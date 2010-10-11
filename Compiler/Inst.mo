@@ -1687,10 +1687,8 @@ algorithm
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
-            Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint,
-            ConnectionGraph.ConnectionGraph> outputs;
+      tuple<Env, DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
+            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
@@ -1726,11 +1724,11 @@ algorithm
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, aa_8, _, aa_9) = inputs;
         // are the important inputs the same??
-        prefixEqualUnlessEnum(aa_2, pre, c);
+        prefixEqualUnlessBasicType(aa_2, pre, c);
         bbx = (aa_7,      aa_8, aa_1, aa_3,  aa_4,     aa_5, aa_9);
         bby = (inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
         equality(bbx = bby);
-        (cache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph) = outputs;
+        (env,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint) = outputs;
         /*
         Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
@@ -1753,16 +1751,15 @@ algorithm
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         
         inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
-        outputs = (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+        outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint);
 
         addToInstCache(fullEnvPathPlusClass,
            SOME(FUNC_instClassIn( // result for full instantiation
              inputs,
              outputs)),
-           /*
-           SOME(FUNC_partialInstClassIn( // result for partial instantiation
+           /*SOME(FUNC_partialInstClassIn( // result for partial instantiation
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims),
-             (cache,env,ih,ci_state)))*/ NONE());
+             (env,ci_state)))*/ NONE());
         /*
         Debug.fprintln("cache", "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
@@ -1787,7 +1784,7 @@ algorithm
   end matchcontinue;
 end instClassIn;
  
-protected function prefixEqualUnlessEnum
+protected function prefixEqualUnlessBasicType
   "Checks if two prefixes are equal, unless the class is an enumeration 
    (all enumerations with the same name are equal)."  
   input Prefix pre1;
@@ -1795,16 +1792,37 @@ protected function prefixEqualUnlessEnum
   input SCode.Class cls;
 algorithm
   _ := matchcontinue(pre1, pre2, cls)
-    case (_, _, SCode.CLASS(restriction = SCode.R_ENUMERATION()))
-      then ();
-    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_ENUMERATION()))
-      then ();
-    case (_, _, _)
+    local
+      SCode.Restriction r;
+      String name;
+
+    // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2) 
+
+    // don't care about prefix for:
+    // - enumerations
+    // - types as they cannot have components    
+    // - predefined types as they cannot have components
+    case (_, _, SCode.CLASS(restriction = SCode.R_ENUMERATION())) then ();
+    // case (_, _, SCode.CLASS(restriction = SCode.R_TYPE())) then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_ENUMERATION())) then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_INTEGER())) then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_REAL())) then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_STRING())) then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_BOOLEAN())) then ();
+    // don't care about prefix for:
+    // - Real, String, Integer, Boolean
+    case (_, _, SCode.CLASS(name = "Real")) then ();
+    case (_, _, SCode.CLASS(name = "Integer")) then ();
+    case (_, _, SCode.CLASS(name = "String")) then ();
+    case (_, _, SCode.CLASS(name = "Boolean")) then ();
+    
+    // anything else, check for equality!
+    case (pre1, pre2, _)
       equation
         equality(pre1 = pre2);
       then ();
   end matchcontinue;
-end prefixEqualUnlessEnum;
+end prefixEqualUnlessBasicType;
 
 public function instClassIn_dispatch
 "function: instClassIn
@@ -2492,7 +2510,7 @@ algorithm
 
       tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix, Connect.Sets,
             ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
-      tuple<Env.Cache, Env, InstanceHierarchy, ClassInf.State> outputs;
+      tuple<Env, ClassInf.State> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
@@ -2519,10 +2537,11 @@ algorithm
         {_,SOME(FUNC_partialInstClassIn(inputs, outputs))} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7) = inputs;
         // are the important inputs the same??
-        bbx = (aa_2, aa_7,      aa_1, aa_3,  aa_4,     aa_5);
-        bby = (pre,  inst_dims, mods, csets, ci_state, c);
+        prefixEqualUnlessBasicType(aa_2, pre, c);
+        bbx = (aa_7,      aa_1, aa_3,  aa_4,     aa_5);
+        bby = (inst_dims, mods, csets, ci_state, c);
         equality(bbx = bby);
-        (cache,env,ih,ci_state_1) = outputs;
+        (env,ci_state_1) = outputs;
         //Debug.fprintln("cache", "IIIIPARTIAL->got PARTIAL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);
@@ -2566,7 +2585,7 @@ algorithm
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
 
         inputs = (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
-        outputs = (cache,env,ih,ci_state);
+        outputs = (env,ci_state);
 
         addToInstCache(fullEnvPathPlusClass,
            NONE(),
@@ -13878,10 +13897,19 @@ uniontype CachedInstItem
           Mod, Prefix, Connect.Sets, ClassInf.State, SCode.Class,
           Boolean, InstDims, Boolean,ConnectionGraph.ConnectionGraph,
           Option<DAE.ComponentRef>> inputs;
-    tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore,
-          DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>,
-          Option<DAE.Type>, Option<Absyn.ElementAttributes>, DAE.EqualityConstraint,
-          ConnectionGraph.ConnectionGraph> outputs;
+    tuple</*Env.Cache, */
+          Env, 
+          /*InstanceHierarchy, */
+          /* UnitAbsyn.InstStore, */
+          DAE.DAElist, 
+          Connect.Sets, 
+          ClassInf.State, 
+          list<DAE.Var>,
+          Option<DAE.Type>, 
+          Option<Absyn.ElementAttributes>, 
+          DAE.EqualityConstraint
+          /*ConnectionGraph.ConnectionGraph*/
+         > outputs;
   end FUNC_instClassIn;
 
   // *important* inputs/outputs for partialInstClassIn
@@ -13889,7 +13917,11 @@ uniontype CachedInstItem
     tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix,
           Connect.Sets, ClassInf.State, SCode.Class, Boolean,
           InstDims> inputs;
-    tuple<Env.Cache, Env, InstanceHierarchy, ClassInf.State> outputs;
+    tuple</*Env.Cache,*/ 
+          Env, 
+          /*InstanceHierarchy,*/ 
+          ClassInf.State
+         > outputs;
   end FUNC_partialInstClassIn;
 
 end CachedInstItem;
