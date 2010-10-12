@@ -1083,7 +1083,7 @@ algorithm
       list<Absyn.Exp> exps;
     case Absyn.EXTERNALDECL(funcName = id,lang = NONE,output_ = cref,args = exps)
       equation
-        idstr = getOptionStr(id, identity);
+        idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
         str = Util.stringAppendList({idstr,", ",crefstr,", (",expstr,")"});
@@ -1092,7 +1092,7 @@ algorithm
         ();
     case Absyn.EXTERNALDECL(funcName = id,lang = SOME(lang),output_ = cref,args = exps)
       equation
-        idstr = getOptionStr(id, identity);
+        idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
         str = Util.stringAppendList({idstr,", \"",lang,"\", ",crefstr,", (",expstr,")"});
@@ -5017,21 +5017,6 @@ algorithm
         ();
   end matchcontinue;
 end printStringCommentOption;
-
-protected function identity "function: identity
-
-  The identity function.
-"
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA:=
-  matchcontinue (inTypeA)
-    local Type_a x;
-    case (x) then x;
-  end matchcontinue;
-end identity;
 
 public function printBoolStr "function: printBoolStr
 
