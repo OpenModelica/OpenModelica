@@ -47,6 +47,7 @@
 #include "simulation_inline_solver.h"
 #include "integer_array.h"
 #include "boolean_array.h"
+#include "linearize.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -308,6 +309,15 @@ int initial_residual();
 
 // function for initializing time instants when sample() is activated
 void function_sampleInit();
+
+// function with template for linear model
+int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
+
+// function for calculation Jacobian
+int functionJacA(double *t, double *x, double *xd, double* jac);
+int functionJacB(double *t, double *x, double *xd, double* jac);
+int functionJacC(double *t, double *x, double *xd, double* jac);
+int functionJacD(double *t, double *x, double *xd, double* jac);
 
 bool isInteractiveSimulation();
 int callSolver(int, char**, string, string, double, double, double, long, double);

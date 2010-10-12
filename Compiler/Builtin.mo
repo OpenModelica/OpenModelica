@@ -2324,6 +2324,28 @@ algorithm
   end matchcontinue;
 end isSkew;
 
+public function isAbs
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "abs")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "abs")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isAbs(inPath); then ();
+  end matchcontinue;
+end isAbs;
+
+public function isDer
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "der")) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isAbs(inPath); then ();
+  end matchcontinue;
+end isDer;
+
+
 public function simpleInitialEnv "
 val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},
 				      (DAE.T_ARRAY),NONE)

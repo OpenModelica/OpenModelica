@@ -94,6 +94,7 @@ type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
+type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
 
 
 // Root data structure containing information required for templates to
@@ -121,6 +122,7 @@ uniontype SimCode
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
     DelayedExpression delayedExps;
+    list<JacobianMatrix> JacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix;
     
@@ -542,6 +544,15 @@ public function incrementInt
 algorithm
   outInt := inInt + increment;
 end incrementInt;
+
+public function decrementInt
+"Used by templates to create new integers that are increments of another."
+  input Integer inInt;
+  input Integer decrement;
+  output Integer outInt;
+algorithm
+  outInt := inInt - decrement;
+end decrementInt;
 
 public function makeCrefRecordExp
 "function: makeCrefRecordExp
@@ -1402,6 +1413,8 @@ algorithm
       list<DAE.Statement> allDivStmts;
       DAELow.Variables orderedVars,knownVars,vars;
       list<DAELow.Var> varlst,varlst1,varlst2;
+      
+      list<JacobianMatrix> LinearMats;
                   
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,libs,simSettingsOpt)
       equation
@@ -1460,6 +1473,9 @@ algorithm
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
         allEquations = applyResidualReplacements(allEquations);
+        
+        LinearMats = createLinearModelMatrixes(dae,dlow,ass1,ass2);
+        
         simCode = SIMCODE(modelInfo,
           functions,
           externalFunctionIncludes,
@@ -1481,6 +1497,7 @@ algorithm
           extObjInfo,
           makefileParams,
           DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          LinearMats,
           simSettingsOpt,
           filenamePrefix,
           dlow);
@@ -1493,6 +1510,262 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
+
+
+protected function createLinearModelMatrixes
+  input DAE.DAElist inDAElist1;
+  input DAELow.DAELow inDAELow2;
+  input Integer[:] inIntegerArray3;
+  input Integer[:] inIntegerArray4;
+  output list<JacobianMatrix> JacobianMatrixes;
+algorithm
+  JacobianMatrixes :=
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4)
+    local
+      DAE.DAElist dae;
+      DAELow.DAELow dlow,dlow2;
+      Integer[:] ass1,ass2;
+
+      DAELow.Variables orderedVars,knownVars;
+      list<DAELow.Var> derivedVariables, varlst,varlst1,varlst2, states, inputvars, outputvars;
+      list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars;
+      
+       //new vars for Jacobian or rather for Linearization
+      DAELow.DAELow deriveddlowAC;
+      DAELow.DAELow deriveddlowBD;
+      DAELow.Variables jacOrderedVars;
+      list<Integer>[:] m,mT;
+      Integer[:] v1,v2;
+      list<list<Integer>> comps1;
+      list<SimEqSystem> JacAEquations;
+      list<SimEqSystem> JacBEquations;
+      list<SimEqSystem> JacCEquations;
+      list<SimEqSystem> JacDEquations;
+      list<SimVar> JacAVars, JacBVars, JacCVars, JacDVars;
+ 
+      list<tuple<String,Integer>> varTuple;
+      DAELow.BinTree jacElements;
+                  
+      list<JacobianMatrix> LinearMats;   
+      
+      DAELow.Variables v,kv,exv;
+      DAELow.AliasVariables av;
+      DAELow.EquationArray e,re,ie;
+      DAELow.MultiDimEquation[:] ae;
+      DAE.Algorithm[:] al;
+      DAELow.EventInfo ev;
+      DAELow.ExternalObjectClasses eoc;
+      list<DAELow.Equation> e_lst,re_lst,ie_lst;
+      list<DAE.Algorithm> algs;
+      list<DAELow.MultiDimEquation> ae_lst;  
+    case (dae,dlow,ass1,ass2)
+      equation
+        true = RTOpts.debugFlag("linearization");
+        Debug.fcall("linmodel",print,"Generate Linear Moldel Matrixes\n");
+        
+        // Prepare all need variables
+        orderedVars = DAELow.daeVars(dlow);
+        knownVars = DAELow.daeKnVars(dlow);
+      	varlst = DAELow.varList(orderedVars);
+      	varlst1 = DAELow.varList(knownVars);
+      	varlst2 = listAppend(varlst,varlst1);
+      	varlst = listReverse(varlst);
+      	varlst1 = listReverse(varlst1);
+      	varlst2 = listReverse(varlst2);  
+        states = Util.listSelect(varlst,DAELow.isStateVar);
+        inputvars = Util.listSelect(varlst1,DAELow.isVarOnTopLevelAndInput);
+        outputvars = Util.listSelect(varlst2,DAELow.isVarOnTopLevelAndOutput);
+        comref_states = Util.listMap(states,DAELow.varCref);
+        comref_inputvars = Util.listMap(inputvars,DAELow.varCref);
+        comref_outputvars = Util.listMap(outputvars,DAELow.varCref);
+        
+        
+        // Create SimCode structure for Jacobian or rather for Linearization
+
+        // Differentiate the System w.r.t states for Matrixes A and C
+        Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
+        (deriveddlowAC as DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)) = DAELow.generateSymbolicJacobian(dlow, dae, comref_states, ass1,ass2);
+        Debug.fcall("linmodel",print,"Done! Create now Matrixes A and C for linear model.\n");
+        
+        // prepare index for Matrix A and Variable for simpleEquations
+        derivedVariables = DAELow.varList(v);
+        (varTuple) = DAELow.determineIndices(comref_states, comref_states, 0, varlst);
+        DAELow.printTuple(varTuple);
+        jacElements = DAELow.emptyBintree;
+        (derivedVariables,jacElements) = DAELow.changeIndices(derivedVariables, varTuple,jacElements);
+        v = DAELow.listVar(derivedVariables);
+        
+        /*
+        // Remove simple Equtaion and 
+        e_lst = DAELow.equationList(e);
+        re_lst = DAELow.equationList(re);
+        ie_lst = DAELow.equationList(ie);
+        ae_lst = arrayList(ae);
+        algs = arrayList(al);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = DAELow.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+
+        e = DAELow.listEquation(e_lst);
+        re = DAELow.listEquation(re_lst);
+        ie = DAELow.listEquation(ie_lst);
+        ae = listArray(ae_lst);
+        al = listArray(algs);
+
+        deriveddlowAC = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        */
+        
+        m = DAELow.incidenceMatrix(deriveddlowAC);
+        mT = DAELow.transposeMatrix(m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        (v1,v2,deriveddlowAC,m,mT) = DAELow.matchingAlgorithm(deriveddlowAC, m, mT, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", DAELow.dump, deriveddlowAC);
+        Debug.fcall("jacdump2", DAELow.dumpMatching, v1);
+        (comps1) = DAELow.strongComponents(m, mT, v1, v2);
+        Debug.fcall("jacdump2", DAELow.dumpComponents, comps1);  
+
+        JacAEquations = createEquations(true, false, true, dae, deriveddlowAC, v1, v2, comps1, {});
+        JacAVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
+
+        jacOrderedVars = DAELow.daeVars(deriveddlowAC);
+        derivedVariables = DAELow.varList(jacOrderedVars);        
+        (varTuple) = DAELow.determineIndices(comref_outputvars, comref_states, 0, varlst);
+        DAELow.printTuple(varTuple);
+        jacElements = DAELow.emptyBintree;
+        (derivedVariables,jacElements) = DAELow.changeIndices(derivedVariables, varTuple,jacElements);
+        v = DAELow.listVar(derivedVariables);
+        /*
+        e_lst = DAELow.equationList(e);
+        re_lst = DAELow.equationList(re);
+        ie_lst = DAELow.equationList(ie);
+        ae_lst = arrayList(ae);
+        algs = arrayList(al);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = DAELow.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+
+        e = DAELow.listEquation(e_lst);
+        re = DAELow.listEquation(re_lst);
+        ie = DAELow.listEquation(ie_lst);
+        ae = listArray(ae_lst);
+        al = listArray(algs);
+
+        deriveddlowAC = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        */
+        m = DAELow.incidenceMatrix(deriveddlowAC);
+        mT = DAELow.transposeMatrix(m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        (v1,v2,deriveddlowAC,m,mT) = DAELow.matchingAlgorithm(deriveddlowAC, m, mT, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", DAELow.dump, deriveddlowAC);
+        Debug.fcall("jacdump2", DAELow.dumpMatching, v1);
+        (comps1) = DAELow.strongComponents(m, mT, v1, v2);
+        Debug.fcall("jacdump2", DAELow.dumpComponents, comps1);  
+
+        JacCEquations = createEquations(true, false, true, dae, deriveddlowAC, v1, v2, comps1, {});
+        JacCVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
+               
+        // For Matrix B and D
+        
+        Debug.fcall("linmodel",print,"Differentiate System w.r.t. inputs.\n");
+        (deriveddlowBD as DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)) = DAELow.generateSymbolicJacobian(dlow, dae, comref_inputvars, ass1,ass2);
+        Debug.fcall("linmodel",print,"Done! Create now Matrixes B and D for linear model.\n");
+
+        derivedVariables = DAELow.varList(v);
+        (varTuple) = DAELow.determineIndices(comref_states, comref_inputvars, 0, varlst);
+        DAELow.printTuple(varTuple);
+        jacElements = DAELow.emptyBintree;
+        (derivedVariables,jacElements) = DAELow.changeIndices(derivedVariables, varTuple,jacElements);
+        /*v = DAELow.listVar(derivedVariables);
+        
+        e_lst = DAELow.equationList(e);
+        re_lst = DAELow.equationList(re);
+        ie_lst = DAELow.equationList(ie);
+        ae_lst = arrayList(ae);
+        algs = arrayList(al);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = DAELow.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+
+        e = DAELow.listEquation(e_lst);
+        re = DAELow.listEquation(re_lst);
+        ie = DAELow.listEquation(ie_lst);
+        ae = listArray(ae_lst);
+        al = listArray(algs);
+
+        deriveddlowBD = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+    		*/
+        m = DAELow.incidenceMatrix(deriveddlowBD);
+        mT = DAELow.transposeMatrix(m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        (v1,v2,deriveddlowBD,m,mT) = DAELow.matchingAlgorithm(deriveddlowBD, m, mT, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", DAELow.dump, deriveddlowBD);
+        Debug.fcall("jacdump2", DAELow.dumpMatching, v1);
+        (comps1) = DAELow.strongComponents(m, mT, v1, v2);
+        Debug.fcall("jacdump2", DAELow.dumpComponents, comps1);  
+
+        JacBEquations = createEquations(true, false, true, dae, deriveddlowBD, v1, v2, comps1, {});
+        JacBVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
+
+        jacOrderedVars = DAELow.daeVars(deriveddlowBD);
+        derivedVariables = DAELow.varList(jacOrderedVars);
+        (varTuple) = DAELow.determineIndices(comref_outputvars, comref_inputvars, 0, varlst);
+        DAELow.printTuple(varTuple);
+        jacElements = DAELow.emptyBintree;
+        (derivedVariables,jacElements) = DAELow.changeIndices(derivedVariables, varTuple,jacElements);
+        
+        /*
+        v = DAELow.listVar(derivedVariables);
+        
+        e_lst = DAELow.equationList(e);
+        re_lst = DAELow.equationList(re);
+        ie_lst = DAELow.equationList(ie);
+        ae_lst = arrayList(ae);
+        algs = arrayList(al);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = DAELow.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+
+        e = DAELow.listEquation(e_lst);
+        re = DAELow.listEquation(re_lst);
+        ie = DAELow.listEquation(ie_lst);
+        ae = listArray(ae_lst);
+        al = listArray(algs);
+
+        deriveddlowBD = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        */
+        m = DAELow.incidenceMatrix(deriveddlowBD);
+        mT = DAELow.transposeMatrix(m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        (v1,v2,deriveddlowBD,m,mT) = DAELow.matchingAlgorithm(deriveddlowBD, m, mT, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", DAELow.dump, deriveddlowBD);
+        Debug.fcall("jacdump2", DAELow.dumpMatching, v1);
+        (comps1) = DAELow.strongComponents(m, mT, v1, v2);
+        Debug.fcall("jacdump2", DAELow.dumpComponents, comps1);  
+
+        JacDEquations = createEquations(true, false, true, dae, deriveddlowBD, v1, v2, comps1, {});
+        JacDVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
+        
+        LinearMats = {(JacAEquations,JacAVars,"A"),(JacBEquations,JacBVars,"B"),(JacCEquations,JacCVars,"C"),(JacDEquations,JacDVars,"D")};  
+
+      then
+        LinearMats;
+    case (dae,dlow,ass1,ass2)
+      equation
+        false = RTOpts.debugFlag("linearization");
+        LinearMats = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
+      then
+        LinearMats;        
+    case (_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of LinearModel Matrixes code using templates failed"});
+      then
+        fail();
+  end matchcontinue;
+end createLinearModelMatrixes;
 
 
 protected function extractDelayedExpressions
@@ -7588,6 +7861,5 @@ algorithm
     case (_) then NONE();
   end matchcontinue;
 end getInitialValue;
-
 
 end SimCode;

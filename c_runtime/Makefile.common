@@ -15,7 +15,7 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
 java_interface.o meta_modelica.o meta_modelica_builtin.o ModelicaUtilities.o $(EXTRA_OBJS)
 
-SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
+SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o linearize.o \
 solver_dasrt.o solver_main.o simulation_result_plt.o simulation_result_csv.o simulation_result_bin.o simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
 
 HFILES = \
@@ -61,7 +61,8 @@ simulation_runtime.h \
 solver_dasrt.h \
 solver_main.h \
 string_array.h \
-utility.h
+utility.h \
+linearize.h
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a

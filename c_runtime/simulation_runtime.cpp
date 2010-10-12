@@ -42,6 +42,7 @@
 #include "solver_dasrt.h"
 #include "solver_main.h"
 #include "options.h"
+#include "linearize.h"
 // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
 #include "omi_ServiceInterface.h"
@@ -230,6 +231,11 @@ int startInteractiveSimulation(int argc, char**argv) {
 int startNonInteractiveSimulation(int argc, char**argv){
   int retVal = -1;
 
+	  /* linear model option is set : -l <lintime> */
+  int create_linearmodel = (int) flagSet("l", argc, argv);
+  string* lintime = (string*) getFlagValue("l",argc,argv);
+
+
       /* mesure time option is set : -mt */
   int measure_time_flag = (int)flagSet("mt",argc,argv);
   double measure_start_time = 0;
@@ -253,7 +259,23 @@ int startNonInteractiveSimulation(int argc, char**argv){
   if (measure_time_flag)
     measure_start_time = clock();
 
+  if(create_linearmodel){
+	  if (lintime == NULL ) {
+		  stop = start;
+	  }else{
+		  stop = atof((*lintime).c_str());
+	  }
+	  cout << "Linearization will performed at point of time: " << stop << endl;
+	  method = "dassl2";
+  }
+
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
+
+  if(create_linearmodel){
+	  retVal = linearize();
+	  cout << "Linear model is created!" << endl;
+  }
+
 
   deinitDelay();
 
