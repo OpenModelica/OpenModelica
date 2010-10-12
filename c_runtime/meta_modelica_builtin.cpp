@@ -42,6 +42,8 @@
 #define snprintf _snprintf
 #endif
 
+extern "C" {
+
 /* Boolean Operations */
 boolAnd_rettype boolAnd(modelica_boolean b1, modelica_boolean b2)
 {
@@ -414,55 +416,55 @@ listStringCharString_rettype listStringCharString(modelica_metatype lst)
   return res;
 }
 
-stringAppendList_rettype stringAppendList(modelica_metatype lst)
+modelica_string_const stringAppendListConst(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
-  modelica_string_t res, res_head;
+  modelica_string_t res, res_head, tmp;
   modelica_metatype car, lstHead;
   lstLen = listLength(lst);
   acc = 0;
   lstHead = lst;
   for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
-    acc += MMC_HDRSTRLEN(MMC_GETHDR(MMC_CAR(lst)));
+    tmp = MMC_STRINGDATA(MMC_CAR(lst));
+    acc += strlen(tmp);
   }
-  alloc_modelica_string(&res, acc+1);
+  res = (char*) malloc(acc+1);
   res_head = res;
   lst = lstHead;
   for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
     car = MMC_CAR(lst);
-    len = MMC_HDRSTRLEN(MMC_GETHDR(car));
-    strncpy(res,MMC_STRINGDATA(car),len);
+    tmp = MMC_STRINGDATA(car);
+    len = strlen(tmp);
+    memcpy(res,tmp,len);
     res += len;
   }
   *res = '\0';
   return res_head;
 }
 
-stringAppend_rettype stringAppend(modelica_string_t str1, modelica_string_t str2)
+stringAppend_rettype stringAppend(modelica_string_const s1, modelica_string_const s2)
 {
-  modelica_string_t tmp;
-  cat_modelica_string(&tmp,str1,str2);
-  return tmp;
+  int len1 = strlen(s1);
+  int len2 = strlen(s2);
+  char* str = (char*) malloc(len1+len2+1);
+
+  memcpy(str, s1, len1);
+  memcpy(str + len1, s2, len2 + 1);
+  str[len1+len2] = '\0';
+  return str;
 }
 
 modelica_metatype boxptr_stringAppend(modelica_metatype str1, modelica_metatype str2)
 {
   const char* s1 = MMC_STRINGDATA(str1);
   const char* s2 = MMC_STRINGDATA(str2);
-  int len1 = strlen(s1);
-  int len2 = strlen(s2);
-  char* str = (char*) malloc(len1+len2+1);
-  modelica_metatype res;
-
-  memcpy(str, s1, len1);
-  memcpy(str + len1, s2, len2 + 1);
-  str[len1+len2] = '\0';
-  res = mmc_mk_scon(str);
+  char* str = stringAppend(s1,s2);
+  modelica_metatype res = mmc_mk_scon(str);
   free(str);
   return res;
 }
 
-stringLength_rettype stringLength(modelica_string_t str)
+stringLength_rettype stringLength(modelica_string_const str)
 {
   return strlen(str);
 }
@@ -746,3 +748,4 @@ void equality(modelica_metatype in1, modelica_metatype in2)
     throw 1;
 }
 
+}
