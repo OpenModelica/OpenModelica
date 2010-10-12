@@ -5145,12 +5145,20 @@ algorithm
 
     case (exp,actual,expected,polymorphicBindings,printFailtrace)
       equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+        (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
+      then 
+        (e_1,e_type_1,polymorphicBindings);
+    case (exp,actual,expected,polymorphicBindings,printFailtrace)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         {} = getAllInnerTypesOfType(expected, isPolymorphic);
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
     case (exp,actual,expected,polymorphicBindings,_)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
         polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);

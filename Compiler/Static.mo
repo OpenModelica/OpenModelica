@@ -2857,7 +2857,7 @@ algorithm
         // verify type here to see that input arguments are okay.
         ty2 = Types.arrayElementType(ty);
         true = typeChecker(ty2);
-        (cache,s1_1,(prop as DAE.PROP(ty,c))) = elabCallArgs(cache,env, Absyn.IDENT(fnName), {s1}, {}, impl, NONE,pre);
+        (cache,s1_1,(prop as DAE.PROP(ty,c))) = elabCallArgs(cache,env, Absyn.FULLYQUALIFIED(Absyn.IDENT(fnName)), {s1}, {}, impl, NONE,pre);
       then
         (cache,s1_1,prop);
   end matchcontinue;
@@ -5979,11 +5979,6 @@ algorithm
       then
         (cache, call, DAE.PROP(ty,DAE.C_VAR));
         
-    case (cache,env,{dim},_,impl,pre)
-      equation
-        print("-elab_builtin_identity failed\n");
-      then
-        fail();
   end matchcontinue;
 end elabBuiltinIdentity;
 
@@ -6747,8 +6742,9 @@ protected function isBuiltinFunc "function: isBuiltinFunc
   input Prefix inPrefix;
   output Env.Cache outCache;
   output Boolean outBoolean;
+  output Absyn.Path outPath "make the path non-FQ";
 algorithm
-  (outCache,outBoolean) := matchcontinue (inCache,inPath,inPrefix)
+  (outCache,outBoolean,outPath) := matchcontinue (inCache,inPath,inPrefix)
     local
       Ident id;
       Absyn.Path path;
@@ -6758,23 +6754,23 @@ algorithm
       equation
         _ = elabBuiltinHandler(id);
       then
-        (cache,true);
+        (cache,true,inPath);
     case (cache,Absyn.FULLYQUALIFIED(path),pre)
       equation
-        (cache,true) = isBuiltinFunc(cache,path,pre);
+        (cache,true,path) = isBuiltinFunc(cache,path,pre);
       then
-        (cache,true);
+        (cache,true,path);
     case (cache, Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       then
-        (cache,true);
+        (cache,true,inPath);
     case (cache,path,pre)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = path);
         (cache,true) = Lookup.isInBuiltinEnv(cache,path);
         checkSemiSupportedFunctions(path,pre);
       then
-        (cache,true);
-    case (cache,_,_) then (cache,false);
+        (cache,true,inPath);
+    case (cache,_,_) then (cache,false,inPath);
   end matchcontinue;
 end isBuiltinFunc;
 
@@ -8667,7 +8663,7 @@ algorithm
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
-        (cache,builtin) = isBuiltinFunc(cache,fn_1,pre);
+        (cache,builtin,fn_1) = isBuiltinFunc(cache,fn_1,pre);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
@@ -10356,7 +10352,7 @@ algorithm
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
-        (cache, isBuiltinFunc) = isBuiltinFunc(cache,path,pre);
+        (cache, isBuiltinFunc, path) = isBuiltinFunc(cache,path,pre);
         {t} = typelist;
         (tt,optPath) = t;
         t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE there";

@@ -1543,19 +1543,41 @@ algorithm
       Env.Frame f;
       list<DAE.Type> res;
       DAE.DAElist dae;
+      Env.AvlTree httypes;
+      Env.AvlTree ht;
+      String str;
       
-    case (cache,env,Absyn.FULLYQUALIFIED(id))
+    /* Builtin operators are looked up in top frame directly */
+    case (cache,env,(id as Absyn.IDENT(name = str)))
       equation
-        f = Env.topFrame(env);
-        (cache,res) = lookupFunctionsInEnv2(cache, {f}, id);
-      then (cache,res);
+        _ = Static.elabBuiltinHandler(str) "Check for builtin operators" ;
+        (cache,env as {Env.FRAME(clsAndVars = ht,types = httypes)}) = Builtin.initialEnv(cache);
+        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str);
+      then
+        (cache,res);
+
+    /* Check for special builtin operators that can not be represented in environment like for instance cardinality.*/
+    case (cache,_,id as Absyn.IDENT(name = str))
+      equation
+        _ = Static.elabBuiltinHandlerGeneric(str);
+        (cache,env) = Builtin.initialEnv(cache);
+        res = createGenericBuiltinFunctions(env, str);
+      then
+        (cache,res);
 
     case (cache,env,id)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = id);
-        (cache,res) = lookupFunctionsInEnv2(cache,env,id);
+        (cache,res) = lookupFunctionsInEnv2(cache,env,id,false);
       then (cache,res);
 
+    case (cache,env,Absyn.FULLYQUALIFIED(id))
+      equation
+        f = Env.topFrame(env);
+        (cache,res) = lookupFunctionsInEnv2(cache,{f},id,true);
+      then (cache,res);
+
+    case (cache,_,_) then (cache,{});
     case (_,_,id)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -1571,10 +1593,11 @@ protected function lookupFunctionsInEnv2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
+  input Boolean followedQual "cannot pop frames if we followed a qualified path at any point";
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath,followedQual)
     local
       Absyn.Path id,iid,path;
       Option<String> sid;
@@ -1590,34 +1613,16 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
       DAE.DAElist dae;
-    case (cache,{},id) then (cache,{});
       
-    /* Builtin operators are looked up in top frame directly */
-    case (cache,env,(id as Absyn.IDENT(name = str)))
-      equation
-        _ = Static.elabBuiltinHandler(str) "Check for builtin operators" ;
-        Env.FRAME(clsAndVars = ht,types = httypes) = Env.topFrame(env);
-        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str);
-      then
-        (cache,res);
-
-    /* Check for special builtin operators that can not be represented in environment like for instance cardinality.*/
-    case (cache,env,id as Absyn.IDENT(name = str))
-      equation
-        _ = Static.elabBuiltinHandlerGeneric(str);
-        res = createGenericBuiltinFunctions(env, str);
-      then
-        (cache,res);
-
     /* Simple name, search frame */
-    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),followedQual)
       equation
         (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str);
       then
         (cache,res);
 
     /* Simple name, if class with restriction function found in frame instantiate to get type. */
-    case (cache, f::fs, id as Absyn.IDENT(name = str))
+    case (cache, f::fs, id as Absyn.IDENT(name = str),followedQual)
       equation
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
@@ -1634,7 +1639,7 @@ algorithm
         (cache,res);
 
     /* For qualified function names, e.g. Modelica.Math.sin */
-    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),followedQual)
       equation
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
@@ -1647,14 +1652,21 @@ algorithm
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {});
-        (cache,res) = lookupFunctionsInEnv2(cache, env_2, path);
+        (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true);
       then
         (cache,res);
 
     /* Did not match. Search next frame. */
-    case (cache,f::fs,id)
+    case (cache,Env.FRAME(isEncapsulated = false)::fs,id,false)
       equation
-        (cache,res) = lookupFunctionsInEnv2(cache, fs, id);
+        (cache,res) = lookupFunctionsInEnv2(cache, fs, id, false);
+      then
+        (cache,res);
+    
+    case (cache,Env.FRAME(isEncapsulated = true)::env,id as Absyn.IDENT(name = str),false)
+      equation
+        (cache,env) = Builtin.initialEnv(cache);
+        (cache,res) = lookupFunctionsInEnv2(cache, env, id, true);
       then
         (cache,res);
 
@@ -1873,7 +1885,7 @@ algorithm
         (cache,env_1,_) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
         
-        (cache,tps) = lookupFunctionsInEnv2(cache,env_1, Absyn.IDENT(id));
+        (cache,tps) = lookupFunctionsInEnv2(cache,env_1,Absyn.IDENT(id),true);
       then
         (cache,tps);
 
@@ -2113,20 +2125,10 @@ algorithm
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,{}) = lookupFunctionsInEnv2(cache,i_env, path);
-      then
-        (cache,false);
-    case (cache,path)
-      equation
-        (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,_) = lookupFunctionsInEnv2(cache,i_env, path);
+        (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true);
       then
         (cache,true);
-    case (cache,path)
-      equation
-        Debug.fprintln("failtrace", "is_in_builtin_env failed");
-      then
-        fail();
+    case (cache,path) then (cache,false);
   end matchcontinue;
 end isInBuiltinEnv;
 
