@@ -164,10 +164,10 @@ int PrintImpl__printErrorBuf(const char* str)
   }
 
   if (print_error_buf_impl(str) != 0) {
-    return 0;
+    return 1;
   }
 
-  return 1;
+  return 0;
 }
 
 void PrintImpl__clearErrorBuf(void)

@@ -52,6 +52,7 @@ omc_communication_impl.o: omc_communication.h
 corbaimpl.o: omc_communication.h
 dynload.o: systemimpl.h ../Absyn.h ../Values.h dynload_try.h
 systemimpl.o : config.unix.h
+Print_rml.o : printimpl.c
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
