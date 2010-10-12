@@ -5130,7 +5130,7 @@ end stdout;
 public function getAstAsCorbaString
   input Absyn.Program program;
 algorithm
-  outStr := matchcontinue program
+  _ := matchcontinue program
     local
       list<Absyn.Class> classes;
       Absyn.Within within_;
@@ -5147,6 +5147,7 @@ algorithm
         Print.printBuf("\nend Absyn.PROGRAM;");
       then ();
   end matchcontinue;
+  print(Print.getString());
 end getAstAsCorbaString;
 
 protected function printPathAsCorbaString
