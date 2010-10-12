@@ -416,7 +416,7 @@ listStringCharString_rettype listStringCharString(modelica_metatype lst)
   return res;
 }
 
-modelica_string_const stringAppendListConst(modelica_metatype lst)
+stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
   modelica_string_t res, res_head, tmp;
