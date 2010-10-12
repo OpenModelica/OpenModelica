@@ -31,26 +31,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "rml.h"
 
 /* errorext.h is a C++ header... */
-void c_add_message(int errorID, char* type, char* severity, char* message, char** ctokens, int nTokens);
+void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens);
 
 /* adrpo: this is defined in rtopts. (enabled with omc +showErrorMessages) */
 extern int showErrorMessages;
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
-char *buf = NULL;
-char *errorBuf = NULL;
+static char *buf = NULL;
+static char *errorBuf = NULL;
 
-int nfilled=0;
-int cursize=0;
+static int nfilled=0;
+static int cursize=0;
 
-int errorNfilled=0;
-int errorCursize=0;
+static int errorNfilled=0;
+static int errorCursize=0;
 
-int increase_buffer(void)
+static int increase_buffer(void)
 {
 
   char * new_buf;
@@ -74,7 +73,7 @@ int increase_buffer(void)
   return 0;
 }
 
-int increase_buffer_fixed(int increase)
+static int increase_buffer_fixed(int increase)
 {
   char * new_buf;
   int new_size;
@@ -100,7 +99,7 @@ int increase_buffer_fixed(int increase)
   return 0;
 }
 
-int error_increase_buffer(void)
+static int error_increase_buffer(void)
 {
   char * new_buf;
   int new_size;
@@ -142,42 +141,22 @@ int print_error_buf_impl(const char *str)
   return 0;
 }
 
-void Print_5finit(void)
+void PrintImpl__setBufSize(long newSize)
 {
-  // set things to 0
-  char *buf = NULL;
-  char *errorBuf = NULL;
-
-  int nfilled=0;
-  int cursize=0;
-
-  int errorNfilled=0;
-  int errorCursize=0;
-}
-
-RML_BEGIN_LABEL(Print__setBufSize)
-{
-  long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
     increase_buffer_fixed(newSize);
   }
-  RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__unSetBufSize)
+void PrintImpl__unSetBufSize(void)
 {
-  long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   increase_buffer_fixed(INITIAL_BUFSIZE);
-  RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__printErrorBuf)
+/* Returns 0 on success; 1 on failure */
+int PrintImpl__printErrorBuf(const char* str)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-
   if (showErrorMessages) /* adrpo: should we show error messages while they happen? */
   {
     fprintf(stderr, "%s", str);
@@ -185,14 +164,13 @@ RML_BEGIN_LABEL(Print__printErrorBuf)
   }
 
   if (print_error_buf_impl(str) != 0) {
-    RML_TAILCALLK(rmlFC);
+    return 0;
   }
 
-  RML_TAILCALLK(rmlSC);
+  return 1;
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__clearErrorBuf)
+void PrintImpl__clearErrorBuf(void)
 {
   errorNfilled=0;
   if (errorBuf != 0) {
@@ -201,33 +179,28 @@ RML_BEGIN_LABEL(Print__clearErrorBuf)
     errorBuf = NULL;
     errorCursize=0;
   }
-  RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__getErrorString)
+/* returns NULL on failure */
+const char* PrintImpl__getErrorString(void)
 {
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
-      RML_TAILCALLK(rmlFC);
+      return NULL;
     }
   }
-
-  rmlA0=(void*)mk_scon(errorBuf);
-  RML_TAILCALLK(rmlSC);
+  return errorBuf;
 }
-RML_END_LABEL
 
-
-RML_BEGIN_LABEL(Print__printBuf)
+/* returns 0 on success */
+int PrintImpl__printBuf(const char* str)
 {
-  char* str = RML_STRINGDATA(rmlA0);
   long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
   while (nfilled + len + 1 > cursize) {
     if(increase_buffer()!= 0) {
-        RML_TAILCALLK(rmlFC);
+      return 1;
     }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled); */
   }
@@ -241,13 +214,10 @@ RML_BEGIN_LABEL(Print__printBuf)
   buf[nfilled] = '\0';
 
   /* printf("%s",str); */
-
-  RML_TAILCALLK(rmlSC);
+  return 0;
 }
-RML_END_LABEL
 
-
-RML_BEGIN_LABEL(Print__clearBuf)
+void PrintImpl__clearBuf(void)
 {
   nfilled=0;
   if (buf != 0) {
@@ -256,61 +226,56 @@ RML_BEGIN_LABEL(Print__clearBuf)
     buf = NULL;
     cursize = 0;
   }
-
-  RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__getString)
+/* returns NULL on failure */
+const char* PrintImpl__getString(void)
 {
   if(buf == NULL || buf[0]=='\0' || cursize==0){
-	  rmlA0=(void*)mk_scon("");
-	  RML_TAILCALLK(rmlSC);
+	  return "";
   }
   if (buf == 0) {
     if (increase_buffer() != 0) {
-      RML_TAILCALLK(rmlFC);
+      return NULL;
     }
   }
-  rmlA0=(void*)mk_scon(buf);
-  RML_TAILCALLK(rmlSC);
+  return buf;
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__writeBuf)
+/* returns 0 on success */
+int PrintImpl__writeBuf(const char* filename)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
+  const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
 #else
-  char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
+  const char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
 #endif
-  char * filename = RML_STRINGDATA(rmlA0);
   FILE * file = NULL;
   /* check if we have something to write */
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
-    char *c_tokens[1]={filename};
+    const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
       "PRINT",
       "ERROR",
       "Error writing to file %s.",
       c_tokens,
       1);
-    RML_TAILCALLK(rmlFC);
+    return 1;
   }
 
   if (buf == NULL || buf[0]=='\0') {
     /* nothing to write to file, just close it and return ! */
     fclose(file);
-    RML_TAILCALLK(rmlFC);
+    return 1;
   }
 
   /*  write 1 element of size nfilled to file and check for errors */
   if (1 != fwrite(buf, nfilled, 1,  file))
   {
-    char *c_tokens[1]={filename};
+    const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
       "PRINT",
       "ERROR",
@@ -318,58 +283,49 @@ RML_BEGIN_LABEL(Print__writeBuf)
       c_tokens,
       1);
     fclose(file);
-    RML_TAILCALLK(rmlFC);
+    return 1;
   }
   fflush(file);
   fclose(file);
-  RML_TAILCALLK(rmlSC);
+  return 0;
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__getBufLength)
+long PrintImpl__getBufLength(void)
 {
-  rmlA0 = mk_icon(nfilled);
-  RML_TAILCALLK(rmlSC);
+  return nfilled;
 }
-RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__printBufSpace)
+/* returns 0 on success */
+int PrintImpl__printBufSpace(long nSpaces)
 {
-  long nSpaces = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   if (nSpaces > 0) {
    while (nfilled + nSpaces + 1 > cursize) {
     if(increase_buffer()!= 0) {
-       RML_TAILCALLK(rmlFC);
+       return 1;
     }
    }
    memset(buf+nfilled,' ',(size_t)nSpaces);
    nfilled += nSpaces;
    buf[nfilled] = '\0';
   }
-
-  RML_TAILCALLK(rmlSC);
+  return 0;
 }
-RML_END_LABEL
 
-
-RML_BEGIN_LABEL(Print__printBufNewLine)
+/* returns 0 on success */
+int PrintImpl__printBufNewLine(void)
 {
   while (nfilled + 1+1 > cursize) {
-	if(increase_buffer()!= 0) {
-		RML_TAILCALLK(rmlFC);
+    if(increase_buffer()!= 0) {
+      return 1;
     }
   }
   buf[nfilled++] = '\n';
   buf[nfilled] = '\0';
 
-  RML_TAILCALLK(rmlSC);
+  return 0;
 }
-RML_END_LABEL
 
-
-RML_BEGIN_LABEL(Print__hasBufNewLineAtEnd)
+int PrintImpl__hasBufNewLineAtEnd(void)
 {
-  rmlA0 = (nfilled > 0 && buf[nfilled-1] == '\n') ? RML_TRUE : RML_FALSE;
-  RML_TAILCALLK(rmlSC);
+  return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }
-RML_END_LABEL
