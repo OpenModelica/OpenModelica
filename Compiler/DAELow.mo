@@ -52,7 +52,11 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import Values;
+public import Builtin;
 public import HashTable2;
+
+public constant String derivativeNamePrefix="$DER";
+public constant String partialDerivativeNamePrefix="$pDER";
 
 public uniontype Type "
 Once we are in DAELow, the Type can be only basic types or enumeration.
@@ -443,7 +447,7 @@ protected import Inline;
 protected import ValuesUtil;
 protected import VarTransform;
 
-protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
+public constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
 public function dumpDAELowEqnList
   input list<Equation> inDAELowEqnList;
@@ -2263,6 +2267,21 @@ algorithm
   end matchcontinue;
 end isStateVar;
 
+public function isNonStateVar
+"function: isStateVar
+  Returns true for state variables, false otherwise."
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    local DAE.Flow flowPrefix;
+    case (VAR(varKind = STATE())) then false;
+    case (_) then true;
+  end matchcontinue;
+end isNonStateVar;
+
+
 public function isDummyStateVar
 "function isDummyStateVar
   Returns true for dummy state variables, false otherwise."
@@ -3075,7 +3094,7 @@ algorithm
   end matchcontinue;
 end equationStr;
 
-protected function removeSimpleEquations
+public function removeSimpleEquations
 "function: removeSimpleEquations
   This function moves simple equations on the form a=b from equations 2nd
   in DAELow to simple equations 3rd in DAELow to speed up assignment alg.
@@ -7249,7 +7268,7 @@ algorithm
   outVariables := VARIABLES(arr,arr2,VARIABLE_ARRAY(0,10,emptyarr),10,0);
 end emptyVars;
 
-protected function mergeVars
+public function mergeVars
 "function: mergeVars
   author: PA
   Takes two sets of Variables and merges them. The variables of the
@@ -7934,6 +7953,47 @@ algorithm
   end matchcontinue;
 end setVarKind;
 
+public function setVarIndex
+"function setVarKind
+  author: PA
+  Sets the VarKind of a variable"
+  input Var inVar;
+  input Value inVarIndex;
+  output Var outVar;
+algorithm
+  outVar := matchcontinue (inVar,inVarIndex)
+    local
+      DAE.ComponentRef cr;
+      VarKind kind,new_kind;
+      DAE.VarDirection dir;
+      Type tp;
+      Option<DAE.Exp> bind,st;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      Value i,new_i;
+      DAE.ElementSource source "origin of equation";
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+
+    case (VAR(varName = cr,
+              varKind = kind,
+              varDirection = dir,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              index = i,
+              source = source,
+              values = attr,
+              comment = comment,
+              flowPrefix = flowPrefix,
+              streamPrefix = streamPrefix),new_i)
+    then VAR(cr,kind,dir,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix);
+  end matchcontinue;
+end setVarIndex;
+
 protected function getVar3
 "function: getVar3
   author: PA
@@ -8404,7 +8464,17 @@ algorithm
       list<WhenClause> whenclauses;
       list<ZeroCrossing> zero_crossings;
       list<DAE.Algorithm> algs;
-
+    /* fail case if daelow is empty */
+    case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,match_opts,inFunctions)
+      equation
+        nvars = arrayLength(m);
+        neqns = arrayLength(mt);
+        (nvars == 0) = true;
+        (neqns == 0) = true;
+        vec1 = listArray({});
+        vec2 = listArray({});
+      then
+        (vec1,vec2,dae,m,mt);
     case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,REMOVE_SIMPLE_EQN())),inFunctions)
       equation
         DAEEXT.clearDifferentiated();
@@ -8469,6 +8539,11 @@ algorithm
         vec2 = assignmentsVector(ass2);
       then
         (vec1,vec2,dae,m,mt);
+    case (_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "- DAELow.MatchingAlgorithm failed\n");
+      then
+        fail();        
   end matchcontinue;
 end matchingAlgorithm;
 
@@ -17302,5 +17377,1117 @@ algorithm
   aliasVariables := emptyVars();
   outAliasVariables := ALIASVARS(aliasMappings,aliasVariables);
 end emptyAliasVariables;
+
+public function generateSymbolicJacobian
+  // function: generateSymbolicJacobian
+  // author: lochel
+  input DAELow inDAELow;
+  input DAE.FunctionTree functions;
+  input list<DAE.ComponentRef> inVars;
+  input Integer[:] inAss1; // var -> eqn
+  input Integer[:] inAss2; // eqn -> var
+  output DAELow outJacobian;
+algorithm
+  outJacobian := matchcontinue(inDAELow, functions, inVars, inAss1, inAss2)
+    local
+      DAELow daeLow;
+      DAE.DAElist daeList;
+      list<DAE.ComponentRef> vars;
+      Integer[:] ass1; // var -> eqn
+      Integer[:] ass2; // eqn -> var
+      DAELow jacobian;
+      
+      // DAELOW
+      Variables orderedVars, jacOrderedVars;
+      Variables knownVars, jacKnownVars;
+      Variables externalObjects, jacExternalObjects;
+      AliasVariables aliasVars, jacAliasVars;
+      EquationArray orderedEqs, jacOrderedEqs;
+      EquationArray removedEqs, jacRemovedEqs;
+      EquationArray initialEqs, jacInitialEqs;
+      MultiDimEquation[:] arrayEqs, jacArrayEqs;
+      DAE.Algorithm[:] algorithms, jacAlgorithms;
+      EventInfo eventInfo, jacEventInfo;
+      ExternalObjectClasses extObjClasses, jacExtObjClasses;
+      // end DAELOW
+      
+      list<Var> allVars, derivedVariables;
+      list<Equation> derivedEquations, derivedEquations2;
+      list<DAE.Algorithm> derivedAlgorithms;
+      
+    case(_, _, {}, _, _) equation
+      jacOrderedVars = emptyVars();
+      jacKnownVars = emptyVars();
+      jacExternalObjects = emptyVars();
+      jacAliasVars =  emptyAliasVariables();
+      jacOrderedEqs = listEquation({});
+      jacRemovedEqs = listEquation({});
+      jacInitialEqs = listEquation({});
+      jacArrayEqs = listArray({});
+      jacAlgorithms = listArray({});
+      jacEventInfo = EVENT_INFO({},{});
+      jacExtObjClasses = {};
+      
+      jacobian = DAELOW(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
+    then jacobian;
+      
+    case(daeLow as DAELOW(orderedVars=orderedVars, knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars, orderedEqs=orderedEqs, removedEqs=removedEqs, initialEqs=initialEqs, arrayEqs=arrayEqs, algorithms=algorithms, eventInfo=eventInfo, extObjClasses=extObjClasses), functions, vars, ass1, ass2) equation
+      Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
+      Debug.fcall("jacdump", dump, daeLow);
+      Debug.fcall("jacdump", print, "##################### daeLow-dump:    input #####################\n\n");
+      
+      allVars = listAppend(varList(orderedVars), varList(knownVars));
+      (_, derivedEquations, derivedAlgorithms) = deriveAll(equationList(orderedEqs), arrayList(algorithms), functions, vars, ass1, ass2, allVars, 0);
+      derivedVariables = generateJacobianVars(varList(orderedVars), vars, allVars);
+      
+      jacOrderedVars = listVar(derivedVariables);
+      jacKnownVars = emptyVars();
+      jacExternalObjects = emptyVars();
+      jacAliasVars =  emptyAliasVariables();
+      jacOrderedEqs = listEquation(derivedEquations);
+      jacRemovedEqs = listEquation({});
+      jacInitialEqs = listEquation({});
+      jacArrayEqs = listArray({});
+      jacAlgorithms = listArray(derivedAlgorithms);
+      jacEventInfo = EVENT_INFO({},{});
+      jacExtObjClasses = {};
+      
+      jacobian = DAELOW(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
+      
+      Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
+      Debug.fcall("jacdump", dump, jacobian);
+      Debug.fcall("jacdump", print, "##################### daeLow-dump: jacobian #####################\n");
+    then jacobian;  
+      
+    case(_, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateSymbolicJacobian failed"});
+    then fail();
+  end matchcontinue;
+end generateSymbolicJacobian;
+
+protected function generateJacobianVars
+  // function: generateJacobianVars
+  // author: lochel
+  input list<Var> inVars1;
+  input list<DAE.ComponentRef> inVars2;
+  input list<Var> inAllVars;
+  output list<Var> outVars;
+algorithm
+  outVars := matchcontinue(inVars1, inVars2, inAllVars)
+  local
+    Var currVar;
+    list<Var> restVar, r1, r2, r, allVars;
+    list<DAE.ComponentRef> vars2;
+    
+    case({}, _, _)
+    then {}; 
+      
+    case(currVar::restVar, vars2, allVars) equation
+      r1 = generateJacobianVars2(currVar, vars2, allVars);
+      r2 = generateJacobianVars(restVar, vars2, allVars);
+      r = listAppend(r1, r2);
+    then r;
+      
+    case(_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateJacobianVars failed"});
+    then fail();
+  end matchcontinue;
+end generateJacobianVars;
+
+/*protected function generateJacobianVars
+  input list<Var> inVars1;
+  input list<DAE.ComponentRef> inVars2;
+  input list<Var> inAllVars;
+  output list<Var> outVars;
+algorithm
+  outVars := Util.listMap2(inVars1, generateJacobianVars2, inVars2, inAllVars);
+end generateJacobianVars;*/
+
+protected function generateJacobianVars2
+  // function: generateJacobianVars2
+  // author: lochel
+  input Var inVar1;
+  input list<DAE.ComponentRef> inVars2;
+  input list<Var> inAllVars;
+  output list<Var> outVars;
+algorithm
+  outVars := matchcontinue(inVar1, inVars2, inAllVars)
+  local
+    Var var, r1;
+    DAE.ComponentRef currVar, cref, derivedCref;
+    list<DAE.ComponentRef> restVar;
+    list<Var> r2, r;
+    list<Var> allVars;
+    
+    case(_, {}, _)
+    then {};
+    
+    case(var as VAR(varName=cref), currVar::restVar, allVars) equation
+      derivedCref = differentiateVarWithRespectToX(cref, currVar, allVars);
+      r1 = VAR(derivedCref, VARIABLE(), DAE.BIDIR(), REAL(), NONE(), NONE(), {}, 0,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r2 = generateJacobianVars2(var, restVar, allVars);
+      r = listAppend({r1}, r2);
+    then r;
+      
+    case(_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateJacobianVars2 failed"});
+    then fail();
+  end matchcontinue;
+end generateJacobianVars2;
+
+protected function deriveAll
+  // function: deriveAll
+  // author: lochel
+  input list<Equation> inEquations;
+  input list<DAE.Algorithm> inAlgorithms;
+  input DAE.FunctionTree inFunctions;
+  input list<DAE.ComponentRef> inVars;
+  input Integer[:] inAss1; // var -> eqn
+  input Integer[:] inAss2; // eqn -> var
+  input list<Var> inAllVars;
+  input Integer inAlgNum;
+  output list<Var> outDerivedVariables;
+  output list<Equation> outDerivedEquations;
+  output list<DAE.Algorithm> outDerivedAlgorithms;
+algorithm
+  (outDerivedVariables, outDerivedEquations, outDerivedAlgorithms) := matchcontinue(inEquations, inAlgorithms, inFunctions, inVars, inAss1, inAss2, inAllVars, inAlgNum)
+    local
+      Equation currEquation;
+      list<Equation> equations;
+      list<DAE.Algorithm> algorithms;
+      DAE.FunctionTree functions;
+      list<DAE.ComponentRef> vars;
+      Integer[:] ass1; // var -> eqn
+      Integer[:] ass2; // eqn -> var
+      
+      list<Var> currDerivedVariables, restDerivedVariables, derivedVariables;
+      list<Equation> currDerivedEquations, restDerivedEquations, derivedEquations;
+      list<DAE.Algorithm> currDerivedAlgorithms, restDerivedAlgorithms, derivedAlgorithms;
+      list<Var> allVars;
+      Integer algNum;
+      
+    case({}, algorithms, functions, vars, ass1, ass2, allVars, _) then ({}, {}, {});
+      
+    case(currEquation::equations, algorithms, functions, vars, ass1, ass2, allVars, algNum) equation
+      (currDerivedVariables, currDerivedEquations, currDerivedAlgorithms) = deriveOne(currEquation, algorithms, functions, vars, ass1, ass2, allVars, algNum);
+      (restDerivedVariables, restDerivedEquations, restDerivedAlgorithms) = deriveAll(equations, algorithms, functions, vars, ass1, ass2, allVars, algNum+listLength(currDerivedAlgorithms));
+      
+      derivedVariables = listAppend(currDerivedVariables, restDerivedVariables);
+      derivedEquations = listAppend(currDerivedEquations, restDerivedEquations);
+      derivedAlgorithms = listAppend(currDerivedAlgorithms, restDerivedAlgorithms);
+    then (derivedVariables, derivedEquations, derivedAlgorithms);
+      
+    case(_, _, _, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.deriveAll failed"});
+    then fail();
+  end matchcontinue;
+end deriveAll;
+
+protected function deriveOne
+  // function: deriveOne
+  // author: lochel
+  input Equation inEquation;
+  input list<DAE.Algorithm> inAlgorithms;
+  input DAE.FunctionTree inFunctions;
+  input list<DAE.ComponentRef> inVars;
+  input Integer[:] inAss1; // var -> eqn
+  input Integer[:] inAss2; // eqn -> var
+  input list<Var> inAllVars;
+  input Integer inAlgNum;
+  output list<Var> outDerivedVariables;
+  output list<Equation> outDerivedEquations;
+  output list<DAE.Algorithm> outDerivedAlgorithms;
+algorithm
+  (outDerivedVariables, outDerivedEquations, outDerivedAlgorithms) := matchcontinue(inEquation, inAlgorithms, inFunctions, inVars, inAss1, inAss2, inAllVars, inAlgNum)
+    local
+      Equation currEquation;
+      list<DAE.Algorithm> algorithms;
+      DAE.FunctionTree functions;
+      DAE.ComponentRef currVar;
+      list<DAE.ComponentRef> restVars;
+      Integer[:] ass1; // var -> eqn
+      Integer[:] ass2; // eqn -> var
+      Integer algNum;
+      
+      list<Var> currDerivedVariables, restDerivedVariables, derivedVariables;
+      list<Equation> currDerivedEquations, restDerivedEquations, derivedEquations;
+      list<DAE.Algorithm> currDerivedAlgorithms, restDerivedAlgorithms, derivedAlgorithms;
+      
+      list<Var> allVars;
+      
+    case(currEquation, algorithms, functions, {}, ass1, ass2, allVars, _) then ({}, {}, {});
+      
+    case(currEquation, algorithms, functions, currVar::restVars, ass1, ass2, allVars, algNum) equation
+      (currDerivedVariables, currDerivedEquations, currDerivedAlgorithms) = derive(currEquation, algorithms, functions, currVar, ass1, ass2, allVars, algNum);
+      (restDerivedVariables, restDerivedEquations, restDerivedAlgorithms) = deriveOne(currEquation, algorithms, functions, restVars, ass1, ass2, allVars, algNum+listLength(currDerivedAlgorithms));
+      
+      derivedVariables = listAppend(currDerivedVariables, restDerivedVariables);
+      derivedEquations = listAppend(currDerivedEquations, restDerivedEquations);
+      derivedAlgorithms = listAppend(currDerivedAlgorithms, restDerivedAlgorithms);
+    then (derivedVariables, derivedEquations, derivedAlgorithms);
+      
+    case(_, _, _, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.deriveOne failed"});
+    then fail();
+  end matchcontinue;
+end deriveOne;
+
+protected function derive
+  // function: derive
+  // author: lochel
+  input Equation inEquation;
+  input list<DAE.Algorithm> inAlgorithms;
+  input DAE.FunctionTree inFunctions;
+  input DAE.ComponentRef inVar;
+  input Integer[:] inAss1; // var -> eqn
+  input Integer[:] inAss2; // eqn -> var
+  input list<Var> inAllVars;
+  input Integer inNumAlgs;
+  output list<Var> outDerivedVariables;
+  output list<Equation> outDerivedEquations;
+  output list<DAE.Algorithm> outDerivedAlgorithms;
+algorithm
+  (outDerivedVariables, outDerivedEquations, outDerivedAlgorithms) := matchcontinue(inEquation, inAlgorithms, inFunctions, inVar, inAss1, inAss2, inAllVars, inNumAlgs)
+    local
+      Equation currEquation;
+      list<DAE.Algorithm> algorithms;
+      DAE.FunctionTree functions;
+      DAE.ComponentRef var, cref, cref_;
+      Integer[:] ass1; // var -> eqn
+      Integer[:] ass2; // eqn -> var
+      
+      Var currDerivedVariable;
+      Equation currDerivedEquation;
+      DAE.Algorithm currDerivedAlgorithm;
+      
+      DAE.Exp lhs, rhs, lhs_, rhs_, exp, exp_;
+      DAE.ElementSource source;
+      
+      list<Var> allVars;
+      
+    case(currEquation as EQUATION(exp=lhs, scalar=rhs, source=source), algorithms, functions, var, ass1, ass2, allVars, _) equation
+      lhs_ = differentiateWithRespectToX(lhs, var, functions, allVars);
+      rhs_ = differentiateWithRespectToX(rhs, var, functions, allVars);
+    then ({}, {EQUATION(lhs_, rhs_, source)}, {});
+      
+    case(currEquation as ARRAY_EQUATION(_, _, _), algorithms, functions, var, ass1, ass2, allVars, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.derive failed: ARRAY_EQUATION-case"});
+    then fail();
+      
+    case(currEquation as SOLVED_EQUATION(componentRef=cref, exp=exp, source=source), algorithms, functions, var, ass1, ass2, allVars, _) equation
+    //  cref_ = differentiateVarWithRespectToX(cref, var);
+    //  exp_ = differentiateWithRespectToX(exp, var, functions);
+    //then ({}, {SOLVED_EQUATION(cref_, exp_, source)}, {});
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.derive failed: SOLVED_EQUATION-case"});
+    then fail();
+      
+    case(currEquation as RESIDUAL_EQUATION(exp=exp, source=source), algorithms, functions, var, ass1, ass2, allVars, _) equation
+      exp_ = differentiateWithRespectToX(exp, var, functions, allVars);
+    then ({}, {RESIDUAL_EQUATION(exp_, source)}, {});
+      
+    case(currEquation as ALGORITHM(index=index, in_=in_, out=out, source=source), algorithms, functions, var, ass1, ass2, allVars, numAlgs) local
+      Integer index;
+      list<DAE.Exp> in_;
+      list<DAE.Exp> out;
+      DAE.ElementSource source;
+      DAE.Algorithm singleAlgorithm, derivedAlgorithm;
+      Integer numAlgs;
+    equation
+      singleAlgorithm = listNth(algorithms, index);
+      (derivedAlgorithm, in_, out) = differentiateAlgorithm(singleAlgorithm, in_, out, var, functions);
+    then ({}, {ALGORITHM(numAlgs, in_, out, source)}, {derivedAlgorithm});
+        
+    case(currEquation as WHEN_EQUATION(_, _), algorithms, functions, var, ass1, ass2, allVars, _) equation
+      print("DAELow.derive: WHEN_EQUATION has been removed");
+    then ({}, {}, {});
+      
+    case(currEquation as COMPLEX_EQUATION(_, _, _, _), algorithms, functions, var, ass1, ass2, allVars, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.derive failed: COMPLEX_EQUATION-case"});
+    then fail();
+      
+    case(_, _, _, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.derive failed"});
+    then fail();
+  end matchcontinue;
+end derive;
+
+protected function differentiateVarWithRespectToX
+  // function: differentiateVarWithRespectToX
+  // author: lochel
+  
+  input DAE.ComponentRef inCref;
+  input DAE.ComponentRef inX;
+  input list<Var> inAllVars;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inX, inAllVars)
+    local
+      DAE.ComponentRef cref, x;
+      String id;
+      DAE.ExpType idType;
+      list<DAE.Subscript> sLst;
+      list<Var> allVars;
+      list<Var> v1;
+    
+    // d(state)/d(x)
+    case(cref as DAE.CREF_IDENT(identType=idType, subscriptLst=sLst), x, allVars) equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      true = isStateVar(listNth(v1, 0));
+      
+      id = derivativeNamePrefix +& Exp.printComponentRefStr(cref) +& partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ".", "$P");
+      id = Util.stringReplaceChar(id, "[", "$pL");
+      id = Util.stringReplaceChar(id, "]", "$pR");
+    then DAE.CREF_IDENT(id, idType, {});
+    // d(state)/d(x)
+    case(cref as DAE.CREF_QUAL(identType=idType, subscriptLst=sLst), x, allVars) equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      true = isStateVar(listNth(v1, 0));
+      
+      id = derivativeNamePrefix +& Exp.printComponentRefStr(cref) +& partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ".", "$P");
+      id = Util.stringReplaceChar(id, "[", "$pL");
+      id = Util.stringReplaceChar(id, "]", "$pR");
+    then DAE.CREF_IDENT(id, idType, {});
+    
+    // d(no state)/d(x)
+    case(cref as DAE.CREF_IDENT(identType=idType, subscriptLst=sLst), x, allVars) equation
+      id = Exp.printComponentRefStr(cref) +& partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ".", "$P");
+      id = Util.stringReplaceChar(id, "[", "$pL");
+      id = Util.stringReplaceChar(id, "]", "$pR");
+    then DAE.CREF_IDENT(id, idType, {});
+    
+    // d(no state)/d(x)
+    case(cref as DAE.CREF_QUAL(identType=idType, subscriptLst=sLst), x, allVars) equation
+      id = Exp.printComponentRefStr(cref) +& partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = Util.stringReplaceChar(id, ".", "$P");
+      id = Util.stringReplaceChar(id, "[", "$pL");
+      id = Util.stringReplaceChar(id, "]", "$pR");
+    then DAE.CREF_IDENT(id, idType, {});
+      
+    case(cref, _, _) local
+      String str; 
+      equation
+        str = "DAELow.differentiateVarWithRespectToX failed: " +&  Exp.printComponentRefStr(cref);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end differentiateVarWithRespectToX;
+
+protected function differentiateWithRespectToX
+  // function: differentiateWithRespectToX
+  // author: lochel
+  
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inX;
+  input DAE.FunctionTree inFunctions;
+  input list<Var> inAllVars;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp, inX, inFunctions, inAllVars)
+    local
+      DAE.ComponentRef x, cref, cref_;
+      DAE.FunctionTree functions;
+      DAE.Exp e1, e1_, e2, e2_, e;
+      DAE.ExpType et;
+      DAE.Operator op;
+      
+      
+      list<DAE.ComponentRef> diff_crefs;
+      Absyn.Path fname;
+      
+      list<DAE.Exp> expList1, expList2;
+      Boolean tuple_, builtin;
+      DAE.InlineType inlineType;
+      list<Var> allVars;
+      
+    case(DAE.ICONST(_), _, _, _)
+    then DAE.ICONST(0);
+      
+    case(DAE.RCONST(_), _, _, _)
+    then DAE.RCONST(0.0);
+      
+    case (DAE.CAST(ty=et, exp=e1), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.CAST(et, e1_);
+      
+    // d(x)/d(x)
+    case(DAE.CREF(componentRef=cref), x, functions, allVars) equation
+      true = Exp.crefEqual(cref, x);
+    then DAE.RCONST(1.0);
+      
+    // d(time)/d(x)
+    case(DAE.CREF(componentRef=(cref as DAE.CREF_IDENT(ident = "time",subscriptLst = {}))), x, functions, allVars)
+    then DAE.RCONST(0.0);
+    
+    // d(state)/d(state) = 0
+    case(DAE.CREF(componentRef=cref, ty=et), x, functions, allVars) local list<Var> v1, v2; equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      (v2, _) = getVar(x, listVar(allVars));
+      
+      true = isStateVar(listNth(v1, 0));
+      true = isStateVar(listNth(v2, 0));
+    then DAE.RCONST(0.0);
+      
+    // d(state)/d(input) = 0
+    case(DAE.CREF(componentRef=cref, ty=et), x, functions, allVars) local list<Var> v1, v2; equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      (v2, _) = getVar(x, listVar(allVars));
+      
+      true = isStateVar(listNth(v1, 0));
+      true = isInput(listNth(v2, 0));
+    then DAE.RCONST(0.0);
+      
+    // d(input)/d(state) = 0
+    case(DAE.CREF(componentRef=cref, ty=et), x, functions, allVars) local list<Var> v1, v2; equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      (v2, _) = getVar(x, listVar(allVars));
+      
+      true = isInput(listNth(v1, 0));
+      true = isStateVar(listNth(v2, 0));
+    then DAE.RCONST(0.0);
+      
+    // d(parameter)/d(no parameter) = 0
+    case(DAE.CREF(componentRef=cref, ty=et), x, functions, allVars)local list<Var> v1, v2; equation
+      (v1, _) = getVar(cref, listVar(allVars));
+      (v2, _) = getVar(x, listVar(allVars));
+      
+      true = isParam(listNth(v1, 0));
+      false = isParam(listNth(v2, 0));
+    then DAE.RCONST(0.0);
+      
+    case(DAE.CREF(componentRef=cref, ty=et), x, functions, allVars) equation
+      cref_ = differentiateVarWithRespectToX(cref, x, allVars);
+    then DAE.CREF(cref_, et);
+      
+    // a + b
+    case(DAE.BINARY(exp1=e1, operator=DAE.ADD(ty=et), exp2=e2), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e2_ = differentiateWithRespectToX(e2, x, functions, allVars);
+    then DAE.BINARY(e1_, DAE.ADD(et), e2_);
+      
+    // a - b
+    case(DAE.BINARY(exp1=e1, operator=DAE.SUB(ty=et), exp2=e2), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e2_ = differentiateWithRespectToX(e2, x, functions, allVars);
+    then DAE.BINARY(e1_, DAE.SUB(et), e2_);
+      
+    // a * b
+    case(DAE.BINARY(exp1=e1, operator=DAE.MUL(ty=et), exp2=e2), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e2_ = differentiateWithRespectToX(e2, x, functions, allVars);
+      e = DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.ADD(et), DAE.BINARY(e1, DAE.MUL(et), e2_));
+      e = Exp.simplify(e);
+    then e;
+      
+    // a / b
+    case(DAE.BINARY(exp1=e1, operator=DAE.DIV(ty=et), exp2=e2), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e2_ = differentiateWithRespectToX(e2, x, functions, allVars);
+      e = DAE.BINARY(DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.SUB(et), DAE.BINARY(e1, DAE.MUL(et), e2_)), DAE.DIV(et), DAE.BINARY(e2, DAE.MUL(et), e2));
+      e = Exp.simplify(e);
+    then e;
+    
+    // a(x)^b
+    case(e as DAE.BINARY(exp1=e1, operator=DAE.POW(ty=et), exp2=e2), x, functions, allVars) equation
+      true = Exp.isConst(e2);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e = DAE.BINARY(e1_, DAE.MUL(et), DAE.BINARY(e2, DAE.MUL(et), DAE.BINARY(e1, DAE.POW(et), DAE.BINARY(e2, DAE.SUB(et), DAE.RCONST(1.0)))));
+    then e;
+    
+    // der(x)
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars)
+      local
+        String str;
+        DAE.ComponentRef cref; 
+      equation
+      Builtin.isDer(fname);
+      str = derivativeNamePrefix +& Exp.printExpStr(e1);
+      cref = DAE.CREF_IDENT(str, DAE.ET_REAL(),{});
+      e1_ = differentiateWithRespectToX(Exp.crefExp(cref), x, functions, allVars);
+    then e1_;
+    
+    // -exp
+    case(DAE.UNARY(operator=op, exp=e1), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.UNARY(op, e1_);
+      
+    // sin(x)
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isSin(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.BINARY(e1_, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+
+    // cos(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isCos(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+
+    // ln(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isLog(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), e1);
+
+    // log10(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isLog10(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.BINARY(e1_, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+
+    // exp(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isExp(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(fname,{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+  
+    // sqrt(x)
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars)
+      equation
+        Builtin.isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
+        e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      then
+        DAE.BINARY(
+          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),
+          DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),
+          DAE.CALL(Absyn.IDENT("sqrt"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()))),DAE.MUL(DAE.ET_REAL()),e1_);
+        
+    // abs(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, functions, allVars) equation
+      Builtin.isAbs(fname);
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+    then DAE.IFEXP(DAE.RELATION(e1_,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), e1_, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_));
+      
+      // differentiate if-expressions
+    case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), x, functions, allVars) equation
+      e1_ = differentiateWithRespectToX(e1, x, functions, allVars);
+      e2_ = differentiateWithRespectToX(e2, x, functions, allVars);
+    then DAE.IFEXP(e, e1_, e2_);
+
+    // extern functions (analytical)
+    case (e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, functions, allVars)
+    local
+        list<DAE.Exp> expList2;
+        list<tuple<Integer,DAE.derivativeCond>> conditions;
+        Absyn.Path derFname;
+        DAE.Type tp;
+        Integer nArgs;
+    equation
+        nArgs = listLength(expList1);
+        (DAE.FUNCTION_DER_MAPPER(derivativeFunction=derFname,conditionRefs=conditions), tp) = Derive.getFunctionMapper(fname, functions);
+        expList2 = deriveExpListwrtstate(expList1, nArgs, conditions, x, functions);
+        e1 = partialAnalyticalDifferentiation(expList1, expList2, e, derFname, listLength(expList2));  
+    then e1;
+
+    // extern functions (numeric)
+    case (e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, functions, allVars)
+    local
+        list<DAE.Exp> expList2;
+        Integer nArgs;
+    equation
+        nArgs = listLength(expList1);
+        expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions);
+        e1 = partialNumericalDifferentiation(expList1, expList2, x, e);  
+    then e1;
+           
+    case(e, x, _, _)
+      local String str;
+      equation
+        str = "differentiateWithRespectToX failed: " +& Exp.printExpStr(e) +& " | " +& Exp.printComponentRefStr(x);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+  end matchcontinue;
+end differentiateWithRespectToX;
+
+protected function deriveExpListwrtstate
+  input list<DAE.Exp> inExpList;
+  input Integer inLengthExpList;
+  input list<tuple<Integer,DAE.derivativeCond>> inConditios;
+  input DAE.ComponentRef inState;
+  input DAE.FunctionTree inFunctions;
+  output list<DAE.Exp> outExpList;
+algorithm
+  outExpList := matchcontinue(inExpList, inLengthExpList, inConditios, inState, inFunctions)
+    local
+      DAE.ComponentRef x;
+      DAE.Exp curr,r1;
+      list<DAE.Exp> rest, r2;
+      DAE.FunctionTree functions;
+      Integer LengthExpList,n, argnum;
+      list<tuple<Integer,DAE.derivativeCond>> conditions;
+    case ({},_, _,_,_) then ({});
+    case (curr::rest, LengthExpList, conditions, x, functions) equation
+      n = listLength(rest);
+      argnum = LengthExpList - n;
+      true = checkcondition(conditions,argnum); 
+      r1 = differentiateWithRespectToX(curr, x, functions, {}); 
+      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions);
+    then (r1::r2);
+    case (curr::rest, LengthExpList, conditions, x, functions) equation
+      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions);
+    then r2;  
+  end matchcontinue;
+end deriveExpListwrtstate;
+
+protected function deriveExpListwrtstate2
+  input list<DAE.Exp> inExpList;
+  input Integer inLengthExpList;
+  input DAE.ComponentRef inState;
+  input DAE.FunctionTree inFunctions;
+  output list<DAE.Exp> outExpList;
+algorithm
+  outExpList := matchcontinue(inExpList, inLengthExpList, inState, inFunctions)
+    local
+      DAE.ComponentRef x;
+      DAE.Exp curr,r1;
+      list<DAE.Exp> rest, r2;
+      DAE.FunctionTree functions;
+      Integer LengthExpList,n, argnum;
+    case ({}, _, _, _) then ({});
+    case (curr::rest, LengthExpList, x, functions) equation
+      n = listLength(rest);
+      argnum = LengthExpList - n;
+      r1 = differentiateWithRespectToX(curr, x, functions, {}); 
+      r2 = deriveExpListwrtstate2(rest,LengthExpList, x, functions);
+    then (r1::r2);
+  end matchcontinue;
+end deriveExpListwrtstate2;
+
+protected function checkcondition
+  input list<tuple<Integer,DAE.derivativeCond>> inConditions;
+  input Integer inArgs;
+  output Boolean outBool;
+algorithm
+  outBool := matchcontinue(inConditions, inArgs)
+    local
+      list<tuple<Integer,DAE.derivativeCond>> rest;
+      Integer i,nArgs;
+      DAE.derivativeCond cond;
+      Boolean res;
+    case ({},_) then true;
+    case((i,cond)::rest,nArgs) 
+      equation
+        equality(i = nArgs);
+        cond = DAE.ZERO_DERIVATIVE();
+      then false;
+        /*    case((i,cond)::rest,nArgs) 
+         equation
+         equality(i = nArgs);
+         cond = DAE.NO_DERIVATIVE();
+         then false;*/   
+    case((i,cond)::rest,nArgs) 
+      equation
+        res = checkcondition(rest,nArgs);
+      then res;           
+  end matchcontinue;
+end checkcondition;
+
+protected function partialAnalyticalDifferentiation
+  input list<DAE.Exp> varExpList;
+  input list<DAE.Exp> derVarExpList;
+  input DAE.Exp functionCall;
+  input Absyn.Path derFname;
+  input Integer nDerArgs;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(varExpList, derVarExpList, functionCall, derFname, nDerArgs)
+    local
+      DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
+      list<DAE.Exp> restVar, restDerVar, varExpList1Added, varExpListTotal;
+      DAE.ExpType et;
+      Boolean tuple_, builtin;
+      DAE.InlineType inlineType;
+      DAE.FunctionTree functions;
+    case ( _, {}, _, _, _) then (DAE.RCONST(0.0));
+    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), derFname, nDerArgs)
+      local
+        Integer nArgs1, nArgs2;
+      equation
+        e = partialAnalyticalDifferentiation(restVar, restDerVar, functionCall, derFname, nDerArgs);
+        nArgs1 = listLength(varExpListTotal);
+        nArgs2 = listLength(restDerVar);
+        varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(0.0),nArgs1 + nDerArgs - 1, varExpListTotal ,DAE.RCONST(0.0));
+        varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - nArgs2 + 1, varExpList1Added,DAE.RCONST(0.0));
+        derFun = DAE.CALL(derFname, varExpList1Added, tuple_, builtin, et, inlineType);
+      then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar)); 
+  end matchcontinue;
+end partialAnalyticalDifferentiation;
+
+protected function partialNumericalDifferentiation
+  input list<DAE.Exp> varExpList;
+  input list<DAE.Exp> derVarExpList;
+  input DAE.ComponentRef inState;
+  input DAE.Exp functionCall;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(varExpList, derVarExpList, inState, functionCall)
+    local
+      DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
+      list<DAE.Exp> restVar, restDerVar, varExpListHAdded, varExpListTotal;
+      DAE.ExpType et;
+      Absyn.Path fname;
+      Boolean tuple_, builtin;
+      DAE.InlineType inlineType;
+      DAE.FunctionTree functions;
+    case ({}, _, _, _) then (DAE.RCONST(0.0));
+    case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType))
+      local
+        Integer nArgs1, nArgs2;
+      equation
+        e = partialNumericalDifferentiation(restVar, restDerVar, inState, functionCall);
+        absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(1e-8)),DAE.OR(),DAE.RELATION(currVar,DAE.LESS(DAE.ET_REAL()),DAE.RCONST(-1e-8)));
+        delta = DAE.IFEXP( absCurr, DAE.BINARY(currVar,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(1e-8)), DAE.RCONST(1e-8));
+        nArgs1 = listLength(varExpListTotal);
+        nArgs2 = listLength(restVar);
+        varExpListHAdded = Util.listReplaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-nArgs2+1, varExpListTotal,DAE.RCONST(0.0));
+        derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, tuple_, builtin, et, inlineType), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, tuple_, builtin, et, inlineType)), DAE.DIV(DAE.ET_REAL()), delta);
+      then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar)); 
+  end matchcontinue;
+end partialNumericalDifferentiation;
+
+protected function differentiateAlgorithm
+  // function: differentiateAlgorithm
+  // author: lochel
+  input DAE.Algorithm inAlgorithm;
+  input list<DAE.Exp> inAlgInputs;
+  input list<DAE.Exp> inAlgOutputs;
+  input DAE.ComponentRef inVar; // differentiate wrt inVar
+  input DAE.FunctionTree inFunctions;
+  output DAE.Algorithm outAlgorithm;
+  output list<DAE.Exp> outAlgInputs;
+  output list<DAE.Exp> outAlgOutputs;
+algorithm
+  (outAlgorithm, outAlgInputs, outAlgOutputs) := matchcontinue(inAlgorithm, inAlgInputs, inAlgOutputs, inVar, inFunctions)
+    local
+      list<DAE.Statement> statementLst;
+      list<DAE.Exp> algInputs;
+      list<DAE.Exp> algOutputs;
+      DAE.ComponentRef var;
+      DAE.FunctionTree functions;
+      
+      list<DAE.Statement> derivedStatementLst;
+      list<DAE.Exp> derivedAlgInputs;
+      list<DAE.Exp> derivedAlgOutputs;
+      
+    case(DAE.ALGORITHM_STMTS(statementLst=statementLst), algInputs, algOutputs, var, functions) equation
+      derivedStatementLst = differentiateAlgorithmStatements(statementLst, var, functions);
+      derivedAlgInputs = Util.listMap3(algInputs, differentiateWithRespectToX, var, functions, {});
+      derivedAlgInputs = listAppend(algInputs, derivedAlgInputs);
+      derivedAlgOutputs = Util.listMap3(algOutputs, differentiateWithRespectToX, var, functions, {});
+    then (DAE.ALGORITHM_STMTS(derivedStatementLst), derivedAlgInputs, derivedAlgOutputs);
+      
+    case(_, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.differentiateAlgorithm failed"});
+    then fail();
+  end matchcontinue;
+end differentiateAlgorithm;
+
+protected function differentiateAlgorithmStatements
+  // function: differentiateAlgorithmStatements
+  // author: lochel
+  input list<DAE.Statement> inStatements;
+  input DAE.ComponentRef inVar;
+  input DAE.FunctionTree inFunctions;
+  output list<DAE.Statement> outStatements;
+algorithm
+  outStatements := matchcontinue(inStatements, inVar, inFunctions)
+    local
+      list<DAE.Statement> restStatements;
+      DAE.ComponentRef var;
+      list<DAE.ComponentRef> dependentVars;
+      DAE.FunctionTree functions;
+      
+      DAE.Exp e1, e2;
+      DAE.ExpType type_;
+      
+      DAE.Exp lhsExps;
+      DAE.Exp rhsExps;
+      
+      DAE.Statement currStmt;
+      list<DAE.Statement> derivedStatements1;
+      list<DAE.Statement> derivedStatements2;
+      
+      list<DAE.Exp> eLst;
+      
+      list<DAE.ComponentRef> vars1, vars2;
+      list<DAE.Exp> exps1, exps2;
+      DAE.FunctionTree functions;
+      list<DAE.Algorithm> algorithms;
+      DAE.ElementSource elemSrc;
+      
+    case({}, _, _) then {};
+      
+    case((currStmt as DAE.STMT_ASSIGN(type_=type_, exp1=e1, exp=e2))::restStatements, var, functions) equation
+      lhsExps = differentiateWithRespectToX(e1, var, functions, {});
+      rhsExps = differentiateWithRespectToX(e2, var, functions, {});
+      derivedStatements1 = {DAE.STMT_ASSIGN(type_, lhsExps, rhsExps, DAE.emptyElementSource), currStmt};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_TUPLE_ASSIGN(exp=e2)::restStatements, var, functions) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.differentiateAlgorithmStatements failed: DAE.STMT_TUPLE_ASSIGN"});
+    then fail();
+      
+    case(DAE.STMT_ASSIGN_ARR(exp=e2)::restStatements, var, functions) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.differentiateAlgorithmStatements failed: DAE.STMT_ASSIGN_ARR"});
+    then fail();
+      
+    case(DAE.STMT_IF(exp=exp, statementLst=statementLst, else_=DAE.NOELSE(), source=source)::restStatements, var, functions) local
+      DAE.Exp exp;
+      list<DAE.Statement> statementLst;
+      DAE.ElementSource source;
+    equation
+      derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
+      derivedStatements1 = {DAE.STMT_IF(exp, derivedStatements1, DAE.NOELSE, source)};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_IF(exp=exp, statementLst=statementLst, else_=DAE.ELSEIF(exp=elseif_exp, statementLst=elseif_statementLst, else_=elseif_else_), source=source)::restStatements, var, functions) local
+      DAE.Exp exp;
+      list<DAE.Statement> statementLst;
+      DAE.Exp elseif_exp;
+      list<DAE.Statement> elseif_statementLst;
+      DAE.Else elseif_else_;
+      DAE.ElementSource source;
+    equation
+      derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
+      derivedStatements2 = differentiateAlgorithmStatements({DAE.STMT_IF(elseif_exp, elseif_statementLst, elseif_else_, source)}, var, functions);
+      derivedStatements1 = {DAE.STMT_IF(exp, derivedStatements1, DAE.ELSE(derivedStatements2), source)};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_IF(exp=exp, statementLst=statementLst, else_=DAE.ELSE(statementLst=else_statementLst), source=source)::restStatements, var, functions) local
+      DAE.Exp exp;
+      list<DAE.Statement> statementLst;
+      list<DAE.Statement> else_statementLst;
+      DAE.ElementSource source;
+    equation
+      derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
+      derivedStatements2 = differentiateAlgorithmStatements(else_statementLst, var, functions);
+      derivedStatements1 = {DAE.STMT_IF(exp, derivedStatements1, DAE.ELSE(derivedStatements2), source)};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, ident=ident, exp=exp, statementLst=statementLst, source=elemSrc)::restStatements, var, functions) local
+      DAE.ExpType type_;
+      Boolean iterIsArray;
+      DAE.Ident ident;
+      DAE.Exp exp, exp2;
+      list<DAE.Statement> statementLst;
+      DAE.ComponentRef cref;
+    equation
+      derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
+      
+      /*cref = DAE.CREF_IDENT(ident, DAE.ET_INT(), {});
+      cref = differentiateVarWithRespectToX(cref, var, {});
+      exp2 = DAE.CREF(cref, DAE.ET_INT());
+      
+      derivedStatements2 = {DAE.STMT_ASSIGN(DAE.ET_INT(), exp2, DAE.ICONST(0), DAE.emptyElementSource)};
+      derivedStatements1 = listAppend(derivedStatements2, derivedStatements1);*/
+      
+      derivedStatements1 = {DAE.STMT_FOR(type_, iterIsArray, ident, exp, derivedStatements1, elemSrc)};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+        
+    case(DAE.STMT_WHILE(exp=e1, statementLst=statementLst, source=elemSrc)::restStatements, var, functions) local
+      list<DAE.Statement> statementLst;
+    equation
+      derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
+      derivedStatements1 = {DAE.STMT_WHILE(e1, derivedStatements1, elemSrc)};
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_WHEN(exp=e2)::restStatements, var, functions) equation
+      derivedStatements1 = differentiateAlgorithmStatements(restStatements, var, functions);
+    then derivedStatements1;
+      
+    case((currStmt as DAE.STMT_ASSERT(cond=e2))::restStatements, var, functions) equation
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+    then derivedStatements1;
+      
+    case((currStmt as DAE.STMT_TERMINATE(msg=e2))::restStatements, var, functions) equation
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+    then derivedStatements1;
+      
+    case(DAE.STMT_REINIT(value=e2)::restStatements, var, functions) equation
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+    then derivedStatements2;
+      
+    case(DAE.STMT_NORETCALL(exp=e1, source=elemSrc)::restStatements, var, functions) equation
+      e2 = differentiateWithRespectToX(e1, var, functions, {});
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend({DAE.STMT_NORETCALL(e2, elemSrc)}, derivedStatements2);
+    then fail();
+      
+    case((currStmt as DAE.STMT_RETURN(source=elemSrc))::restStatements, var, functions) equation
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+    then derivedStatements1;
+      
+    case((currStmt as DAE.STMT_BREAK(source=elemSrc))::restStatements, var, functions) equation
+      derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
+      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+    then derivedStatements1;
+      
+    case(_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.differentiateAlgorithmStatements failed"});
+    then fail();
+  end matchcontinue;
+end differentiateAlgorithmStatements;
+
+public function determineIndices
+  // function: determineIndices
+  // using column major order
+  
+  input list<DAE.ComponentRef> inStates;
+  input list<DAE.ComponentRef> inStates2;
+  input Integer inActInd;
+  input list<Var> inAllVars;
+  output list<tuple<String,Integer>> outTuple;
+algorithm
+  out := matchcontinue(inStates, inStates2, inActInd,inAllVars)
+    local
+      list<tuple<String,Integer>> str;
+      list<tuple<String,Integer>> erg;
+      list<DAE.ComponentRef> rest, states;
+      DAE.ComponentRef curr;
+      Boolean searchForStates;
+      Integer actInd;
+      list<Var> allVars;
+      
+    case ({}, states, _, _) then {};
+    case (curr::rest, states, actInd, allVars) equation
+      (str, actInd) = determineIndices2(states, curr, actInd, allVars);
+      erg = determineIndices(rest, states, actInd, allVars);
+      str = listAppend(str, erg);
+    then str;
+  end matchcontinue;
+end determineIndices;
+
+protected function determineIndices2
+  // function: determineIndices2
+  
+  input list<DAE.ComponentRef> inStates;
+  input DAE.ComponentRef inDStates;
+  //input Boolean inSearchForStates;
+  input Integer actInd;
+  input list<Var> inAllVars;
+  output list<tuple<String,Integer>> outTuple;
+  output Integer actInd;
+algorithm
+  out := matchcontinue(inStates, inDStates, actInd, inAllVars)
+    local
+      tuple<String,Integer> str;
+      list<tuple<String,Integer>> erg;
+      list<DAE.ComponentRef> rest;
+      DAE.ComponentRef new, curr, dState;
+      list<Var> allVars;
+      //String debug1;Integer debug2;
+    case ({}, dState, actInd, allVars) then ({}, actInd);
+    case (curr::rest, dState, actInd, allVars) equation
+      new = differentiateVarWithRespectToX(dState,curr,allVars);
+      str = (Exp.printComponentRefStr(new) ,actInd);
+      actInd = actInd+1;      
+      (erg, actInd) = determineIndices2(rest, dState, actInd, allVars);
+    then (str::erg, actInd);
+    case (_,_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.determineIndices2() failed"});
+    then fail();
+  end matchcontinue;
+end determineIndices2;
+
+public function changeIndices
+  input list<Var> derivedVariables;
+  input list<tuple<String,Integer>> outTuple;
+  input BinTree inBinTree;
+  output list<Var> derivedVariablesChanged;
+  output BinTree outBinTree;
+algorithm
+  (derivedVariablesChanged,outBinTree) := matchcontinue(derivedVariables,outTuple,inBinTree)
+    local
+      list<Var> rest,changedVariables;
+      Var derivedVariable;
+      list<tuple<String,Integer>> restTuple;
+      BinTree bt;
+    case ({},_,bt) then ({},bt);
+    case (derivedVariable::rest,restTuple,bt) equation
+      (derivedVariable,bt) = changeIndices2(derivedVariable,restTuple,bt);
+      (changedVariables,bt) = changeIndices(rest,restTuple,bt);
+    then (derivedVariable::changedVariables,bt);
+    case (_,_,_) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.changeIndices() failed"});
+    then fail();      
+  end matchcontinue;
+end changeIndices;
+
+protected function changeIndices2
+  input Var derivedVariable;
+  input list<tuple<String,Integer>> varIndex; 
+  input BinTree inBinTree;
+  output Var derivedVariablesChanged;
+  output BinTree outBinTree;
+algorithm
+ (derivedVariablesChanged,outBinTree) := matchcontinue(derivedVariable, varIndex,inBinTree)
+    local
+      Var curr, changedVar;
+      DAE.ComponentRef currCREF;
+      list<tuple<String,Integer>> restTuple;
+      String currVar;
+      Integer currInd;
+      BinTree bt;
+    case (curr  as VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
+      true = stringEqual(currVar,Exp.printComponentRefStr(currCREF));
+      changedVar = setVarIndex(curr,currInd);
+      Debug.fcall("varIndex2",print, currVar +& " " +& intString(currInd)+&"\n");
+      bt = treeAddList(bt,{currCREF});
+    then (changedVar,bt);
+    case (curr  as VAR(varName=currCREF),{},bt) equation
+      changedVar = setVarIndex(curr,-1);
+      Debug.fcall("varIndex2",print, Exp.printComponentRefStr(currCREF) +& " -1\n");
+    then (changedVar,bt);      
+    case (curr  as VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
+      changedVar = setVarIndex(curr,-1);
+      Debug.fcall("varIndex2",print, Exp.printComponentRefStr(currCREF) +& " -1\n");
+      (changedVar,bt) = changeIndices2(changedVar,restTuple,bt);
+    then (changedVar,bt);
+    case (_,_,_) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.changeIndices2() failed"});
+    then fail();      
+  end matchcontinue;
+end changeIndices2;
+
+public function printTuple
+  
+  input list<tuple<String,Integer>> outTuple;
+algorithm
+  _ := matchcontinue(outTuple)
+    local
+      String currVar;
+      Integer currInd;
+      list<tuple<String,Integer>> restTuple;
+    case ({}) then ();
+    case ((currVar,currInd)::restTuple) equation
+      Debug.fcall("varIndex",print, currVar);
+      Debug.fcall("varIndex",print,":   ");
+      Debug.fcall("varIndex",print,intString(currInd));
+      Debug.fcall("varIndex",print,"\n");
+      printTuple(restTuple);
+    then ();
+    case (_) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.printTuple() failed"});
+    then fail();      
+  end matchcontinue;
+end printTuple;
 
 end DAELow;

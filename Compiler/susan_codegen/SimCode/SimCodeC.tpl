@@ -143,10 +143,12 @@ case SIMCODE(__) then
   
   <%functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)%>
   
+  <%generateLinearMatrixes(JacobianMatrixes)%>
+  
+  <%functionlinearmodel(modelInfo)%>
   
   >>
 end simulationFile;
-
 
 template simulationFileHeader(SimCode simCode)
  "Generates header part of simulation file."
@@ -1542,6 +1544,249 @@ template functionOde(list<SimEqSystem> stateContEquations)
   >>
 end functionOde;
 
+template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, String MatrixName)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let Equations_ = (JacEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  let Vars_ = (JacVars |> var => 
+  		defvars(var))
+  let writeJac_ = (JacVars |> var => 
+  		writejac(var)) 	
+  <<
+  int functionJac<%MatrixName%>(double *t, double *x, double *xd, double *jac)
+  {
+  	state mem_state;
+  	
+  	double* statesBackup;
+  	double* statesDerivativesBackup;
+  	double timeBackup;
+  	
+  	timeBackup = localData->timeValue;
+  	statesBackup = localData->states;
+  	statesDerivativesBackup = localData->statesDerivatives;
+  	localData->timeValue = *t;
+  	localData->states = x;
+  	localData->statesDerivatives = xd;
+  	
+    <%Vars_%>
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%Equations_%>
+    <%writeJac_%>
+    restore_memory_state(mem_state);
+    
+    localData->states = statesBackup;
+  	localData->statesDerivatives = statesDerivativesBackup;
+  	localData->timeValue = timeBackup;
+  	
+    return 0;
+  }
+  
+  >>
+end functionJac;
+
+template defvars(SimVar item)
+"Declare variables"
+::=
+match item
+case SIMVAR(__) then 
+	<<
+	double <%cref(name)%>;
+	>>
+end defvars;
+
+template writejac(SimVar item)
+"Declare variables"
+::=
+match item
+case SIMVAR(name=name, index=index) then
+	match index
+	case -1 then
+	<<>>
+	case _ then
+	<<
+	jac[<%index%>] = <%cref(name)%>;
+	
+	>>
+end writejac;
+
+template functionlinearmodel(ModelInfo modelInfo)
+ "Generates function in simulation file."
+::= 
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+  let matrixA = genMatrix("A",varInfo.numStateVars,varInfo.numStateVars)
+  let matrixB = genMatrix("B",varInfo.numStateVars,varInfo.numInVars)
+  let matrixC = genMatrix("C",varInfo.numOutVars,varInfo.numStateVars)
+  let matrixD = genMatrix("D",varInfo.numOutVars,varInfo.numInVars)
+  let vectorX = genVector("x", varInfo.numStateVars, 0)
+  let vectorU = genVector("u", varInfo.numInVars, 1)
+  let vectorY = genVector("y", varInfo.numOutVars, 2)
+  //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
+  <<
+  int linear_model_frame(string &out, string A, string B, string C, string D, string x_startvalues, string u_startvalues)
+  {
+    string def_head("model linear_<%dotPath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n");
+	      
+	string def_init_states("  parameter Real x0[<%varInfo.numStateVars%>] = {");
+	string def_init_states_end("};\n");
+
+    string def_init_inputs("  parameter Real u0[<%varInfo.numInVars%>] = {");
+	string def_init_inputs_end("};\n");
+	
+	<%vectorX%>
+	<%vectorU%>
+	<%vectorY%>
+	
+	<%matrixA%>
+	<%matrixB%>
+	<%matrixC%>
+	<%matrixD%>
+	
+	string def_Variable("\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n");
+	
+	string def_tail("equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n");
+		
+    out += def_head.data();
+    out += def_init_states.data();
+	out += x_startvalues.data();
+	out += def_init_states_end.data();
+	out += def_init_inputs.data();
+	out += u_startvalues.data();
+	out += def_init_inputs_end.data();
+    out += def_matrixA_start.data();
+    out += A.data();
+    out += def_matrixA_end.data();
+    out += def_matrixB_start.data();
+    out += B.data();
+    out += def_matrixB_end.data();
+    out += def_matrixC_start.data();
+    out += C.data();
+    out += def_matrixC_end.data();
+    out += def_matrixD_start.data();
+    out += D.data();
+    out += def_matrixD_end.data();
+    out += def_vectorx.data();
+    out += def_vectoru.data();
+    out += def_vectory.data();
+	out += def_Variable.data();
+	out += def_tail.data();
+    return 0;
+  }
+
+  >>
+end functionlinearmodel;
+
+template getVarsName(list<SimVar> items)
+ "Generates array with variable names in global data section."
+::=
+  match items
+  case {} then
+    <<
+    ""
+    >>
+  case items then
+    let itemsStr = (items |> SIMVAR(__) => '"<%crefStr(name)%>"' ;separator=", ")
+    <<
+    <%itemsStr%>;
+    >>
+end getVarsName;
+
+template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize)
+ "Generates name for a varables."
+::=
+  match simVars
+  case {} then
+  	<<
+  	>>
+  case (var :: restVars) then
+    let rest = getVarName(restVars, arrayName, arraySize)
+    let arrindex = decrementInt(arraySize,listLength(restVars))
+    match var
+    case SIMVAR(__) then 
+    	<<
+    	Real <%arrayName%>_<%crefStr(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>
+    	>>
+end getVarName;
+
+template genMatrix(String name, Integer row, Integer col)
+ "Generates Matrix for linear model"
+::=
+match row
+case 0 then
+		<<
+		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
+    	string def_matrix<%name%>_end("");
+    	>>
+case _ then
+	match col
+	case 0 then
+		<<
+		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
+    	string def_matrix<%name%>_end("");
+    	>>
+    case _ then
+    	<<
+		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = [");
+		string def_matrix<%name%>_end("];\n");
+    	>>
+    end match
+end match	    	           
+end genMatrix;
+
+template genVector(String name, Integer numIn, Integer flag)
+ "Generates variables Vectors for linear model"
+::=
+match flag
+case 0 then 
+	match numIn
+	case 0 then
+			<<
+			string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
+	    	>>
+	case _ then
+			<<
+			string def_vector<%name%>("  Real <%name%>[<%numIn%>](start=<%name%>0);\n");
+	    	>>
+	end match
+case 1 then 
+	match numIn
+	case 0 then
+			<<
+			string def_vector<%name%>("  input Real <%name%>[<%numIn%>];\n");
+	    	>>
+	case _ then
+			<<
+			string def_vector<%name%>("  input Real <%name%>[<%numIn%>](start= <%name%>0);\n");
+	    	>>
+	end match
+case 2 then 
+	match numIn
+	case 0 then
+			<<
+			string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+	    	>>
+	case _ then
+			<<
+			string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+	    	>>
+	end match				    	           
+end genVector;
+
+template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
+ "Generates Matrixes for Linear Model."
+::=
+  let jacMats = (JacobianMatrixes |> (eqs,vars,name) =>
+  	functionJac(eqs,vars,name)
+  	;seprator="\n")
+ <<
+ <%jacMats%>
+ >>
+end generateLinearMatrixes;
 
 template functionInitial(list<SimEqSystem> initialEquations)
  "Generates function in simulation file."

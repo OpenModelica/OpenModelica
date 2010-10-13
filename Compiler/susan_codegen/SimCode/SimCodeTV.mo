@@ -17,6 +17,7 @@ package SimCode
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
+  type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
   
   uniontype SimCode
     record SIMCODE
@@ -41,6 +42,7 @@ package SimCode
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
+      list<JacobianMatrix> JacobianMatrixes;  
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
     end SIMCODE;
@@ -354,7 +356,13 @@ package SimCode
     input Integer increment;
     output Integer outInt;
   end incrementInt;
-  
+ 
+  function decrementInt
+    input Integer inInt;
+    input Integer decrement;
+    output Integer outInt;
+  end decrementInt;
+
   function makeCrefRecordExp
     input DAE.ComponentRef inCRefRecord;
     input DAE.ExpVar inVar;

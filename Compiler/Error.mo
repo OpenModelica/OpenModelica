@@ -344,7 +344,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Model is structurally singular, error found sorting equations %s for variables %s"),
           (STRUCT_SINGULAR_EQUATION,SYMBOLIC(),ERROR(),
           "Model is structurally singular in equation %s."),
-          (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),ERROR(),
+          (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),WARNING(),
           "Model is structurally singular, the following connectors are not connected from the outside: %s"),
           (NON_EXISTING_DERIVATIVE,SYMBOLIC(),ERROR(),
           "Derivative of expression %s is non-existent"),
