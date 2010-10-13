@@ -38,6 +38,7 @@ build: $(NAME)
 	mkdir -p $$DIRS) && \
 	cd ../DrModelica/ && \
 	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drmodelica/{} \;)
+	mv $(builddir_share)/omnotebook/drmodelica/OMNotebookHelp.onb $(builddir_share)/omnotebook/
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status

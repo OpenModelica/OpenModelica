@@ -2661,10 +2661,9 @@ namespace IAEX
 			if( help.isEmpty() )
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
-			if( help.endsWith("/") || help.endsWith( "\\") )
-				help += "bin/";
-			else
-				help += "/bin/";
+			if( !help.endsWith("/") && !help.endsWith( "\\") )
+				help += "/";
+      help += "share/omnotebook/";
 
 			QString helpFile = "OMNotebookHelp.onb";
 			dir.setPath( help );
