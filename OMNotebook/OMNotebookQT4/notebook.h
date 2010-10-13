@@ -110,7 +110,7 @@ namespace IAEX
 
 	private slots:
 		void newFile();
-		void openFile(const QString filename=0);
+		void openFile(const QString filename="");
 		void closeFile();
 		void closeEvent( QCloseEvent *event );			// Added 2006-01-19 AF
 		void aboutQTNotebook();
