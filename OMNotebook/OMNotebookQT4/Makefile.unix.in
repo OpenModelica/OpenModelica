@@ -28,17 +28,22 @@ $(NAME): $(NAME)$(EXE) always
 endif
 
 build: $(NAME)
-	mkdir -p $(builddir_share)/omnotebook/drmodelica/
+	mkdir -p $(builddir_share)/omnotebook/drmodelica/ $(builddir_share)/omnotebook/drcontrol/
 	cp -p $(NAME) $(builddir_bin)/
 	cp -p *.xml $(builddir_share)/omnotebook/
-	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/drmodelica/
+	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/
 	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \
         DIRS=`cd ../DrModelica/ && find . -type d | grep -v svn` && \
 	(cd $(builddir_share)/omnotebook/drmodelica/ && \
 	mkdir -p $$DIRS) && \
 	cd ../DrModelica/ && \
 	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drmodelica/{} \;)
-	mv $(builddir_share)/omnotebook/drmodelica/OMNotebookHelp.onb $(builddir_share)/omnotebook/
+	(DRCONTROLPWD=`cd ../DrControl/ && pwd` && \
+        DIRS=`cd ../DrControl/ && find . -type d | grep -v svn` && \
+	(cd $(builddir_share)/omnotebook/drcontrol/ && \
+	mkdir -p $$DIRS) && \
+	cd ../DrControl/ && \
+	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drcontrol/{} \;)
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status
