@@ -11273,11 +11273,11 @@ algorithm
       Absyn.ComponentRef cref;
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
+        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE,Absyn.dummyInfo);
       then DAE.CREF(e_cref,DAE.ET_OTHER());
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
-        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
+        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE,Absyn.dummyInfo);
       then DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(e_cref,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
   end matchcontinue;
 end CodeVarToCref;

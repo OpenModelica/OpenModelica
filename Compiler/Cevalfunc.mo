@@ -686,7 +686,7 @@ algorithm
     // algorithm assign      
     case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
-        (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false,Prefix.NOPRE());
+        (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
         e1 = replaceComplex(e1,ht2); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
@@ -695,7 +695,7 @@ algorithm
     // assign, tuple assign
     case(env, SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
-        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
+        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
         resExp = replaceComplex(resExp,ht2);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
         (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
@@ -744,7 +744,7 @@ algorithm
     // error for unknown range
     case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
@@ -762,7 +762,7 @@ algorithm
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
         (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
       then
         env;
@@ -770,9 +770,9 @@ algorithm
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
         (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true, NONE,true,Prefix.NOPRE());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
         (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
@@ -844,7 +844,7 @@ algorithm
     // handle failure, report type error
     case (value,exp,algitemlst,algrest,env, ht2)  
       equation 
-        (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE()); 
+        (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo); 
         estr = Exp.printExpStr(daeExp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
@@ -872,7 +872,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   // no type to convert into
   case(inExp,env,NONE,ht2)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
       e1 = replaceComplex(e1,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
     then
@@ -880,7 +880,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   // some type we need to convert into
   case(inExp,env,SOME(ty),ht2)
     equation
-      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
@@ -1548,7 +1548,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
 
   case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
       (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);

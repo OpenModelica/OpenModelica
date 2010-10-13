@@ -389,6 +389,37 @@ algorithm
   end matchcontinue;
 end bcall2;
 
+public function bcall3
+"function: bcall3
+  bool controlled calling of function."
+  input Boolean inBoolean;
+  input FuncTypeType_aType_bType_cTo fn;
+  input Type_a inTypeA;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  partial function FuncTypeType_aType_bType_cTo
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+  end FuncTypeType_aType_bType_cTo;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  _ := matchcontinue (inBoolean,fn,inTypeA,inTypeB,inTypeC)
+    local
+      Type_a a;
+      Type_b b;
+      Type_c c;
+    case (true,fn,a,b,c)
+      equation
+        fn(a, b, c);
+      then
+        ();
+    case (false,_,_,_,_) then ();
+  end matchcontinue;
+end bcall3;
+
 public function notfcall
 "function: notfcall
   Call the given function (2nd arg)

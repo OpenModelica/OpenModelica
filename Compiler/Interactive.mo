@@ -500,7 +500,7 @@ algorithm
         (str_1,st_1);
     case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = exp)})),st) /* Evaluate expressions in evaluate_expr_to_str() */
       equation
-        (str,st_1) = evaluateExprToStr(exp, st);
+        (str,st_1) = evaluateExprToStr(exp, st, Absyn.dummyInfo);
         str_1 = stringAppend(str, "\n");
       then
         (str_1,st_1);
@@ -543,31 +543,32 @@ algorithm
       Absyn.Exp starte, stepe, stope;
       Absyn.ComponentRef cr;
       Env.Cache cache;
+      Absyn.Info info;
 
-    case (Absyn.ALGORITHMITEM(
+    case (Absyn.ALGORITHMITEM(info = info,
       		algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       		functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
       		(st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true,Prefix.NOPRE());
+        (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then
         ("",st_2);
 
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
           (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true,Prefix.NOPRE());
+        (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
 
     case /* Special case to lookup fields of records.
           * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
-      (Absyn.ALGORITHMITEM(algorithm_ =
+      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
         (st as SYMBOLTABLE(lstVarVal = vars)))
@@ -579,13 +580,13 @@ algorithm
       then (str,newst);
 
     case
-      (Absyn.ALGORITHMITEM(algorithm_ =
+      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),
         (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE());
+        (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
@@ -593,13 +594,13 @@ algorithm
         (str,newst);
 
     case
-      (Absyn.ALGORITHMITEM(algorithm_ =
+      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
         Absyn.TUPLE(expressions = crefexps),value = rexp)),
         (st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE());
+        (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
@@ -608,7 +609,7 @@ algorithm
         ("",newst);
 
     case
-      (Absyn.ALGORITHMITEM(algorithm_ =
+      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_IF(
         ifExp = exp,
         trueBranch = algitemlist,
@@ -618,59 +619,59 @@ algorithm
         cond1 = (exp,algitemlist);
         cond2 = (cond1 :: elseifexpitemlist);
         cond3 = listAppend(cond2, {(Absyn.BOOL(true),elseitemlist)});
-        st_1 = evaluateIfStatementLst(cond3, st);
+        st_1 = evaluateIfStatementLst(cond3,st,info);
       then
         ("",st_1);
 
 		 /* while-statement */
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist)),st)
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist)),st)
       equation
-        (value,st_1) = evaluateExpr(exp, st);
-        st_2 = evaluateWhileStmt(value, exp, algitemlist, st_1);
+        (value,st_1) = evaluateExpr(exp, st,info);
+        st_2 = evaluateWhileStmt(value, exp, algitemlist, st_1,info);
       then
         ("",st_2);
 
     /* for-statement, optimized case, e.g.: for i in 1:1000 loop */
-    case (Absyn.ALGORITHMITEM(algorithm_ =
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
       	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE, stop=stope)))},
         forBody = algItemList)),st)
       equation
-        (startv,st_1) = evaluateExpr(starte, st);
-        (stopv,st_2) = evaluateExpr(stope, st_1);
+        (startv,st_1) = evaluateExpr(starte, st,info);
+        (stopv,st_2) = evaluateExpr(stope, st_1,info);
         st_3 = evaluateForStmtRangeOpt(iter, startv, Values.INTEGER(1), stopv, algItemList, st_2);
      then
         ("",st_3);
 
     /* for-statement, optimized case, e.g.: for i in 7.3:0.4:1000.3 loop */
-    case (Absyn.ALGORITHMITEM(algorithm_ =
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
       	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope)))},
         forBody = algItemList)),st)
       equation
-        (startv,st_1) = evaluateExpr(starte, st);
-        (stepv,st_2) = evaluateExpr(stepe, st_1);
-        (stopv,st_3) = evaluateExpr(stope, st_2);
+        (startv,st_1) = evaluateExpr(starte, st,info);
+        (stepv,st_2) = evaluateExpr(stepe, st_1,info);
+        (stopv,st_3) = evaluateExpr(stope, st_2,info);
         st_4 = evaluateForStmtRangeOpt(iter, startv, stepv, stopv, algItemList, st_3);
       then
         ("",st_4);
 
     /* for-statement, general case */
-    case (Absyn.ALGORITHMITEM(algorithm_ =
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
       	Absyn.ALG_FOR(iterators = {(iter, SOME(exp))},forBody = algItemList)),st)
       local
         input list<Values.Value> valList;
       equation
-        (Values.ARRAY(valueLst = valList),st_1) = evaluateExpr(exp, st);
+        (Values.ARRAY(valueLst = valList),st_1) = evaluateExpr(exp, st,info);
         st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
       then
         ("",st_2);
 
     /* for-statement - not an array type */
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators = {(_, SOME(exp))})),st)
+    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_FOR(iterators = {(_, SOME(exp))})),st)
       local
         String estr;
       equation
         estr = stringRepresOfExpr(exp, st);
-        Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
+        Error.addSourceMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr}, info);
       then
         fail();
   end matchcontinue;
@@ -750,10 +751,11 @@ protected function evaluateWhileStmt
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Absyn.Info info;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inInteractiveSymbolTable)
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inInteractiveSymbolTable,info)
     local
       InteractiveSymbolTable st,st_1,st_2,st_3;
       Values.Value value;
@@ -761,26 +763,23 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
       DAE.Type vtype;
-    case (Values.BOOL(boolean = false),_,_,st)
-      equation
-      then
-      	st;
-    case (Values.BOOL(boolean = true),exp,algitemlst,st)
+    case (Values.BOOL(boolean = false),_,_,st,info) then st;
+    case (Values.BOOL(boolean = true),exp,algitemlst,st,info)
       equation
         st_1 = evaluateAlgStmtLst(algitemlst, st);
-        (value,st_2) = evaluateExpr(exp, st_1);
-        st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2); /* Tail recursive */
+        (value,st_2) = evaluateExpr(exp, st_1,info);
+        st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2,info); /* Tail recursive */
       then
         st_3;
-    case (Values.BOOL(_), _,_,st) // An error occured when evaluating the algorithm items
+    case (Values.BOOL(_), _,_,st,info) // An error occured when evaluating the algorithm items
 	    then
 	      st;
-    case (value,exp,_,st) // The condition value was not a boolean
+    case (value,exp,_,st,info) // The condition value was not a boolean
       equation
         estr = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
-        Error.addMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr});
+        Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr},info);
       then
         fail();
   end matchcontinue;
@@ -797,10 +796,11 @@ protected function evaluatePartOfIfStatement
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Absyn.Info info;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable)
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable,info)
     local
       InteractiveSymbolTable st_1,st;
       Boolean exp_val;
@@ -810,22 +810,22 @@ algorithm
       DAE.Type vtype;
       Values.Value value;
       Absyn.Exp exp;
-    case (Values.BOOL(boolean = true),_,algitemlst,_,st)
+    case (Values.BOOL(boolean = true),_,algitemlst,_,st,info)
       equation
         st_1 = evaluateAlgStmtLst(algitemlst, st);
       then
         st_1;
-    case (Values.BOOL(boolean = false),_,algitemlst,algrest,st)
+    case (Values.BOOL(boolean = false),_,algitemlst,algrest,st,info)
       equation
-        st_1 = evaluateIfStatementLst(algrest, st);
+        st_1 = evaluateIfStatementLst(algrest, st, info);
       then
         st_1;
-    case (value,exp,_,_,st) /* Report type error */
+    case (value,exp,_,_,st,info) /* Report type error */
       equation
         estr = stringRepresOfExpr(exp, st);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
-        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr});
+        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr}, info);
       then
         fail();
   end matchcontinue;
@@ -837,21 +837,22 @@ protected function evaluateIfStatementLst
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Absyn.Info info;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
-  matchcontinue (inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable)
+  matchcontinue (inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable,info)
     local
       InteractiveSymbolTable st,st_1,st_2;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
-    case ({},st) then st;
-    case (((exp,algitemlst) :: algrest),st)
+    case ({},st,info) then st;
+    case (((exp,algitemlst) :: algrest),st,info)
       equation
-        (value,st_1) = evaluateExpr(exp, st);
-        st_2 = evaluatePartOfIfStatement(value, exp, algitemlst, algrest, st_1);
+        (value,st_1) = evaluateExpr(exp, st, info);
+        st_2 = evaluatePartOfIfStatement(value, exp, algitemlst, algrest, st_1, info);
       then
         st_2;
   end matchcontinue;
@@ -892,11 +893,12 @@ protected function evaluateExpr
    Output: Values.Value - Resulting value of the expression"
   input Absyn.Exp inExp;
   input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Absyn.Info info;
   output Values.Value outValue;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   (outValue,outInteractiveSymbolTable):=
-  matchcontinue (inExp,inInteractiveSymbolTable)
+  matchcontinue (inExp,inInteractiveSymbolTable,info)
     local
       list<Env.Frame> env;
       DAE.Exp sexp;
@@ -911,15 +913,15 @@ algorithm
 
       /* Special case to lookup fields of records.
        * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
-    case (Absyn.CREF(cr),(st as SYMBOLTABLE(lstVarVal = vars)))
+    case (Absyn.CREF(cr),(st as SYMBOLTABLE(lstVarVal = vars)),info)
       equation
         value = getVariableValueLst(listReverse(Absyn.pathToStringList(Absyn.crefToPath(cr))), vars);
       then (value,st);
 
-    case (exp,(st as SYMBOLTABLE(ast = p)))
+    case (exp,(st as SYMBOLTABLE(ast = p)),info)
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE());
+        (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (value,st_2);
@@ -939,7 +941,7 @@ protected function stringRepresOfExpr
   InteractiveSymbolTable st_1;
 algorithm
   env := buildEnvFromSymboltable(st);
-  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE());
+  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),Absyn.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(Env.emptyCache(), env, sexp, prop, true);
   estr := Exp.printExpStr(sexp);
 end stringRepresOfExpr;
@@ -955,23 +957,24 @@ protected function evaluateExprToStr
    Output: string - The resulting value represented as a string"
   input Absyn.Exp inExp;
   input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Absyn.Info info;
   output String outString;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
   (outString,outInteractiveSymbolTable):=
-  matchcontinue (inExp,inInteractiveSymbolTable)
+  matchcontinue (inExp,inInteractiveSymbolTable,info)
     local
       Values.Value value;
       InteractiveSymbolTable st_1,st;
       String str;
       Absyn.Exp exp;
-    case (exp,st)
+    case (exp,st,info)
       equation
-        (value,st_1) = evaluateExpr(exp, st);
+        (value,st_1) = evaluateExpr(exp, st, info);
         str = ValuesUtil.valString(value);
       then
         (str,st_1);
-    case (_,st) then ("",st);
+    case (_,st,_) then ("",st);
   end matchcontinue;
 end evaluateExprToStr;
 
@@ -13535,8 +13538,9 @@ algorithm
       list<Absyn.ElementArg> elts;
       Env.Cache cache;
       DAE.Properties prop;
+      Absyn.Info info;
 
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),
+    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _), info = info,
       comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)})),_))))
       local Absyn.Program lineProgram;
       equation
@@ -13544,7 +13548,7 @@ algorithm
         fargs = createFuncargsFromElementargs(elts);
         p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,newexp,prop) = Static.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false,Prefix.NOPRE()) "impl" ;
+        (_,newexp,prop) = Static.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false,Prefix.NOPRE(), info) "impl" ;
         (cache, newexp, prop) = Ceval.cevalIfConstant(cache, env, newexp, prop, false);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(newexp);
@@ -13868,7 +13872,7 @@ algorithm
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
-        (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
@@ -14100,12 +14104,12 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(),
                          Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE()) "impl" ;
+        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo) "impl" ;
         (cache, graphicexp2, prop) = Ceval.cevalIfConstant(cache, env, graphicexp2, prop, false);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
@@ -14125,7 +14129,7 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(),
@@ -14144,14 +14148,14 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache,env, graphicexp, false,Prefix.NOPRE()) "impl" ;
-        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE()) "impl" ;
+        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache,env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo) "impl" ;
+        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
         s1 = stringAppend(str, ",");
@@ -14167,7 +14171,7 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(),

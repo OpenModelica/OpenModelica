@@ -190,13 +190,13 @@ algorithm
 
     case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,st,_,msg)
       equation
-        (cache,exp_1) = CevalScript.cevalAstExp(cache,env, exp, impl, st, msg);
+        (cache,exp_1) = CevalScript.cevalAstExp(cache,env, exp, impl, st, msg, Absyn.dummyInfo);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),st);
 
     case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,st,_,msg)
       equation
-        (cache,exp_1) = CevalScript.cevalAstExp(cache,env, exp, impl, st, msg);
+        (cache,exp_1) = CevalScript.cevalAstExp(cache,env, exp, impl, st, msg, Absyn.dummyInfo);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),st);
 
@@ -1801,7 +1801,7 @@ algorithm
         DAE.ExpType tp;
         DAE.Exp dim;
       equation
-        (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
+        (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo) "If component not instantiated yet, recursive definition.
 	 For example,
 	 Real x[:](min=fill(1.0,size(x,1))) = {1.0}
 
