@@ -80,7 +80,7 @@ public
 uniontype Slot
   record SLOT
     DAE.FuncArg an "An argument to a function" ;
-    Boolean true_ "True if the slot has been filled, i.e. argument has been given a value" ;
+    Boolean slotFilled "True if the slot has been filled, i.e. argument has been given a value" ;
     Option<DAE.Exp> expExpOption;
     list<DAE.Dimension> typesArrayDimLst;
   end SLOT;
@@ -432,13 +432,6 @@ algorithm
       then
         (cache,e,prop,st_1);
     // stefan
-    /*case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
-      local DAE.Exp e;
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
-      then
-        (cache,e,prop,st_1);*/
     case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect,pre)
       local DAE.Exp e;
       equation
@@ -1884,7 +1877,7 @@ protected function elabPartEvalFunction
 algorithm
   (outCache,outExp,outProperties,outSymbolTableOption) := matchcontinue(inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect,inPrefix)
     local
-      Env.Cache c;
+      Env.Cache cache;
       Env.Env env;
       Absyn.ComponentRef cref;
       list<Absyn.Exp> posArgs;
@@ -1898,17 +1891,19 @@ algorithm
       DAE.Type tty,tty_1;
       DAE.DAElist dae;
       Prefix pre;
-    case(c,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect,pre)
+      list<Slot> slots;
+    case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect,pre)
       equation
         p = Absyn.crefToPath(cref);
-        (c,DAE.CALL(p,args,_,_,_,_),prop,st) = elabCall(c,env,cref,posArgs,namedArgs,impl,st,pre);
-        (c,tty,env) = Lookup.lookupType(c,env,p,true);
-        tty_1 = stripExtraArgsFromType(listLength(args),tty);
+        (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p);
+        (cache,args,_,_,tty as (_,SOME(p)),_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, pre);
+        tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
         ty = Types.elabType(tty_1);
-        prop_1 = Types.setTypeInProps(tty_1,prop);
+        prop_1 = DAE.PROP(tty_1,DAE.C_VAR());
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p, false, NONE(), true);
       then
-        (c,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
+        (cache,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
     case(_,_,_,_,_,_,_)
       equation
         Debug.fprintln("failtrace","Static.elabPartEvalFunction failed");
@@ -1918,27 +1913,21 @@ algorithm
 end elabPartEvalFunction;
 
 protected function stripExtraArgsFromType
-"function: stripExtraArgsFromType
-  removes the last n arguments from the funcarg list of a function type"
-  input Integer inInteger;
+  input list<Slot> slots;
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue(inInteger,inType)
+  outType := matchcontinue(slots,inType)
     local
-      Integer n;
       DAE.Type resType,tty,tty_1;
       list<DAE.FuncArg> args,args_1;
       Option<Absyn.Path> po;
       DAE.InlineType  isInline;
-    case(0,tty) then tty;
-    case(n,(DAE.T_FUNCTION(args,resType,isInline),po))
+    case(slots,(DAE.T_FUNCTION(args,resType,isInline),po))
       equation
-        args_1 = Util.listRemoveNth(args,listLength(args));
-        tty = (DAE.T_FUNCTION(args_1,resType,isInline),po);
-        tty_1 = stripExtraArgsFromType(n-1,tty);
+        args = stripExtraArgsFromType2(slots,args);
       then
-        tty_1;
+        ((DAE.T_FUNCTION(args,resType,isInline),po));
     case(_,_)
       equation
         Debug.fprintln("failtrace","- Static.stripExtraArgsFromType failed");
@@ -1946,6 +1935,25 @@ algorithm
         fail();
   end matchcontinue;
 end stripExtraArgsFromType;
+
+protected function stripExtraArgsFromType2
+  input list<Slot> slots;
+  input list<DAE.FuncArg> inType;
+  output list<DAE.FuncArg> outType;
+algorithm
+  outType := matchcontinue(slots,inType)
+    local
+      list<Slot> slotsRest;
+      list<DAE.FuncArg> rest;
+      DAE.FuncArg arg;
+    case ({},{}) then {};
+    case (SLOT(slotFilled = true)::slotsRest,_::rest) then stripExtraArgsFromType2(slotsRest,rest);
+    case (SLOT(slotFilled = false)::slotsRest,arg::rest)
+      equation
+        rest = stripExtraArgsFromType2(slotsRest,rest);
+      then arg::rest;
+  end matchcontinue;
+end stripExtraArgsFromType2;
 
 protected function elabArray
 "function: elabArray
@@ -8670,6 +8678,7 @@ algorithm
         prop = getProperties(restype, tyconst);
         tp = Types.elabType(restype);
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre);
+        true = Util.listFold(slots2, slotAnd, true);
         callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline);
 
         //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
@@ -8899,18 +8908,19 @@ algorithm
       list<Slot> slots2;
       Prefix pre;
       // If we find a class
-    case(cache,env,inArgs,fn,slots,impl,pre) equation
-      // We need the class to fill default slots
-      (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
-      (cache,slots2) = fillDefaultSlots(cache,slots, cl, env_2, impl,pre);
-      // Update argument list to include default values.
-      args_2 = expListFromSlots(slots2);
-    then (cache,args_2,slots2);
+    case(cache,env,inArgs,fn,slots,impl,pre)
+      equation
+        // We need the class to fill default slots
+        (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
+        (cache,slots2) = fillDefaultSlots(cache,slots, cl, env_2, impl,pre);
+        // Update argument list to include default values.
+        args_2 = expListFromSlots(slots2);
+      then (cache,args_2,slots2);
 
       // If no class found. builtin, with no defaults. NOTE: if builtin class with defaults exist
       // both its type -and- its class must be added to Builtin.mo
-    case(cache,env,inArgs,fn,slots,impl,_)
-    then (cache,inArgs,slots);
+    case (cache,env,inArgs,fn,slots,impl,_)
+      then (cache,inArgs,slots);
   end matchcontinue;
 end addDefaultArgs;
 
@@ -9911,12 +9921,12 @@ algorithm
       Ident id;
       Env.Cache cache;
       Prefix pre;
-    case (cache,(SLOT(an = fa,true_ = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre) /* impl */
+    case (cache,(SLOT(an = fa,slotFilled = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre) /* impl */
       equation
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre);
       then
         (cache,SLOT(fa,true,e,ds) :: res);
-    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
+    case (cache,(SLOT(an = (id,tp),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
       equation
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre);
         SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
@@ -9924,11 +9934,11 @@ algorithm
         (exp_1,_) = Types.matchType(exp,t,tp,true);
       then
         (cache,SLOT((id,tp),true,SOME(exp_1),ds) :: res);
-    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
+    case (cache,(SLOT(an = (id,tp),slotFilled = _,expExpOption = _,typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
       equation
-        (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre) "Error.add_message(Error.INTERNAL_ERROR,{id})" ;
+        (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre);
       then
-        (cache,SLOT((id,tp),true,e,ds) :: xs);
+        (cache,SLOT((id,tp),false,NONE(),ds) :: res);
     case (cache,{},_,_,_,_) then (cache,{});
   end matchcontinue;
 end fillDefaultSlots;
@@ -9948,7 +9958,7 @@ algorithm
       Option<DAE.Exp> exp;
       list<DAE.Dimension> ds;
       list<Slot> xs;
-    case ((SLOT(an = farg,true_ = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
+    case ((SLOT(an = farg,slotFilled = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
       equation
         farg_str = Types.printFargStr(farg);
         filled = Util.if_(filled, "filled", "not filled");
@@ -10220,21 +10230,21 @@ algorithm
       Prefix pre;
       String ps;
     
-    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = false) :: xs),checkTypes as true,pre)
+    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),slotFilled = false) :: xs),checkTypes as true,pre)
       equation
         true = stringEqual(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
     
     // If not checking types, store actual type in slot so error message contains actual type 
-    case ((fa1,b),exp,ds,(SLOT(an = (fa2,_),true_ = false) :: xs),checkTypes as false,pre)
+    case ((fa1,b),exp,ds,(SLOT(an = (fa2,_),slotFilled = false) :: xs),checkTypes as false,pre)
       equation
         true = stringEqual(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
     
     // fail if slot already filled
-    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = true) :: xs),checkTypes ,pre)
+    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),slotFilled = true) :: xs),checkTypes ,pre)
       equation
         true = stringEqual(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
@@ -13732,5 +13742,15 @@ algorithm
     case _ equation true = OptManager.getOption("checkModel"); then DAE.C_UNKNOWN;
   end matchcontinue;
 end unevaluatedFunctionVariability;
+
+protected function slotAnd
+"Use with listFold to check if all slots have been filled"
+  input Slot s;
+  input Boolean b;
+  output Boolean res;
+algorithm
+  SLOT(slotFilled = res) := s;
+  res := b and res;
+end slotAnd;
 
 end Static;
