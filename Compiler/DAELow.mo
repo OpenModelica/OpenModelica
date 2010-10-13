@@ -3094,7 +3094,7 @@ algorithm
   end matchcontinue;
 end equationStr;
 
-public function removeSimpleEquations
+protected function removeSimpleEquations
 "function: removeSimpleEquations
   This function moves simple equations on the form a=b from equations 2nd
   in DAELow to simple equations 3rd in DAELow to speed up assignment alg.
@@ -17378,6 +17378,92 @@ algorithm
   outAliasVariables := ALIASVARS(aliasMappings,aliasVariables);
 end emptyAliasVariables;
 
+
+public function generateLinearMatrix
+  // function: generateLinearModel
+  // author: wbraun
+  input DAELow inDAELow;
+  input DAE.FunctionTree functionTree;
+  input list<DAE.ComponentRef> inComRef1; // eqnvars
+  input list<DAE.ComponentRef> inComRef2; // vars to differentiate 
+  input list<Var> inAllVar;
+  output DAELow outJacobian;
+  output Integer[:] outV1;
+  output Integer[:] outV2;
+  output list<list<Integer>> outComps1;
+algorithm 
+  (outJacobian,outv1,outv2,outComps1) :=
+    matchcontinue (inDAELow,functionTree,inComRef1,inComRef2,inAllVar)
+    local
+      DAE.DAElist dae;
+      DAELow dlow;
+      
+      list<DAE.ComponentRef> eqvars,diffvars;
+      list<Var> varlst;
+      Integer[:] v1,v2;
+      list<list<Integer>> comps1;
+      list<Var> derivedVariables;
+      BinTree jacElements;
+      list<tuple<String,Integer>> varTuple;
+      list<Integer>[:] m,mT;
+      
+      Variables v,kv,exv;
+      AliasVariables av;
+      EquationArray e,re,ie;
+      MultiDimEquation[:] ae;
+      DAE.Algorithm[:] al;
+      EventInfo ev;
+      ExternalObjectClasses eoc;
+      list<Equation> e_lst,re_lst,ie_lst;
+      list<DAE.Algorithm> algs;
+      list<MultiDimEquation> ae_lst;
+      case(dlow,_,{},_,_) then (dlow,listArray({}),listArray({}),{});
+      case(dlow,_,_,{},_) then (dlow,listArray({}),listArray({}),{});
+      case(dlow as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),functionTree,eqvars,diffvars,varlst)
+        equation
+
+        // prepare index for Matrix and variables for simpleEquations
+        derivedVariables = varList(v);
+        (varTuple) = determineIndices(eqvars, diffvars, 0, varlst);
+        printTuple(varTuple);
+        jacElements = emptyBintree;
+        (derivedVariables,jacElements) = changeIndices(derivedVariables, varTuple, jacElements);
+        v = listVar(derivedVariables);
+        /*
+        // Remove simple Equtaion and 
+        e_lst = equationList(e);
+        re_lst = equationList(re);
+        ie_lst = equationList(ie);
+        ae_lst = arrayList(ae);
+        algs = arrayList(al);
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, jacElements); 
+
+        e = listEquation(e_lst);
+        re = listEquation(re_lst);
+        ie = listEquation(ie_lst);
+        ae = listArray(ae_lst);
+        al = listArray(algs);
+				*/
+        dlow = DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+     
+        m = incidenceMatrix(dlow);
+        mT = transposeMatrix(m);
+        Debug.fcall("jacdump2", dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", dumpIncidenceMatrixT, mT);
+        (v1,v2,dlow,m,mT) = matchingAlgorithm(dlow, m, mT, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()),functionTree);
+        Debug.fcall("jacdump2", dumpIncidenceMatrix, m);
+        Debug.fcall("jacdump2", dumpIncidenceMatrixT, mT);
+        Debug.fcall("jacdump2", dump, dlow);
+        Debug.fcall("jacdump2", dumpMatching, v1);
+        (comps1) = strongComponents(m, mT, v1, v2);
+        Debug.fcall("jacdump2", dumpComponents, comps1);
+        then (dlow,v1,v2,comps1);
+    case(_, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateLinearMatrix failed"});
+    then fail();          
+   end matchcontinue;
+end generateLinearMatrix;         
+
 public function generateSymbolicJacobian
   // function: generateSymbolicJacobian
   // author: lochel
@@ -17698,7 +17784,7 @@ algorithm
     then ({}, {ALGORITHM(numAlgs, in_, out, source)}, {derivedAlgorithm});
         
     case(currEquation as WHEN_EQUATION(_, _), algorithms, functions, var, ass1, ass2, allVars, _) equation
-      print("DAELow.derive: WHEN_EQUATION has been removed");
+      Debug.fcall("jacdump",print,"DAELow.derive: WHEN_EQUATION has been removed");
     then ({}, {}, {});
       
     case(currEquation as COMPLEX_EQUATION(_, _, _, _), algorithms, functions, var, ass1, ass2, allVars, _) equation

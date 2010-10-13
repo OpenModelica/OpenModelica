@@ -2347,7 +2347,7 @@ algorithm
   _:=
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "der")) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isAbs(inPath); then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isDer(inPath); then ();
   end matchcontinue;
 end isDer;
 
