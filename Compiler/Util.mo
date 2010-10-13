@@ -118,7 +118,7 @@ algorithm
     case({},_) then {};
     case ({elt},greaterThan) then {elt};
     case(lst,greaterThan) equation
-      middle = listLength(lst) / 2;
+      middle = intDiv(listLength(lst),2);
       (left,right) = listSplit(lst,middle);
       left = sort(left,greaterThan);
       right = sort(right,greaterThan);
@@ -196,7 +196,7 @@ algorithm
   flagVal :=
    matchcontinue(flag,arguments)
    local
-      String flag,arg,value;
+      String arg,value;
       list<String> args;
    case(flag,{}) then "";
    case(flag,arg::{})

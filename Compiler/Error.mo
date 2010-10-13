@@ -522,12 +522,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Using non-standardized function %s in component %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
           "Error, %s"),
-          (ARRAY_INDEX_OUT_OF_BOUNDS(),TRANSLATION(),ERROR(),
+          (ARRAY_INDEX_OUT_OF_BOUNDS,TRANSLATION(),ERROR(),
           "Index out of bounds. Adressing position: %s, while array length is: %s"),
-          (SELF_REFERENCE_EQUATION(),TRANSLATION(), WARNING(),
+          (SELF_REFERENCE_EQUATION,TRANSLATION(), WARNING(),
           "Circular reference with variable \"%s\""),
 /*   ******* INACTIVE FOR NOW
-          (CLASS_NAME_VARIABLE(), TRANSLATION(),ERROR(),
+          (CLASS_NAME_VARIABLE, TRANSLATION(),ERROR(),
           "Declared a variable with name %s while having a class named %s"),
 */
           (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
@@ -576,7 +576,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal derivative. der(%s) in component %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
-          (HIGHER_VARIABILITY_BINDING(),TRANSLATION(),ERROR(),
+          (HIGHER_VARIABILITY_BINDING,TRANSLATION(),ERROR(),
           "Component %s of variability %s has binding %s of higher variability %s."),
           
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),

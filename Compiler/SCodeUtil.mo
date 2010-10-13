@@ -1059,7 +1059,7 @@ algorithm
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
-      Boolean finalPrefix,prot,rp,pa,fi,e,repl_1,fl,st;
+      Boolean prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n,ns,str;
@@ -1310,7 +1310,6 @@ algorithm
       Absyn.FunctionArgs fargs;
       list<Absyn.ForIterator> restIterators;
       Option<SCode.Comment> com;
-      Absyn.Info info;
 
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info)
       equation

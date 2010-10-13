@@ -689,7 +689,7 @@ protected function instantiate
   output list<SCode.Class> scode;
   output Absyn.Path cname;
 algorithm
-  (cache, env, dae, cname) := matchcontinue(program)
+  (cache, env, dae, scode, cname) := matchcontinue(program)
     local
       Env.Cache c;
       Env.Env e;
