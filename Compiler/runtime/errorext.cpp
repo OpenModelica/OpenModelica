@@ -49,15 +49,15 @@ struct absyn_info{
   int ce;
 };
 // if error_on is true, message is added, otherwise not.
-bool error_on=true;
+static bool error_on=true;
 
 #include "ErrorMessage.hpp"
-std::string currVariable("");
-absyn_info finfo;
-bool haveInfo(false);
-stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
-vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
-string lastDeletedCheckpoint = "";
+static std::string currVariable("");
+static absyn_info finfo;
+static bool haveInfo(false);
+static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
+static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
+static string lastDeletedCheckpoint = "";
 
 /* Adds a message without file info. */
 void add_message(int errorID,

@@ -442,6 +442,12 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
   return res_head;
 }
 
+/* OMC declares this const, but we don't always use it in that manner... */
+stringAppendListExt_rettype stringAppendListExt(modelica_metatype lst)
+{
+  return stringAppendList(lst);
+}
+
 stringAppend_rettype stringAppend(modelica_string_const s1, modelica_string_const s2)
 {
   int len1 = strlen(s1);

@@ -806,7 +806,7 @@ function stringAppendList
   input list<String> listWithStrings;
   output String appendedString;
   
-  external "C";
+  external "C" appendedString=stringAppendListExt(listWithStrings);
 end stringAppendList;
 
 function refEqual
