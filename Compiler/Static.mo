@@ -7212,6 +7212,26 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("translateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
+      local
+        Absyn.Path className;
+      equation
+        className = Absyn.crefToPath(cr);
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre);
+        recordtype = (
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
+          {
+          DAE.TYPES_VAR("flatClass",
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.TYPES_VAR("exeFile",
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE,NONE),NONE);
+      then
+        (cache,DAE.CALL(Absyn.IDENT("translateModelFMU"),
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+
+
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
       local
         Absyn.Path className;

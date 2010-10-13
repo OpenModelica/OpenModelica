@@ -309,26 +309,43 @@ algorithm
   greaterThan := System.strcmp(printComponentRefStr(cr1),printComponentRefStr(cr2)) > 0;
 end crefSortFunc;
 
+public function crefToStr
+"function: crefStr
+  This function converts a ComponentRef to a String.
+  It is a tail recursive implementation, because of that it
+  neads inPreString. Use inNameSeperator to define the 
+  Separator inbetween and between the namespace names and the name"
+  input String inPreString;
+  input ComponentRef inComponentRef "The ComponentReference";
+  input String inNameSeparator "The Separator between the Names";
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inPreString,inComponentRef,inNameSeparator)
+    local
+      Ident s,ns,s1,ss;
+      ComponentRef n;
+    case (inPreString,DAE.CREF_IDENT(ident = s),_)
+      equation
+        ss = stringAppend(inPreString, s);
+      then ss;
+    case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
+      equation
+        s1 = stringAppend(inPreString, s);
+        ns = stringAppend(s1, inNameSeparator);
+        ss = crefToStr(ns,n,inNameSeparator);
+      then
+        ss;
+  end matchcontinue;
+end crefToStr;
+
 public function crefStr
 "function: crefStr
   This function simply converts a ComponentRef to a String."
   input ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef)
-    local
-      Ident s,ns,s1,ss;
-      ComponentRef n;
-    case (DAE.CREF_IDENT(ident = s)) then s;
-    case (DAE.CREF_QUAL(ident = s,componentRef = n))
-      equation
-        ns = crefStr(n);
-        s1 = stringAppend(s, ".");
-        ss = stringAppend(s1, ns);
-      then
-        ss;
-  end matchcontinue;
+  outString:= crefToStr("",inComponentRef,".");
 end crefStr;
 
 public function crefModelicaStr
@@ -337,20 +354,7 @@ public function crefModelicaStr
   input ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef)
-    local
-      Ident s,ns,s1,ss;
-      ComponentRef n;
-    case (DAE.CREF_IDENT(ident = s)) then s;
-    case (DAE.CREF_QUAL(ident = s,componentRef = n))
-      equation
-        ns = crefModelicaStr(n);
-        s1 = stringAppend(s, "_");
-        ss = stringAppend(s1, ns);
-      then
-        ss;
-  end matchcontinue;
+  outString:= crefToStr("",inComponentRef,"_");
 end crefModelicaStr;
 
 public function crefLastIdent

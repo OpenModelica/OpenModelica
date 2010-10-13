@@ -24,6 +24,7 @@ $(srcdir)/modpar/libmodpar.a
 SUSANMO= \
 SimCodeC.mo \
 SimCodeCSharp.mo \
+SimCodeFMU.mo \
 TplCodegen.mo
 
 SRCMO= \
