@@ -32,6 +32,8 @@
 
 extern "C" {
 
+int showErrorMessages;
+
 int debugFlag(const char* flag) {
   fprintf(stderr, "RTOpts.debugFlag not yet implemented %s\n", flag);
   return 0;
