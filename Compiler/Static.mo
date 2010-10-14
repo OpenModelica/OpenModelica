@@ -8732,7 +8732,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,t as (DAE.T_METARECORD(index,vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
         Util.setStatefulBoolean(stopElab,true);
         //(cache,c,env_1) = Lookup.lookupClass(cache, env, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
@@ -8747,11 +8747,20 @@ algorithm
         true = Util.listFold(newslots, slotAnd, true);
         //(cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre,info);
         args_2 = expListFromSlots(newslots);
-        (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
       then
         (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());
         /* ------ */
 
+      /* MetaRecord failure */
+    case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Util.getStatefulBoolean(stopElab);
+        (cache,t as (DAE.T_METARECORD(index,vars),SOME(fn_1)),env_1) = Lookup.lookupType(cache, env, fn, false);
+        types_str = Types.unparseType(t);
+        fn_str = Absyn.pathString(fn_1);
+        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,types_str},info);
+      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* ..Other functions */
       local
         DAE.ExpType tp;
