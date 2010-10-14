@@ -2740,7 +2740,7 @@ algorithm
         cdef = Interactive.getPathedClassInProgram(p_class, p);
         filename = Absyn.classFilename(cdef);
         pd = System.pathDelimiter();
-        (pd_1 :: _) = string_list_string_char(pd);
+        (pd_1 :: _) = stringListStringChar(pd);
         filename_1 = Util.stringSplitAtChar(filename, pd_1);
         dir = Util.listStripLast(filename_1);
         dir_1 = Util.stringDelimitList(dir, pd);

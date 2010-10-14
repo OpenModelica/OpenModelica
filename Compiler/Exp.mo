@@ -9267,28 +9267,28 @@ algorithm
         (e1_1,c1) = replaceExp(e1, source, target);
         (e2_1,c2) = replaceExp(e2, source, target);
         (e3_1,c3) = replaceExp(e3, source, target);
-        c = Util.listReduce({c1,c2,c3}, int_add);
+        c = Util.listReduce({c1,c2,c3}, intAdd);
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),c);
     case (DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inlineType=i),source,target)
       local Boolean c;DAE.InlineType i; Type tp;
       equation
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(cnt, int_add);
+        cnt_1 = Util.listReduce(cnt, intAdd);
       then
         (DAE.CALL(path,expl_1,t,c,tp,i),cnt_1);
     case(DAE.PARTEVALFUNCTION(path = path, expList = expl, ty = tp),source,target)
       local Type tp;
       equation
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(cnt, int_add);
+        cnt_1 = Util.listReduce(cnt, intAdd);
       then
         (DAE.PARTEVALFUNCTION(path,expl_1,tp),cnt_1);
     case (DAE.ARRAY(ty = tp,scalar = c,array = expl),source,target)
       local Boolean c;
       equation
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(cnt, int_add);
+        cnt_1 = Util.listReduce(cnt, intAdd);
       then
         (DAE.ARRAY(tp,c,expl_1),cnt_1);
     case (DAE.MATRIX(ty = t,integer = b,scalar = expl),source,target)
@@ -9312,13 +9312,13 @@ algorithm
         (e1_1,c1) = replaceExp(e1, source, target);
         (e2_1,c2) = replaceExp(e2, source, target);
         (e3_1,c3) = replaceExp(e3, source, target);
-        c = Util.listReduce({c1,c2,c3}, int_add);
+        c = Util.listReduce({c1,c2,c3}, intAdd);
       then
         (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),c);
     case (DAE.TUPLE(PR = expl),source,target)
       equation
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
-        cnt_1 = Util.listReduce(cnt, int_add);
+        cnt_1 = Util.listReduce(cnt, intAdd);
       then
         (DAE.TUPLE(expl_1),cnt_1);
     case (DAE.CAST(ty = tp,exp = e1),source,target)
@@ -9332,7 +9332,7 @@ algorithm
       equation
         (e1_1,c) = replaceExp(e1, source, target);
         (expl_1,cnt) = Util.listMap22(ae1, replaceExp, source, target);
-        cnt_1 = Util.listReduce(cnt, int_add);
+        cnt_1 = Util.listReduce(cnt, intAdd);
         c = c+cnt_1;
       then
         (DAE.ASUB(e1_1,expl_1),c);

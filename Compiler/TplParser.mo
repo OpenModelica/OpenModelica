@@ -456,7 +456,7 @@ algorithm
       equation
         (chars, linfo) = interleave(chars, linfo);
         (_, false) = isKeyword(chars, kwchars);
-        kw = string_char_list_string(kwchars);
+        kw = stringCharListString(kwchars);
         (linfo) = parseError(chars, linfo, "Expected keyword '" +& kw +& "' at the position.", isfatal); 
       then (chars, linfo);
     
@@ -818,7 +818,7 @@ end afterKeyword;
 
 /*
 identifier:
-	[_A-Za-z]:c  identifier_rest:rest     =>  string_char_list_string(c::rest)
+	[_A-Za-z]:c  identifier_rest:rest     =>  stringCharListString(c::rest)
 */
 
 protected constant list<String> keywords = 
@@ -844,7 +844,7 @@ algorithm
             or ( 65/*A*/ <= i and i <= 90/*Z*/)
             or ( 97/*a*/ <= i and i <= 122/*z*/);
         (chars, restIdChars) = identifier_rest(chars);
-        ident = string_char_list_string(c :: restIdChars);
+        ident = stringCharListString(c :: restIdChars);
         //false = listMember(ident, keywords);
       then (chars, ident);
           
@@ -3732,7 +3732,7 @@ end stringConstant;
 literalConstant:
 	//(+|-)?d*(.d+)?(('e'|'E')(+|-)?d+)?	
 	plusMinus:pm digits:ds dotNumber:(dn,ts) exponent(ts):(ex,ts)
-	=> (pm+& string_char_list_string(ds)+&dn+&ex, ts)  //validate the number - must have integer part or dotpart 
+	=> (pm+& stringCharListString(ds)+&dn+&ex, ts)  //validate the number - must have integer part or dotpart 
 	|
 	'true' => ("true", BOOLEAN_TYPE())
 	|
@@ -3770,7 +3770,7 @@ algorithm
         (chars, ds) = digits(chars);
         (chars, dn, ts) = dotNumber(chars);
         //validate the number - must have integer part or dotpart
-        num = string_char_list_string(ds)+&dn;
+        num = stringCharListString(ds)+&dn;
         true = stringLength(num) > 0;
         (chars, ex, ts) = exponent(chars,ts);
         num = pm +& num +& ex;         
@@ -3825,12 +3825,12 @@ end rightVerbatimConstQuote;
 
 /*
 doubleQuoteConst(accChars,accStrList):
-	'"' => string_char_list_string(listReverse(accChars)) :: accStrList
+	'"' => stringCharListString(listReverse(accChars)) :: accStrList
 	|
-	newLine doubleQuoteConst({}, string_char_list_string(listReverse('\n'::accChars))::accStrList):stRevLst 
+	newLine doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst 
 	=> stRevLst
 	|
-	'\\n' doubleQuoteConst({}, string_char_list_string(listReverse('\n'::accChars))::accStrList):stRevLst
+	'\\n' doubleQuoteConst({}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
 	=> stRevLst
 	|
 	'\\'escChar:c doubleQuoteConst(c::accChars,accStrList):stRevLst
@@ -3870,13 +3870,13 @@ algorithm
     
     case ("\"" :: chars, linfo, accChars, accStrList)
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList, NONE);
     
     //escaped new line
     case ("\\"::"n" :: chars, linfo, accChars, accStrList)
       equation
-        str = string_char_list_string(listReverse("\n"::accChars));
+        str = stringCharListString(listReverse("\n"::accChars));
         (chars, linfo,stRevLst, optError) = doubleQuoteConst(chars, linfo,{},str :: accStrList);        
       then (chars, linfo, stRevLst, optError);
         
@@ -3890,7 +3890,7 @@ algorithm
     case (chars, linfo, accChars, accStrList)
       equation
         (chars, linfo) = newLine(chars, linfo);
-        str = string_char_list_string(listReverse("\n"::accChars));
+        str = stringCharListString(listReverse("\n"::accChars));
         (chars, linfo,stRevLst,optError) = doubleQuoteConst(chars, linfo,{},str :: accStrList);        
       then (chars, linfo, stRevLst, optError);
     
@@ -3902,7 +3902,7 @@ algorithm
     
     case ( {}, linfo, accChars, accStrList) 
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         errStr = "Unmatched \" \" quotes for a string constant - reached end of file.";
         Debug.fprint("failtrace", "Parse error - TplParser.doubleQuoteConst - " +& errStr +& "\n");
       then ({}, linfo, str :: accStrList, SOME(errStr));
@@ -3942,11 +3942,11 @@ end escChar;
 /*
 verbatimConst(rquot, accChars, accStrList):
 	//strip a last inline new line
-	newLine (rquot)'%' =>  string_char_list_string(listReverse(accChars)) :: accStrList 
+	newLine (rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
 	|
-	(rquot)'%' =>  string_char_list_string(listReverse(accChars)) :: accStrList 
+	(rquot)'%' =>  stringCharListString(listReverse(accChars)) :: accStrList 
 	|
-	newLine verbatimConst(rquot, {}, string_char_list_string(listReverse('\n'::accChars))::accStrList):stRevLst
+	newLine verbatimConst(rquot, {}, stringCharListString(listReverse('\n'::accChars))::accStrList):stRevLst
 	  => stRevLst
 	|
 	c  verbatimConst(rquot, c::accChars,accStrList):stRevLst
@@ -3988,19 +3988,19 @@ algorithm
         (chars, linfo) = newLine(chars, linfo);
         (c :: "%" :: chars) = chars;
         equality(c = rquot);
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList, NONE);
     
     case (c :: "%" :: chars, linfo, rquot, accChars, accStrList)
       equation
         equality(c = rquot);
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList, NONE);
     
     case (chars, linfo, rquot, accChars, accStrList)
       equation
         (chars, linfo) = newLine(chars, linfo);
-        str = string_char_list_string(listReverse("\n"::accChars));
+        str = stringCharListString(listReverse("\n"::accChars));
         (chars, linfo, stRevLst, optError) = verbatimConst(chars, linfo,rquot,{}, str :: accStrList);        
       then (chars, linfo, stRevLst, optError);
     
@@ -4012,7 +4012,7 @@ algorithm
     
     case ( {}, linfo, rquot, accChars, accStrList) 
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         errStr = "Unmatched %"+&rquot+&" "+&rquot+&"% quotes for a verbatim string constant - reached end of file.";
         Debug.fprint("failtrace", "Parse error - TplParser.verbatimConst - " +& errStr +& "\n");        
       then ({}, linfo, str :: accStrList, SOME(errStr));
@@ -4022,13 +4022,13 @@ end verbatimConst;
 
 /*
 escUnquotedChars(accChars,accStrList):
-	'\\n' escUnquotedChars({}, string_char_list_string(listReverse('\n'::accChars)) :: accStrList):stRevLst
+	'\\n' escUnquotedChars({}, stringCharListString(listReverse('\n'::accChars)) :: accStrList):stRevLst
 	=> stRevLst
 	|
 	'\\' escChar:c  escUnquotedChars(c::accChars, accStrList):stRevLst
 	=> stRevLst
 	|
-	_ => string_char_list_string(listReverse(accChars)) :: accStrList
+	_ => stringCharListString(listReverse(accChars)) :: accStrList
 
 */
 public function escUnquotedChars
@@ -4050,7 +4050,7 @@ algorithm
     
     case ("\\":: "n" :: chars, linfo, accChars, accStrList)
       equation
-       str = string_char_list_string(listReverse("\n"::accChars));
+       str = stringCharListString(listReverse("\n"::accChars));
        (chars, linfo,stRevLst) = escUnquotedChars(chars, linfo,{},str :: accStrList);        
       then (chars, linfo, stRevLst);
     
@@ -4062,7 +4062,7 @@ algorithm
 
     case (chars, linfo, accChars, accStrList)
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
       then (chars, linfo, str :: accStrList);
 
   end matchcontinue;
@@ -4168,7 +4168,7 @@ algorithm
 end digits;
 /*
 dotNumber:
-	'.' digits:ds  =>  (string_char_list_string(ds), REAL_TYPE())
+	'.' digits:ds  =>  (stringCharListString(ds), REAL_TYPE())
 	|
 	_ => INTEGER_TYPE()	 
 */
@@ -4189,7 +4189,7 @@ algorithm
       equation        
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        dn = "." +& string_char_list_string(ds);         
+        dn = "." +& stringCharListString(ds);         
       then (chars, dn, TplAbsyn.REAL_TYPE());
     
     case (chars)
@@ -4200,9 +4200,9 @@ end dotNumber;
 
 /*
 exponent(typ):
-	'e' plusMinus:pm  digits:ds => ("e"+&pm+&string_char_list_string(ds), REAL_TYPE())
+	'e' plusMinus:pm  digits:ds => ("e"+&pm+&stringCharListString(ds), REAL_TYPE())
 	|
-	'E' plusMinus:pm  digits:ds => ("E"+&pm+&string_char_list_string(ds), REAL_TYPE())
+	'E' plusMinus:pm  digits:ds => ("E"+&pm+&stringCharListString(ds), REAL_TYPE())
 	|
 	=> ("",typ)
 */
@@ -4226,7 +4226,7 @@ algorithm
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        ex = "e" +& pm +& string_char_list_string(ds);         
+        ex = "e" +& pm +& stringCharListString(ds);         
       then (chars, ex, TplAbsyn.REAL_TYPE());
     
     case ("E" :: chars, litType)
@@ -4234,7 +4234,7 @@ algorithm
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        ex = "E" +& pm +& string_char_list_string(ds);         
+        ex = "E" +& pm +& stringCharListString(ds);         
       then (chars, ex, TplAbsyn.REAL_TYPE());
     
     case (chars, litType)
@@ -5132,7 +5132,7 @@ algorithm
         failure("\n" = stringGetStringChar(strNonNl, stringLength(strNonNl))); 
         // push the disposable new line
         strNonNl = strNonNl +& "\n";
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strNonNl :: strLst, false)) :: expLst;
       then expLst;
    
@@ -5143,7 +5143,7 @@ algorithm
        accChars as (_::_))
       equation
         //"\n" = stringGetStringChar(strNonNl, stringLength(strNonNl)); 
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: "\n" :: strLst, false)) :: expLst;
       then expLst;
    
@@ -5153,7 +5153,7 @@ algorithm
    case (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = ("" :: strLst), lastHasNewLine = false)) :: expLst,
        accChars as (_::_))
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strLst, false)) :: expLst;
       then expLst;
    
@@ -5162,7 +5162,7 @@ algorithm
    // expLst = no opened ST  :: _
    case ( expLst, accChars as (_::_))
       equation
-        str = string_char_list_string(listReverse(accChars));
+        str = stringCharListString(listReverse(accChars));
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST({"", str}, false)) :: expLst;
       then expLst;
    

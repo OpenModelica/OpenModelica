@@ -2310,7 +2310,7 @@ public function listListMap "function: listListMap
   Takes a list of lists and a function producing one value.
   The function is applied to each element of the lists resulting
   in a new list of lists.
-  Example: listListMap({ {1,2},{3},{4}},int_string) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }"
+  Example: listListMap({ {1,2},{3},{4}},intString) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }"
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<list<Type_b>> outTypeBLstLst;
@@ -2834,7 +2834,7 @@ end listThreadMap32;
 public function listListThreadMap "function: listListThreadMap
   Takes two lists of lists and a function and threads (interleaves)
   and maps the elements  of the elements of the two lists creating a new list.
-  Example: listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}"
+  Example: listListThreadMap({{1,2}},{{3,4}},intAdd) => {{1+3, 2+4}}"
   input list<list<Type_a>> inTypeALst;
   input list<list<Type_b>> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
@@ -4149,7 +4149,7 @@ end listReplaceAtWithFill;
 public function listReduce "function: listReduce
   Takes a list and a function operating on two elements of the list.
   The function performs a reduction of the lists to a single value using the function.
-  Example: listReduce({1,2,3},int_add) => 6"
+  Example: listReduce({1,2,3},intAdd) => 6"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToType_a inFuncTypeTypeATypeAToTypeA;
   output Type_a outTypeA;
@@ -4817,9 +4817,9 @@ algorithm
       String fromChar,toChar;
     case (str,fromChar,toChar)
       equation
-        strList = string_list_string_char(str);
+        strList = stringListStringChar(str);
         resList = stringReplaceChar2(strList, fromChar, toChar);
-        res = string_char_list_string(resList);
+        res = stringCharListString(resList);
       then
         res;
     case (strList,_,_)
@@ -4854,7 +4854,7 @@ algorithm
       equation
         true = stringEqual(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
-        charList2 = string_list_string_char(toChar);
+        charList2 = stringListStringChar(toChar);
         res = listAppend(charList2,res);
       then
         res;
@@ -4889,7 +4889,7 @@ algorithm
       String chr;
     case (str,chr)
       equation
-        chrList = string_list_string_char(str);
+        chrList = stringListStringChar(str);
         stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
       then
         stringList;
@@ -4913,7 +4913,7 @@ algorithm
     case ({},_,chr_rest)
       equation
         chr_rest_1 = listReverse(chr_rest);
-        res = string_char_list_string(chr_rest_1);
+        res = stringCharListString(chr_rest_1);
       then
         {res};
     
@@ -4921,7 +4921,7 @@ algorithm
       equation
         true = stringEqual(firstChar, chr);
         chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
-        res = string_char_list_string(chrList);
+        res = stringCharListString(chrList);
         res_str = stringSplitAtChar2(rest, chr, {});
       then
         (res :: res_str);
@@ -5868,8 +5868,8 @@ algorithm
       String s1,s2;
     case (s1,s2,n)
       equation
-        clst1 = string_list_string_char(s1);
-        clst2 = string_list_string_char(s2);
+        clst1 = stringListStringChar(s1);
+        clst2 = stringListStringChar(s2);
         s1len = stringLength(s1);
         s2len = stringLength(s2);
         (s1len >= n) = true;
@@ -5921,7 +5921,7 @@ algorithm
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = string_list_string_char(pd); */
+        /* (pd_chr :: {}) = stringListStringChar(pd); */
         (list_path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
         res = System.pwd();
       then
@@ -5931,7 +5931,7 @@ algorithm
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = string_list_string_char(pd); */
+        /* (pd_chr :: {}) = stringListStringChar(pd); */
         list_path = stringSplitAtChar(file, pd);
         file_path = listLast(list_path);
         list_path_1 = listStripLast(list_path);

@@ -7547,7 +7547,7 @@ algorithm
     case ({}) then 0;
     case ((c :: cs))
       equation
-        c2 = string_char_int(c);
+        c2 = stringCharInt(c);
         c1 = hashChars(cs);
       then
         c1 + c2;

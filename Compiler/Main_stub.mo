@@ -82,9 +82,9 @@ algorithm
 	e.g typeOf function would be taken as a type definition otherwise */
       equation
         true = Util.strncmp(" ", str, 1);
-        clst = string_list_string_char(str);
+        clst = stringListStringChar(str);
         clst_1 = listDelete(clst, 0);
-        str_1 = string_char_list_string(clst_1);
+        str_1 = stringCharListString(clst_1);
         res = checkClassdef(str_1);
       then
         res;

@@ -267,7 +267,7 @@ algorithm
     case (txt, c :: chars )
       equation
         (lschars, chars, isline) = takeLineOrString(chars);
-        txt = writeLineOrStr(txt, string_char_list_string( c :: lschars), isline);
+        txt = writeLineOrStr(txt, stringCharListString( c :: lschars), isline);
         //Error txt = writeLineOrStr(txt, stringCharListString( str :: lschars), isline);
       then 
         writeChars(txt, chars);
