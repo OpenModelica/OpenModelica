@@ -8734,7 +8734,7 @@ algorithm
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
         Util.setStatefulBoolean(stopElab,true);
-        (cache,c,env_1) = Lookup.lookupClass(cache, env_1, fn, false);
+        //(cache,c,env_1) = Lookup.lookupClass(cache, env, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
         fieldNames = Util.listMap(vars, Types.getVarName);
         tys = Util.listMap(vars, Types.getVarType);
@@ -8744,8 +8744,9 @@ algorithm
         const = Util.listReduce(constlist, Types.constAnd);
         tyconst = elabConsts(t, const);
         prop = getProperties(t, tyconst);
-        (cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre,info);
-        args_2 = expListFromSlots(newslots2);
+        true = Util.listFold(newslots, slotAnd, true);
+        //(cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre,info);
+        args_2 = expListFromSlots(newslots);
         (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
       then
         (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());

@@ -551,6 +551,8 @@ algorithm
     case Absyn.R_PREDEFINED_REAL() then "Real";
     case Absyn.R_PREDEFINED_STRING() then "String";
     case Absyn.R_PREDEFINED_BOOLEAN() then "Boolean";
+    case Absyn.R_METARECORD(_,_) then "metarecord";
+    case _ then "*unknown*";
   end matchcontinue;
 end unparseRestrictionStr;
 
