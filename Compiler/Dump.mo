@@ -3841,7 +3841,7 @@ algorithm
       list<Absyn.EquationItem> e;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, l, e, r, c)
+    case Absyn.CASE(p, _, l, e, r, c)
       equation
         Print.printBuf("Absyn.CASE(");
         Print.printBuf("Pattern(");
@@ -4462,13 +4462,13 @@ algorithm
       list<Absyn.EquationItem> eq;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, {}, {}, r, c)
+    case Absyn.CASE(p, _, {}, {}, r, c)
       equation
         s1 = printExpStr(p);
         s4 = printExpStr(r);
         s = Util.stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
       then s;
-    case Absyn.CASE(p, l, eq, r, c)
+    case Absyn.CASE(p, _, l, eq, r, c)
       equation
         s1 = printExpStr(p);
         s2 = unparseLocalElements(3, l);
@@ -6642,14 +6642,17 @@ algorithm
   _ := matchcontinue case_
     local
       Absyn.Exp pattern;
+      Absyn.Info info;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.EquationItem>  equations;
       Absyn.Exp result;
       Option<String> comment;
-    case Absyn.CASE(pattern,localDecls,equations,result,comment)
+    case Absyn.CASE(pattern,info,localDecls,equations,result,comment)
       equation
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
+        Print.printBuf(", info = ");
+        printInfo(info);
         Print.printBuf(", localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
         Print.printBuf(", equations = ");

@@ -830,6 +830,7 @@ end ValueblockBody;
 uniontype Case "case in match or matchcontinue"
   record CASE
     Exp pattern " patterns to be matched ";
+    Info patternInfo "file information of the pattern";
     list<ElementItem> localDecls " local decls ";
     list<EquationItem>  equations " equations [] for no equations ";
     Exp result " result ";

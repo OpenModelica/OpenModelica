@@ -2561,7 +2561,7 @@ algorithm
         */
         
         lhsExp = MetaUtil.createLhsExp(varList);
-        matchExp = Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},{Absyn.CASE(left,{},{},Absyn.TUPLE({}),NONE())},NONE());
+        matchExp = Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},{Absyn.CASE(left,info,{},{},Absyn.TUPLE({}),NONE())},NONE());
         vb = Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
           {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,right),NONE(),info),Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),NONE(),info)}),
           Absyn.BOOL(true));

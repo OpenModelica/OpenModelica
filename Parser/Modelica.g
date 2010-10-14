@@ -1301,10 +1301,10 @@ cases2 returns [void* ast] :
 onecase returns [void* ast] :
   (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression SEMICOLON)
     {
-        ast = Absyn__CASE(pat,es,or_nil(eqs),exp,mk_some_or_none(cmt));
+        ast = Absyn__CASE(pat.ast,pat.info,es,or_nil(eqs),exp,mk_some_or_none(cmt));
     }
   ;
 
-pattern returns [void* ast] :
-  e=expression {ast = e;}
+pattern returns [void* ast, void* info] :
+  e=expression {$ast = e; $info = INFO($start);}
   ;
