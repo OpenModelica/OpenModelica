@@ -412,7 +412,7 @@ protected function translateEnumlist
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output list<SCode.Enum> outEnumLst;
 algorithm
-  outIdentLst := matchcontinue (inAbsynEnumLiteralLst)
+  outEnumLst := matchcontinue (inAbsynEnumLiteralLst)
     local
       list<SCode.Enum> res;
       String id;

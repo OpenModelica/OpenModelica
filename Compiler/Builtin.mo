@@ -2981,6 +2981,7 @@ algorithm
         env = Env.extendFrameT(env, "stringInt", string2int);
         env = Env.extendFrameT(env, "stringListStringChar", string2listOfString);
         env = Env.extendFrameT(env, "listStringCharString", listOfString2string);
+        env = Env.extendFrameT(env, "stringCharListString", listOfString2string); // same as above, but with the old RML name
         env = Env.extendFrameT(env, "stringAppendList", listOfString2string);
         env = Env.extendFrameT(env, "stringLength", string2int);
         env = Env.extendFrameT(env, "stringGetStringChar", stringInt2string);
