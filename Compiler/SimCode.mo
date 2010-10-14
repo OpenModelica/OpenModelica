@@ -73,6 +73,7 @@ protected import SCodeUtil;
 protected import ClassInf;
 protected import SimCodeC;
 protected import SimCodeCSharp;
+protected import SimCodeFMU;
 protected import Util;
 protected import Debug;
 protected import Error;
@@ -651,6 +652,134 @@ algorithm
      method, options, outputFormat);
 end createSimulationSettings;
 
+
+public function generateModelCodeFMU
+  "Generates code for a model by creating a SimCode structure and calling the
+   template-based code generator on it."
+  input SCode.Program program;
+  input DAE.DAElist dae;
+  input DAELow.DAELow indexedDAELow;
+  input DAE.FunctionTree functionTree;
+  input Absyn.Path className;
+  input String filenamePrefix;
+  input String fileDir;
+  input Integer[:] equationIndices;
+  input Integer[:] variableIndices;
+  input DAELow.IncidenceMatrix incidenceMatrix;
+  input DAELow.IncidenceMatrix incidenceMatrixT;
+  input list<list<Integer>> strongComponents;
+  input Option<SimulationSettings> simSettingsOpt;
+  output DAELow.DAELow outIndexedDAELow;
+  output list<String> libs;
+  output Real timeSimCode;
+  output Real timeTemplates;
+  
+  list<String> includes;
+  list<Function> functions;
+  DAE.DAElist dae2;
+  String filename, funcfilename;
+  SimCode simCode;
+  Real timeSimCode, timeTemplates;
+algorithm
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  (libs, includes, functions, outIndexedDAELow, dae2) :=
+    createFunctions(program, dae, indexedDAELow, functionTree, className);
+  simCode := createSimCode(functionTree, outIndexedDAELow, equationIndices, 
+    variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
+    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt); 
+  timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);   
+  Tpl.tplNoret(SimCodeC.translateModel, simCode);  
+  Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);   
+end generateModelCodeFMU;
+
+public function translateModelFMU
+"Entry point to translate a Modelica model for FMU export.
+    
+ Called from other places in the compiler."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output DAELow.DAELow outDAELow;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+    local
+      String filenameprefix,file_dir;
+      list<SCode.Class> p_1;
+      DAE.DAElist dae;
+      list<Env.Frame> env;
+      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      list<Integer>[:] m,mT;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p,ptot;
+      Ceval.Msg msg;
+      //Exp.Exp fileprefix;
+      Env.Cache cache;
+      DAE.FunctionTree funcs;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
+      equation
+        /* calculate stuff that we need to create SimCode data structure */
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
+        ptot = Dependency.getTotalProgram(className,p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        funcs = Env.getFunctionTree(cache);
+        dae = DAEUtil.transformationsBeforeBackend(dae);
+        dlow = DAELow.lower(dae, funcs, addDummy, true);
+        Debug.fprint("bltdump", "Lowered DAE:\n");
+        Debug.fcall("bltdump", DAELow.dump, dlow);
+        m = DAELow.incidenceMatrix(dlow);
+        mT = DAELow.transposeMatrix(m);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        // late Inline
+        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
+        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
+        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        Debug.fprint("bltdump", "indexed DAE:\n");
+        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
+        Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
+        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
+        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
+        a_cref = Absyn.pathToCref(className);
+        file_dir = CevalScript.getFileDir(a_cref, p);
+        timeBackend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        (indexed_dlow_1, libs, timeSimCode, timeTemplates) 
+         = generateModelCodeFMU(p_1, dae, indexed_dlow_1, funcs, className, filenameprefix,
+          file_dir, ass1, ass2, m, mT, comps,inSimSettingsOpt);
+        resultValues = 
+          {("timeTemplates",Values.REAL(timeTemplates)),
+           ("timeSimCode",  Values.REAL(timeSimCode)),
+           ("timeBackend",  Values.REAL(timeBackend)),
+           ("timeFrontend", Values.REAL(timeFrontend))
+           };   
+      then
+        (cache,Values.STRING("SimCode: The model has been translated to FMU"),st,indexed_dlow,libs,file_dir, resultValues);
+  end matchcontinue;
+end translateModelFMU;
 
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the

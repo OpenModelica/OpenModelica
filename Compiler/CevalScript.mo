@@ -356,6 +356,22 @@ algorithm
 
     case (cache,env,
       DAE.CALL(
+        path = Absyn.IDENT(name = "translateModelFMU"),
+        expLst = {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,
+        explodedAst = sp,
+        instClsLst = ic,
+        lstVarVal = iv,
+        compiledFunctions = cf)),msg)
+      equation
+        (cache,fileNamePrefix_s) = extractFilePrefix(cache,env, filenameprefix, st, msg);
+        (cache,ret_val,st_1,_,_,_,_) = translateModelFMU(cache,env, className, st, fileNamePrefix_s,true, NONE);
+      then
+        (cache,ret_val,st_1);
+
+    case (cache,env,
+      DAE.CALL(
         path = Absyn.IDENT(name = "exportDAEtoMatlab"),
         expLst = {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix}),
       (st as Interactive.SYMBOLTABLE(
@@ -2408,6 +2424,44 @@ algorithm
   end matchcontinue;
 end translateModel;
 
+protected function translateModelFMU "function translateModelFMU
+ author: Frenkel TUD
+ translates a model into cpp code and writes also a makefile"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output DAELow.DAELow outDAELow;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+    local
+      Env.Cache cache;
+      list<Env.Frame> env;
+      DAELow.DAELow indexed_dlow;
+      Interactive.InteractiveSymbolTable st;
+      list<String> libs;
+      Ceval.Msg msg;
+      Values.Value outValMsg;
+      DAE.Exp fileprefix;
+      String file_dir, fileNamePrefix;
+    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
+      equation
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
+          SimCode.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+      then
+        (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
+  end matchcontinue;
+end translateModelFMU;
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
   input Env.Cache inCache;

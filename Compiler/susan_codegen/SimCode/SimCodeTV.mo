@@ -421,7 +421,7 @@ package DAELow
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
   end WhenEquation;
-
+  
 end DAELow;
 
 package System
@@ -1040,5 +1040,11 @@ package RTOpts
     output Boolean outBoolean;
   end acceptMetaModelicaGrammar;
 end RTOpts;
+
+package Settings
+  function getVersionNr
+    output String outString;
+  end getVersionNr;
+end Settings;
 
 //end SimCodeTV;
