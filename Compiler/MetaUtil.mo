@@ -757,7 +757,6 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
-      Absyn.Class class_;
       list<Absyn.Class> metaClasses, classes;
       list<Absyn.ElementItem> elementItems;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,name=name,info=info,constrainClass=constrainClass)),class_)

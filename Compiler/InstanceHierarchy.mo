@@ -210,12 +210,11 @@ function createInstanceHierarchyFromClassDef
 algorithm
   (ih, ic) := matchcontinue(scope, cdef)
     local
-      InstanceHierarchy i;
+      Instance i;
       SCode.Restriction restriction;
       SCode.ClassDef classDef;
       String name;
       Absyn.Path path, fpath;
-      Instance i;
       InstanceHierarchy ihrest;
       list<SCode.Element> elements;
       Absyn.TypeSpec t;
@@ -265,12 +264,11 @@ function createInstanceHierarchyFromElements
 algorithm
   ih := matchcontinue(scope, elements)
     local
-      InstanceHierarchy i;
+      Instance i;
       SCode.Restriction restriction;
       SCode.ClassDef classDef;
       String name;
       Absyn.Path path, fpath;
-      Instance i;
       InstanceHierarchy ihrest;
       list<SCode.Element> rest;
       SCode.Element el;
