@@ -735,7 +735,7 @@ protected function runBackendQ
   It should be run if either \"blt\" flag is set or if
   parallelization is enabled by giving flag -n=<no proc.>"
   output Boolean res_1;
-  Boolean bltflag,sim_cg,par,res,res_1;
+  Boolean bltflag,sim_cg,par,res;
   Integer n;
 algorithm
   bltflag := RTOpts.debugFlag("blt");

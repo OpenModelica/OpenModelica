@@ -91,9 +91,9 @@ public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
   record CACHE
-    Option<EnvCache>[:] envCache "The cache contains of environments from which classes can be found";
+    array<Option<EnvCache>> envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
-    DAE.FunctionTree[:] functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
+    array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
   end CACHE;
 end Cache;
 
@@ -193,8 +193,8 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
  protected
-  Option<EnvCache>[:] arr;
-  DAE.FunctionTree[:] instFuncs;
+  array<Option<EnvCache>> arr;
+  array<DAE.FunctionTree> instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
   arr := listArray({NONE});
@@ -1195,8 +1195,8 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm
   outCache := matchcontinue(inCache,env)
   local
-    	Option<EnvCache>[:] envCache;
-    	DAE.FunctionTree[:] ef;
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
 
     case (CACHE(envCache,_,ef),env) equation
  //    	print("setCachedInitialEnv\n");
@@ -1211,8 +1211,10 @@ public function cacheGet "Get an environment from the cache."
   output Env env;
 algorithm
   env:= matchcontinue(scope,path,cache)
-  local CacheTree tree;  Option<EnvCache>[:] arr;
-    DAE.FunctionTree[:] ef;
+    local
+      CacheTree tree;
+      array<Option<EnvCache>> arr;
+      array<DAE.FunctionTree> ef;
    case (scope,path,CACHE(arr ,_,ef))
       equation
         true = OptManager.getOption("envCache");
@@ -1233,8 +1235,8 @@ algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
     Option<Env> ie;
-    Option<EnvCache>[:] arr;
-    DAE.FunctionTree[:] ef;
+    array<Option<EnvCache>> arr;
+    array<DAE.FunctionTree> ef;
     case(_,inCache,env) equation
       false = OptManager.getOption("envCache");
     then inCache;
@@ -1509,8 +1511,8 @@ algorithm
   str := matchcontinue(cache)
     local 
       CacheTree tree;
-      Option<EnvCache>[:] arr;
-      DAE.FunctionTree[:] ef;
+      array<Option<EnvCache>> arr;
+      array<DAE.FunctionTree> ef;
       String s,s2;
     
     // some cache present
@@ -2318,7 +2320,7 @@ public function getFunctionTree
 "Selector function"
   input Cache cache;
   output DAE.FunctionTree ft;
-  DAE.FunctionTree[:] ef;
+  array<DAE.FunctionTree> ef;
 algorithm
   CACHE(functions = ef) := cache;
   ft := arrayGet(ef, 1);
@@ -2333,8 +2335,8 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-    	Option<EnvCache>[:] envCache;
-    	DAE.FunctionTree[:] ef;
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
     	Absyn.ComponentRef cr;
     	Option<Env> ienv;
 
@@ -2361,8 +2363,8 @@ public function addDaeFunction
 algorithm
   outCache := matchcontinue(inCache,funcs)
     local
-    	Option<EnvCache>[:] envCache;
-    	DAE.FunctionTree[:] ef;
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
     	Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
       equation
@@ -2379,8 +2381,8 @@ public function addDaeExtFunction
 algorithm
   outCache := matchcontinue(inCache,funcs)
     local
-    	Option<EnvCache>[:] envCache;
-    	DAE.FunctionTree[:] ef;
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
     	Option<Env> ienv;
     case (CACHE(envCache,ienv,ef),funcs)
       equation
@@ -2397,7 +2399,7 @@ public function getCachedInstFunc
 algorithm
   func := matchcontinue(inCache,path)
     local
-      DAE.FunctionTree[:] ef;
+      array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),path)
       equation
         SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
@@ -2412,7 +2414,7 @@ public function checkCachedInstFuncGuard
 algorithm
   _ := matchcontinue(inCache,path)
     local
-      DAE.FunctionTree[:] ef;
+      array<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),path) equation
       _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
     then ();
