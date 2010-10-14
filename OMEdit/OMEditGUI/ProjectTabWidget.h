@@ -43,6 +43,7 @@
 #include "ComponentAnnotation.h"
 #include "ConnectorWidget.h"
 #include "StringHandler.h"
+#include "ModelicaEditor.h"
 
 class ProjectTab;
 class IconAnnotation;
@@ -63,6 +64,8 @@ class GraphicsView : public QGraphicsView
 private:
     Connector *mpConnector;
     QList<IconAnnotation*> mIconsList;
+    void createActions();
+    void createMenus();
 public:
     GraphicsView(ProjectTab *parent = 0);
     Connector *getConnector();
@@ -73,7 +76,8 @@ public:
     bool mIsCreatingConnector;
     QVector<Connector *> mConnectorVector;
     ProjectTab *mpParentProjectTab;
-    QColor mBackgroundColor;
+    QAction *mCancelConnectionAction;
+    QAction *mDeleteIconAction;
 signals:
     void keyPressDelete();
     void keyPressUp();
@@ -82,6 +86,8 @@ signals:
     void keyPressRight();
 public slots:
     void addConnector(ComponentAnnotation *pComponent);
+    void removeConnector();
+    void removeConnector(Connector* pConnector);
     void resetZoom();
     void zoomIn();
     void zoomOut();
@@ -95,16 +101,29 @@ protected:
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
+    virtual void contextMenuEvent(QContextMenuEvent *event);
+};
+
+class GraphicsViewScroll : public QScrollArea
+{
+public:
+    GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent = 0);
+
+    GraphicsView *mpGraphicsView;
+protected:
+    virtual void scrollContentsBy(int dx, int dy);
 };
 
 class ProjectTabWidget; //Forward declaration
+class ModelicaEditor;
 class ProjectTab : public QWidget
 {
     Q_OBJECT
 private:
     QPushButton *mpModelicaModelButton;
     QPushButton *mpModelicaTextButton;
-    QTextEdit *mpEditBox;
+    ModelicaEditor *mpModelicaEditor;
+    GraphicsViewScroll *mpViewScrollArea;
 public:
     ProjectTab(ProjectTabWidget *parent = 0);
     ProjectTabWidget *mpParentProjectTabWidget;
@@ -115,19 +134,16 @@ public:
 public slots:
     void showModelicaModel();
     void showModelicaText();
+    void ModelicaEditorTextChanged();
 };
 
 class MainWindow;
 class ProjectTabWidget : public QTabWidget
 {
     Q_OBJECT
-private:
-    QList<IconAnnotation*> mGlobalIconsList;
 public:
     ProjectTabWidget(MainWindow *parent = 0);
     ProjectTab *getCurrentTab();
-    void addGlobalIconObject(IconAnnotation* icon);
-    IconAnnotation* getGlobalIconObject(QString className);
 
     MainWindow *mpParentMainWindow;
     bool mShowLines;

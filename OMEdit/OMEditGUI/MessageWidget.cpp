@@ -44,7 +44,7 @@ QSize MessageWidget::sizeHint() const
 {
     QSize size = QTextEdit::sizeHint();
     //Set very small height. A minimum apperantly stops at resonable size.
-    size.rheight() = 48; //pixels
+    size.rheight() = 100; //pixels
     return size;
 }
 
@@ -78,20 +78,20 @@ void MessageWidget::printGUIMessage(QString message)
 void MessageWidget::printGUIErrorMessage(QString message)
 {
     //! @todo make better
-        setMessageColor(Error);
-    append(message);
+    setMessageColor(Error);
+    append(QString("Error: ").append(message));
 }
 
 void MessageWidget::printGUIWarningMessage(QString message)
 {
     //! @todo make better
     setMessageColor(Warning);
-    append(message);
+    append(QString("Warning: ").append(message));
 }
 
 void MessageWidget::printGUIInfoMessage(QString message)
 {
     //! @todo make better
-        setMessageColor(Info);
-    append(message);
+    setMessageColor(Info);
+    append(QString("Info: ").append(message));
 }

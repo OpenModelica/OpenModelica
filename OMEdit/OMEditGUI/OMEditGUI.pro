@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui
+QT += network xml core gui opengl
 
 TARGET = OMEdit
 TEMPLATE = app
@@ -15,8 +15,8 @@ SOURCES += main.cpp\
     LibraryWidget.cpp \
     MessageWidget.cpp \
     omc_communication.cpp \
-    OMCThread.cpp \
     OMCProxy.cpp \
+    OMCThread.cpp \
     StringHandler.cpp \
     ModelWidget.cpp \
     Helper.cpp \
@@ -32,15 +32,33 @@ SOURCES += main.cpp\
     ComponentAnnotation.cpp \
     ComponentsProperties.cpp \
     CornerItem.cpp \
-    ConnectorWidget.cpp
+    ConnectorWidget.cpp \
+    Components.cpp \
+    SimulationWidget.cpp \
+    PlotWidget.cpp \
+    ModelicaEditor.cpp \
+    ../3Dpkg/VisualizationWidget.cpp \
+    ../3Dpkg/SimulationData.cpp \
+    ../Pltpkg2/variablewindow.cpp \
+    ../Pltpkg2/variableData.cpp \
+    ../Pltpkg2/preferenceWindow.cpp \
+    ../Pltpkg2/point.cpp \
+    ../Pltpkg2/lineGroup.cpp \
+    ../Pltpkg2/line2D.cpp \
+    ../Pltpkg2/legendLabel.cpp \
+    ../Pltpkg2/graphWindow.cpp \
+    ../Pltpkg2/graphWidget.cpp \
+    ../Pltpkg2/dataSelect.cpp \
+    ../Pltpkg2/curve.cpp \
+    ../Pltpkg2/compoundWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
     LibraryWidget.h \
     MessageWidget.h \
     omc_communication.h \
-    OMCThread.h \
     OMCProxy.h \
+    OMCThread.h \
     StringHandler.h \
     ModelWidget.h \
     Helper.h \
@@ -57,6 +75,28 @@ HEADERS  += mainwindow.h \
     ComponentsProperties.h \
     CornerItem.h \
     ConnectorWidget.h \
+    Components.h \
+    SimulationWidget.h \
+    PlotWidget.h \
+    ModelicaEditor.h \
+    ../3Dpkg/VisualizationWidget.h \
+    ../3Dpkg/SimulationData.h \
+    ../Pltpkg2/verticalLabel.h \
+    ../Pltpkg2/variablewindow.h \
+    ../Pltpkg2/variableData.h \
+    ../Pltpkg2/preferenceWindow.h \
+    ../Pltpkg2/point.h \
+    ../Pltpkg2/lineGroup.h \
+    ../Pltpkg2/line2D.h \
+    ../Pltpkg2/legendLabel.h \
+    ../Pltpkg2/label.h \
+    ../Pltpkg2/graphWindow.h \
+    ../Pltpkg2/graphWidget.h \
+    ../Pltpkg2/graphScene.h \
+    ../Pltpkg2/focusRect.h \
+    ../Pltpkg2/dataSelect.h \
+    ../Pltpkg2/curve.h \
+    ../Pltpkg2/compoundWidget.h
 
 # -------For OMNIorb
 win32 {
@@ -68,12 +108,26 @@ LIBS += -L. \
     -lomniORB414_rtd \
     -lomnithread34_rtd
 
-INCLUDEPATH += C:\\Thesis\\omniORB-4.1.4\\include
+INCLUDEPATH += C:\\Thesis\\omniORB-4.1.4\\include \
+               ../Pltpkg2 \
+               ../3Dpkg
 } else {
 LIBS += -L/usr/lib/ -lomniORB4 -lomnithread
-INCLUDEPATH += /usr/include/omniORB4
+INCLUDEPATH += /usr/include/omniORB4 \
+               ../Pltpkg2 \
+               ../3Dpkg
 }
 #---------End OMNIorb
 
 OTHER_FILES += \
     Resources/css/stylesheet.qss
+
+CONFIG += warn_off
+
+FORMS += \
+    SimulationWidget.ui \
+    ../Pltpkg2/preferences.ui \
+    ../Pltpkg2/newgraph.ui \
+    ../Pltpkg2/graphWindow.ui \
+    ../Pltpkg2/dataSelect.ui \
+    ../Pltpkg2/compoundWidget.ui

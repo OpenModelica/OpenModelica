@@ -31,31 +31,34 @@
  *
  */
 
-#ifndef RECTANGLEANNOTATION_H
-#define RECTANGLEANNOTATION_H
+#ifndef SIMULATIONWIDGET_H
+#define SIMULATIONWIDGET_H
 
-#include "ShapeAnnotation.h"
+#include <QDialog>
 
-class RectangleAnnotation : public ShapeAnnotation
+#include "mainwindow.h"
+
+class MainWindow;
+
+namespace Ui {
+    class SimulationWidget;
+}
+
+class SimulationWidget : public QDialog
 {
-private:
-    bool mVisible;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mExtent;
-    qreal mCornerRadius;
+    Q_OBJECT
 public:
-    RectangleAnnotation(QString shape, QGraphicsItem *parent = 0);
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void drawRectangleAnnotaion(QPainter *painter);
+    explicit SimulationWidget(MainWindow *parent = 0);
+    ~SimulationWidget();
+    void initializeFields();
+    void show();
+    bool validate();
+
+    MainWindow *mpParentMainWindow;
+private:
+    Ui::SimulationWidget *ui;
+public slots:
+    void simulate();
 };
 
-#endif // RECTANGLEANNOTATION_H
+#endif // SIMULATIONWIDGET_H

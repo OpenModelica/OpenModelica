@@ -147,8 +147,32 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     Q_UNUSED(widget);
 
     QPainterPath path;
-    //painter->rotate(ShapeAnnotation::mRotationAngle);
-    //painter->scale(ShapeAnnotation::mScaleX, ShapeAnnotation::mScaleY);
+
+    switch (this->mFillPattern)
+    {
+    case Qt::LinearGradientPattern:
+    case Qt::Dense1Pattern:
+    case Qt::RadialGradientPattern:
+        painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
+            break;
+    default:
+        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
+        break;
+    }
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+
+    QVector<QPointF> points;
+    for (int i = 0 ; i < this->mPoints.size() ; i ++)
+        points.append(this->mPoints.at(i));
+
+    path.addPolygon(QPolygonF(points));
+    painter->drawPath(path);
+    painter->strokePath(path, this->mLineColor);
+}
+
+void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
+{
+    QPainterPath path;
 
     switch (this->mFillPattern)
     {

@@ -43,18 +43,11 @@ class OMCThread : public QThread
 {
     Q_OBJECT
 public:
-    OMCThread(QString expression, OMCProxy *omcProxy ,QObject *parent = 0);
+    OMCThread();
     ~OMCThread();
     static void sleep(unsigned long secs);
-    QString getResult();
-signals:
-    void exceptionOccurred();
 protected:
     void run();
-private:
-    OMCProxy *mpOMCProxy;
-    QString mExpression;
-    QString mResult;
 };
 
 #endif // OMCTHREAD_H

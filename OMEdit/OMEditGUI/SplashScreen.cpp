@@ -82,4 +82,7 @@ void SplashScreen::drawContents(QPainter *painter)
     painter->setFont(this->mFonts.at(2));
     painter->setPen(this->mColors.at(2));
     painter->drawText(this->mPoints.at(2), this->mMessages.at(2));
+
+    painter->setFont(QFont("Verdana", 9));
+    QSplashScreen::drawContents(painter);
 }

@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     splashScreen.setMessage();
     splashScreen.show();
 
-    MainWindow mainwindow;
+    MainWindow mainwindow(&splashScreen);
     mainwindow.showMaximized();
     splashScreen.finish(&mainwindow);
     if (mainwindow.mExitApplication)        // if there is some issue in running the application.

@@ -152,8 +152,60 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
     Q_UNUSED(widget);
 
     QPainterPath path;
-    //painter->rotate(ShapeAnnotation::mRotationAngle);
-    //painter->scale(ShapeAnnotation::mScaleX, ShapeAnnotation::mScaleY);
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    QRectF rect (left, top, width, height);
+
+    switch (this->mFillPattern)
+    {
+    case Qt::LinearGradientPattern:
+        {
+            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.center().x(), rect.y());
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    case Qt::Dense1Pattern:
+        {
+            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.x(), rect.center().y());
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    case Qt::RadialGradientPattern:
+        {
+            QRadialGradient gradient(rect.center().x(), rect.center().y(), width);
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    default:
+        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
+        break;
+    }
+
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+
+    path.addRect(rect);
+    painter->drawPath(path);
+    painter->strokePath(path, this->mLineColor);
+}
+
+void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
+{
+    QPainterPath path;
     QPointF p1 = this->mExtent.at(0);
     QPointF p2 = this->mExtent.at(1);
 

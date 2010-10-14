@@ -157,7 +157,7 @@ NewPackage::NewPackage(MainWindow *parent)
 {
     this->mpParentMainWindow = parent;
     //Set the name and size of the main window
-    this->setWindowTitle("Create New Package");
+    this->setWindowTitle(QString(Helper::applicationName).append(" - Create New Package"));
     this->setMaximumSize(375, 140);
     this->setMinimumSize(375, 140);
     this->setModal(true);
@@ -259,7 +259,7 @@ NewModel::NewModel(MainWindow *parent)
 {
     this->mpParentMainWindow = parent;
     //Set the name and size of the main window
-    this->setWindowTitle("Create New Model");
+    this->setWindowTitle(QString(Helper::applicationName).append(" - Create New Model"));
     this->setMaximumSize(375, 140);
     this->setMinimumSize(375, 140);
     this->setModal(true);

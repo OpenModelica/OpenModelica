@@ -136,8 +136,60 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     Q_UNUSED(widget);
 
     QPainterPath path;
-    //painter->rotate(ShapeAnnotation::mRotationAngle);
-    //painter->scale(ShapeAnnotation::mScaleX, ShapeAnnotation::mScaleY);
+
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    QRectF ellipse (left, top, width, height);
+
+    switch (this->mFillPattern)
+    {
+    case Qt::LinearGradientPattern:
+        {
+            QLinearGradient gradient(ellipse.center().x(), ellipse.center().y(), ellipse.center().x(), ellipse.y());
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    case Qt::Dense1Pattern:
+        {
+            QLinearGradient gradient(ellipse.center().x(), ellipse.center().y(), ellipse.x(), ellipse.center().y());
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    case Qt::RadialGradientPattern:
+        {
+            QRadialGradient gradient(ellipse.center().x(), ellipse.center().y(), width);
+            gradient.setColorAt(0.0, this->mFillColor);
+            gradient.setColorAt(1.0, this->mLineColor);
+            gradient.setSpread(QGradient::ReflectSpread);
+            painter->setBrush(gradient);
+            break;
+        }
+    default:
+        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
+        break;
+    }
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+
+    path.addEllipse(ellipse);
+    painter->drawPath(path);
+    painter->strokePath(path, this->mLineColor);
+}
+
+void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
+{
+    QPainterPath path;
 
     QPointF p1 = this->mExtent.at(0);
     QPointF p2 = this->mExtent.at(1);

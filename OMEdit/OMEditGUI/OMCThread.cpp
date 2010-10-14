@@ -45,12 +45,9 @@
 //! Constructor
 //! @param expression is the command that is needed to be send to OMC.
 //! @param parent.
-OMCThread::OMCThread(QString expression, OMCProxy *omcProxy, QObject *parent)
-    : QThread(parent)
+OMCThread::OMCThread()
 {
-    this->mpOMCProxy = omcProxy;
-    this->mExpression = expression;
-    connect(this, SIGNAL(exceptionOccurred()), mpOMCProxy, SLOT(catchException()));
+
 }
 
 //! Destructor
@@ -66,18 +63,5 @@ void OMCThread::sleep(unsigned long secs)
 
 void OMCThread::run()
 {
-    try
-    {
-        mResult = this->mpOMCProxy->evalCommand(this->mExpression);
-    }
-    catch(CORBA::Exception& ex)
-    {
-        emit exceptionOccurred();
-        this->exit();
-    }
-}
 
-QString OMCThread::getResult()
-{
-    return mResult;
 }

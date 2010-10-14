@@ -1,5 +1,5 @@
 /* Library Widget Styles */
-QTreeWidget::branch {
+/*QTreeWidget::branch {
     border-image: url(../icons/vline.png) 0;
 }
 QTreeWidget::branch:has-siblings:adjoins-item {
@@ -15,7 +15,7 @@ QTreeWidget::branch:has-children:!has-siblings:closed, QTreeWidget::branch:close
 QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:has-children:has-siblings  {
     border-image: none;
     image: url(../icons/branch-open.png);
-}
+}*/
 /* End of Library Widget Styles */
 
 /* Modelica Model and Text Buttons Styles */

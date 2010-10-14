@@ -82,6 +82,7 @@ public slots:
     void setPassive();
     void setHovered();
     void setUnHovered();
+    void deleteMe();
 };
 
 class ConnectorLine : public QObject, public QGraphicsLineItem
@@ -115,6 +116,7 @@ protected:
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
     virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
     virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 private:
     bool mIsActive;

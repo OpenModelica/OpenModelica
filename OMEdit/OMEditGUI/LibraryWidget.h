@@ -45,6 +45,7 @@
 
 #include "mainwindow.h"
 #include "StringHandler.h"
+#include "Components.h"
 
 class MainWindow;
 class OMCProxy;
@@ -64,6 +65,9 @@ public:
     void addModelNode(QString name, QString parentName=QString(), QString parentStructure=QString());
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
     void removeProject();
+    bool isTreeItemLoaded(QTreeWidgetItem *item);
+    void addGlobalIconObject(IconAnnotation* icon);
+    IconAnnotation* getGlobalIconObject(QString className);
 private slots:
     void showLib(QTreeWidgetItem *item);
 private:
@@ -71,6 +75,8 @@ private:
     MainWindow *mpParentMainWindow;
     QTreeWidget *mpTree;
     QVBoxLayout *mpGrid;
+    QList<QString> mTreeList;
+    QList<IconAnnotation*> mGlobalIconsList;
 };
 
 #endif // LIBRARYWIDGET_H

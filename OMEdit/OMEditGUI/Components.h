@@ -31,31 +31,26 @@
  *
  */
 
-#ifndef RECTANGLEANNOTATION_H
-#define RECTANGLEANNOTATION_H
+#ifndef COMPONENTS_H
+#define COMPONENTS_H
 
-#include "ShapeAnnotation.h"
+#include "IconAnnotation.h"
 
-class RectangleAnnotation : public ShapeAnnotation
+class IconAnnotation;
+class OMCProxy;
+
+class Components
 {
 private:
-    bool mVisible;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mExtent;
-    qreal mCornerRadius;
+    QString mIconAnnotationString;
+    QString mClassName;
+    QRectF mRectangle;
+    QPixmap mIconPixmap;
 public:
-    RectangleAnnotation(QString shape, QGraphicsItem *parent = 0);
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void drawRectangleAnnotaion(QPainter *painter);
+    Components(QString value, QString className, OMCProxy *omc);
+    QPixmap getIcon();
+
+    IconAnnotation *mpIcon;
 };
 
-#endif // RECTANGLEANNOTATION_H
+#endif // COMPONENTS_H

@@ -44,6 +44,7 @@ Connector::Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, 
     setZValue(-1.0);
     this->updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
     this->mEndComponentConnected = false;
+    this->mIsActive = false;
     this->drawConnector();
 }
 
@@ -300,7 +301,7 @@ void Connector::doSelect(bool lineSelected, int lineNumber)
 //! @see setPassive()
 void Connector::setActive()
 {
-    //connect(this->mpParentGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+    connect(this->mpParentGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
     if(this->mEndComponentConnected)
     {
         mIsActive = true;
@@ -315,7 +316,7 @@ void Connector::setActive()
 //! @see setActive()
 void Connector::setPassive()
 {
-    //disconnect(this->mpParentGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+    disconnect(this->mpParentGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
     if(this->mEndComponentConnected)
     {
         mIsActive = false;
@@ -354,6 +355,12 @@ void Connector::setUnHovered()
     }
 }
 
+//! Asks my parent to delete myself.
+void Connector::deleteMe()
+{
+    mpParentGraphicsView->removeConnector(this);
+}
+
 ConnectorLine::ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNumber, Connector *parent)
     : QGraphicsLineItem(x1, y1, x2, y2, parent)
 {
@@ -366,7 +373,7 @@ ConnectorLine::ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNum
     this->mParentConnectorEndComponentConnected = false;
     this->mActivePen = QPen(Qt::red, 1.0);
     this->mPassivePen = QPen(Qt::black, 1.0);
-    this->mHoverPen = QPen(Qt::darkRed, 6.8);
+    this->mHoverPen = QPen(Qt::darkRed, 6.9);
 }
 
 //! Reimplementation of paint function. Removes the ugly dotted selection box.
@@ -451,6 +458,18 @@ void ConnectorLine::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 int ConnectorLine::getLineNumber()
 {
     return mLineNumber;
+}
+
+void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    // make the connector selected
+    this->setSelected(true);
+
+    QMenu menu(mpParentConnector->mpParentGraphicsView);
+    mpParentConnector->mpParentGraphicsView->mCancelConnectionAction->setText("Delete Connection");
+    mpParentConnector->mpParentGraphicsView->mCancelConnectionAction->setShortcut(QKeySequence::Delete);
+    menu.addAction(mpParentConnector->mpParentGraphicsView->mCancelConnectionAction);
+    menu.exec(event->screenPos());
 }
 
 //! Defines what shall happen if the line is selected or moved.

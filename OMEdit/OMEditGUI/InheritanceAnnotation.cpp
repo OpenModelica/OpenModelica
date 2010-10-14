@@ -34,9 +34,11 @@
 #include "InheritanceAnnotation.h"
 
 InheritanceAnnotation::InheritanceAnnotation(QString value, QString className, IconAnnotation *pParent)
-    : ShapeAnnotation(pParent), mClassName(className)
+    : ShapeAnnotation(pParent), mClassName(className), mIconAnnotationString(value)
 {
+    static int zvalue = 1;
     setFlag(QGraphicsItem::ItemStacksBehindParent);
+    setZValue(zvalue--);
     mpParentIcon = pParent;
     mpParentIcon->parseIconAnnotationString(this, value);
 }

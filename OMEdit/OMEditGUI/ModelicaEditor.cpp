@@ -31,31 +31,18 @@
  *
  */
 
-#ifndef RECTANGLEANNOTATION_H
-#define RECTANGLEANNOTATION_H
+#include "ModelicaEditor.h"
 
-#include "ShapeAnnotation.h"
-
-class RectangleAnnotation : public ShapeAnnotation
+ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
+    : QTextEdit(pParent)
 {
-private:
-    bool mVisible;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mExtent;
-    qreal mCornerRadius;
-public:
-    RectangleAnnotation(QString shape, QGraphicsItem *parent = 0);
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void drawRectangleAnnotaion(QPainter *painter);
-};
+    mpParentProjectTab = pParent;
+    connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
+}
 
-#endif // RECTANGLEANNOTATION_H
+void ModelicaEditor::focusOutEvent(QFocusEvent *e)
+{
+    QTextEdit::focusOutEvent(e);
+
+    emit focusOut();
+}

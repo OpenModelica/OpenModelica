@@ -35,7 +35,8 @@
 
 ComponentAnnotation::ComponentAnnotation(QString value, QString className, QString transformationStr,
                                          ComponentsProperties *pComponentProperties, IconAnnotation *pParent)
-    : ShapeAnnotation(pParent), mClassName(className)
+    : ShapeAnnotation(pParent), mClassName(className), mIconAnnotationString(value),
+      mTransformationString(transformationStr)
 {
     mpParentIcon = pParent;
     mpComponentProperties = pComponentProperties;
@@ -43,6 +44,18 @@ ComponentAnnotation::ComponentAnnotation(QString value, QString className, QStri
     parseTransformationString(transformationStr);
     connect(this, SIGNAL(componentClicked(ComponentAnnotation*)), mpParentIcon->mpGraphicsView,
             SLOT(addConnector(ComponentAnnotation*)));
+}
+
+ComponentAnnotation::ComponentAnnotation(QString value, QString className, QString transformationStr,
+                                         ComponentsProperties *pComponentProperties, IconAnnotation *pParent, bool libraryIcon)
+    : ShapeAnnotation(pParent), mClassName(className), mIconAnnotationString(value),
+      mTransformationString(transformationStr)
+{
+    Q_UNUSED(libraryIcon);
+    mpParentIcon = pParent;
+    mpComponentProperties = pComponentProperties;
+    mpParentIcon->parseIconAnnotationString(this, value);
+    parseTransformationString(transformationStr);
 }
 
 void ComponentAnnotation::parseTransformationString(QString value)

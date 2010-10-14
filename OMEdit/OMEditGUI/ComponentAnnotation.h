@@ -36,25 +36,22 @@
 
 #include "ShapeAnnotation.h"
 #include "IconAnnotation.h"
-#include "LineAnnotation.h"
-#include "PolygonAnnotation.h"
-#include "RectangleAnnotation.h"
-#include "EllipseAnnotation.h"
-#include "TextAnnotation.h"
 #include "ComponentsProperties.h"
 
 class IconAnnotation;
+class LineAnnotation;
+class PolygonAnnotation;
+class RectangleAnnotation;
+class EllipseAnnotation;
+class TextAnnotation;
 
 class ComponentAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 private:
     QLineF line;
-    QString mClassName;
     IconAnnotation *mpParentIcon;
-    bool mVisible;
-    qreal mPositionX;
-    qreal mPositionY;
+    bool mVisible;    
     qreal mScale;
     qreal mAspectRatio;
     bool mFlipHorizontal;
@@ -63,14 +60,26 @@ private:
 public:
     ComponentAnnotation(QString value, QString className, QString transformationStr,
                         ComponentsProperties *pComponentProperties, IconAnnotation *pParent);
+    ComponentAnnotation(QString value, QString className, QString transformationStr,
+                        ComponentsProperties *pComponentProperties, IconAnnotation *pParent, bool libraryIcon);
     void parseTransformationString(QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     qreal getRotateAngle();
     IconAnnotation* getParentIcon();
 
+    QString mClassName;
+    QString mIconAnnotationString;
+    QString mTransformationString;
     QRectF mRectangle;
+    qreal mPositionX;
+    qreal mPositionY;
     ComponentsProperties *mpComponentProperties;
+    QList<LineAnnotation*> mpLinesList;
+    QList<PolygonAnnotation*> mpPolygonsList;
+    QList<RectangleAnnotation*> mpRectanglesList;
+    QList<EllipseAnnotation*> mpEllipsesList;
+    QList<TextAnnotation*> mpTextsList;
 protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
 signals:

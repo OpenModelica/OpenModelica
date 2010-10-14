@@ -46,6 +46,9 @@
 #include "ProjectTabWidget.h"
 #include "StringHandler.h"
 #include "Helper.h"
+#include "SimulationWidget.h"
+#include "PlotWidget.h"
+#include "SplashScreen.h"
 
 class QGridLayout;
 class QHBoxLayout;
@@ -63,13 +66,15 @@ class LibraryWidget;
 class NewProject;
 class NewPackage;
 class NewModel;
+class SimulationWidget;
+class PlotWidget;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0);
+    MainWindow(SplashScreen *splashScreen, QWidget *parent = 0);
     ~MainWindow();
 
     QWidget *mpCentralwidget;
@@ -77,6 +82,8 @@ public:
     ProjectTabWidget *mpProjectTabs;
     QGridLayout *mpTabgrid;
     LibraryWidget *mpLibrary;
+    SimulationWidget *mpSimulationWidget;
+    PlotWidget *mpPlotWidget;
     NewProject *mpNewProject;
     NewPackage *mpNewPackage;
     NewModel *mpNewModel;
@@ -87,6 +94,7 @@ public:
     QMenu *menuEdit;
     QMenu *menuView;
     QMenu *menuTools;
+    QMenu *menuSimulation;
     MessageWidget *mpMessageWidget;
     QStatusBar *statusBar;
     QPushButton *mpBackButton;
@@ -109,15 +117,21 @@ public:
     QAction *zoomOutAction;
     QAction *closeAction;
     QAction *gridLinesAction;
+    QAction *simulationAction;
+    QAction *plotAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
     QToolBar *viewToolBar;
+    QToolBar *simulationToolBar;
+
+    QDockWidget *plotdock;
 
     bool mExitApplication;
 
     void closeEvent(QCloseEvent *event);
 private slots:
+    void openSimulation();
     void openNewPackage();
     void openNewModel();
     void openOMShell();

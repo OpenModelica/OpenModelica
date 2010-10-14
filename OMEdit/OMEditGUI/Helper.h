@@ -47,6 +47,7 @@ public:
     static QString omFileOpenText;
     static qreal globalXScale;
     static qreal globalYScale;
+    static QString ModelicaSimulationMethods;
 };
 
 #endif // HELPER_H

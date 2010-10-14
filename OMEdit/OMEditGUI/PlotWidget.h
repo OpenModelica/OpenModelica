@@ -31,31 +31,38 @@
  *
  */
 
-#ifndef RECTANGLEANNOTATION_H
-#define RECTANGLEANNOTATION_H
+#ifndef PLOTWIDGET_H
+#define PLOTWIDGET_H
 
-#include "ShapeAnnotation.h"
+#include "mainwindow.h"
+#include "graphWindow.h"
 
-class RectangleAnnotation : public ShapeAnnotation
+class MainWindow;
+
+class PlotWidget : public QWidget
 {
-private:
-    bool mVisible;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mExtent;
-    qreal mCornerRadius;
+    Q_OBJECT
 public:
-    RectangleAnnotation(QString shape, QGraphicsItem *parent = 0);
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void drawRectangleAnnotaion(QPainter *painter);
+    PlotWidget(MainWindow *pParent = 0);
+
+    MainWindow *mpParentMainWindow;
+
+    void readPlotVariables(QString fileName);
+    void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
+    void addInGraphWindowMap(QString key, GraphWindow *graphWindow);
+    void deleteInGraphWindowMap(QString key);
+    GraphWindow* getGraphWindow(QString key);
+private:
+    QLabel *mpPlotTypesLabel;
+    QComboBox *mpPlotTypesCombo;
+    QTreeWidget *mpPlotVariablesTree;
+    QVBoxLayout *mpVerticalLayout;
+    QMap<QString, GraphWindow*> mGraphWindowsMap;
+public slots:
+    void plotVariables(QTreeWidgetItem *item, int column);
+    void visualize(QString value);
+protected:
+    void contextMenuEvent(QContextMenuEvent *event);
 };
 
-#endif // RECTANGLEANNOTATION_H
+#endif // PLOTWIDGET_H

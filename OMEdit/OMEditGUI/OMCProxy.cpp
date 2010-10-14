@@ -60,25 +60,23 @@ OMCProxy::OMCProxy(MainWindow *pParent)
     this->mpParentMainWindow = pParent;
     this->mpOMCLogger = new QDialog();
     this->mpOMCLogger->setWindowFlags(Qt::WindowTitleHint);
-    this->mpOMCLogger->resize(640, 480);
+    this->mpOMCLogger->setMaximumSize(640, 480);
+    this->mpOMCLogger->setMinimumSize(640, 480);
     this->mpOMCLogger->setWindowIcon(QIcon("../OMEditGUI/Resources/icons/console.png"));
-    this->mpOMCLogger->setWindowTitle("OMC Messages Log");
-    QPalette palette = this->mpOMCLogger->palette();
-    palette.setColor(QPalette::Window, Qt::black);
-    this->mpOMCLogger->setPalette(palette);
+    this->mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - OMC Messages Log"));
     // Set the QTextEdit Box
     this->mpTextEdit = new QTextEdit();
-    palette = this->mpTextEdit->palette();
-    palette.setColor(QPalette::Active, static_cast<QPalette::ColorRole>(9), Qt::black);
-    this->mpTextEdit->setPalette(palette);
-    this->mpTextEdit->setFrameShape(QTextEdit::NoFrame);
-    this->mpTextEdit->setFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    this->mpTextEdit->setTextColor(Qt::white);
     this->mpTextEdit->setReadOnly(true);
     // Set the Layout
     QHBoxLayout *layout = new QHBoxLayout(this->mpOMCLogger);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(this->mpTextEdit);
+    //start the server
+    if(!startServer())      // if we are unable to start OMC. Exit the application.
+    {
+        mpParentMainWindow->mExitApplication = true;
+        return;
+    }
 }
 
 //! Destructor
@@ -227,26 +225,23 @@ void OMCProxy::sendCommand(QString expression)
             return;
         }
 
-    OMCThread *thread = new OMCThread(expression, this);
-    thread->start();
-    thread->wait();
-    mResult = thread->getResult();
-    this->mpTextEdit->append(">>  " + expression);
-    this->mpTextEdit->append(">>  " + mResult);
-    if (thread->isRunning())
-       thread->exit();
-    delete thread;
-}
-
-//! Sends the user commands to OMC.
-//! @param expression is used to send command as a string.
-//! @see sendCommand(QString expression)
-//! @see OMCThread
-QString OMCProxy::evalCommand(QString expression)
-{
-    QString result;
-    result = mOMC->sendExpression(expression.toLatin1());
-    return result;
+    // Send command to server
+    try
+    {
+        mResult = mOMC->sendExpression(expression.toLatin1());
+        logOMCMessages(expression);
+    }
+    catch(CORBA::Exception& ex)
+    {
+        // if the command is quit() and we get exception just simply quit
+        if (expression == "quit()")
+            return;
+        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                              QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
+                              .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
+        removeObjectRefFile();
+        restartApplication();
+    }
 }
 
 void OMCProxy::setResult(QString value)
@@ -258,6 +253,16 @@ void OMCProxy::setResult(QString value)
 QString OMCProxy::getResult()
 {
     return mResult.trimmed();
+}
+
+void OMCProxy::logOMCMessages(QString expression)
+{
+    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
+    mpTextEdit->append(">>  " + expression);
+
+    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
+    mpTextEdit->append(">>  " + getResult());
+    mpTextEdit->append("");
 }
 
 QStringList OMCProxy::createPackagesList()
@@ -308,8 +313,8 @@ void OMCProxy::removeObjectRefFile()
 
 void OMCProxy::restartApplication()
 {
-    QProcess *applicationProcess = new QProcess();
-    applicationProcess->start(qApp->applicationFilePath());
+    //QProcess *applicationProcess = new QProcess();
+    //applicationProcess->start(qApp->applicationFilePath());
     qApp->exit();
 }
 
@@ -323,6 +328,12 @@ QString OMCProxy::getErrorString()
         setResult(tr(""));
         return getResult();
     }
+}
+
+QString OMCProxy::getVersion()
+{
+    sendCommand("getVersion()");
+    return getResult();
 }
 
 //! Loads the Open Modelica Standard Library.
@@ -476,7 +487,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
     // check if there is any error.
     if (!getErrorString().isEmpty())
         return true;
-        return false;
+    return false;
 }
 
 bool OMCProxy::createModel(QString modelName)
@@ -545,6 +556,51 @@ bool OMCProxy::addConnection(QString from, QString to, QString className)
 {
     sendCommand("addConnection(" + from + "," + to + "," + className + ")");
     if (getResult().contains("Ok"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::deleteConnection(QString from, QString to, QString className)
+{
+    sendCommand("deleteConnection(" + from + "," + to + "," + className + ")");
+    if (getResult().contains("Ok"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
+{
+    sendCommand("simulate(" + modelName + "," + simualtionParameters + ")");
+    if (getResult().contains("res.plt"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::plot(QString modelName, QString plotVariables)
+{
+    sendCommand("plot(" + modelName + ",{" + plotVariables + "})");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::plotParametric(QString modelName, QString plotVariables)
+{
+    sendCommand("plotParametric(" + modelName + "," + plotVariables + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::visualize(QString modelName)
+{
+    sendCommand("visualize(" + modelName + ")");
+    if (getResult().contains("true"))
         return true;
     else
         return false;

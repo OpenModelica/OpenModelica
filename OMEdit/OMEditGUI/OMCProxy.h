@@ -63,14 +63,15 @@ public:
     bool startServer();
     void stopServer();
     void sendCommand(const QString expression);
-    QString evalCommand(const QString expression);
     void setResult(QString value);
     QString getResult();
+    void logOMCMessages(QString expression);
     QStringList createPackagesList();
     void addPackage(QStringList *list, QString package, QString parentPackage = QString());
     void restartApplication();
     void removeObjectRefFile();
     QString getErrorString();
+    QString getVersion();
     void loadStandardLibrary();
     bool isStandardLibraryLoaded();
     QStringList getClassNames(QString className);
@@ -96,6 +97,11 @@ public:
     bool deleteComponent(QString name, QString modelName);
     void renameComponent(QString oldName, QString className, QString newName);
     bool addConnection(QString from, QString to, QString className);
+    bool deleteConnection(QString from, QString to, QString className);
+    bool simulate(QString modelName, QString simualtionParameters);
+    bool plot(QString modelName, QString plotVariables);
+    bool plotParametric(QString modelName, QString plotVariables);
+    bool visualize(QString modelName);
 public slots:
     void openOMCLogger();
     void catchException();

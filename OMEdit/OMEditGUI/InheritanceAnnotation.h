@@ -38,12 +38,16 @@
 #include "IconAnnotation.h"
 
 class IconAnnotation;
+class LineAnnotation;
+class PolygonAnnotation;
+class RectangleAnnotation;
+class EllipseAnnotation;
+class TextAnnotation;
 
 class InheritanceAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 private:
-    QString mClassName;
     IconAnnotation *mpParentIcon;
 public:
     InheritanceAnnotation(QString value, QString className, IconAnnotation *pParent);
@@ -51,7 +55,14 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     IconAnnotation* getParentIcon();
 
+    QString mClassName;
+    QString mIconAnnotationString;
     QRectF mRectangle;
+    QList<LineAnnotation*> mpLinesList;
+    QList<PolygonAnnotation*> mpPolygonsList;
+    QList<RectangleAnnotation*> mpRectanglesList;
+    QList<EllipseAnnotation*> mpEllipsesList;
+    QList<TextAnnotation*> mpTextsList;
 };
 
 #endif // INHERITANCEANNOTATION_H

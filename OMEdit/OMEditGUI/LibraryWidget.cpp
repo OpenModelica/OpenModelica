@@ -46,13 +46,14 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
 
     mpTree = new QTreeWidget(this);
     mpTree->setHeaderLabel(tr("Modelica Standard Library"));
-    mpTree->setIndentation(15);
+    mpTree->setIndentation(13);
     mpTree->setDragEnabled(true);
+    mpTree->setIconSize(QSize(20, 20));
 
     mpProjectsTree = new QTreeWidget(this);
     mpProjectsTree->setHeaderLabel(tr("Modelica Files"));
     mpProjectsTree->setColumnCount(1);
-    mpProjectsTree->setIndentation(15);
+    mpProjectsTree->setIndentation(13);
     mpTree->setColumnCount(1);
 
     mpGrid = new QVBoxLayout(this);
@@ -75,11 +76,10 @@ void LibraryWidget::addModelicaStandardLibrary()
         QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
         newTreePost->setText(0, QString("Modelica"));
         newTreePost->setToolTip(0, QString("Modelica"));
+        newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         this->mpTree->insertTopLevelItem(0, newTreePost);
-        // add temporary item to show open icon of tree.
-        addClass("Temp", "Modelica.", "Modelica.", false);
-        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
-        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
+//        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
+//        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
     }
 }
 
@@ -88,25 +88,39 @@ void LibraryWidget::addModelicaStandardLibrary()
 //! @param prefixstr is the name of the parent hierarchy of the class.
 void LibraryWidget::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
 {
-    if (this->mpParentMainWindow->mpOMCProxy->isPackage(prefixStr + value))
+    if (this->mpParentMainWindow->mpOMCProxy->isPackage(value))
     {
-        //if value is Modelica then dont send it to addClass. Because we already added it statically.
-        if (value != tr("Modelica"))
-        {
-            this->mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(prefixStr + value));
-            addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
-        }
-        QStringList list = this->mpParentMainWindow->mpOMCProxy->getClassNames(prefixStr + value);
+        QStringList list = this->mpParentMainWindow->mpOMCProxy->getClassNames(value);
         prefixStr += value + ".";
         foreach (QString str, list)
         {
-            loadModelicaLibraryHierarchy(str, prefixStr);
+            addClass(str, StringHandler::getSubStringFromDots(prefixStr), prefixStr, false);
         }
     }
-    else
-    {
-        addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
-    }
+
+    /*
+        Open the Following code and comment the above if loading library once.
+    */
+
+//    if (this->mpParentMainWindow->mpOMCProxy->isPackage(prefixStr + value))
+//    {
+//        //if value is Modelica then dont send it to addClass. Because we already added it statically.
+//        if (value != tr("Modelica"))
+//        {
+//            this->mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(prefixStr + value));
+//            addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
+//        }
+//        QStringList list = this->mpParentMainWindow->mpOMCProxy->getClassNames(prefixStr + value);
+//        prefixStr += value + ".";
+//        foreach (QString str, list)
+//        {
+//            loadModelicaLibraryHierarchy(str, prefixStr);
+//        }
+//    }
+//    else
+//    {
+//        addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
+//    }
 }
 
 //! Let the user to point out a OM Class and adds it to the library widget.
@@ -116,20 +130,25 @@ void LibraryWidget::loadModelicaLibraryHierarchy(QString value, QString prefixSt
 //! @param hasIcon is the boolean value indicating whether the class has IconAnnotation or not.
 void LibraryWidget::addClass(QString className, QString parentClassName, QString parentStructure, bool hasIcon)
 {
+    mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(parentStructure + className));
     QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
     newTreePost->setText(0, QString(className));
     newTreePost->setToolTip(0, QString(parentStructure + className));
-    /*if (hasIcon)
+    // If Loaded class is package show treewidgetitem expand indicator
+    // Remove if using load once library feature
+    if (mpParentMainWindow->mpOMCProxy->isPackage(parentStructure + className))
     {
-        OMCProxy *omcproxy = OMCProxy::getInstance();
-        QString result = omcproxy->getIconAnnotation(parentStructure + className);
-        qDebug() << parentStructure + className;
-        //QGraphicsScene scene;
-        IconAnnotation *iconAnnotation = new IconAnnotation(result, parentStructure + className);
+        newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        hasIcon = false;
+    }
 
-        newTreePost->setIcon(0, QIcon(iconAnnotation->getIcon()));
-        //newTreePost->setIcon(0, QIcon("../../HopsanGUI/icons/hopsan.png"));
-    }*/
+    if (hasIcon)
+    {
+        QString result = mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure + className);
+        Components *component = new Components(result, parentStructure + className, mpParentMainWindow->mpOMCProxy);
+        newTreePost->setIcon(0, QIcon(component->getIcon()));
+        addGlobalIconObject(component->mpIcon);
+    }
 
     if (parentClassName.isEmpty())
     {
@@ -224,17 +243,56 @@ void LibraryWidget::removeProject()
 //! @see hideAllLib()
 void LibraryWidget::showLib(QTreeWidgetItem *item)
 {
-    // disconnect the mpTree itemClicked and itemExpanded signals
-    disconnect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(showLib(QTreeWidgetItem*)));
-    disconnect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(showLib(QTreeWidgetItem*)));
+    if (isTreeItemLoaded(item))
+    {
+        mTreeList.append(item->toolTip(0));
+        // Set the cursor to wait.
+        setCursor(Qt::WaitCursor);
+        loadModelicaLibraryHierarchy(item->toolTip(0));
+        item->setExpanded(true);
+        this->mpParentMainWindow->statusBar->clearMessage();
+        // Remove the wait cursor
+        unsetCursor();
+    }
 
-    // Set the cursor to wait.
-    setCursor(Qt::WaitCursor);
-    // Delete the temp entry now
-    item->removeChild(item->child(0));
+    /*
+        Open the Following code and comment the above if loading library once.
+    */
+
+    // disconnect the mpTree itemClicked and itemExpanded signals
+//    disconnect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(showLib(QTreeWidgetItem*)));
+//    disconnect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(showLib(QTreeWidgetItem*)));
+
+//    // Set the cursor to wait.
+//    setCursor(Qt::WaitCursor);
+//    // Delete the temp entry now
+//    item->removeChild(item->child(0));
 //    loadModelicaLibraryHierarchy(tr("Modelica"));
 //    this->mpParentMainWindow->statusBar->clearMessage();
-    //mpTree->sortItems(0, Qt::AscendingOrder);
-    // Remove the wait cursor
-    unsetCursor();
+//    //mpTree->sortItems(0, Qt::AscendingOrder);
+//    // Remove the wait cursor
+//    unsetCursor();
+}
+
+bool LibraryWidget::isTreeItemLoaded(QTreeWidgetItem *item)
+{
+    foreach (QString str, mTreeList)
+        if (str == item->toolTip(0))
+            return false;
+    return true;
+}
+
+void LibraryWidget::addGlobalIconObject(IconAnnotation *icon)
+{
+    mGlobalIconsList.append(icon);
+}
+
+IconAnnotation* LibraryWidget::getGlobalIconObject(QString className)
+{
+    foreach (IconAnnotation* icon, mGlobalIconsList)
+    {
+        if (icon->getClassName() == className)
+            return icon;
+    }
+    return NULL;
 }

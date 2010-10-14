@@ -41,3 +41,5 @@ QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
 qreal Helper::globalXScale = 0.15;
 qreal Helper::globalYScale = 0.15;
+
+QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";

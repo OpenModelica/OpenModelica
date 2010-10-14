@@ -37,19 +37,21 @@
 #include "mainwindow.h"
 
 //! Constructor
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     : QMainWindow(parent), mExitApplication(false)
 {
     // Create the OMCProxy object.
-    //this->mpOMCProxy = OMCProxy::getInstance();
+    splashScreen->showMessage("Connecting to " + Helper::applicationName +" Server", Qt::AlignRight, Qt::white);
     this->mpOMCProxy = new OMCProxy(this);
+    // If there is some problem connecting to omc server then quit
+
     //Set the name and size of the main window
+    splashScreen->showMessage("Loading Widgets", Qt::AlignRight, Qt::white);
     this->setObjectName("MainWindow");
     this->setWindowTitle(Helper::applicationName);
     this->setWindowIcon(QIcon("../OMEditGUI/Resources/icons/omeditor.png"));
-    this->setMinimumSize(800, 600);
+    this->setMinimumSize(950, 670);
     this->setContentsMargins(1, 1, 1, 1);
-    //this->resize(800,600);
 
     //Create a centralwidget for the main window
     mpCentralwidget = new QWidget(this);
@@ -68,20 +70,36 @@ MainWindow::MainWindow(QWidget *parent)
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     mpMessageWidget->printGUIMessage("OMEdit, Version: " + Helper::applicationVersion);
+    if (!mExitApplication)
+        mpMessageWidget->printGUIInfoMessage("Open Modelica, Version: " + mpOMCProxy->getVersion());
 
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
     libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpLibrary = new LibraryWidget(this);
     // Loads and adds the OM Standard Library into the Library Widget.
-    mpLibrary->addModelicaStandardLibrary();
+    splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
+    if (!mExitApplication)
+        mpLibrary->addModelicaStandardLibrary();
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
 
     //Set dock widget corner owner
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
 
+    // Create simulation widget.
+    mpSimulationWidget = new SimulationWidget(this);
+
+    plotdock = new QDockWidget(tr(" Plot Variables"), this);
+    plotdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    plotdock->setContentsMargins(0, 1, 1, 1);
+    mpPlotWidget = new PlotWidget(this);
+    plotdock->setWidget(mpPlotWidget);
+    addDockWidget(Qt::RightDockWidgetArea, plotdock);
+    plotdock->hide();
+
     //Create Actions, Toolbar and Menus
+    splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
     this->createActions();
     this->createToolbars();
     this->createMenus();
@@ -90,7 +108,6 @@ MainWindow::MainWindow(QWidget *parent)
     mpProjectTabs = new ProjectTabWidget(this);
     mpProjectTabs->setObjectName("projectTabs");
 
-    //mpCentralgrid->addWidget(mpSimulationSetupWidget,0,0);
     mpBackButton = new QPushButton("Back");
     mpCentralgrid->addWidget(mpBackButton,0,0);
     mpCentralgrid->addWidget(mpProjectTabs,1,0);
@@ -163,11 +180,12 @@ void MainWindow::createActions()
 
     newPackageAction = new QAction(tr("&Package"), this);
     newPackageAction->setStatusTip(tr("Create New Package"));
-    connect(newPackageAction, SIGNAL(triggered()), this, SLOT(openNewPackage()));
+    connect(newPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
 
     newModelAction = new QAction(tr("&Model"), this);
-    newPackageAction->setStatusTip(tr("Create New Model"));
-    connect(newModelAction, SIGNAL(triggered()), this, SLOT(openNewModel()));
+    newModelAction->setStatusTip(tr("Create New Model"));
+    newModelAction->setShortcut(QKeySequence("Ctrl+n"));
+    connect(newModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
 
     openAction = new QAction(QIcon("../OMEditGUI/Resources/icons/open.png"), tr("&Open"), this);
     openAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -201,13 +219,10 @@ void MainWindow::createActions()
     pasteAction->setShortcut(QKeySequence("Ctrl+v"));
 
     resetZoomAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoom100.png"), tr("&Reset Zoom"), this);
-    resetZoomAction->setText("Reset Zoom");
 
     zoomInAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoomIn.png"), tr("&Zoom In"), this);
-    zoomInAction->setText("Zoom In");
 
     zoomOutAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoomOut.png"), tr("&Zoom Out"), this);
-    zoomOutAction->setText("Zoom Out");
 
     omcLoggerAction = new QAction(QIcon("../OMEditGUI/Resources/icons/console.png"), tr("&OMC Logger"), this);
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
@@ -215,15 +230,22 @@ void MainWindow::createActions()
 
     openOMShellAction = new QAction(QIcon("../OMEditGUI/Resources/icons/OMS.bmp"), tr("&OMShell"), this);
     openOMShellAction->setStatusTip(tr("Opens Open Modelica Shell (OMShell)"));
-    connect(openOMShellAction, SIGNAL(triggered()), this, SLOT(openOMShell()));
+    connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
     closeAction = new QAction(QIcon("../OMEditGUI/Resources/icons/close.png"), tr("&Close"), this);
-    closeAction->setText("Close");
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
-    connect(this->closeAction,SIGNAL(triggered()),SLOT(close()));
+    connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
 
     gridLinesAction = new QAction(QIcon("../OMEditGUI/Resources/icons/grid.png"), tr("&Grid Lines"), this);
     gridLinesAction->setCheckable(true);
+
+    simulationAction = new QAction(QIcon("../OMEditGUI/Resources/icons/simulate.png"), tr("&Simulate"), this);
+    simulationAction->setStatusTip(tr("Simulate the Model"));
+    connect(simulationAction, SIGNAL(triggered()), SLOT(openSimulation()));
+
+    plotAction = plotdock->toggleViewAction();
+    plotAction->setIcon(QIcon("../OMEditGUI/Resources/icons/plot.png"));
+    plotAction->setText(tr("&Plot Variables"));
 }
 
 //! Creates the menus
@@ -249,6 +271,9 @@ void MainWindow::createMenus()
     menuView = new QMenu(menubar);
     menuView->setTitle("&View");
 
+    menuSimulation = new QMenu(menubar);
+    menuSimulation->setTitle("&Simulation");
+
     menuTools = new QMenu(menubar);
     menuTools->setTitle("&Tools");
 
@@ -273,11 +298,19 @@ void MainWindow::createMenus()
     menuEdit->addAction(copyAction);
     menuEdit->addAction(pasteAction);
 
-    menuView->addAction(libdock->toggleViewAction());
-    menuView->addAction(messagedock->toggleViewAction());
+    QAction *libAction = libdock->toggleViewAction();
+    libAction->setText(tr("&Components"));
+    QAction *messageAction = messagedock->toggleViewAction();
+    messageAction->setText(tr("&Messages"));
+
+    menuView->addAction(libAction);
+    menuView->addAction(messageAction);
     menuView->addAction(fileToolBar->toggleViewAction());
     menuView->addAction(editToolBar->toggleViewAction());
     menuView->addAction(gridLinesAction);
+
+    menuSimulation->addAction(simulationAction);
+    menuSimulation->addAction(plotAction);
 
     menuTools->addAction(omcLoggerAction);
     menuTools->addAction(openOMShellAction);
@@ -285,6 +318,7 @@ void MainWindow::createMenus()
     menubar->addAction(menuFile->menuAction());
     menubar->addAction(menuEdit->menuAction());
     menubar->addAction(menuView->menuAction());
+    menubar->addAction(menuSimulation->menuAction());
     menubar->addAction(menuTools->menuAction());
 }
 
@@ -318,12 +352,23 @@ void MainWindow::createToolbars()
     editToolBar->addAction(copyAction);
     editToolBar->addAction(pasteAction);
 
+    simulationToolBar = addToolBar(tr("Simulation"));
+    simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    simulationToolBar->addAction(simulationAction);
+    simulationToolBar->addAction(plotAction);
+
     viewToolBar = addToolBar(tr("View Toolbar"));
     viewToolBar->setAllowedAreas(Qt::TopToolBarArea);
     viewToolBar->addAction(gridLinesAction);
     viewToolBar->addAction(resetZoomAction);
     viewToolBar->addAction(zoomInAction);
     viewToolBar->addAction(zoomOutAction);
+}
+
+//! Open Simulation Window
+void MainWindow::openSimulation()
+{
+    this->mpSimulationWidget->show();
 }
 
 //! Opens the new package widget.

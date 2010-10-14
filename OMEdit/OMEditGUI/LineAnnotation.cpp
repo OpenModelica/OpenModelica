@@ -119,8 +119,6 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(widget);
 
     QPainterPath path;
-    //painter->rotate(ShapeAnnotation::mRotationAngle);
-    //painter->scale(ShapeAnnotation::mScaleX, ShapeAnnotation::mScaleY);
     painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
 
     if (this->mPoints.size() > 0)
@@ -146,11 +144,26 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 
 void LineAnnotation::drawLineAnnotaion(QPainter *painter)
 {
-    //painter->setBackground(QBrush(Qt::transparent));
-    //painter->setPen(QPen(QBrush(this->mColor), static_cast<qreal>(this->mThickness), this->mLinePattern));
-    painter->setPen(QPen(QBrush(Qt::blue), static_cast<qreal>(this->mThickness), this->mLinePattern));
-    if (!(this->mPoints.size() < 2))
+    QPainterPath path;
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+
+    if (this->mPoints.size() > 0)
     {
-        painter->drawLine(this->mPoints.at(0), this->mPoints.at(1));
+        for (int i = 0 ; i < this->mPoints.size() ; i++)
+        {
+            QPointF p1 = this->mPoints.at(i);
+            if (i == 0)
+                path.moveTo(p1.x(), p1.y());
+            if (this->mSmooth)
+            {
+
+            }
+            else
+            {
+                path.lineTo(p1.x(), p1.y());
+            }
+        }
+        painter->drawPath(path);
+        painter->strokePath(path, this->mLineColor);
     }
 }

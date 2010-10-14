@@ -55,6 +55,8 @@ class PolygonAnnotation;
 class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
+class InheritanceAnnotation;
+class ComponentAnnotation;
 
 class IconAnnotation : public ShapeAnnotation
 {
@@ -63,8 +65,7 @@ private:
     QString mIconAnnotationString;
     QString mName;
     QString mClassName;
-    QRectF mRectangle;
-    QPixmap mIconPixmap;
+    bool mIsClone;
     CornerItem *mpTopLeftCornerItem;
     CornerItem *mpTopRightCornerItem;
     CornerItem *mpBottomLeftCornerItem;
@@ -72,24 +73,29 @@ private:
 public:
     IconAnnotation(QString value, QString name, QString className, QPointF position, OMCProxy *omc,
                    GraphicsScene *graphicsScene, GraphicsView *graphicsView);
+    IconAnnotation(QString value, QString name, QString className, OMCProxy *omc);
     IconAnnotation(const IconAnnotation *icon, QString name, QPointF position, GraphicsScene *graphicsScene,
                    GraphicsView *graphicsView);
     ~IconAnnotation();
 
+    QRectF mRectangle;
     OMCProxy *mpOMCProxy;
     GraphicsScene *mpGraphicsScene;
     GraphicsView *mpGraphicsView;
+    QList<LineAnnotation*> mpLinesList;
+    QList<PolygonAnnotation*> mpPolygonsList;
+    QList<RectangleAnnotation*> mpRectanglesList;
+    QList<EllipseAnnotation*> mpEllipsesList;
+    QList<TextAnnotation*> mpTextsList;
+    QList<InheritanceAnnotation*> mpInheritanceList;
+    QList<ComponentAnnotation*> mpComponentsList;
 
     void parseIconAnnotationString(QGraphicsItem *item, QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
-    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
-    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
-    QPixmap getIcon();
     QString getName();
     QString getClassName();
-    void getClassComponents(QString className);
+    void getClassComponents(QString className, bool libraryIcon = false);
     QList<QPointF> getBoundingRect();
     void createSelectionBox();
     void setSelectionBoxActive();
@@ -109,6 +115,11 @@ public slots:
     void moveDown();
     void moveLeft();
     void moveRight();
+protected:
+    virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
+    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
 
 #endif // ICONANNOTATION_H
