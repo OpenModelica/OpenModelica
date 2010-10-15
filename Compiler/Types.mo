@@ -5679,11 +5679,10 @@ end solvePolymorphicBindingsLoop;
 
 protected function solveBindings
 "Checks all types against each other to find an unbound polymorphic variable, which will then become bound.
-Quadratic algorithm, but at least the lists are short and we remove duplicates before starting...
+Uses unification to solve the system, but the algorithm is slow (possibly quadratic).
+The good news is we don't have functions with many unknown types in the compiler.
 
-For example, {Option<Type_x>,Option<Integer>} becomes {Option<Type_x>,Option<Integer>}
-
-Horribly complicated function to keep track of what it does...
+Horribly complicated function to keep track of what happens...
 "
   input list<Type> tys1;
   input list<Type> tys2;

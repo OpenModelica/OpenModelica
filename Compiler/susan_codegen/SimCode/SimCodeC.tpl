@@ -54,7 +54,8 @@ template translateModel(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsFile(functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
@@ -72,7 +73,8 @@ template translateFunctions(FunctionCode functionCode)
 match functionCode
 case FUNCTIONCODE(__) then
   let filePrefix = name
-  let()= textFile(functionsFile(mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.c')
+  let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
+  let()= textFile(functionsFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.c')
   let()= textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile')
   "" // Return empty result since result written to files directly
 end translateFunctions;
@@ -163,13 +165,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "string.h"
   #include "simulation_runtime.h"
   
-  #if defined(_MSC_VER) && !defined(_SIMULATION_RUNTIME_H)
-    #define DLLExport   __declspec( dllexport )
-  #else 
-    #define DLLExport /* nothing */
-  #endif 
-  
-  #include "<%fileNamePrefix%>_functions.cpp"
+  #include "<%fileNamePrefix%>_functions.h"
   
   >>
 end simulationFileHeader;
@@ -2252,29 +2248,33 @@ case SES_WHEN(__) then
 end equationWhen;
 
 
-template simulationFunctionsFile(list<Function> functions, list<String> includes)
+template simulationFunctionsFile(String filePrefix, list<Function> functions, list<String> includes)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
-  #ifdef __cplusplus
+  #include "<%filePrefix%>_functions.h"
+  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
   extern "C" {
-  #endif
-  
-  /* Header */
-  <%externalFunctionIncludes(includes)%>
-  <%functionHeaders(functions)%>
-  /* End Header */
-  
-  /* Body */
   <%functionBodies(functions)%>
-  /* End Body */
-  
-  #ifdef __cplusplus
   }
-  #endif
-  
   >>
 end simulationFunctionsFile;
+
+template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<String> includes)
+ "Generates the content of the C file for functions in the simulation case."
+::=
+  <<
+  #ifndef <%filePrefix%>__functions__H
+  #define <%filePrefix%>__functions__H
+  <%commonHeader()%>
+  extern "C" {
+  <%externalFunctionIncludes(includes)%>
+  <%functionHeaders(functions)%>
+  }
+  #endif
+  >>
+end simulationFunctionsHeaderFile;
 
 
 template simulationMakefile(SimCode simCode)
@@ -2299,8 +2299,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: <%fileNamePrefix%>.cpp
-  <%\t%> $(CXX) $(CFLAGS) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) <%libsPos2%>
+  <%fileNamePrefix%>: <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h
+  <%\t%> $(CXX) $(CFLAGS) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) <%libsPos2%>
   >>
 end simulationMakefile;
 
@@ -2359,16 +2359,10 @@ template initVals(list<SimVar> varsLst) ::=
   ;separator="\n"
 end initVals;
 
-
-template functionsFile(Function mainFunction,
-                       list<Function> functions,
-                       list<RecordDeclaration> extraRecordDecls,
-                       list<String> includes)
- "Generates the contents of the main C file for the function case."
+template commonHeader()
 ::=
   <<
   #include "modelica.h"
-  #include <algorithm>
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
@@ -2378,36 +2372,57 @@ template functionsFile(Function mainFunction,
   #else
     #define DLLExport /* nothing */
   #endif
+  >>
+end commonHeader;
+
+template functionsFile(String filePrefix,
+                       Function mainFunction,
+                       list<Function> functions,
+                       list<RecordDeclaration> extraRecordDecls,
+                       list<String> includes)
+ "Generates the contents of the main C file for the function case."
+::=
+  <<
+  #include "<%filePrefix%>.h"
+  #include <algorithm>
+  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
+
+  extern "C" {
+  <%functionBody(mainFunction,true)%>
+  <%functionBodies(functions)%>
+  <%extraRecordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+  }
   
-  #if !defined(MODELICA_ASSERT)
-    #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
-  #endif
-  #if !defined(MODELICA_TERMINATE)
-    #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
-  #endif
-  
+  >>
+end functionsFile;
+
+template functionsHeaderFile(String filePrefix,
+                       Function mainFunction,
+                       list<Function> functions,
+                       list<RecordDeclaration> extraRecordDecls,
+                       list<String> includes)
+ "Generates the contents of the main C file for the function case."
+::=
+  <<
+  #ifndef <%filePrefix%>__H
+  #define <%filePrefix%>__H
+  <%commonHeader()%>
   #ifdef __cplusplus
   extern "C" {
   #endif
   
-  /* Header */
   <%externalFunctionIncludes(includes)%>
   <%functionHeader(mainFunction,true)%>
   <%functionHeaders(functions)%>
-  <%extraRecordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
-  /* End Header */
-  
-  /* Body */
-  <%functionBody(mainFunction,true)%>
-  <%functionBodies(functions)%>
-  /* End Body */
-  
+  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
+
   #ifdef __cplusplus
   }
-  #endif<%\n%>
+  #endif
+  #endif
   >>
-end functionsFile;
-
+end functionsHeaderFile;
 
 template functionsMakefile(FunctionCode fnCode)
  "Generates the contents of the makefile for the function case."
@@ -2427,7 +2442,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   
   .PHONY: <%name%>
-  <%name%>: <%name%>.c
+  <%name%>: <%name%>.c <%name%>.h
   <%\t%> $(LINK) $(CFLAGS) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(LDFLAGS) -lm
   >>
 end functionsMakefile;
@@ -2624,13 +2639,13 @@ template functionHeader(Function fn, Boolean inFunc)
   match fn
     case FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), funArgs, outVars)%>
   
@@ -2650,17 +2665,15 @@ template functionHeader(Function fn, Boolean inFunc)
           modelica_metatype targ1;
         } <%fname%>_rettypeboxed;
         
-        DLLExport
         <%fname%>_rettypeboxed boxptr_<%fname%>(<%funArgsBoxedStr%>);
         >>
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       #define <%fname%>_rettype_1 targ1
       typedef struct <%fname%>_rettype_s {
         struct <%fname%> targ1;
       } <%fname%>_rettype;
       
-      DLLExport 
       <%fname%>_rettype _<%fname%>(<%funArgsStr%>);
 
       <%boxedHeader%>
@@ -2673,27 +2686,46 @@ template recordDeclaration(RecordDeclaration recDecl)
   match recDecl
   case RECORD_DECL_FULL(__) then
     <<
-    struct <%name%> {
-      <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
-    };
     <%recordDefinition(dotPath(defPath),
                       underscorePath(defPath),
-                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","))%>
+                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
+                      listLength(variables))%>
     >> 
   case RECORD_DECL_DEF(__) then
     <<
     <%recordDefinition(dotPath(path),
                       underscorePath(path),
-                      (fieldNames |> name => '"<%name%>"' ;separator=","))%>
+                      (fieldNames |> name => '"<%name%>"' ;separator=","),
+                      listLength(fieldNames))%>
     >>
 end recordDeclaration;
 
+template recordDeclarationHeader(RecordDeclaration recDecl)
+ "Generates structs for a record declaration."
+::=
+  match recDecl
+  case RECORD_DECL_FULL(__) then
+    <<
+    struct <%name%> {
+      <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+    };
+    <%recordDefinitionHeader(dotPath(defPath),
+                      underscorePath(defPath),
+                      listLength(variables))%>
+    >> 
+  case RECORD_DECL_DEF(__) then
+    <<
+    <%recordDefinitionHeader(dotPath(path),
+                      underscorePath(path),
+                      listLength(fieldNames))%>
+    >>
+end recordDeclarationHeader;
 
-template recordDefinition(String origName, String encName, String fieldNames)
+template recordDefinition(String origName, String encName, String fieldNames, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
   <<
-  const char* <%encName%>__desc__fields[] = {<%fieldNames%>};
+  const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};
   struct record_description <%encName%>__desc = {
     "<%encName%>", /* package_record__X */
     "<%origName%>", /* package.record_X */
@@ -2701,6 +2733,15 @@ template recordDefinition(String origName, String encName, String fieldNames)
   };
   >>
 end recordDefinition;
+
+template recordDefinitionHeader(String origName, String encName, Integer numFields)
+ "Generates the definition struct for a record declaration."
+::=
+  <<
+  extern const char* <%encName%>__desc__fields[<%numFields%>];
+  extern struct record_description <%encName%>__desc;
+  >>
+end recordDefinitionHeader;
 
 template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc)
 ::= functionHeaderImpl(fname, fargs, outVars, inFunc, false)
@@ -2739,11 +2780,9 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
 
-  DLLExport 
   <%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
   >> else <<
 
-  DLLExport 
   void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
   >>
 end functionHeaderImpl;
@@ -2930,6 +2969,7 @@ case FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     <%funArgs%>
@@ -2985,6 +3025,7 @@ case EXTERNAL_FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>' ;separator=", "%>)
   {
     <%varDecls%>
@@ -3028,6 +3069,7 @@ case RECORD_CONSTRUCTOR(__) then
   let structVar = tempDecl(structType, &varDecls /*BUFC*/)
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
