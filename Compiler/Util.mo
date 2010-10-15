@@ -69,6 +69,16 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
+public uniontype DateTime
+  record DATETIME
+    Integer sec;
+    Integer min;
+    Integer hour;
+    Integer mday;
+    Integer mon;
+    Integer year;
+  end DATETIME;
+end DateTime;
 
 protected import System;
 protected import Print;
@@ -6295,6 +6305,19 @@ algorithm
       then head;
   end matchcontinue;
 end selectList;
+
+public function getCurrentDateTime
+  output DateTime dt;
+  Integer sec;
+  Integer min;
+  Integer hour;
+  Integer mday;
+  Integer mon;
+  Integer year;  
+algorithm
+  (sec,min,hour,mday,mon,year) := System.getCurrentDateTime();
+  dt := DATETIME(sec,min,hour,mday,mon,year);
+end getCurrentDateTime;
 
 end Util;
 

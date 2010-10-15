@@ -2186,7 +2186,45 @@ RML_BEGIN_LABEL(System__getCurrentTimeStr)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCurrentDateTime)
+{
+  time_t t;
+  struct tm* localTime;
+  int sec;
+  int min;
+  int hour;
+  int mday;
+  int mon;
+  int year;
+  time( &t );
+  localTime = localtime(&t);
+  sec = localTime->tm_sec;
+  min = localTime->tm_min;
+  hour = localTime->tm_hour;
+  mday = localTime->tm_mday;
+  mon = localTime->tm_mon + 1;
+  year = localTime->tm_year + 1900;
+  rmlA0 = (void*) mk_icon(sec);
+  rmlA1 = (void*) mk_icon(min);
+  rmlA2 = (void*) mk_icon(hour);
+  rmlA3 = (void*) mk_icon(mday);
+  rmlA4 = (void*) mk_icon(mon);
+  rmlA5 = (void*) mk_icon(year);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getUUIDStr)
+{
+  char uuidStr[50] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
+  //uuid_t uuid;
+  //uuid_generate(uuid);
+  //uuid_unparse(uuid,uuidStr);
+  //uuid_clear(uuid);
+  rmlA0 = mk_scon(uuidStr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 #else /********************************* LINUX PART!!! *************************************/
 
@@ -2997,6 +3035,46 @@ RML_BEGIN_LABEL(System__getCurrentTimeStr)
   localTime = localtime(&t);
   dateStr = asctime(localTime);
   rmlA0 = mk_scon(dateStr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getCurrentDateTime)
+{
+  time_t t;
+  struct tm* localTime;
+  int sec;
+  int min;
+  int hour;
+  int mday;
+  int mon;
+  int year;
+  time( &t );
+  localTime = localtime(&t);
+  sec = localTime->tm_sec;
+  min = localTime->tm_min;
+  hour = localTime->tm_hour;
+  mday = localTime->tm_mday;
+  mon = localTime->tm_mon + 1;
+  year = localTime->tm_year + 1900;
+  rmlA0 = (void*) mk_icon(sec);
+  rmlA1 = (void*) mk_icon(min);
+  rmlA2 = (void*) mk_icon(hour);
+  rmlA3 = (void*) mk_icon(mday);
+  rmlA4 = (void*) mk_icon(mon);
+  rmlA5 = (void*) mk_icon(year);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getUUIDStr)
+{
+  char uuidStr[50] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
+  //uuid_t uuid;
+  //uuid_generate(uuid);
+  //uuid_unparse(uuid,uuidStr);
+  //uuid_clear(uuid);
+  rmlA0 = mk_scon(uuidStr);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
