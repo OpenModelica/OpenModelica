@@ -531,6 +531,19 @@ public function getCurrentTime
   external "C" ;
 end getCurrentTime;
 
+public function getCurrentDateTime
+"@author Frenkel TUD
+ this system function returns current time elapsed
+ since the Epoch (00:00:00 UTC, January 1, 1970)."
+  output Integer sec;
+  output Integer min;
+  output Integer hour;
+  output Integer mday;
+  output Integer mon;
+  output Integer year;
+  external "C" ;
+end getCurrentDateTime;
+
 public function getCurrentTimeStr "
 returns current time in format Www Mmm dd hh:mm:ss yyyy
 using the asctime() function in time.h (libc)
@@ -819,6 +832,13 @@ function refEqual
   
   external "C";
 end refEqual;
+
+public function getUUIDStr "
+creates the Globally Unique IDentifier and return it as String
+"
+  output String uuidStr;
+  external "C";
+end getUUIDStr;
 
 end System;
 

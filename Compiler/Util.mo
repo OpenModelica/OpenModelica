@@ -74,6 +74,16 @@ public uniontype Status "Used to signal success or failure of a function call"
   record FAILURE end FAILURE;
 end Status;
 
+public uniontype DateTime
+  record DATETIME
+    Integer sec;
+    Integer min;
+    Integer hour;
+    Integer mday;
+    Integer mon;
+    Integer year;
+  end DATETIME;
+end DateTime;
 
 protected import System;
 protected import Print;
@@ -6431,5 +6441,17 @@ algorithm
   end matchcontinue;
 end listMapMap_tail;
 
-end Util;
+public function getCurrentDateTime
+  output DateTime dt;
+  Integer sec;
+  Integer min;
+  Integer hour;
+  Integer mday;
+  Integer mon;
+  Integer year;  
+algorithm
+  (sec,min,hour,mday,mon,year) := System.getCurrentDateTime();
+  dt := DATETIME(sec,min,hour,mday,mon,year);
+end getCurrentDateTime;
 
+end Util;

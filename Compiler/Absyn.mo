@@ -1540,7 +1540,8 @@ algorithm
 
     case ((e as ARRAY(expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        // Also traverse expressions within the array. Daniel Hedberg 2010-10.
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((ARRAY(expl_1),ext_arg_2));
@@ -1548,7 +1549,8 @@ algorithm
     case ((e as MATRIX(mexpl)),rel,ext_arg)
       local list<list<Exp>> mexpl,mexpl1;
       equation
-        (mexpl1,ext_arg_1) = Util.listlistFoldMap(mexpl,rel,ext_arg);
+        // Also traverse expressions within the matrix. Daniel Hedberg 2010-10.
+        ((mexpl1,ext_arg_1)) = traverseExpListList(mexpl, rel, ext_arg);
         ((MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((MATRIX(mexpl1),ext_arg_2));
@@ -1568,12 +1570,14 @@ algorithm
         ((RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
+
     case ((e as TUPLE(expl)),rel,ext_arg)
       equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
         ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((TUPLE(expl_1),ext_arg_2));
+
     case (e,rel,ext_arg)
       equation
         ((e_1,ext_arg_1)) = rel((e,ext_arg));
@@ -1582,25 +1586,56 @@ algorithm
   end matchcontinue;
 end traverseExp;
 
+public function traverseExpListList
+"
+  Calls traverseExpList on each element in the given list.
+"
+  input list<list<Exp>> inExpListList;
+  input FuncTplToTpl inFunc;
+  input Type_a inTypeA;
+  output tuple<list<list<Exp>>, Type_a> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Exp, Type_a> inTpl;
+    output tuple<Exp, Type_a> outTpl;
+    replaceable type Type_a subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inExpListList,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      Type_a arg,arg_1,arg_2;
+      list<Exp> e,e_1;
+      list<list<Exp>> cdr,cdr_1;
+    case({},_,arg) then (({},arg));
+    case(e :: cdr,rel,arg)
+      equation
+        ((e_1,arg_1)) = traverseExpList(e,rel,arg);
+        ((cdr_1,arg_2)) = traverseExpListList(cdr,rel,arg_1);
+      then
+        ((e_1 :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseExpListList;
+
 // stefan
 public function traverseExpList
 "function: traverseExpList
   calls traverseExp on each element in the given list"
   input list<Exp> inExpList;
   input FuncTplToTpl inFunc;
-  input TypeA inTypeA;
-  output tuple<list<Exp>, TypeA> outTpl;
+  input Type_a inTypeA;
+  output tuple<list<Exp>, Type_a> outTpl;
   partial function FuncTplToTpl
-    input tuple<Exp, TypeA> inTpl;
-    output tuple<Exp, TypeA> outTpl;
-    replaceable type TypeA subtypeof Any;
+    input tuple<Exp, Type_a> inTpl;
+    output tuple<Exp, Type_a> outTpl;
+    replaceable type Type_a subtypeof Any;
   end FuncTplToTpl;
-  replaceable type TypeA subtypeof Any;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTpl := matchcontinue (inExpList,inFunc,inTypeA)
     local
       FuncTplToTpl rel;
-      TypeA arg,arg_1,arg_2;
+      Type_a arg,arg_1,arg_2;
       Exp e,e_1;
       list<Exp> cdr,cdr_1;
     case({},_,arg) then (({},arg));

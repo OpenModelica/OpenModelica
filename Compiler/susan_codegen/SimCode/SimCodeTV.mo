@@ -7,7 +7,19 @@ package builtin
     input list<TypeVar> lst;
     output Integer result;
   end listLength;
-
+  
+  function intAdd
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intAdd;
+  
+  function stringEqual
+    input String a;
+    input String b;
+    output Boolean res;
+  end stringEqual;
+  
 end builtin;
 
 
@@ -440,6 +452,14 @@ package System
   function tmpTickReset
     input Integer start;
   end tmpTickReset;
+
+  function getCurrentTimeStr
+    output String timeStr;
+  end getCurrentTimeStr;
+
+  function getUUIDStr 
+    output String uuidStr;
+  end getUUIDStr;
 
 end System;
 
@@ -1003,10 +1023,25 @@ end ClassInf;
 
 package Util
   
+	uniontype DateTime
+	  record DATETIME
+	    Integer sec;
+	    Integer min;
+	    Integer hour;
+	    Integer mday;
+	    Integer mon;
+	    Integer year;
+	  end DATETIME;
+	end DateTime;  
+  
   function escapeModelicaStringToCString
     input String modelicaString;
     output String cString;
   end escapeModelicaStringToCString;
+
+	function getCurrentDateTime
+	  output DateTime dt;
+	end getCurrentDateTime;
 
 end Util;
 

@@ -53,65 +53,81 @@ template translateModel(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(__) then
-  let()= textFile(fmuModelDescriptionFile(simCode), 'modelDescription.xml')
-  let()= textFile(fmumodel_identifierFile(simCode), '<%fileNamePrefix%>_FMU.cpp')
+  let guid = getUUIDStr()
+  let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
+  let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.cpp')
   let()= textFile(fmuMakefile(simCode), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
 
 
-template fmuModelDescriptionFile(SimCode simCode)
+template fmuModelDescriptionFile(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF8"?>
-  <%fmiModelDescription(simCode)%>
+  <%fmiModelDescription(simCode,guid)%>
   
   >>
 end fmuModelDescriptionFile;
 
-template fmiModelDescription(SimCode simCode)
+template fmiModelDescription(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
+//  <%UnitDefinitions(simCode)%>
+//  <%TypeDefinitions(simCode)%>
+//  <%VendorAnnotations(simCode)%>
 match simCode
 case SIMCODE(__) then
   <<
-  <fmiModelDescription <%fmiModelDescriptionAttributes(simCode)%>>
-  <%UnitDefinitions(simCode)%>
-  <%TypeDefinitions(simCode)%>
-  <%DefaultExperiment(simCode)%>
-  <%VendorAnnotations(simCode)%>
+  <fmiModelDescription 
+  <%fmiModelDescriptionAttributes(simCode,guid)%>>
+  <%DefaultExperiment(simulationSettingsOpt)%>
   <%ModelVariables(modelInfo)%>  
   </fmiModelDescription>  
   >>
 end fmiModelDescription;
 
-template fmiModelDescriptionAttributes(SimCode simCode)
+template fmiModelDescriptionAttributes(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(__)) then
+case SIMCODE(modelInfo=MODELINFO(varInfo=VARINFO(numStateVars=numStateVars,numZeroCrossings=numZeroCrossings))) then
   let fmiVersion = '1.0' 
   let modelName = dotPath(modelInfo.name)
   let modelIdentifier = fileNamePrefix
-  let guid = '0.0'
   let description = ''
   let author = ''
   let version= '' 
   let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
-  let generationDateAndTime = ''
+  let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention= 'structured'
-  let numberOfContinuousStates = ''
-  let numberOfEventIndicators = '' 
+  let numberOfContinuousStates = numStateVars
+  let numberOfEventIndicators = numZeroCrossings
+//  description="<%description%>" 
+//    author="<%author%>" 
+//    version="<%version%>" 
   << 
-  fmiVersion="<%fmiVersion%>" modelName="<%modelName%>" modelIdentifier="<%modelIdentifier%>" guid="{<%guid%>}" description="<%description%>"
-  author="<%author%>" version="<%version%>" 
-  generationTool="<%generationTool%>" generationDateAndTime="<%generationDateAndTime%>"
-  variableNamingConvention="<%variableNamingConvention%>" numberOfContinuousStates="<%numberOfContinuousStates%>" numberOfEventIndicators="<%numberOfEventIndicators%>" 
+    fmiVersion="<%fmiVersion%>" 
+    modelName="<%modelName%>"
+    modelIdentifier="<%modelIdentifier%>" 
+    guid="{<%guid%>}" 
+    generationTool="<%generationTool%>" 
+    generationDateAndTime="<%generationDateAndTime%>"
+    variableNamingConvention="<%variableNamingConvention%>" 
+    numberOfContinuousStates="<%numberOfContinuousStates%>" 
+    numberOfEventIndicators="<%numberOfEventIndicators%>" 
   >>
 end fmiModelDescriptionAttributes;
+
+template xsdateTime(DateTime dt)
+ "YYYY-MM-DDThh:mm:ssZ"
+::=
+  match dt
+  case DATETIME(__) then '<%year%>-<%mon%>-<%mday%>T<%hour%>:<%min%>:<%sec%>Z'
+end xsdateTime;
 
 template dotPath(Path path)
  "Generates paths with components separated by dots."
@@ -145,16 +161,25 @@ case SIMCODE(__) then
   >>
 end TypeDefinitions;
 
-template DefaultExperiment(SimCode simCode)
+template DefaultExperiment(Option<SimulationSettings> simulationSettingsOpt)
  "Generates code for DefaultExperiment file for FMU target."
 ::=
-match simCode
-case SIMCODE(__) then
-  <<
-  <DefaultExperiment>
-  </DefaultExperiment>  
-  >>
+match simulationSettingsOpt
+  case SOME(v) then 
+	<<
+	  <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
+  	>>
 end DefaultExperiment;
+
+template DefaultExperimentAttribute(SimulationSettings simulationSettings)
+ "Generates code for DefaultExperiment Attribute file for FMU target."
+::=
+match simulationSettings
+  case SIMULATION_SETTINGS(__) then 
+	<<
+	startTime="<%startTime%>" stopTime="<%stopTime%>" tolerance="<%tolerance%>"
+  	>>
+end DefaultExperimentAttribute;
 
 template VendorAnnotations(SimCode simCode)
  "Generates code for VendorAnnotations file for FMU target."
@@ -175,68 +200,135 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <<
   <ModelVariables>
   <%vars.stateVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",0)
   ;separator="\n"%>  
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",10000)
+  ;separator="\n"%>
+  <%vars.inputVars |> var =>
+    ScalarVariable(var,"input",100000)
+  ;separator="\n"%>
+  <%vars.outputVars |> var =>
+    ScalarVariable(var,"output",200000)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",1000000)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var, "parameter")
-  ;separator="\n"%>
-  <%vars.extObjVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",5000000)
   ;separator="\n"%>
   <%vars.intAlgVars |> var =>
-    ScalarVariable(var, "continuous")
+	ScalarVariable(var,"internal",0)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var, "parameter")
+    ScalarVariable(var,"internal",1000000)
   ;separator="\n"%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",0)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var, "parameter")
+    ScalarVariable(var,"internal",1000000)
   ;separator="\n"%>  
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var, "continuous")
+    ScalarVariable(var,"internal",0)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var, "parameter")
+    ScalarVariable(var,"internal",1000000)
   ;separator="\n"%> 
   </ModelVariables>  
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar, String variability)
+template ScalarVariable(SimVar simVar, String causality, Integer offset)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
   case SIMVAR(__) then
   <<
-  <ScalarVariable >
-  <%ScalarVariableAttribute(simVar,variability)%>
+  <ScalarVariable 
+  <%ScalarVariableAttribute(simVar,causality,offset)%>>
+  <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
   </ScalarVariable>  
   >>
 end ScalarVariable;
 
-template ScalarVariableAttribute(SimVar simVar, String variability)
+template ScalarVariableAttribute(SimVar simVar, String causality, Integer offset)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
 match simVar
   case SIMVAR(__) then
-  let valueReference = ''
-  let description = comment
-  let causality = ''
-  let alias = ''
+  let valueReference = intAdd(index,offset)
+  let variability = getVariablity(varKind)
+  let description = if stringEqual(comment,"") then 
+      '' 
+    else 
+      'description="<%comment%>"' 
+  let alias = 'noAlias'  //TODO get the right information about alias {noAlias,alias,negatedAlias}
   <<
-  name="<%crefStr(name)%>" valueReference="<%valueReference%>" description="<%description%>"
-  variability="<%variability%>" causality="<%causality%>" alias="<%alias%>"
+    name="<%crefStr(name)%>" 
+    valueReference="<%valueReference%>" 
+    <%description%>
+    variability="<%variability%>" 
+    causality="<%causality%>" 
+    alias="<%alias%>"
   >>  
 end ScalarVariableAttribute;
+
+template getVariablity(DAELow.VarKind varKind)
+ "Returns the variablity Attribute of ScalarVariable."
+::=
+match varKind
+  case DISCRETE(__) then 'discrete'
+  case PARAM(__) then 'parameter'
+  case CONST(__) then 'constant'
+  else 'continuous'
+end getVariablity;
+
+template ScalarVariableType(DAE.ExpType type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+match type_
+  case ET_INT(__) then '  <Integer/>' 
+  case ET_REAL(__) then '  <Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%>/>' 
+  case ET_BOOL(__) then '  <Boolean/>' 
+  case ET_STRING(__) then '  <String/>' 
+  case ET_ENUMERATION(__) then '  <Enumeration/>' 
+  else 'UNKOWN_TYPE'
+end ScalarVariableType;
+
+template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+match initialValue
+  case SOME(exp) then 'start="<%initVals(exp)%> fixed="<%isFixed%>"'
+end ScalarVariableTypeCommonAttribute;
+
+template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
+ "Generates code for ScalarVariable Type Real file for FMU target."
+::=
+  let unit_ = if stringEqual(unit,"") then 
+      '' 
+    else 
+      'unit="<%unit%>"'   
+  let displayUnit_ = if stringEqual(displayUnit,"") then 
+      '' 
+    else 
+      'displayUnit="<%displayUnit%>"'   
+  <<
+  <%unit_%> <%displayUnit_%>
+  >>
+end ScalarVariableTypeRealAttribute;
+
+template initVals(DAE.Exp initialValue)
+::=
+match initialValue 
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%>'
+  else "*ERROR* initial value of unknown type"
+end initVals;
 
 template crefStr(ComponentRef cr)
  "Generates the name of a variable for variable name array."
@@ -282,15 +374,17 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
   else "UNKNOWN_EXP"
 end daeExp;
 
-template fmumodel_identifierFile(SimCode simCode)
+template fmumodel_identifierFile(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
   #define MODEL_IDENTIFIER <%fileNamePrefix%>
-  #define MODEL_GUID 
+  #define MODEL_GUID "<%guid%>"
   #include "fmiModelFunctions.h"
+  // implementation of the Model Exchange functions
+  #include "fmu_model_interface.c"
   
   >>
 end fmumodel_identifierFile;
