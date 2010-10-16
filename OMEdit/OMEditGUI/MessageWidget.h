@@ -31,6 +31,13 @@
  *
  */
 
+/*
+ * HopsanGUI
+ * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
+ * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
+ * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
+ */
+
 #ifndef MESSAGEWIDGET_H
 #define MESSAGEWIDGET_H
 

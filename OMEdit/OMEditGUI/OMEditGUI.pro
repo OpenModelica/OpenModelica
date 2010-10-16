@@ -50,7 +50,9 @@ SOURCES += main.cpp\
     ../Pltpkg2/graphWidget.cpp \
     ../Pltpkg2/dataSelect.cpp \
     ../Pltpkg2/curve.cpp \
-    ../Pltpkg2/compoundWidget.cpp
+    ../Pltpkg2/compoundWidget.cpp \
+    IconProperties.cpp \
+    IconParameters.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -96,7 +98,9 @@ HEADERS  += mainwindow.h \
     ../Pltpkg2/focusRect.h \
     ../Pltpkg2/dataSelect.h \
     ../Pltpkg2/curve.h \
-    ../Pltpkg2/compoundWidget.h
+    ../Pltpkg2/compoundWidget.h \
+    IconProperties.h \
+    IconParameters.h
 
 # -------For OMNIorb
 win32 {
@@ -130,4 +134,5 @@ FORMS += \
     ../Pltpkg2/newgraph.ui \
     ../Pltpkg2/graphWindow.ui \
     ../Pltpkg2/dataSelect.ui \
-    ../Pltpkg2/compoundWidget.ui
+    ../Pltpkg2/compoundWidget.ui \
+    IconProperties.ui

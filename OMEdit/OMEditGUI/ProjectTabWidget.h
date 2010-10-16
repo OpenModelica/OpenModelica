@@ -31,6 +31,13 @@
  *
  */
 
+/*
+ * HopsanGUI
+ * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
+ * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
+ * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
+ */
+
 #ifndef PROJECTTABWIDGET_H
 #define PROJECTTABWIDGET_H
 
@@ -71,19 +78,25 @@ public:
     Connector *getConnector();
     void addIconObject(IconAnnotation* icon);
     void deleteIconObject(IconAnnotation* icon);
-    QString checkIconName(QString iconName, int number = 0);
+    QString getUniqueIconName(QString iconName, int number = 0);
+    bool checkIconName(QString iconName);
 
     bool mIsCreatingConnector;
     QVector<Connector *> mConnectorVector;
     ProjectTab *mpParentProjectTab;
-    QAction *mCancelConnectionAction;
-    QAction *mDeleteIconAction;
+    QAction *mpCancelConnectionAction;
+    QAction *mpRotateIconAction;
+    QAction *mpRotateAntiIconAction;
+    QAction *mpResetRotation;
+    QAction *mpDeleteIconAction;
 signals:
     void keyPressDelete();
     void keyPressUp();
     void keyPressDown();
     void keyPressLeft();
     void keyPressRight();
+    void keyPressRotateClockwise();
+    void keyPressRotateAntiClockwise();
 public slots:
     void addConnector(ComponentAnnotation *pComponent);
     void removeConnector();
@@ -130,8 +143,11 @@ public:
     GraphicsView *mpGraphicsView;
     GraphicsScene *mpGraphicsScene;
     QString mModelFileName;
-    QString mModelFileStrucrure;
+    QString mModelName;
+    QString mModelNameStructure;
+    bool mIsSaved;
 public slots:
+    void hasChanged();
     void showModelicaModel();
     void showModelicaText();
     void ModelicaEditorTextChanged();
@@ -150,6 +166,10 @@ public:
 public slots:
     void addProjectTab(ProjectTab *projectTab, QString tabName="Untitled");
     void addNewProjectTab(QString tabName, QString modelStructure);
+    void saveProjectTab();
+    void saveProjectTabAs();
+    void saveProjectTab(int index, bool saveAs);
+    bool saveModel(bool saveAs);
     bool closeProjectTab(int index);
     bool closeAllProjectTabs();
     void loadModel();

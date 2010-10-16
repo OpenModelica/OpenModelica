@@ -38,7 +38,7 @@ ComponentsProperties::ComponentsProperties(QString value)
 {
     this->mClassName = "";
     this->mName = "";
-    this->mDescription = "";
+    this->mComment = "";
     this->mIsProtected = false;
     this->mIsFinal = false;
     this->mIsFlow = false;
@@ -79,7 +79,7 @@ void ComponentsProperties::parseString(QString value)
         return;
 
     if (list.size() > 2)
-        this->mDescription = list.at(2);
+        this->mComment = list.at(2);
     else
         return;
 
@@ -154,4 +154,9 @@ QString ComponentsProperties::getClassName()
 QString ComponentsProperties::getName()
 {
     return mName;
+}
+
+QString ComponentsProperties::getComment()
+{
+    return mComment;
 }

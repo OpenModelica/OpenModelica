@@ -31,6 +31,13 @@
  *
  */
 
+/*
+ * HopsanGUI
+ * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
+ * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
+ * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
+ */
+
 #include <QtGui>
 #include <QSizePolicy>
 #include <QMap>
@@ -44,8 +51,6 @@
 #include "ProjectTabWidget.h"
 #include "LibraryWidget.h"
 #include "mainwindow.h"
-#include "MessageWidget.h"
-#include "Helper.h"
 
 //! @class GraphicsView
 //! @brief The GraphicsView class is a class which display the content of a scene of components.
@@ -148,7 +153,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
         // Check if the icon is already loaded.
         IconAnnotation *oldIcon = pMainWindow->mpLibrary->getGlobalIconObject(item->toolTip(0));
         IconAnnotation *newIcon;
-        QString iconName = checkIconName(item->text(0).toLower());
+        QString iconName = getUniqueIconName(item->text(0).toLower());
 
         if (oldIcon == NULL)
         {
@@ -164,7 +169,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
             addIconObject(newIcon);
         }
         // Add the component to model in OMC Global Scope.
-        pMainWindow->mpOMCProxy->addComponent(iconName, item->toolTip(0), mpParentProjectTab->mModelFileStrucrure);
+        pMainWindow->mpOMCProxy->addComponent(iconName, item->toolTip(0), mpParentProjectTab->mModelNameStructure);
         event->accept();
     }
     else
@@ -200,10 +205,10 @@ void GraphicsView::deleteIconObject(IconAnnotation *icon)
     }
     // remove the icon now
     mIconsList.removeOne(icon);
-    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(icon->getName(), mpParentProjectTab->mModelFileStrucrure);
+    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(icon->getName(), mpParentProjectTab->mModelNameStructure);
 }
 
-QString GraphicsView::checkIconName(QString iconName, int number)
+QString GraphicsView::getUniqueIconName(QString iconName, int number)
 {
     QString name;
     if (number > 0)
@@ -214,11 +219,24 @@ QString GraphicsView::checkIconName(QString iconName, int number)
     {
         if (icon->getName() == name)
         {
-            name = checkIconName(iconName, ++number);
+            name = getUniqueIconName(iconName, ++number);
             break;
         }
     }
     return name;
+}
+
+bool GraphicsView::checkIconName(QString iconName)
+{
+    foreach (IconAnnotation *icon, mIconsList)
+    {
+        if (icon->getName() == iconName)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
@@ -268,10 +286,22 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     {
         emit keyPressRight();
     }
-    else if (event->modifiers() and Qt::ControlModifier and event->key() == Qt::Key_A)
+    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_A)
+    {
         this->selectAll();
+    }
+    else if (!event->modifiers().testFlag(Qt::ShiftModifier) and event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_R)
+    {
+        emit keyPressRotateClockwise();
+    }
+    else if (event->modifiers().testFlag(Qt::ShiftModifier) and event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_R)
+    {
+        emit keyPressRotateAntiClockwise();
+    }
     else
+    {
         QGraphicsView::keyPressEvent(event);
+    }
 }
 
 //! Defines what shall happen when a key is released.
@@ -283,12 +313,23 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 
 void GraphicsView::createActions()
 {
-    mCancelConnectionAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"), tr("&Cancel Connection"), this);
-    connect(mCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));
-
-    mDeleteIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"), tr("&Delete"), this);
-    mDeleteIconAction->setShortcut(QKeySequence::Delete);
-
+    // Connection Delete Action
+    mpCancelConnectionAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"),
+                                          tr("&Cancel Connection"), this);
+    connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));
+    // Icon Delete Action
+    mpDeleteIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"), tr("&Delete"), this);
+    mpDeleteIconAction->setShortcut(QKeySequence::Delete);
+    // Icon Rotate ClockWise Action
+    mpRotateIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/rotateclockwise.png"),
+                                    tr("&Rotate Clockwise"), this);
+    mpRotateIconAction->setShortcut(QKeySequence("Ctrl+r"));
+    // Icon Rotate Anti-ClockWise Action
+    mpRotateAntiIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/rotateanticlockwise.png"),
+                                        tr("&Rotate Anticlockwise"), this);
+    mpRotateAntiIconAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
+    // Icon Reset Rotation Action
+    mpResetRotation = new QAction(tr("&Rotate Anticlockwise"), this);
 }
 
 void GraphicsView::createMenus()
@@ -301,8 +342,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     if (mIsCreatingConnector)
     {
         QMenu menu(this);
-        mCancelConnectionAction->setText("Cancel Connection");
-        menu.addAction(mCancelConnectionAction);
+        mpCancelConnectionAction->setText("Cancel Connection");
+        menu.addAction(mpCancelConnectionAction);
         menu.exec(event->globalPos());
     }
     QGraphicsView::contextMenuEvent(event);
@@ -329,6 +370,7 @@ void GraphicsView::addConnector(ComponentAnnotation *pComponent)
         this->mpConnector->addPoint(startPos);
         this->mpConnector->drawConnector();
     }
+    // When clicking end port
     else
     {
         ComponentAnnotation *pStartComponent = this->mpConnector->getStartComponent();
@@ -341,27 +383,36 @@ void GraphicsView::addConnector(ComponentAnnotation *pComponent)
         // If both components are same
         if (pStartComponent == pComponent)
         {
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(tr("You can not connect a port to itself."));
+            removeConnector();
+            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
         }
         else
         {
             if (pMainWindow->mpOMCProxy->addConnection(startIconName + "." + startIconCompName,
                                                        endIconName + "." + endIconCompName,
-                                                       mpParentProjectTab->mModelFileStrucrure))
+                                                       mpParentProjectTab->mModelNameStructure))
             {
-                this->mIsCreatingConnector = false;
-                QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-                this->mpConnector->updateEndPoint(newPos);
-                pComponent->getParentIcon()->addConnector(this->mpConnector);
-                this->mpConnector->setEndComponent(pComponent);
-                this->mConnectorVector.append(mpConnector);
-                pMainWindow->mpMessageWidget->printGUIInfoMessage("Conncted: (" + startIconName + "." + startIconCompName +
-                                                                  ", " + endIconName + "." + endIconCompName + ")");
-            }
-            else
-            {
-                //! @todo Make the addconnection feature better. OMC doesn't handle the wrong connections.
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
+                // Check if both ports connected are compatible or not.
+                if (pMainWindow->mpOMCProxy->instantiateModel(mpParentProjectTab->mModelNameStructure))
+                {
+                    this->mIsCreatingConnector = false;
+                    QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
+                    this->mpConnector->updateEndPoint(newPos);
+                    pComponent->getParentIcon()->addConnector(this->mpConnector);
+                    this->mpConnector->setEndComponent(pComponent);
+                    this->mConnectorVector.append(mpConnector);
+                    pMainWindow->mpMessageWidget->printGUIInfoMessage("Conncted: (" + startIconName + "." + startIconCompName +
+                                                                      ", " + endIconName + "." + endIconCompName + ")");
+                }
+                else
+                {
+                    removeConnector();
+                    pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
+                    // remove the connection from model
+                    pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
+                                                              endIconName + "." + endIconCompName,
+                                                              mpParentProjectTab->mModelNameStructure);
+                }
             }
         }
     }
@@ -424,7 +475,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
 
         if (pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
                                                       endIconName + "." + endIconCompName,
-                                                      mpParentProjectTab->mModelFileStrucrure))
+                                                      mpParentProjectTab->mModelNameStructure))
         {
             pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconncted: (" + startIconName + "." + startIconCompName +
                                                               ", " + endIconName + "." + endIconCompName + ")");
@@ -488,6 +539,7 @@ GraphicsScene::GraphicsScene(ProjectTab *parent)
         :   QGraphicsScene(parent)
 {
     mpParentProjectTab = parent;
+    connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
 GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
@@ -512,6 +564,8 @@ void GraphicsViewScroll::scrollContentsBy(int dx, int dy)
 ProjectTab::ProjectTab(ProjectTabWidget *parent)
     : QWidget(parent)
 {
+    mIsSaved = true;
+    mModelFileName.clear();
     mpParentProjectTabWidget = parent;
     if (!mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->isEnabled())
         mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->setEnabled(true);
@@ -555,6 +609,21 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     setLayout(tabLayout);
 }
 
+//! Should be called when a model has changed in some sense,
+//! e.g. a component added or a connection has changed.
+void ProjectTab::hasChanged()
+{
+    if (mIsSaved)
+    {
+        QString tabName = mpParentProjectTabWidget->tabText(mpParentProjectTabWidget->currentIndex());
+
+        tabName.append("*");
+        mpParentProjectTabWidget->setTabText(mpParentProjectTabWidget->currentIndex(), tabName);
+
+        mIsSaved = false;
+    }
+}
+
 void ProjectTab::showModelicaModel()
 {
     mpModelicaModelButton->setChecked(true);
@@ -569,7 +638,7 @@ void ProjectTab::showModelicaText()
     mpModelicaTextButton->setChecked(true);
     mpViewScrollArea->hide();
     // get the modelica text of the model
-    mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelFileStrucrure));
+    mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
     mpModelicaEditor->show();
 }
 
@@ -594,6 +663,9 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     this->mShowLines = false;
     if (this->count() == 0)
         mpParentMainWindow->gridLinesAction->setEnabled(false);
+
+    connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
+    connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
@@ -620,10 +692,115 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString tabName)
 void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure)
 {
     ProjectTab *newTab = new ProjectTab(this);
-    newTab->mModelFileName = modelName;
-    newTab->mModelFileStrucrure = modelStructure + modelName;
+    newTab->mIsSaved = false;
+    newTab->mModelName = modelName;
+    newTab->mModelNameStructure = modelStructure + modelName;
     addTab(newTab, modelName.append(QString("*")));
     setCurrentWidget(newTab);
+}
+
+//! Saves current project.
+//! @see saveProjectTab(int index)
+void ProjectTabWidget::saveProjectTab()
+{
+    saveProjectTab(currentIndex(), false);
+}
+
+//! Saves current project to a new model file.
+//! @see saveProjectTab(int index)
+void ProjectTabWidget::saveProjectTabAs()
+{
+    saveProjectTab(currentIndex(), true);
+}
+
+//! Saves project at index.
+//! @param index defines which project to save.
+//! @see saveProjectTab()
+void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
+{
+    ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
+    QString tabName = tabText(index);
+
+    if (pCurrentTab->mIsSaved)
+    {
+        //Nothing to do
+        //statusBar->showMessage(QString("Project: ").append(tabName).append(QString(" is already saved")));
+    }
+    else
+    {
+        if (saveModel(saveAs))
+        {
+            tabName.chop(1);
+            setTabText(index, tabName);
+            pCurrentTab->mIsSaved = true;
+        }
+    }
+}
+
+//! Saves the model in the active project tab to a model file.
+//! @param saveAs tells whether or not an already existing file name shall be used
+//! @see saveProjectTab()
+//! @see loadModel()
+bool ProjectTabWidget::saveModel(bool saveAs)
+{
+    ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(currentWidget());
+    MainWindow *pMainWindow = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+    QString modelFileName;
+    // if first time save or doing a saveas
+    if(pCurrentTab->mModelFileName.isEmpty() | saveAs)
+    {
+        QDir fileDialogSaveDir;
+        modelFileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+                                                             fileDialogSaveDir.currentPath(),
+                                                             Helper::omFileOpenText);
+        if (modelFileName.isEmpty())
+        {
+            return false;
+        }
+        else
+        {
+            if (pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, modelFileName))
+            {
+                if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
+                {
+                    pCurrentTab->mModelFileName = modelFileName;
+                    return true;
+                }
+                // if OMC is unable to save the file
+                else
+                {
+                    QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                         GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                         "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+                    return false;
+                }
+            }
+            // if unable to set source file in OMC
+            else
+            {
+                QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                     GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                     "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+                return false;
+            }
+        }
+    }
+    // if saving the file second time
+    else
+    {
+        if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
+        {
+            return true;
+        }
+        else
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                 "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+            return false;
+        }
+    }
 }
 
 //! Closes current project.
@@ -632,10 +809,48 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
-    removeTab(index);
-    if (this->count() == 0)
-        mpParentMainWindow->gridLinesAction->setEnabled(false);
-    return true;
+    if (!(qobject_cast<ProjectTab *>(widget(index))->mIsSaved))
+    {
+        QString modelName;
+        modelName = tabText(index);
+        modelName.chop(1);
+        QMessageBox msgBox;
+        msgBox.setParent(this);
+        msgBox.setText(QString("The model '").append(modelName).append("'").append(QString(" is not saved.")));
+        msgBox.setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Save);
+
+        int answer = msgBox.exec();
+
+        switch (answer)
+        {
+        case QMessageBox::Save:
+            // Save was clicked
+            std::cout << "ProjectTabWidget: " << "Save and close" << std::endl;
+            saveProjectTab(index, false);
+            removeTab(index);
+            return true;
+        case QMessageBox::Discard:
+            // Don't Save was clicked
+            removeTab(index);
+            return true;
+        case QMessageBox::Cancel:
+            // Cancel was clicked
+            std::cout << "ProjectTabWidget: " << "Cancel closing" << std::endl;
+            return false;
+        default:
+            // should never be reached
+            return false;
+        }
+    }
+    else
+    {
+        removeTab(index);
+        if (this->count() == 0)
+            mpParentMainWindow->gridLinesAction->setEnabled(false);
+        return true;
+    }
 }
 
 //! Closes all opened projects.

@@ -35,7 +35,6 @@
 
 #include "ModelWidget.h"
 #include "StringHandler.h"
-#include "Helper.h"
 #include "ProjectTabWidget.h"
 
 /*
@@ -210,7 +209,8 @@ void NewPackage::createPackage()
 {
     if (this->mpPackageNameTextBox->text().isEmpty())
     {
-        QMessageBox::warning(this, Helper::applicationName, tr("Please enter Package Name"), tr("OK"));
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
+                             GUIMessages::getMessage(GUIMessages::ENTER_PACKAGE_NAME), tr("OK"));
         return;
     }
     QString package, parentPackage, packageStructure;
@@ -229,27 +229,38 @@ void NewPackage::createPackage()
     // Check whether package exists or not.
     if (this->mpParentMainWindow->mpOMCProxy->existClass(package))
     {
-        QMessageBox::warning(this, Helper::applicationName,
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
                              QString("Package '").append(package).append("' already exists").append(parentPackage),
                              tr("OK"));
         return;
     }
     // create the package.
     if (this->mpParentPackageCombo->currentText().isEmpty())
-        this->mpParentMainWindow->mpOMCProxy->createClass("package", this->mpPackageNameTextBox->text());
-    else
-        this->mpParentMainWindow->mpOMCProxy->createSubClass("package", this->mpPackageNameTextBox->text(), this->mpParentPackageCombo->currentText());
-
-    if (!this->mpParentMainWindow->mpOMCProxy->getResult().isEmpty())
     {
-        QMessageBox::warning(this, Helper::applicationName,
-                             QString("Following Error has occurred:\n").append(this->mpParentMainWindow->mpOMCProxy->getResult()),
-                             tr("OK"));
-        return;
+        if(!mpParentMainWindow->mpOMCProxy->createClass("package", this->mpPackageNameTextBox->text()))
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                 "\n\n" + mpParentMainWindow->mpOMCProxy->getResult() +
+                                 "\n\n" + GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS),
+                                 tr("OK"));
+            return;
+        }
+    }
+    else
+    {
+        if(!mpParentMainWindow->mpOMCProxy->createSubClass("package", this->mpPackageNameTextBox->text(), this->mpParentPackageCombo->currentText()))
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                 "\n\n" + mpParentMainWindow->mpOMCProxy->getResult() +
+                                 "\n\n" + GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS),
+                                 tr("OK"));
+            return;
+        }
     }
 
-
-    //Add the model to tree
+    //Add the package to tree
     this->mpParentMainWindow->mpLibrary->addModelNode(this->mpPackageNameTextBox->text(), this->mpParentPackageCombo->currentText(), packageStructure);
     this->accept();
 }
@@ -312,7 +323,8 @@ void NewModel::createModel()
 {
     if (this->mpModelNameTextBox->text().isEmpty())
     {
-        QMessageBox::warning(this, Helper::applicationName, tr("Please enter Model Name"), tr("OK"));
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
+                              GUIMessages::getMessage(GUIMessages::ENTER_MODEL_NAME), tr("OK"));
         return;
     }
     QString model, parentPackage, modelStructure;
@@ -331,23 +343,39 @@ void NewModel::createModel()
     // Check whether model exists or not.
     if (this->mpParentMainWindow->mpOMCProxy->existClass(model))
     {
-        QMessageBox::warning(this, Helper::applicationName,
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
                              QString("Model '").append(model).append("' already exists").append(parentPackage),
                              tr("OK"));
         return;
     }
     // create the model.
     if (this->mpParentPackageCombo->currentText().isEmpty())
-        this->mpParentMainWindow->mpOMCProxy->createClass("model", this->mpModelNameTextBox->text());
-    else
-        this->mpParentMainWindow->mpOMCProxy->createSubClass("model", this->mpModelNameTextBox->text(), this->mpParentPackageCombo->currentText());
-
-    if (!this->mpParentMainWindow->mpOMCProxy->getResult().isEmpty())
     {
-        QMessageBox::warning(this, Helper::applicationName,
-                             QString("Following Error has occurred:\n").append(this->mpParentMainWindow->mpOMCProxy->getResult()),
-                             tr("OK"));
-        return;
+        if (!mpParentMainWindow->mpOMCProxy->createClass("model", this->mpModelNameTextBox->text()))
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                 "\n\n" + mpParentMainWindow->mpOMCProxy->getResult() +
+                                 "\n\n" + GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS),
+                                 tr("OK"));
+            return;
+        }
+    }
+
+    else
+    {
+        if(!mpParentMainWindow->mpOMCProxy->createSubClass("model", this->mpModelNameTextBox->text(), this->mpParentPackageCombo->currentText()))
+        {
+            if (!mpParentMainWindow->mpOMCProxy->createClass("model", this->mpModelNameTextBox->text()))
+            {
+                QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                     GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                                     "\n\n" + mpParentMainWindow->mpOMCProxy->getResult() +
+                                     "\n\n" + GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS),
+                                     tr("OK"));
+                return;
+            }
+        }
     }
 
     //open the new tab in central widget and add the model to tree.

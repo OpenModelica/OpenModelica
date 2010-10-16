@@ -31,19 +31,30 @@
  *
  */
 
-#ifndef SHAPEANNOTATION_H
-#define SHAPEANNOTATION_H
+#ifndef ICONPARAMETERS_H
+#define ICONPARAMETERS_H
 
-#include <QtCore>
-#include <QtGui>
+#include <QString>
 
-#include "StringHandler.h"
-
-// Base class for all shapes annotations
-class ShapeAnnotation : public QObject, public QGraphicsItem
+class IconParameters
 {
 public:
-    ShapeAnnotation(QGraphicsItem *parent = 0);
+    IconParameters(QString name, QString defaultValue);
+
+    QString getName();
+    QString getDefaultValue();
+    QString getValue();
+    QString getComment();
+
+    void setName(QString name);
+    void setDefaultValue(QString defaultValue);
+    void setValue(QString value);
+    void setComment(QString comment);
+private:
+    QString mName;
+    QString mDefaultValue;
+    QString mValue;
+    QString mComment;
 };
 
-#endif // SHAPEANNOTATION_H
+#endif // ICONPARAMETERS_H

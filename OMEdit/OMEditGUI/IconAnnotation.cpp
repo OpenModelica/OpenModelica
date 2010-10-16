@@ -43,9 +43,14 @@ IconAnnotation::IconAnnotation(QString value, QString name, QString className, Q
     setPos(position);
     setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemSendsGeometryChanges);
     setAcceptHoverEvents(true);
+
+    mpIconParametersList.append(mpOMCProxy->getParameters(mClassName));
     parseIconAnnotationString(this, value);
     getClassComponents(this->mClassName);
     createSelectionBox();
+    createActions();
+
+    connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
 }
 
 IconAnnotation::IconAnnotation(QString value, QString name, QString className, OMCProxy *omc)
@@ -257,6 +262,12 @@ QList<QPointF> IconAnnotation::getBoundingRect()
     return points;
 }
 
+void IconAnnotation::createActions()
+{
+    // Icon Properties Action
+    mpIconPropertiesAction = new QAction(QIcon("../OMEditGUI/Resources/icons/tool.png"), tr("&Properties"), this);
+}
+
 void IconAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(painter);
@@ -282,7 +293,13 @@ void IconAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     this->setSelected(true);
     QMenu menu(mpGraphicsView);
-    menu.addAction(mpGraphicsView->mDeleteIconAction);
+    menu.addAction(mpGraphicsView->mpRotateIconAction);
+    menu.addAction(mpGraphicsView->mpRotateAntiIconAction);
+    menu.addAction(mpGraphicsView->mpResetRotation);
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->mpDeleteIconAction);
+    menu.addSeparator();
+    menu.addAction(mpIconPropertiesAction);
     menu.exec(event->screenPos());
 }
 
@@ -294,23 +311,33 @@ QVariant IconAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
         {
             setSelectionBoxActive();
             setCursor(Qt::SizeAllCursor);
-            connect(mpGraphicsView->mDeleteIconAction, SIGNAL(triggered()), SLOT(deleteMe()));
+            connect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), SLOT(rotateClockwise()));
+            connect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()));
+            connect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), SLOT(resetRotation()));
+            connect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), SLOT(deleteMe()));
             connect(this->mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
             connect(this->mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
             connect(this->mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
             connect(this->mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
             connect(this->mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
+            connect(this->mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+            connect(this->mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         }
         else
         {
             setSelectionBoxPassive();
             unsetCursor();
-            disconnect(mpGraphicsView->mDeleteIconAction, SIGNAL(triggered()), this, SLOT(deleteMe()));
+            disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
+            disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
+            disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
+            disconnect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), this, SLOT(deleteMe()));
             disconnect(this->mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
             disconnect(this->mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
             disconnect(this->mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
             disconnect(this->mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
             disconnect(this->mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
+            disconnect(this->mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+            disconnect(this->mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         }
     }
     else if (change == QGraphicsItem::ItemPositionHasChanged)
@@ -427,9 +454,85 @@ void IconAnnotation::moveRight()
     mpGraphicsScene->update();
 }
 
+void IconAnnotation::rotateClockwise()
+{
+    qreal rotation = this->rotation();
+    qreal rotateIncrement = 90;
+
+    if (rotation == -270)
+        this->setRotation(0);
+    else
+        this->setRotation(rotation - rotateIncrement);
+}
+
+void IconAnnotation::rotateAntiClockwise()
+{
+    qreal rotation = this->rotation();
+    qreal rotateIncrement = -90;
+
+    if (rotation == 270)
+        this->setRotation(0);
+    else
+        this->setRotation(rotation - rotateIncrement);
+}
+
+void IconAnnotation::resetRotation()
+{
+    this->setRotation(0);
+}
+
+void IconAnnotation::openIconProperties()
+{
+    IconProperties *iconProperties = new IconProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    iconProperties->show();
+}
+
 QString IconAnnotation::getName()
 {
     return mName;
+}
+
+void IconAnnotation::updateName(QString newName)
+{
+    // check in icon text annotation
+    foreach (TextAnnotation *textAnnotation, mpTextsList)
+        if (textAnnotation->getTextString() == mName)
+        {
+            textAnnotation->setTextString(newName);
+            mName = newName;
+            return;
+        }
+
+    // check in icon's inheritance text annotation
+    foreach (InheritanceAnnotation *inheritance, mpInheritanceList)
+        foreach (TextAnnotation *textAnnotation, inheritance->mpTextsList)
+            if (textAnnotation->getTextString() == mName)
+            {
+                textAnnotation->setTextString(newName);
+                mName = newName;
+                return;
+            }
+
+    // check in icon's components text annotation
+    foreach (ComponentAnnotation *component, mpComponentsList)
+        foreach (TextAnnotation *textAnnotation, component->mpTextsList)
+            if (textAnnotation->getTextString() == mName)
+            {
+                textAnnotation->setTextString(newName);
+                mName = newName;
+                return;
+            }
+}
+
+void IconAnnotation::updateParameterValue(QString oldValue, QString newValue)
+{
+    // check in icon text annotation
+    foreach (TextAnnotation *textAnnotation, mpTextsList)
+        if (textAnnotation->getTextString() == oldValue)
+        {
+            textAnnotation->setTextString(newValue);
+            return;
+        }
 }
 
 QString IconAnnotation::getClassName()
@@ -475,6 +578,11 @@ void IconAnnotation::getClassComponents(QString className, bool libraryIcon)
                 }
                 mpComponentsList.append(componentAnnotation);
             }
+        }
+        else
+        {
+            //! @todo Change it to add all components.............
+            mpComponentProperties = components.at(0);
         }
         i++;
     }

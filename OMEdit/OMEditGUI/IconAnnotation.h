@@ -44,6 +44,8 @@
 #include "RectangleAnnotation.h"
 #include "EllipseAnnotation.h"
 #include "TextAnnotation.h"
+#include "IconProperties.h"
+#include "IconParameters.h"
 
 class OMCProxy;
 class GraphicsScene;
@@ -57,6 +59,8 @@ class EllipseAnnotation;
 class TextAnnotation;
 class InheritanceAnnotation;
 class ComponentAnnotation;
+class IconProperties;
+class IconParameters;
 
 class IconAnnotation : public ShapeAnnotation
 {
@@ -70,6 +74,9 @@ private:
     CornerItem *mpTopRightCornerItem;
     CornerItem *mpBottomLeftCornerItem;
     CornerItem *mpBottomRightCornerItem;
+    QAction *mpIconPropertiesAction;
+
+    void createActions();
 public:
     IconAnnotation(QString value, QString name, QString className, QPointF position, OMCProxy *omc,
                    GraphicsScene *graphicsScene, GraphicsView *graphicsView);
@@ -82,6 +89,7 @@ public:
     OMCProxy *mpOMCProxy;
     GraphicsScene *mpGraphicsScene;
     GraphicsView *mpGraphicsView;
+    ComponentsProperties *mpComponentProperties;
     QList<LineAnnotation*> mpLinesList;
     QList<PolygonAnnotation*> mpPolygonsList;
     QList<RectangleAnnotation*> mpRectanglesList;
@@ -89,11 +97,14 @@ public:
     QList<TextAnnotation*> mpTextsList;
     QList<InheritanceAnnotation*> mpInheritanceList;
     QList<ComponentAnnotation*> mpComponentsList;
+    QList<IconParameters*> mpIconParametersList;
 
     void parseIconAnnotationString(QGraphicsItem *item, QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     QString getName();
+    void updateName(QString newName);
+    void updateParameterValue(QString oldValue, QString newValue);
     QString getClassName();
     void getClassComponents(QString className, bool libraryIcon = false);
     QList<QPointF> getBoundingRect();
@@ -110,11 +121,16 @@ signals:
 public slots:
     void showSelectionBox();
     void resizeIcon(qreal resizeFactorX, qreal resizeFactorY);
+    //void renameIcon();
     void deleteMe();
     void moveUp();
     void moveDown();
     void moveLeft();
     void moveRight();
+    void rotateClockwise();
+    void rotateAntiClockwise();
+    void resetRotation();
+    void openIconProperties();
 protected:
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
     virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);

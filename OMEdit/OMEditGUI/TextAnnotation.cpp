@@ -130,15 +130,9 @@ TextAnnotation::TextAnnotation(QString shape, QGraphicsItem *parent)
 
     // 15 item of the list contains the text string.
     this->mTextString = StringHandler::removeFirstLastQuotes(list.at(14));
-    if (this->mTextString.contains("%name"))
-    {
-        if (dynamic_cast<IconAnnotation*>(parent))
-            this->mTextString = (dynamic_cast<IconAnnotation*>(parent))->getName();
-        else if (dynamic_cast<InheritanceAnnotation*>(parent))
-            this->mTextString = (dynamic_cast<InheritanceAnnotation*>(parent))->getParentIcon()->getName();
-        else if (dynamic_cast<ComponentAnnotation*>(parent))
-            this->mTextString = (dynamic_cast<ComponentAnnotation*>(parent))->getParentIcon()->getName();
-    }
+
+    checkNameString(parent);
+    checkParameterString(parent);
 
     // 16 item of the list contains the font size.
     this->mFontSize = static_cast<QString>(list.at(15)).toInt();
@@ -214,5 +208,49 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     painter->setPen(QPen(this->mFillColor, this->mThickness, this->mLinePattern));
     painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
     painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
-    painter->drawText(rect, Qt::AlignCenter | Qt::AlignVCenter, this->mTextString, &rect);
+    painter->drawText(rect, Qt::AlignCenter, this->mTextString, &rect);
+}
+
+void TextAnnotation::checkNameString(QGraphicsItem *item)
+{
+    if (this->mTextString.contains("%name"))
+    {
+        if (dynamic_cast<IconAnnotation*>(item))
+            this->mTextString = (dynamic_cast<IconAnnotation*>(item))->getName();
+        else if (dynamic_cast<InheritanceAnnotation*>(item))
+            this->mTextString = (dynamic_cast<InheritanceAnnotation*>(item))->getParentIcon()->getName();
+        else if (dynamic_cast<ComponentAnnotation*>(item))
+            this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->getParentIcon()->getName();
+    }
+}
+
+void TextAnnotation::checkParameterString(QGraphicsItem *item)
+{
+    IconAnnotation *iconAnnotation;
+    QString parameterString;
+
+    if (dynamic_cast<IconAnnotation*>(item))
+    {
+        iconAnnotation = (dynamic_cast<IconAnnotation*>(item));
+        foreach (IconParameters *parameter, iconAnnotation->mpIconParametersList)
+        {
+            parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
+            if (parameterString == this->mTextString)
+            {
+                this->mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
+                break;
+            }
+        }
+    }
+}
+
+QString TextAnnotation::getTextString()
+{
+    return mTextString.trimmed();
+}
+
+void TextAnnotation::setTextString(QString text)
+{
+    mTextString = text;
+    update(boundingRect());
 }

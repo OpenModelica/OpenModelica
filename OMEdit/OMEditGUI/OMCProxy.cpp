@@ -42,7 +42,6 @@
 #include "OMCProxy.h"
 #include "OMCThread.h"
 #include "StringHandler.h"
-#include "Helper.h"
 #include <omniORB4/CORBA.h>
 
 //! @class OMCProxy
@@ -93,7 +92,7 @@ bool OMCProxy::startServer()
         QString msg;
         QString omHome (getenv("OPENMODELICAHOME"));
         if (omHome.isEmpty())
-            throw std::runtime_error("Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.");
+            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
 
         QDir dir;
 
@@ -402,6 +401,49 @@ bool OMCProxy::isWhat(int type, QString className)
         return false;
 }
 
+QList<IconParameters*> OMCProxy::getParameters(QString className)
+{
+    QList<IconParameters*> iconParametersList;
+    QStringList list = getParameterNames(className);
+
+    for (int i = 0 ; i < list.size() ; i++)
+    {
+        QString value = getParameterValue(className, list.at(i));
+        IconParameters *iconParameter = new IconParameters(list.at(i), value);
+        iconParametersList.append(iconParameter);
+    }
+
+    return iconParametersList;
+}
+
+QStringList OMCProxy::getParameterNames(QString className)
+{
+    sendCommand("getParameterNames(" + className + ")");
+    QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
+    if (result.isEmpty())
+        return QStringList();
+    else
+    {
+        QStringList list = result.split(",", QString::SkipEmptyParts);
+        return list;
+    }
+}
+
+QString OMCProxy::getParameterValue(QString className, QString parameter)
+{
+    sendCommand("getParameterValue(" + className + "," + parameter + ")");
+    return getResult();
+}
+
+bool OMCProxy::setParameterValue(QString className, QString parameter, QString value)
+{
+    sendCommand("setParameterValue(" + className + "," + parameter + "," + value + ")");
+    if (getResult().contains("Ok"))
+        return true;
+    else
+        return false;
+}
+
 //! Gets the Icon Annotation of a specified class from OMC.
 //! @param className is the name of the class.
 QString OMCProxy::getIconAnnotation(QString className)
@@ -475,19 +517,19 @@ QString OMCProxy::loadFile(QString fileName)
 bool OMCProxy::createClass(QString type, QString className)
 {
     sendCommand(type + " " + className + " end " + className + ";");
-    // check if there is any error.
-    if (!getErrorString().isEmpty())
-        return true;
+    if (getResult().contains("error"))
         return false;
+    else
+        return true;
 }
 
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName)
 {
     sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
-    // check if there is any error.
-    if (!getErrorString().isEmpty())
+    if (getResult().contains("error"))
+        return false;
+    else
         return true;
-    return false;
 }
 
 bool OMCProxy::createModel(QString modelName)
@@ -523,6 +565,24 @@ QString OMCProxy::getSourceFile(QString modelName)
     return getResult();
 }
 
+bool OMCProxy::setSourceFile(QString modelName, QString path)
+{
+    sendCommand("setSourceFile(" + modelName + ", \"" + path + "\")");
+    if (getResult().toLower().contains("ok"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::save(QString modelName)
+{
+    sendCommand("save(" + modelName + ")");
+    if (getResult().toLower().contains("true"))
+        return true;
+    else
+        return false;
+}
+
 QString OMCProxy::list(QString className)
 {
     sendCommand("list(" + className + ")");
@@ -547,9 +607,13 @@ bool OMCProxy::deleteComponent(QString name, QString modelName)
         return false;
 }
 
-void OMCProxy::renameComponent(QString oldName, QString className, QString newName)
+bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newName)
 {
-    sendCommand("renameComponent(" + oldName + "," + className + "," + newName + ")");
+    sendCommand("renameComponent(" + modelName + "," + oldName + "," + newName + ")");
+    if (getResult().contains("error"))
+        return false;
+    else
+        return true;
 }
 
 bool OMCProxy::addConnection(QString from, QString to, QString className)
@@ -568,6 +632,15 @@ bool OMCProxy::deleteConnection(QString from, QString to, QString className)
         return true;
     else
         return false;
+}
+
+bool OMCProxy::instantiateModel(QString modelName)
+{
+    sendCommand("instantiateModel(" + modelName + ")");
+    if (getResult().size() < 3)
+        return false;
+    else
+        return true;
 }
 
 bool OMCProxy::simulate(QString modelName, QString simualtionParameters)

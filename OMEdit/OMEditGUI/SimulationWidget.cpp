@@ -104,7 +104,8 @@ void SimulationWidget::simulate()
 
         if (!projectTab)
         {
-            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage("There is no open Model to simulate.");
+            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(
+                                                                        GUIMessages::NO_OPEN_MODEL));
             accept();
             return;
         }
@@ -122,18 +123,18 @@ void SimulationWidget::simulate()
         progressBar.setValue(endtime/2);
 
         mpParentMainWindow->mpOMCProxy->changeDirectory(QString(qApp->applicationDirPath()).append("/../tmp"));
-        if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelFileStrucrure, simualtionParameters))
+        if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Enable to simulate the Model '" +
-                                                                      projectTab->mModelFileStrucrure + "'");
+                                                                      projectTab->mModelNameStructure + "'");
             accept();
             return;
         }
 
-        mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelFileStrucrure).append("_res.plt"));
+        mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure).append("_res.plt"));
         mpParentMainWindow->plotdock->show();
         mpParentMainWindow->mpMessageWidget->printGUIMessage("Simulated '" +
-                                                              projectTab->mModelFileStrucrure + "' successfully!");
+                                                              projectTab->mModelNameStructure + "' successfully!");
         progressBar.setValue(endtime);
         progressBar.hide();
         accept();
@@ -143,17 +144,20 @@ void SimulationWidget::simulate()
 bool SimulationWidget::validate()
 {
     if (ui->mpStartTimeTextBox->text().isEmpty())
-        mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(tr("Simulation Start Time is not defined. Default value (0) will be used."));
+        mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(
+                                                                    GUIMessages::NO_SIMULATION_STARTTIME));
 
     if (ui->mpStopTimeTextBox->text().isEmpty())
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(tr("Simulation Stop Time is not defined."));
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
+                                                                  GUIMessages::NO_SIMULATION_STOPTIME));
         return false;
     }
 
     if (ui->mpStopTimeTextBox->text().toInt() <= ui->mpStartTimeTextBox->text().toInt())
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(tr("Simulation Start Time should be less than Stop Time."));
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
+                                                                  GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME));
         return false;
     }
 

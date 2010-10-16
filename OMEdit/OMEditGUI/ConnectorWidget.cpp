@@ -31,6 +31,13 @@
  *
  */
 
+/*
+ * HopsanGUI
+ * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
+ * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
+ * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
+ */
+
 #include "ConnectorWidget.h"
 
 Connector::Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, QGraphicsItem *parent)
@@ -466,9 +473,9 @@ void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     this->setSelected(true);
 
     QMenu menu(mpParentConnector->mpParentGraphicsView);
-    mpParentConnector->mpParentGraphicsView->mCancelConnectionAction->setText("Delete Connection");
-    mpParentConnector->mpParentGraphicsView->mCancelConnectionAction->setShortcut(QKeySequence::Delete);
-    menu.addAction(mpParentConnector->mpParentGraphicsView->mCancelConnectionAction);
+    mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction->setText("Delete Connection");
+    mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction->setShortcut(QKeySequence::Delete);
+    menu.addAction(mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction);
     menu.exec(event->screenPos());
 }
 

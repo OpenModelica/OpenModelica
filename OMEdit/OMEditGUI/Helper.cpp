@@ -43,3 +43,33 @@ qreal Helper::globalXScale = 0.15;
 qreal Helper::globalYScale = 0.15;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
+
+QString GUIMessages::getMessage(int type)
+{
+    if (type == SAME_COMPONENT_NAME)
+        return "A Component with the same name already exists. Please choose another Name.";
+    else if (type == SAME_PORT_CONNECT)
+        return "You can not connect a port to itself.";
+    else if (type == NO_OPEN_MODEL)
+        return "There is no open Model to simulate.";
+    else if (type == NO_SIMULATION_STARTTIME)
+        return "Simulation Start Time is not defined. Default value (0) will be used.";
+    else if (type == NO_SIMULATION_STOPTIME)
+        return "Simulation Stop Time is not defined.";
+    else if (type == SIMULATION_STARTTIME_LESSTHAN_STOPTIME)
+        return "Simulation Start Time should be less than Stop Time.";
+    else if (type == ENTER_PACKAGE_NAME)
+        return "Please enter Package Name.";
+    else if (type == ENTER_MODEL_NAME)
+        return "Please enter Model Name.";
+    else if (type == OPEN_MODELICA_HOME_NOT_FOUND)
+        return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
+    else if (type == ERROR_OCCURRED)
+        return "Following Error has occurred.";
+    else if (type == NO_OPEN_MODELICA_KEYWORDS)
+        return "Please make sure you are not using any Open Modelica Keywords like (model, package, record, class etc.)";
+    else if (type == INCOMPATIBLE_CONNECTORS)
+        return "Incompatible types for the connectors.";
+    else if (type == SAVE_CHANGES)
+        return "Do you want to save your changes before closing?";
+}

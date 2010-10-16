@@ -44,10 +44,11 @@ public:
     void parseString(QString value);
     QString getClassName();
     QString getName();
+    QString getComment();
 private:
     QString mClassName;
     QString mName;
-    QString mDescription;
+    QString mComment;
     bool mIsProtected;
     bool mIsFinal;
     bool mIsFlow;

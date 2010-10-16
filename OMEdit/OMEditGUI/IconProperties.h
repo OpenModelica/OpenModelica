@@ -31,19 +31,34 @@
  *
  */
 
-#ifndef SHAPEANNOTATION_H
-#define SHAPEANNOTATION_H
+#ifndef ICONPROPERTIES_H
+#define ICONPROPERTIES_H
 
-#include <QtCore>
-#include <QtGui>
+#include <QDialog>
 
-#include "StringHandler.h"
+#include "IconAnnotation.h"
 
-// Base class for all shapes annotations
-class ShapeAnnotation : public QObject, public QGraphicsItem
+class IconAnnotation;
+
+namespace Ui {
+    class IconProperties;
+}
+
+class IconProperties : public QDialog
 {
+    Q_OBJECT
 public:
-    ShapeAnnotation(QGraphicsItem *parent = 0);
+    explicit IconProperties(IconAnnotation *icon, QWidget *parent = 0);
+    ~IconProperties();
+
+    IconAnnotation *mpIconAnnotation;
+private:
+    Ui::IconProperties *ui;
+    QList<QLineEdit*> mParameterTextBoxesList;
+
+    void initializeFields();
+public slots:
+    void updateIconProperties();
 };
 
-#endif // SHAPEANNOTATION_H
+#endif // ICONPROPERTIES_H

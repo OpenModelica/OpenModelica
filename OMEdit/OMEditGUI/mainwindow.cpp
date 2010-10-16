@@ -31,6 +31,13 @@
  *
  */
 
+/*
+ * HopsanGUI
+ * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
+ * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
+ * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
+ */
+
 #include <iostream>
 #include <QtGui>
 
@@ -390,7 +397,7 @@ void MainWindow::openOMShell()
 
     if (omShellPath.isEmpty())
     {
-        QMessageBox::warning( this, "Error", "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.", "OK" );
+        QMessageBox::warning( this, "Error", GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND), "OK" );
         return;
     }
 

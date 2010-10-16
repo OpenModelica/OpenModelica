@@ -60,6 +60,10 @@ public:
     TextAnnotation(QString shape, QGraphicsItem *parent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+    void checkNameString(QGraphicsItem *item);
+    void checkParameterString(QGraphicsItem *item);
+    QString getTextString();
+    void setTextString(QString text);
 };
 
 #endif // TEXTANNOTATION_H

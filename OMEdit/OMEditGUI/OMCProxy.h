@@ -40,6 +40,7 @@
 #include "mainwindow.h"
 #include "omc_communication.h"
 #include "ComponentsProperties.h"
+#include "IconParameters.h"
 
 class MainWindow;
 
@@ -78,6 +79,10 @@ public:
     QStringList getPackages(QString packageName);
     bool isPackage(QString className);
     bool isWhat(int type, QString className);
+    QList<IconParameters*> getParameters(QString className);
+    QStringList getParameterNames(QString className);
+    QString getParameterValue(QString className, QString parameter);
+    bool setParameterValue(QString className, QString parameter, QString value);
     QString getIconAnnotation(QString className);
     QString getDiagramAnnotation(QString className);
     int getInheritanceCount(QString className);
@@ -92,12 +97,15 @@ public:
     bool newModel(QString modelName, QString parentModelName);
     bool existClass(QString className);
     QString getSourceFile(QString modelName);
+    bool setSourceFile(QString modelName, QString path);
+    bool save(QString modelName);
     QString list(QString className);
     bool addComponent(QString name, QString className, QString modelName);
     bool deleteComponent(QString name, QString modelName);
-    void renameComponent(QString oldName, QString className, QString newName);
+    bool renameComponent(QString modelName, QString oldName, QString newName);
     bool addConnection(QString from, QString to, QString className);
     bool deleteConnection(QString from, QString to, QString className);
+    bool instantiateModel(QString modelName);
     bool simulate(QString modelName, QString simualtionParameters);
     bool plot(QString modelName, QString plotVariables);
     bool plotParametric(QString modelName, QString plotVariables);

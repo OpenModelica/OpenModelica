@@ -50,4 +50,27 @@ public:
     static QString ModelicaSimulationMethods;
 };
 
+class GUIMessages
+{
+public:
+    enum MessagesTypes
+    {
+        SAME_COMPONENT_NAME,
+        SAME_PORT_CONNECT,
+        NO_OPEN_MODEL,
+        NO_SIMULATION_STARTTIME,
+        NO_SIMULATION_STOPTIME,
+        SIMULATION_STARTTIME_LESSTHAN_STOPTIME,
+        ENTER_PACKAGE_NAME,
+        ENTER_MODEL_NAME,
+        OPEN_MODELICA_HOME_NOT_FOUND,
+        ERROR_OCCURRED,
+        NO_OPEN_MODELICA_KEYWORDS,
+        INCOMPATIBLE_CONNECTORS,
+        SAVE_CHANGES
+    };
+
+    static QString getMessage(int type);
+};
+
 #endif // HELPER_H
