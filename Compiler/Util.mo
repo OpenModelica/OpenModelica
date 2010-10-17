@@ -2504,7 +2504,7 @@ public function listFoldR "function: listFoldR
   partial function FoldFunc
     input Type_b foldArg;
     input Type_a iterated;
-    output Type_b foldArg;
+    output Type_b ofoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2512,7 +2512,6 @@ algorithm
     local
       Type_b foldArg1,foldArg2;
       Type_a l;
-      list<Type_a> lst;
     case ({},foldFunc,foldArg) then foldArg;
     case ((l :: lst),foldFunc,foldArg)
       equation

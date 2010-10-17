@@ -3555,7 +3555,6 @@ protected function simplifyMul
 //   list<Ident> sl;
 //   Ident s;
   list<tuple<Exp, Real>> exp_const,exp_const_1;
-  list<Exp> expl_1;
 algorithm
 //   sl := Util.listMap(expl, printExpStr);
 //   s := Util.stringDelimitList(sl, ", ");
@@ -7159,12 +7158,11 @@ algorithm
   outString := matchcontinue (inType)
     local
       list<Ident> ss;
-      Ident s1,ts,res;
       Type t;
       list<DAE.Dimension> dims;
       list<tuple<Type,Ident>> varlst;
       list<String> strLst;
-      String s1,s2;
+      String s1,s2,ts,res;
     case DAE.ET_INT() then "INT";
     case DAE.ET_REAL() then "REAL";
     case DAE.ET_BOOL() then "BOOL";

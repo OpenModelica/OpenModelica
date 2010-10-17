@@ -226,8 +226,8 @@ uniontype DAELow "THE LOWERED DAE consist of variables and equations. The variab
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
-    MultiDimEquation[:] arrayEqs "arrayEqs ; Array equations" ;
-    DAE.Algorithm[:] algorithms "algorithms ; Algorithms" ;
+    array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
+    array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
   end DAELOW;
@@ -248,8 +248,8 @@ end ExternalObjectClass;
 public
 uniontype Variables "- Variables"
   record VARIABLES
-    list<CrefIndex>[:] crefIdxLstArr "crefIdxLstArr ; HashTB, cref->indx" ;
-    list<StringIndex>[:] strIdxLstArr "strIdxLstArr ; HashTB, cref->indx for old names" ;
+    array<list<CrefIndex>> crefIdxLstArr "crefIdxLstArr ; HashTB, cref->indx" ;
+    array<list<StringIndex>> strIdxLstArr "strIdxLstArr ; HashTB, cref->indx for old names" ;
     VariableArray varArr "varArr ; Array of variables" ;
     Integer bucketSize "bucketSize ; bucket size" ;
     Integer numberOfVars "numberOfVars ; no. of vars" ;
@@ -309,7 +309,7 @@ uniontype VariableArray "array of Equations are expandable, to amortize the cost
   record VARIABLE_ARRAY
     Integer numberOfElements "numberOfElements ; no. elements" ;
     Integer arrSize "arrSize ; array size" ;
-    Option<Var>[:] varOptArr "varOptArr" ;
+    array<Option<Var>> varOptArr "varOptArr" ;
   end VARIABLE_ARRAY;
 
 end VariableArray;
@@ -319,7 +319,7 @@ uniontype EquationArray "- Equation Array"
   record EQUATION_ARRAY
     Integer numberOfElement "numberOfElement ; no. elements" ;
     Integer arrSize "arrSize ; array size" ;
-    Option<Equation>[:] equOptArr "equOptArr" ;
+    array<Option<Equation>> equOptArr "equOptArr" ;
   end EQUATION_ARRAY;
 
 end EquationArray;
@@ -331,7 +331,7 @@ uniontype Assignments "Assignments of variables to equations and vice versa are 
   record ASSIGNMENTS
     Integer actualSize "actualSize ; actual size" ;
     Integer allocatedSize "allocatedSize ; allocated size >= actual size" ;
-    Integer[:] arrOfIndices "arrOfIndices ; array of indices" ;
+    array<Integer> arrOfIndices "arrOfIndices ; array of indices" ;
   end ASSIGNMENTS;
 
 end Assignments;
@@ -365,7 +365,7 @@ public
 type Value = Integer "- Value" ;
 
 public
-type IncidenceMatrix = list<Integer>[:];
+type IncidenceMatrix = array<list<Integer>>;
 
 public
 type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation indexes (1..n),
@@ -613,8 +613,8 @@ algorithm
       list<WhenClause> whenclauses,whenclauses_1;
       list<ZeroCrossing> zero_crossings;
       EquationArray eqnarr,reqnarr,ieqnarr;
-      MultiDimEquation[:] arr_md_eqns;
-      DAE.Algorithm[:] algarr;
+      array<MultiDimEquation> arr_md_eqns;
+      array<DAE.Algorithm> algarr;
       ExternalObjectClasses extObjCls;
       Boolean daeContainsNoStates, shouldAddDummyDerivative;
       EventInfo einfo;
@@ -1912,8 +1912,8 @@ public function generateStatePartition "function:generateStatePartition
 "
   input list<list<Integer>> inIntegerLstLst1;
   input DAELow inDAELow2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   input IncidenceMatrix inIncidenceMatrix5;
   input IncidenceMatrixT inIncidenceMatrixT6;
   output list<list<Integer>> outIntegerLstLst1;
@@ -1923,15 +1923,15 @@ algorithm
   matchcontinue (inIntegerLstLst1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6)
     local
       Value size;
-      Value[:] arr,arr_1;
+      array<Value> arr,arr_1;
       list<list<Value>> blt_states,blt_no_states,blt;
       DAELow dae;
       Variables v,kv;
       EquationArray e,se,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
-      Value[:] ass1,ass2;
-      list<Value>[:] m,mt;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
+      array<Value> ass1,ass2;
+      array<list<Value>> m,mt;
     case (blt,(dae as DAELOW(orderedVars = v,knownVars = kv,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al)),ass1,ass2,m,mt)
       equation
         size = array_length(ass1) "equation_size(e) => size &" ;
@@ -1956,7 +1956,7 @@ protected function splitBlocks "function: splitBlocks
   outputs: (dynamic: int list list, output: int list list)
 "
   input list<list<Integer>> inIntegerLstLst;
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   output list<list<Integer>> outIntegerLstLst1;
   output list<list<Integer>> outIntegerLstLst2;
 algorithm
@@ -1965,7 +1965,7 @@ algorithm
     local
       list<list<Value>> states,output_,blocks;
       list<Value> block_;
-      Value[:] arr;
+      array<Value> arr;
     case ({},_) then ({},{});
     case ((block_ :: blocks),arr)
       equation
@@ -1986,7 +1986,7 @@ protected function blockIsDynamic "function blockIsDynamic
   Return true if the block contains a variable that is marked
 "
   input list<Integer> inIntegerLst;
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -1995,7 +1995,7 @@ algorithm
       Value x_1,x,mark_value;
       Boolean res;
       list<Value> xs;
-      Value[:] arr;
+      array<Value> arr;
     case ({},_) then false;
     case ((x :: xs),arr)
       equation
@@ -2031,25 +2031,25 @@ protected function markStateEquations "function: markStateEquations
   outputs: marks: int array
 "
   input DAELow inDAELow1;
-  input Integer[:] inIntegerArray2;
+  input array<Integer> inIntegerArray2;
   input IncidenceMatrix inIncidenceMatrix3;
   input IncidenceMatrixT inIncidenceMatrixT4;
-  input Integer[:] inIntegerArray5;
-  input Integer[:] inIntegerArray6;
-  output Integer[:] outIntegerArray;
+  input array<Integer> inIntegerArray5;
+  input array<Integer> inIntegerArray6;
+  output array<Integer> outIntegerArray;
 algorithm
   outIntegerArray:=
   matchcontinue (inDAELow1,inIntegerArray2,inIncidenceMatrix3,inIncidenceMatrixT4,inIntegerArray5,inIntegerArray6)
     local
       list<Var> v_lst,statevar_lst;
       DAELow dae;
-      Value[:] arr_1,arr;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<Value> arr_1,arr;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
       Variables v,kn;
       EquationArray e,se,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] alg;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> alg;
     case ((dae as DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr,m,mt,a1,a2)
       equation
         v_lst = varList(v);
@@ -2072,16 +2072,16 @@ protected function markStateEquation
   following edges in backward direction.
   inputs and outputs are tuples so we can use Util.list_fold"
   input Var inVar;
-  input tuple<DAELow, Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> inTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
-  output tuple<DAELow, Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> outTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  input tuple<DAELow, array<Integer>, IncidenceMatrix, IncidenceMatrixT, array<Integer>, array<Integer>> inTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  output tuple<DAELow, array<Integer>, IncidenceMatrix, IncidenceMatrixT, array<Integer>, array<Integer>> outTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
 algorithm
   outTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
   matchcontinue (inVar,inTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
     local
       list<Value> v_indxs,v_indxs_1,eqns;
-      Value[:] arr_1,arr;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<Value> arr_1,arr;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
       DAE.ComponentRef cr;
       DAELow dae;
       Variables vars;
@@ -2127,15 +2127,15 @@ protected function markStateEquation2
   outputs: ((marks: int array  IncidenceMatrix  IncidenceMatrixT
 	      int vector  int vector))"
   input list<Integer> inIntegerLst;
-  input tuple<Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
-  output tuple<Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  input tuple<array<Integer>, IncidenceMatrix, IncidenceMatrixT, array<Integer>, array<Integer>> inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  output tuple<array<Integer>, IncidenceMatrix, IncidenceMatrixT, array<Integer>, array<Integer>> outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
 algorithm
   outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
   matchcontinue (inIntegerLst,inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
     local
-      Value[:] marks,marks_1,marks_2,marks_3;
-      list<Value>[:] m,mt,m_1,mt_1;
-      Value[:] a1,a2,a1_1,a2_1;
+      array<Value> marks,marks_1,marks_2,marks_3;
+      array<list<Value>> m,mt,m_1,mt_1;
+      array<Value> a1,a2,a1_1,a2_1;
       Value eqn_1,eqn,mark_value,len;
       list<Value> inv_reachable,inv_reachable_1,eqns;
       list<list<Value>> inv_reachable_2;
@@ -2190,8 +2190,8 @@ protected function invReachableNodes "function: invReachableNodes
   input Integer inInteger1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
-  input Integer[:] inIntegerArray4;
-  input Integer[:] inIntegerArray5;
+  input array<Integer> inIntegerArray4;
+  input array<Integer> inIntegerArray5;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
@@ -2199,8 +2199,8 @@ algorithm
     local
       Value eqn_1,e,eqn;
       list<Value> var_lst,var_lst_1,lst;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
       String eqn_str;
     case (e,m,mt,a1,a2)
       equation
@@ -2228,7 +2228,7 @@ protected function invReachableNodes2 "function: invReachableNodes2
   outputs: int list
 "
   input list<Integer> inIntegerLst;
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
@@ -2236,7 +2236,7 @@ algorithm
     local
       list<Value> eqns,vs;
       Value v_1,eqn,v;
-      Value[:] a1;
+      array<Value> a1;
     case ({},_) then {};
     case ((v :: vs),a1)
       equation
@@ -2343,8 +2343,8 @@ algorithm
       Variables vars1,vars2,vars3;
       AliasVariables av;
       EquationArray eqns,reqns,ieqns;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] algs;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
       list<ZeroCrossing> zc;
       ExternalObjectClasses extObjCls;
     case (DAELOW(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,EVENT_INFO(zeroCrossingLst = zc),extObjCls))
@@ -2822,7 +2822,7 @@ algorithm
   outVarLst:=
   matchcontinue (inVariableArray)
     local
-      Option<Var>[:] arr;
+      array<Option<Var>> arr;
       Var elt;
       Value lastpos,n,size;
       list<Var> lst;
@@ -2844,7 +2844,7 @@ end vararrayList;
 protected function vararrayList2
 "function: vararrayList2
   Helper function to vararrayList"
-  input Option<Var>[:] inVarOptionArray1;
+  input array<Option<Var>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<Var> outVarLst;
@@ -2853,7 +2853,7 @@ algorithm
   matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
     local
       Var v;
-      Option<Var>[:] arr;
+      array<Option<Var>> arr;
       Value pos,lastpos,pos_1;
       list<Var> res;
     case (arr,pos,lastpos)
@@ -3204,9 +3204,8 @@ protected function removeSimpleEquations2
 algorithm
   (outEqns,outSimpleEqns,outMvars,outRepl,outExtendLst,outReplc) := matchcontinue (eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc)
     local
-      Variables vars,knvars;
-      BinTree mvars,states,mvars_1,mvars_2;
-      VarTransform.VariableReplacements repl,repl_1,repl_2,replc_1,replc_2;
+      BinTree mvars_1,mvars_2;
+      VarTransform.VariableReplacements repl_1,repl_2,replc_1,replc_2;
       DAE.ComponentRef cr1,cr2;
       list<Equation> eqns_1,seqns_1,eqns;
       Equation e;
@@ -4215,8 +4214,8 @@ algorithm
       BinTree bt;
       Variables v,kn;
       EquationArray e,re,ia;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo ev;
     case (DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = re,initialEqs = ia,arrayEqs = ae,algorithms = al,eventInfo = ev))
       equation
@@ -6823,7 +6822,7 @@ algorithm
     local
       list<Equation> eqnsl;
       list<list<Value>> lstlst;
-      list<Value>[:] arr;
+      array<list<Value>> arr;
       Variables vars;
       EquationArray eqns;
       list<WhenClause> wc;
@@ -7256,10 +7255,10 @@ public function emptyVars
   Returns a Variable datastructure that is empty.
   Using the bucketsize 10000 and array size 1000."
   output Variables outVariables;
-  list<CrefIndex>[:] arr;
-  list<StringIndex>[:] arr2;
+  array<list<CrefIndex>> arr;
+  array<list<StringIndex>> arr2;
   list<Option<Var>> lst;
-  Option<Var>[:] emptyarr;
+  array<Option<Var>> emptyarr;
 algorithm
   arr := fill({}, 10);
   arr2 := fill({}, 10);
@@ -7311,10 +7310,10 @@ algorithm
       Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
       VariableArray varr_1,varr;
       list<CrefIndex> indexes;
-      list<CrefIndex>[:] hashvec_1,hashvec;
+      array<list<CrefIndex>> hashvec_1,hashvec;
       String name_str;
       list<StringIndex> indexexold;
-      list<StringIndex>[:] oldhashvec_1,oldhashvec;
+      array<list<StringIndex>> oldhashvec_1,oldhashvec;
       Var v,newv;
       DAE.ComponentRef cr,name;
       DAE.Flow flowPrefix;
@@ -7385,7 +7384,7 @@ algorithm
   outVariableArray := matchcontinue (inVariableArray,inVar)
     local
       Value n_1,n,size,expandsize,expandsize_1,newsize;
-      Option<Var>[:] arr_1,arr,arr_2;
+      array<Option<Var>> arr_1,arr,arr_2;
       Var v;
       Real rsize,rexpandsize;
     case (VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
@@ -7429,7 +7428,7 @@ public function vararraySetnth
 algorithm
   outVariableArray := matchcontinue (inVariableArray,inInteger,inVar)
     local
-      Option<Var>[:] arr_1,arr;
+      array<Option<Var>> arr_1,arr;
       Value n,size,pos;
       Var v;
 
@@ -7462,7 +7461,7 @@ algorithm
     local
       Var v;
       Value n,pos,len;
-      Option<Var>[:] arr;
+      array<Option<Var>> arr;
       String ps,lens,ns;
     case (VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
@@ -7642,8 +7641,8 @@ algorithm
       Var v;
       DAE.ComponentRef cr2,cr;
       DAE.Flow flowPrefix;
-      list<CrefIndex>[:] hashvec;
-      list<StringIndex>[:] oldhashvec;
+      array<list<CrefIndex>> hashvec;
+      array<list<StringIndex>> oldhashvec;
       VariableArray varr;
       String str;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
@@ -7682,8 +7681,8 @@ algorithm
       list<Var> vs;
       list<Value> indxs;
       Variables vars;
-      list<CrefIndex>[:] hashvec;
-      list<StringIndex>[:] oldhashvec;
+      array<list<CrefIndex>> hashvec;
+      array<list<StringIndex>> oldhashvec;
       VariableArray varr;
     case (cr,(vars as VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
@@ -7845,8 +7844,8 @@ algorithm
       list<CrefIndex> indexes;
       Var v;
       DAE.ComponentRef cr2,cr;
-      list<CrefIndex>[:] hashvec;
-      list<StringIndex>[:] oldhashvec;
+      array<list<CrefIndex>> hashvec;
+      array<list<StringIndex>> oldhashvec;
       VariableArray varr;
       String str;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
@@ -7894,8 +7893,8 @@ algorithm
       DAE.ComponentRef cr2,name;
       DAE.Flow flowPrefix;
       String name_str,cr;
-      list<CrefIndex>[:] hashvec;
-      list<StringIndex>[:] oldhashvec;
+      array<list<CrefIndex>> hashvec;
+      array<list<StringIndex>> oldhashvec;
       VariableArray varr;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
@@ -8068,8 +8067,8 @@ algorithm
       list<Var> varlst,varlst_1;
       Variables newvars,newvars_1;
       DAE.ComponentRef cr;
-      list<CrefIndex>[:] hashvec;
-      list<StringIndex>[:] oldhashvec;
+      array<list<CrefIndex>> hashvec;
+      array<list<StringIndex>> oldhashvec;
       VariableArray varr;
       Value bsize,n;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
@@ -8347,7 +8346,7 @@ public function dumpMatching
 "function: dumpMatching
   author: PA
   prints the matching information on stdout."
-  input Integer[:] v;
+  input array<Integer> v;
   Value len;
   String len_str;
 algorithm
@@ -8364,14 +8363,14 @@ protected function dumpMatching2
 "function: dumpMatching2
   author: PA
   Helper function to dumpMatching."
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   input Integer inInteger;
 algorithm
   _ := matchcontinue (inIntegerArray,inInteger)
     local
       Value len,i_1,eqn,i;
       String s,s2;
-      Value[:] v;
+      array<Value> v;
     case (v,i)
       equation
         len = array_length(v);
@@ -8434,8 +8433,8 @@ public function matchingAlgorithm
   input IncidenceMatrixT inIncidenceMatrixT;
   input MatchingOptions inMatchingOptions;
   input DAE.FunctionTree inFunctions;
-  output Integer[:] outIntegerArray1;
-  output Integer[:] outIntegerArray2;
+  output array<Integer> outIntegerArray1;
+  output array<Integer> outIntegerArray2;
   output DAELow outDAELow3;
   output IncidenceMatrix outIncidenceMatrix4;
   output IncidenceMatrixT outIncidenceMatrixT5;
@@ -8450,14 +8449,14 @@ algorithm
       Variables v,kv,v_1,kv_1,vars,exv;
       AliasVariables av;
       EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
-      MultiDimEquation[:] ae,ae1;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae,ae1;
+      array<DAE.Algorithm> al;
       EventInfo ev,einfo;
-      list<Value>[:] m,mt,m_1,mt_1;
+      array<list<Value>> m,mt,m_1,mt_1;
       BinTree s;
       list<Equation> e_lst,re_lst,ie_lst,e_lst_1,re_lst_1,ie_lst_1;
       list<MultiDimEquation> ae_lst,ae_lst1;
-      Value[:] vec1,vec2;
+      array<Value> vec1,vec2;
       MatchingOptions match_opts;
       ExternalObjectClasses eoc;
       BinTree s;
@@ -8606,12 +8605,12 @@ protected function assignmentsVector
   author: PA
   Converts Assignments to vector of int elements"
   input Assignments inAssignments;
-  output Integer[:] outIntegerArray;
+  output array<Integer> outIntegerArray;
 algorithm
   outIntegerArray := matchcontinue (inAssignments)
     local
-      Value[:] newarr,newarr_1,arr;
-      Value[:] vec;
+      array<Value> newarr,newarr_1,arr;
+      array<Value> vec;
       Value size;
     case (ASSIGNMENTS(actualSize = size,arrOfIndices = arr))
       equation
@@ -8639,7 +8638,7 @@ protected function assignmentsCreate
   input Integer v;
   output Assignments outAssignments;
   list<Value> lst;
-  Value[:] arr;
+  array<Value> arr;
 algorithm
   lst := Util.listFill(0, memsize);
   arr := listArray(lst) "	array_create(memsize,v) => arr &" ;
@@ -8659,7 +8658,7 @@ protected function assignmentsSetnth
 algorithm
   outAssignments := matchcontinue (inAssignments1,inInteger2,inInteger3)
     local
-      Value[:] arr;
+      array<Value> arr;
       Value s,ms,n,v;
     case (ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),n,v)
       equation
@@ -8722,7 +8721,7 @@ algorithm
     local
       Real msr,msr_1;
       Value ms_1,s_1,ms_2,s,ms,v;
-      Value[:] arr_1,arr_2,arr;
+      array<Value> arr_1,arr_2,arr;
 
     case (ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),v)
       equation
@@ -8792,7 +8791,7 @@ algorithm
     local
       Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value nv,nf,i,i_1,nv_1,nkv,nf_1,nvd;
       MatchingOptions match_opts;
       EquationArray eqns;
@@ -8958,7 +8957,7 @@ algorithm
       list<Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<Key> states;
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value nv,nf,stateno,i;
       DAE.ComponentRef state,dummy_der;
       list<String> es;
@@ -9061,8 +9060,8 @@ algorithm
       AliasVariables av;      
       DAELow dae;
       EquationArray e,se,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo ei;
       ExternalObjectClasses eoc;
 
@@ -9241,7 +9240,7 @@ algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
   matchcontinue (inDAELow,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
-      list<Value>[:] m_1,mt_1,m,mt;
+      array<list<Value>> m_1,mt_1,m,mt;
       list<list<Value>> changedvars;
       list<Value> changedvars_1,eqns;
       DAELow dae;
@@ -9280,7 +9279,7 @@ algorithm
   matchcontinue (inDAELow,inIncidenceMatrix,inIntegerLst)
     local
       DAELow dae;
-      list<Value>[:] m,m_1,m_2;
+      array<list<Value>> m,m_1,m_2;
       Value e_1,e;
       Equation eqn;
       list<Value> row,changedvars1,eqns;
@@ -9328,7 +9327,7 @@ algorithm
   outIncidenceMatrixT:=
   matchcontinue (inIntegerLst,inIncidenceMatrix,inIncidenceMatrixT)
     local
-      list<Value>[:] m,mt,mt_1,mt_2;
+      array<list<Value>> m,mt,mt_1,mt_2;
       list<list<Value>> mlst;
       list<Value> row_1,vars;
       Value v_1,v;
@@ -9366,8 +9365,8 @@ algorithm
       Variables vars_1,vars,knvar,evar;
       AliasVariables av;
       EquationArray eqns,reqns,ieqns;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo ev;
       ExternalObjectClasses eoc;
     case (DAELOW(vars,knvar,evar,av,eqns,reqns,ieqns,ae,al,ev,eoc))
@@ -9464,8 +9463,8 @@ algorithm
       Variables vars_1,vars,kv,ev;
       AliasVariables av;
       EquationArray e,se,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo wc;
       ExternalObjectClasses eoc;
       DAELow daelow, daelow_1;
@@ -9515,14 +9514,14 @@ algorithm
     local
       DAE.ComponentRef state,dummy,dummyder;
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value e_1,e;
       Equation eqn,eqn_1;
       Variables v_1,v,kv,ev;
       AliasVariables av;
       EquationArray eqns_1,eqns,seqns,ie,ie1;
-      MultiDimEquation[:] ae,ae1,ae2,ae3;
-      DAE.Algorithm[:] al,al1,al2,al3;
+      array<MultiDimEquation> ae,ae1,ae2,ae3;
+      array<DAE.Algorithm> al,al1,al2,al3;
       EventInfo wc;
       list<Value> rest;
       ExternalObjectClasses eoc;
@@ -9564,11 +9563,11 @@ protected function replaceDummyDer2
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   input Equation inEquation3;
-  input DAE.Algorithm[:] inAlgs;
-  input MultiDimEquation[:] inMultiDimEquationArray;
+  input array<DAE.Algorithm> inAlgs;
+  input array<MultiDimEquation> inMultiDimEquationArray;
   output Equation outEquation;
-  output DAE.Algorithm[:] outAlgs;
-  output MultiDimEquation[:] outMultiDimEquationArray;
+  output array<DAE.Algorithm> outAlgs;
+  output array<MultiDimEquation> outMultiDimEquationArray;
 algorithm
   (outEquation,outAlgs,outMultiDimEquationArray) := matchcontinue (inComponentRef1,inComponentRef2,inEquation3,inAlgs,inMultiDimEquationArray)
     local
@@ -9580,8 +9579,8 @@ algorithm
       WhenEquation elsepartRes;
       WhenEquation elsepart;
       DAE.ElementSource source,source1;
-      DAE.Algorithm[:] algs;
-      MultiDimEquation[:] ae,ae1;
+      array<DAE.Algorithm> algs;
+      array<MultiDimEquation> ae,ae1;
       list<Integer> dimSize;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2,source = source),inAlgs,ae)
       equation
@@ -9642,15 +9641,15 @@ end replaceDummyDer2;
 
 protected function replaceDummyDerAlgs
   input Integer inIndex;
-  input DAE.Algorithm[:] inAlgs;  
+  input array<DAE.Algorithm> inAlgs;  
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;  
-  output DAE.Algorithm[:] outAlgs;  
+  output array<DAE.Algorithm> outAlgs;  
 algorithm
   outAlgs:=
   matchcontinue (inIndex,inAlgs,inExp2,inExp3)
     local  
-      DAE.Algorithm[:] algs;
+      array<DAE.Algorithm> algs;
       list<DAE.Statement> statementLst,statementLst1;
       Integer i_1;
   case (inIndex,inAlgs,inExp2,inExp3)
@@ -9867,11 +9866,11 @@ protected function replaceDummyDerEqns
   input list<Equation> eqns;
   input DAE.ComponentRef st;
   input DAE.ComponentRef dummyder;
-  input DAE.Algorithm[:] inAlgs;
-  input MultiDimEquation[:] inMultiDimEquationArray;
+  input array<DAE.Algorithm> inAlgs;
+  input array<MultiDimEquation> inMultiDimEquationArray;
   output list<Equation> outEqns;
-  output DAE.Algorithm[:] outAlgs;
-  output MultiDimEquation[:] outMultiDimEquationArray;
+  output array<DAE.Algorithm> outAlgs;
+  output array<MultiDimEquation> outMultiDimEquationArray;
 algorithm
   (outEqns,outAlgs,outMultiDimEquationArray):=
   matchcontinue (eqns,st,dummyder,inAlgs,inMultiDimEquationArray)
@@ -9879,8 +9878,8 @@ algorithm
       DAE.ComponentRef st,dummyder;
       list<Equation> eqns1,eqns;
       Equation e,e1;
-      DAE.Algorithm[:] algs,algs1;
-      MultiDimEquation[:] ae,ae1,ae2;
+      array<DAE.Algorithm> algs,algs1;
+      array<MultiDimEquation> ae,ae1,ae2;
     case ({},st,dummyder,inAlgs,ae) then ({},inAlgs,ae);
     case (e::eqns,st,dummyder,inAlgs,ae)
       equation
@@ -9904,12 +9903,12 @@ protected function replaceDummyDerOthers
   is a dummy variable, etc."
   input Equation inEquation;
   input Variables inVariables;
-  input DAE.Algorithm[:] inAlgs;
-  input MultiDimEquation[:] inMultiDimEquationArray;  
+  input array<DAE.Algorithm> inAlgs;
+  input array<MultiDimEquation> inMultiDimEquationArray;  
   output Equation outEquation;
   output Variables outVariables;
-  output DAE.Algorithm[:] outAlgs;
-  output MultiDimEquation[:] outMultiDimEquationArray;
+  output array<DAE.Algorithm> outAlgs;
+  output array<MultiDimEquation> outMultiDimEquationArray;
 algorithm
   (outEquation,outVariables,outAlgs,outMultiDimEquationArray):=
   matchcontinue (inEquation,inVariables,inAlgs,inMultiDimEquationArray)
@@ -9923,8 +9922,8 @@ algorithm
       WhenEquation elsePart;
       DAE.ElementSource source,source1;
       Integer indx;
-      DAE.Algorithm[:] al;
-      MultiDimEquation[:] ae,ae1;
+      array<DAE.Algorithm> al;
+      array<MultiDimEquation> ae,ae1;
       list<Integer> dimSize;
 
     case (EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs,ae)
@@ -9984,14 +9983,14 @@ end replaceDummyDerOthers;
 protected function replaceDummyDerOthersAlgs
   input Integer inIndex;
   input Variables inVariables;
-  input DAE.Algorithm[:] inAlgs;
+  input array<DAE.Algorithm> inAlgs;
   output Variables outVariables;
-  output DAE.Algorithm[:] outAlgs;
+  output array<DAE.Algorithm> outAlgs;
 algorithm
   (outVariables,outAlgs):=
   matchcontinue (inIndex,inVariables,inAlgs)
     local
-      DAE.Algorithm[:] algs;
+      array<DAE.Algorithm> algs;
       list<DAE.Statement> statementLst,statementLst1;
       Integer i_1;
       Variables vars;
@@ -10384,8 +10383,8 @@ algorithm
       Variables vars_1,vars,kv,ev;
       AliasVariables av;      
       EquationArray eqns,seqns,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo wc;
       ExternalObjectClasses eoc;
       Var dummyvar;
@@ -10776,7 +10775,7 @@ algorithm
       list<Key> crs;
       list<Value> indxs;
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
     case ({},{},_,_,_) then {};
     case ((cr :: crs),(indx :: indxs),dae,m,mt)
       equation
@@ -10803,7 +10802,7 @@ algorithm
       DAE.ComponentRef cr;
       Value indx;
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
     case (cr,indx,dae,m,mt) then (cr,indx,0);
   end matchcontinue;
 end calculateDummyStatePriority;
@@ -10836,7 +10835,7 @@ algorithm
       list<Var> varlst;
       Variables vars;
       EquationArray eqns;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       DAELow daelow;
     case ({},_,_,_) then ({},{});
     case ((e :: rest),daelow as DAELOW(orderedVars = vars,orderedEqs = eqns),m,mt)
@@ -10946,7 +10945,7 @@ algorithm
   matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       DAELow dae;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value nv,nf,e_1,leneqns,e;
       Equation eqn,eqn_1;
       String str;
@@ -10954,8 +10953,8 @@ algorithm
       list<Value> reqns,es;
       Variables v,kv,ev;
       AliasVariables av;
-      MultiDimEquation[:] ae,ae1;
-      DAE.Algorithm[:] al,al1;
+      array<MultiDimEquation> ae,ae1;
+      array<DAE.Algorithm> al,al1;
       EventInfo wc;
       ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
@@ -11029,7 +11028,7 @@ algorithm
   matchcontinue (inEquationArray,inEquation)
     local
       Value n_1,n,size,expandsize,expandsize_1,newsize;
-      Option<Equation>[:] arr_1,arr,arr_2;
+      array<Option<Equation>> arr_1,arr,arr_2;
       Equation e;
       Real rsize,rexpandsize;
     case (EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),e)
@@ -11071,7 +11070,7 @@ algorithm
   outEquationLst:=
   matchcontinue (inEquationArray)
     local
-      Option<Equation>[:] arr;
+      array<Option<Equation>> arr;
       Equation elt;
       Value lastpos,n,size;
       list<Equation> lst;
@@ -11104,7 +11103,7 @@ public function listEquation "function: listEquation
   output EquationArray outEquationArray;
   Value len,size;
   Real rlen,rlen_1;
-  Option<Equation>[:] optarr,eqnarr,newarr;
+  array<Option<Equation>> optarr,eqnarr,newarr;
   list<Option<Equation>> eqn_optlst;
 algorithm
   len := listLength(lst);
@@ -11127,7 +11126,7 @@ protected function equationList2 "function: equationList2
   outputs: Equation list
 
 "
-  input Option<Equation>[:] inEquationOptionArray1;
+  input array<Option<Equation>> inEquationOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<Equation> outEquationLst;
@@ -11136,7 +11135,7 @@ algorithm
   matchcontinue (inEquationOptionArray1,inInteger2,inInteger3)
     local
       Equation e;
-      Option<Equation>[:] arr;
+      array<Option<Equation>> arr;
       Value pos,lastpos,pos_1;
       list<Equation> res;
     case (arr,pos,lastpos)
@@ -11222,7 +11221,7 @@ algorithm
     local
       Equation e;
       Value n,pos;
-      Option<Equation>[:] arr;
+      array<Option<Equation>> arr;
     case (EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),pos)
       equation
         (pos < n) = true;
@@ -11250,7 +11249,7 @@ algorithm
   outEquationArray:=
   matchcontinue (inEquationArray,inInteger,inEquation)
     local
-      Option<Equation>[:] arr_1,arr;
+      array<Option<Equation>> arr_1,arr;
       Value n,size,pos;
       Equation eqn;
     case (EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),pos,eqn)
@@ -11294,7 +11293,7 @@ algorithm
   matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6)
     local
       DAELow dae;
-      list<Value>[:] m,mt,nt;
+      array<list<Value>> m,mt,nt;
       Value nv,nf,nv_1,v;
       list<Value> vs;
     case (dae,m,mt,nv,nf,{}) then (dae,m,mt,nv,nf);
@@ -11331,7 +11330,7 @@ algorithm
   matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inInteger3,inAssignments4,inAssignments5)
     local
       Assignments ass1_1,ass2_1,ass1,ass2;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value i;
     case (m,mt,i,ass1,ass2)
       equation
@@ -11365,7 +11364,7 @@ algorithm
     local
       list<Value> vars;
       Assignments ass1_1,ass2_1,ass1,ass2;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value i;
     case (m,mt,i,ass1,ass2)
       equation
@@ -11494,7 +11493,7 @@ algorithm
     local
       Value n_1,n,indx;
       list<Value> res,res_1;
-      list<Value>[:] m;
+      array<list<Value>> m;
       String s;
     case (m,n)
       equation
@@ -11541,7 +11540,7 @@ algorithm
     local
       Value n_1,n,indx;
       list<Value> res,res_1;
-      list<Value>[:] mt;
+      array<list<Value>> mt;
       String s;
     case (mt,n)
       equation
@@ -11582,7 +11581,7 @@ algorithm
     local
       Value n_1,n,indx;
       list<Value> res,res_1;
-      list<Value>[:] mt;
+      array<list<Value>> mt;
       String s;
     case (mt,n)
       equation
@@ -11657,7 +11656,7 @@ algorithm
   matchcontinue (inInteger1,inAssignments2,inAssignments3)
     local
       Value v;
-      Value[:] m;
+      array<Value> m;
     case (v,ASSIGNMENTS(arrOfIndices = m),_) then m[v];
   end matchcontinue;
 end getAssigned;
@@ -11719,7 +11718,7 @@ algorithm
     local
       list<Value> vars,vars_1;
       Assignments ass1_1,ass2_1,ass1,ass2;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       Value i;
     case (m,mt,i,ass1,ass2)
       equation
@@ -11765,7 +11764,7 @@ algorithm
     local
       Value assarg,i,v;
       Assignments ass1_1,ass2_1,ass1_2,ass2_2,ass1,ass2;
-      list<Value>[:] m,mt;
+      array<list<Value>> m,mt;
       list<Value> vars,vs;
     case (m,mt,i,(vars as (v :: vs)),ass1,ass2)
       equation
@@ -11790,8 +11789,8 @@ public function dumpComponentsGraphStr
   input Integer n;
   input IncidenceMatrix m;
   input IncidenceMatrixT mT;
-  input Integer[:] ass1;
-  input Integer[:] ass2;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
   output String res;
 algorithm
   res := matchcontinue(n,m,mT,ass1,ass2)
@@ -11810,8 +11809,8 @@ protected function dumpComponentsGraphStr2 "help function"
   input Integer n;
   input IncidenceMatrix m;
   input IncidenceMatrixT mT;
-  input Integer[:] ass1;
-  input Integer[:] ass2;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
   output list<String> lst;
 algorithm
   lst := matchcontinue(i,n,m,mT,ass1,ass2)
@@ -11856,8 +11855,8 @@ public function strongComponents "function: strongComponents
 "
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   output list<list<Integer>> outIntegerLstLst;
 algorithm
   outIntegerLstLst:=
@@ -11866,8 +11865,8 @@ algorithm
       Value n,i;
       list<Value> stack;
       list<list<Value>> comps;
-      list<Value>[:] m,mt;
-      Value[:] ass1,ass2;
+      array<list<Value>> m,mt;
+      array<Value> ass1,ass2;
     case (m,mt,ass1,ass2)
       equation
         n = arrayLength(m);
@@ -11904,8 +11903,8 @@ protected function strongConnectMain "function: strongConnectMain
 "
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   input Integer inInteger5;
   input Integer inInteger6;
   input Integer inInteger7;
@@ -11918,8 +11917,8 @@ algorithm
   (outInteger,outIntegerLst,outIntegerLstLst):=
   matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inInteger7,inIntegerLst8,inIntegerLstLst9)
     local
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
       Value n,i,w,w_1,num;
       list<Value> stack,stack_1,stack_2;
       list<list<Value>> comp,comps;
@@ -11960,8 +11959,8 @@ protected function strongConnect "function: strongConnect
 "
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
@@ -11976,8 +11975,8 @@ algorithm
       Value i_1,i,v;
       list<Value> stack_1,eqns,stack_2,stack_3,comp,stack;
       list<list<Value>> comps_1,comps_2,comps;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
     case (m,mt,a1,a2,i,v,stack,comps)
       equation
         i_1 = i + 1;
@@ -12032,8 +12031,8 @@ protected function reachableNodes "function: reachableNodes
   input Integer inInteger1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
-  input Integer[:] inIntegerArray4;
-  input Integer[:] inIntegerArray5;
+  input array<Integer> inIntegerArray4;
+  input array<Integer> inIntegerArray5;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
@@ -12041,8 +12040,8 @@ algorithm
     local
       Value eqn_1,var,var_1,pos,eqn;
       list<Value> reachable,reachable_1,reachable_2;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
       String eqnstr;
     case (eqn,m,mt,a1,a2)
       equation
@@ -12079,8 +12078,8 @@ protected function iterateReachableNodes "function: iterateReachableNodes
   input list<Integer> inIntegerLst1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
-  input Integer[:] inIntegerArray4;
-  input Integer[:] inIntegerArray5;
+  input array<Integer> inIntegerArray4;
+  input array<Integer> inIntegerArray5;
   input Integer inInteger6;
   input Integer inInteger7;
   input list<Integer> inIntegerLst8;
@@ -12095,8 +12094,8 @@ algorithm
       Value i,lv,lw,minv,w,v,nw,nv,lowlinkv;
       list<Value> stack,ws;
       list<list<Value>> comps_1,comps_2,comps;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation
         0 = DAEEXT.getNumber(w);
@@ -12158,8 +12157,8 @@ protected function checkRoot "function: checkRoot
 "
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
@@ -12172,8 +12171,8 @@ algorithm
     local
       Value lv,nv,i,v;
       list<Value> stack_1,comps,stack;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
     case (m,mt,a1,a2,i,v,stack)
       equation
         lv = DAEEXT.getLowLink(v);
@@ -12197,8 +12196,8 @@ protected function checkStack "function: checkStack
 "
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
   input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
@@ -12212,8 +12211,8 @@ algorithm
     local
       Value topn,vn,i,v,top;
       list<Value> stack_1,comp_1,rest,comp,stack;
-      list<Value>[:] m,mt;
-      Value[:] a1,a2;
+      array<list<Value>> m,mt;
+      array<Value> a1,a2;
     case (m,mt,a1,a2,i,v,(top :: rest),comp)
       equation
         topn = DAEEXT.getNumber(top);
@@ -12289,8 +12288,8 @@ algorithm
   matchcontinue (inDAELow,dummy)
     local
       list<Var> varlst,knvarlst,extvarlst;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
       Variables vars, knvars, extVars;
@@ -12562,7 +12561,7 @@ algorithm
       Value indx_1,indx;
       list<Value> ds;
       list<DAE.Exp> expl;
-      MultiDimEquation[:] arreqn;
+      array<MultiDimEquation> arreqn;
 
     case ({},_) then true;
     // check rhs for for EQUATION nodes.
@@ -12770,7 +12769,7 @@ public function calculateJacobian "function: calculateJacobian
   and calculates the jacobian of the equations."
   input Variables inVariables;
   input EquationArray inEquationArray;
-  input MultiDimEquation[:] inMultiDimEquationArray;
+  input array<MultiDimEquation> inMultiDimEquationArray;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
@@ -12783,8 +12782,8 @@ algorithm
       list<tuple<Value, Value, Equation>> jac;
       Variables vars;
       EquationArray eqns;
-      MultiDimEquation[:] ae;
-      list<Value>[:] m,mt;
+      array<MultiDimEquation> ae;
+      array<list<Value>> m,mt;
     case (vars,eqns,ae,m,mt,differentiateIfExp)
       equation
         eqn_lst = equationList(eqns);
@@ -12806,7 +12805,7 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   {(e1,x1,3a), (e1,y1,5z), (e1,z1,5y+2z)}"
   input list<Equation> eqns;
   input Variables vars;
-  input MultiDimEquation[:] ae;
+  input array<MultiDimEquation> ae;
   input IncidenceMatrix m;
   input IncidenceMatrixT mt;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
@@ -12820,7 +12819,7 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   Helper function to calculateJacobianRows"
   input list<Equation> inEquationLst;
   input Variables inVariables;
-  input MultiDimEquation[:] inMultiDimEquationArray;
+  input array<MultiDimEquation> inMultiDimEquationArray;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
@@ -12837,8 +12836,8 @@ algorithm
       Equation eqn;
       list<Equation> eqns;
       Variables vars;
-      MultiDimEquation[:] ae;
-      list<Value>[:] m,mt;
+      array<MultiDimEquation> ae;
+      array<list<Value>> m,mt;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2; 
     case ({},_,_,_,_,_,_,inEntrylst) then (SOME({}),inEntrylst);
     case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
@@ -12864,7 +12863,7 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   outputs: ((int  int  Equation) list option)"
   input Equation inEquation;
   input Variables inVariables;
-  input MultiDimEquation[:] inMultiDimEquationArray;
+  input array<MultiDimEquation> inMultiDimEquationArray;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
@@ -12881,8 +12880,8 @@ algorithm
       list<tuple<Value, Value, Equation>> eqns;
       DAE.Exp e,e1,e2,new_exp;
       Variables vars;
-      MultiDimEquation[:] ae;
-      list<Value>[:] m,mt;
+      array<MultiDimEquation> ae;
+      array<list<Value>> m,mt;
       Value eqn_indx,indx;
       list<DAE.Exp> in_,out,expl;
       Exp.Type t;
@@ -13042,8 +13041,8 @@ algorithm
       EquationArray eqns2,eqns,seqns,ieqns;
       Variables vars,knvars,extVars;
       AliasVariables av;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] ialg;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> ialg;
       EventInfo wc;
       ExternalObjectClasses extobjcls;
 
@@ -13432,8 +13431,8 @@ algorithm
       Variables knvars,vars,extVars;
       AliasVariables av;
       EquationArray eqns,seqns,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo wc;
       ExternalObjectClasses extObjCls;
     case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av,orderedEqs = eqns,
@@ -15196,8 +15195,8 @@ algorithm
       list<list<DAE.Exp>> explist6,explist;
       Variables vars1,vars2;
       EquationArray eqns,reqns,ieqns;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] algs;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
     case (DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,initialEqs = ieqns,arrayEqs = ae,algorithms = algs))
       equation
         exps1 = getAllExpsVars(vars1);
@@ -15220,7 +15219,7 @@ protected function getAllExpsArrayEqns "function: getAllExpsArrayEqns
 
   Returns all expressions in array equations
 "
-  input MultiDimEquation[:] arr;
+  input array<MultiDimEquation> arr;
   output list<DAE.Exp> res;
   list<MultiDimEquation> lst;
   list<list<DAE.Exp>> llst;
@@ -15258,8 +15257,8 @@ algorithm
     local
       list<Var> vars;
       list<DAE.Exp> exps;
-      list<CrefIndex>[:] crefindex;
-      list<StringIndex>[:] oldcrefindex;
+      array<list<CrefIndex>> crefindex;
+      array<list<StringIndex>> oldcrefindex;
       VariableArray vararray;
       Value bsize,nvars;
     case VARIABLES(crefIdxLstArr = crefindex,strIdxLstArr = oldcrefindex,varArr = vararray,bucketSize = bsize,numberOfVars = nvars)
@@ -15407,8 +15406,8 @@ algorithm
       list<DAE.Algorithm> alglst;
       Variables vars1,vars2;
       EquationArray eqns,reqns,ieqns;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] algs;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
     case (DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs),func)
       equation
@@ -15451,8 +15450,8 @@ algorithm
     local
       list<Var> vars;
       list<Type_a> talst;
-      list<CrefIndex>[:] crefindex;
-      list<StringIndex>[:] oldcrefindex;
+      array<list<CrefIndex>> crefindex;
+      array<list<StringIndex>> oldcrefindex;
       VariableArray vararray;
       Value bsize,nvars;
     case (VARIABLES(crefIdxLstArr = crefindex,strIdxLstArr = oldcrefindex,varArr = vararray,bucketSize = bsize,numberOfVars = nvars),func)
@@ -15650,7 +15649,7 @@ protected function traverseDEALowExpsArrayEqns "function: traverseDEALowExpsArra
 
   helper for traverseDEALowExps
 "
-  input MultiDimEquation[:] arr;
+  input array<MultiDimEquation> arr;
   input FuncExpType func;
   output list<Type_a> outTypeALst;
   partial function FuncExpType
@@ -16023,14 +16022,14 @@ public function tearingSystem
   input DAELow inDlow;
   input IncidenceMatrix inM;
   input IncidenceMatrixT inMT;
-  input Integer[:] inV1;
-  input Integer[:] inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<list<Integer>> inComps;
   output DAELow outDlow;
   output IncidenceMatrix outM;
   output IncidenceMatrixT outMT;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<list<Integer>> outComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
@@ -16041,7 +16040,7 @@ algorithm
       DAELow dlow,dlow_1,dlow1;
       IncidenceMatrix m,m_1;
       IncidenceMatrixT mT,mT_1;
-      Integer[:] v1,v2,v1_1,v2_1;
+      array<Integer> v1,v2,v1_1,v2_1;
       list<list<Integer>> comps,comps_1;
       list<list<Integer>> r,t;
     case (dlow,m,mT,v1,v2,comps)
@@ -16116,18 +16115,18 @@ algorithm
       Variables ordvars,knvars,exobj,ordvars1;
       AliasVariables av;
       EquationArray eqns,remeqns,inieqns,eqns1;
-      MultiDimEquation[:] arreqns;
-      DAE.Algorithm[:] algorithms;
+      array<MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
       EventInfo einfo;
       ExternalObjectClasses eoc;
       Value n,size,n1,size1;
-      Option<Equation>[:] arr_1,arr;
-      list<CrefIndex>[:] crefIdxLstArr,crefIdxLstArr1;
-      list<StringIndex>[:] strIdxLstArr,strIdxLstArr1;
+      array<Option<Equation>> arr_1,arr;
+      array<list<CrefIndex>> crefIdxLstArr,crefIdxLstArr1;
+      array<list<StringIndex>> strIdxLstArr,strIdxLstArr1;
       VariableArray varArr;
       Integer bucketSize;
       Integer numberOfVars;
-      Option<Var>[:] varOptArr,varOptArr1;
+      array<Option<Var>> varOptArr,varOptArr1;
     case (DAELOW(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
         VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
@@ -16157,8 +16156,8 @@ protected function tearingSystem1
   input DAELow inDlow1;
   input IncidenceMatrix inM;
   input IncidenceMatrixT inMT;
-  input Integer[:] inV1;
-  input Integer[:] inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<list<Integer>> inComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
@@ -16166,8 +16165,8 @@ protected function tearingSystem1
   output DAELow outDlow1;
   output IncidenceMatrix outM;
   output IncidenceMatrixT outMT;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<list<Integer>> outComps;
 algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
@@ -16176,7 +16175,7 @@ algorithm
       DAELow dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
       IncidenceMatrix m,m_1,m_2,m_3,m_4;
       IncidenceMatrixT mT,mT_1,mT_2,mT_3,mT_4;
-      Integer[:] v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
       list<list<Integer>> comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns,l2,l2_1;
       list<list<Integer>> r,t;
@@ -16221,17 +16220,17 @@ end tearingSystem1;
 protected function correctAssignments
 " function: correctAssignments
   Correct the assignments"
-  input Value[:] inV1;
-  input Value[:] inV2;
+  input array<Value> inV1;
+  input array<Value> inV2;
   input list<Integer> inRLst;
   input list<Integer> inTLst;
-  output Value[:] outV1;
-  output Value[:] outV2;
+  output array<Value> outV1;
+  output array<Value> outV2;
 algorithm
   (outV1,outV2):=
   matchcontinue (inV1,inV2,inRLst,inTLst)
     local
-      Value[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
+      array<Value> v1,v2,v1_1,v2_1,v1_2,v2_2;
       list<Value> comp;
       list<Integer> rlst,tlst;
       Integer r,t;
@@ -16250,8 +16249,8 @@ protected function getTearingVars
 " function: getTearingVars
   Substracts all interesting vars for tearing"
   input IncidenceMatrix inM;
-  input Value[:] inV1;
-  input Value[:] inV2;
+  input array<Value> inV1;
+  input array<Value> inV2;
   input list<Value> inComp;
   input DAELow inDlow;
   output list<Value> outVarLst;
@@ -16261,7 +16260,7 @@ algorithm
   matchcontinue (inM,inV1,inV2,inComp,inDlow)
     local
       IncidenceMatrix m;
-      Value[:] v1,v2;
+      array<Value> v1,v2;
       Value c,v;
       list<Value> comp,varlst;
       DAELow dlow;
@@ -16290,8 +16289,8 @@ protected function tearingSystem2
   input DAELow inDlow1;
   input IncidenceMatrix inM;
   input IncidenceMatrixT inMT;
-  input Integer[:] inV1;
-  input Integer[:] inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<Integer> inComp;
   input list<Integer> inTVars;
   input list<Integer> inExclude;
@@ -16306,8 +16305,8 @@ protected function tearingSystem2
   output DAELow outDlow1;
   output IncidenceMatrix outM;
   output IncidenceMatrixT outMT;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<Integer> outComp;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
@@ -16316,7 +16315,7 @@ algorithm
       DAELow dlow,dlow_1,dlow1,dlow1_1;
       IncidenceMatrix m,m_1;
       IncidenceMatrixT mT,mT_1;
-      Integer[:] v1,v2,v1_1,v2_1;
+      array<Integer> v1,v2,v1_1,v2_1;
       list<Integer> tvars,vars,vars_1,comp,comp_1,exclude;
       String str,str1;
       Integer residualeqn;
@@ -16368,8 +16367,8 @@ protected function tearingSystem3
   input DAELow inDlow1;
   input IncidenceMatrix inM;
   input IncidenceMatrixT inMT;
-  input Integer[:] inV1;
-  input Integer[:] inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<Integer> inComp;
   input list<Integer> inTVars;
   input list<Integer> inExclude;
@@ -16385,8 +16384,8 @@ protected function tearingSystem3
   output DAELow outDlow1;
   output IncidenceMatrix outM;
   output IncidenceMatrixT outMT;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<Integer> outComp;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
@@ -16395,7 +16394,7 @@ algorithm
       DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
       IncidenceMatrix m,m_1,m_2,m_3;
       IncidenceMatrixT mT,mT_1,mT_2,mT_3;
-      Integer[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       list<list<Integer>> comps,comps_1,lstm,lstmp,onecomp,morecomps;
       list<Integer> vars,comp,comp_1,comp_2,r,t,exclude,b,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2;
@@ -16410,8 +16409,8 @@ algorithm
       AliasVariables av;
       Assignments assign1,assign2,assign1_1,assign2_1,ass1,ass2;
       EquationArray eqns, eqns_1, eqns_2,removedEqs,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
-      MultiDimEquation[:] arreqns;
-      DAE.Algorithm[:] algorithms;
+      array<MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
       EventInfo einfo;
       ExternalObjectClasses eoc;
       DAE.Exp eqn,eqn_1,scalar,scalar_1;
@@ -16525,8 +16524,8 @@ protected function tearingSystem4
   input DAELow inDlow1;
   input IncidenceMatrix inM;
   input IncidenceMatrixT inMT;
-  input Integer[:] inV1;
-  input Integer[:] inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<list<Integer>> inComps;
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
@@ -16541,8 +16540,8 @@ protected function tearingSystem4
   output DAELow outDlow1;
   output IncidenceMatrix outM;
   output IncidenceMatrixT outMT;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<list<Integer>> outComp;
   output Integer outCompCount;
 algorithm
@@ -16552,7 +16551,7 @@ algorithm
       DAELow dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
       IncidenceMatrix m,m_1,m_2;
       IncidenceMatrixT mT,mT_1,mT_2;
-      Integer[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       list<list<Integer>> comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,ccomp,r,t,r_1,t_1,te,te_1,tearingeqns;
       Integer ll,compcount,compcount_1,compcount_2;
@@ -16714,7 +16713,7 @@ protected function solveEquations
   try to solve the equations"
   input EquationArray inEqnArray;
   input list<Integer> inEqns;
-  input Integer[:] inAssigments;
+  input array<Integer> inAssigments;
   input Variables inVars;
   input list<DAE.ComponentRef> inCrlst;
   output EquationArray outEqnArray;
@@ -16725,7 +16724,7 @@ algorithm
       EquationArray eqns,eqns_1,eqns_2;
       list<Integer> rest;
       Integer e,e_1,v,v_1;
-      Integer[:] ass;
+      array<Integer> ass;
       Variables vars;
       DAE.Exp e1,e2,varexp,expr;
       list<DAE.Exp> divexplst,constexplst,nonconstexplst,tfixedexplst,tnofixedexplst;
@@ -17388,8 +17387,8 @@ public function generateLinearMatrix
   input list<DAE.ComponentRef> inComRef2; // vars to differentiate 
   input list<Var> inAllVar;
   output DAELow outJacobian;
-  output Integer[:] outV1;
-  output Integer[:] outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
   output list<list<Integer>> outComps1;
 algorithm 
   (outJacobian,outv1,outv2,outComps1) :=
@@ -17400,18 +17399,18 @@ algorithm
       
       list<DAE.ComponentRef> eqvars,diffvars;
       list<Var> varlst;
-      Integer[:] v1,v2;
+      array<Integer> v1,v2;
       list<list<Integer>> comps1;
       list<Var> derivedVariables;
       BinTree jacElements;
       list<tuple<String,Integer>> varTuple;
-      list<Integer>[:] m,mT;
+      array<list<Integer>> m,mT;
       
       Variables v,kv,exv;
       AliasVariables av;
       EquationArray e,re,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      array<MultiDimEquation> ae;
+      array<DAE.Algorithm> al;
       EventInfo ev;
       ExternalObjectClasses eoc;
       list<Equation> e_lst,re_lst,ie_lst;
@@ -17470,8 +17469,8 @@ public function generateSymbolicJacobian
   input DAELow inDAELow;
   input DAE.FunctionTree functions;
   input list<DAE.ComponentRef> inVars;
-  input Integer[:] inAss1; // var -> eqn
-  input Integer[:] inAss2; // eqn -> var
+  input array<Integer> inAss1; // var -> eqn
+  input array<Integer> inAss2; // eqn -> var
   output DAELow outJacobian;
 algorithm
   outJacobian := matchcontinue(inDAELow, functions, inVars, inAss1, inAss2)
@@ -17479,8 +17478,8 @@ algorithm
       DAELow daeLow;
       DAE.DAElist daeList;
       list<DAE.ComponentRef> vars;
-      Integer[:] ass1; // var -> eqn
-      Integer[:] ass2; // eqn -> var
+      array<Integer> ass1; // var -> eqn
+      array<Integer> ass2; // eqn -> var
       DAELow jacobian;
       
       // DAELOW
@@ -17491,8 +17490,8 @@ algorithm
       EquationArray orderedEqs, jacOrderedEqs;
       EquationArray removedEqs, jacRemovedEqs;
       EquationArray initialEqs, jacInitialEqs;
-      MultiDimEquation[:] arrayEqs, jacArrayEqs;
-      DAE.Algorithm[:] algorithms, jacAlgorithms;
+      array<MultiDimEquation> arrayEqs, jacArrayEqs;
+      array<DAE.Algorithm> algorithms, jacAlgorithms;
       EventInfo eventInfo, jacEventInfo;
       ExternalObjectClasses extObjClasses, jacExtObjClasses;
       // end DAELOW
@@ -17628,8 +17627,8 @@ protected function deriveAll
   input list<DAE.Algorithm> inAlgorithms;
   input DAE.FunctionTree inFunctions;
   input list<DAE.ComponentRef> inVars;
-  input Integer[:] inAss1; // var -> eqn
-  input Integer[:] inAss2; // eqn -> var
+  input array<Integer> inAss1; // var -> eqn
+  input array<Integer> inAss2; // eqn -> var
   input list<Var> inAllVars;
   input Integer inAlgNum;
   output list<Var> outDerivedVariables;
@@ -17643,8 +17642,8 @@ algorithm
       list<DAE.Algorithm> algorithms;
       DAE.FunctionTree functions;
       list<DAE.ComponentRef> vars;
-      Integer[:] ass1; // var -> eqn
-      Integer[:] ass2; // eqn -> var
+      array<Integer> ass1; // var -> eqn
+      array<Integer> ass2; // eqn -> var
       
       list<Var> currDerivedVariables, restDerivedVariables, derivedVariables;
       list<Equation> currDerivedEquations, restDerivedEquations, derivedEquations;
@@ -17676,8 +17675,8 @@ protected function deriveOne
   input list<DAE.Algorithm> inAlgorithms;
   input DAE.FunctionTree inFunctions;
   input list<DAE.ComponentRef> inVars;
-  input Integer[:] inAss1; // var -> eqn
-  input Integer[:] inAss2; // eqn -> var
+  input array<Integer> inAss1; // var -> eqn
+  input array<Integer> inAss2; // eqn -> var
   input list<Var> inAllVars;
   input Integer inAlgNum;
   output list<Var> outDerivedVariables;
@@ -17691,8 +17690,8 @@ algorithm
       DAE.FunctionTree functions;
       DAE.ComponentRef currVar;
       list<DAE.ComponentRef> restVars;
-      Integer[:] ass1; // var -> eqn
-      Integer[:] ass2; // eqn -> var
+      array<Integer> ass1; // var -> eqn
+      array<Integer> ass2; // eqn -> var
       Integer algNum;
       
       list<Var> currDerivedVariables, restDerivedVariables, derivedVariables;
@@ -17725,8 +17724,8 @@ protected function derive
   input list<DAE.Algorithm> inAlgorithms;
   input DAE.FunctionTree inFunctions;
   input DAE.ComponentRef inVar;
-  input Integer[:] inAss1; // var -> eqn
-  input Integer[:] inAss2; // eqn -> var
+  input array<Integer> inAss1; // var -> eqn
+  input array<Integer> inAss2; // eqn -> var
   input list<Var> inAllVars;
   input Integer inNumAlgs;
   output list<Var> outDerivedVariables;
@@ -17739,8 +17738,8 @@ algorithm
       list<DAE.Algorithm> algorithms;
       DAE.FunctionTree functions;
       DAE.ComponentRef var, cref, cref_;
-      Integer[:] ass1; // var -> eqn
-      Integer[:] ass2; // eqn -> var
+      array<Integer> ass1; // var -> eqn
+      array<Integer> ass2; // eqn -> var
       
       Var currDerivedVariable;
       Equation currDerivedEquation;

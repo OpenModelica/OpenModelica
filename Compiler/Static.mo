@@ -8573,7 +8573,7 @@ algorithm
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
       SCode.Class cl;
-      Absyn.Path fn,fn_1,fqPath;
+      Absyn.Path fn,fn_1,fqPath,utPath;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin;
@@ -8732,7 +8732,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
         Util.setStatefulBoolean(stopElab,true);
         //(cache,c,env_1) = Lookup.lookupClass(cache, env, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
@@ -8743,6 +8743,7 @@ algorithm
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{},pre,info);
         const = Util.listReduce(constlist, Types.constAnd);
         tyconst = elabConsts(t, const);
+        t = (DAE.T_UNIONTYPE({}),SOME(utPath));
         prop = getProperties(t, tyconst);
         true = Util.listFold(newslots, slotAnd, true);
         //(cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre,info);

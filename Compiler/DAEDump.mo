@@ -1363,7 +1363,6 @@ algorithm
       Option<Absyn.Path> optPath;
       Option<DAE.Type> optTp;
       DAE.EqualityConstraint ec;
-      DAE.Type tp;
       DAE.Binding binding;
       ClassInf.State cistate;
       String name,s1,s2;

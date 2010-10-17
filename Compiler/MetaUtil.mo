@@ -1011,50 +1011,44 @@ function fixRestriction
     input Integer index;
     output Absyn.Restriction resout;
 
-  algorithm
-    resout := matchcontinue(resin,name,index)
+algorithm
+  resout := matchcontinue(resin,name,index)
     local
-      String name;
-      Integer index;
       Absyn.Ident ident;
       Absyn.Path path;
-      case(Absyn.R_RECORD(),name,index)
-        equation
-          ident = name;
-          path = Absyn.IDENT(ident);
+    case(Absyn.R_RECORD(),name,index)
+      equation
+        ident = name;
+        path = Absyn.IDENT(ident);
       then Absyn.R_METARECORD(path,index);
-      case(_,_,_)
-      then resin;
-    end matchcontinue;
-  end fixRestriction;
+    case(_,_,_) then resin;
+  end matchcontinue;
+end fixRestriction;
 
 
-  function fixClass
-    input Absyn.Class classin;
-    input String name;
-    input Integer index;
-    output Absyn.Class classout;
-  algorithm
-    classout := matchcontinue(classin,name,index)
-      local
-        Absyn.Ident n;
-        Boolean p;
-        Boolean f;
-        Boolean e;
-        Absyn.Restriction res;
-        Absyn.ClassDef b;
-        Absyn.Info i;
-        String name;
-        Integer index;
+function fixClass
+  input Absyn.Class classin;
+  input String name;
+  input Integer index;
+  output Absyn.Class classout;
+algorithm
+  classout := matchcontinue(classin,name,index)
+    local
+      Absyn.Ident n;
+      Boolean p;
+      Boolean f;
+      Boolean e;
+      Absyn.Restriction res;
+      Absyn.ClassDef b;
+      Absyn.Info i;
 
-      case(Absyn.CLASS(n,p,f,e,res,b,i),name,index)
-        equation
-          res = fixRestriction(res,name,index);
+    case(Absyn.CLASS(n,p,f,e,res,b,i),name,index)
+      equation
+        res = fixRestriction(res,name,index);
       then Absyn.CLASS(n,p,f,e,res,b,i);
-      case(_,_,_)
-      then classin;
-    end matchcontinue;
-  end fixClass;
+    case(_,_,_) then classin;
+  end matchcontinue;
+end fixClass;
 
 
 function fixElementSpecification
@@ -1062,15 +1056,11 @@ function fixElementSpecification
   input String name;
   input Integer index;
   output Absyn.ElementSpec specout;
-
-
 algorithm
   specout := matchcontinue(specin,name,index)
     local
       Boolean rep;
       Absyn.Class c;
-      String name;
-      Integer index;
     case(Absyn.CLASSDEF(rep,c),name,index)
       equation
         c = fixClass(c,name,index);
@@ -1096,8 +1086,6 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info inf;
       Option<Absyn.ConstrainClass> con;
-      String name;
-      Integer index;
     case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, name=n, specification=spec, info=inf, constrainClass=con),name,index)
       equation
         spec = fixElementSpecification(spec,name,index);
@@ -1116,8 +1104,6 @@ algorithm
   elementItemout := matchcontinue(elementItemin,name,index)
     local
       Absyn.Element element;
-      String name;
-      Integer index;
     case(Absyn.ELEMENTITEM(element),name,index)
       equation
         element = fixElement(element,name,index);
@@ -1136,16 +1122,15 @@ algorithm
     local
       Absyn.ElementItem element;
       list<Absyn.ElementItem> rest;
-      Integer index;
     case(element::rest,name,index)
       equation
         element = fixElementItem(element,name,index);
         rest = fixElementItems(rest,name,index+1);
       then (element::rest);
-    case(element::nil,name,index)
+    case(element::{},name,index)
       equation
         element = fixElementItem(element,name,index);
-      then (element::nil);
+      then (element::{});
   end matchcontinue;
 end fixElementItems;
 

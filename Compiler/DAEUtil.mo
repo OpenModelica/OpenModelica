@@ -988,12 +988,12 @@ public function getMatchingElements "function getMatchingElements
 "
   input list<DAE.Element> elist;
   input FuncTypeElementTo cond;
-  output list<DAE.Element> elist;
+  output list<DAE.Element> oelist;
   partial function FuncTypeElementTo
     input DAE.Element inElement;
   end FuncTypeElementTo;
 algorithm
-  elist := Util.listFilter(elist, cond);
+  oelist := Util.listFilter(elist, cond);
 end getMatchingElements;
 
 public function getAllMatchingElements "function getAllMatchingElements
@@ -2851,7 +2851,6 @@ algorithm
       list<Boolean> b;
       list<String> strs;
       String str;
-      Integer nrOfEquations;
       list<Integer> nrOfEquationsBranches;
     case (trueBranches,falseBranch,source)
       equation
@@ -4822,7 +4821,7 @@ public function splitElements_dispatch
   input list<DAE.Element> e_acc;
   input list<DAE.Element> a_acc;
   input list<DAE.Element> o_acc;
-  output list<DAE.Element> v_acc;
+  output list<DAE.Element> v;
   output list<DAE.Element> ie;
   output list<DAE.Element> ia;
   output list<DAE.Element> e;
