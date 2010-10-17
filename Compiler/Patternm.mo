@@ -478,6 +478,14 @@ algorithm
       equation
         tempPat = DFA.RP_INTEGER(localVar,val);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
+    case (Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(val)),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
+      local
+        Integer val;
+        RenamedPat tempPat;
+      equation
+        val = -val;
+        tempPat = DFA.RP_INTEGER(localVar,val);
+      then (localCache,tempPat,localAsBinds,localConstTagEnv);
         // REAL EXPRESSION
     case (Absyn.REAL(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
@@ -486,6 +494,15 @@ algorithm
       equation
         tempPat = DFA.RP_REAL(localVar,val);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
+    case (Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(val)),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
+      local
+        Real val;
+        RenamedPat tempPat;
+      equation
+        val = realNeg(val);
+        tempPat = DFA.RP_REAL(localVar,val);
+      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+
         // BOOLEAN EXPRESSION
     case (Absyn.BOOL(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
