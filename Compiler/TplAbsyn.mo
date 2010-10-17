@@ -907,10 +907,9 @@ algorithm
     local
       list<MMExp> stmts, fargs;
       MMExp stmt, rhs;
-      Ident ident, outident;
+      Ident ident, outident, inident;
       PathIdent fpath;
       list<Ident> largs;
-      String outident, inident;
       list<tuple<Ident,Ident>> trIdents; 
       
     case ( MM_IDENT(IDENT(ident = ident)), trIdents)
@@ -2040,7 +2039,7 @@ public function statementFromFun
   output TypedIdents outLocals;
   output Ident outOutText; 
 algorithm
-  (outIsTemplate, outStmt, outRetMMExp, outRetType, outLocals) 
+  (outHasRetValue, outStmt, outRetMMExp, outRetType, outLocals, outOutText) 
     := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
     local
       
@@ -3266,10 +3265,9 @@ public function getItNameFromArg
   input MatchingExp inMatchingExp;
   input list<ASTDef> inASTDefs;
   
-  output Ident outItName;   
+  output Ident outItName;
 algorithm
-  (outMatchingExp) 
-  := matchcontinue (inItArgMMExp, inMType, inMatchingExp, inASTDefs)
+  outItName := matchcontinue (inItArgMMExp, inMType, inMatchingExp, inASTDefs)
     local
       TypeSignature exptype;
       MatchingExp mexp;
@@ -3463,7 +3461,7 @@ algorithm
       MatchingExp mexp;
       TypeSignature mtype;
       list<tuple<Ident, MatchingExp>> fms;
-      TypedIdents locals, fields;
+      TypedIdents locals;
       list<ASTDef> astDefs;
       String reason;      
     
@@ -3742,7 +3740,7 @@ algorithm
       MatchingExp mexp;
       TypeSignature mtype;
       list<tuple<Ident, MatchingExp>> fms;
-      TypedIdents locals, fields;
+      TypedIdents locals;
       list<ASTDef> astDefs;
       String reason;      
     
@@ -4559,8 +4557,7 @@ algorithm
         (ident, idtype, scEnv);
         
     //not in the function scope, look up
-    case ( ident, path, 
-           FUN_SCOPE(args = fargs) :: restEnv, astdefs  )
+    case (ident, path, FUN_SCOPE(args = fargs)::restEnv, astdefs)
       equation
         //failure(_ = lookupTupleList(fargs, ident));
         (ident, idtype, restEnv) = resolvePathInScopeEnv(ident, path, restEnv, astdefs);
@@ -5051,7 +5048,7 @@ public function lookupUpdateMExpRecord
   output TypeSignature outValueType;
   output list<tuple<Ident, MatchingExp>> outFieldMatchings;
 algorithm 
-  (outValueType, outMatchingExp) 
+  (outValueType, outFieldMatchings) 
     := matchcontinue (inIdent, inPathIdent, inFieldMatchings, inFields, inASTDefs)
     local
       Ident inid, ident;
@@ -6128,8 +6125,6 @@ algorithm
   end matchcontinue;
 end fullyQualifyTemplateTypeSignature;
 
-
-
 protected function lookupTupleList
   input list<tuple<Type_a,Type_b>> inList;
   input Type_a inItemA;
@@ -6147,7 +6142,7 @@ algorithm
     case ( (a, itemB) :: rest, itemA )
       equation
         equality(a = itemA);
-        then itemB;
+      then itemB;
     case ( _ :: rest, itemA)
       then lookupTupleList(rest, itemA);   
   end matchcontinue;
@@ -6178,7 +6173,6 @@ algorithm
 
   end matchcontinue;
 end updateTupleList;
-
 
 protected function lookupDeleteTupleList
   input list<tuple<Type_a,Type_b>> inList;
@@ -6222,7 +6216,7 @@ Assuming the lists have distinct tuples (no multiple first elements occurences).
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outList := matchcontinue(inListToAlign, inListAlignBy)
+  outAlignedList := matchcontinue(inListToAlign, inListAlignBy)
     local
        Type_a a;
        Type_b b;

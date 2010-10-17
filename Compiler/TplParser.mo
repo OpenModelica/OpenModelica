@@ -127,7 +127,7 @@ public function parseError
   
   output LineInfo outLineInfo;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inErrMessage, isFatal)
+  outLineInfo := matchcontinue (inChars, inLineInfo, inErrMessage, isFatal)
     local
       list<String> chars, solchars, errLst;
       LineInfo linfo;

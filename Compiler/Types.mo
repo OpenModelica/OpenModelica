@@ -4030,6 +4030,15 @@ algorithm
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
+    case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_BOXED(ty2),p2),printFailtrace)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        e_1 = DAE.META_TUPLE(elist);
+        ty1 = (DAE.T_METATUPLE(tys1),p2);
+        (e_1,t_1) = matchType(e_1, ty1, ty2, printFailtrace);
+      then
+        (e_1,t_1);
+
       /*
          The automatic type conversion will convert any array that can be
          const-eval'ed to an DAE.ARRAY or DAE.MATRIX into a list of the same
@@ -5148,8 +5157,11 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
+        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
+        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);
+        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,true)
