@@ -965,9 +965,9 @@ the same type.
 
 See also listMap, arrayMap 
   "
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
@@ -978,11 +978,11 @@ algorithm
 end arrayMapNoCopy;
 
 protected function arrayMapNoCopyHelp1 "help function to arrayMap"
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
@@ -1010,7 +1010,7 @@ Since it will update the array values the returned array must not have the same 
 
 See also listMap, arrayMapNoCopy 
   "
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
   output Type_b[:] outArray;
   replaceable type Type_a subtypeof Any;
@@ -1026,7 +1026,7 @@ algorithm
 end arrayMap;
 
 protected function arrayMapHelp1 "help function to arrayMap"
-  input Type_a[:] array;
+  input array<Type_a> array;
   input Type_b[:] newArray;
   input FuncType func;
   input Integer pos "iterated 1..len";
@@ -3754,7 +3754,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -3764,8 +3764,8 @@ algorithm
 end listIntersectionIntN;
 
 protected function listIntersectionIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -3786,9 +3786,9 @@ end listIntersectionIntVec;
 
 protected function listSetPos "Help function to listIntersectionIntN"
   input list<Integer> intLst;
-  input Integer[:] arr;
+  input array<Integer> arr;
   input Integer v;
-  output Integer[:] outArr;
+  output array<Integer> outArr;
 algorithm
   outArr := matchcontinue(intLst,arr,v)
   local Integer i;
@@ -3810,7 +3810,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -3820,8 +3820,8 @@ algorithm
 end listUnionIntN;
 
 protected function listUnionIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -3846,7 +3846,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -3856,8 +3856,8 @@ algorithm
 end listSetDifferenceIntN;
 
 protected function listSetDifferenceIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -4246,16 +4246,16 @@ public function arrayReplaceAtWithFill "
     arrayReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input Type_a inTypeA1;
   input Integer inInteger2;
-  input Type_a[:] inTypeAArray3;
+  input array<Type_a> inTypeAArray3;
   input Type_a inTypeA4;
-  output Type_a[:] outTypeAArray;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeA1,inInteger2,inTypeAArray3,inTypeA4)
     local
       Integer alen,pos,pos_1;
-      Type_a[:] res,arr,newarr,res_1;
+      array<Type_a> res,arr,newarr,res_1;
       Type_a x,fillv;
     case (x,pos,arr,fillv)
       equation
@@ -4284,12 +4284,12 @@ public function arrayExpand "function: arrayExpand
   Increases the number of elements of a list with n.
   Each of the new elements have the value v."
   input Integer n;
-  input Type_a[:] arr;
+  input array<Type_a> arr;
   input Type_a v;
-  output Type_a[:] newarr_1;
+  output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
   Integer len,newlen;
-  Type_a[:] newarr,newarr_1;
+  array<Type_a> newarr,newarr_1;
 algorithm
   len := arrayLength(arr);
   newlen := n + len;
@@ -4300,13 +4300,13 @@ end arrayExpand;
 public function arrayNCopy "function arrayNCopy
   Copeis n elements in src array into dest array
   The function fails if all elements can not be fit into dest array."
-  input Type_a[:] src;
-  input Type_a[:] dst;
+  input array<Type_a> src;
+  input array<Type_a> dst;
   input Integer n;
-  output Type_a[:] dst_1;
+  output array<Type_a> dst_1;
   replaceable type Type_a subtypeof Any;
   Integer n_1;
-  Type_a[:] dst_1;
+  array<Type_a> dst_1;
 algorithm
   n_1 := n - 1;
   dst_1 := arrayCopy2(src, dst, n_1);
@@ -4314,9 +4314,9 @@ end arrayNCopy;
 
 public function arrayAppend "Function: arrayAppend
 function for appending two arrays"
-  input Type_a[:] arr1;
-  input Type_a[:] arr2;
-  output Type_a[:] out;
+  input array<Type_a> arr1;
+  input array<Type_a> arr2;
+  output array<Type_a> out;
   replaceable type Type_a subtypeof Any;
   list<Type_a> l1,l2,l3;
 algorithm
@@ -4329,16 +4329,16 @@ end arrayAppend;
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
-  output Type_a[:] outTypeAArray;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2)
     local
       Integer srclen,dstlen;
-      Type_a[:] src,dst,dst_1;
+      array<Type_a> src,dst,dst_1;
     case (src,dst) /* src dst */
       equation
         srclen = arrayLength(src);
@@ -4359,16 +4359,16 @@ algorithm
 end arrayCopy;
 
 protected function arrayCopy2
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
   input Integer inInteger3;
-  output Type_a[:] outTypeAArray;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
     local
-      Type_a[:] src,dst,dst_1,dst_2;
+      array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
       Integer pos;
     case (src,dst,-1) then dst;  /* src dst current pos */
@@ -6163,7 +6163,7 @@ algorithm
   end matchcontinue;
 end mulListIntegerOpt;
 
-public type StatefulBoolean = Boolean[:] "A single boolean value that can be updated (a destructive operation)";
+public type StatefulBoolean = array<Boolean> "A single boolean value that can be updated (a destructive operation)";
 
 public function makeStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"

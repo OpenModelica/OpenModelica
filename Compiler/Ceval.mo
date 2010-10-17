@@ -5688,7 +5688,7 @@ end dumpTuple;
 public
 uniontype CevalHashTable
   record HASHTABLE
-    list<tuple<Key,Integer>>[:] hashTable " hashtable to translate Key to array indx" ;
+    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx" ;
     ValueArray valueArr "Array of values" ;
     Integer bucketSize "bucket size" ;
     Integer numberOfEntries "number of entries in hashtable" ;
@@ -5701,7 +5701,7 @@ uniontype ValueArray
   record VALUE_ARRAY
     Integer numberOfElements "number of elements in hashtable" ;
     Integer arrSize "size of crefArray" ;
-    Option<tuple<Key,Value>>[:] valueArray "array of values";
+    array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;
 
@@ -5712,9 +5712,9 @@ input CevalHashTable inHash;
 output CevalHashTable outHash;
 algorithm outHash := matchcontinue(inHash)
   local
-    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    array<list<tuple<Key,Integer>>> arg1,arg1_2;
     Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
-    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+    array<Option<tuple<Key,Value>>> arg23,arg23_2;
   case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
     equation
       arg1_2 = arrayCopy(arg1);
@@ -5733,9 +5733,9 @@ public function emptyCevalHashTable
   Returns an empty CevalHashTable.
   Using the bucketsize 100 and array size 10."
   output CevalHashTable hashTable;
-  list<tuple<Key,Integer>>[:] arr;
+  array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
-  Option<tuple<Key,Value>>[:] emptyarr;
+  array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
   arr := fill({}, 1000);
   emptyarr := fill(NONE(), 100);
@@ -5766,7 +5766,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -5813,7 +5813,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -5852,7 +5852,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -5894,7 +5894,7 @@ algorithm
       Integer hval,hashindx,indx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
-      list<tuple<Key,Integer>>[:] hashvec;
+      array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
       Key key2;
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -5968,7 +5968,7 @@ public function valueArrayList
 algorithm
   tplLst := matchcontinue (valueArray)
     local
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       tuple<Key,Value> elt;
       Integer lastpos,n,size;
       list<tuple<Key,Value>> lst;
@@ -5988,7 +5988,7 @@ algorithm
 end valueArrayList;
 
 public function valueArrayList2 "Helper function to valueArrayList"
-  input Option<tuple<Key,Value>>[:] inVarOptionArray1;
+  input array<Option<tuple<Key,Value>>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<tuple<Key,Value>> outVarLst;
@@ -5996,7 +5996,7 @@ algorithm
   outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
     local
       tuple<Key,Value> v;
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
     case (arr,pos,lastpos)
@@ -6045,7 +6045,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,entry)
     local
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
-      Option<tuple<Key,Value>>[:] arr_1,arr,arr_2;
+      array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
     case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
       equation
@@ -6087,7 +6087,7 @@ public function valueArraySetnth
 algorithm
   outValueArray := matchcontinue (valueArray,pos,entry)
     local
-      Option<tuple<Key,Value>>[:] arr_1,arr;
+      array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size,pos;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
@@ -6112,7 +6112,7 @@ public function valueArrayClearnth
 algorithm
   outValueArray := matchcontinue (valueArray,pos)
     local
-      Option<tuple<Key,Value>>[:] arr_1,arr;
+      array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size,pos;
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
@@ -6140,7 +6140,7 @@ algorithm
     local
       Value v;
       Integer n,pos,len;
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation

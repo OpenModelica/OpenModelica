@@ -3207,7 +3207,7 @@ algorithm
       BinTree mvars_1,mvars_2;
       VarTransform.VariableReplacements repl_1,repl_2,replc_1,replc_2;
       DAE.ComponentRef cr1,cr2;
-      list<Equation> eqns_1,seqns_1,eqns;
+      list<Equation> eqns_1,seqns_1;
       Equation e;
       DAE.ExpType t;
       DAE.Exp e1,e2;

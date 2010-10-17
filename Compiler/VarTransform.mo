@@ -888,7 +888,6 @@ algorithm
     local
       DAE.ComponentRef src,src_1,dst_1;
       DAE.Exp dst,dst_1,olddst;
-      VariableReplacements repl;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s1,s2,s3,s4,s;
