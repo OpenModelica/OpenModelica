@@ -137,7 +137,7 @@ public function nullHashTable "
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 0);
+  arr := arrayCreate(0, {});
   emptyarr := listArray({});
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,0,emptyarr),0,0);
 end nullHashTable;
@@ -153,7 +153,7 @@ public function emptyHashTable "
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 1000);
+  arr := arrayCreate(1000, {});
   lst := Util.listFill(NONE, 100);
   emptyarr := listArray(lst);
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
@@ -351,7 +351,7 @@ algorithm
   (value,indx):=
   matchcontinue (key,hashTable)
     local
-      Integer hval,hashindx,indx,indx_1,bsize,n;
+      Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;

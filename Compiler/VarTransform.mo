@@ -886,7 +886,7 @@ algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst)
     local
-      DAE.ComponentRef src,src_1,dst_1;
+      DAE.ComponentRef src,src_1;
       DAE.Exp dst,dst_1,olddst;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
@@ -1116,9 +1116,8 @@ algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst)
     local
-      DAE.ComponentRef src,src_1,dst_1;
+      DAE.ComponentRef src,src_1;
       DAE.Exp dst,dst_1,olddst;
-      VariableReplacements repl;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s1,s2,s3,s4,s;
@@ -1252,7 +1251,7 @@ algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst)
     local
-      VariableReplacements repl_1,repl_2,repl;
+      VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
     case (repl,src,dst)
@@ -1280,7 +1279,7 @@ algorithm
   matchcontinue (repl,src,dst)
     local
       list<DAE.ComponentRef> lst;
-      VariableReplacements repl_1,repl,singleRepl;
+      VariableReplacements repl_1,singleRepl;
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
       DAE.Exp dst_1;
@@ -1336,9 +1335,9 @@ algorithm
   (outRepl,outSrc,outDst):=
   matchcontinue (repl,src,dst)
     local
-      DAE.ComponentRef src,src_1;
-      DAE.Exp newdst,dst_1,dst;
-      VariableReplacements repl_1,repl;
+      DAE.ComponentRef src_1;
+      DAE.Exp newdst,dst_1;
+      VariableReplacements repl_1;
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;

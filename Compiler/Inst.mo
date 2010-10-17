@@ -14303,8 +14303,8 @@ public function emptyInstHashTable
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 1000);
-  emptyarr := fill(NONE(), 100);
+  arr := arrayCreate(1000, {});
+  emptyarr := arrayCreate(100, NONE());
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyInstHashTable;
 
@@ -14462,7 +14462,7 @@ public function get1 "help function to get"
 algorithm
   (value,indx):= matchcontinue (key,hashTable)
     local
-      Integer hval,hashindx,indx,indx_1,bsize,n;
+      Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;

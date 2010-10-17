@@ -2234,7 +2234,7 @@ public function get1 "help function to get"
 algorithm
   (value, indx) := matchcontinue (key,hashTable)
     local
-      Integer hval,hashindx,indx,indx_1,bsize,n;
+      Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       array<list<tuple<Key,Integer>>> hashvec;
