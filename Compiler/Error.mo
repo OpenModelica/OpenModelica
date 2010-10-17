@@ -271,6 +271,7 @@ public constant ErrorID META_CEVAL_FUNCTION_REFERENCE=5008;
 public constant ErrorID NON_INSTANTIATED_FUNCTION=5009;
 public constant ErrorID META_UNSOLVED_POLYMORPHIC_BINDINGS=5010;
 public constant ErrorID META_RECORD_FOUND_FAILURE=5011;
+public constant ErrorID META_INVALID_PATTERN=5012;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -613,7 +614,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (NON_INSTANTIATED_FUNCTION,SYMBOLIC(),ERROR(),"Tried to use function %s, but it was not instantiated."),
           (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s"),
           (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n    Input bindings: %s\n    Solved bindings: %s\n    Unsolved bindings: %s"),
-          (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"Found %s with type %s, but failed to elaborate the call.")
+          (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"Found %s with type %s, but failed to elaborate the call."),
+          (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s")
           
           };
 

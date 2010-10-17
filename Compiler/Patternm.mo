@@ -47,6 +47,7 @@ public import Debug;
 public import Dump;
 public import RTOpts;
 
+protected import Error;
 protected import Lookup;
 protected import Util;
 
@@ -462,8 +463,8 @@ algorithm
   (outCache,renamedPat,outAsBinds,outConstTagEnv) :=
   matchcontinue (pat,rootVar,inAsBinds,cache,env,inConstTagEnv,info)
     local
-      Absyn.Exp localPat;
-      Absyn.Ident localVar,localVar2;
+      Absyn.Exp localPat,e;
+      Absyn.Ident localVar,localVar2,str;
       list<tuple<Absyn.Ident,Absyn.Ident>> localVars;
       AsList localAsBinds,localAsBinds2;
       Env.Cache localCache;
@@ -677,11 +678,16 @@ algorithm
         (localCache,pat,localAsBinds,localConstTagEnv) =
         renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-    case (e,_,_,_,_,_,_)  local Absyn.Exp e; String str;
+    case (e,_,_,_,_,_,_)
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- Patternm.renameMain failed, invalid pattern " +& str);
+      then fail();
+    case (e,_,_,_,_,_,info)
+      equation
+        str = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
   end matchcontinue;
 end renameMain;

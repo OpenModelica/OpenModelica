@@ -367,7 +367,7 @@ constant Ident emptyTxt = "emptyTxt";
 constant Ident errorIdent = "!error!";
 
 constant Tpl.IterOptions defaultIterOptions 
-  = Tpl.ITER_OPTIONS(0, NONE, NONE, 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE());
+  = Tpl.ITER_OPTIONS(0, NONE(), NONE(), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE());
 
 
 constant Ident indexOffsetOptionId    = "indexOffset";
