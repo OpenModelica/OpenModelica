@@ -105,7 +105,7 @@ public function testStringEquality
   
   output Integer outNotPassedCnt;
 algorithm
-  outPassed := matchcontinue (inStringReturned, inStringShouldBe, inPrintResult, inPrintErrorBuffer, inTestLabel, inNotPassedCnt)
+  outNotPassedCnt := matchcontinue (inStringReturned, inStringShouldBe, inPrintResult, inPrintErrorBuffer, inTestLabel, inNotPassedCnt)
     local
       // Tpl.Tokens toks, txttoks;
       String strRet, strShouldBe, strLabel, strRes, strErrBuf;

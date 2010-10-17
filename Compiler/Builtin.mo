@@ -1962,8 +1962,8 @@ protected constant tuple<DAE.TType, Option<Type_a>> list2int=(
 protected constant tuple<DAE.TType, Option<Type_a>> list2boolean=(
           DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_NOTYPE(),NONE)),NONE))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
 
-protected constant tuple<DAE.TType, Option<Type_a>> listAA2boolean=(
-          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE)),("el",typeA)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> AlistA2boolean=(
+          DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> boxed2any=(
           DAE.T_FUNCTION({("x",typeBoxedAny)},((DAE.T_NOTYPE(),NONE)),DAE.NO_INLINE),NONE);
@@ -2994,7 +2994,7 @@ algorithm
         env = Env.extendFrameT(env, "listAppend", listAListA2listA);
         env = Env.extendFrameT(env, "listReverse", listA2listA);
         env = Env.extendFrameT(env, "listLength", list2int);
-        env = Env.extendFrameT(env, "listMember", listAA2boolean);
+        env = Env.extendFrameT(env, "listMember", AlistA2boolean);
         env = Env.extendFrameT(env, "listGet", listAInt2A);
         env = Env.extendFrameT(env, "listNth", listAInt2A);
         env = Env.extendFrameT(env, "listRest", listA2listA);

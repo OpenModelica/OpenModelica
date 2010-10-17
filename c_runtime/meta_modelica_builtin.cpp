@@ -558,7 +558,7 @@ listLength_rettype listLength(modelica_metatype lst)
   return res;
 }
 
-listMember_rettype listMember(modelica_metatype lst, modelica_metatype obj)
+listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {

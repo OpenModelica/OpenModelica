@@ -1507,7 +1507,7 @@ function listMap2_tail
   input Type_b inTypeB;
   input Type_c inTypeC;
   input  list<Type_d> accumulator;
-  output list<Type_d> outTypeDLst;
+  output list<Type_d> outLst;
   replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cToType_d
     input Type_a inTypeA;

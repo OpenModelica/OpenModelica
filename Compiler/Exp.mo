@@ -13341,7 +13341,7 @@ algorithm
     local
       String s;
       Integer x;
-    case DAE.DIM_UNKNOWN then ":";
+    case DAE.DIM_UNKNOWN() then ":";
     case DAE.DIM_ENUM(enumTypeName = p) 
       local Absyn.Path p;
       equation

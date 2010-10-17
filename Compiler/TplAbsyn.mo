@@ -5799,7 +5799,7 @@ public function fullyQualifyASTDefs
   input list<ASTDef> inASTDefs;  
   output list<ASTDef> outFullyQualifiedASTDefs;  
 algorithm 
-  outFullyQualifiedASTDef := matchcontinue inASTDefs
+  outFullyQualifiedASTDefs := matchcontinue inASTDefs
     local
       list<tuple<Ident, TypeInfo>> typeLst;
       PathIdent importckg;
@@ -6065,7 +6065,7 @@ public function fullyQualifyTemplateTypeSignature
     
   output TypeSignature outFullyQualifiedTypeSignature;  
 algorithm 
-  outASTDefTypeSignature := matchcontinue (inTemplateTypeSignature, inASTDefs)
+  outFullyQualifiedTypeSignature := matchcontinue (inTemplateTypeSignature, inASTDefs)
     local
       list<TypeSignature> typeLst;
       Ident typeident;

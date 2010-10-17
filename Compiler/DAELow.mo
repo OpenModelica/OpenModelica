@@ -1934,8 +1934,8 @@ algorithm
       array<list<Value>> m,mt;
     case (blt,(dae as DAELOW(orderedVars = v,knownVars = kv,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al)),ass1,ass2,m,mt)
       equation
-        size = array_length(ass1) "equation_size(e) => size &" ;
-        arr = fill(0, size);
+        size = arrayLength(ass1) "equation_size(e) => size &" ;
+        arr = arrayCreate(size, 0);
         arr_1 = markStateEquations(dae, arr, m, mt, ass1, ass2);
         (blt_states,blt_no_states) = splitBlocks(blt, arr);
       then
@@ -7260,8 +7260,8 @@ public function emptyVars
   list<Option<Var>> lst;
   array<Option<Var>> emptyarr;
 algorithm
-  arr := fill({}, 10);
-  arr2 := fill({}, 10);
+  arr := arrayCreate(10, {});
+  arr2 := arrayCreate(10, {});
   lst := Util.listFill(NONE, 10);
   emptyarr := listArray(lst);
   outVariables := VARIABLES(arr,arr2,VARIABLE_ARRAY(0,10,emptyarr),10,0);
@@ -8614,7 +8614,7 @@ algorithm
       Value size;
     case (ASSIGNMENTS(actualSize = size,arrOfIndices = arr))
       equation
-        newarr = fill(0, size);
+        newarr = arrayCreate(size, 0);
         newarr_1 = Util.arrayNCopy(arr, newarr, size);
         vec = array_copy(newarr_1);
       then
@@ -11110,7 +11110,7 @@ algorithm
   rlen := intReal(len);
   rlen_1 := rlen *. 1.4;
   size := realInt(rlen_1);
-  optarr := fill(NONE, size);
+  optarr := arrayCreate(size, NONE());
   eqn_optlst := Util.listMap(lst, Util.makeOption);
   eqnarr := listArray(eqn_optlst);
   newarr := Util.arrayCopy(eqnarr, optarr);
@@ -16131,15 +16131,15 @@ algorithm
       equation
         VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
         VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
-        crefIdxLstArr1 = fill({}, size1);
+        crefIdxLstArr1 = arrayCreate(size1, {});
         crefIdxLstArr1 = Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
-        strIdxLstArr1 = fill({}, size1);
+        strIdxLstArr1 = arrayCreate(size1, {});
         strIdxLstArr1 = Util.arrayCopy(strIdxLstArr, strIdxLstArr1);
-        varOptArr1 = fill(NONE, size1);
+        varOptArr1 = arrayCreate(size1, NONE());
         varOptArr1 = Util.arrayCopy(varOptArr, varOptArr1);
         ordvars1 = VARIABLES(crefIdxLstArr1,strIdxLstArr1,VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
         EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) = eqns;
-        arr_1 = fill(NONE, size);
+        arr_1 = arrayCreate(size, NONE());
         arr_1 = Util.arrayCopy(arr, arr_1);
         eqns1 = EQUATION_ARRAY(n,size,arr_1);
       then
@@ -16194,9 +16194,9 @@ algorithm
         // try tearing
         (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{},crlst);
         // clean v1,v2,m,mT
-        v2_2 = fill(0, ll);
+        v2_2 = arrayCreate(ll, 0);
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);
-        v1_2 = fill(0, ll);
+        v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         m_3 = incidenceMatrix(dlow1_1);
         mT_3 = transposeMatrix(m_3);
