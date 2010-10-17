@@ -4668,7 +4668,7 @@ algorithm
       list<ASTDef> astDefs;
       
       list<TypeSignature> otLst;
-      String bid, id, reason;
+      String reason;
       PathIdent tagn;
       list<tuple<String, MatchingExp>> fms;
       MatchingExp inmexp, mexp, restmexp;

@@ -508,7 +508,7 @@ public function openFile
   output LineInfo outLineInfo;
   output Option<String> outErrorOpt;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inFile)
+  (outChars, outLineInfo, outErrorOpt) := matchcontinue (inFile)
     local
       String file, src, errStr;
       list<String> chars;
@@ -1587,7 +1587,7 @@ public function absynDef
   output LineInfo outLineInfo;
   output TplAbsyn.ASTDef outASTDef;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outASTDef) := matchcontinue (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;

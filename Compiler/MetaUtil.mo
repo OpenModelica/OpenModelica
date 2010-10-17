@@ -1295,6 +1295,7 @@ algorithm
     case ((DAE.T_BOOL(_),_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
     case ((DAE.T_STRING(_),_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
     case ((DAE.T_REAL(_),_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE());
+    case ((DAE.T_BOXED(t),_)) then typeConvert(t);
     /*case (DAE.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s;
       equation
       then Absyn.TPATH(Absyn.IDENT(s),NONE()); */
@@ -1346,7 +1347,7 @@ algorithm
     case t
       local String str;
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         str = Types.unparseType(t);
         Debug.fprintln("matchcase", "- MetaUtil.typeConvert failed: " +& str);
       then fail();
@@ -1389,6 +1390,11 @@ algorithm
       list<DAE.Type> rest;
       list<Absyn.Exp> localAccList2;
       Integer localCnt;
+      DAE.Type ty;
+      Absyn.TypeSpec tSpec;
+      Absyn.Ident n1,n2;
+      Absyn.ElementItem elem1;
+      Absyn.Exp elem2;
     case ({},localCnt,localAccList1,localAccList2)
       then (localAccList1,localAccList2);
     case ({(DAE.T_TUPLE(rest),_)},1,{},{})
@@ -1396,12 +1402,6 @@ algorithm
         (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
       then (localAccList1,localAccList2);
     case (ty :: rest, localCnt,localAccList1,localAccList2)
-      local
-        DAE.Type ty;
-        Absyn.TypeSpec tSpec;
-        Absyn.Ident n1,n2;
-        Absyn.ElementItem elem1;
-        Absyn.Exp elem2;
       equation
         tSpec = typeConvert(ty);
         n1 = "var";
@@ -1410,15 +1410,15 @@ algorithm
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
+            Absyn.dummyInfo,NONE()));
         elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
         localAccList1 = listAppend(localAccList1,{elem1});
         localAccList2 = listAppend(localAccList2,{elem2});
         (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
-    case (_,_,_,_)
+    case (ty::_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- InstSection.extractOutputVarsType failed");
+        Debug.fprintln("failtrace", "- MetaUtil.extractOutputVarsType failed: " +& Types.unparseType(ty));
       then fail();
   end matchcontinue;
 end extractOutputVarsType;

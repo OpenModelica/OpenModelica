@@ -2587,10 +2587,10 @@ algorithm
         (cache,stmts);
 
     /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
       equation 
         s = Dump.printExpStr(e);
-        Error.addMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s});
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
         fail();
         

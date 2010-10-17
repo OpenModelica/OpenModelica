@@ -9429,7 +9429,7 @@ algorithm
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},pre,info);
         dims = slotsVectorizable(newslots);
-        polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings);
+        polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings);
         t = (DAE.T_FUNCTION(params,restype,isInline),p);
         t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
