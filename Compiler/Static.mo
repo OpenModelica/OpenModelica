@@ -4143,10 +4143,10 @@ algorithm
       DAE.DAElist dae;
       Prefix pre;
 
-    case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(s)},{},impl,pre,info)
+    case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields)},{},impl,pre,info)
       equation
         (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),_),c),_) = elabExp(cache, env, s1, impl, NONE, true,pre,info);
-        expList = {s1_1, DAE.ICONST(i), DAE.ICONST(numFields), DAE.SCONST(s)};
+        expList = {s1_1, DAE.ICONST(i), DAE.ICONST(numFields)};
         s1_1 = makeBuiltinCall("mmc_uniontype_metarecord_typedef_equal", 
             expList, DAE.ET_BOOL);
       then
@@ -8732,7 +8732,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(index,vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,t as (DAE.T_METARECORD(index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
         Util.setStatefulBoolean(stopElab,true);
         //(cache,c,env_1) = Lookup.lookupClass(cache, env, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
@@ -8756,7 +8756,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         true = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(index,vars),SOME(fn_1)),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,t as (DAE.T_METARECORD(index=_),SOME(fn_1)),env_1) = Lookup.lookupType(cache, env, fn, false);
         types_str = Types.unparseType(t);
         fn_str = Absyn.pathString(fn_1);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,types_str},info);

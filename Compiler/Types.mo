@@ -1235,12 +1235,13 @@ algorithm
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
-      local Integer index; String ident;
+      local Integer index; String ident; Absyn.Path utPath;
       equation
         true = index >= 0;
         vars = valuesToVars(vl, ids);
+        utPath = Absyn.stripLast(cname);
       then
-        ((DAE.T_METARECORD(index, vars),SOME(cname)));
+        ((DAE.T_METARECORD(utPath, index, vars),SOME(cname)));
 
         // MetaModelica list type
     case Values.LIST(vl)
@@ -1539,16 +1540,14 @@ algorithm
         true = subtype(t1,t2);
       then true;
     
-    case(t1 as (DAE.T_METARECORD(_,_),_), t2 as (DAE.T_METARECORD(_,_),_))
-      equation
-        equality(t1 = t2);
-      then true;
+    case((DAE.T_METARECORD(utPath=p1),_),(DAE.T_METARECORD(utPath=p2),_))
+      then Absyn.pathEqual(p1,p2);
     
-    case ((DAE.T_UNIONTYPE(pathLst),_),(DAE.T_METARECORD(_,_),SOME(path)))
-      then listMember(path, pathLst);
+    case ((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_METARECORD(utPath=p2),_))
+      then Absyn.pathEqual(p1,p2);
 
-    case ((DAE.T_METARECORD(_,_),SOME(path)),(DAE.T_UNIONTYPE(pathLst),_))
-      then listMember(path, pathLst);
+    case ((DAE.T_METARECORD(utPath=p1),_),(DAE.T_UNIONTYPE(_),SOME(p2)))
+      then Absyn.pathEqual(p1,p2);
     
     // <uniontype> = <uniontype>
     case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_UNIONTYPE(_),SOME(p2)))
@@ -2160,14 +2159,14 @@ algorithm
         res;
 
         /* MetaModelica uniontype (but we know which record in the UT it is) */
-    case ((DAE.T_METARECORD(_,vs),SOME(p)))
+    case ((DAE.T_METARECORD(utPath=_),SOME(p)))
       local Absyn.Path p;
       equation
-        str = Absyn.pathString(p);
-        vars = Util.listMap(vs, unparseVar);
+        str = Absyn.pathString(p); /* Path of the actual metarecord should be best for error messages... */
+        /*vars = Util.listMap(vs, unparseVar);
         vstr = Util.stringAppendList(vars);
-        res = Util.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
-      then res;
+        res = Util.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});*/
+      then str;
 
         /* MetaModelica boxed type */
     case ((DAE.T_BOXED(ty),_))
@@ -3586,7 +3585,7 @@ algorithm
 
     case ((DAE.T_UNIONTYPE(_),_)) then DAE.ET_UNIONTYPE();
 
-    case ((DAE.T_METARECORD(_,_),_)) then DAE.ET_UNIONTYPE();
+    case ((DAE.T_METARECORD(utPath=_),_)) then DAE.ET_UNIONTYPE();
 
     case ((DAE.T_POLYMORPHIC(_),_)) then DAE.ET_POLYMORPHIC();
 
@@ -4018,16 +4017,6 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
       then
         (DAE.META_OPTION(NONE),(DAE.T_METAOPTION(t2),p2));
-
-        //Part of metamodelica extension, added by, simbj
-        // <uniontype> = <metarecord>
-    case(e,(DAE.T_METARECORD(_,_),SOME(path)),t2 as (DAE.T_UNIONTYPE(lst),_),printFailtrace)
-      local
-        list<Absyn.Path> lst;
-        Absyn.Path path;
-      equation
-        true = listMember(path, lst);
-      then (e,t2);
 
         /* MetaModelica Tuple */
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
@@ -4967,7 +4956,7 @@ algorithm
     case ((DAE.T_LIST(_),_)) then true;
     case ((DAE.T_METATUPLE(_),_)) then true;
     case ((DAE.T_UNIONTYPE(_),_)) then true;
-    case ((DAE.T_METARECORD(_,_),_)) then true;
+    case ((DAE.T_METARECORD(utPath=_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
     case ((DAE.T_POLYMORPHIC_SOLVED(_),_)) then true;
     case ((DAE.T_META_ARRAY(_),_)) then true;
@@ -5103,12 +5092,11 @@ algorithm
         tp = superType(t1,t2);
       then ((DAE.T_META_ARRAY(tp),NONE));
 
-    case (t1 as (DAE.T_UNIONTYPE(lst),_),(DAE.T_METARECORD(_,_),SOME(path)))
+    case (t1 as (DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_METARECORD(utPath=path2),_))
       local
-        list<Absyn.Path> lst;
-        Absyn.Path path;
+        Absyn.Path path1,path2;
       equation
-        true = listMember(path, lst);
+        true = Absyn.pathEqual(path1,path2);
       then t1;
 
     case (t1,t2)
@@ -5403,7 +5391,7 @@ public function metarecordFilter
   input Type ty;
 algorithm
   _ := matchcontinue ty
-    case ((DAE.T_METARECORD(_,_),_)) then ();
+    case ((DAE.T_METARECORD(utPath=_),_)) then ();
   end matchcontinue;
 end metarecordFilter;
 

@@ -5438,7 +5438,7 @@ algorithm
         tp = typeof(e);
       then DAE.ET_METAOPTION(tp);
     case (DAE.META_OPTION(NONE)) then DAE.ET_METAOPTION(DAE.ET_OTHER());
-    case (DAE.METARECORDCALL(_,_,_,_)) then DAE.ET_UNIONTYPE();
+    case (DAE.METARECORDCALL(path=_)) then DAE.ET_UNIONTYPE();
     case e
       equation
         Debug.fprintln("failtrace", "- Exp.typeof failed for " +& printExpStr(e));

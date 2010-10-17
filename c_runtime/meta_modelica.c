@@ -348,13 +348,12 @@ int mmc_boxes_equal(void* lhs, void* rhs)
 }
 
 mmc__uniontype__metarecord__typedef__equal_rettype
-mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums,modelica_string pathString)
+mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
 {
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
   struct record_description* desc;
-  mmc__uniontype__metarecord__typedef__equal_rettype res;
 
   hdr = MMC_GETHDR(ut);
   numslots = MMC_HDRSLOTS(hdr);
@@ -362,8 +361,7 @@ mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums,mo
 
   if (numslots == fieldNums+1 && ctor == ex_ctor+3) { /* RECORD */
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(ut),1));
-    res = 0 == strcmp(pathString,desc->name);
-    return res;
+    return 1;
   } else {
     return 0;
   }

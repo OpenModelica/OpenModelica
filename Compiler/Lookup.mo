@@ -176,7 +176,7 @@ algorithm
     local
       DAE.Type t;
       list<Env.Frame> env_1,env_2,env_3;
-      Absyn.Path path;
+      Absyn.Path path,utPath;
       SCode.Class c;
       String id;
       SCode.Restriction restr;
@@ -215,18 +215,19 @@ algorithm
         (cache,t,env_3);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_METARECORD(_,index),classDef=SCode.PARTS(elementLst = els)))
+    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index),classDef=SCode.PARTS(elementLst = els)))
       local
         Integer index;
         list<SCode.Element> els;
         list<tuple<SCode.Element,DAE.Mod>> elsModList;
       equation
-        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
+        (cache,utPath) = Inst.makeFullyQualified(cache,env_1,utPath);
+        path = Absyn.joinPaths(utPath, Absyn.IDENT(id));
         elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
             cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false, ConnectionGraph.EMPTY);
-        t = (DAE.T_METARECORD(index,varlst),SOME(path));
+        t = (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
       then
         (cache,t,env_2);
 

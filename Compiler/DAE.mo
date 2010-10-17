@@ -722,6 +722,9 @@ public uniontype TType "-TType contains the actual type"
   end T_UNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+    Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
+    // If the metarecord constructor was added to the FunctionTree, this would
+    // not be needed. They are used to create the datatype in the runtime...
     Integer index; //The index in the uniontype
     list<Var> fields;
   end T_METARECORD;
@@ -1156,7 +1159,6 @@ uniontype Exp "Expressions
     Absyn.Path path;
     list<Exp> args;
     list<String> fieldNames;
-    // SCode.Path name; //Name of the uniontype - removed 2009-09-18 /sjoelund
     Integer index; //Index in the uniontype
   end METARECORDCALL;
 

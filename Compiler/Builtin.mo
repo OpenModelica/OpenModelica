@@ -1977,8 +1977,8 @@ protected constant tuple<DAE.TType, Option<Type_a>> anyInteger2any=(
 protected constant tuple<DAE.TType, Option<Type_a>> anyAnyString2any=(
           DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",(DAE.T_NOTYPE(),NONE)),("x3",DAE.T_STRING_DEFAULT)},(DAE.T_NOTYPE(),NONE),DAE.NO_INLINE),NONE);
 
-protected constant tuple<DAE.TType, Option<Type_a>> anyIntegerIntegerString2boolean=(
-          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_STRING_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> anyIntegerInteger2boolean=(
+          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> string2void =(
           DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT)},(DAE.T_NORETCALL(),NONE),DAE.NO_INLINE),NONE);
@@ -2913,7 +2913,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         env = Env.extendFrameT(env, "mmc_get_field", anyInteger2any);
         env = Env.extendFrameT(env, "mmc_get_field", anyAnyString2any);
-        env = Env.extendFrameT(env, "mmc_uniontype_metarecord_typedef_equal", anyIntegerIntegerString2boolean);
+        env = Env.extendFrameT(env, "mmc_uniontype_metarecord_typedef_equal", anyIntegerInteger2boolean);
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
 
         // Boolean Operations

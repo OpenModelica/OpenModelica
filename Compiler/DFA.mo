@@ -53,9 +53,9 @@ type Stamp = Integer;
 type ArcName = Absyn.Ident;
 type SimpleStateArray = SimpleState[:];
 
+protected import Dump;
 protected import Lookup;
 protected import Util;
-protected import Dump;
 
 public uniontype Dfa
   record DFArec
@@ -1750,27 +1750,26 @@ end getPatternComp;
 
 protected function uniontypeComp
   input Absyn.Ident pathVar;
-  input SCode.Restriction restriction;
+  input DAE.Type restriction;
   input Integer numFields;
-  input Absyn.Ident classPathStr;
   input Absyn.Info info;
   output list<Absyn.AlgorithmItem> out;
 algorithm
-  out := matchcontinue (pathVar,restriction,numFields,classPathStr,info)
+  out := matchcontinue (pathVar,restriction,numFields,info)
     local
       Integer i;
       Absyn.AlgorithmItem alg;
       Absyn.Exp exp;
       Absyn.FunctionArgs fargs;
-    case (_,SCode.R_RECORD(),_,_,_) then {};
-    case (pathVar,SCode.R_METARECORD(_,i),numFields,classPathStr,info)
+    case (pathVar,(DAE.T_METARECORD(index=i),_),numFields,info)
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
-        fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(classPathStr)}, {});
+        fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields)}, {});
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_uniontype_metarecord_typedef_equal",{})), fargs);
         exp = Absyn.LUNARY(Absyn.NOT(), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
+    case (_,_,_,_) then {};
   end matchcontinue;
 end uniontypeComp;
 
@@ -1894,19 +1893,16 @@ algorithm
 
         pathVarList = Util.listMap(argList,extractPathVar);
         // Get recordnames
-        (localCache,sClass as SCode.CLASS(name = className, restriction = restriction),localEnv) = Lookup.lookupClass(localCache,localEnv,pathName,true);
-        (localCache,ty,localEnv) = Lookup.lookupType(localCache,localEnv,pathName,true);
+        (localCache,ty,_) = Lookup.lookupType(localCache,localEnv,pathName,true);
         //tyStr = Types.unparseType(ty);
         //Debug.fprintln("matchcase", "- Looked up record cons. func: " +& tyStr);
-        classPath = Env.joinEnvPath(localEnv,Absyn.IDENT(className));
-        classPathStr = Absyn.pathString(classPath);
-        (fieldNameList,fieldTypes) = MetaUtil.constructorCallTypeToNamesAndTypes(ty); // extractFieldNamesAndTypes(sClass);
+        (fieldNameList,fieldTypes) = MetaUtil.constructorCallTypeToNamesAndTypes(ty);
         fieldTypeSpecs = Util.listMap(fieldTypes, MetaUtil.typeConvert);
 
         dfaEnvElem = mergeLists(pathVarList,fieldTypeSpecs,{});
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
 
-        algs1 = createPathVarAssignmentsCall(pathVar,pathVarList,fieldNameList,{},restriction,cRef,info);
+        algs1 = createPathVarAssignmentsCall(pathVar,pathVarList,fieldNameList,{},ty,cRef,info);
         elem1 = createPathVarDeclarations(pathVarList,fieldTypeSpecs,{},info);
 
         crefs = Util.listMap(pathVarList, identToCrefExp);
@@ -1915,7 +1911,7 @@ algorithm
         algs = listAppend(algs1,algs2);
 
         numFields = listLength(argList);
-        algs2 = uniontypeComp(pathVar, restriction, numFields, classPathStr, info);
+        algs2 = uniontypeComp(pathVar, ty, numFields, info);
         algs = listAppend(algs2,algs);
       then (localCache,localDfaEnv,elem,algs);
     case (RP_TUPLE(pathVar,argList),localCache,localEnv,localDfaEnv,info)
@@ -2040,7 +2036,7 @@ protected function createPathVarAssignmentsCall
   input list<Absyn.Ident> pathVarList;
   input list<Absyn.Ident> fieldNameList;
   input list<Absyn.AlgorithmItem> accList;
-  input SCode.Restriction restriction;
+  input DAE.Type restriction;
   input Absyn.ComponentRef cref;
   input Absyn.Info info;
   output list<Absyn.AlgorithmItem> outList;
@@ -2055,16 +2051,7 @@ algorithm
       Integer n;
     case (_,{},{},localAccList,_,_,_) then listReverse(localAccList);
     // We should use fieldNames to create assignments.
-    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,SCode.R_RECORD(),cref,info)
-      equation
-        elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
-          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CREF(Absyn.CREF_QUAL(localRecVarName,{},
-          Absyn.CREF_IDENT(firstFieldName,{})))),NONE(),info);
-        localAccList = elem::localAccList;
-        localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
-      then localAccList;
-    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,SCode.R_METARECORD(utPath,utIndex),cref,info)
+    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,(DAE.T_METARECORD(utPath=_),_),cref,info)
       local
         Absyn.Path utPath;
         Absyn.Exp utCref;
@@ -2074,6 +2061,15 @@ algorithm
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
           Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_get_field",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.CREF(cref),Absyn.STRING(firstFieldName)},{}))),NONE(),info);
+        localAccList = elem::localAccList;
+        localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
+      then localAccList;
+    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,_,cref,info)
+      equation
+        elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
+          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
+          Absyn.CREF(Absyn.CREF_QUAL(localRecVarName,{},
+          Absyn.CREF_IDENT(firstFieldName,{})))),NONE(),info);
         localAccList = elem::localAccList;
         localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
       then localAccList;

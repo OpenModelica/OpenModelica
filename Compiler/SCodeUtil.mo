@@ -1032,7 +1032,7 @@ protected function translateDefineunitParam2 " help function to translateElement
   input String arg;
   output Option<Real> weightOpt;
 algorithm
-  (expOpt) := matchcontinue(args,arg)
+  weightOpt := matchcontinue(args,arg)
     local String name; Real r;
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;

@@ -788,7 +788,7 @@ algorithm
          body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
       equation
         r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
-        equality(r_1 = SCode.R_UNIONTYPE);
+        SCode.R_UNIONTYPE() = r_1;
         els = fixElementItems(els,n,0);
         cllst = convertElementsToClasses(els);
       then cllst;
@@ -1136,7 +1136,6 @@ algorithm
     local
       Absyn.ElementItem element;
       list<Absyn.ElementItem> rest;
-      String name;
       Integer index;
     case(element::rest,name,index)
       equation
