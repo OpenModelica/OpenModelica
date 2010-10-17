@@ -1496,7 +1496,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         (flatType,_) = Types.flattenArrayType(ty);
         true = Types.isBoxedType(flatType) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
-        (exp,ty) = Types.matchType(exp, ty, (DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE()), false);
+        (exp,ty) = Types.matchType(exp, ty, (DAE.T_LIST(DAE.T_BOXED_DEFAULT),NONE()), false);
       then (exp,ty);
     case (exp,ty)
       equation

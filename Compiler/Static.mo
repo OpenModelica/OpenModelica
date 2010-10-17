@@ -581,8 +581,7 @@ algorithm
        Boolean correctTypes;
        DAE.Type t;
      equation
-       (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
-       (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
+       {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
 
        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
        (cache,e2_1,DAE.PROP((DAE.T_LIST(t2),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
@@ -590,6 +589,7 @@ algorithm
        t1 = Types.getPropType(prop1);
        c1 = Types.propAllConst(prop1);
        t = Types.superType(t1,t2);
+       t = Types.superType(t,t); // For example TUPLE should be META_TUPLE; if it's only 1 argument, it might not be
 
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
        (e2_1,_) = Types.matchType(e2_1, t2, t, true);
@@ -4093,11 +4093,12 @@ algorithm
         (cache,s2_1,prop2,_) = elabExp(cache, env, s2, impl, NONE, impl,pre,info);
         t1 = Types.getPropType(prop1);
         t2 = Types.getPropType(prop2);
-        (s1_1,t1) = Types.matchType(s1_1, t1, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE), true);
-        (s2_1,t2) = Types.matchType(s2_1, t2, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE), true);
+        (s1_1,t1) = Types.matchType(s1_1, t1, DAE.T_BOXED_DEFAULT, true);
+        (s2_1,t2) = Types.matchType(s2_1, t2, DAE.T_BOXED_DEFAULT, true);
         t1 = Types.unboxedType(t1);
         t2 = Types.unboxedType(t2);
         ty = Types.superType(t1, t2);
+        ty = Types.superType(ty, ty);
         tp = Types.elabType(ty);
         ty = if_exp(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
         c1 = Types.propAllConst(prop1);

@@ -2119,7 +2119,9 @@ algorithm
     case ((DAE.T_METATUPLE(types = tys),_))
       local list<Type> tys;
       equation
-        res = unparseType((DAE.T_TUPLE(tys),NONE));
+        tystrs = Util.listMap(tys, unparseType);
+        tystr = Util.stringDelimitList(tystrs, ", ");
+        res = Util.stringAppendList({"tuple<",tystr,">"});
       then
         res;
 
@@ -4030,14 +4032,14 @@ algorithm
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
-    case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_BOXED(ty2),p2),printFailtrace)
+    case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),ty2 as (DAE.T_BOXED((DAE.T_NOTYPE(),_)),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e_1 = DAE.META_TUPLE(elist);
-        ty1 = (DAE.T_METATUPLE(tys1),p2);
-        (e_1,t_1) = matchType(e_1, ty1, ty2, printFailtrace);
+        tys2 = Util.listFill(ty2, listLength(tys1));
+        (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
-        (e_1,t_1);
+        (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
 
       /*
          The automatic type conversion will convert any array that can be
@@ -5074,7 +5076,7 @@ algorithm
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
-      then ((DAE.T_TUPLE(type_list1),NONE));
+      then ((DAE.T_METATUPLE(type_list1),NONE));
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
@@ -5839,9 +5841,12 @@ algorithm
       Absyn.Path path,path1,path2;
     case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
       then addPolymorphicBinding(id,boxIfUnboxedType(actual),bindings);
-    case ((DAE.T_BOXED(ty1),_),(DAE.T_BOXED(ty2),_),bindings)
+    case ((DAE.T_BOXED(ty1),_),ty2,bindings)
       equation
         ty1 = unboxedType(ty1);
+      then subtypePolymorphic(ty1,ty2,bindings);
+    case (ty1,(DAE.T_BOXED(ty2),_),bindings)
+      equation
         ty2 = unboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,bindings);
     case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_),bindings) then bindings;
