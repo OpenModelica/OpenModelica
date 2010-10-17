@@ -284,7 +284,7 @@ algorithm
     case (cas :: _,_,_,_,_,_,_)
       local Absyn.Case cas; String casStr;
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         casStr = Dump.printCaseStr(cas);
         Debug.fprintln("matchcase", "- Patternm.extractFromMatchAST failed: " +& casStr);
       then fail();
@@ -361,7 +361,7 @@ algorithm
       then (localCache,temp2,temp4,localConstTagEnv);
     case (_,_,_,e :: _,_,_,_,_,_)  local Absyn.Exp e; String str;
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- fillMatrix failed: " +& str);
       then fail();
@@ -387,11 +387,36 @@ protected function addRow "function: addRow
   output AsList outAsBinds;
   output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
 algorithm
-  (outCache,outPatMat,outAsBinds,outConstTagEnv) :=
+  (outCache,outPatMat,outAsBinds,outConstTagEnv,Util.SUCCESS()) :=
+  addRow2(asBindings,varList,pivot,pats,patMat,cache,env,inConstTagEnv,info);
+end addRow;
+
+
+protected function addRow2 "function: addRow
+	author: KS
+ 	Adds a row to the matrix.
+ 	This is done by adding one element at a time to the matrix row
+"
+  input AsList asBindings; // Used to store AS construct bindings
+  input list<Absyn.Exp> varList; // Input variable list
+  input Integer pivot; // Position in the row
+  input list<Absyn.Exp> pats; // The patterns to be stored in the row
+  input RenamedPatMatrix patMat;
+  input Env.Cache cache;
+  input Env.Env env;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inConstTagEnv;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output RenamedPatMatrix outPatMat;
+  output AsList outAsBinds;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
+  output Util.Status status;
+algorithm
+  (outCache,outPatMat,outAsBinds,outConstTagEnv,status) :=
   matchcontinue (asBindings,varList,pivot,pats,patMat,cache,env,inConstTagEnv,info)
     local
       Integer localPivot;
-      Absyn.Exp firstPat;
+      Absyn.Exp firstPat,e;
       list<Absyn.Exp> restPat,restVar;
       RenamedPatMatrix localPatMat;
       Absyn.Ident firstVar;
@@ -401,9 +426,9 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
+      String str;
     case (localAsBindings,_,_,{},localPatMat,localCache,_,localConstTagEnv,info)
-      equation
-      then (localCache,localPatMat,localAsBindings,localConstTagEnv);
+      then (localCache,localPatMat,localAsBindings,localConstTagEnv,Util.SUCCESS());
     case(localAsBindings,Absyn.CREF(cRef) :: restVar,localPivot,firstPat :: restPat,
         localPatMat,localCache,localEnv,localConstTagEnv,info)
       local
@@ -422,7 +447,7 @@ algorithm
         firstVar = Absyn.pathString(Absyn.crefToPath(cRef));
 
         //Rename a pattern, that is, transform it into path=pattern form
-        (localCache,pat,asBinds,localConstTagEnv) =
+        (localCache,pat,asBinds,localConstTagEnv,Util.SUCCESS()) =
         renameMain(firstPat,stringAppend(str,firstVar),{},localCache,localEnv,localConstTagEnv,info);
         localAsBindings = listAppend(localAsBindings,asBinds);
 
@@ -431,16 +456,22 @@ algorithm
         localPatMat = arrayUpdate(localPatMat, localPivot, temp5);
 
         //Add the rest of the elements for this row
-        (localCache,temp2,temp4,localConstTagEnv) = addRow(localAsBindings,restVar,localPivot+1,restPat,
+        (localCache,temp2,temp4,localConstTagEnv,status) = addRow2(localAsBindings,restVar,localPivot+1,restPat,
         localPatMat,localCache,localEnv,localConstTagEnv,info);
-      then (localCache,temp2,temp4,localConstTagEnv);
+      then (localCache,temp2,temp4,localConstTagEnv,status);
+    case (localAsBindings,Absyn.CREF(_)::_,_,_,localPatMat,localCache,_,localConstTagEnv,info)
+      then (localCache,localPatMat,localAsBindings,localConstTagEnv,Util.FAILURE());
     case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("matchcase", "- Patternm.addRow failed");
       then fail();
+    case (localAsBindings,e::_,_,_,localPatMat,localCache,_,localConstTagEnv,info)
+      equation
+        str = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_MATCH_INPUT_OUTPUT_NON_CREF, {"input",str}, info);
+      then (localCache,localPatMat,localAsBindings,localConstTagEnv,Util.FAILURE());
   end matchcontinue;
-end addRow;
-
+end addRow2;
 
 protected function renameMain "function: renameMain
  	author: KS
@@ -448,7 +479,7 @@ protected function renameMain "function: renameMain
  	The function transforms the pattern into path=pattern form (DFA.RenamedPat).
  	As a side effect we also collect the As-bindings.
 "
-  input Absyn.Exp pat;
+  input Absyn.Exp localPat;
   input Absyn.Ident rootVar;
   input AsList inAsBinds;
   input Env.Cache cache;
@@ -459,73 +490,67 @@ protected function renameMain "function: renameMain
   output RenamedPat renamedPat;
   output AsList outAsBinds; // New as-bindings are added in the as-pattern case
   output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
+  output Util.Status status;
 algorithm
-  (outCache,renamedPat,outAsBinds,outConstTagEnv) :=
-  matchcontinue (pat,rootVar,inAsBinds,cache,env,inConstTagEnv,info)
+  (outCache,renamedPat,outAsBinds,outConstTagEnv,status) :=
+  matchcontinue (localPat,rootVar,inAsBinds,cache,env,inConstTagEnv,info)
     local
-      Absyn.Exp localPat,e;
+      Absyn.Exp e;
       Absyn.Ident localVar,localVar2,str;
       list<tuple<Absyn.Ident,Absyn.Ident>> localVars;
       AsList localAsBinds,localAsBinds2;
       Env.Cache localCache;
       Env.Env localEnv;
       tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
+      RenamedPat pat;
       // INTEGER EXPRESSION
     case (Absyn.INTEGER(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Integer val;
-        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_INTEGER(localVar,val);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_INTEGER(localVar,val);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
     case (Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(val)),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Integer val;
-        RenamedPat tempPat;
       equation
         val = -val;
-        tempPat = DFA.RP_INTEGER(localVar,val);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_INTEGER(localVar,val);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
         // REAL EXPRESSION
     case (Absyn.REAL(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Real val;
-        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_REAL(localVar,val);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_REAL(localVar,val);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
     case (Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(val)),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Real val;
-        RenamedPat tempPat;
       equation
         val = realNeg(val);
-        tempPat = DFA.RP_REAL(localVar,val);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_REAL(localVar,val);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
 
         // BOOLEAN EXPRESSION
     case (Absyn.BOOL(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Boolean val;
-        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_BOOL(localVar,val);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_BOOL(localVar,val);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
         // WILDCARD EXPRESSION
     case (Absyn.CREF(Absyn.WILD()),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
-      local
-        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_WILDCARD(localVar);
-      then (localCache,tempPat,localAsBinds,localConstTagEnv);
+        pat = DFA.RP_WILDCARD(localVar);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
         // STRING EXPRESSION
     case (Absyn.STRING(val),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         String val;
-        RenamedPat pat;
       equation
         pat = DFA.RP_STRING(localVar,val);
-      then (localCache,pat,localAsBinds,localConstTagEnv);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
         // AS BINDINGS
         // An as-binding is collected as an equation assignment. This assigment will later be
         // added to the correspond righthand side.
@@ -535,7 +560,6 @@ algorithm
         Absyn.Ident var;
 
         // Temp variables
-        RenamedPat temp1;
         AsList temp3;
       equation
         lhs = Absyn.CREF(Absyn.CREF_IDENT(var,{}));
@@ -543,12 +567,12 @@ algorithm
         localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(lhs,rhs),NONE(),info)};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
-        (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info);
-      then (localCache,temp1,temp3,localConstTagEnv);
+        (localCache,pat,temp3,localConstTagEnv,status) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info);
+      then (localCache,pat,temp3,localConstTagEnv,status);
 
         // NONE EXPRESSION
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",_)),localVar,localAsBinds,localCache,localEnv,localConstTagEnv,_)
-    then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
+    then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv,Util.SUCCESS());
 
         // COMPONENT REFERENCE EXPRESSION
         // Will be interpretated as: case (var AS _)
@@ -557,7 +581,6 @@ algorithm
     case (Absyn.CREF(cr),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       local
         Absyn.Ident var;
-        RenamedPat pat;
         Absyn.ComponentRef cr;
         Absyn.Exp rhs;
       equation
@@ -566,7 +589,7 @@ algorithm
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
         pat = DFA.RP_WILDCARD(localVar);
-      then (localCache,pat,localAsBinds,localConstTagEnv);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
 
         // TUPLE EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
@@ -574,7 +597,7 @@ algorithm
       local
         list<Absyn.Exp> funcArgs;
         RenamedPatList renamedPatList;
-        RenamedPat pat,first2,second2;
+        RenamedPat first2,second2;
         AsList localAsBinds2;
         Integer constTag;
       equation
@@ -582,12 +605,12 @@ algorithm
         localVar2 = stringAppend(localVar,"_");
         localVar2 = stringAppend(localVar2,intString(constTag));
 
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
 
         pat = DFA.RP_TUPLE(localVar,renamedPatList);
 
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
 
         // CONS EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
@@ -603,19 +626,19 @@ algorithm
         localVar2 = stringAppend(localVar,"_");
         localVar2 = stringAppend(localVar2,intString(constTag));
 
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList({first,second}
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList({first,second}
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
         first2 = Util.listFirst(renamedPatList);
         second2 = Util.listFirst(Util.listRest(renamedPatList));
 
         pat = DFA.RP_CONS(localVar,first2,second2);
 
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
 
         // NONE EXPRESSION
     case (Absyn.CALL(Absyn.CREF_IDENT("NONE",_),Absyn.FUNCTIONARGS({},{})),localVar,
         localAsBinds,localCache,localEnv,localConstTagEnv,_)
-         then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
+      then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv,Util.SUCCESS());
 
       // SOME EXPRESSION
     case (Absyn.CALL(Absyn.CREF_IDENT("SOME",_),Absyn.FUNCTIONARGS(first :: _,{})),localVar,
@@ -623,7 +646,7 @@ algorithm
       local
         Absyn.Exp first;
         RenamedPatList renamedPatList;
-        RenamedPat pat,first2;
+        RenamedPat first2;
         AsList localAsBinds2;
         Integer constTag;
       equation
@@ -631,13 +654,13 @@ algorithm
         localVar2 = stringAppend(localVar,"_");
         localVar2 = stringAppend(localVar2,intString(constTag));
 
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList({first}
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList({first}
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
         first2 = Util.listFirst(renamedPatList);
 
         pat = DFA.RP_SOME(localVar,first2);
 
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
 
         // CALL EXPRESSION - translates pos/named args into only pos ones
     case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,namedArgList)),
@@ -673,39 +696,37 @@ algorithm
         funcArgsNamedFixed = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
 
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
 
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
         // EMPTY LIST EXPRESSION
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
-      local
-        RenamedPat pat;
       equation
         pat = DFA.RP_EMPTYLIST(localVar);
-      then (localCache,pat,localAsBinds,localConstTagEnv);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.SUCCESS());
     case (Absyn.ARRAY(expList),localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info)
       local
         list<Absyn.Exp> expList;
-        RenamedPat pat;
         Absyn.Exp exp;
       equation
         exp = createConsFromList(expList);
-        (localCache,pat,localAsBinds,localConstTagEnv) =
+        (localCache,pat,localAsBinds,localConstTagEnv,status) =
         renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info);
-      then (localCache,pat,localAsBinds,localConstTagEnv);
+      then (localCache,pat,localAsBinds,localConstTagEnv,status);
     case (e,_,_,_,_,_,_)
       equation
         true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- Patternm.renameMain failed, invalid pattern " +& str);
       then fail();
-    case (e,_,_,_,_,_,info)
+    case (e,localVar,localAsBinds,localCache,_,localConstTagEnv,info)
       equation
         str = Dump.printExpStr(e);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
-      then fail();
+        pat = DFA.RP_WILDCARD(localVar);
+      then (localCache,pat,localAsBinds,localConstTagEnv,Util.FAILURE());
   end matchcontinue;
 end renameMain;
 
@@ -752,8 +773,9 @@ protected function renamePatList "function: renamePatList
   output list<RenamedPat> renamedPatList;
   output AsList outAsBindings;
   output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
+  output Util.Status status;
 algorithm
-  (outCache,renamedPatList,outAsBindings,outConstTagEnv) :=
+  (outCache,renamedPatList,outAsBindings,outConstTagEnv,status) :=
   matchcontinue (patList,var,pivot,accRenamedPatList,asBindings,cache,env,inConstTagEnv,info)
     local
       list<RenamedPat> localAccRenamedPatList;
@@ -762,7 +784,7 @@ algorithm
       Env.Env localEnv;
       tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
     case ({},_,_,localAccRenamedPatList,localAsBindings,localCache,_,localConstTagEnv,_)
-      equation then (localCache,localAccRenamedPatList,localAsBindings,localConstTagEnv);
+      then (localCache,localAccRenamedPatList,localAsBindings,localConstTagEnv,Util.SUCCESS());
     case (first :: rest,localVar,localPivot,localAccRenamedPatList,localAsBindings,
       localCache,localEnv,localConstTagEnv,info)
       local
@@ -780,20 +802,20 @@ algorithm
       equation
         tempStr = stringAppend("__",intString(localPivot));
         //Rename first pattern
-        (localCache,localRenamedPat,localAsBindings2,localConstTagEnv) =
+        (localCache,localRenamedPat,localAsBindings2,localConstTagEnv,Util.SUCCESS()) =
         renameMain(first,stringAppend(localVar,tempStr),{},localCache,localEnv,localConstTagEnv,info);
 
       	str = stringAppend(localVar,tempStr);
 
       	localAccRenamedPatList = listAppend(localAccRenamedPatList,localRenamedPat :: {});
-      	(localCache,temp1,temp3,localConstTagEnv) = renamePatList(rest,localVar,localPivot+1,
+      	(localCache,temp1,temp3,localConstTagEnv,status) = renamePatList(rest,localVar,localPivot+1,
         	localAccRenamedPatList,
         	listAppend(localAsBindings,localAsBindings2),localCache,localEnv,localConstTagEnv,info);
-      	then (localCache,temp1,temp3,localConstTagEnv);
-    case (_,_,_,_,_,_,_,_,_)
+      then (localCache,temp1,temp3,localConstTagEnv,status);
+    case (_,_,_,localAccRenamedPatList,localAsBindings,localCache,_,localConstTagEnv,_)
       equation
         Debug.fprintln("matchcase", "- Patternm.renamePatList failed");
-      then fail();
+      then (localCache,localAccRenamedPatList,localAsBindings,localConstTagEnv,Util.FAILURE());
   end matchcontinue;
 end renamePatList;
 

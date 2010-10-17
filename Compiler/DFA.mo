@@ -788,43 +788,69 @@ protected function addVarsToDfaEnv "function: addVarsToDfaEnv"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
   input Env.Cache cache;
   input Env.Env env;
+  input Absyn.Info info;
   output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outDfaEnv;
   output Env.Cache outCache;
 algorithm
-  (outDfaEnv,outCache) := matchcontinue (expList,dfaEnv,cache,env)
+  (SOME(outDfaEnv),outCache) := addVarsToDfaEnv2(expList,dfaEnv,cache,env,info);
+end addVarsToDfaEnv;
+
+protected function addVarsToDfaEnv2 "function: addVarsToDfaEnv"
+  input list<Absyn.Exp> expList;
+  input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Info info;
+  output Option<list<tuple<Absyn.Ident,Absyn.TypeSpec>>> outDfaEnv "";
+  output Env.Cache outCache;
+algorithm
+  (outDfaEnv,outCache) := matchcontinue (expList,dfaEnv,cache,env,info)
     local
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
+      Option<list<tuple<Absyn.Ident,Absyn.TypeSpec>>> res;
       Env.Cache localCache;
       Env.Env localEnv;
       list<Absyn.Exp> restExps;
       Absyn.Exp e;
       String str;
-    case ({},localDfaEnv,localCache,_) then (localDfaEnv,localCache);
-    case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv)
+      Absyn.Ident firstId;
+      DAE.Type t;
+      Absyn.TypeSpec t2;
+      tuple<Absyn.Ident,Absyn.TypeSpec> dfaEnvElem;
+    case ({},localDfaEnv,localCache,_,_)
       equation
-        (localDfaEnv,localCache) = addVarsToDfaEnv(restExps,localDfaEnv,localCache,localEnv);
-      then (localDfaEnv,localCache);
-    case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{})) :: restExps,localDfaEnv,localCache,localEnv)
-      local
-        Absyn.Ident firstId;
-        DAE.Type t;
-        Absyn.TypeSpec t2;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
+        localDfaEnv = listReverse(localDfaEnv);
+      then (SOME(localDfaEnv),localCache);
+    case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv,info)
+      equation
+        (res,localCache) = addVarsToDfaEnv2(restExps,localDfaEnv,localCache,localEnv,info);
+      then (res,localCache);
+    case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{})) :: restExps,localDfaEnv,localCache,localEnv,info)
       equation
         (localCache,DAE.TYPES_VAR(_,_,_,t,_,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
         t2 = MetaUtil.typeConvert(t);
-        dfaEnvElem = {(firstId,t2)};
-        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
-        (localDfaEnv,localCache) = addVarsToDfaEnv(restExps,localDfaEnv,localCache,localEnv);
-      then (localDfaEnv,localCache);
-    case (e::_,_,_,_)
+        dfaEnvElem = (firstId,t2);
+        localDfaEnv = dfaEnvElem::localDfaEnv;
+        (res,localCache) = addVarsToDfaEnv2(restExps,localDfaEnv,localCache,localEnv,info);
+      then (res,localCache);
+    case (e::_,_,_,_,info)
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed " +& str);
       then fail();
+    case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{}))::_,_,_,env,info)
+      equation
+        str = Env.printEnvPathStr(env);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {firstId,str}, info);
+      then (NONE(),cache);
+    case (e::_,_,_,_,info)
+      equation
+        str = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_MATCH_INPUT_OUTPUT_NON_CREF, {"output",str}, info);
+      then (NONE(),cache);
   end matchcontinue;
-end addVarsToDfaEnv;
+end addVarsToDfaEnv2;
 
 protected function createListOfTrue "function: createListOfTrue"
   input Integer nStates;
@@ -1462,7 +1488,7 @@ protected
   Absyn.Algorithm alg;
   Absyn.AlgorithmItem algItem;
 algorithm
-  (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv);
+  (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv, info);
   checkShadowing(declList,invalidDecls);
   (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
   alg := Absyn.ALG_MATCHCASES(matchType,cases);
@@ -1538,6 +1564,7 @@ protected function getMatchContinueInvalidDeclsAndInitialEnv
   input list<Absyn.Exp> resVarList;
   input Env.Cache inCache;
   input Env.Env localEnv;
+  input Absyn.Info info;
   output list<tuple<String,Absyn.TypeSpec>> dfaEnv;
   output list<String> invalidDecls;
   output Env.Cache cache;
@@ -1545,9 +1572,9 @@ protected
   list<tuple<String,Absyn.TypeSpec>> dfaEnvRes;
   list<String> envIdents, envIdents1, envIdents2;
 algorithm
-  (dfaEnvRes,cache) := addVarsToDfaEnv(resVarList,{},inCache,localEnv);
+  (dfaEnvRes,cache) := addVarsToDfaEnv(resVarList,{},inCache,localEnv,info);
   envIdents1 := Util.listMap(dfaEnvRes, Util.tuple21);
-  (dfaEnv,cache) := addVarsToDfaEnv(inputVarList,{},cache,localEnv);
+  (dfaEnv,cache) := addVarsToDfaEnv(inputVarList,{},cache,localEnv,info);
   envIdents2 := Util.listMap(dfaEnv, Util.tuple21);
   invalidDecls := listAppend(envIdents1, envIdents2);
 end getMatchContinueInvalidDeclsAndInitialEnv;

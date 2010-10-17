@@ -3042,38 +3042,10 @@ algorithm
       Absyn.Info info;
       DAE.ElementSource source;
       
-    // _ := matchcontinue(...) ...
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.WILD()), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
+    // (v1,v2,..,vn)|v|_ := matchcontinue(...). Part of MetaModelica extension. KS
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
       equation
-        expl = {};
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre,info);
-        (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
-        source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
-        stmt = DAE.STMT_ASSIGN(
-                  DAE.ET_OTHER(),
-                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                  e_2,source);
-      then (localCache,stmt);
-
-    // v1 := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
-      equation
-        expl = {Absyn.CREF(cr)};
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre,info);
-        (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
-        source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
-        stmt = DAE.STMT_ASSIGN(
-                  DAE.ET_OTHER(),
-                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                  e_2,source);
-      then
-        (localCache,stmt);
-
-    // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expl), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
-      equation
+        expl = MetaUtil.extractListFromTuple(exp, 0);
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre,info);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
