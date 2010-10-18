@@ -5736,7 +5736,7 @@ algorithm
 
     case ((DAE.T_METATUPLE(tys1),_)::_,(DAE.T_METATUPLE(tys2),_)::rest,solvedBindings)
       equation
-        (tys1,solvedBindings) = solveBindings(tys1,tys2,solvedBindings);
+        (tys1,solvedBindings) = solveBindingsThread(tys1,tys2,solvedBindings);
         ty1 = (DAE.T_METATUPLE(tys1),NONE());
       then (ty1::rest,solvedBindings);
     
@@ -5746,6 +5746,33 @@ algorithm
       then (ty::tys,solvedBindings);
   end matchcontinue;
 end solveBindings;
+
+protected function solveBindingsThread
+"Checks all types against each other to find an unbound polymorphic variable, which will then become bound.
+Uses unification to solve the system, but the algorithm is slow (possibly quadratic).
+The good news is we don't have functions with many unknown types in the compiler.
+
+Horribly complicated function to keep track of what happens...
+"
+  input list<Type> tys1;
+  input list<Type> tys2;
+  input PolymorphicBindings solvedBindings;
+  output list<Type> outTys;
+  output PolymorphicBindings outSolvedBindings;
+algorithm
+  (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,solvedBindings)
+    local
+      Type ty,ty1,ty2;
+      list<Type> tys,tys1,tys2,rest;
+      String id,id1,id2;
+    case (ty1::tys1,ty2::tys2,solvedBindings)
+      equation
+        ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
+        (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,solvedBindings);
+      then (ty1::tys2,solvedBindings);
+    case ({},{},solvedBindings) then ({},solvedBindings);
+  end matchcontinue;
+end solveBindingsThread;
 
 protected function replaceSolvedBindings
   input list<Type> tys;
