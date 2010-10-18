@@ -9974,7 +9974,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(daeElts,extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)},funcs),dae1);
+        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefix,DAE.NO_INLINE,source)},funcs),dae1);
       then
         (cache,env_1,ih,dae);
 
