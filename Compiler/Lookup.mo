@@ -205,7 +205,7 @@ algorithm
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
@@ -226,7 +226,9 @@ algorithm
         elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
             cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false, ConnectionGraph.EMPTY);
+            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet,
+            ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false,
+            Inst.INNER_CALL, ConnectionGraph.EMPTY);
         t = (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
       then
         (cache,t,env_2);
@@ -236,8 +238,7 @@ algorithm
       local
       equation
         true = Inst.classIsExternalObject(c);
-        (cache,_::env_1,_,_,_,_,_,_,_,_) =
-        Inst.instClass(
+        (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,
           {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
@@ -1258,7 +1259,7 @@ algorithm
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
+          ci_state, c, false, {}, /*true*/false, Inst.INNER_CALL, ConnectionGraph.EMPTY, filterCref);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -1900,7 +1901,7 @@ algorithm
           Inst.instClass(
             cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
             DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
-             {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+              {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
            //s = Types.unparseType(t);
             //print("type :");print(s);print("\n");

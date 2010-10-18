@@ -61,19 +61,23 @@ uniontype Face"This type indicates whether a connector is an inside or an outsid
   record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
 
+type EquSetElement = tuple<DAE.ComponentRef, DAE.ElementSource>;
+type FlowSetElement = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
+type StreamSetElement = tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Face, DAE.ElementSource>;
+
 public
 uniontype Set "A connection set is represented using the Set type."
 
   record EQU "a list of component references"
-    list<tuple<DAE.ComponentRef, DAE.ElementSource>> expComponentRefLst;
+    list<EquSetElement> expComponentRefLst;
   end EQU;
 
   record FLOW "a list of component reference and a face"
-    list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
+    list<FlowSetElement> tplExpComponentRefFaceLst;
   end FLOW;
 
   record STREAM "a list of component reference for stream, a component reference for corresponding flow and a face"
-    list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
+    list<StreamSetElement> tplExpComponentRefFaceLst;
   end STREAM;
 
 end Set;

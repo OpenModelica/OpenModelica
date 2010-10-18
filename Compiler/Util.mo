@@ -2732,6 +2732,43 @@ algorithm
   end matchcontinue;
 end listThread;
 
+public function listMergeSorted
+  "This function merges two sorted lists into one sorted list. It takes a
+  comparison function that defines a strict weak ordering of the elements, i.e.
+  that returns true if the first element should be placed before the second
+  element in the sorted list."
+  input list<Type_a> inList1;
+  input list<Type_a> inList2;
+  input CompFunc comp;
+  output list<Type_a> outList;
+
+  partial function CompFunc
+    input Type_a inElem1;
+    input Type_a inElem2;
+    output Boolean res;
+  end CompFunc;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := matchcontinue(inList1, inList2, comp)
+    local
+      Type_a e1, e2;
+      list<Type_a> l1, l2, res;
+    case ({}, l2, _) then l2;
+    case (l1, {}, _) then l1;
+    case (e1 :: l1, l2 as (e2 :: _), _)
+      equation
+        true = comp(e1, e2);
+        res = listMergeSorted(l1, l2, comp);
+      then
+        e1 :: res;
+    case (l1, e2 :: l2, _)
+      equation
+        res = listMergeSorted(l1, l2, comp);
+      then
+        e2 :: res;
+  end matchcontinue;
+end listMergeSorted;
+
 public function listThread3 "function: listThread
   Takes three lists of the same type and threads (interleaves) them togheter.
   Example: listThread3({1,2,3},{4,5,6},{7,8,9}) => {7,4,1,8,5,2,9,6,3}"
