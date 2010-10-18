@@ -184,6 +184,7 @@ typedef modelica_integer stringCompare_rettype;
 typedef modelica_boolean stringEqual_rettype;
 typedef modelica_string_t stringGetStringChar_rettype;
 typedef modelica_string_t stringUpdateStringChar_rettype;
+typedef modelica_string_t stringCharListString_rettype;
 
 stringInt_rettype stringInt(modelica_string_t);
 stringListStringChar_rettype stringListStringChar(modelica_string_t);
@@ -196,6 +197,7 @@ stringCompare_rettype stringCompare(modelica_string_t,modelica_string_t);
 stringEqual_rettype stringEqual(modelica_string_t,modelica_string_t);
 stringGetStringChar_rettype stringGetStringChar(modelica_string_t,modelica_integer);
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t, modelica_string_t, modelica_integer);
+#define stringCharListString(X) stringAppendList(X)
 
 modelica_metatype boxptr_stringAppend(modelica_metatype,modelica_metatype);
 

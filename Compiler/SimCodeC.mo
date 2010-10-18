@@ -21491,18 +21491,17 @@ algorithm
         list<DAE.Exp> rest;
         DAE.Exp i_exp;
         Tpl.Text i_lhs;
-        Tpl.Text i_content;
         Tpl.Text txt_1;
         Tpl.Text i_decl;
       equation
         txt_1 = expTypeFromExpModelica(emptyTxt, i_exp);
         (i_decl, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(txt_1), i_varDecls);
-        (i_content, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
         (i_lhs, i_preExp, i_varDecls) = scalarLhsCref(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
         i_varAssign = Tpl.writeText(i_varAssign, i_decl);
         i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(" = "));
-        i_varAssign = Tpl.writeText(i_varAssign, i_content);
+        i_varAssign = Tpl.writeText(i_varAssign, i_lhs);
         i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(";"));
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_NEW_LINE());
         txt = Tpl.writeText(txt, i_lhs);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_decl);
@@ -22856,7 +22855,7 @@ algorithm
         DAE.ComponentRef i_cr;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("*((modelica_fnptr*)&_"));
-        txt = functionName(txt, i_cr);
+        txt = crefStr(txt, i_cr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then (txt, i_preExp, i_varDecls);
 
@@ -23433,7 +23432,7 @@ algorithm
         DAE.ComponentRef i_cr;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_fnptr) _"));
-        txt = functionName(txt, i_cr);
+        txt = crefStr(txt, i_cr);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,

@@ -3947,10 +3947,11 @@ template algStmtMatchcasesVarDeclsAndAssign(list<Exp> expList, Context context, 
 ::=
   (expList |> exp =>
     let decl = tempDecl(expTypeFromExpModelica(exp), &varDecls)
-    let content = daeExp(exp, context, &preExp, &varDecls)
+    // let content = daeExp(exp, context, &preExp, &varDecls)
     let lhs = scalarLhsCref(exp, context, &preExp, &varDecls)
-    let &varAssign += '<%decl%> = <%content%>;'
-    '<%lhs%> = <%decl%>;'; separator = "\n")
+    let &varAssign += '<%decl%> = <%lhs%>;' + "\n"
+      '<%lhs%> = <%decl%>;'
+    ; separator = "\n")
 end algStmtMatchcasesVarDeclsAndAssign;
 
 template algStmtMatchcases(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -4194,7 +4195,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
 ::=
   match ecr
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
-    '*((modelica_fnptr*)&_<%functionName(cr)%>)'
+    '*((modelica_fnptr*)&_<%crefStr(cr)%>)'
   case ecr as CREF(componentRef=CREF_IDENT(__)) then
     if crefNoSub(ecr.componentRef) then
       contextCref(ecr.componentRef, context)
@@ -4285,7 +4286,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
     '(modelica_fnptr)boxptr_<%functionName(cr)%>'
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
-    '(modelica_fnptr) _<%functionName(cr)%>'
+    '(modelica_fnptr) _<%crefStr(cr)%>'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
 
