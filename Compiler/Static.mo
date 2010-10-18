@@ -13854,7 +13854,7 @@ algorithm
           Inst.instElementList(cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                                DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}),
                                ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")),
-                               ld_mod,{},impl,ConnectionGraph.EMPTY);
+                               ld_mod,{},impl,Inst.INNER_CALL,ConnectionGraph.EMPTY);
 
         // The instantiation of the components may have produced some equations
         (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);

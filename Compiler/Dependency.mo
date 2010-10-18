@@ -1217,8 +1217,8 @@ algorithm
       env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
-                                                       UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-                                                       ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
+        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        ci_state, cl, false, {},false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
     then env_2;
     end matchcontinue;
 end getClassEnvNoElaboration;

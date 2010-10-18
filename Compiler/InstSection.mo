@@ -3328,6 +3328,18 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
+    // Check if either of the components are conditional components with
+    // condition = false, in which case we should not instantiate the connection.
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
+      equation
+        c1_1 = Exp.toExpCref(c1);
+        (cache, c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_1);
+        c2_1 = Exp.toExpCref(c2);
+        (cache, c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_1);
+        true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
+      then
+        (cache, env, ih, sets, DAEUtil.emptyDae, graph);
+
     // adrpo: handle expandable connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
@@ -4445,15 +4457,11 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Non-flow and Non-stream type Parameters and constants generate assert statements */
-    case (cache,env,ih,sets as(Connect.SETS(deletedComponents=dc)),pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
       local list<Boolean> bolist,bolist2;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        bolist = Util.listMap1(dc,Exp.crefNotPrefixOf,c1_1);
-        bolist2 = Util.listMap1(dc,Exp.crefNotPrefixOf,c2_1);
-        bolist = listAppend(bolist,bolist2);
-        true = Util.listFold(bolist,boolAnd,true);
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(t1);
         true = Types.basicType(t2);
@@ -5001,7 +5009,7 @@ algorithm
         Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")), ld_mod, {}, {}, {}, impl);
        (cache2,env2,ih,_,_,_,_,_,_) = Inst.instElementList(localCache,env2,ih,UnitAbsyn.noStore,
         DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")),
-        ld_mod,{},impl,ConnectionGraph.EMPTY);
+        ld_mod,{},impl,Inst.INNER_CALL,ConnectionGraph.EMPTY);
 
         (cache2,_,DAE.PROP(t,_),_,dae2) = Static.elabExp(cache2,env2,localIterExp,
           impl,NONE(),false,pre);
