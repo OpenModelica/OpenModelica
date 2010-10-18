@@ -3410,22 +3410,22 @@ algorithm
 
         // do the union of the connectors by adding the missing 
         // components from one to the other and vice-versa.
-        Debug.fprintln("expandable", 
-          ">>>> connect(expandable, expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
+        // Debug.fprintln("expandable", 
+        //  ">>>> connect(expandable, expandable)(" +& 
+        //     Dump.printComponentRefStr(c1) +& ", " +&
+        //     Dump.printComponentRefStr(c2) +& ")"
+        //     );
         
         // get the environments of the expandable connectors
         // which contain all the virtual components.
         (_,_,_,_,_,_,_,env1,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,env2,_) = Lookup.lookupVar(cache, env, c2_2);
         
-        Debug.fprintln("expandable", 
-          "1 connect(expandable, expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")" 
-             );
+        // Debug.fprintln("expandable", 
+        //   "1 connect(expandable, expandable)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")" 
+        //      );
              
         //Debug.fprintln("expandable", "env ===>\n" +& Env.printEnvStr(env));
         //Debug.fprintln("expandable", "env(c1) ===>\n" +& Env.printEnvStr(env1));
@@ -3433,27 +3433,27 @@ algorithm
              
         // get the virtual components
         variables1 = Env.getVariablesFromEnv(env1);
-        Debug.fprintln("expandable", "Variables1: " +& Util.stringDelimitList(variables1, ", "));
+        // Debug.fprintln("expandable", "Variables1: " +& Util.stringDelimitList(variables1, ", "));
         variables2 = Env.getVariablesFromEnv(env2);
-        Debug.fprintln("expandable", "Variables2: " +& Util.stringDelimitList(variables2, ", "));
+        // Debug.fprintln("expandable", "Variables2: " +& Util.stringDelimitList(variables2, ", "));
         variablesUnion = Util.listUnion(variables1, variables2);
-        Debug.fprintln("expandable", "Union of expandable connector variables: " +& Util.stringDelimitList(variablesUnion, ", "));
+        // Debug.fprintln("expandable", "Union of expandable connector variables: " +& Util.stringDelimitList(variablesUnion, ", "));
         
-        Debug.fprintln("expandable", 
-          "2 connect(expandable, expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
+        // Debug.fprintln("expandable", 
+        //   "2 connect(expandable, expandable)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
         
         // then connect each of the components normally.
         (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
         
-        Debug.fprintln("expandable", 
-          "<<<< connect(expandable, expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );        
-         
+        // Debug.fprintln("expandable", 
+        //   "<<<< connect(expandable, expandable)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
+        
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3463,11 +3463,11 @@ algorithm
         // c2 is expandable
         failure((_,_,_,_) = Static.elabCref(cache, env, c2, impl, false,pre,info));
         (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env,c1,impl,false,pre,info);
-        Debug.fprintln("expandable", 
-          "connect(existing, expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
+        // Debug.fprintln("expandable", 
+        //   "connect(existing, expandable)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
         (cache,env,ih,sets,dae,graph) = connectExpandableConnectors(cache,env,ih,sets,pre,c2,c1,impl,graph,info);
       then
         (cache,env,ih,sets,dae,graph);
@@ -3477,6 +3477,7 @@ algorithm
       equation
         // c1 is expandable        
         failure((_,_,_,_) = Static.elabCref(cache,env,c1,impl,false,pre,info));
+        // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +& 
           Absyn.printComponentRefStr(c1) +& "], " +&
           Absyn.printComponentRefStr(c2) +& "); should be qualified, i.e. expandableConnectorName.virtualName!\n"); 
@@ -3491,23 +3492,23 @@ algorithm
         failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre, info));
         (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre, info);        
 
-        Debug.fprintln("expandable", 
-          ">>>> connect(expandable, existing)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
-
+        // Debug.fprintln("expandable", 
+        //   ">>>> connect(expandable, existing)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
+        
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
         DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dir2,io2) = attr2;
-
-        Debug.fprintln("expandable", 
-          "1 connect(expandable, existing)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
+        
+        // Debug.fprintln("expandable", 
+        //   "1 connect(expandable, existing)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
 
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
@@ -3528,11 +3529,11 @@ algorithm
         // more than 1 variables
         true = listLength(variablesUnion) > 1;
         
-        Debug.fprintln("expandable", 
-          "2 connect(expandable, existing[MULTIPLE])(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );        
+        // Debug.fprintln("expandable", 
+        //   "2 connect(expandable, existing[MULTIPLE])(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );        
 
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3575,25 +3576,25 @@ algorithm
         // c1 is expandable        
         failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre, info));
         (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre, info);
-
-        Debug.fprintln("expandable", 
-          ">>>> connect(expandable, existing)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
-
+        
+        // Debug.fprintln("expandable", 
+        //   ">>>> connect(expandable, existing)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
+        
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
         DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dir2,io2) = attr2;
-
-        Debug.fprintln("expandable", 
-          "1 connect(expandable, existing)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
-
+        
+        // Debug.fprintln("expandable", 
+        //   "1 connect(expandable, existing)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
+        
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
         // elab expandable connector
@@ -3613,11 +3614,11 @@ algorithm
         // max 1 variable, should check for empty!
         false = listLength(variablesUnion) > 1;        
         
-        Debug.fprintln("expandable", 
-          "2 connect(expandable, existing[SINGLE])(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
+        // Debug.fprintln("expandable", 
+        //   "2 connect(expandable, existing[SINGLE])(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
         
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3645,12 +3646,12 @@ algorithm
                     cnstForRange, 
                     envExpandable);
         // ******************************************************************************
-
-        Debug.fprintln("expandable", 
-          "3 connect(expandable, existing[SINGLE])(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")" 
-             );        
+        
+        // Debug.fprintln("expandable", 
+        //   "3 connect(expandable, existing[SINGLE])(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")" 
+        //      );        
 
         //Debug.fprintln("expandable", "env expandable: " +& Env.printEnvStr(envExpandable));
         //Debug.fprintln("expandable", "env component: " +& Env.printEnvStr(envComponent));
@@ -3679,12 +3680,12 @@ algorithm
         
         dae = DAEUtil.joinDaes(dae, daeExpandable);
         
-        Debug.fprintln("expandable", 
-          "<<<< connect(expandable, existing)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")\nDAE:\n" +&
-             DAEDump.dump2str(daeExpandable)
-             );
+        // Debug.fprintln("expandable", 
+        //   "<<<< connect(expandable, existing)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")\nDAE:\n" +&
+        //      DAEDump.dump2str(daeExpandable)
+        //      );
       then
         (cache,env,ih,sets,dae,graph);
     
@@ -3704,12 +3705,11 @@ algorithm
         false = isExpandableConnectorType(ty1);
         false = isExpandableConnectorType(ty2);
 
-        Debug.fprintln("expandable", 
-          "connect(non-expandable, non-expandable)(" +& 
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
-             );
-        
+        // Debug.fprintln("expandable", 
+        //   "connect(non-expandable, non-expandable)(" +& 
+        //      Dump.printComponentRefStr(c1) +& ", " +&
+        //      Dump.printComponentRefStr(c2) +& ")"
+        //      );
         // then connect the components normally.
       then
         fail(); // fail to enter connect normally
@@ -3859,10 +3859,10 @@ algorithm
         // add name to both c1 and c2, then connect normally
         c1_full = Absyn.joinCrefs(c1, Absyn.CREF_IDENT(name, {}));
         c2_full = Absyn.joinCrefs(c2, Absyn.CREF_IDENT(name, {}));
-        Debug.fprintln("expandable", 
-          "connect(full_expandable, full_expandable)(" +& 
-             Dump.printComponentRefStr(c1_full) +& ", " +&
-             Dump.printComponentRefStr(c2_full) +& ")");
+        // Debug.fprintln("expandable", 
+        //   "connect(full_expandable, full_expandable)(" +& 
+        //      Dump.printComponentRefStr(c1_full) +& ", " +&
+        //      Dump.printComponentRefStr(c2_full) +& ")");
         (cache,env,ih,sets,dae1,graph) = instConnect(cache,env,ih,sets,pre,c1_full,c2_full,impl,graph,info);
         
         (cache,env,ih,sets,dae2,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,names,impl,graph,info);
