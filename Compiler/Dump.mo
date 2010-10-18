@@ -5994,7 +5994,7 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
-      list<Absyn.Exp> switchCases;
+      list<Absyn.Exp> inputExps, switchCases;
       String label;
       Absyn.AlgorithmItem equ;
       Absyn.MatchType matchType;
@@ -6076,10 +6076,12 @@ algorithm
       equation
         Print.printBuf("record Absyn.ALG_THROW end Absyn.ALG_THROW;");
       then ();
-    case Absyn.ALG_MATCHCASES(matchType,switchCases)
+    case Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases)
       equation
         Print.printBuf("record Absyn.ALG_MATCHCASES matchType = ");
         printMatchTypeAsCorbaString(matchType);
+        Print.printBuf(", inputExps = ");
+        printListAsCorbaString(inputExps, printExpAsCorbaString, ",");
         Print.printBuf(", switchCases = ");
         printListAsCorbaString(switchCases, printExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_MATCHCASES;");

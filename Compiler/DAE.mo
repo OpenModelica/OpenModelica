@@ -572,6 +572,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
 
   record STMT_MATCHCASES "match[continue] helper"
     Absyn.MatchType matchType;
+    list<Exp> inputExps "for now these are idents; they should be full expressions (but the cases are not split into matching and assignments...)";
     list<Exp> caseStmt;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_MATCHCASES;

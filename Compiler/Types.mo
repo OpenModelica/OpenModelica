@@ -5292,6 +5292,11 @@ algorithm
         tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
         tys = Util.listMap(tys, unboxedType);
       then ((DAE.T_METATUPLE(tys),NONE));
+    case ((DAE.T_TUPLE(tys),_),bindings)
+      equation
+        tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
+        tys = Util.listMap(tys, unboxedType);
+      then ((DAE.T_TUPLE(tys),NONE));
     // Add Uniontype, Function reference(?)
     case (ty, bindings)
       then ty;
@@ -5697,7 +5702,7 @@ algorithm
   (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,solvedBindings)
     local
       Type ty,ty1,ty2;
-      list<Type> tys;
+      list<Type> tys,tys1,tys2,rest;
       String id,id1,id2;
     case ((ty1 as (DAE.T_POLYMORPHIC_SOLVED(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC_SOLVED(id2),_))::tys2,solvedBindings)
       equation
@@ -5722,6 +5727,18 @@ algorithm
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
         ty1 = (DAE.T_METAOPTION(ty1),NONE());
       then (ty1::tys2,solvedBindings);
+    
+    case ((DAE.T_LIST(ty1),_)::tys1,(DAE.T_LIST(ty2),_)::tys2,solvedBindings)
+      equation
+        ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
+        ty1 = (DAE.T_LIST(ty1),NONE());
+      then (ty1::tys2,solvedBindings);
+
+    case ((DAE.T_METATUPLE(tys1),_)::_,(DAE.T_METATUPLE(tys2),_)::rest,solvedBindings)
+      equation
+        (tys1,solvedBindings) = solveBindings(tys1,tys2,solvedBindings);
+        ty1 = (DAE.T_METATUPLE(tys1),NONE());
+      then (ty1::rest,solvedBindings);
     
     case (tys1,ty::tys2,_)
       equation

@@ -9676,7 +9676,7 @@ algorithm
       list<DAE.Statement> rest,st,stlst,stlst1;
       DAE.Statement s,s1;
       DAE.Exp e,e1,e_1,e1_1;
-      list<DAE.Exp> elst,elst1;
+      list<DAE.Exp> elst,elst1,inputExps;
       DAE.ExpType t;
       DAE.ComponentRef cr,cr1;
       DAE.Else else_,else_1;
@@ -9811,12 +9811,12 @@ algorithm
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_LABEL(labelName,source)::st);
-  case (DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=elst,source=source)::rest,inExp2,inExp3)
+  case (DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=elst,source=source)::rest,inExp2,inExp3)
     equation
         (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
-      (DAE.STMT_MATCHCASES(matchType,elst1,source)::st);
+      (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st);
   case (_,_,_)
     equation
       print("-DAELow.replaceDummyDerAlgs1 failed\n");
@@ -10018,7 +10018,7 @@ algorithm
       list<DAE.Statement> rest,st,stlst,stlst1;
       DAE.Statement s,s1;
       DAE.Exp e,e1,e_1,e1_1;
-      list<DAE.Exp> elst,elst1;
+      list<DAE.Exp> elst,elst1,inputExps;
       DAE.ExpType t;
       DAE.ComponentRef cr,cr1;
       DAE.Else else_,else_1;
@@ -10154,12 +10154,12 @@ algorithm
         (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
     then
       (DAE.STMT_LABEL(labelName,source)::st,vars);
-  case (DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=elst,source=source)::rest,inVariables)
+  case (DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=elst,source=source)::rest,inVariables)
     equation
         (elst1,vars) = replaceDummyDerOthersExpLst(elst,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
-      (DAE.STMT_MATCHCASES(matchType,elst1,source)::st,vars1);
+      (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st,vars1);
   case (_,_)
     equation
       print("-DAELow.replaceDummyDerOthersAlgs1 failed\n");

@@ -838,7 +838,7 @@ algorithm
       list<DAE.Function> dae;
       DAE.ExpType ty;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> elst,elst_1;
+      list<DAE.Exp> elst,elst_1,inputExps;
       DAE.Else els,els_1;
       Boolean b;
       Ident i;
@@ -936,12 +936,13 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_CATCH(stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_MATCHCASES(matchType,elst,source) :: cdr,dae)
+    case(DAE.STMT_MATCHCASES(matchType,inputExps,elst,source) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
+        (inputExps,dae) = elabExpList(inputExps,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_MATCHCASES(matchType,elst_1,source) :: cdr_1,dae);
+        (DAE.STMT_MATCHCASES(matchType,inputExps,elst_1,source) :: cdr_1,dae);
     case(stmt :: cdr,dae)
       equation
         (cdr_1,dae) = elabStmts(cdr,dae);
@@ -1558,7 +1559,7 @@ algorithm
       DAE.Statement stmt,stmt_1;
       list<Integer> ilst;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> elst,elst_1;
+      list<DAE.Exp> elst,elst_1,inputExps;
       DAE.ElementSource source;
       Absyn.MatchType matchType;
     case({},_,_,_,_) then {};
@@ -1657,12 +1658,13 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_CATCH(stmts_1,source) :: cdr_1;
-    case(DAE.STMT_MATCHCASES(matchType,elst,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_MATCHCASES(matchType,inputExps,elst,source) :: cdr,dae,p,inputs,current)
       equation
+        inputExps = Util.listMap1(inputExps,handleExpList2,(p,inputs,dae,current));
         elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_MATCHCASES(matchType,elst_1,source) :: cdr_1;
+        DAE.STMT_MATCHCASES(matchType,inputExps,elst_1,source) :: cdr_1;
     case(stmt :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);

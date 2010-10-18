@@ -408,6 +408,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
 
   record ALG_MATCHCASES
     Absyn.MatchType matchType;
+    list<Absyn.Exp> inputExps;
     list<Absyn.Exp> switchCases;
     Option<Comment> comment;
     Absyn.Info info;
@@ -2519,7 +2520,7 @@ algorithm
       Absyn.ForIterators iterators;
       Absyn.FunctionArgs functionArgs;
       Absyn.Info info;
-      list<Absyn.Exp> switchCases,conditions;
+      list<Absyn.Exp> inputExps,switchCases,conditions;
       list<list<Statement>> stmtsList;
       list<Statement> body,trueBranch,elseBranch;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
@@ -2587,8 +2588,8 @@ algorithm
     case ALG_THROW(comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE(),info);
     
-    case ALG_MATCHCASES(matchType,switchCases,comment,info)
-    then Absyn.ALGORITHMITEM(Absyn.ALG_MATCHCASES(matchType,switchCases),NONE(),info);
+    case ALG_MATCHCASES(matchType,inputExps,switchCases,comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases),NONE(),info);
       
     case ALG_GOTO(labelName,comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_GOTO(labelName),NONE(),info);

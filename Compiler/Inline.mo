@@ -804,7 +804,7 @@ algorithm
       Algorithm.Statement stmt,stmt_1;
       DAE.ExpType t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<DAE.Exp> explst,explst_1;
+      list<DAE.Exp> explst,explst_1,inputExps;
       DAE.ComponentRef cref;
       Algorithm.Else a_else,a_else_1;
       list<Algorithm.Statement> stmts,stmts_1;
@@ -894,11 +894,12 @@ algorithm
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
         DAE.STMT_CATCH(stmts_1,source);
-    case(DAE.STMT_MATCHCASES(matchType,explst,source),fns)
+    case(DAE.STMT_MATCHCASES(matchType,inputExps,explst,source),fns)
       equation
+        inputExps = Util.listMap1(inputExps,inlineExp,fns);
         explst_1 = Util.listMap1(explst,inlineExp,fns);
       then
-        DAE.STMT_MATCHCASES(matchType,explst_1,source);
+        DAE.STMT_MATCHCASES(matchType,inputExps,explst_1,source);
     case(stmt,_) then stmt;
   end matchcontinue;
 end inlineStatement;

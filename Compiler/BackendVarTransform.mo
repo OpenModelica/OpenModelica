@@ -417,7 +417,7 @@ algorithm
       DAE.Statement statement,statement_1;
       DAE.ExpType type_;
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
-      list<DAE.Exp> expExpLst,expExpLst_1;
+      list<DAE.Exp> expExpLst,expExpLst_1,inputExps;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
       String str;
@@ -565,12 +565,13 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_LABEL(str,source):: es_1); 
-    case ((DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=expExpLst,source=source)::es),repl)
+    case ((DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=expExpLst,source=source)::es),repl)
       equation
+        inputExps = Util.listMap2(inputExps,VarTransform.replaceExp,repl, NONE);
         expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_MATCHCASES(matchType,expExpLst_1,source):: es_1);
+        (DAE.STMT_MATCHCASES(matchType,inputExps,expExpLst_1,source):: es_1);
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);

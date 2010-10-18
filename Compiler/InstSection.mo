@@ -2346,9 +2346,10 @@ algorithm
       Absyn.ComponentRef cr;
       Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
       Boolean impl,onlyCref,tupleExp;
-      list<DAE.Exp> expl_1,expl_2;
+      list<Absyn.Exp> absynExpList,inputExps,expl;
+      list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
+      Absyn.MatchType matchType;
       list<DAE.Properties> cprops, eprops;
-      list<Absyn.Exp> expl;
       String s,i;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
@@ -2798,16 +2799,13 @@ algorithm
         (cache,{stmt});
     
       // Helper statement for matchcontinue
-    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, switchCases = absynExpList, comment = comment, info = info),source,_,impl,unrollForLoops)
-      local
-        Absyn.MatchType matchType;
-        list<Absyn.Exp> absynExpList;
-        list<DAE.Exp> expExpList;
+    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, inputExps = inputExps, switchCases = expl, comment = comment, info = info),source,_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,expExpList,_,_) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true,pre,info);
+        (cache,expl_1,_,_) = Static.elabExpList(cache,env, expl, impl, NONE,true,pre,info);
+        (cache,inputExpsDAE,_,_) = Static.elabExpList(cache,env, inputExps, impl, NONE,true,pre,info);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_MATCHCASES(matchType,expExpList,source);
+        stmt = DAE.STMT_MATCHCASES(matchType,inputExpsDAE,expl_1,source);
       then (cache,{stmt});
 
     //------------------------------------------

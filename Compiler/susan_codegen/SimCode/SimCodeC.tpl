@@ -3943,6 +3943,15 @@ case STMT_ASSERT(__) then
   >>
 end algStmtAssert;
 
+template algStmtMatchcasesVarDeclsAndAssign(list<Exp> expList, Context context, Text &varDecls, Text &varAssign, Text &preExp)
+::=
+  (expList |> exp =>
+    let decl = tempDecl(expTypeFromExpModelica(exp), &varDecls)
+    let content = daeExp(exp, context, &preExp, &varDecls)
+    let lhs = scalarLhsCref(exp, context, &preExp, &varDecls)
+    let &varAssign += '<%decl%> = <%content%>;'
+    '<%lhs%> = <%decl%>;'; separator = "\n")
+end algStmtMatchcasesVarDeclsAndAssign;
 
 template algStmtMatchcases(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a matchcases algorithm statement."
@@ -3951,11 +3960,19 @@ match stmt
 case STMT_MATCHCASES(__) then
   let loopVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
   let doneVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
+  let &inVarDecl = buffer ""
+  let &inVarAssign = buffer ""
+  let &inVarPreExp = buffer ""
+  let inVarAssignLoop = algStmtMatchcasesVarDeclsAndAssign(inputExps, context, &inVarDecl, &inVarAssign, &inVarPreExp)
   let numCases = listLength(caseStmt)
   <<
 
   <%doneVar%> = 0;
+  <%inVarDecl%>
+  <%inVarPreExp%>
+  <%inVarAssign%>
   for (<%loopVar%>=0; 0==<%doneVar%> && <%loopVar%><<%numCases%>; <%loopVar%>++) {
+    <%inVarAssignLoop%>
     <% match matchType case MATCHCONTINUE(__) then 'try { /* matchcontinue */' else '{' %>
       switch (<%loopVar%>) {
         <%caseStmt |> e indexedby i0 =>
@@ -4506,6 +4523,7 @@ case rel as RELATION(__) then
     case GREATER(ty = ET_INT(__))      then '(<%e1%> > <%e2%>)'
     case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
     case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
+
     case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = ET_INT(__))       then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
@@ -4682,6 +4700,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFC*/)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="rem"),
             expLst={e1, e2}) then

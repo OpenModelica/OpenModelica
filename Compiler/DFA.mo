@@ -1491,7 +1491,7 @@ algorithm
   (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv, info);
   checkShadowing(declList,invalidDecls);
   (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
-  alg := Absyn.ALG_MATCHCASES(matchType,cases);
+  alg := Absyn.ALG_MATCHCASES(matchType,inputVarList,cases);
   algItem := Absyn.ALGORITHMITEM(alg, NONE(), info);
   expr := Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS({algItem}),Absyn.BOOL(true));
 end matchContinueToSwitch;

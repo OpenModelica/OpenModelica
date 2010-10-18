@@ -858,6 +858,7 @@ package DAE
     end STMT_RETURN;
     record STMT_MATCHCASES
       Absyn.MatchType matchType;
+      list<Exp> inputExps;
       list<Exp> caseStmt;
       ElementSource source;
     end STMT_MATCHCASES;
