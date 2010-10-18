@@ -66,6 +66,7 @@
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
 
+#include <rpc.h>
 #else
 
 /* includes/defines specific for LINUX/OS X */
@@ -2216,12 +2217,16 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getUUIDStr)
 {
-  char uuidStr[50] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
-  //uuid_t uuid;
-  //uuid_generate(uuid);
-  //uuid_unparse(uuid,uuidStr);
-  //uuid_clear(uuid);
-  rmlA0 = mk_scon(uuidStr);
+  char outStr[36];
+  char *uuidStr;
+  memset(&uuidStr,0,sizeof(char)*36);
+  UUID uuid;
+  if (UuidCreate(&uuid) == RPC_S_OK)
+  	UuidToString(&uuid, (unsigned char **)(&uuidStr));
+  uuidStr[36] = '\0';
+  memcpy(outStr, strlwr(uuidStr), 36);
+  RpcStringFree((unsigned char**)(&uuidStr));
+  rmlA0 = mk_scon(outStr);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -3069,7 +3074,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getUUIDStr)
 {
-  char uuidStr[50] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
+  char uuidStr[36] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
   //uuid_t uuid;
   //uuid_generate(uuid);
   //uuid_unparse(uuid,uuidStr);
