@@ -67,7 +67,7 @@ end clearErrorBuf;
 public function getErrorString
   output String outString;
 
-  external "C" ;
+  external "C" outString = Print__getErrorString();
 end getErrorString;
 
 public function printBuf
@@ -84,7 +84,7 @@ end clearBuf;
 public function getString "Does not clear the buffer"
   output String outString;
 
-  external "C" ;
+  external "C" outString = Print__getString();
 end getString;
 
 public function writeBuf
@@ -97,7 +97,7 @@ public function getBufLength
 "Gets the actual length of the filled space in the print buffer."
   output Integer outBufFilledLength;
 
-  external "C" ;
+  external "C" outBufFilledLength = Print__getBufLength();
 end getBufLength;
 
 public function printBufSpace
@@ -118,9 +118,8 @@ public function hasBufNewLineAtEnd
  It is a (temporary) workaround to stringLength()'s O(n) cost." 
   output Boolean outHasNewLineAtEnd ;
 
-  external "C" ;
+  external "C" outHasNewLineAtEnd = Print__hasBufNewLineAtEnd();
 end hasBufNewLineAtEnd;
-
 
 end Print;
 

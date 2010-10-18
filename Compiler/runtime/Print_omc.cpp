@@ -46,12 +46,52 @@ extern void printBuf(const char* str)
     throw 1;
 }
 
-extern const char* getString()
+extern int Print__hasBufNewLineAtEnd(void)
+{
+  return PrintImpl__hasBufNewLineAtEnd();
+}
+
+extern int Print__getBufLength(void)
+{
+  return PrintImpl__getBufLength();
+}
+
+extern const char* Print__getString(void)
 {
   const char* res = PrintImpl__getString();
   if (res == NULL)
     throw 1;
   return res;
+}
+
+extern const char* Print__getErrorString(void)
+{
+  const char* res = PrintImpl__getErrorString();
+  if (res == NULL)
+    throw 1;
+  return res;
+}
+
+extern void clearErrorBuf(void)
+{
+  PrintImpl__clearErrorBuf();
+}
+
+extern void clearBuf(void)
+{
+  PrintImpl__clearBuf();
+}
+
+extern void printBufSpace(int numSpace)
+{
+  if (PrintImpl__printBufSpace(numSpace))
+    throw 1;
+}
+
+extern void printBufNewLine(void)
+{
+  if (PrintImpl__printBufNewLine())
+    throw 1;
 }
 
 }
