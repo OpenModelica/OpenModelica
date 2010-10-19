@@ -141,7 +141,7 @@ int print_error_buf_impl(const char *str)
   return 0;
 }
 
-void PrintImpl__setBufSize(long newSize)
+static void PrintImpl__setBufSize(long newSize)
 {
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
@@ -149,13 +149,13 @@ void PrintImpl__setBufSize(long newSize)
   }
 }
 
-void PrintImpl__unSetBufSize(void)
+static void PrintImpl__unSetBufSize(void)
 {
   increase_buffer_fixed(INITIAL_BUFSIZE);
 }
 
 /* Returns 0 on success; 1 on failure */
-int PrintImpl__printErrorBuf(const char* str)
+static int PrintImpl__printErrorBuf(const char* str)
 {
   if (showErrorMessages) /* adrpo: should we show error messages while they happen? */
   {
@@ -170,7 +170,7 @@ int PrintImpl__printErrorBuf(const char* str)
   return 0;
 }
 
-void PrintImpl__clearErrorBuf(void)
+static void PrintImpl__clearErrorBuf(void)
 {
   errorNfilled=0;
   if (errorBuf != 0) {
@@ -182,7 +182,7 @@ void PrintImpl__clearErrorBuf(void)
 }
 
 /* returns NULL on failure */
-const char* PrintImpl__getErrorString(void)
+static const char* PrintImpl__getErrorString(void)
 {
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
@@ -193,7 +193,7 @@ const char* PrintImpl__getErrorString(void)
 }
 
 /* returns 0 on success */
-int PrintImpl__printBuf(const char* str)
+static int PrintImpl__printBuf(const char* str)
 {
   long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
@@ -217,7 +217,7 @@ int PrintImpl__printBuf(const char* str)
   return 0;
 }
 
-void PrintImpl__clearBuf(void)
+static void PrintImpl__clearBuf(void)
 {
   nfilled=0;
   if (buf != 0) {
@@ -243,7 +243,7 @@ const char* PrintImpl__getString(void)
 }
 
 /* returns 0 on success */
-int PrintImpl__writeBuf(const char* filename)
+static int PrintImpl__writeBuf(const char* filename)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
@@ -290,13 +290,13 @@ int PrintImpl__writeBuf(const char* filename)
   return 0;
 }
 
-long PrintImpl__getBufLength(void)
+static long PrintImpl__getBufLength(void)
 {
   return nfilled;
 }
 
 /* returns 0 on success */
-int PrintImpl__printBufSpace(long nSpaces)
+static int PrintImpl__printBufSpace(long nSpaces)
 {
   if (nSpaces > 0) {
    while (nfilled + nSpaces + 1 > cursize) {
@@ -312,7 +312,7 @@ int PrintImpl__printBufSpace(long nSpaces)
 }
 
 /* returns 0 on success */
-int PrintImpl__printBufNewLine(void)
+static int PrintImpl__printBufNewLine(void)
 {
   while (nfilled + 1+1 > cursize) {
     if(increase_buffer()!= 0) {
@@ -325,7 +325,7 @@ int PrintImpl__printBufNewLine(void)
   return 0;
 }
 
-int PrintImpl__hasBufNewLineAtEnd(void)
+static int PrintImpl__hasBufNewLineAtEnd(void)
 {
   return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }

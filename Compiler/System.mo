@@ -293,7 +293,7 @@ public function readFile
   input String inString;
   output String outString;
 
-  external "C" ;
+  external "C" outString = SystemImpl__readFile(inString);
 end readFile;
 
 public function getVariableNames
@@ -384,7 +384,7 @@ public function regularFileExists
   input String inString;
   output Boolean outBool;
 
-  external "C" ;
+  external "C" outBool = SystemImpl__regularFileExists(inString);
 end regularFileExists;
 
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
