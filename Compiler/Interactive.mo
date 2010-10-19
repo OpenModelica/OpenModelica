@@ -2195,7 +2195,7 @@ algorithm
          Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         nargs = getApiFunctionNamedArgs(istmts);
         (s1,newp) = deleteConnection(cr, c1, c2, p);
-        (resstr,newp_1) = addConnection(cr, c1, c2, nargs, newp);
+        (resstr,newp) = addConnection(cr, c1, c2, nargs, newp);
         st = setSymbolTableAST(st, newp);
       then
         (resstr, st);
