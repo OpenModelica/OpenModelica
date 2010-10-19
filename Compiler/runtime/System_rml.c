@@ -40,11 +40,6 @@
 #include <shlwapi.h>
 #endif
 
-#include "rtclock.h"
-#include "systemimpl.h"
-#include "config.h"
-#include "rtopts.h"
-
 #include "systemimpl.c"
 
 #include "rml.h"
@@ -481,29 +476,10 @@ RML_BEGIN_LABEL(System__stringReplace)
   char *str = /* strdup( */RML_STRINGDATA(rmlA0)/* ) */;
   char *source = /* strdup( */RML_STRINGDATA(rmlA1)/* ) */;
   char *target =/*  strdup( */RML_STRINGDATA(rmlA2)/* ) */;
-  char * res=0;
-/*   printf("in '%s' replace '%s' with '%s'\n",str,source,target); */
-
-  /* adrpo 2006-05-15
-   * if source and target are the same this function
-   * cycles, get rid of that here
-   * x08joekl 2008-02-5
-   * fixed so that _replace handles target having source as a substring.
-   */
-  /*
-   if (!strcmp(source, target))
-     RML_TAILCALLK(rmlSC);
-  */
-  /* end adrpo */
-
-  res = _replace(str,source,target);
+  char *res = _replace(str,source,target);
   if (res == NULL)
-  {
-/*      printf("res == NULL\n");  */
     RML_TAILCALLK(rmlFC);
-  }
   rmlA0 = (void*) mk_scon(res);
-/*   printf("Replace result: '%s'\n",res); */
   free(res);
   RML_TAILCALLK(rmlSC);
 }
@@ -2599,7 +2575,7 @@ RML_END_LABEL
 
 char *select_from_dir;
 
-int file_select_directories(struct dirent *entry)
+int file_select_directories(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
   int res;
@@ -2642,7 +2618,7 @@ RML_BEGIN_LABEL(System__subDirectories)
 }
 RML_END_LABEL
 
-int file_select_mo(struct dirent *entry)
+int file_select_mo(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
   int res; char* ptr;

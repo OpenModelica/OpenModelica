@@ -8788,6 +8788,7 @@ algorithm
         tuple_ = isTuple(restype);
         (cache,builtin,fn_1) = isBuiltinFunc(cache,fn_1,pre);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
+        const = Util.if_(RTOpts.debugFlag("rml"), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);

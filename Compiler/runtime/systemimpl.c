@@ -82,10 +82,13 @@ extern "C" {
 #endif
 #endif
 
-/* errorext.h is a C++ header... */
-void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens);
+#include "rtclock.h"
+#include "systemimpl.h"
+#include "config.h"
+#include "rtopts.h"
+#include "errorext.h"
 
-static int SystemImpl__regularFileExists(const char* str)
+static modelica_integer SystemImpl__regularFileExists(const char* str)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int ret_val;
@@ -145,7 +148,7 @@ static char* SystemImpl__readFile(const char* filename)
 }
 
 /* returns 0 on success */
-static int SystemImpl__writeFile(const char* filename, const char* data)
+static modelica_integer SystemImpl__writeFile(const char* filename, const char* data)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
@@ -189,6 +192,21 @@ static int SystemImpl__writeFile(const char* filename, const char* data)
   fflush(file);
   fclose(file);
   return 0;
+}
+
+static modelica_integer SystemImpl__stringFind(const char* str, const char* searchStr)
+{
+  int strLen = strlen(str);
+  int strSearchLen = strlen(searchStr);
+  modelica_integer i,retVal=-1;
+
+  for (i=0; i< strLen - strSearchLen+1; i++) {
+    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
+      retVal = i;
+      break;
+    }
+  }
+  return retVal;
 }
 
 #ifdef __cplusplus

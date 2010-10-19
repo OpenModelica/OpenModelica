@@ -83,7 +83,7 @@ public function stringFind "locates substring searchStr in str. If succeeds retu
   input String searchStr;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=System__stringFind(str,searchStr);
 end stringFind;
 
 public function stringFindString "locates substring searchStr in str. If succeeds return the string, otherwise fail"
@@ -110,7 +110,7 @@ public function stringReplace
   input String target;
   output String res;
 
-  external "C" ;
+  external "C" res=System__stringReplace(str,source,target);
 end stringReplace;
 
 public function toupper
@@ -293,7 +293,7 @@ public function readFile
   input String inString;
   output String outString;
 
-  external "C" outString = SystemImpl__readFile(inString);
+  external "C" outString = System__readFile(inString);
 end readFile;
 
 public function getVariableNames
@@ -384,7 +384,7 @@ public function regularFileExists
   input String inString;
   output Boolean outBool;
 
-  external "C" outBool = SystemImpl__regularFileExists(inString);
+  external "C" outBool = System__regularFileExists(inString);
 end regularFileExists;
 
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"

@@ -35,22 +35,33 @@ extern "C" {
 extern int System__regularFileExists(const char* str)
 {
   fprintf(stderr, "NYI: %s\n", __FUNCTION__);
-  //return SystemImpl__regularFileExists(str);
-  throw 1;
+  return SystemImpl__regularFileExists(str);
 }
 
 extern void writeFile(const char* filename, const char* data)
 {
   fprintf(stderr, "NYI: %s\n", __FUNCTION__);
-  //if (SystemImpl__writeFile(filename, data))
+  if (SystemImpl__writeFile(filename, data))
     throw 1;
 }
 
 extern char* System__readFile(const char* filename)
 {
   fprintf(stderr, "NYI: %s\n", __FUNCTION__);
-  //return SystemImpl__readFile(filename);
-  throw 1;
+  return SystemImpl__readFile(filename);
+}
+
+extern const char* System__stringReplace(const char* str, const char* source, const char* target)
+{
+  char* res = _replace(str,source,target);
+  if (res == NULL)
+    throw 1;
+  return res;
+}
+
+extern int System__stringFind(const char* str, const char* searchStr)
+{
+  return SystemImpl__stringFind(str, searchStr);
 }
 
 }

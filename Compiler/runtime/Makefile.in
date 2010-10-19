@@ -36,7 +36,7 @@ SRC	= rtopts.c socketimpl.c Print_rml.c System_rml.c settingsimpl.c dynload.c Si
 
 CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp Error_rml.cpp optmanager.cpp systemimplmisc.cpp dynload_try.o $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
-OMC_OBJ = Error_omc.o Print_omc.o RTOpts_omc.o System_omc.o ErrorMessage.o
+OMC_OBJ = Error_omc.o Print_omc.o RTOpts_omc.o System_omc.o ErrorMessage.o systemimplmisc.o
 
 all: runtime.a install
 .PHONY: all install
