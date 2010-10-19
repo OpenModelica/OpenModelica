@@ -1830,7 +1830,7 @@ algorithm
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env, DAE.DAElist,
             Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint
+            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph 
             > outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
@@ -1848,6 +1848,7 @@ algorithm
       replaceable type Type_a subtypeof Any;
       Type_a bbx, bby;
       CachedInstItem partialFunc;
+      ConnectionGraph.ConnectionGraph graphCached;
 
     /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
      * it filters out a lot of things. */
@@ -1871,7 +1872,8 @@ algorithm
         bbx = (aa_7,      aa_8, aa_1, aa_3,  aa_4,     aa_5, aa_9);
         bby = (inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
         equality(bbx = bby);
-        (env,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint) = outputs;
+        (env,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graphCached) = outputs;
+        graph = ConnectionGraph.merge(graph, graphCached);
         /*
         Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
@@ -1894,7 +1896,7 @@ algorithm
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         
         inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
-        outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint);
+        outputs = (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
         addToInstCache(fullEnvPathPlusClass,
            SOME(FUNC_instClassIn( // result for full instantiation
@@ -14161,15 +14163,15 @@ uniontype CachedInstItem
     tuple</*Env.Cache, */
           Env, 
           /*InstanceHierarchy, */
-          /* UnitAbsyn.InstStore, */
+          /*UnitAbsyn.InstStore, */
           DAE.DAElist, 
           Connect.Sets, 
           ClassInf.State, 
           list<DAE.Var>,
           Option<DAE.Type>, 
           Option<Absyn.ElementAttributes>, 
-          DAE.EqualityConstraint
-          /*ConnectionGraph.ConnectionGraph*/
+          DAE.EqualityConstraint,
+          ConnectionGraph.ConnectionGraph
          > outputs;
   end FUNC_instClassIn;
 
