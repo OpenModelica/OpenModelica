@@ -980,6 +980,49 @@ algorithm
   end matchcontinue;
 end arrayMapNoCopyHelp1;
 
+
+public function arraySelect 
+"Takes an array and a list with index and output a new array with the indexed elements. 
+Since it will update the array values the returned array must not have the same type, 
+the array will first be initialized with the result of the first call.
+assume the Indecies are in range 1,arrayLength(array). 
+
+See also listMap, arrayMapNoCopy 
+  "
+  input Type_a[:] array;
+  input list<Integer> lst;
+  output Type_a[:] outArray;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outArray := arrayCreate(listLength(lst),array[1]);
+  outArray := arraySelectHelp(array,lst,outArray,1);
+end arraySelect;
+
+
+protected function arraySelectHelp "help function to arrayMap"
+  input Type_a[:] array;
+  input list<Integer> posistions;
+  input Type_a[:] inArray;
+  input Integer lstpos;
+  output Type_a[:] outArray;
+algorithm
+  outArray := matchcontinue(array,posistions,inArray,lstpos)
+    local 
+    Integer pos,i;
+    list<Integer> rest;
+    Type_a elmt;
+    case(_,{},inArray,_) then inArray;  
+    case(array,pos::rest,inArray,i) equation 
+      elmt = array[pos];
+      inArray = arrayUpdate(inArray,i,elmt);
+      inArray = arraySelectHelp(array,rest,inArray,i+1);
+    then inArray;
+    case(_,_,_,i) equation
+      print("arrayMapHelp1 failed\n for i : " +& intString(i));
+    then fail();  
+  end matchcontinue;
+end arraySelectHelp;
+
 public function arrayMap "Takes an array and a function over the elements of the array, which is applied for each element.
 Since it will update the array values the returned array must not have the same type, the array will first be initialized with the result of the first call. 
 
@@ -3261,6 +3304,92 @@ algorithm
         n;
   end matchcontinue;
 end listPos;
+
+public function listlistPosition "function: listPosition
+  Takes a value and a list of values and returns the (first) position
+  the value has in the list. Position index start at zero, such that
+  listNth can be used on the resulting position directly.
+  Example: listPosition(2,{0,1,2,3}) => 2"
+  input Type_a x;
+  input list<list<Type_a>> ys;
+  output Integer n;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  n := listlistPos(x, ys, 0);
+end listlistPosition;
+
+protected function listlistPos "helper function to listPosition"
+  input Type_a inTypeA;
+  input list<list<Type_a>> inTypeALst;
+  input Integer inInteger;
+  output Integer outInteger;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
+    local
+      Type_a x,y,i;
+      list<Type_a> y1;
+      list<list<Type_a>> ys;
+      Integer i_1,n;
+    case (x,((y::{}):: ys),i)
+      equation
+        equality(x = y);
+      then
+        i;
+    case (x,((y::{}) :: ys),i)
+      local Integer i;
+      equation
+        failure(equality(x = y));
+        i_1 = i + 1;
+        n = listlistPos(x, ys, i_1);
+      then
+        n;        
+    case (x,((y1) :: ys),i)
+      local Integer i;
+      equation
+        //failure(equality(x = y1));
+        //i_1 = i + 1;
+        true = listPos2(x, y1);
+      then
+        i;
+    case (x,(y1 :: ys),i)
+      local Integer i;
+      equation
+        false = listPos2(x, y1);
+        i_1 = i + 1;
+        n = listlistPos(x, ys, i_1);
+      then
+        n;    
+  end matchcontinue;
+end listlistPos;
+
+protected function listPos2 "helper function to listlistPos"
+  input Type_a inTypeA;
+  input list<Type_a> inTypeALst;
+  output Boolean outInteger;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outInteger := matchcontinue (inTypeA,inTypeALst)
+    local
+      Type_a x,y,i;
+      list<Type_a> ys;
+      Integer i_1,n;
+      Boolean a;
+    case (_,{}) then false;
+    case (x,(y :: ys))
+      equation
+        equality(x = y);
+      then
+        true;
+    case (x,(y :: ys))
+      equation
+        failure(equality(x = y));
+        a = listPos2(x, ys);
+        //print("Found with i " +& intString(i) +& " a n: " +& intString(n) +& "\n");
+      then
+        a;        
+  end matchcontinue;
+end listPos2;
 
 public function listGetMember "function: listGetMember
   Takes a value and a list of values and returns the value
