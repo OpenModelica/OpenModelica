@@ -8582,10 +8582,10 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       list<DAE.Type> typelist,ktypelist,tys;
       list<DAE.Dimension> vect_dims;
-      DAE.Exp call_exp;
+      DAE.Exp call_exp,daeExp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope,pre_str;
-      String s,name,argStr,id;
+      String s,name,argStr,id,args_str;
       Env.Cache cache;
       DAE.ExpType tp;
       SCode.Mod mod;
@@ -8735,35 +8735,12 @@ algorithm
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
         Util.setStatefulBoolean(stopElab,true);
-        //(cache,c,env_1) = Lookup.lookupClass(cache, env, fn, false);
-        // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
-        fieldNames = Util.listMap(vars, Types.getVarName);
-        tys = Util.listMap(vars, Types.getVarType);
-        fargs = Util.listThreadTuple(fieldNames, tys);
-        slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{},pre,info);
-        const = Util.listReduce(constlist, Types.constAnd);
-        tyconst = elabConsts(t, const);
-        t = (DAE.T_UNIONTYPE({}),SOME(utPath));
-        prop = getProperties(t, tyconst);
-        true = Util.listFold(newslots, slotAnd, true);
-        //(cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre,info);
-        args_2 = expListFromSlots(newslots);
+        (cache,call_exp,prop,status) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
-        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());
-        /* ------ */
+        (cache,call_exp,prop,status);
 
-      /* MetaRecord failure */
+      /* ..Other functions */
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        true = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(index=_),SOME(fn_1)),env_1) = Lookup.lookupType(cache, env, fn, false);
-        types_str = Types.unparseType(t);
-        fn_str = Absyn.pathString(fn_1);
-        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,types_str},info);
-      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
-    case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* ..Other functions */
       local
         DAE.ExpType tp;
         DAE.Exp callExp;
@@ -8864,6 +8841,105 @@ algorithm
         fail();
   end matchcontinue;
 end elabCallArgs2;
+
+protected function elabCallArgsMetarecord
+  input Env.Cache cache;
+  input Env.Env inEnv;
+  input DAE.Type inType;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input Boolean inBoolean;
+  input Util.StatefulBoolean stopElab;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Util.Status status;
+algorithm
+  (outCache,outExp,outProperties,status) :=
+  matchcontinue (cache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+    local
+      DAE.Type t,outtype,restype,functype,tp1;
+      list<tuple<Ident, DAE.Type>> fargs;
+      list<Env.Frame> env_1,env_2,env;
+      list<Slot> slots,newslots,newslots2,slots2;
+      list<DAE.Exp> args_1,args_2,args1;
+      list<DAE.Const> constlist;
+      DAE.Const const;
+      DAE.TupleConst tyconst;
+      DAE.Properties prop,prop_1;
+      SCode.Class cl;
+      Absyn.Path fn,fn_1,fqPath,utPath;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs, translatedNArgs;
+      Boolean impl,tuple_,builtin;
+      DAE.InlineType inline;
+      Option<Interactive.InteractiveSymbolTable> st;
+      list<DAE.Type> typelist,ktypelist,tys;
+      list<DAE.Dimension> vect_dims;
+      DAE.Exp call_exp,daeExp;
+      list<Ident> t_lst;
+      Ident fn_str,types_str,scope,pre_str;
+      String s,name,argStr,id,args_str,str;
+      Env.Cache cache;
+      DAE.ExpType tp;
+      SCode.Mod mod;
+      DAE.Mod tmod;
+      SCode.Class cl;
+      Option<Absyn.Modification> absynOptMod;
+      ClassInf.State complexClassType;
+      DAE.DAElist dae,dae1,dae2,dae3,dae4,outDae;
+      Prefix pre;
+      SCode.Class c;
+      SCode.Restriction re;
+      Integer index;
+      list<String> fieldNames;
+      list<DAE.Var> vars;
+      
+    case (cache,env,t as (DAE.T_METARECORD(fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+      equation
+         false = listLength(vars) == listLength(args) + listLength(nargs);
+         fn_str = Absyn.pathString(fqPath);
+         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
+      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+
+    case (cache,env,t as (DAE.T_METARECORD(index=index,utPath=utPath,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+      equation
+        fieldNames = Util.listMap(vars, Types.getVarName);
+        tys = Util.listMap(vars, Types.getVarType);
+        fargs = Util.listThreadTuple(fieldNames, tys);
+        slots = makeEmptySlots(fargs);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, {}, pre, info);
+        const = Util.listReduce(constlist, Types.constAnd);
+        tyconst = elabConsts(t, const);
+        t = (DAE.T_UNIONTYPE({}),SOME(utPath));
+        prop = getProperties(t, tyconst);
+        true = Util.listFold(newslots, slotAnd, true);
+        args_2 = expListFromSlots(newslots);
+      then
+        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());
+
+      /* MetaRecord failure */
+    case (cache,env,(DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+      equation
+        (cache,daeExp,prop,_) = elabExp(cache,env,Absyn.TUPLE(args),false,st,false,pre,info);
+        tys = Util.listMap(vars, Types.getVarType);
+        str = "Failed to match types: Got " +& Types.unparseType(Types.getPropType(prop)) +& " but expected " +& Types.unparseType((DAE.T_TUPLE(tys),NONE()));
+        fn_str = Absyn.pathString(fqPath);
+        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,str},info);
+      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+
+      /* MetaRecord failure (args). */
+    case (cache,env,(_,SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+      equation
+        args_str = "Failed to elaborate arguments " +& Dump.printExpStr(Absyn.TUPLE(args));
+        fn_str = Absyn.pathString(fqPath);
+        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,args_str},info);
+      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+  end matchcontinue;
+end elabCallArgsMetarecord;
 
 protected function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"

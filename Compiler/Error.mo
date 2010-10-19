@@ -230,6 +230,7 @@ public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
 public constant ErrorID GENERIC_INST_FUNCTION=145;
+public constant ErrorID WRONG_NO_OF_ARGS=146;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -273,6 +274,7 @@ public constant ErrorID META_UNSOLVED_POLYMORPHIC_BINDINGS=5010;
 public constant ErrorID META_RECORD_FOUND_FAILURE=5011;
 public constant ErrorID META_INVALID_PATTERN=5012;
 public constant ErrorID META_MATCH_INPUT_OUTPUT_NON_CREF=5013;
+public constant ErrorID META_MATCH_GENERAL_FAILURE=5014;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -444,6 +446,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Operand of %s in component %s must be builtin-type in %s"),
           (WRONG_TYPE_OR_NO_OF_ARGS,TRANSLATION(),ERROR(),
           "Wrong type or wrong number of arguments to %s (in component %s)"),
+          (WRONG_NO_OF_ARGS,TRANSLATION(),ERROR(),"Wrong number of arguments to %s"),
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s in component %s"),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
@@ -615,9 +618,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (NON_INSTANTIATED_FUNCTION,SYMBOLIC(),ERROR(),"Tried to use function %s, but it was not instantiated."),
           (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s"),
           (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n    Input bindings: %s\n    Solved bindings: %s\n    Unsolved bindings: %s"),
-          (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"Found %s with type %s, but failed to elaborate the call."),
+          (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"In metarecord call %s: %s"),
           (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
-          (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s.")
+          (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
+          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s")
           
           };
 

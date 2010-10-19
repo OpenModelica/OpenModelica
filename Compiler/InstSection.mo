@@ -2526,7 +2526,7 @@ algorithm
     case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl);
+        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
       then (cache,{stmt});
         
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = left, value = right, comment = comment, info = info),source,initial_,impl,unrollForLoops)
@@ -3019,10 +3019,11 @@ protected function createMatchStatement
   input Prefix pre;
   input SCode.Statement alg;
   input Boolean inBoolean;
+  input Integer numError;
   output Env.Cache outCache;
   output DAE.Statement outStmt;
 algorithm
-  (outCache,outStmt,dae) := matchcontinue (cache,env,ih,pre,alg,inBoolean)
+  (outCache,outStmt,dae) := matchcontinue (cache,env,ih,pre,alg,inBoolean,numError)
     local
       DAE.Properties cprop,eprop;
       DAE.Statement stmt;
@@ -3039,9 +3040,10 @@ algorithm
       list<Absyn.Exp> expl;
       Absyn.Info info;
       DAE.ElementSource source;
+      String str1,str2;
       
     // (v1,v2,..,vn)|v|_ := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl,numError)
       equation
         expl = MetaUtil.extractListFromTuple(exp, 0);
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
@@ -3055,10 +3057,14 @@ algorithm
       then
         (localCache,stmt);
 
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
       equation
-        Debug.fprintln("matchcase", "- InstSection.createMatchStatement failed");
+        true = numError == Error.getNumErrorMessages();
+        str1 = Dump.printExpStr(exp);
+        str2 = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str1,str2}, info);
       then fail();
+
   end matchcontinue;
 end createMatchStatement;
 
