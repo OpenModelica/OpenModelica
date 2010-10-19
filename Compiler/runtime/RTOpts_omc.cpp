@@ -28,15 +28,37 @@
  *
  */
 
-#include <stdio.h>
+#include "modelica.h"
 
 extern "C" {
+#include "rtoptsimpl.c"
 
-int showErrorMessages;
+extern int showErrorMessages;
 
-int debugFlag(const char* flag) {
-  fprintf(stderr, "RTOpts.debugFlag not yet implemented %s\n", flag);
-  return 0;
+extern int RTOpts_debugFlag(const char* flag) {
+  return check_debug_flag(flag);
+}
+
+extern modelica_metatype RTOpts_args(modelica_metatype args) {
+  modelica_metatype res = mmc_mk_nil();
+
+  while (MMC_GETHDR(args) != MMC_NILHDR)
+  {
+    modelica_metatype head = MMC_CAR(args);
+    const char *arg = MMC_STRINGDATA(head);
+    switch (RTOptsImpl__arg(arg)) {
+    case ARG_FAILURE:
+      throw 1;
+      break;
+    case ARG_CONSUME:
+      break;
+    case ARG_SUCCESS:
+      res = mmc_mk_cons(head, res);
+      break;
+    }
+    args = MMC_CDR(args);
+  }
+  return listReverse(res);
 }
 
 }

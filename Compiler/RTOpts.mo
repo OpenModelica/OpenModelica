@@ -46,7 +46,7 @@ public function args
   input list<String> inStringLst;
   output list<String> outStringLst;
 
-  external "C" ;
+  external "C" outStringLst=RTOpts_args(inStringLst);
 end args;
 
 public function typeinfo
@@ -77,7 +77,7 @@ public function debugFlag
   input String inString;
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean=RTOpts_debugFlag(inString);
 end debugFlag;
 
 public function setDebugFlag

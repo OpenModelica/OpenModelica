@@ -46,17 +46,17 @@ extern void printBuf(const char* str)
     throw 1;
 }
 
-extern int Print__hasBufNewLineAtEnd(void)
+extern int Print_hasBufNewLineAtEnd(void)
 {
   return PrintImpl__hasBufNewLineAtEnd();
 }
 
-extern int Print__getBufLength(void)
+extern int Print_getBufLength(void)
 {
   return PrintImpl__getBufLength();
 }
 
-extern const char* Print__getString(void)
+extern const char* Print_getString(void)
 {
   const char* res = PrintImpl__getString();
   if (res == NULL)
@@ -64,7 +64,7 @@ extern const char* Print__getString(void)
   return res;
 }
 
-extern const char* Print__getErrorString(void)
+extern const char* Print_getErrorString(void)
 {
   const char* res = PrintImpl__getErrorString();
   if (res == NULL)

@@ -32,7 +32,7 @@ IDL	= @IDLCMD@
 CFLAGS	+=  @CFLAGS@
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
-SRC	= rtopts.c socketimpl.c Print_rml.c System_rml.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c Database.c
+SRC	= RTOpts_rml.c socketimpl.c Print_rml.c System_rml.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c Database.c
 
 CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp Error_rml.cpp optmanager.cpp systemimplmisc.cpp dynload_try.o $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
@@ -64,6 +64,8 @@ Error_rml.o : errorext.cpp
 Error_omc.o : errorext.cpp
 System_rml.o : systemimpl.c config.unix.h
 System_omc.o : systemimpl.c config.unix.h
+RTOpts_rml.o : rtoptsimpl.c
+RTOpts_omc.o : rtoptsimpl.c
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

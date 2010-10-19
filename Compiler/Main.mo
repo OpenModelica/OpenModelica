@@ -1222,9 +1222,6 @@ algorithm
         false = System.userIsRoot();
         _ = System.readEnv("OPENMODELICAHOME");
         
-        // we need this as we get the arguments in reverse from RTOpts.args
-        args_1 = listReverse(args_1);
-
         // debug_show_depth(2);
         
         // reset the timer used to calculate 
