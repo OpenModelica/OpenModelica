@@ -2194,12 +2194,11 @@ public function listMapFlat "function: listMapFlat
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<Type_b> outTypeBLst;
   replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output list<Type_b> outTypeBLst;
-    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
-  replaceable type Type_b subtypeof Any;
 algorithm
   /* Fastest impl. on large lists, 10M elts takes about 3 seconds */
   outTypeBLst := listMapFlat_impl_2(inTypeALst,{},inFuncTypeTypeAToTypeB);
@@ -2241,20 +2240,18 @@ end listMapFlat_impl_2;
 public function listMapFlat1 "function listMapFlat1
   Takes a list and a function over the list plus an extra argument sent to the function.
   The function produces a new list of values which is used for creating a new list."
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output list<Type_c> outTypeCLst;
-    replaceable type Type_b subtypeof Any;
-    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
 algorithm
   outTypeCLst:= listMapFlat1_tail(inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,{});
 end listMapFlat1;
@@ -2262,21 +2259,19 @@ end listMapFlat1;
 public function listMapFlat1_tail
 "function listMapFlat1_tail
  tail recurstive implmentation of listMapFlat1"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
   input list<Type_c> accTypeCLst;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output list<Type_c> outTypeCLst;
-    replaceable type Type_b subtypeof Any;
-    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
 algorithm
   outTypeCLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,accTypeCLst)
@@ -2297,6 +2292,69 @@ algorithm
         r_1;
   end matchcontinue;
 end listMapFlat1_tail;
+
+public function listMapFlat2 "function listMapFlat2
+  Takes a list and a function over the list plus two extra argument sent to the function.
+  The function produces a new list of values which is used for creating a new list."
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d inFuncTypeTypeATypeBTypeCToTypeD;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  output list<Type_d> outTypeDLst;
+  partial function FuncTypeType_aType_bType_cToType_d
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output list<Type_d> outTypeDLst;
+  end FuncTypeType_aType_bType_cToType_d;
+algorithm
+  outTypeDLst:= listMapFlat2_tail(inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC,{});
+end listMapFlat2;
+
+public function listMapFlat2_tail
+"function listMapFlat2_tail
+ tail recurstive implmentation of listMapFlat2"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d inFuncTypeTypeATypeBTypeCToTypeD;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input list<Type_d> accTypeDLst;
+  output list<Type_d> outTypeDLst;
+  partial function FuncTypeType_aType_bType_cToType_d
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output list<Type_d> outTypeDLst;
+  end FuncTypeType_aType_bType_cToType_d;
+algorithm
+  outTypeCLst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC,accTypeDLst)
+    local
+      list<Type_d> f_1;
+      list<Type_d> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_aType_bType_cToType_d fn;
+      Type_b extraarg;
+      Type_c extraarg1;
+    case ({},_,_,_,accTypeDLst) then listReverse(accTypeDLst);
+    case ((f :: r),fn,extraarg,extraarg1,accTypeDLst)
+      equation
+        f_1 = fn(f, extraarg,extraarg1);
+        accTypeDLst = listAppend(f_1,accTypeDLst);
+        r_1 = listMapFlat2_tail(r, fn, extraarg,extraarg1, accTypeDLst);
+      then
+        r_1;
+  end matchcontinue;
+end listMapFlat2_tail;
 
 public function listListAppendLast "appends to the last element of a list of list of elements"
   input list<list<Type_a>> llst;

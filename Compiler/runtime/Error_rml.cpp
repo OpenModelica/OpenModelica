@@ -211,7 +211,7 @@ RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
 {
   std::string res("{");
   while(!errorMessageQueue.empty()) {
-    res = res + errorMessageQueue.top()->getFullMessage();
+    res = errorMessageQueue.top()->getFullMessage() + res;
     delete errorMessageQueue.top();
     errorMessageQueue.pop();
     if (!errorMessageQueue.empty()) { res = res + string(","); }

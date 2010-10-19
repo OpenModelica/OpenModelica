@@ -44,6 +44,7 @@ Convert.mo \
 DAE.mo \
 DAELow.mo \
 DAEUtil.mo \
+DAELowUtil.mo \
 DAEDump.mo \
 Derive.mo \
 Debug.mo \

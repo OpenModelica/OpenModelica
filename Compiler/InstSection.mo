@@ -511,7 +511,7 @@ algorithm
         // regard to the position of the input arguments.
         
         // equality equation (cr1,...,crn) = fn(...)?
-        checkTupleCallEquation(e1,e2);
+        checkTupleCallEquationMessage(e1,e2,info);
 
         //  Returns the output parameters from the function.
         (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/,pre,info); 
@@ -533,12 +533,13 @@ algorithm
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
         
-    case (cache,env,ih,mods,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
+    
+/*    case (cache,env,ih,mods,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
       equation 
         failure(checkTupleCallEquation(e1,e2));
         s = SCode.equationStr(eqn);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
-      then fail();
+      then fail();*/
 
     /* if-equation         
        If the condition is constant this case will select the correct branch and remove the if-equation*/ 
@@ -895,7 +896,7 @@ algorithm
   end matchcontinue;
 end instEquationCommonWork;
 
-protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call.
+/*protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call.
 Returns the error on failure."
   input Absyn.Exp left;
   input Absyn.Exp right;
@@ -912,7 +913,43 @@ algorithm
         failure(Absyn.TUPLE(_) = left);
       then ();
   end matchcontinue;
-end checkTupleCallEquation;
+end checkTupleCallEquation;*/
+
+protected function checkTupleCallEquationMessage "A version of checkTupleCallEquation
+which produces appropriate error message if the check fails"
+  input Absyn.Exp left;
+  input Absyn.Exp right;
+  input Absyn.Info info;
+algorithm
+  _ := matchcontinue (left,right,info)
+    local
+      list<Absyn.Exp> crs;
+      String s1,s2,s;
+    case (Absyn.TUPLE(crs),Absyn.CALL(functionArgs = _),_)
+      equation
+        _ = Util.listMap(crs,Absyn.expCref);
+      then ();
+    case (left,_,_)
+      equation
+        failure(Absyn.TUPLE(_) = left);
+      then ();
+    case (left as Absyn.TUPLE(crs),right,info)
+      equation
+        s1 = Dump.printExpStr(left);
+        s2 = Dump.printExpStr(right);
+        s = System.stringAppendList({s1," = ",s2,";"});
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY,{s},info);
+      then fail();
+    case (left as Absyn.TUPLE(crs),right,info)
+      equation
+        failure(Absyn.CALL(_,_) = right);
+        s1 = Dump.printExpStr(left);
+        s2 = Dump.printExpStr(right);
+        s = System.stringAppendList({s1," = ",s2,";"});
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
+      then fail();
+  end matchcontinue;
+end checkTupleCallEquationMessage;
 
 protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
   input DAE.Exp expCall;
@@ -2587,9 +2624,19 @@ algorithm
       then
         (cache,stmts);
 
+    /* Tuple with lhs being a tuple NOT of crefs => Error */
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e as Absyn.TUPLE(expressions = expl)),source,initial_,impl,unrollForLoops)
+      equation 
+        failure(_ = Util.listMap(expl,Absyn.expCref));
+        s = Dump.printExpStr(e);
+        Error.addMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s});
+      then
+        fail();
+        
     /* Tuple with rhs not CALL or CONSTANT => Error */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
       equation 
+        _ = Util.listMap(expl,Absyn.expCref);
         s = Dump.printExpStr(e);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then

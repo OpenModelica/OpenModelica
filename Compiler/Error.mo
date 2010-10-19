@@ -231,6 +231,7 @@ public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
 public constant ErrorID GENERIC_INST_FUNCTION=145;
 public constant ErrorID WRONG_NO_OF_ARGS=146;
+public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=147;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -621,8 +622,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"In metarecord call %s: %s"),
           (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
           (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
-          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s")
-          
+          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
+          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)")
           };
 
 protected import ErrorExt;

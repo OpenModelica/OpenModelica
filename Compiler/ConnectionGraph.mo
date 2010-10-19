@@ -1490,6 +1490,53 @@ algorithm
   end matchcontinue;
 end elementSourceInBrokenConnects;
 
+public function merge
+"merge two ConnectionGraphs"
+  input ConnectionGraph inGraph1;
+  input ConnectionGraph inGraph2;
+  output ConnectionGraph outGraph;
+algorithm
+  outGraph := matchcontinue(inGraph1, inGraph2)
+    local
+      Boolean updateGraph, updateGraph1, updateGraph2;
+      list<DAE.ComponentRef> definiteRoots, definiteRoots1, definiteRoots2;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots, potentialRoots1, potentialRoots2;
+      Edges branches, branches1, branches2;
+      DaeEdges connections, connections1, connections2;
+
+    // left is empty, return right
+    case (inGraph1, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}))
+      then
+        inGraph1;
+    
+    // right is empty, return left
+    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}), inGraph2)
+      then
+        inGraph2;
+
+    // they are equal, return any
+    case (inGraph1, inGraph2)
+      equation
+        equality(inGraph1 = inGraph2);
+      then
+        inGraph1;
+
+    // they are NOT equal, merge them
+    case (GRAPH(updateGraph = updateGraph1,definiteRoots = definiteRoots1,potentialRoots = potentialRoots1,branches = branches1,connections = connections1), 
+          GRAPH(updateGraph = updateGraph2,definiteRoots = definiteRoots2,potentialRoots = potentialRoots2,branches = branches2,connections = connections2))
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.merge()");
+        updateGraph    = boolOr(updateGraph1, updateGraph2);
+        definiteRoots  = Util.listUnion(definiteRoots1, definiteRoots2);
+        potentialRoots = Util.listUnion(potentialRoots1, potentialRoots2);
+        branches       = Util.listUnion(branches1, branches2);
+        connections    = Util.listUnion(connections1, connections2);
+      then
+        GRAPH(updateGraph,definiteRoots,potentialRoots,branches,connections);
+  end matchcontinue;
+end merge;
+
+
 /***********************************************************************************************************************/
 /******************************************* GraphViz generation *******************************************************/
 /***********************************************************************************************************************/
