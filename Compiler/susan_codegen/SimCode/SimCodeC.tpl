@@ -1548,9 +1548,11 @@ template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, Strin
       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   let Vars_ = (JacVars |> var => 
-  		defvars(var))
+  		defvars(var)
+  		;separator="\n")
   let writeJac_ = (JacVars |> var => 
-  		writejac(var)) 	
+  		writejac(var)
+  	;separator="\n") 	
   <<
   int functionJac<%MatrixName%>(double *t, double *x, double *xd, double *jac)
   {
@@ -1606,7 +1608,6 @@ case SIMVAR(name=name, index=index) then
 	case _ then
 	<<
 	jac[<%index%>] = <%cref(name)%>;
-	
 	>>
 end writejac;
 
@@ -1677,21 +1678,6 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   >>
 end functionlinearmodel;
 
-template getVarsName(list<SimVar> items)
- "Generates array with variable names in global data section."
-::=
-  match items
-  case {} then
-    <<
-    ""
-    >>
-  case items then
-    let itemsStr = (items |> SIMVAR(__) => '"<%crefStr(name)%>"' ;separator=", ")
-    <<
-    <%itemsStr%>;
-    >>
-end getVarsName;
-
 template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize)
  "Generates name for a varables."
 ::=
@@ -1705,7 +1691,7 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize)
     match var
     case SIMVAR(__) then 
     	<<
-    	Real <%arrayName%>_<%crefStr(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>
+    	Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>
     	>>
 end getVarName;
 
@@ -2508,6 +2494,42 @@ template crefStr(ComponentRef cr)
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
+
+template crefM(ComponentRef cr)
+ "Generates Modelica equivalent name for component reference."
+::=
+  match cr
+  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "time") then "time"
+  else "P" + crefToMStr(cr)
+end crefM;
+
+template crefToMStr(ComponentRef cr)
+ "Helper function to crefM."
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%><%subscriptsToMStr(subscriptLst)%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToMStr(subscriptLst)%>P<%crefToMStr(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToMStr;
+
+template subscriptsToMStr(list<Subscript> subscripts)
+::=
+  if subscripts then
+    'lB<%subscripts |> s => subscriptToMStr(s) ;separator="c"%>rB'
+end subscriptsToMStr;
+
+template subscriptToMStr(Subscript subscript)
+::=
+  let &preExp = buffer ""
+  let &varDecls = buffer ""
+  match subscript
+  case INDEX(__)
+  case SLICE(__) then daeExp(exp, contextSimulationNonDiscrete, &preExp, &varDecls)
+  case WHOLEDIM(__) then "WHOLEDIM"
+  else "UNKNOWN_SUBSCRIPT"
+end subscriptToMStr;
+
 
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."

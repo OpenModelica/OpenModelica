@@ -1646,7 +1646,7 @@ algorithm
       DAELow.DAELow dlow,deriveddlow1,deriveddlow2;
       Integer[:] ass1,ass2;
 
-      DAELow.Variables v,kv;
+      //DAELow.Variables v,kv;
       list<DAELow.Var> derivedVariables, varlst,varlst1,varlst2, states, inputvars, outputvars;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars;
 
@@ -1658,18 +1658,30 @@ algorithm
       list<SimEqSystem> JacDEquations;
       list<SimVar> JacAVars, JacBVars, JacCVars, JacDVars;
  
+      DAELow.Variables v,kv,exv;
+      DAELow.AliasVariables av;
+      DAELow.EquationArray e,re,ie;
+      DAELow.MultiDimEquation[:] ae;
+      DAE.Algorithm[:] al;
+      DAELow.EventInfo ev;
+      DAELow.ExternalObjectClasses eoc;
+      list<DAELow.Equation> e_lst,re_lst,ie_lst;
+      list<DAE.Algorithm> algs;
+      list<DAELow.MultiDimEquation> ae_lst;
+ 
       list<JacobianMatrix> LinearMats;   
 
-    case (functions,dlow,ass1,ass2)
+    case (functions,dlow as DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),ass1,ass2)
       equation
         true = RTOpts.debugFlag("linearization");
         Debug.fcall("linmodel",print,"Generate Linear Model Matrices\n");
         
-        // Prepare all need variables
-        v = DAELow.daeVars(dlow);
-        kv = DAELow.daeKnVars(dlow);
+        // Prepare all needed variables
+        //v = DAELow.daeVars(dlow);
+        //kv = DAELow.daeKnVars(dlow);
       	varlst = DAELow.varList(v);
       	varlst1 = DAELow.varList(kv);
+      	e_lst = DAELow.equationList(e);
       	varlst2 = listAppend(varlst,varlst1);
       	varlst = listReverse(varlst);
       	varlst1 = listReverse(varlst1);
@@ -1681,15 +1693,19 @@ algorithm
         comref_inputvars = Util.listMap(inputvars,DAELow.varCref);
         comref_outputvars = Util.listMap(outputvars,DAELow.varCref);
         
-        
+        //e_lst = replaceDerOpInEquationList(e_lst);
+        //e_lst = solveDAELow(e_lst, varlst, arrayList(ass2));
+        //e = DAELow.listEquation(e_lst);
+        //dlow = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
         // Create SimCode structure for Jacobian or rather for Linearization
 
         // Differentiate the System w.r.t states for matrices A and C
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
-        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_states, ass1,ass2);
+        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_states);
         Debug.fcall("linmodel",print,"Done! Create now Matrixes A and C for linear model.\n");
         
          // create Matrix A and variables
+        Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquations(true, false, true, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
@@ -1697,6 +1713,7 @@ algorithm
         JacAVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
         
         // create Matrix C and variables
+        Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquations(true, false, true, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
@@ -1705,10 +1722,11 @@ algorithm
         
         // Differentiate the System w.r.t states for matrices B and D
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. inputs.\n");
-        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_inputvars, ass1,ass2);
+        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_inputvars);
         Debug.fcall("linmodel",print,"Done! Create now Matrixes B and D for linear model.\n");
 
-         // create Matrix B and variables
+        // create Matrix B and variables
+        Debug.fcall("jacdump2", print, "Dump of daelow for Matrix B.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquations(true, false, true, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
@@ -1716,6 +1734,7 @@ algorithm
         JacBVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
         
         // create Matrix D and variables
+        Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquations(true, false, true, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
@@ -1740,6 +1759,61 @@ algorithm
   end matchcontinue;
 end createLinearModelMatrixes;
 
+protected function solveDAELow
+  input list<DAELow.Equation> inEqns;
+  input list<DAELow.Var> inVars;
+  input list<Integer> inAss2;
+  output list<DAELow.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(inEqns, inVars, inAss2)
+  local
+      DAELow.Equation currEqn, currSolvedEqn;
+      list<DAELow.Equation> restEqns, restSolvedEqns;
+      list<DAELow.Var> vars;
+      Integer currAss;
+      list<Integer> restAss;
+      DAELow.Var currVar;
+      DAE.ComponentRef cref;
+      
+    case({}, _, _) then {};
+    case(currEqn::restEqns, vars, currAss::restAss) equation
+      currVar = listNth(vars, currAss-1);
+      false = DAELow.isStateVar(currVar);
+      cref = DAELow.varCref(currVar);
+      currSolvedEqn = solveEqn(currEqn, cref);
+      restSolvedEqns = solveDAELow(restEqns, vars, restAss);
+    then currSolvedEqn::restSolvedEqns;
+      
+    case(currEqn::restEqns, vars, currAss::restAss) equation
+      currVar = listNth(vars, currAss-1);
+      true = DAELow.isStateVar(currVar);
+      cref = DAELow.varCref(currVar);
+      cref = DAELow.makeDerCref(cref);
+      currSolvedEqn = solveEqn(currEqn, cref);
+      restSolvedEqns = solveDAELow(restEqns, vars, restAss);
+    then currSolvedEqn::restSolvedEqns;
+  end matchcontinue;
+end solveDAELow;
+
+protected function solveEqn
+  input DAELow.Equation inEqn;
+  input DAE.ComponentRef inCref;
+  output DAELow.Equation outEqn;
+algorithm
+  outEqn := matchcontinue(inEqn, inCref)
+    case(DAELow.EQUATION(exp=lhs, scalar=rhs, source=source), cref)
+      local
+        DAE.ComponentRef cref;
+        DAE.Exp lhs, rhs, exp;
+        DAE.ElementSource source;
+      equation
+        exp = solve(lhs, rhs, DAE.CREF(cref, DAE.ET_REAL()));
+    then DAELow.SOLVED_EQUATION(cref, exp, source);
+      
+    case(eqn, _) local DAELow.Equation eqn;
+    then eqn;
+  end matchcontinue;
+end solveEqn;
 
 protected function extractDelayedExpressions
   input DAELow.DAELow dlow;
