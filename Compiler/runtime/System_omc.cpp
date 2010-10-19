@@ -34,7 +34,7 @@ extern "C" {
 
 extern int System_regularFileExists(const char* str)
 {
-  return SystemImpl__regularFileExists(str);
+  return SystemImpl__regularFileExists(str)!=0;
 }
 
 extern void writeFile(const char* filename, const char* data)

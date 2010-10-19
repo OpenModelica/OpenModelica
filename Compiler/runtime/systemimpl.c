@@ -110,7 +110,7 @@ static modelica_integer SystemImpl__regularFileExists(const char* str)
 #else
   struct stat buf;
   if (stat(str, &buf)) return 0;
-  return buf.st_mode & S_IFREG;
+  return (buf.st_mode & S_IFREG);
 #endif
 }
 

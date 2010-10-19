@@ -35,8 +35,10 @@ extern "C" {
 
 extern int showErrorMessages;
 
+const char* corbaSessionName = ""; // TODO: Move this to corbaimpl when bootstrapped version has that file
+
 extern int RTOpts_debugFlag(const char* flag) {
-  return check_debug_flag(flag);
+  return check_debug_flag(flag)!=0;
 }
 
 extern modelica_metatype RTOpts_args(modelica_metatype args) {

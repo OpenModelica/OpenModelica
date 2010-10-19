@@ -61,7 +61,7 @@ extern const char* Print_getString(void)
   const char* res = PrintImpl__getString();
   if (res == NULL)
     throw 1;
-  return res;
+  return strdup(res);
 }
 
 extern const char* Print_getErrorString(void)
@@ -69,7 +69,7 @@ extern const char* Print_getErrorString(void)
   const char* res = PrintImpl__getErrorString();
   if (res == NULL)
     throw 1;
-  return res;
+  return strdup(res);
 }
 
 extern void clearErrorBuf(void)
