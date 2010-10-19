@@ -12841,7 +12841,7 @@ algorithm ocrefs := matchcontinue(inExp)
   end matchcontinue;
 end extractCrefsFromExp;
 
-protected function traversingComponentRefFinder "
+public function traversingComponentRefFinder "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an exp.
