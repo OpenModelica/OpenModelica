@@ -79,6 +79,16 @@ algorithm
   end matchcontinue;
 end algorithmEmpty;
 
+public function isReinitStatement "returns true if statement is a reinit"
+  input Statement stmt;
+  output Boolean res;
+algorithm
+  res := matchcontinue(stmt)
+    case(DAE.STMT_REINIT(var = _)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isReinitStatement;
+
 public function splitReinits ""
   input list<Algorithm> inAlgs;
   output list<Algorithm> reinits;
