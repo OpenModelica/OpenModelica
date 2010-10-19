@@ -75,8 +75,17 @@ public:
     bool isTreeItemLoaded(QTreeWidgetItem *item);
     void addGlobalIconObject(IconAnnotation* icon);
     IconAnnotation* getGlobalIconObject(QString className);
+    void updateNodeText(QString text, QString textStructure);
+    void createActions();
+
+    QTreeWidgetItem *mSelectedItem;
 private slots:
     void showLib(QTreeWidgetItem *item);
+    void openProjectTab(QTreeWidgetItem *item, int column);
+    void showContextMenu(QPoint point);
+    void renameClass();
+    void checkClass();
+    void deleteClass();
 private:
     //Member variables
     MainWindow *mpParentMainWindow;
@@ -84,6 +93,10 @@ private:
     QVBoxLayout *mpGrid;
     QList<QString> mTreeList;
     QList<IconAnnotation*> mGlobalIconsList;
+
+    QAction *mRenameAction;
+    QAction *mCheckModelAction;
+    QAction *mDeleteAction;
 };
 
 #endif // LIBRARYWIDGET_H

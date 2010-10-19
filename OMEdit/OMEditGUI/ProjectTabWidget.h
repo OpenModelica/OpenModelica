@@ -139,6 +139,8 @@ private:
     GraphicsViewScroll *mpViewScrollArea;
 public:
     ProjectTab(ProjectTabWidget *parent = 0);
+    void updateTabName(QString name, QString nameStructure);
+
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;
     GraphicsScene *mpGraphicsScene;
@@ -146,6 +148,7 @@ public:
     QString mModelName;
     QString mModelNameStructure;
     bool mIsSaved;
+    int mTabPosition;
 public slots:
     void hasChanged();
     void showModelicaModel();
@@ -159,7 +162,9 @@ class ProjectTabWidget : public QTabWidget
     Q_OBJECT
 public:
     ProjectTabWidget(MainWindow *parent = 0);
-    ProjectTab *getCurrentTab();
+    ProjectTab* getCurrentTab();
+    ProjectTab* getTabByName(QString name);
+    void removeTab(int index);
 
     MainWindow *mpParentMainWindow;
     bool mShowLines;

@@ -1,0 +1,32 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Resources/icons/close.png</file>
+        <file>Resources/icons/console.png</file>
+        <file>Resources/icons/copy.png</file>
+        <file>Resources/icons/cut.png</file>
+        <file>Resources/icons/delete.png</file>
+        <file>Resources/icons/grid.png</file>
+        <file>Resources/icons/model.png</file>
+        <file>Resources/icons/modeltext.png</file>
+        <file>Resources/icons/new.png</file>
+        <file>Resources/icons/omeditor_splash.png</file>
+        <file>Resources/icons/OMS.bmp</file>
+        <file>Resources/icons/open.png</file>
+        <file>Resources/icons/paste.png</file>
+        <file>Resources/icons/plot.png</file>
+        <file>Resources/icons/redo.png</file>
+        <file>Resources/icons/rotateanticlockwise.png</file>
+        <file>Resources/icons/rotateclockwise.png</file>
+        <file>Resources/icons/save.png</file>
+        <file>Resources/icons/saveall.png</file>
+        <file>Resources/icons/saveas.png</file>
+        <file>Resources/icons/simulate.png</file>
+        <file>Resources/icons/tool.png</file>
+        <file>Resources/icons/undo.png</file>
+        <file>Resources/css/stylesheet.qss</file>
+        <file>Resources/icons/omeditor.ico</file>
+        <file>Resources/icons/omeditor.png</file>
+        <file>Resources/icons/check.png</file>
+        <file>Resources/icons/rename.png</file>
+    </qresource>
+</RCC>

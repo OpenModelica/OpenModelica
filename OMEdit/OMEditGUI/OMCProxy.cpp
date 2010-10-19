@@ -61,7 +61,7 @@ OMCProxy::OMCProxy(MainWindow *pParent)
     this->mpOMCLogger->setWindowFlags(Qt::WindowTitleHint);
     this->mpOMCLogger->setMaximumSize(640, 480);
     this->mpOMCLogger->setMinimumSize(640, 480);
-    this->mpOMCLogger->setWindowIcon(QIcon("../OMEditGUI/Resources/icons/console.png"));
+    this->mpOMCLogger->setWindowIcon(QIcon(":/Resources/icons/console.png"));
     this->mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - OMC Messages Log"));
     // Set the QTextEdit Box
     this->mpTextEdit = new QTextEdit();
@@ -553,6 +553,24 @@ bool OMCProxy::newModel(QString modelName, QString parentModelName)
 bool OMCProxy::existClass(QString className)
 {
     sendCommand("existClass(" + className + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::renameClass(QString oldName, QString newName)
+{
+    sendCommand("renameClass(" + oldName + ", " + newName + ")");
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
+}
+
+bool OMCProxy::deleteClass(QString className)
+{
+    sendCommand("deleteClass(" + className + ")");
     if (getResult().contains("true"))
         return true;
     else

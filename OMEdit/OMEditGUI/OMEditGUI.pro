@@ -109,8 +109,8 @@ DEFINES += __x86__ \
     __OSVERSION__=4 \
     __WIN32__
 LIBS += -L. \
-    -lomniORB414_rtd \
-    -lomnithread34_rtd
+    -lomniORB414_rt \
+    -lomnithread34_rt
 
 INCLUDEPATH += C:\\Thesis\\omniORB-4.1.4\\include \
                ../Pltpkg2 \
@@ -136,3 +136,7 @@ FORMS += \
     ../Pltpkg2/dataSelect.ui \
     ../Pltpkg2/compoundWidget.ui \
     IconProperties.ui
+
+RESOURCES += resource_omedit.qrc
+
+RC_FILE = rc_omedit.rc

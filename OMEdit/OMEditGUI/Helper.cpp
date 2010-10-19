@@ -35,7 +35,7 @@
 
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
+QString Helper::applicationIntroText = "Open Modelica Connection Editor";
 QString Helper::omcServerName = "OMEditor";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
@@ -72,4 +72,8 @@ QString GUIMessages::getMessage(int type)
         return "Incompatible types for the connectors.";
     else if (type == SAVE_CHANGES)
         return "Do you want to save your changes before closing?";
+    else if (type == DELETE_FAIL)
+        return "Unable to delete. Server error has occurred while trying to delete.";
+    else if (type == ONLY_MODEL_ALLOWED)
+        return "This item is not a model.";
 }

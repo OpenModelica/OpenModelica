@@ -73,7 +73,6 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
     this->scale(2.0, -2.0);
-    this->centerOn(this->sceneRect().center());
     this->createActions();
     this->createMenus();
 
@@ -314,22 +313,22 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 void GraphicsView::createActions()
 {
     // Connection Delete Action
-    mpCancelConnectionAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"),
-                                          tr("&Cancel Connection"), this);
-    connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));
-    // Icon Delete Action
-    mpDeleteIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/delete.png"), tr("&Delete"), this);
-    mpDeleteIconAction->setShortcut(QKeySequence::Delete);
+    mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"),
+                                          tr("Cancel Connection"), this);
+    connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));    
     // Icon Rotate ClockWise Action
-    mpRotateIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/rotateclockwise.png"),
-                                    tr("&Rotate Clockwise"), this);
+    mpRotateIconAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.png"),
+                                    tr("Rotate Clockwise"), this);
     mpRotateIconAction->setShortcut(QKeySequence("Ctrl+r"));
     // Icon Rotate Anti-ClockWise Action
-    mpRotateAntiIconAction = new QAction(QIcon("../OMEditGUI/Resources/icons/rotateanticlockwise.png"),
-                                        tr("&Rotate Anticlockwise"), this);
+    mpRotateAntiIconAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.png"),
+                                        tr("Rotate Anticlockwise"), this);
     mpRotateAntiIconAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
     // Icon Reset Rotation Action
-    mpResetRotation = new QAction(tr("&Rotate Anticlockwise"), this);
+    mpResetRotation = new QAction(tr("Reset Rotation"), this);
+    // Icon Delete Action
+    mpDeleteIconAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+    mpDeleteIconAction->setShortcut(QKeySequence::Delete);
 }
 
 void GraphicsView::createMenus()
@@ -574,14 +573,14 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     mpGraphicsView  = new GraphicsView(this);
     mpGraphicsView->setScene(mpGraphicsScene);
 
-    mpModelicaModelButton = new QPushButton(QIcon("../OMEditGUI/Resources/icons/model.png"), tr("Modeling"), this);
+    mpModelicaModelButton = new QPushButton(QIcon(":/Resources/icons/model.png"), tr("Modeling"), this);
     mpModelicaModelButton->setIconSize(QSize(25, 25));
     mpModelicaModelButton->setObjectName(tr("ModelicaModelButton"));
     mpModelicaModelButton->setCheckable(true);
     mpModelicaModelButton->setChecked(true);
     connect(mpModelicaModelButton, SIGNAL(clicked()), this, SLOT(showModelicaModel()));
 
-    mpModelicaTextButton = new QPushButton(QIcon("../OMEditGUI/Resources/icons/modeltext.png") ,tr("Model Text"), this);
+    mpModelicaTextButton = new QPushButton(QIcon(":/Resources/icons/modeltext.png") ,tr("Model Text"), this);
     mpModelicaTextButton->setIconSize(QSize(25, 25));
     mpModelicaTextButton->setCheckable(true);
     mpModelicaTextButton->setObjectName(tr("ModelicaTextButton"));
@@ -592,7 +591,8 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
 
     mpViewScrollArea = new GraphicsViewScroll(mpGraphicsView);
     mpViewScrollArea->setWidget(mpGraphicsView);
-    mpViewScrollArea->ensureVisible(1050, 1220);
+    //mpViewScrollArea->ensureVisible(1050, 1220);
+    mpViewScrollArea->ensureVisible(mpGraphicsView->rect().center().x(), mpGraphicsView->rect().center().y(), 100, 272);
     mpViewScrollArea->setWidgetResizable(true);
 
     QHBoxLayout *layout = new QHBoxLayout();
@@ -607,6 +607,17 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     tabLayout->addWidget(mpModelicaEditor);
     tabLayout->addItem(layout);
     setLayout(tabLayout);
+}
+
+void ProjectTab::updateTabName(QString name, QString nameStructure)
+{
+    mModelName = name;
+    mModelNameStructure = nameStructure;
+
+    if (mIsSaved)
+        mpParentProjectTabWidget->setTabText(mTabPosition, mModelName);
+    else
+        mpParentProjectTabWidget->setTabText(mTabPosition, QString(mModelName).append("*"));
 }
 
 //! Should be called when a model has changed in some sense,
@@ -673,17 +684,42 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
 }
 
 //! Returns a pointer to the currently active project tab
-ProjectTab *ProjectTabWidget::getCurrentTab()
+ProjectTab* ProjectTabWidget::getCurrentTab()
 {
     return qobject_cast<ProjectTab *>(currentWidget());
+}
+
+ProjectTab* ProjectTabWidget::getTabByName(QString name)
+{
+    for (int i = 0; i < this->count() ; i++)
+    {
+        ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(this->widget(i));
+        if (pCurrentTab->mModelNameStructure == name)
+        {
+            return pCurrentTab;
+        }
+    }
+    return NULL;
+}
+
+//! Reimplemented function to remove the Tab.
+void ProjectTabWidget::removeTab(int index)
+{
+    if (this->count() == 0)
+        mpParentMainWindow->gridLinesAction->setEnabled(false);
+
+    QTabWidget::removeTab(index);
 }
 
 //! Adds an existing ProjectTab object to itself.
 //! @see closeProjectTab(int index)
 void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString tabName)
 {
-    projectTab->setParent(this);
-    addTab(projectTab, tabName);
+    /*projectTab->setParent(this);*/
+    projectTab->mIsSaved = false;
+    projectTab->mModelName = tabName;
+    projectTab->mModelNameStructure = tabName;
+    projectTab->mTabPosition = addTab(projectTab, tabName);
     setCurrentWidget(projectTab);
 }
 
@@ -695,7 +731,7 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
     newTab->mIsSaved = false;
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
-    addTab(newTab, modelName.append(QString("*")));
+    newTab->mTabPosition = addTab(newTab, modelName.append(QString("*")));
     setCurrentWidget(newTab);
 }
 
@@ -721,18 +757,27 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
     QString tabName = tabText(index);
 
-    if (pCurrentTab->mIsSaved)
+    if (saveAs)
     {
-        //Nothing to do
-        //statusBar->showMessage(QString("Project: ").append(tabName).append(QString(" is already saved")));
+        saveModel(saveAs);
     }
+    // if not saveAs then
     else
     {
-        if (saveModel(saveAs))
+        // if user presses ctrl + s and model is already saved
+        if (pCurrentTab->mIsSaved)
         {
-            tabName.chop(1);
-            setTabText(index, tabName);
-            pCurrentTab->mIsSaved = true;
+            //Nothing to do
+        }
+        // if model is not saved then save it
+        else
+        {
+            if (saveModel(saveAs))
+            {
+                tabName.chop(1);
+                setTabText(index, tabName);
+                pCurrentTab->mIsSaved = true;
+            }
         }
     }
 }
@@ -809,35 +854,36 @@ bool ProjectTabWidget::saveModel(bool saveAs)
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
-    if (!(qobject_cast<ProjectTab *>(widget(index))->mIsSaved))
+    ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
+    if (!(pCurrentTab->mIsSaved))
     {
         QString modelName;
         modelName = tabText(index);
         modelName.chop(1);
-        QMessageBox msgBox;
-        msgBox.setParent(this);
-        msgBox.setText(QString("The model '").append(modelName).append("'").append(QString(" is not saved.")));
-        msgBox.setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
-        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Save);
+        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+        msgBox->setText(QString("The model '").append(modelName).append("'").append(QString(" is not saved.")));
+        msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
+        msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox->setDefaultButton(QMessageBox::Save);
 
-        int answer = msgBox.exec();
+        int answer = msgBox->exec();
 
         switch (answer)
         {
         case QMessageBox::Save:
             // Save was clicked
-            std::cout << "ProjectTabWidget: " << "Save and close" << std::endl;
             saveProjectTab(index, false);
             removeTab(index);
             return true;
         case QMessageBox::Discard:
             // Don't Save was clicked
-            removeTab(index);
+            if (mpParentMainWindow->mpOMCProxy->deleteClass(pCurrentTab->mModelNameStructure))
+                removeTab(index);
+            else
+                mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::DELETE_FAIL));
             return true;
         case QMessageBox::Cancel:
             // Cancel was clicked
-            std::cout << "ProjectTabWidget: " << "Cancel closing" << std::endl;
             return false;
         default:
             // should never be reached
@@ -847,8 +893,6 @@ bool ProjectTabWidget::closeProjectTab(int index)
     else
     {
         removeTab(index);
-        if (this->count() == 0)
-            mpParentMainWindow->gridLinesAction->setEnabled(false);
         return true;
     }
 }

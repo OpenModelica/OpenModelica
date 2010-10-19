@@ -56,12 +56,13 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpTree->setIndentation(13);
     mpTree->setDragEnabled(true);
     mpTree->setIconSize(QSize(20, 20));
+    mpTree->setColumnCount(1);
 
     mpProjectsTree = new QTreeWidget(this);
     mpProjectsTree->setHeaderLabel(tr("Modelica Files"));
     mpProjectsTree->setColumnCount(1);
     mpProjectsTree->setIndentation(13);
-    mpTree->setColumnCount(1);
+    mpProjectsTree->setContextMenuPolicy(Qt::CustomContextMenu);
 
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
@@ -69,8 +70,13 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpGrid->addWidget(mpProjectsTree);
 
     setLayout(mpGrid);
+
+    createActions();
+
     connect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(showLib(QTreeWidgetItem*)));
     connect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
+    connect(mpProjectsTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openProjectTab(QTreeWidgetItem*,int)));
+    connect(mpProjectsTree, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -302,4 +308,84 @@ IconAnnotation* LibraryWidget::getGlobalIconObject(QString className)
             return icon;
     }
     return NULL;
+}
+
+void LibraryWidget::updateNodeText(QString text, QString textStructure)
+{
+    mSelectedItem->setText(0, text);
+    mSelectedItem->setToolTip(0, textStructure);
+}
+
+void LibraryWidget::createActions()
+{
+    mRenameAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Rename"), this);
+    connect(mRenameAction, SIGNAL(triggered()), SLOT(renameClass()));
+
+    mCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    connect(mCheckModelAction, SIGNAL(triggered()), SLOT(checkClass()));
+
+    mDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+    connect(mDeleteAction, SIGNAL(triggered()), SLOT(deleteClass()));
+}
+
+void LibraryWidget::openProjectTab(QTreeWidgetItem *item, int column)
+{
+    bool isFound = false;
+    // if the clicked item is model
+    if (mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, item->toolTip(column)))
+    {
+        ProjectTab *pCurrentTab = mpParentMainWindow->mpProjectTabs->getTabByName(item->toolTip(column));
+        if (pCurrentTab)
+        {
+            mpParentMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
+            isFound = true;
+
+        }
+        // if the tab is closed by user then reopen it and set is current tab
+        if (!isFound)
+        {
+            //! @todo make it better load the model here and get the components required.
+            mpParentMainWindow->mpProjectTabs->addProjectTab(new ProjectTab(mpParentMainWindow->mpProjectTabs),
+                                                             "model1234");
+        }
+    }
+    else
+    {
+        mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ONLY_MODEL_ALLOWED));
+    }
+}
+
+void LibraryWidget::showContextMenu(QPoint point)
+{
+    int adjust = 24;
+    QTreeWidgetItem *item = 0;
+    item = mpProjectsTree->itemAt(point);
+
+    if (item)
+    {
+        mSelectedItem = item;
+        QMenu menu(this);
+        menu.addAction(mRenameAction);
+        menu.addAction(mCheckModelAction);
+        menu.addAction(mDeleteAction);
+        point.setY(point.y() + adjust);
+        menu.exec(mpProjectsTree->mapToGlobal(point));
+    }
+}
+
+void LibraryWidget::renameClass()
+{
+    RenameClassWidget *renameWidget = new RenameClassWidget(mSelectedItem->text(0), mSelectedItem->toolTip(0),
+                                                            mpParentMainWindow);
+    renameWidget->show();
+}
+
+void LibraryWidget::checkClass()
+{
+
+}
+
+void LibraryWidget::deleteClass()
+{
+
 }

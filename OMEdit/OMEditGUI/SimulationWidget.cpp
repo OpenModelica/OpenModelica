@@ -122,22 +122,23 @@ void SimulationWidget::simulate()
         progressBar.show();
         progressBar.setValue(endtime/2);
 
-        mpParentMainWindow->mpOMCProxy->changeDirectory(QString(qApp->applicationDirPath()).append("/../tmp"));
+        mpParentMainWindow->mpOMCProxy->changeDirectory(QString(qApp->applicationDirPath()).append("/tmp"));
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Enable to simulate the Model '" +
                                                                       projectTab->mModelNameStructure + "'");
             accept();
-            return;
         }
-
-        mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure).append("_res.plt"));
-        mpParentMainWindow->plotdock->show();
-        mpParentMainWindow->mpMessageWidget->printGUIMessage("Simulated '" +
-                                                              projectTab->mModelNameStructure + "' successfully!");
-        progressBar.setValue(endtime);
-        progressBar.hide();
-        accept();
+        else
+        {
+            mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure).append("_res.plt"));
+            mpParentMainWindow->plotdock->show();
+            mpParentMainWindow->mpMessageWidget->printGUIMessage("Simulated '" +
+                                                                  projectTab->mModelNameStructure + "' successfully!");
+            progressBar.setValue(endtime);
+            progressBar.hide();
+            accept();
+        }
     }
 }
 

@@ -383,3 +383,71 @@ void NewModel::createModel()
     this->mpParentMainWindow->mpProjectTabs->addNewProjectTab(this->mpModelNameTextBox->text(), modelStructure);
     this->accept();
 }
+
+RenameClassWidget::RenameClassWidget(QString name, QString nameStructure, MainWindow *parent)
+    : QDialog(parent, Qt::WindowTitleHint), mName(name), mNameStructure(nameStructure)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    mpParentMainWindow = parent;
+
+    this->setWindowTitle(QString(Helper::applicationName).append(" - Rename ").append(name));
+    this->setMaximumSize(300, 100);
+    this->setMinimumSize(300, 100);
+    this->setModal(true);
+
+    this->mpModelNameTextBox = new QLineEdit(name);
+    this->mpModelNameLabel = new QLabel(tr("New Name:"));
+    // Create the buttons
+    this->mpOkButton = new QPushButton(tr("Rename"));
+    this->mpOkButton->setAutoDefault(true);
+    connect(this->mpOkButton, SIGNAL(pressed()), this, SLOT(renameClass()));
+    this->mpCancelButton = new QPushButton(tr("&Cancel"));
+    this->mpCancelButton->setAutoDefault(false);
+    connect(this->mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+
+    this->mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    this->mpButtonBox->addButton(this->mpOkButton, QDialogButtonBox::ActionRole);
+    this->mpButtonBox->addButton(this->mpCancelButton, QDialogButtonBox::ActionRole);
+
+    // Create a layout
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->addWidget(this->mpModelNameLabel, 0, 0);
+    mainLayout->addWidget(this->mpModelNameTextBox, 1, 0);
+    mainLayout->addWidget(this->mpButtonBox, 2, 0);
+
+    setLayout(mainLayout);
+}
+
+RenameClassWidget::~RenameClassWidget()
+{
+
+}
+
+void RenameClassWidget::renameClass()
+{
+    QString newName = mpModelNameTextBox->text().trimmed();
+    QString newNameStructure;
+    if (mpParentMainWindow->mpOMCProxy->renameClass(mNameStructure, newName))
+    {
+        // Find the Tab and rename it to new Name
+        newNameStructure = StringHandler::removeFirstLastCurlBrackets(mpParentMainWindow->mpOMCProxy->getResult());
+        ProjectTab *pCurrentTab = mpParentMainWindow->mpProjectTabs->getTabByName(mNameStructure);
+        if (pCurrentTab)
+        {
+            pCurrentTab->updateTabName(newName, newNameStructure);
+        }
+        // Change the name in tree as well
+        mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
+        mpParentMainWindow->mpMessageWidget->printGUIInfoMessage("Renamed '"+mName+"' to '"+mpModelNameTextBox->text().trimmed()+"'");
+        accept();
+    }
+    else
+    {
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
+                             GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
+                             "\n\n" + mpParentMainWindow->mpOMCProxy->getResult() +
+                             "\n\n" + GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS),
+                             tr("OK"));
+        return;
+    }
+}

@@ -56,7 +56,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     splashScreen->showMessage("Loading Widgets", Qt::AlignRight, Qt::white);
     this->setObjectName("MainWindow");
     this->setWindowTitle(Helper::applicationName);
-    this->setWindowIcon(QIcon("../OMEditGUI/Resources/icons/omeditor.png"));
+    this->setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
     this->setMinimumSize(950, 670);
     this->setContentsMargins(1, 1, 1, 1);
 
@@ -183,76 +183,76 @@ void MainWindow::closeEvent(QCloseEvent *event)
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
 {
-    newAction = new QAction(tr("&New"), this);
+    newAction = new QAction(tr("New"), this);
 
-    newPackageAction = new QAction(tr("&Package"), this);
+    newPackageAction = new QAction(tr("Package"), this);
     newPackageAction->setStatusTip(tr("Create New Package"));
     connect(newPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
 
-    newModelAction = new QAction(tr("&Model"), this);
+    newModelAction = new QAction(tr("Model"), this);
     newModelAction->setStatusTip(tr("Create New Model"));
     newModelAction->setShortcut(QKeySequence("Ctrl+n"));
     connect(newModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
 
-    openAction = new QAction(QIcon("../OMEditGUI/Resources/icons/open.png"), tr("&Open"), this);
+    openAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open"), this);
     openAction->setShortcut(QKeySequence("Ctrl+o"));
     openAction->setStatusTip(tr("Opens Open Modelica file"));
 
-    saveAction = new QAction(QIcon("../OMEditGUI/Resources/icons/save.png"), tr("&Save"), this);
+    saveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
     saveAction->setShortcut(QKeySequence("Ctrl+s"));
     saveAction->setStatusTip(tr("Save a file"));
 
-    saveAsAction = new QAction(QIcon("../OMEditGUI/Resources/icons/saveas.png"), tr("&Save As"), this);
+    saveAsAction = new QAction(QIcon(":/Resources/icons/saveas.png"), tr("Save As"), this);
     saveAsAction->setStatusTip(tr("Save As a File"));
 
-    saveAllAction = new QAction(QIcon("../OMEditGUI/Resources/icons/saveall.png"), tr("&Save All"), this);
+    saveAllAction = new QAction(QIcon(":/Resources/icons/saveall.png"), tr("Save All"), this);
     saveAllAction->setStatusTip(tr("Save All Files"));
 
-    undoAction = new QAction(QIcon("../OMEditGUI/Resources/icons/undo.png"), tr("&Undo"), this);
+    undoAction = new QAction(QIcon(":/Resources/icons/undo.png"), tr("Undo"), this);
     undoAction->setShortcut(QKeySequence("Ctrl+z"));
     undoAction->setStatusTip(tr("Undo Action"));
 
-    redoAction = new QAction(QIcon("../OMEditGUI/Resources/icons/redo.png"), tr("&Redo"), this);
+    redoAction = new QAction(QIcon(":/Resources/icons/redo.png"), tr("Redo"), this);
     redoAction->setShortcut(QKeySequence("Ctrl+y"));
     redoAction->setStatusTip(tr("Redo Action"));
 
-    cutAction = new QAction(QIcon("../OMEditGUI/Resources/icons/cut.png"), tr("&Cut"), this);
+    cutAction = new QAction(QIcon(":/Resources/icons/cut.png"), tr("Cut"), this);
     cutAction->setShortcut(QKeySequence("Ctrl+x"));
 
-    copyAction = new QAction(QIcon("../OMEditGUI/Resources/icons/copy.png"), tr("&Copy"), this);
+    copyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
     copyAction->setShortcut(QKeySequence("Ctrl+c"));
 
-    pasteAction = new QAction(QIcon("../OMEditGUI/Resources/icons/paste.png"), tr("&Paste"), this);
+    pasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
     pasteAction->setShortcut(QKeySequence("Ctrl+v"));
 
-    resetZoomAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoom100.png"), tr("&Reset Zoom"), this);
+    resetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
 
-    zoomInAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoomIn.png"), tr("&Zoom In"), this);
+    zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
 
-    zoomOutAction = new QAction(QIcon("../OMEditGUI/Resources/icons/zoomOut.png"), tr("&Zoom Out"), this);
+    zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
 
-    omcLoggerAction = new QAction(QIcon("../OMEditGUI/Resources/icons/console.png"), tr("&OMC Logger"), this);
+    omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
     connect(omcLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
 
-    openOMShellAction = new QAction(QIcon("../OMEditGUI/Resources/icons/OMS.bmp"), tr("&OMShell"), this);
+    openOMShellAction = new QAction(QIcon(":/Resources/icons/OMS.bmp"), tr("OMShell"), this);
     openOMShellAction->setStatusTip(tr("Opens Open Modelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
-    closeAction = new QAction(QIcon("../OMEditGUI/Resources/icons/close.png"), tr("&Close"), this);
+    closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
     connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
 
-    gridLinesAction = new QAction(QIcon("../OMEditGUI/Resources/icons/grid.png"), tr("&Grid Lines"), this);
+    gridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
     gridLinesAction->setCheckable(true);
 
-    simulationAction = new QAction(QIcon("../OMEditGUI/Resources/icons/simulate.png"), tr("&Simulate"), this);
+    simulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Simulate"), this);
     simulationAction->setStatusTip(tr("Simulate the Model"));
     connect(simulationAction, SIGNAL(triggered()), SLOT(openSimulation()));
 
     plotAction = plotdock->toggleViewAction();
-    plotAction->setIcon(QIcon("../OMEditGUI/Resources/icons/plot.png"));
-    plotAction->setText(tr("&Plot Variables"));
+    plotAction->setIcon(QIcon(":/Resources/icons/plot.png"));
+    plotAction->setText(tr("Plot Variables"));
 }
 
 //! Creates the menus
@@ -343,7 +343,7 @@ void MainWindow::createToolbars()
     newMenuButton->setMenu(newMenu);
     newMenuButton->setDefaultAction(newModelAction);
     newMenuButton->setPopupMode(QToolButton::MenuButtonPopup);
-    newMenuButton->setIcon(QIcon("../OMEditGUI/Resources/icons/new.png"));
+    newMenuButton->setIcon(QIcon(":/Resources/icons/new.png"));
 
     fileToolBar->addWidget(newMenuButton);
     fileToolBar->addAction(openAction);

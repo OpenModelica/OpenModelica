@@ -67,7 +67,9 @@ public:
         ERROR_OCCURRED,
         NO_OPEN_MODELICA_KEYWORDS,
         INCOMPATIBLE_CONNECTORS,
-        SAVE_CHANGES
+        SAVE_CHANGES,
+        DELETE_FAIL,
+        ONLY_MODEL_ALLOWED
     };
 
     static QString getMessage(int type);

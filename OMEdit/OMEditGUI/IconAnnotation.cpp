@@ -265,7 +265,12 @@ QList<QPointF> IconAnnotation::getBoundingRect()
 void IconAnnotation::createActions()
 {
     // Icon Properties Action
-    mpIconPropertiesAction = new QAction(QIcon("../OMEditGUI/Resources/icons/tool.png"), tr("&Properties"), this);
+    mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
+}
+
+void IconAnnotation::getAnnotationString()
+{
+
 }
 
 void IconAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -273,6 +278,8 @@ void IconAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(painter);
     Q_UNUSED(option);
     Q_UNUSED(widget);
+
+    getAnnotationString();
 }
 
 //! Event when mouse cursor enters component icon.

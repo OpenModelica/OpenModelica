@@ -77,6 +77,7 @@ private:
     QAction *mpIconPropertiesAction;
 
     void createActions();
+    void getAnnotationString();
 public:
     IconAnnotation(QString value, QString name, QString className, QPointF position, OMCProxy *omc,
                    GraphicsScene *graphicsScene, GraphicsView *graphicsView);

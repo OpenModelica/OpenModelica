@@ -96,6 +96,8 @@ public:
     bool createModel(QString modelName);
     bool newModel(QString modelName, QString parentModelName);
     bool existClass(QString className);
+    bool renameClass(QString oldName, QString newName);
+    bool deleteClass(QString className);
     QString getSourceFile(QString modelName);
     bool setSourceFile(QString modelName, QString path);
     bool save(QString modelName);

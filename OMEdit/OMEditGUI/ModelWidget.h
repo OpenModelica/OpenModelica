@@ -107,4 +107,24 @@ public slots:
     void createModel();
 };
 
+class RenameClassWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    RenameClassWidget(QString name, QString nameStructure, MainWindow *parent = 0);
+    ~RenameClassWidget();
+
+    MainWindow *mpParentMainWindow;
+private:
+    QString mName;
+    QString mNameStructure;
+    QLabel *mpModelNameLabel;
+    QLineEdit *mpModelNameTextBox;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
+public slots:
+    void renameClass();
+};
+
 #endif // MODELWIDGET_H

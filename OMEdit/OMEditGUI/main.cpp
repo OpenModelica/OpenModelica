@@ -40,12 +40,13 @@
 
 int main(int argc, char *argv[])
 {
+    Q_INIT_RESOURCE(resource_omedit);
     // adding style sheet
     argc += 1;
-    argv[1] = "-stylesheet=../OMEditGUI/Resources/css/stylesheet.qss";
+    argv[1] = "-stylesheet=:/Resources/css/stylesheet.qss";
 
     QApplication a(argc, argv);
-    QPixmap pixmap("../OMEditGUI/Resources/icons/omeditor_splash.png");
+    QPixmap pixmap(":/Resources/icons/omeditor_splash.png");
     SplashScreen splashScreen(pixmap);
     splashScreen.setMessage();
     splashScreen.show();
