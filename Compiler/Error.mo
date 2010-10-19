@@ -229,6 +229,7 @@ public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
 public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
+public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=145;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -606,7 +607,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),
           (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has mismatched number of expected (%s) and actual (%s) outputs. The expressions were %s and %s."),
           (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead."),
-          (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s).") 
+          (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s)."),
+          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)")
+           
           
           };
 
