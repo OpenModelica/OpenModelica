@@ -475,15 +475,15 @@ algorithm
       equation
         res = "";
         str1 = Settings.getCompileCommand();
-        res = Util.stringAppendList({res,"Compile command: ", str1,"\n"});
+        res = System.stringAppendList({res,"Compile command: ", str1,"\n"});
         str1 = Settings.getTempDirectoryPath();
-        res = Util.stringAppendList({res,"Temp folder path: ", str1,"\n"});
+        res = System.stringAppendList({res,"Temp folder path: ", str1,"\n"});
         str1 = Settings.getInstallationDirectoryPath();
-        res = Util.stringAppendList({res,"Installation folder: ", str1,"\n"});
+        res = System.stringAppendList({res,"Installation folder: ", str1,"\n"});
         str1 = Settings.getPlotCommand();
-        res = Util.stringAppendList({res,"Plot command: ", str1,"\n"});
+        res = System.stringAppendList({res,"Plot command: ", str1,"\n"});
         str1 = Settings.getModelicaPath();
-        res = Util.stringAppendList({res,"Modelica path: ", str1,"\n"});
+        res = System.stringAppendList({res,"Modelica path: ", str1,"\n"});
       then
         (cache,Values.STRING(res),st);
 
@@ -632,11 +632,11 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
-        sim_call = Util.stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
+        sim_call = System.stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         0 = System.systemCall(sim_call);        
         
-        result_file = Util.stringAppendList({executable,"_res.",outputFormat_str});
+        result_file = System.stringAppendList({executable,"_res.",outputFormat_str});
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(result_file, System.readFile("output.log"),
@@ -661,7 +661,7 @@ algorithm
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
-        res = Util.stringAppendList({"Simulation failed.\n",errorStr});
+        res = System.stringAppendList({"Simulation failed.\n",errorStr});
         simValue = createSimulationResultFailure(res);
       then
         (cache,simValue,st);
@@ -772,7 +772,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = Util.stringAppendList({pwd,pd,filename});
+        filename_1 = System.stringAppendList({pwd,pd,filename});
         value = SimulationResults.readPtolemyplotDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
@@ -801,7 +801,7 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = Util.stringAppendList({pwd,pd,filename});
+        filename_1 = System.stringAppendList({pwd,pd,filename});
         value = SimulationResults.readPtolemyplotDatasetSize(filename_1);
       then
         (cache,value,st);
@@ -844,11 +844,11 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
+        plotCmd = System.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
+        tmpPlotFile = System.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
-        call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
+        call = System.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
 
         _ = System.systemCall(call);
       then
@@ -929,7 +929,7 @@ algorithm
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
           filename = Absyn.pathString(className);
-          filename2 = Util.stringAppendList({filename, "_res.plt"});
+          filename2 = System.stringAppendList({filename, "_res.plt"});
 
           failure(_ = System.getVariableNames(filename2));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
@@ -974,7 +974,7 @@ algorithm
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
           filename = Absyn.pathString(className);
-          filename2 = Util.stringAppendList({filename, "_res.plt"});
+          filename2 = System.stringAppendList({filename, "_res.plt"});
 
           str = System.getVariableNames(filename2);
           vars_2 = Util.stringSplitAtChar(str, " ");
@@ -1071,7 +1071,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
-        filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = System.stringAppendList({filename, "_res.plt"});
 
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
@@ -1102,7 +1102,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
-        filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = System.stringAppendList({filename, "_res.plt"});
 
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -1240,12 +1240,12 @@ algorithm
         visvar_str = Interactive.getElementsOfVisType(className, p);
         //print("varsofvistype: " +& visvar_str +& "\n");
         filename = Absyn.pathString(className);
-        filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = System.stringAppendList({filename, "_res.plt"});
         //print("filename: ");
         //print(filename);
         vars = SimulationResults.readPtolemyplotVariables(filename, visvar_str);
         vars_2 = Util.listUnionElt("time", vars);
-        //print(Util.stringAppendList(vars_2));
+        //print(System.stringAppendList(vars_2));
         //print(Util.stringDelimitList(vars_2, ", "));
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
@@ -1274,7 +1274,7 @@ algorithm
         //vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         //vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
-        filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = System.stringAppendList({filename, "_res.plt"});
         vars = SimulationResults.readPtolemyplotVariables(filename);
 
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars, 0));
@@ -1303,7 +1303,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
 //        listMap(vars_2, print);
-        print(Util.stringAppendList(vars_2));
+        print(System.stringAppendList(vars_2));
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
@@ -1568,11 +1568,11 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
+        plotCmd = System.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
+        tmpPlotFile = System.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
-        call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
+        call = System.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
         _ = System.systemCall(call);
       then
         (cache,Values.BOOL(true),st);
@@ -1659,7 +1659,7 @@ algorithm
         length = listLength(vars_1);
         (length > 1) = true;
         filename = Absyn.pathString(className);
-        filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = System.stringAppendList({filename, "_res.plt"});
 
         value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
@@ -1667,9 +1667,9 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
+        plotCmd = System.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
+        tmpPlotFile = System.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
@@ -1809,7 +1809,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         strings = Util.listMap(vars, Exp.printExpStr);
         // print("setVariableFilter\n");
-        // print(Util.stringAppendList(vars_1));
+        // print(System.stringAppendList(vars_1));
         // print("\n");
         // _ = ValuesUtil.setVariableFilter(vars_1);
         _ = System.setVariableFilter(Util.stringDelimitList(strings, "|"));
@@ -1904,7 +1904,7 @@ algorithm
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* no such directory */
       equation
         failure(true = System.directoryExists(str));
-        res = Util.stringAppendList({"Error, directory ",str," does not exist,"});
+        res = System.stringAppendList({"Error, directory ",str," does not exist,"});
       then
         (cache,Values.STRING(res),st);
 
@@ -2122,7 +2122,7 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         cit = winCitation();
         pd = System.pathDelimiter();
-        filename = Util.stringAppendList({omhome_1,pd,"share",pd,"doc",pd,"omc",pd,"omc_helptext.txt"});
+        filename = System.stringAppendList({omhome_1,pd,"share",pd,"doc",pd,"omc",pd,"omc_helptext.txt"});
         print(filename);
         str = System.readFile(filename);
       then
@@ -2516,7 +2516,7 @@ algorithm
         within_ = Interactive.buildWithin(className);
         p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p);
         s1 = Absyn.pathString(className);
-        retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
+        retStr=System.stringAppendList({"Translation of ",s1," successful.\n"});
       then
         (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,cf,lf));
 
@@ -2647,7 +2647,7 @@ algorithm
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st_1, msg);
-        init_filename = Util.stringAppendList({filenameprefix,"_init.txt"});
+        init_filename = System.stringAppendList({filenameprefix,"_init.txt"});
         (cache,Values.STRING(method_str),SOME(st2)) = Ceval.ceval(cache,env, method, true, SOME(st_1), NONE, msg);
         (cache,Values.STRING(outputFormat_str),SOME(st2)) = Ceval.ceval(cache, env, outputFormat, true, SOME(st2), NONE, msg);
         exeFile = filenameprefix +& System.getExeExt();
@@ -2752,7 +2752,7 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
         cit = winCitation();
-        dir_1 = Util.stringAppendList({cit,omhome_1,pd,"work",cit});
+        dir_1 = System.stringAppendList({cit,omhome_1,pd,"work",cit});
       then
         dir_1;
     case (_,_) then "";  /* this function should never fail */
@@ -2799,7 +2799,7 @@ algorithm
         //        to the environment variable! Don't ask me why, ask Microsoft.
         omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
         s_call =
-        Util.stringAppendList({omhome,extra_command,
+        System.stringAppendList({omhome,extra_command,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
@@ -2817,7 +2817,7 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
+        s_call = System.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
         // print(s_call);
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call) ;
@@ -2827,7 +2827,7 @@ algorithm
     */
     case (fileprefix,libs,file_dir,_,_) /* compilation failed */
       equation
-        filename = Util.stringAppendList({fileprefix,".log"});
+        filename = System.stringAppendList({fileprefix,".log"});
         true = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
@@ -2840,7 +2840,7 @@ algorithm
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         false = System.regularFileExists(command);
-        str=Util.stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
+        str=System.stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then fail();
 
@@ -2854,9 +2854,9 @@ algorithm
          * please leave Compile instead of Compile.bat
          * here as it has to work on Linux too
          */
-        s_call = Util.stringAppendList({"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""});
+        s_call = System.stringAppendList({"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""});
         false = System.regularFileExists(s_call);
-        str=Util.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
+        str=System.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
@@ -3506,7 +3506,7 @@ algorithm
         simpleEqnSizeStr = intString(simpleEqnSize);
         
         warnings = Error.printMessagesStr();
-        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+        retStr=System.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
@@ -3547,7 +3547,7 @@ algorithm
 
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr();
-        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+        retStr=System.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
@@ -3573,7 +3573,7 @@ algorithm
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr();
         // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
-        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
+        retStr=System.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
         (cache,Values.STRING(retStr),st);
 
@@ -3883,7 +3883,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);//Verificare cosa fa
-        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcpaths = SimCode.getCalledFunctions(dae, dlow);
         funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
@@ -3926,7 +3926,7 @@ algorithm
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
-        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
         funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
@@ -3973,7 +3973,7 @@ algorithm
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
-        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcpaths = SimCode.getCalledFunctions(dae, indexed_dlow_1);
         funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
@@ -4080,7 +4080,7 @@ algorithm
       equation
         parent_string = Absyn.pathString(inPath);
         s = Error.printMessagesStr();
-        s = Util.stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
+        s = System.stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
         print(s);
       then {};
   end matchcontinue;
@@ -4351,7 +4351,7 @@ algorithm
         cflags = System.getCFlags();
         ldflags = System.getLDFlags();
         senddatalibs = System.getSendDataLibs();
-        header = Util.stringAppendList({
+        header = System.stringAppendList({
           "#Makefile generated by OpenModelica\n\n",
           "CC=",ccompiler,"\n",
           "CXX=",cxxcompiler,"\n",
@@ -4370,7 +4370,7 @@ protected function generateMakefilename "function generateMakefilename"
   input String filenameprefix;
   output String makefilename;
 algorithm
-  makefilename := Util.stringAppendList({filenameprefix,".makefile"});
+  makefilename := System.stringAppendList({filenameprefix,".makefile"});
 end generateMakefilename;
 
 protected function generateFunctionName
@@ -4511,7 +4511,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
-        ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," ) set \"nogen\" flag to false */\n"});
+        ss1 = System.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," ) set \"nogen\" flag to false */\n"});
         Debug.fprint("failtrace", ss1);
       then
         fail();
@@ -4521,7 +4521,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         false = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
-        ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," )*/\n"});
+        ss1 = System.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," )*/\n"});
         Debug.fprint("failtrace", ss1);
       then
         fail();

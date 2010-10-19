@@ -46,7 +46,7 @@ package Debug
 
 protected import RTOpts;
 protected import Print;
-protected import Util;
+protected import System;
 
 public function print
 "function: print
@@ -127,7 +127,7 @@ algorithm
     case (flag,strlist)
       equation
         true = RTOpts.debugFlag(flag);
-        str = Util.stringAppendList(strlist);
+        str = System.stringAppendList(strlist);
         Print.printErrorBuf(str);
       then
         ();

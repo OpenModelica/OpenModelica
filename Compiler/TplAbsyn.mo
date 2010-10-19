@@ -6410,7 +6410,7 @@ public function canBeOnOneLine
 algorithm 
   outCanBeOnOneLine := 
         (listLength(inStringList) <= 4) 
-        and stringLength(Util.stringAppendList(inStringList)) <= 10;
+        and stringLength(System.stringAppendList(inStringList)) <= 10;
 end canBeOnOneLine;
 
 

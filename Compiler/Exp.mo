@@ -331,8 +331,7 @@ algorithm
       then ss;
     case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
       equation
-        s1 = stringAppend(inPreString, s);
-        ns = stringAppend(s1, inNameSeparator);
+        ns = System.stringAppendList({inPreString, s, inNameSeparator});
         ss = crefToStr(ns,n,inNameSeparator);
       then
         ss;
@@ -7078,7 +7077,7 @@ algorithm
     case ((e :: xs))
       equation
         s = Dump.printSubscriptsStr({e});
-        str = Util.stringAppendList({"#Error converting subscript: ",s," to Exp.\n"});
+        str = System.stringAppendList({"#Error converting subscript: ",s," to Exp.\n"});
         //print("#Error converting subscript: " +& s +& " to Exp.\n");
         //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);
@@ -7176,7 +7175,7 @@ algorithm
         ss = Util.listMap(dims, dimensionString);
         s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
         ts = typeString(t);
-        res = Util.stringAppendList({"/tp:",ts,"[",s1,"]/"});
+        res = System.stringAppendList({"/tp:",ts,"[",s1,"]/"});
       then
         res;
     case(DAE.ET_COMPLEX(varLst=vars,complexClassType=ci))
@@ -7928,37 +7927,39 @@ protected function binopSymbol2
   input Operator inOperator;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inOperator)
+  outString := matchcontinue (inOperator)
     local
       Ident ts,s,s_1;
       Type t;
+    
     case (DAE.ADD(ty = t))
       equation
         ts = typeString(t);
-        s = stringAppend(" +<", ts);
-        s_1 = stringAppend(s, "> ");
+        s = System.stringAppendList({" +<", ts, "> "});
       then
-        s_1;
-    case (DAE.SUB(ty = t)) equation
-       ts = typeString(t);
-       s = stringAppend(" -<", ts);
-        s_1 = stringAppend(s, "> ");
+        s;
+    
+    case (DAE.SUB(ty = t)) 
+      equation
+        ts = typeString(t);
+        s = System.stringAppendList({" -<", ts, "> "});
       then
-        s_1;
-    case (DAE.MUL(ty = t)) equation
-      ts = typeString(t);
-       s = stringAppend(" *<", ts);
-        s_1 = stringAppend(s, "> ");
+        s;
+    
+    case (DAE.MUL(ty = t)) 
+      equation
+        ts = typeString(t);
+        s = System.stringAppendList({" *<", ts, "> "});
       then
-        s_1;
+        s;
+    
     case (DAE.DIV(ty = t))
       equation
         ts = typeString(t);
-        s = stringAppend(" /<", ts);
-        s_1 = stringAppend(s, "> ");
+        s = System.stringAppendList({" /<", ts, "> "});
       then
-        s_1;
+        s;
+    
     case (DAE.POW(ty = t)) then " ^ ";
     case (DAE.ADD_ARR(ty = _)) then " + ";
     case (DAE.SUB_ARR(ty = _)) then " - ";
@@ -8127,31 +8128,39 @@ algorithm
       list<Subscript> subs;
       ComponentRef cr;
       Type ty;
+    
+    // Optimize -- a function call less
     case (DAE.CREF_IDENT(ident = s,identType = ty,subscriptLst = {}))
-      then s; /* optimize */
+      then s;
+    
+    // idents with subscripts 
     case DAE.CREF_IDENT(ident = s,identType = ty, subscriptLst = subs)
       equation
         str = printComponentRef2Str(s, subs);
       then
         str;
-    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
+    
+    // Qualified - Modelica output - does not handle names with underscores
+    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
         true = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str_1 = stringAppend(str, "__");
-        str_2 = stringAppend(str_1, strrest);
+        str = System.stringAppendList({str, "__", strrest});
       then
-        str_2;
+        str;
+    
+    // Qualified - non Modelica output
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
         false = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str_1 = stringAppend(str, ".");
-        str_2 = stringAppend(str_1, strrest);
+        str = System.stringAppendList({str, ".", strrest});
       then
-        str_2;
+        str;
+    
+    // Wild 
     case DAE.WILD() then "_";
   end matchcontinue;
 end printComponentRefStr;
@@ -8163,30 +8172,31 @@ public function printComponentRef2Str
   input list<Subscript> inSubscriptLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inIdent,inSubscriptLst)
+  outString := matchcontinue (inIdent,inSubscriptLst)
     local
       Ident s,str,str_1,str_2,str_3;
       list<Subscript> l;
+    
+    // no subscripts
     case (s,{}) then s;
+    
+    // some subscripts, Modelica output
     case (s,l)
       equation
         true = RTOpts.modelicaOutput();
         str = printListStr(l, printSubscriptStr, ",");
-        str_1 = stringAppend(s, "_L");
-        str_2 = stringAppend(str_1, str);
-        str_3 = stringAppend(str_2, "_R");
+        str = System.stringAppendList({s, "_L", str, "_R"});
       then
-        str_3;
+        str;
+    
+    // some subscripts, non Modelica output
     case (s,l)
       equation
         false = RTOpts.modelicaOutput();
         str = printListStr(l, printSubscriptStr, ",");
-        str_1 = stringAppend(s, "[");
-        str_2 = stringAppend(str_1, str);
-        str_3 = stringAppend(str_2, "]");
+        str = System.stringAppendList({s, "[", str, "]"});
       then
-        str_3;
+        str;
   end matchcontinue;
 end printComponentRef2Str;
 
@@ -8204,27 +8214,28 @@ public function printListStr
     output String outString;
   end FuncTypeType_aToString;
 algorithm
-  outString:=
-  matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
+  outString := matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
     local
       Ident s,srest,s_1,s_2,sep;
       Type_a h;
       FuncTypeType_aToString r;
       list<Type_a> t;
+    
     case ({},_,_) then "";
+    
     case ({h},r,_)
       equation
         s = r(h);
       then
         s;
+    
     case ((h :: t),r,sep)
       equation
         s = r(h);
         srest = printListStr(t, r, sep);
-        s_1 = stringAppend(s, sep);
-        s_2 = stringAppend(s_1, srest);
+        s = System.stringAppendList({s, sep, srest});
       then
-        s_2;
+        s;
   end matchcontinue;
 end printListStr;
 
@@ -8233,8 +8244,7 @@ public function debugPrintSubscriptStr "
   input Subscript inSubscript;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inSubscript)
+  outString := matchcontinue (inSubscript)
     local
       Ident s;
       Exp e1;
@@ -8293,17 +8303,17 @@ public function printExpListStrNoSpace
 	input list<Exp> expl;
 	output String res;
 algorithm
-  res := Util.stringAppendList(Util.listMap(expl,printExpStr));
+  res := System.stringAppendList(Util.listMap(expl,printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
-Returns a string if SOME otherwise ''
-"
-input Option<Exp> oexp;
-output String str;
-algorithm str := matchcontinue(oexp)
-  case(NONE) then "";
-  case(SOME(e)) local Exp e; then printExpStr(e);
+Returns a string if SOME otherwise ''"
+  input Option<Exp> oexp;
+  output String str;
+algorithm 
+  str := matchcontinue(oexp)
+    case(NONE) then "";
+    case(SOME(e)) local Exp e; then printExpStr(e);
   end matchcontinue;
 end printOptExpStr;
 
@@ -8342,8 +8352,7 @@ public function printExp2Str
     end printComponentRefStrFunc;    
   end printCallFunc;  
 algorithm
-  outString:=
-  matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
+  outString := matchcontinue (inExp, stringDelimiter, opcreffunc, opcallfunc)
     local
       Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
@@ -8358,31 +8367,37 @@ algorithm
       printComponentRefStrFunc pcreffunc;
       Type_a creffuncparam;
       printCallFunc pcallfunc;
+    
     case (DAE.END(), _, _, _) then "end";
+    
     case (DAE.ICONST(integer = x), _, _, _)
       equation
         s = intString(x);
       then
         s;
+    
     case (DAE.RCONST(real = x), _, _, _)
       local Real x;
       equation
         s = realString(x);
       then
         s;
-    case (DAE.SCONST(string = s), _, _, _)
+    
+    case (DAE.SCONST(string = s), stringDelimiter, _, _)
       equation
-        s_1 = stringAppend(stringDelimiter, s);
-        s_2 = stringAppend(s_1, stringDelimiter);
+        s = System.stringAppendList({stringDelimiter, s, stringDelimiter});
       then
-        s_2;
+        s;
+    
     case (DAE.BCONST(bool = false), _, _, _) then "false";
     case (DAE.BCONST(bool = true), _, _, _) then "true";
+    
     case (DAE.CREF(componentRef = c,ty = t), _, SOME((pcreffunc,creffuncparam)), _)
       equation
         s = pcreffunc(c,creffuncparam);
       then
         s;      
+    
     case (DAE.CREF(componentRef = c,ty = t), _, _, _)
       equation
         s = printComponentRefStr(c);
@@ -8406,11 +8421,11 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p2, p,true);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        s = System.stringAppendList({s1_1, sym, s2_1});
       then
-        s_1;
-     case ((e as DAE.UNARY(op,e1)), _, _, _)
+        s;
+    
+    case ((e as DAE.UNARY(op,e1)), _, _, _)
       equation
         sym = unaryopSymbol(op);
         s = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
@@ -8420,7 +8435,8 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-   case ((e as DAE.LBINARY(e1,op,e2)), _, _, _)
+    
+    case ((e as DAE.LBINARY(e1,op,e2)), _, _, _)
       equation
         sym = lbinopSymbol(op);
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
@@ -8430,11 +8446,11 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p2, p,true);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        s = System.stringAppendList({s1_1, sym, s2_1});
       then
-        s_1;
-   case ((e as DAE.LUNARY(op,e1)), _, _, _)
+        s;
+    
+    case ((e as DAE.LUNARY(op,e1)), _, _, _)
       equation
         sym = lunaryopSymbol(op);
         s = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
@@ -8444,6 +8460,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
+    
     case ((e as DAE.RELATION(e1,op,e2)), _, _, _)
       equation
         sym = relopSymbol(op);
@@ -8454,10 +8471,10 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p1, p,true);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        s = System.stringAppendList({s1_1, sym, s2_1});
       then
-        s_1;
+        s;
+    
     case ((e as DAE.IFEXP(cond,tb,fb)), _, _, _)
       equation
         cs = printExp2Str(cond, stringDelimiter, opcreffunc, opcallfunc);
@@ -8470,53 +8487,52 @@ algorithm
         cs_1 = parenthesize(cs, pc, p,false);
         ts_1 = parenthesize(ts, pt, p,false);
         fs_1 = parenthesize(fs, pf, p,false);
-        str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
+        str = System.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
+    
     case (e as DAE.CALL(path = fcn,expLst = args), _, _, SOME(pcallfunc))
       equation
         s_2 = pcallfunc(e,stringDelimiter,opcreffunc);
       then
         s_2;        
+    
     case (e as DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppend(fs, "(");
-        s_1 = stringAppend(s, argstr);
-        s_2 = stringAppend(s_1, ")");
+        s = System.stringAppendList({fs, "(", argstr, ")"});
       then
-        s_2;
+        s;
 
     case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = stringAppend("function ", fs);
-        s1 = stringAppend(s, "(");
-        s2 = stringAppend(s1, argstr);
-        s3 = stringAppend(s2, ")");
+        s = System.stringAppendList({"function ", fs, "(", argstr, ")"});
       then
-        s3;
+        s;
+    
     case (DAE.ARRAY(array = es,ty=tp), _, _, _)
       local Type tp; String s3;
       equation
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
           Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s_2 = Util.stringAppendList({"{",s,"}"});
+        s = System.stringAppendList({"{", s, "}"});
       then
-        s_2;
+        s;
+    
     case (DAE.TUPLE(PR = es), _, _, _)
       equation
         s = Util.stringDelimitList(
           Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s_1 = stringAppend("(", s);
-        s_2 = stringAppend(s_1, ")");
+        s = System.stringAppendList({"(", s, ")"});
       then
-        s_2;
+        s;
+    
     case (DAE.MATRIX(scalar = es,ty=tp), _, _, _)
       local list<list<tuple<Exp, Boolean>>> es;
         Type tp; String s3;
@@ -8524,9 +8540,10 @@ algorithm
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
           Util.listMap1(es, printRowStr, stringDelimiter), "},{");
-        s_2 = Util.stringAppendList({"{{",s,"}}"});
+        s = System.stringAppendList({"{{",s,"}}"});
       then
-        s_2;
+        s;
+    
     case (e as DAE.RANGE(_,start,NONE,stop), _, _, _)
       equation
         s1 = printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
@@ -8536,9 +8553,10 @@ algorithm
         pstop = expPriority(stop);
         s1_1 = parenthesize(s1, pstart, p,false);
         s3_1 = parenthesize(s3, pstop, p,false);
-        s = Util.stringAppendList({s1_1,":",s3_1});
+        s = System.stringAppendList({s1_1, ":", s3_1});
       then
         s;
+    
     case ((e as DAE.RANGE(_,start,SOME(step),stop)), _, _, _)
       equation
         s1 = printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
@@ -8551,9 +8569,10 @@ algorithm
         s1_1 = parenthesize(s1, pstart, p,false);
         s3_1 = parenthesize(s3, pstop, p,false);
         s2_1 = parenthesize(s2, pstep, p,false);
-        s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
+        s = System.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
+    
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)), _, _, _)
       equation
         false = RTOpts.modelicaOutput();
@@ -8561,6 +8580,7 @@ algorithm
         res = realString(rval);
       then
         res;
+    
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))), _, _, _)
       equation
         false = RTOpts.modelicaOutput();
@@ -8569,19 +8589,22 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
+    
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _, _, _)
       equation
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = Util.stringAppendList({"Real(",s,")"});
+        s_2 = System.stringAppendList({"Real(",s,")"});
       then
         s_2;
+    
     case (DAE.CAST(ty = tp,exp = e), _, _, _)
       equation
         str = typeString(tp);
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        res = Util.stringAppendList({"DAE.CAST(",str,", ",s,")"});
+        res = System.stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
         res;
+    
     case (e as DAE.ASUB(exp = e1,sub = aexpl), _, _, _)
       local list<Exp> aexpl;
       equation
@@ -8594,79 +8617,77 @@ algorithm
         s_4 = s1_1+& "["+& s4 +& "]";
       then
         s_4;
+    
     case (DAE.SIZE(exp = cr,sz = SOME(dim)), _, _, _)
       equation
         crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
         dimstr = printExp2Str(dim, stringDelimiter, opcreffunc, opcallfunc);
-        str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
+        str = System.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
+    
     case (DAE.SIZE(exp = cr,sz = NONE), _, _, _)
       equation
         crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
-        str = Util.stringAppendList({"size(",crstr,")"});
+        str = System.stringAppendList({"size(",crstr,")"});
       then
         str;
+    
     case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
         iterstr = printExp2Str(iterexp, stringDelimiter, opcreffunc, opcallfunc);
-        str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
+        str = System.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
         str;
-
-
-      // MetaModelica tuple
+    
+    // MetaModelica tuple
     case (DAE.META_TUPLE(es), _, _, _)
       equation
         s = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
       then
         s;
 
-      // MetaModelica list
+    // MetaModelica list
     case (DAE.LIST(_,es), _, _, _)
       local list<Exp> es;
       equation
-        s = Util.stringDelimitList(
-          Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s_1 = stringAppend("list(", s);
-        s_2 = stringAppend(s_1, ")");
+        s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
+        s = System.stringAppendList({"list(", s, ")"});
       then
-        s_2;
+        s;
 
-        // MetaModelica list cons
+    // MetaModelica list cons
     case (DAE.CONS(_,e1,e2), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
+        s_2 = System.stringAppendList({"cons(", s1, ",", s2, ")"});
       then
         s_2;
 
-        // MetaModelica Option
+    // MetaModelica Option
     case (DAE.META_OPTION(NONE), _, _, _) then "NONE";
     case (DAE.META_OPTION(SOME(e1)), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s_1 = Util.stringAppendList({"SOME(",s1,")"});
+        s_1 = System.stringAppendList({"SOME(",s1,")"});
       then
         s_1;
-
-     // MetaModelica Uniontype Constructor
+    
+    // MetaModelica Uniontype Constructor
     case (DAE.METARECORDCALL(path = fcn, args=args), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = stringAppend(fs, "(");
-        s_1 = stringAppend(s, argstr);
-        s_2 = stringAppend(s_1, ")");
+        s = System.stringAppendList({fs, "(", argstr, ")"});
       then
-        s_2;
-
+        s;
+    
     case (DAE.VALUEBLOCK(_,_,_,_), _, _, _) then "#valueblock#";
-
+    
     case (e, _, _, _)
       equation
         // debug_print("unknown expression - printExp2Str: ", e);
@@ -8689,23 +8710,24 @@ algorithm
     local
       Ident str_1,str;
       Integer pparent,pexpr;
-    case (str,pparent,pexpr,rightOpParenthesis) /* expr, prio. parent expr, prio. expr */
+    
+    // expr, prio. parent expr, prio. expr
+    case (str,pparent,pexpr,rightOpParenthesis)
       equation
         (pparent > pexpr) = true;
-        str_1 = Util.stringAppendList({"(",str,")"});
+        str_1 = System.stringAppendList({"(",str,")"});
       then str_1;
-    /* If priorites are equal and str is from right hand side, parenthesize to make
-          left associative */
+    
+    // If priorites are equal and str is from right hand side, parenthesize to make left associative
     case (str,pparent,pexpr,true)
       equation
         (pparent == pexpr) = true;
-        str_1 = Util.stringAppendList({"(",str,")"});
+        str_1 = System.stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_,_) then str;
   end matchcontinue;
 end parenthesize;
-
 
 public function expPriority
 "function: expPriority
@@ -8716,8 +8738,7 @@ public function expPriority
   input Exp inExp;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inExp)
+  outInteger := matchcontinue (inExp)
     case (DAE.ICONST(_)) then 0;
     case (DAE.RCONST(_)) then 0;
     case (DAE.SCONST(_)) then 0;
@@ -8774,7 +8795,6 @@ algorithm
   end matchcontinue;
 end expPriority;
 
-
 public function printRowStr
 "function: printRowStr
   Prints a list of expressions to a string."
@@ -8784,8 +8804,7 @@ public function printRowStr
   list<Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
-  s := Util.stringDelimitList(
-    Util.listMap3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
+  s := Util.stringDelimitList(Util.listMap3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
 end printRowStr;
 
 public function printLeftparStr
@@ -8796,10 +8815,10 @@ public function printLeftparStr
   output String outString;
   output Integer outInteger;
 algorithm
-  (outString,outInteger):=
-  matchcontinue (inInteger1,inInteger2)
+  (outString,outInteger) := matchcontinue (inInteger1,inInteger2)
     local Integer x,y,pri1,pri2;
-    case (x,y) /* prio1 prio2 */
+    // prio1 prio2 
+    case (x,y)
       equation
         (x > y) = true;
       then
@@ -8816,8 +8835,7 @@ public function printRightparStr
   input Integer inInteger2;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger1,inInteger2)
+  outString := matchcontinue (inInteger1,inInteger2)
     local Integer x,y;
     case (x,y)
       equation
@@ -9385,7 +9403,7 @@ algorithm
         false = crefHasScalarSubscripts(cr);
         name = printComponentRefStr(cr);
         false = Util.stringContainsChar(name,"$");
-        id = Util.stringAppendList({"$",id});
+        id = System.stringAppendList({"$",id});
         id = Util.stringReplaceChar(id,".","$p");
       then
         (DAE.CREF(DAE.CREF_IDENT(id,t2,ssl),ety),1);
@@ -9795,31 +9813,37 @@ algorithm
       Absyn.Path fcn;
       list<Exp> args,es;
       Type ty;
+    
     case (DAE.END()) then Graphviz.NODE("END",{},{});
+    
     case (DAE.ICONST(integer = x))
       equation
         s = intString(x);
       then
         Graphviz.LNODE("ICONST",{s},{},{});
+    
     case (DAE.RCONST(real = x))
       local Real x;
       equation
         s = realString(x);
       then
         Graphviz.LNODE("RCONST",{s},{},{});
+    
     case (DAE.SCONST(string = s))
       equation
-        s_1 = stringAppend("\"", s);
-        s_2 = stringAppend(s_1, "\"");
+        s = System.stringAppendList({"\"", s, "\""});
       then
-        Graphviz.LNODE("SCONST",{s_2},{},{});
+        Graphviz.LNODE("SCONST",{s},{},{});
+    
     case (DAE.BCONST(bool = false)) then Graphviz.LNODE("BCONST",{"false"},{},{});
     case (DAE.BCONST(bool = true)) then Graphviz.LNODE("BCONST",{"true"},{},{});
+    
     case (DAE.CREF(componentRef = c))
       equation
         s = printComponentRefStr(c);
       then
         Graphviz.LNODE("CREF",{s},{},{});
+    
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         sym = binopSymbol(op);
@@ -9827,12 +9851,14 @@ algorithm
         rt = dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("BINARY",{sym},{},{lt,rt});
+    
     case (DAE.UNARY(operator = op,exp = e))
       equation
         sym = unaryopSymbol(op);
         ct = dumpExpGraphviz(e);
       then
         Graphviz.LNODE("UNARY",{sym},{},{ct});
+    
     case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         sym = lbinopSymbol(op);
@@ -9840,12 +9866,14 @@ algorithm
         rt = dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("LBINARY",{sym},{},{lt,rt});
+    
     case (DAE.LUNARY(operator = op,exp = e))
       equation
         sym = lunaryopSymbol(op);
         ct = dumpExpGraphviz(e);
       then
         Graphviz.LNODE("LUNARY",{sym},{},{ct});
+    
     case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
       equation
         sym = relopSymbol(op);
@@ -9853,6 +9881,7 @@ algorithm
         rt = dumpExpGraphviz(e2);
       then
         Graphviz.LNODE("RELATION",{sym},{},{lt,rt});
+    
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f))
       local Exp c;
       equation
@@ -9861,37 +9890,41 @@ algorithm
         ft = dumpExpGraphviz(f);
       then
         Graphviz.NODE("IFEXP",{},{ct,tt,ft});
+    
     case (DAE.CALL(path = fcn,expLst = args))
       equation
         fs = Absyn.pathString(fcn);
         argnodes = Util.listMap(args, dumpExpGraphviz);
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
+    
     case(DAE.PARTEVALFUNCTION(path = fcn,expList = args))
       equation
         fs = Absyn.pathString(fcn);
         argnodes = Util.listMap(args, dumpExpGraphviz);
       then
         Graphviz.NODE("PARTEVALFUNCTION",{},argnodes);
+    
     case (DAE.ARRAY(array = es))
       equation
         nodes = Util.listMap(es, dumpExpGraphviz);
       then
         Graphviz.NODE("ARRAY",{},nodes);
+    
     case (DAE.TUPLE(PR = es))
       equation
         nodes = Util.listMap(es, dumpExpGraphviz);
       then
         Graphviz.NODE("TUPLE",{},nodes);
+    
     case (DAE.MATRIX(scalar = es))
       local list<list<tuple<Exp, Boolean>>> es;
       equation
-        s = Util.stringDelimitList(
-          Util.listMap1(es, printRowStr, "\""), "},{");
-        s_1 = stringAppend("{{", s);
-        s_2 = stringAppend(s_1, "}}");
+        s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
+        s = System.stringAppendList({"{{", s, "}}"});
       then
-        Graphviz.LNODE("MATRIX",{s_2},{},{});
+        Graphviz.LNODE("MATRIX",{s},{},{});
+    
     case (DAE.RANGE(exp = start,expOption = NONE,range = stop))
       equation
         t1 = dumpExpGraphviz(start);
@@ -9899,6 +9932,7 @@ algorithm
         t3 = dumpExpGraphviz(stop);
       then
         Graphviz.NODE("RANGE",{},{t1,t2,t3});
+    
     case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop))
       equation
         t1 = dumpExpGraphviz(start);
@@ -9906,31 +9940,36 @@ algorithm
         t3 = dumpExpGraphviz(stop);
       then
         Graphviz.NODE("RANGE",{},{t1,t2,t3});
+    
     case (DAE.CAST(ty = ty,exp = e))
       equation
         tystr = typeString(ty);
         ct = dumpExpGraphviz(e);
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
+    
     case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})))
       local Exp ae1;
       equation
         ct = dumpExpGraphviz(e);
         istr = intString(i);
-        s = Util.stringAppendList({"[",istr,"]"});
+        s = System.stringAppendList({"[",istr,"]"});
       then
         Graphviz.LNODE("ASUB",{s},{},{ct});
+    
     case (DAE.SIZE(exp = cr,sz = SOME(dim)))
       equation
         crt = dumpExpGraphviz(cr);
         dimt = dumpExpGraphviz(dim);
       then
         Graphviz.NODE("SIZE",{},{crt,dimt});
+    
     case (DAE.SIZE(exp = cr,sz = NONE))
       equation
         crt = dumpExpGraphviz(cr);
       then
         Graphviz.NODE("SIZE",{},{crt});
+    
     case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
       equation
         fs = Absyn.pathString(fcn);
@@ -9938,6 +9977,7 @@ algorithm
         itert = dumpExpGraphviz(iterexp);
       then
         Graphviz.LNODE("REDUCTION",{fs},{},{expt,itert});
+    
     case (_) then Graphviz.NODE("#UNKNOWN EXPRESSION# ----eeestr ",{},{});
   end matchcontinue;
 end dumpExpGraphviz;
@@ -9953,7 +9993,9 @@ algorithm
     local
       Ident str,new_str,res_str;
       Integer new_level,level;
+    
     case (str,0) then "";  /* n */
+    
     case (str,level)
       equation
         new_level = level + (-1);
@@ -9982,55 +10024,61 @@ algorithm
       Absyn.Path fcn;
       list<Exp> args,es;
       Type ty;
+    
     case (DAE.END(),level)
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = Util.stringAppendList({gen_str,"END","\n"});
+        res_str = System.stringAppendList({gen_str,"END","\n"});
       then
         res_str;
+    
     case (DAE.ICONST(integer = x),level) /* Graphviz.LNODE(\"ICONST\",{s},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
         s = intString(x);
-        res_str = Util.stringAppendList({gen_str,"ICONST ",s,"\n"});
+        res_str = System.stringAppendList({gen_str,"ICONST ",s,"\n"});
       then
         res_str;
+    
     case (DAE.RCONST(real = x),level) /* Graphviz.LNODE(\"RCONST\",{s},{},{}) */
       local Real x;
       equation
         gen_str = genStringNTime("   |", level);
         s = realString(x);
-        res_str = Util.stringAppendList({gen_str,"RCONST ",s,"\n"});
+        res_str = System.stringAppendList({gen_str,"RCONST ",s,"\n"});
       then
         res_str;
+    
     case (DAE.SCONST(string = s),level) /* Graphviz.LNODE(\"SCONST\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        s_1 = stringAppend("\"", s);
-        s_2 = stringAppend(s_1, "\"");
-        res_str = Util.stringAppendList({gen_str,"SCONST ",s_2,"\n"});
+        res_str = System.stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
       then
         res_str;
+    
     case (DAE.BCONST(bool = false),level) /* Graphviz.LNODE(\"BCONST\",{\"false\"},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = Util.stringAppendList({gen_str,"BCONST ","false","\n"});
+        res_str = System.stringAppendList({gen_str,"BCONST ","false","\n"});
       then
         res_str;
+    
     case (DAE.BCONST(bool = true),level) /* Graphviz.LNODE(\"BCONST\",{\"true\"},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = Util.stringAppendList({gen_str,"BCONST ","true","\n"});
+        res_str = System.stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
+    
     case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
         s = /*printComponentRefStr*/debugPrintComponentRefTypeStr(c);
         tpStr= typeString(ty);
-        res_str = Util.stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
+        res_str = System.stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
+    
     case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */
       local 
         String str;
@@ -10044,9 +10092,10 @@ algorithm
         str = typeString(tp);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = Util.stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
+        res_str = System.stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
       then
         res_str;
+    
     case (DAE.UNARY(operator = op,exp = e),level) /* Graphviz.LNODE(\"UNARY\",{sym},{},{ct}) */
       local String str;
       equation
@@ -10055,9 +10104,10 @@ algorithm
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
         str = "expType:"+&typeString(typeof(e))+&" optype:"+&typeString(typeofOp(op))+&"\n";
-        res_str = Util.stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
+        res_str = System.stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
+    
     case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"LBINARY\",{sym},{},{lt,rt}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10066,18 +10116,20 @@ algorithm
         sym = lbinopSymbol(op);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = Util.stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
+        res_str = System.stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
       then
         res_str;
+    
     case (DAE.LUNARY(operator = op,exp = e),level) /* Graphviz.LNODE(\"LUNARY\",{sym},{},{ct}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         sym = lunaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        res_str = Util.stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
+        res_str = System.stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
       then
         res_str;
+    
     case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"RELATION\",{sym},{},{lt,rt}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10086,9 +10138,10 @@ algorithm
         sym = relopSymbol(op);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = Util.stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
+        res_str = System.stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
       then
         res_str;
+    
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),level) /* Graphviz.NODE(\"IFEXP\",{},{ct,tt,ft}) */
       local Exp c;
       equation
@@ -10099,61 +10152,64 @@ algorithm
         ct = dumpExpStr(c, new_level1);
         tt = dumpExpStr(t, new_level2);
         ft = dumpExpStr(f, new_level3);
-        res_str = Util.stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
+        res_str = System.stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
       then
         res_str;
+    
     case (DAE.CALL(path = fcn,expLst = args),level) /* Graphviz.LNODE(\"CALL\",{fs},{},argnodes) Graphviz.NODE(\"ARRAY\",{},nodes) */
       equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
         argnodes = Util.listMap1(args, dumpExpStr, new_level1);
-        argnodes_1 = Util.stringAppendList(argnodes);
-        res_str = Util.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+        argnodes_1 = System.stringAppendList(argnodes);
+        res_str = System.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
+    
     case (DAE.PARTEVALFUNCTION(path = fcn,expList = args),level)
       equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
         argnodes = Util.listMap1(args, dumpExpStr, new_level1);
-        argnodes_1 = Util.stringAppendList(argnodes);
-        res_str = Util.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+        argnodes_1 = System.stringAppendList(argnodes);
+        res_str = System.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
+    
     case (DAE.ARRAY(array = es,scalar=b,ty=tp),level)
       local Boolean b; String s,tpStr; DAE.ExpType tp;
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
-        nodes_1 = Util.stringAppendList(nodes);
+        nodes_1 = System.stringAppendList(nodes);
         s = Util.boolString(b);
         tpStr = typeString(tp);
-        res_str = Util.stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
+        res_str = System.stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
+    
     case (DAE.TUPLE(PR = es),level) /* Graphviz.NODE(\"TUPLE\",{},nodes) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
-        nodes_1 = Util.stringAppendList(nodes);
-        res_str = Util.stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
+        nodes_1 = System.stringAppendList(nodes);
+        res_str = System.stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
       then
         res_str;
+    
     case (DAE.MATRIX(scalar = es),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
       local list<list<tuple<Exp, Boolean>>> es;
       equation
         gen_str = genStringNTime("   |", level);
-        s = Util.stringDelimitList(
-          Util.listMap1(es, printRowStr, "\""), "},{");
-        s_1 = stringAppend("{{", s);
-        s_2 = stringAppend(s_1, "}}");
-        res_str = Util.stringAppendList({gen_str,"MATRIX ","\n",s_2,"","\n"});
+        s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
+        res_str = System.stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
       then
         res_str;
+    
     case (DAE.RANGE(exp = start,expOption = NONE,range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10162,9 +10218,10 @@ algorithm
         t1 = dumpExpStr(start, new_level1);
         t2 = ":";
         t3 = dumpExpStr(stop, new_level2);
-        res_str = Util.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+        res_str = System.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
+    
     case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10174,30 +10231,32 @@ algorithm
         t1 = dumpExpStr(start, new_level1);
         t2 = dumpExpStr(step, new_level2);
         t3 = dumpExpStr(stop, new_level3);
-        res_str = Util.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+        res_str = System.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
+    
     case (DAE.CAST(ty = ty,exp = e),level) /* Graphviz.LNODE(\"CAST\",{tystr},{},{ct}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         tystr = typeString(ty);
         ct = dumpExpStr(e, new_level1);
-        res_str = Util.stringAppendList({gen_str,"CAST ","\n",ct,""});
+        res_str = System.stringAppendList({gen_str,"CAST ","\n",ct,""});
       then
         res_str;
+    
     case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})),level) /* Graphviz.LNODE(\"ASUB\",{s},{},{ct}) */
       local Exp ae1;
       equation
-
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         ct = dumpExpStr(e, new_level1);
         istr = intString(i);
-        s = Util.stringAppendList({"[",istr,"]"});
-        res_str = Util.stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
+        s = System.stringAppendList({"[",istr,"]"});
+        res_str = System.stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
       then
         res_str;
+    
     case (DAE.SIZE(exp = cr,sz = SOME(dim)),level) /* Graphviz.NODE(\"SIZE\",{},{crt,dimt}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10205,17 +10264,19 @@ algorithm
         new_level2 = level + 1;
         crt = dumpExpStr(cr, new_level1);
         dimt = dumpExpStr(dim, new_level2);
-        res_str = Util.stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
+        res_str = System.stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
       then
         res_str;
+    
     case (DAE.SIZE(exp = cr,sz = NONE),level) /* Graphviz.NODE(\"SIZE\",{},{crt}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         crt = dumpExpStr(cr, new_level1);
-        res_str = Util.stringAppendList({gen_str,"SIZE ","\n",crt,""});
+        res_str = System.stringAppendList({gen_str,"SIZE ","\n",crt,""});
       then
         res_str;
+    
     case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10224,13 +10285,14 @@ algorithm
         fs = Absyn.pathString(fcn);
         expt = dumpExpStr(exp, new_level1);
         itert = dumpExpStr(iterexp, new_level2);
-        res_str = Util.stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
+        res_str = System.stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
       then
         res_str;
+    
     case (_,level) /* Graphviz.NODE(\"#UNKNOWN EXPRESSION# ----eeestr \",{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = Util.stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});
+        res_str = System.stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});
       then
         res_str;
   end matchcontinue;
@@ -10661,9 +10723,9 @@ algorithm
     case (e,cr)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-Exp.expContains failed\n");
+        Debug.fprint("failtrace", "- Exp.expContains failed\n");
         s = printExpStr(e);
-        str = Util.stringAppendList({"exp = ",s,"\n"});
+        str = System.stringAppendList({"exp = ",s,"\n"});
         Debug.fprint("failtrace", str);
       then
         fail();
@@ -10685,6 +10747,7 @@ algorithm
       Operator op;
       list<Exp> farg,expl,expl_2;
       list<tuple<Exp, Boolean>> expl_1;
+    
     case (DAE.ICONST(integer = _)) then {};
     case (DAE.RCONST(real = _)) then {};
     case (DAE.SCONST(string = _)) then {};
@@ -12162,7 +12225,7 @@ algorithm
       equation
       s = printArraySizes(lst);
       s2 = intString(x);
-      s = Util.stringAppendList({s2, s});
+      s = System.stringAppendList({s2, s});
       then s;
     case(_ :: lst)
       equation
@@ -12173,41 +12236,41 @@ end printArraySizes;
 
 public function tmpPrint "
 "
-input list<Option <Integer>> inLst;
-
+  input list<Option <Integer>> inLst;
 algorithm
   _ := matchcontinue(inLst)
-  local
-    Integer x;
-    list<Option<Integer>> lst;
+    local
+      Integer x;
+      list<Option<Integer>> lst;
+  
     case({}) then ();
     case(SOME(x) :: lst)
       equation
-      print(intString(x));print(" ,");
-      tmpPrint(lst);
+        print(intString(x)); print(" ,");
+        tmpPrint(lst);
       then ();
     case(_ :: lst)
       equation
-      tmpPrint(lst);
+        tmpPrint(lst);
       then ();
-end matchcontinue;
+  end matchcontinue;
 end tmpPrint;
 
 public function unliftArrayX "Function: unliftArrayX
-Unlifts a type with X dimensions...
-"
+Unlifts a type with X dimensions..."
   input Type inType;
   input Integer x;
   output Type outType;
-algorithm outType := matchcontinue(inType,x)
-  local Type ty;
-  case(inType,0) then inType;
-  case(inType,x)
-    equation
-      ty = unliftArray(inType);
+algorithm 
+  outType := matchcontinue(inType,x)
+    local Type ty;
+    case(inType,0) then inType;
+    case(inType,x)
+      equation
+        ty = unliftArray(inType);
       then
         unliftArrayX(ty,x-1);
-end matchcontinue;
+  end matchcontinue;
 end unliftArrayX;
 
 public function liftArrayR "
@@ -12929,7 +12992,7 @@ algorithm ostr := matchcontinue(inCref)
       s1 = replaceExpCrefRecursive(cr);
       cr2 = DAE.CREF_IDENT(name,DAE.ET_REAL(),subs);
       s2 = printComponentRefStr(cr2);
-      s3 = Util.stringAppendList({s2,"$p",s1});
+      s3 = System.stringAppendList({s2,"$p",s1});
     then
       s3;
 end matchcontinue;
@@ -12951,7 +13014,7 @@ algorithm str := matchcontinue(inExp)
   case(DAE.CREF(cr,_)) then debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation
-      s1 = "{" +& Util.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
+      s1 = "{" +& System.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
     then
       s1;
   case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
@@ -12961,50 +13024,48 @@ end debugPrintComponentRefExp;
 public function debugPrintComponentRefTypeStr "Function: print_component_ref
 This function is equal to debugPrintComponentRefTypeStr with the extra feature that it
 prints the base type of each ComponentRef.
-NOTE Only used for debugging.
-"
+NOTE Only used for debugging."
   input ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef)
+  outString := matchcontinue (inComponentRef)
     local
       Ident s,str,str2,strrest,str_1,str_2;
       list<Subscript> subs;
       ComponentRef cr;
       Type ty;
+    
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
         str_1 = printListStr(subs, debugPrintSubscriptStr, ",");
         str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
         // this printing way will be useful when adressin the  'crefEqual' bug.
-        //str = printComponentRef2Str(s, subs);
+        // str = printComponentRef2Str(s, subs);
         str2 = typeString(ty);
-        str = Util.stringAppendList({str," [",str2,"]"});
+        str = System.stringAppendList({str," [",str2,"]"});
       then
         str;
+    
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
       equation
         true = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         str2 = typeString(ty);
-        str = Util.stringAppendList({str," [",str2,"] "});
-        strrest = debugPrintComponentRefTypeStr(cr);
-        str_1 = stringAppend(str, "__");
-        str_2 = stringAppend(str_1, strrest);
+        strrest = debugPrintComponentRefTypeStr(cr);        
+        str = System.stringAppendList({str," [",str2,"] ", "__", strrest});
       then
-        str_2;
+        str;
+    
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
       equation
         false = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         str2 = typeString(ty);
-        str = Util.stringAppendList({str," [",str2,"] "});
         strrest = debugPrintComponentRefTypeStr(cr);
-        str_1 = stringAppend(str, ".");
-        str_2 = stringAppend(str_1, strrest);
+        str = System.stringAppendList({str," [",str2,"] ", ".", strrest});
       then
-        str_2;
+        str;
+    
     case DAE.WILD() then "_";
   end matchcontinue;
 end debugPrintComponentRefTypeStr;

@@ -164,7 +164,7 @@ algorithm
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
         classfile = stringAppend(class_, ".mo");
-        classfile_1 = Util.stringAppendList({mp,pd,classfile});
+        classfile_1 = System.stringAppendList({mp,pd,classfile});
         existRegularFile(classfile_1);
         p = Parser.parse(classfile_1);
       then
@@ -175,8 +175,8 @@ algorithm
         ts = Absyn.getNewTimeStamp();
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
-        dirfile = Util.stringAppendList({mp,pd,class_});
-        packfile = Util.stringAppendList({dirfile,pd,"package.mo"});
+        dirfile = System.stringAppendList({mp,pd,class_});
+        packfile = System.stringAppendList({dirfile,pd,"package.mo"});
         existDirectoryFile(dirfile);
         existRegularFile(packfile);
         Print.printBuf("Class is package stored in a directory, loading whole package(incl. subdir)\n");
@@ -241,8 +241,8 @@ algorithm
     case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
-        mp_1 = Util.stringAppendList({mp,pd,pack});
-        packagefile = Util.stringAppendList({mp_1,pd,"package.mo"});
+        mp_1 = System.stringAppendList({mp,pd,pack});
+        packagefile = System.stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
         Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile);
         Print.printBuf("loading ");
@@ -260,8 +260,8 @@ algorithm
     case (pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
-        mp_1 = Util.stringAppendList({mp,pd,pack});
-        packagefile = Util.stringAppendList({mp_1,pd,"package.mo"});
+        mp_1 = System.stringAppendList({mp,pd,pack});
+        packagefile = System.stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
         Absyn.PROGRAM(p1,w1,ts) = Parser.parse(packagefile);
         Print.printBuf("loading ");
@@ -404,7 +404,7 @@ algorithm
     case ((f :: fs),mp,within_,Absyn.PROGRAM(classes = oldc,globalBuildTimes = ts))
       equation
         pd = System.pathDelimiter();
-        f_1 = Util.stringAppendList({mp,pd,f});
+        f_1 = System.stringAppendList({mp,pd,f});
         Absyn.PROGRAM(cls,_,_) = Parser.parse(f_1);
         p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         p_2 = loadSubpackageFiles(fs, mp, within_, p_1);
@@ -437,7 +437,7 @@ algorithm
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
         p1_1 = Parser.parse(name);
         pd = System.pathDelimiter();
-        dir_1 = Util.stringAppendList({dir,pd,".."});
+        dir_1 = System.stringAppendList({dir,pd,".."});
         p1 = loadModelFromEachClass(p1_1, dir_1);
       then
         p1;

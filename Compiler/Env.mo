@@ -988,7 +988,7 @@ algorithm
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
         encflag_str = Util.boolString(encflag);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
       then
@@ -1016,7 +1016,7 @@ algorithm
       equation
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
@@ -1025,7 +1025,7 @@ algorithm
       equation
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
@@ -1057,7 +1057,7 @@ algorithm
       equation
         s1 = printFrameElementStr(("",e));
         s2 = printImportsStr(rst);
-        res = Util.stringAppendList({s1,", ",s2});
+        res = System.stringAppendList({s1,", ",s2});
       then
         res;
   end matchcontinue;
@@ -1093,7 +1093,7 @@ algorithm
         var_str = Types.unparseVar(tv);
         frame_str = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, binding:",bind_str});
       then
@@ -1104,32 +1104,32 @@ algorithm
         elt_str = SCode.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, compframe: []"});
       then
         res;
     case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
       equation
-        res = Util.stringAppendList({"v:",n,"\n"});
+        res = System.stringAppendList({"v:",n,"\n"});
       then
         res;
     case ((n,CLASS(class_ = _)))
       equation
-        res = Util.stringAppendList({"c:",n,"\n"});
+        res = System.stringAppendList({"c:",n,"\n"});
       then
         res;
     case ((n,TYPE(list_ = lst)))
       equation
         len = listLength(lst);
         lenstr = intString(len);
-        res = Util.stringAppendList({"t:",n," (",lenstr,")\n"});
+        res = System.stringAppendList({"t:",n," (",lenstr,")\n"});
       then
         res;
     case ((n,IMPORT(import_ = imp)))
       equation
         s = Dump.unparseImportStr(imp);
-        res = Util.stringAppendList({"imp:",s,"\n"});
+        res = System.stringAppendList({"imp:",s,"\n"});
       then
         res;
   end matchcontinue;
@@ -1550,7 +1550,7 @@ algorithm
       equation
         SOME(ENVCACHE(tree)) = arr[1];
         s = printCacheTreeStr(tree,1);
-        str = Util.stringAppendList({"Cache:\n",s,"\n"});
+        str = System.stringAppendList({"Cache:\n",s,"\n"});
         s2 = HashTable5.dumpHashTableStr(ef);
         str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
@@ -1573,8 +1573,8 @@ algorithm
     case (CACHETREE(id,_,children),indent)
       equation
         s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
-        s1 = Util.stringAppendList(Util.listFill(" ",indent));
-        str = Util.stringAppendList({s1,id,"\n",s});
+        s1 = System.stringAppendList(Util.listFill(" ",indent));
+        str = System.stringAppendList({s1,id,"\n",s});
 	    then str;
 	end matchcontinue;
 end printCacheTreeStr;

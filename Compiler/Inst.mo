@@ -14738,7 +14738,7 @@ algorithm
       equation
         //classNameStr = Absyn.optPathString(classNameOpt);
         //warnings = Error.printMessagesStr();
-        //retStr= Util.stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
+        //retStr= System.stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
         // do not show empty elements with 0 vars and 0 equs
         // Debug.fprintln("checkModel", retStr);
     then ();
@@ -14760,7 +14760,7 @@ algorithm
         simpleEqnSizeStr = intString(simpleEqnSize);
         classNameStr = Absyn.optPathString(classNameOpt);
         warnings = Error.printMessagesStr();
-        retStr= Util.stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr,
+        retStr= System.stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr,
                                        " equation(s) and ", varSizeStr," variable(s). ",
                                        simpleEqnSizeStr, " of these are trivial equation(s).",
                                        warnings});

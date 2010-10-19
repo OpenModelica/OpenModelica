@@ -2592,7 +2592,7 @@ algorithm
         list<String> str;
       equation
         str = Util.listMap(comp,intString);
-        Debug.fprintln("failtrace"," Failed to create Equation with:" +& Util.stringAppendList(str));
+        Debug.fprintln("failtrace"," Failed to create Equation with:" +& System.stringAppendList(str));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
         fail();        
@@ -2748,7 +2748,7 @@ algorithm
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
   end matchcontinue;
@@ -3987,7 +3987,7 @@ algorithm
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
     case (_,_)
@@ -5249,7 +5249,7 @@ algorithm
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         helpInfo = (helpVarIndex,e,i);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
           " + localData->nZeroCrossing);\n"});
         helpVarIndex_1 = helpVarIndex + 1;
@@ -5262,7 +5262,7 @@ algorithm
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         helpInfo = (helpVarIndex,e,i);
-        res = Util.stringAppendList(
+        res = System.stringAppendList(
           {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
           " + localData->nZeroCrossing);\n"});
         helpVarIndex_1 = helpVarIndex + 1;
@@ -5538,7 +5538,7 @@ protected
 algorithm
 	crStr := Exp.printComponentRefStr(cr);
 	indxStr := intString(indx);
-	str := Util.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
+	str := System.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
 
 protected function mixedCollectRelations "function: mixedCollectRelations

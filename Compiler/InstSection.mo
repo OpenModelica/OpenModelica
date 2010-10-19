@@ -1262,8 +1262,8 @@ algorithm
         t1_str = Types.unparseType(t1);
         e2_str = Exp.printExpStr(e2);
         t2_str = Types.unparseType(t2);
-        s1 = Util.stringAppendList({e1_str,"=",e2_str});
-        s2 = Util.stringAppendList({t1_str,"=",t2_str});
+        s1 = System.stringAppendList({e1_str,"=",e2_str});
+        s2 = System.stringAppendList({t1_str,"=",t2_str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
         Debug.fprintln("failtrace", "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
@@ -1701,7 +1701,7 @@ algorithm
 			  false = OptManager.getOption("checkModel");
 				lhs_str = Exp.printExpStr(lhs);
 				rhs_str = Exp.printExpStr(rhs);
-				eq_str = Util.stringAppendList({lhs_str, "=", rhs_str});
+				eq_str = System.stringAppendList({lhs_str, "=", rhs_str});
 				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
 			then 
 				fail();
@@ -4712,8 +4712,8 @@ algorithm
         t1_str = Types.unparseType(t1);
         c2_str = Exp.printComponentRefStr(c2);
         t2_str = Types.unparseType(t2);
-        c1_str = Util.stringAppendList({c1_str," and ",c2_str});
-        t1_str = Util.stringAppendList({t1_str," and ",t2_str});
+        c1_str = System.stringAppendList({c1_str," and ",c2_str});
+        t1_str = System.stringAppendList({t1_str," and ",t2_str});
         Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,t1_str},info);
       then
         fail();

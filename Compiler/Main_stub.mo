@@ -117,7 +117,7 @@ protected function makeDebugResult
   Boolean dumpflag;
 algorithm
   debugstr := Print.getString();
-  res_with_debug := Util.stringAppendList(
+  res_with_debug := System.stringAppendList(
           {res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",
           flagstr,")---\n"});
   dumpflag := RTOpts.debugFlag(flagstr);

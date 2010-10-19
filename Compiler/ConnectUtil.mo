@@ -1024,7 +1024,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printStreamRefStr);
         str = Util.stringDelimitList(strs, ", ");
-        str = Util.stringAppendList({"stream set: {",str,"}"});        
+        str = System.stringAppendList({"stream set: {",str,"}"});        
         print("Only one-to-one connections of streams are supported: unsupported connection set:" +& str);
       then DAEUtil.emptyDae;
   end matchcontinue;   
@@ -1589,7 +1589,7 @@ algorithm
         s2 = printSetCrsStr(crs);
         s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr), ",");
         s4 = printOuterConnectsStr(outerConn);
-        res = Util.stringAppendList({"Connect.SETS(\n\t",
+        res = System.stringAppendList({"Connect.SETS(\n\t",
           s1_1,", \n\t",
           s2,", \n\tdeleted comps: ",s3,", \n\touter connections:",s4,")\n"});
       then
@@ -1632,7 +1632,7 @@ algorithm
       equation
         strs = Util.listMap(Util.listMap(cs, Util.tuple21), Exp.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({"\n\tnon-flow set: {",s1,"}"});
+        res = System.stringAppendList({"\n\tnon-flow set: {",s1,"}"});
       then
         res;
     case Connect.FLOW(tplExpComponentRefFaceLst = cs)
@@ -1640,7 +1640,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({"\n\tflow set: {",s1,"}"});
+        res = System.stringAppendList({"\n\tflow set: {",s1,"}"});
       then
         res;
     case Connect.STREAM(tplExpComponentRefFaceLst = cs)
@@ -1648,7 +1648,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printStreamRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({"\n\tstream set: {",s1,"}"});
+        res = System.stringAppendList({"\n\tstream set: {",s1,"}"});
       then
         res;        
   end matchcontinue;
@@ -1710,7 +1710,7 @@ protected function printSetCrsStr
 algorithm
   c_strs := Util.listMap(crs, Exp.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
-  res := Util.stringAppendList({"connect crs: {",s,"}"});
+  res := System.stringAppendList({"connect crs: {",s,"}"});
 end printSetCrsStr;
 
 public function componentFace

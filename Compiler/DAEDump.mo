@@ -460,7 +460,7 @@ algorithm
     case (SOME(e))
       equation
         s = Exp.printExpStr(e);
-        res = Util.stringAppendList({"(start=",s,")"});
+        res = System.stringAppendList({"(start=",s,")"});
       then
         res;
     case (_) then "";
@@ -482,7 +482,7 @@ algorithm
       equation
         extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ",");
         rettystr = dumpExtArgStr(retty);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"EXTERNALDECL(",id,", (",extargsstr,"), ",rettystr,", \"",
           lang,"\")"});
       then
@@ -512,21 +512,21 @@ algorithm
         crstr = Exp.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
         tystr = Types.getTypeName(ty);
-        str = Util.stringAppendList({dirstr," ",tystr," ",crstr});
+        str = System.stringAppendList({dirstr," ",tystr," ",crstr});
       then
         str;
     case DAE.EXTARGEXP(exp = exp,type_ = ty)
       equation
         crstr = Exp.printExpStr(exp);
         tystr = Types.getTypeName(ty);
-        str = Util.stringAppendList({"(",tystr,") ",crstr});
+        str = System.stringAppendList({"(",tystr,") ",crstr});
       then
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
         crstr = Exp.printComponentRefStr(cr);
         dimstr = Exp.printExpStr(dim);
-        str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
+        str = System.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
   end matchcontinue;
@@ -722,7 +722,7 @@ algorithm
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           Initial_str,fixed_str,nominal_str,stateSel_str}, ", ");
-        res1 = Util.stringAppendList({"(",res_1,")"});
+        res1 = System.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
@@ -736,7 +736,7 @@ algorithm
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
-        res1 = Util.stringAppendList({"(",res_1,")"});
+        res1 = System.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
@@ -748,7 +748,7 @@ algorithm
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str,fixed_str}, ", ");
-        res1 = Util.stringAppendList({"(",res_1,")"});
+        res1 = System.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
@@ -759,7 +759,7 @@ algorithm
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str}, ", ");
-        res1 = Util.stringAppendList({"(",res_1,")"});
+        res1 = System.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
@@ -773,7 +773,7 @@ algorithm
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
-        res1 = Util.stringAppendList({"(",res_1,")"});
+        res1 = System.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
@@ -878,7 +878,7 @@ algorithm
     // String comment with possible annotation.
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation
-        str = Util.stringAppendList({" \"",cmt,"\""});
+        str = System.stringAppendList({" \"",cmt,"\""});
         str = str +& dumpAnnotationOptionStr(annopt);
       then
         str;
@@ -1163,14 +1163,14 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        str = Util.stringAppendList({"  assert(",s1, ",",s2,");\n"});
+        str = System.stringAppendList({"  assert(",s1, ",",s2,");\n"});
       then
         str;
 
     case (DAE.TERMINATE(message=e1))
       equation
         s1 = Exp.printExpStr(e1);
-        str = Util.stringAppendList({"  terminate(",s1,");\n"});
+        str = System.stringAppendList({"  terminate(",s1,");\n"});
       then
         str;
     // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
@@ -1351,7 +1351,7 @@ algorithm
         fstr = Absyn.pathString(fpath);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         daestr = dumpElementsStr(daeElts);
-        str = Util.stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+        str = System.stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
         Print.printBuf(str);
       then
         ();
@@ -1492,7 +1492,7 @@ algorithm
         s2 = Exp.printExpStr(e);
         es = Util.listMap(expl, Exp.printExpStr);
         s3 = Util.stringDelimitList(es, ", ");
-        str = Util.stringAppendList({s1,"(",s3,") := ",s2,";\n"});
+        str = System.stringAppendList({s1,"(",s3,") := ",s2,";\n"});
         Print.printBuf(str);
       then
         ();
@@ -1738,7 +1738,7 @@ algorithm
         s2 = Exp.printExpStr(e);
         es = Util.listMap(expl, Exp.printExpStr);
         s3 = Util.stringDelimitList(es, ", ");
-        str = Util.stringAppendList({s1,"(",s3,") := ",s2,";\n"});
+        str = System.stringAppendList({s1,"(",s3,") := ",s2,";\n"});
       then
         str;
     case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),i)
@@ -1802,7 +1802,7 @@ algorithm
         s1 = indentStr(i);
         cond_str = Exp.printExpStr(cond);
         msg_str = Exp.printExpStr(msg);
-        str = Util.stringAppendList({s1,"assert(",cond_str,", ",msg_str,");\n"});
+        str = System.stringAppendList({s1,"assert(",cond_str,", ",msg_str,");\n"});
       then
         str;
 
@@ -1810,7 +1810,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
-        str = Util.stringAppendList({s1,s2,";\n"});
+        str = System.stringAppendList({s1,s2,";\n"});
       then
         str;
 
@@ -1826,7 +1826,7 @@ algorithm
           s1 = indentStr(i);
           e1_str = Exp.printExpStr(e1);
           e2_str = Exp.printExpStr(e2);
-          str = Util.stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
+          str = System.stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
         then str;
     case (_,i)
       equation
@@ -3343,7 +3343,7 @@ algorithm
         fstr = Absyn.pathString(fpath);
         c_str = dumpFunctionStr(constr);
         d_str = dumpFunctionStr(destr);
-        str = Util.stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\n",c_str,
+        str = System.stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\n",c_str,
           d_str,"end ",fstr,";\n"});
       then
         str;
