@@ -2594,6 +2594,39 @@ algorithm
   end matchcontinue;
 end listFold;
 
+public function listFold1 "Like listFold, but relation takes an extra constant argument between the new element and the accumulated value"
+  input list<Type_a> inTypeALst;
+  input Func func;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  output Type_c outTypeC;
+  partial function Func
+    input Type_a inTypeA "current element";
+    input Type_b inTypeB "extra constant";
+    input Type_c inTypeC "accumulated value";
+    output Type_c outTypeC;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeB:=
+  matchcontinue (inTypeALst,func,inTypeB,inTypeC)
+    local
+      Type_b b;
+      Type_c c,c_1,c_2;
+      Type_a l;
+      list<Type_a> lst;
+    case ({},func,b,c) then c;
+    case ((l :: lst),func,b,c)
+      equation
+        c_1 = func(l, b, c);
+        c_2 = listFold1(lst, func, b, c_1);
+      then
+        c_2;
+  end matchcontinue;
+end listFold1;
+
 public function listFoldR "function: listFoldR
   Similar to listFold but reversed argument order in function."
   input list<Type_a> lst;

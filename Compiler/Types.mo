@@ -5164,7 +5164,7 @@ algorithm
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
         // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);
-        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (OK)\n");
+        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,true)
@@ -5566,6 +5566,13 @@ algorithm
   (DAE.T_POLYMORPHIC_SOLVED(_),_) := ty;
 end isSolvedPolymorphic;
 
+protected function polymorphicTypeName
+  input Type ty;
+  output String name;
+algorithm
+  (DAE.T_POLYMORPHIC(name),_) := ty;
+end polymorphicTypeName;
+
 protected function addPolymorphicBinding
   input String id;
   input Type ty;
@@ -5882,8 +5889,9 @@ algorithm
       String id;
       Type ty,ty1,ty2;
       list<FuncArg> farg1,farg2;
-      list<Type> tList1,tList2;
+      list<Type> tList1,tList2,tys;
       Absyn.Path path,path1,path2;
+      list<String> ids;
     case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
       then addPolymorphicBinding(id,boxIfUnboxedType(actual),bindings);
     case ((DAE.T_BOXED(ty1),_),ty2,bindings)
@@ -5900,44 +5908,21 @@ algorithm
     case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_),bindings) then bindings;
     case ((DAE.T_BOOL(_),_),(DAE.T_BOOL(_),_),bindings) then bindings;
     case ((DAE.T_META_ARRAY(ty1),_),(DAE.T_META_ARRAY(ty2),_),bindings)
-      equation
-        ty1 = boxIfUnboxedType(ty1);
-        ty2 = boxIfUnboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,bindings);
     case ((DAE.T_LIST(ty1),_),(DAE.T_LIST(ty2),_),bindings)
-      equation
-        ty1 = boxIfUnboxedType(ty1);
-        ty2 = boxIfUnboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,bindings);
     case ((DAE.T_METAOPTION(ty1),_),(DAE.T_METAOPTION(ty2),_),bindings)
-      equation
-        ty1 = boxIfUnboxedType(ty1);
-        ty2 = boxIfUnboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,bindings);
     case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_),bindings)
-      equation
-        tList1 = Util.listMap(tList1, boxIfUnboxedType);
-        tList2 = Util.listMap(tList2, boxIfUnboxedType);
-        bindings = subtypePolymorphicList(tList1,tList2,bindings);
-      then bindings;
+      then subtypePolymorphicList(tList1,tList2,bindings);
     case ((DAE.T_TUPLE(tList1),_),(DAE.T_TUPLE(tList2),_),bindings)
-      equation
-        tList1 = Util.listMap(tList1, boxIfUnboxedType);
-        tList2 = Util.listMap(tList2, boxIfUnboxedType);
-        bindings = subtypePolymorphicList(tList1,tList2,bindings);
-      then bindings;
+      then subtypePolymorphicList(tList1,tList2,bindings);
     // MM Function Reference. sjoelund
     case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),bindings)
       equation
         true = Absyn.pathEqual(path1,path2); // Don't rename the result type for recursive calls...
         tList1 = Util.listMap(farg1, Util.tuple22);
-        // tList1 = Util.listMap1(tList1, renamePolymorphicType, Absyn.pathString(path1));
         tList2 = Util.listMap(farg2, Util.tuple22);
-        ty1 = boxIfUnboxedType(ty1);
-        ty2 = boxIfUnboxedType(ty2);
-
-        tList1 = Util.listMap(tList1, boxIfUnboxedType);
-        tList2 = Util.listMap(tList2, boxIfUnboxedType);
         bindings = subtypePolymorphicList(tList1,tList2,bindings);
         bindings = subtypePolymorphic(ty1,ty2,bindings);
       then bindings;
@@ -5948,14 +5933,22 @@ algorithm
         tList1 = Util.listMap(farg1, Util.tuple22);
         tList1 = Util.listMap1(tList1, renamePolymorphicType, Absyn.pathString(path1));
         tList2 = Util.listMap(farg2, Util.tuple22);
-        ty1 = boxIfUnboxedType(ty1);
-        ty2 = boxIfUnboxedType(ty2);
         ty1 = renamePolymorphicType(ty1, Absyn.pathString(path1));
 
-        tList1 = Util.listMap(tList1, boxIfUnboxedType);
-        tList2 = Util.listMap(tList2, boxIfUnboxedType);
         bindings = subtypePolymorphicList(tList1,tList2,bindings);
         bindings = subtypePolymorphic(ty1,ty2,bindings);
+      then bindings;
+    case ((DAE.T_NOTYPE(),_),ty2,bindings)
+      equation
+        tys = getAllInnerTypesOfType(ty2, isPolymorphic);
+        ids = Util.listMap(tys, polymorphicTypeName);
+        bindings = Util.listFold1(ids, addPolymorphicBinding, actual, bindings);
+      then bindings;
+    case ((DAE.T_ANYTYPE(_),_),ty2,bindings)
+      equation
+        tys = getAllInnerTypesOfType(ty2, isPolymorphic);
+        ids = Util.listMap(tys, polymorphicTypeName);
+        bindings = Util.listFold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
   end matchcontinue;
 end subtypePolymorphic;
