@@ -2047,8 +2047,8 @@ RML_BEGIN_LABEL(System__getUUIDStr)
 {
   char outStr[36];
   char *uuidStr;
-  memset(&uuidStr,0,sizeof(char)*36);
   UUID uuid;
+  memset(&uuidStr,0,sizeof(char)*36);
   if (UuidCreate(&uuid) == RPC_S_OK)
   	UuidToString(&uuid, (unsigned char **)(&uuidStr));
   uuidStr[36] = '\0';

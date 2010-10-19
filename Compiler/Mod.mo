@@ -2197,7 +2197,7 @@ algorithm
         finalPrefixstr = Util.if_(finalPrefix, " final", "");
         str_lst = Util.listMap(elist_1, SCode.printElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
-        res = Util.stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
+        res = System.stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
       then
         res;
     case DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = eq)
@@ -2207,7 +2207,7 @@ algorithm
         s1_1 = Util.stringDelimitList(s1, ",");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
-        str = Util.stringAppendList({finalPrefixstr,s1_1,s2});
+        str = System.stringAppendList({finalPrefixstr,s1_1,s2});
       then
         str;
     case(_) equation print(" failure in printModStr \n"); then fail();
@@ -2403,7 +2403,7 @@ algorithm
         Print.printBuf("[");
         s = intString(x);
         str = printSubscripts2Str(xs);
-        res = Util.stringAppendList({"[",s,str,"]"});
+        res = System.stringAppendList({"[",s,str,"]"});
       then
         res;
   end matchcontinue;
@@ -2425,7 +2425,7 @@ algorithm
         Print.printBuf(",");
         s = intString(x);
         str = printSubscripts2Str(xs);
-        res = Util.stringAppendList({",",s,str});
+        res = System.stringAppendList({",",s,str});
       then
         res;
   end matchcontinue;
@@ -2449,14 +2449,14 @@ algorithm
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);
         e_val_str = ValuesUtil.valString(e_val);
-        res = Util.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
+        res = System.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
     case SOME(DAE.TYPED(e,NONE,prop,_))
       equation
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);
-        res = Util.stringAppendList({" = (typed)",str,str2});
+        res = System.stringAppendList({" = (typed)",str,str2});
       then
         res;
     case SOME(DAE.UNTYPED(e))
@@ -2542,7 +2542,7 @@ algorithm
       equation
         lst = getAllIndexesFromIdxMods(rest);
         // from an index list {1, 2} make a string such as 1.2 
-        str = Util.stringAppendList(Util.listMap(il, intStringDot));
+        str = System.stringAppendList(Util.listMap(il, intStringDot));
       then
         (str,submod)::lst;
     // ignore named modifs

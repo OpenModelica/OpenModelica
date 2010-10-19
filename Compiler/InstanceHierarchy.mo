@@ -59,6 +59,7 @@ protected import Debug;
 protected import Dump;
 protected import Util;
 protected import RTOpts;
+protected import System;
 
 public
 type InstanceHierarchy = list<Instance> "an instance hierarchy is a list of instances";
@@ -650,7 +651,7 @@ algorithm
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        res = Util.stringAppendList({"extends ",str,";"});
+        res = System.stringAppendList({"extends ",str,";"});
       then
         res;
 
@@ -660,14 +661,14 @@ algorithm
         mod_str = SCode.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = SCode.unparseVariability(var);
-        res = Util.stringAppendList({vs," ",s," ",n,mod_str,";"});
+        res = System.stringAppendList({vs," ",s," ",n,mod_str,";"});
       then
         res;
 
     case SCode.CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         //str = printClassStr(cl);
-        res = Util.stringAppendList({"class ",n," ... end ",n,";"});
+        res = System.stringAppendList({"class ",n," ... end ",n,";"});
       then
         res;
 

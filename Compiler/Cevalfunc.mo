@@ -39,19 +39,18 @@ protected import ValuesUtil;
 protected import ErrorExt;
 protected import OptManager;
 protected import Dump;
+protected import System;
 
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
 evaluate it. This is to prevent multiple compilation of c files.
 
-NOTE: this function operates on Absyn and not DAE therefore static elaboration on expressions is done twice
-"
+NOTE: this function operates on Absyn and not DAE therefore static elaboration on expressions is done twice"
   input Env.Env env "enviroment for the user-function";
   input DAE.Exp callExp "DAE.CALL(userFunc)";
   input list<Values.Value> inArgs "arguments evaluated so no envirnoment is needed";
   input SCode.Class sc "function body";
   output Values.Value outVal "The output value";
-
 algorithm
   outVal := matchcontinue(env,callExp,inArgs,sc)
       local
@@ -84,7 +83,7 @@ algorithm
         str = Absyn.pathString(funcpath);
         replacements = createReplacementRules(inArgs,elementList);
         ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
-        str = Util.stringAppendList({"cevalfunc_",str});
+        str = System.stringAppendList({"cevalfunc_",str});
         env3 = Env.openScope(env, false, SOME(str), SOME(Env.FUNCTION_SCOPE));
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
@@ -113,7 +112,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable());
         str = Absyn.pathString(funcpath);
-        str = Util.stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
+        str = System.stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
         Debug.fprint("failtrace", str);
         then
           fail();
@@ -124,7 +123,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable()));
         str = Absyn.pathString(funcpath);
-        str = Util.stringAppendList({"- Cevalfunc.extendEnvWithInputArgs failed for function /* ",str," */"});
+        str = System.stringAppendList({"- Cevalfunc.extendEnvWithInputArgs failed for function /* ",str," */"});
         Debug.fprint("failtrace", str);
       then
         fail();
@@ -1092,7 +1091,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       true = RTOpts.debugFlag("failtrace");
       //(Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
       dbgString = Dump.printComponentRefStr(dbgcr);
-      dbgString = Util.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
+      dbgString = System.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
       Debug.fprint("failtrace", dbgString);
     then fail();
 end matchcontinue;

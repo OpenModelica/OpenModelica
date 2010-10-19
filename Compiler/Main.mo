@@ -171,7 +171,7 @@ algorithm
       equation
         true = RTOpts.debugFlag(flagstr);
         debugstr = Print.getString();
-        res_with_debug = Util.stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+        res_with_debug = System.stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     case (_,res) then res;
   end matchcontinue;
@@ -927,10 +927,10 @@ algorithm
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
-        //filename = Util.stringAppendList({cname_str,".cpp"});
-        //funcfilename = Util.stringAppendList({cname_str,"_functions.cpp"});
-        //init_filename = Util.stringAppendList({cname_str,"_init.txt"});
-        //makefilename = Util.stringAppendList({cname_str,".makefile"});
+        //filename = System.stringAppendList({cname_str,".cpp"});
+        //funcfilename = System.stringAppendList({cname_str,"_functions.cpp"});
+        //init_filename = System.stringAppendList({cname_str,"_init.txt"});
+        //makefilename = System.stringAppendList({cname_str,".makefile"});
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
@@ -1113,7 +1113,7 @@ algorithm
     case (file,inSymbolTable)
       equation
         true = System.regularFileExists(file);
-        str = Util.stringAppendList({"runScript(\"",file,"\")"});
+        str = System.stringAppendList({"runScript(\"",file,"\")"});
         (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
       then
         outSymbolTable;
@@ -1211,7 +1211,7 @@ algorithm
         // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
-        newpath = Util.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
+        newpath = System.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
         _ = System.setEnv("PATH",newpath,true);
       then fail();
     

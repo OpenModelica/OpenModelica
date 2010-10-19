@@ -976,7 +976,7 @@ protected function stringToString "function: stringToString
   output String str_1;
   String str_1;
 algorithm
-  str_1 := Util.stringAppendList({"\"",str,"\""});
+  str_1 := System.stringAppendList({"\"",str,"\""});
 end stringToString;
 
 

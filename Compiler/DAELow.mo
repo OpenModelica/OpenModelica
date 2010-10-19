@@ -1206,7 +1206,7 @@ algorithm
         wc_s_list = Util.listMap(wc, intString);
         wc_s = Util.stringDelimitList(wc_s_list, ",");
         str = Exp.printExpStr(e);
-        str2 = Util.stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
+        str2 = System.stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
       then
         str2;
   end matchcontinue;
@@ -2915,7 +2915,7 @@ algorithm
         estr = Exp.printExpStr(e);
         rowstr = intString(row);
         colstr = intString(col);
-        str = Util.stringAppendList({"{",rowstr,",",colstr,"}:",estr});
+        str = System.stringAppendList({"{",rowstr,",",colstr,"}:",estr});
         strs = dumpJacobianStr2(eqns);
       then
         (str :: strs);
@@ -2939,7 +2939,7 @@ algorithm
         is = intString(inInteger);
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        s = Util.stringAppendList({is," : ",s1," = ",s2,"\n"});
+        s = System.stringAppendList({is," : ",s1," = ",s2,"\n"});
         print(s);
         dumpArrayEqns(es,inInteger + 1);
       then
@@ -3002,14 +3002,14 @@ algorithm
         s1 = whenEquationStr(weqn);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
-        res = Util.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */, s1});
+        res = System.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */, s1});
       then
         res;
     case (WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = NONE()))
       equation
         s2 = Exp.printExpStr(e2);
         is = intString(i);
-        res = Util.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
+        res = System.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
       then
         res;
   end matchcontinue;
@@ -3033,28 +3033,28 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," = ",s2});
+        res = System.stringAppendList({s1," = ",s2});
       then
         res;
     case (COMPLEX_EQUATION(lhs = e1,rhs = e2))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," = ",s2});
+        res = System.stringAppendList({s1," = ",s2});
       then
         res;
     case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
         var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
-        res = Util.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
+        res = System.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
     case (SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," := ",s2});
+        res = System.stringAppendList({s1," := ",s2});
       then
         res;
         
@@ -3064,7 +3064,7 @@ algorithm
         s2 = Exp.printExpStr(e2);
         is = intString(i);
         s3 = whenEquationStr(weqn);
-        res = Util.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */, s3});
+        res = System.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */, s3});
       then
         res;
     case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2)))
@@ -3072,13 +3072,13 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
-        res = Util.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */});
+        res = System.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */});
       then
         res;
     case (RESIDUAL_EQUATION(exp = e))
       equation
         s1 = Exp.printExpStr(e);
-        res = Util.stringAppendList({s1,"= 0"});
+        res = System.stringAppendList({s1,"= 0"});
       then
         res;
     case (ALGORITHM(index = i, in_ = inps, out = outs))
@@ -3086,7 +3086,7 @@ algorithm
         is = intString(i);
         intsStr = Util.stringDelimitList(Util.listMap(inps, Exp.printExpStr), ", ");
         outsStr = Util.stringDelimitList(Util.listMap(outs, Exp.printExpStr), ", ");        
-        res = Util.stringAppendList({"Algorithm no: ", is, " for inputs: (", 
+        res = System.stringAppendList({"Algorithm no: ", is, " for inputs: (", 
                                       intsStr, ") => outputs: (", 
                                       outsStr, ")" /*,"\n"*/});
       then
@@ -8888,7 +8888,7 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
         s2 = equationStr(eqn);
-        res = Util.stringAppendList({s2,";\n",s1});
+        res = System.stringAppendList({s2,";\n",s1});
       then
         res;
   end matchcontinue;
@@ -8918,7 +8918,7 @@ algorithm
         VAR(varName = cr) = getVarAt(vars, v);
         s2 = Exp.printComponentRefStr(cr);
         s3 = intString(v);
-        res = Util.stringAppendList({s2,"(",s3,"), ",s1});
+        res = System.stringAppendList({s2,"(",s3,"), ",s1});
       then
         res;
   end matchcontinue;
@@ -10468,7 +10468,7 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = realString(prio);
-        str = Util.stringAppendList({"(",s1,", ",s2,")"});
+        str = System.stringAppendList({"(",s1,", ",s2,")"});
       then str;
   end matchcontinue;
 end printPrioTuplesStr;
@@ -11799,7 +11799,7 @@ algorithm
       equation
       	lst = dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
       	res = Util.stringDelimitList(lst,",");
-      	res = Util.stringAppendList({"{",res,"}"});
+      	res = System.stringAppendList({"{",res,"}"});
       then res;
   end matchcontinue;
 end dumpComponentsGraphStr;
@@ -11829,7 +11829,7 @@ algorithm
         llst = Util.listMap1(llst,Util.listCons,i);
         slst = Util.listMap(llst,intListStr);
         str = Util.stringDelimitList(slst,",");
-        str = Util.stringAppendList({"{",str,"}"});
+        str = System.stringAppendList({"{",str,"}"});
         strLst = dumpComponentsGraphStr2(i+1,n,m,mT,ass1,ass2);
       then str::strLst;
   end matchcontinue;
@@ -11840,7 +11840,7 @@ protected function intListStr "Takes a list of Integers and produces a string  o
   output String res;
 algorithm
   res := Util.stringDelimitList(Util.listMap(lst,intString),",");
-  res := Util.stringAppendList({"{",res,"}"});
+  res := System.stringAppendList({"{",res,"}"});
 end intListStr;
 
 public function strongComponents "function: strongComponents
@@ -14557,7 +14557,7 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," = ",s2,"\n"});
+        res = System.stringAppendList({s1," = ",s2,"\n"});
         print(res);
       then
         ();
@@ -14566,7 +14566,7 @@ algorithm
         (cr,e2) = getWhenEquationExpr(w);
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," =  ",s2,"\n"});
+        res = System.stringAppendList({s1," =  ",s2,"\n"});
         print(res);
       then
         ();

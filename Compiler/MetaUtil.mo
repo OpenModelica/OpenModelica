@@ -37,6 +37,7 @@ package MetaUtil
   RCS: $Id$
 
   "
+
 public import Absyn;
 public import ClassInf;
 public import DAE;
@@ -50,6 +51,7 @@ protected import Lookup;
 protected import RTOpts;
 protected import Types;
 protected import Util;
+protected import System;
 
 public function isList "function: isList
 	author: KS
@@ -119,7 +121,7 @@ algorithm
       equation
         firstVar = createConstantCExp(firstExp,firstVar);
         s2 = listToConsCell(restVar,restExp);
-        s = Util.stringAppendList({"mmc_mk_cons(",firstVar,",",s2,")"});
+        s = System.stringAppendList({"mmc_mk_cons(",firstVar,",",s2,")"});
       then s;
   end matchcontinue;
 end listToConsCell;
@@ -145,19 +147,19 @@ algorithm
       String localInExp,outStr;
     case (DAE.ET_INT(),localInExp)
       equation
-        outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
+        outStr = System.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
     case (DAE.ET_REAL(),localInExp)
       equation
-        outStr = Util.stringAppendList({"mmc_mk_rcon(",localInExp,")"});
+        outStr = System.stringAppendList({"mmc_mk_rcon(",localInExp,")"});
       then outStr;
     case (DAE.ET_BOOL(),localInExp)
       equation
-        outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
+        outStr = System.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
     case (DAE.ET_STRING(),localInExp)
       equation
-        outStr = Util.stringAppendList({"mmc_mk_scon(",localInExp,")"});
+        outStr = System.stringAppendList({"mmc_mk_scon(",localInExp,")"});
       then outStr;
     case (DAE.ET_COMPLEX(name = path, varLst = varLst),localInExp)
       local
@@ -927,7 +929,7 @@ algorithm
   tmp1 := "(" +& numStr +& ",";
   tmp2 := numStr +& "(";
   tmp3 := Util.if_(numBoxes > 9, tmp1, tmp2); // mmc_mk_box<n>( or mmc_mk_box(<n>,
-  out := Util.stringAppendList({"mmc_mk_box",tmp3,val,")"});
+  out := System.stringAppendList({"mmc_mk_box",tmp3,val,")"});
 end mmc_mk_box;
 
 //Generates the mk_box<size>(<index>,<data>::<data>)
@@ -956,7 +958,7 @@ algorithm
         tmp4 = tmp1 +& "(";
         tmp5 = Util.if_(numberOfVariables > 9, tmp3, tmp4); // mmc_mk_box<n>( or mmc_mk_box(<n>,
         name = Util.stringReplaceChar(name, ".", "_");
-        expStr = Util.stringAppendList({tmp2,",&",name,"__desc",expStr});
+        expStr = System.stringAppendList({tmp2,",&",name,"__desc",expStr});
         expStr = mmc_mk_box(numberOfVariables, expStr);
       then expStr;
     
@@ -983,7 +985,7 @@ algorithm
       equation
         firstVar = createConstantCExp2(firstExp,firstVar);
         restStr = createExpStr(restVar,restExp);
-        firstVar = Util.stringAppendList({",",firstVar,restStr});
+        firstVar = System.stringAppendList({",",firstVar,restStr});
         then firstVar;
   end matchcontinue;
 end createExpStr;

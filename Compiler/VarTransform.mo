@@ -903,7 +903,7 @@ algorithm
         s2 = Exp.printExpStr(dst);
         s3 = Exp.printComponentRefStr(src_1);
         s4 = Exp.printExpStr(dst_1);
-        s = Util.stringAppendList(
+        s = System.stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
           print(s);

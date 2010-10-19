@@ -53,6 +53,7 @@ public type Ident = String;
 protected import Print;
 protected import Util;
 protected import Debug;
+protected import System;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -113,7 +114,7 @@ algorithm
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
-        str = Util.stringAppendList({s1,s2,"\n"});
+        str = System.stringAppendList({s1,s2,"\n"});
       then
         str;
     case (_,_) then "unparsing failed\n";
@@ -138,7 +139,7 @@ algorithm
       equation
         s1 = unparseClassStr(i, c, "", ("",""), "");
         s2 = unparseClassList(i, cs);
-        res = Util.stringAppendList({s1,";\n",s2});
+        res = System.stringAppendList({s1,";\n",s2});
       then
         res;
   end matchcontinue;
@@ -161,7 +162,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = Absyn.pathString(p);
-        str = Util.stringAppendList({s1,"within ",s2,";\n"});
+        str = System.stringAppendList({s1,"within ",s2,";\n"});
       then
         str;
   end matchcontinue;
@@ -236,7 +237,7 @@ algorithm
         s5 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n,s5,"\n",s4,is,"end ",n});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
     case (indent,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -254,7 +255,7 @@ algorithm
         s9 = unparseCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -269,7 +270,7 @@ algorithm
         s5 = unparseCommentOption(cmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -283,7 +284,7 @@ algorithm
         s5 = unparseCommentOption(cmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -300,7 +301,7 @@ algorithm
         s6 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
@@ -315,7 +316,7 @@ algorithm
         s5 = Util.stringDelimitList(vars, ", ");
         s6 = unparseCommentOption(cmt);
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
+        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
   end matchcontinue;
@@ -349,7 +350,7 @@ algorithm
         s2 = selectString(f, "final ", "");
         s2_1 = selectString(e, "encapsulated ", "");
         s3 = unparseRestrictionStr(r);
-        str = Util.stringAppendList({s2_1,s1,s2,s3});
+        str = System.stringAppendList({s2_1,s1,s2,s3});
       then
         str;
   end matchcontinue;
@@ -369,7 +370,7 @@ algorithm
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         s1 = unparseAnnotationOption(0, annopt);
-        str = Util.stringAppendList({" \"",cmt,"\"",s1});
+        str = System.stringAppendList({" \"",cmt,"\"",s1});
       then
         str;
     case (SOME(Absyn.COMMENT(annopt,NONE)))
@@ -390,7 +391,7 @@ algorithm
     local Ident str,cmt;
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
       equation
-        str = Util.stringAppendList({" \"",cmt,"\""});
+        str = System.stringAppendList({" \"",cmt,"\""});
       then
         str;
     case (_) then "";
@@ -415,7 +416,7 @@ algorithm
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
         dumpAnnotationOption(annopt);
-        str = Util.stringAppendList({"SOME(\"",cmt,"\")))"});
+        str = System.stringAppendList({"SOME(\"",cmt,"\")))"});
         Print.printBuf(str);
       then
         ();
@@ -468,14 +469,14 @@ algorithm
       equation
         s1 = unparseCommentOption(optcmt);
         s2 = unparseEnumliterals((a :: b));
-        res = Util.stringAppendList({str,s1,", ",s2});
+        res = System.stringAppendList({str,s1,", ",s2});
       then
         res;
     case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt),Absyn.ENUMLITERAL(literal = str2,comment = optcmt2)})
       equation
         s1 = unparseCommentOption(optcmt);
         s2 = unparseCommentOption(optcmt2);
-        res = Util.stringAppendList({str," ",s1,", ",str2," ",s2});
+        res = System.stringAppendList({str," ",s1,", ",str2," ",s2});
       then
         res;
   end matchcontinue;
@@ -703,7 +704,7 @@ algorithm
         s3 = intString(scol);
         s4 = intString(eline);
         s5 = intString(ecol);
-        str = Util.stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
+        str = System.stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
       then
         str;
   end matchcontinue;
@@ -882,7 +883,7 @@ algorithm
     case (Absyn.CLASSMOD(expOption = SOME(e)))
       equation
         s1 = printExpStr(e);
-        str = Util.stringAppendList({" = ",s1});
+        str = System.stringAppendList({" = ",s1});
       then
         str;
   end matchcontinue;
@@ -954,7 +955,7 @@ algorithm
         s3 = printComponentRefStr(r);
         s4 = unparseOptModificationStr(optm);
         s5 = unparseStringCommentOption(optstr);
-        str = Util.stringAppendList({s1,s2,s3,s4,s5});
+        str = System.stringAppendList({s1,s2,s3,s4,s5});
       then
         str;
     case (Absyn.REDECLARATION(finalItem = f,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constr))
@@ -967,7 +968,7 @@ algorithm
         redeclareStr = redeclareStr +& s1;
         s4 = unparseElementspecStr(0, spec, s2, (redeclareStr,replaceableStr), "");
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4,s5});
+        str = System.stringAppendList({s4,s5});
       then
         str;
   end matchcontinue;
@@ -1088,7 +1089,7 @@ algorithm
         idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
-        str = Util.stringAppendList({idstr,", ",crefstr,", (",expstr,")"});
+        str = System.stringAppendList({idstr,", ",crefstr,", (",expstr,")"});
         Print.printBuf(str);
       then
         ();
@@ -1097,7 +1098,7 @@ algorithm
         idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
-        str = Util.stringAppendList({idstr,", \"",lang,"\", ",crefstr,", (",expstr,")"});
+        str = System.stringAppendList({idstr,", \"",lang,"\", ",crefstr,", (",expstr,")"});
         Print.printBuf(str);
       then
         ();
@@ -1158,7 +1159,7 @@ algorithm
       equation
         s1 = unparseElementitemStrLst(i, el);
         // no ident needed! i_1 = i - 1; is = indentStr(i_1);
-        str = Util.stringAppendList({s1});
+        str = System.stringAppendList({s1});
       then
         str;
     case (i,Absyn.PUBLIC(contents = el),false)
@@ -1166,7 +1167,7 @@ algorithm
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({is,"public \n",s1});
+        str = System.stringAppendList({is,"public \n",s1});
       then
         str;
     case (i,Absyn.PROTECTED(contents = el),_)
@@ -1174,7 +1175,7 @@ algorithm
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({is,"protected \n",s1});
+        str = System.stringAppendList({is,"protected \n",s1});
       then
         str;
     case (i,Absyn.EQUATIONS(contents = eqs),_)
@@ -1182,7 +1183,7 @@ algorithm
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({"\n",is,"equation \n",s1});
+        str = System.stringAppendList({"\n",is,"equation \n",s1});
       then
         str;
     case (i,Absyn.INITIALEQUATIONS(contents = eqs),_)
@@ -1190,7 +1191,7 @@ algorithm
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({"\n",is,"initial equation \n",s1});
+        str = System.stringAppendList({"\n",is,"initial equation \n",s1});
       then
         str;
     case (i,Absyn.ALGORITHMS(contents = eqs),_)
@@ -1199,7 +1200,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, eqs, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({is,"algorithm \n",s1});
+        str = System.stringAppendList({is,"algorithm \n",s1});
       then
         str;
     case (i,Absyn.INITIALALGORITHMS(contents = eqs),_)
@@ -1208,7 +1209,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, eqs, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({is,"initial algorithm \n",s1});
+        str = System.stringAppendList({is,"initial algorithm \n",s1});
       then
         str;
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
@@ -1222,7 +1223,7 @@ algorithm
         is = indentStr(i);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"\n",is,"external ",langstr," ",outputstr," = ",ident,"(",
           expstr,") ",annstr,";",annstr2,"\n"});
       then
@@ -1237,7 +1238,7 @@ algorithm
         is = indentStr(i);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"\n",is,"external ",langstr," ",ident,"(",expstr,") ",
           annstr,"; ",annstr2,"\n"});
       then
@@ -1250,7 +1251,7 @@ algorithm
         langstr = getExtlangStr(lang);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        res = Util.stringAppendList({"\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"});
+        res = System.stringAppendList({"\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"});
       then
         res;
   end matchcontinue;
@@ -1265,7 +1266,7 @@ algorithm
   outString := matchcontinue (inStringOption)
     local Ident res,str;
     case (NONE) then "";
-    case (SOME(str)) equation res = Util.stringAppendList({"\"",str,"\""}); then res;
+    case (SOME(str)) equation res = System.stringAppendList({"\"",str,"\""}); then res;
   end matchcontinue;
 end getExtlangStr;
 
@@ -1363,7 +1364,7 @@ algorithm
       equation
         s1 = unparseElementitemStr(i, x);
         s2 = unparseElementitemStrLst(i, xs);
-        res = Util.stringAppendList({s1,"\n",s2});
+        res = System.stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
@@ -1441,7 +1442,7 @@ algorithm
       equation
         s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
         is = indentStr(i);
-        str = Util.stringAppendList({is,"annotation",s1});
+        str = System.stringAppendList({is,"annotation",s1});
       then
         str;
     case (_,NONE) then "";
@@ -1555,7 +1556,7 @@ algorithm
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, redeclareKeywords, s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4,s5,";"});
+        str = System.stringAppendList({s4,s5,";"});
       then
         str;
     case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
@@ -1564,7 +1565,7 @@ algorithm
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, ("",""), s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4,s5,";"});
+        str = System.stringAppendList({s4,s5,";"});
       then
         str;
     case(i,Absyn.DEFINEUNIT(name,{})) equation
@@ -1579,7 +1580,7 @@ algorithm
     case (i,Absyn.TEXT(optName = SOME(name),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"/* Absyn.TEXT(SOME(\"",name,"\"), \"",text,"\", ",s1,
           "); */"});
       then
@@ -1587,7 +1588,7 @@ algorithm
     case (i,Absyn.TEXT(optName = NONE,string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
-        str = Util.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
+        str = System.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
       then
         str;
     case(_,_) equation
@@ -1818,7 +1819,7 @@ algorithm
         is = indentStr(i);
         s3 = unparseAnnotationOption(0, annOpt);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
-        str = Util.stringAppendList({is,s2,s3});
+        str = System.stringAppendList({is,s2,s3});
       then
         str;
     case (i,Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=annOpt),f,r,io)
@@ -1829,7 +1830,7 @@ algorithm
         is = indentStr(i);
         s4 = unparseAnnotationOption(0, annOpt);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
-        str = Util.stringAppendList({is,s2,"(",s3,")",s4});
+        str = System.stringAppendList({is,s2,"(",s3,")",s4});
       then
         str;
     case (i,Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs),f,r,io)
@@ -1840,7 +1841,7 @@ algorithm
         s3 = getStringList(cs, unparseComponentitemStr, ",");
         is = indentStr(i);
         prefixKeywords = unparseElementPrefixKeywords(r, f, io, "", "");
-        str = Util.stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
+        str = System.stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
       then
         str;
     case (indent,Absyn.IMPORT(import_ = i),f,r,io)
@@ -1850,7 +1851,7 @@ algorithm
         s2 = stringAppend("import ", s1);
         is = indentStr(indent);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for import!
-        str = Util.stringAppendList({is,s2});
+        str = System.stringAppendList({is,s2});
       then
         str;
     case (_,_,_,_,_)
@@ -1983,7 +1984,7 @@ algorithm
         ss = selectString(st, "stream ", "");
         vs = unparseVariabilitySymbolStr(var);
         ds = unparseDirectionSymbolStr(dir);
-        str = Util.stringAppendList({fs,ss,vs,ds});
+        str = System.stringAppendList({fs,ss,vs,ds});
       then
         str;
     case (_)
@@ -2170,7 +2171,7 @@ algorithm
         s1 = unparseComponentStr(c);
         s2 = unparseComponentCondition(optcond);
         s3 = unparseCommentOption(cmtopt);
-        str = Util.stringAppendList({s1,s2,s3});
+        str = System.stringAppendList({s1,s2,s3});
       then
         str;
   end matchcontinue;
@@ -2616,7 +2617,7 @@ algorithm
         i_1 = i + 1;
         s2 = unparseEquationitemStrLst(i_1, tb, ";\n");
         is = indentStr(i);
-        str = Util.stringAppendList({"if ",s1," then\n",is,s2,is,"end if"});
+        str = System.stringAppendList({"if ",s1," then\n",is,s2,is,"end if"});
       then
         str;
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
@@ -2627,7 +2628,7 @@ algorithm
         s3 = unparseEqElseifStrLst(i_1, eb, "\n");
         s4 = unparseEquationitemStrLst(i_1, fb, ";\n");
         is = indentStr(i);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"if ",s1," then\n",s2,s3,"\n",is,"else\n",s4,"\n",is,
           "end if"});
       then
@@ -2637,7 +2638,7 @@ algorithm
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         is = indentStr(i);
-        str = Util.stringAppendList({is,s1," = ",s2});
+        str = System.stringAppendList({is,s1," = ",s2});
       then
         str;
     case (i,Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
@@ -2646,7 +2647,7 @@ algorithm
         s1 = printComponentRefStr(e1);
         s2 = printComponentRefStr(e2);
         is = indentStr(i);
-        str = Util.stringAppendList({is,"connect(",s1,",",s2,")"});
+        str = System.stringAppendList({is,"connect(",s1,",",s2,")"});
       then
         str;
     case (indent,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
@@ -2654,7 +2655,7 @@ algorithm
         s1 = printIteratorsStr(iterators);
         s2 = unparseEquationitemStrLst(indent, el, ";\n");
         is = indentStr(indent);
-        str = Util.stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
+        str = System.stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
       then
         str;
     case (i,Absyn.EQ_NORETCALL(functionName = cref,functionArgs = fargs))
@@ -2662,7 +2663,7 @@ algorithm
         s2 = printFunctionArgsStr(fargs);
         id = printComponentRefStr(cref);
         is = indentStr(i);
-        str = Util.stringAppendList({is, id,"(",s2,")"});
+        str = System.stringAppendList({is, id,"(",s2,")"});
       then
         str;
     case (i,Absyn.EQ_WHEN_E(whenExp = exp,whenEquations = eql,elseWhenEquations = eqlelse))
@@ -2672,14 +2673,14 @@ algorithm
         s2 = unparseEquationitemStrLst(i_1, eql, ";\n");
         is = indentStr(i);
         s4 = unparseEqElsewhenStrLst(i_1, eqlelse);
-        str = Util.stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
+        str = System.stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
       then
         str;
     case (i,Absyn.EQ_FAILURE(equItem))
       equation
         s1 = unparseEquationitemStr(0, equItem);
         is = indentStr(i);
-        str = Util.stringAppendList({is,"failure(",s1,")"});
+        str = System.stringAppendList({is,"failure(",s1,")"});
       then
         str;
     case (_,_)
@@ -2711,7 +2712,7 @@ algorithm
       equation
         s1 = unparseEquationitemStr(i, x);
         s2 = unparseEquationitemStrLst(i, xs, sep);
-        res = Util.stringAppendList({s1,sep,s2});
+        res = System.stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
@@ -2790,21 +2791,21 @@ algorithm
     case (i,{x1},sep)
       equation
         s1 = unparseEqElseifStr(i, x1);
-        res = Util.stringAppendList({s1,sep});
+        res = System.stringAppendList({s1,sep});
       then
         res;
     case (i,(x :: (xs as (_ :: _))),sep)
       equation
         s2 = unparseEqElseifStrLst(i, xs, sep);
         s1 = unparseEqElseifStr(i, x);
-        res = Util.stringAppendList({s1,sep,s2});
+        res = System.stringAppendList({s1,sep,s2});
       then
         res;
     case (i,{x1,x2},sep)
       equation
         s1 = unparseEqElseifStr(i, x1);
         s2 = unparseEqElseifStr(i, x2);
-        res = Util.stringAppendList({s1,sep,s2});
+        res = System.stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
@@ -2831,7 +2832,7 @@ algorithm
         s2 = unparseEquationitemStrLst(i, el, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        res = Util.stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
+        res = System.stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
       then
         res;
   end matchcontinue;
@@ -2989,7 +2990,7 @@ algorithm
       equation
         s1 = unparseAlgorithmStr(i, x);
         s2 = unparseAlgorithmStrLst(i, xs, sep);
-        res = Util.stringAppendList({s1,sep,s2});
+        res = System.stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
@@ -3048,7 +3049,7 @@ algorithm
         s2 = printExpStr(exp);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList({is,s1,":=",s2,s3,";"});
+        str = System.stringAppendList({is,s1,":=",s2,s3,";"});
       then
         str;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb),comment = optcmt)) /* ALG_IF */
@@ -3060,7 +3061,7 @@ algorithm
         s4 = unparseAlgorithmStrLst(i, fb, "\n");
         s5 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"if ",s1," then \n",is,s2,s3,"\n",is,"else ",s4,"\n",is,
           "end if",s5,";"});
       then
@@ -3073,7 +3074,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(ident_1, el, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(ident);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,
           ";"});
       then
@@ -3085,7 +3086,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"while (",s1,") loop\n",is,s2,"\n",is,"end while",s3,";"});
       then
         str;
@@ -3097,7 +3098,7 @@ algorithm
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         s4 = unparseAlgElsewhenStrLst(i_1, al2);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when",s3,
           ";"});
       then
@@ -3108,7 +3109,7 @@ algorithm
         s2 = printFunctionArgsStr(fargs);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList({is,s1,"(",s2,")",s3,";"});
+        str = System.stringAppendList({is,s1,"(",s2,")",s3,";"});
       then
         str;
     case (i,Absyn.ALGORITHMITEMANN(annotation_ = ann))
@@ -3147,7 +3148,7 @@ algorithm
         s3 = unparseCommentOption(optcmt);
         strlist = Util.listMap(explist, printExpStr);
         strlist = Util.listMap1r(strlist, stringAppend, "\ncase:\n    ");
-        s2 = Util.stringAppendList(strlist);
+        s2 = System.stringAppendList(strlist);
         str_1 = printMatchType(matchType) +& " cases { " +& s2 +& " } "+& s3 +&";";
       then
         str_1;
@@ -3157,7 +3158,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"try\n",is,s2,is,"end try",s3,";"});
       then
         str;
@@ -3173,7 +3174,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {is,"catch\n",is,s2,is,"end catch",s3,";"});
       then
         str;
@@ -3210,14 +3211,14 @@ algorithm
       equation
         s1 = unparseAlgElsewhenStr(i, x1);
         s2 = unparseAlgElsewhenStr(i, x2);
-        res = Util.stringAppendList({s1,"\n",s2});
+        res = System.stringAppendList({s1,"\n",s2});
       then
         res;
     case (i,(x :: (xs as (_ :: _))))
       equation
         s1 = unparseAlgElsewhenStr(i, x);
         s2 = unparseAlgElsewhenStrLst(i, xs);
-        res = Util.stringAppendList({s1,"\n",s2});
+        res = System.stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
@@ -3243,7 +3244,7 @@ algorithm
         is = indentStr(i);
         s1 = unparseAlgorithmStrLst(i, algl, "\n");
         s2 = printExpStr(exp);
-        res = Util.stringAppendList({"elsewhen ",s2," then\n",s1});
+        res = System.stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
   end matchcontinue;
@@ -3274,14 +3275,14 @@ algorithm
       equation
         s1 = unparseEqElsewhenStr(i, x1);
         s2 = unparseEqElsewhenStr(i, x2);
-        res = Util.stringAppendList({s1,"\n",s2});
+        res = System.stringAppendList({s1,"\n",s2});
       then
         res;
     case (i,(x :: xs))
       equation
         s1 = unparseEqElsewhenStr(i, x);
         s2 = unparseEqElsewhenStrLst(i, xs);
-        res = Util.stringAppendList({s1,"\n",s2});
+        res = System.stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
@@ -3307,7 +3308,7 @@ algorithm
         is = indentStr(i);
         s1 = unparseEquationitemStrLst(i, eql, ";\n");
         s2 = printExpStr(exp);
-        res = Util.stringAppendList({"elsewhen ",s2," then\n",s1});
+        res = System.stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
   end matchcontinue;
@@ -3356,7 +3357,7 @@ algorithm
       equation
         s2 = unparseAlgElseifStrLst(i, xs, sep);
         s1 = unparseAlgElseifStr(i, x);
-        res = Util.stringAppendList({s1,sep,s2});
+        res = System.stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
@@ -3383,7 +3384,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(i, el, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = Util.stringAppendList({is,"elseif ",s1," then\n",s2});
+        str = System.stringAppendList({is,"elseif ",s1," then\n",s2});
       then
         str;
   end matchcontinue;
@@ -3972,7 +3973,7 @@ algorithm
       equation
         estr = printExpStr(exp);
         istr = printIteratorsStr(iterators);
-        str = Util.stringAppendList({estr," for ", istr});
+        str = System.stringAppendList({estr," for ", istr});
       then
         str;
   end matchcontinue;
@@ -3995,14 +3996,14 @@ algorithm
     case ({(id, SOME(exp))})
       equation
         s1 = printExpStr(exp);
-        s = Util.stringAppendList({id, " in ", s1});
+        s = System.stringAppendList({id, " in ", s1});
       then s;
     case ({(id, NONE())}) then id;
     case (x::rest)
       equation
         s1 = printIteratorsStr({x});
         s2 = printIteratorsStr(rest);
-        s = Util.stringAppendList({s1, ", ", s2});
+        s = System.stringAppendList({s1, ", ", s2});
       then s;
   end matchcontinue;
 end printIteratorsStr;
@@ -4131,7 +4132,7 @@ algorithm
     case (str,pparent,pexpr) /* expr, prio. parent expr, prio. expr */
       equation
         (pparent > pexpr) = true;
-        str_1 = Util.stringAppendList({"(",str,")"});
+        str_1 = System.stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_) then str;
@@ -4277,7 +4278,7 @@ algorithm
         ts_1 = parenthesize(ts, pt, p);
         fs_1 = parenthesize(fs, pf, p);
         el = printElseifStr(elseif_);
-        str = Util.stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
+        str = System.stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
       then
         str;
     case (Absyn.CALL(function_ = fcn,functionArgs = args))
@@ -4330,7 +4331,7 @@ algorithm
         pstop = expPriority(stop);
         s1_1 = parenthesize(s1, pstart, p);
         s3_1 = parenthesize(s3, pstop, p);
-        s = Util.stringAppendList({s1_1,":",s3_1});
+        s = System.stringAppendList({s1_1,":",s3_1});
       then
         s;
     case ((e as Absyn.RANGE(start = start,step = SOME(step),stop = stop)))
@@ -4345,14 +4346,14 @@ algorithm
         s1_1 = parenthesize(s1, pstart, p);
         s3_1 = parenthesize(s3, pstop, p);
         s2_1 = parenthesize(s2, pstep, p);
-        s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
+        s = System.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
     case (Absyn.CODE(code = c))
       local Absyn.CodeNode c;
       equation
         res = printCodeStr(c);
-        res_1 = Util.stringAppendList({"Code(",res,")"});
+        res_1 = System.stringAppendList({"Code(",res,")"});
       then
         res_1;
     case Absyn.END() then "end";
@@ -4362,13 +4363,13 @@ algorithm
       equation
         s1 = printExpStr(head);
         s2 = printExpStr(rest);
-        s = Util.stringAppendList({s1, "::", s2});
+        s = System.stringAppendList({s1, "::", s2});
       then
         s;
     case Absyn.AS(s1, rest)
       equation
         s2 = printExpStr(rest);
-        s = Util.stringAppendList({s1, " as ", s2});
+        s = System.stringAppendList({s1, " as ", s2});
       then
         s;
     case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
@@ -4378,7 +4379,7 @@ algorithm
         s3 = unparseStringCommentOption(comment);
         s4 = unparseLocalElements(3, localDecls);
         s5 = getStringList(cases, printCaseStr, "\n");
-        s = Util.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
+        s = System.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
     case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKALGORITHMS(algs),result)
@@ -4466,7 +4467,7 @@ algorithm
       equation
         s1 = printExpStr(p);
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
+        s = System.stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
       then s;
     case Absyn.CASE(p, _, l, eq, r, c)
       equation
@@ -4474,19 +4475,19 @@ algorithm
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
+        s = System.stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
       then s;
     case Absyn.ELSE({}, {}, r, c)
       equation
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\telse then ", s4, ";"});
+        s = System.stringAppendList({"\telse then ", s4, ";"});
       then s;
     case Absyn.ELSE(l, eq, r, c)
       equation
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\telse", s2, s3, "\t  then ", s4, ";"});
+        s = System.stringAppendList({"\telse", s2, s3, "\t  then ", s4, ";"});
       then s;
   end matchcontinue;
 end printCaseStr;
@@ -4522,14 +4523,14 @@ algorithm
       equation
         s1 = selectString(b, "initial ", "");
         s2 = unparseEquationitemStrLst(1, eqitems, ";\n");
-        res = Util.stringAppendList({s1,"equation ",s2});
+        res = System.stringAppendList({s1,"equation ",s2});
       then
         res;
     case (Absyn.C_ALGORITHMSECTION(boolean = b,algorithmItemLst = algitems))
       equation
         s1 = selectString(b, "initial ", "");
         s2 = unparseAlgorithmStrLst(1, algitems, ";\n");
-        res = Util.stringAppendList({s1,"algorithm ",s2});
+        res = System.stringAppendList({s1,"algorithm ",s2});
       then
         res;
     case (Absyn.C_ELEMENT(element = elt))
@@ -4567,7 +4568,7 @@ algorithm
         s1 = printExpStr(ec);
         s2 = printExpStr(ee);
         s3 = printElseifStr(rest);
-        str = Util.stringAppendList({" elseif ",s1," then ",s2,s3});
+        str = System.stringAppendList({" elseif ",s1," then ",s2,s3});
       then
         str;
   end matchcontinue;
@@ -4991,7 +4992,7 @@ algorithm
     case (NONE) then "";
     case (SOME(s))
       equation
-        str = Util.stringAppendList({" \"",s,"\""});
+        str = System.stringAppendList({" \"",s,"\""});
       then
         str;
   end matchcontinue;
@@ -5013,7 +5014,7 @@ algorithm
         ();
     case (SOME(s))
       equation
-        str = Util.stringAppendList({"SOME(\"",s,"\")"});
+        str = System.stringAppendList({"SOME(\"",s,"\")"});
         Print.printBuf(str);
       then
         ();
@@ -5076,7 +5077,7 @@ algorithm
       equation
         str1 = Absyn.pathString(path);
         str2 = unparseTypeSpecLst(typeSpecLst);
-        str3 = Util.stringAppendList({str1,"<",str2,">"});
+        str3 = System.stringAppendList({str1,"<",str2,">"});
         s = getOptionStr(adim, printArraydimStr);
         str = stringAppend(str3, s);
       then
@@ -5103,7 +5104,7 @@ algorithm
       equation
         str1 = unparseTypeSpec(x);
         str2 = unparseTypeSpecLst(rest);
-        str3 = Util.stringAppendList({str1,", ",str2});
+        str3 = System.stringAppendList({str1,", ",str2});
       then
         str3;
   end matchcontinue;

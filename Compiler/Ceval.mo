@@ -1828,7 +1828,7 @@ algorithm
         false = Types.dimensionsKnown(tp);
         cr_str = Exp.printComponentRefStr(cr);
         dim_str = Exp.printExpStr(dim);
-        size_str = Util.stringAppendList({"size(",cr_str,", ",dim_str,")"});
+        size_str = System.stringAppendList({"size(",cr_str,", ",dim_str,")"});
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {size_str});
       then
         fail();
@@ -2479,14 +2479,14 @@ algorithm
     case (_, _, _, false)
       equation
         fill_size = minLength - stringLength;
-        str = Util.stringAppendList(Util.listFill(" ", fill_size)) +& inString;
+        str = System.stringAppendList(Util.listFill(" ", fill_size)) +& inString;
       then
         str;
     // leftJustified is true, append spaces at the end of the string.
     case (_, _, _, true)
       equation
         fill_size = minLength - stringLength;
-        str = inString +& Util.stringAppendList(Util.listFill(" ", fill_size));
+        str = inString +& System.stringAppendList(Util.listFill(" ", fill_size));
       then
         str;
   end matchcontinue;
@@ -2887,7 +2887,7 @@ algorithm
         // WARNING: This can be very, very slow for long lists - it grows as O(n^2)
         // TODO: When implemented, use listStringCharString (OMC name) or stringCharListString (RML name) directly
         chList = Util.listMap(valList, extractValueStringChar);
-        str = Util.stringAppendList(chList);
+        str = System.stringAppendList(chList);
       then
         (cache,Values.STRING(str),st);
   end matchcontinue;
@@ -5162,7 +5162,7 @@ algorithm
         s1 = Exp.printComponentRefStr(e1);
         s2 = Types.printBindingStr(inBinding);
         str = Env.printEnvPathStr(env);
-        str = Util.stringAppendList({"- Ceval.cevalCrefBinding: ", 
+        str = System.stringAppendList({"- Ceval.cevalCrefBinding: ", 
                 s1, " = [", s2, "] in env:", str, " failed\n"});
         Debug.fprint("ceval", str);
       then

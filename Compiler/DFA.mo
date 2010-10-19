@@ -56,6 +56,7 @@ type SimpleStateArray = SimpleState[:];
 protected import Dump;
 protected import Lookup;
 protected import Util;
+protected import System;
 
 public uniontype Dfa
   record DFArec
@@ -1324,17 +1325,17 @@ algorithm
         Integer value;
       equation
         str = intString(value);
-        str = Util.stringAppendList({"Pathvar:", var, " :",str,"\n"});
+        str = System.stringAppendList({"Pathvar:", var, " :",str,"\n"});
       then str;
     case(RP_BOOL(var,_))
       equation
-        str = Util.stringAppendList({"Pathvar:", var, " BOOL","\n"});
+        str = System.stringAppendList({"Pathvar:", var, " BOOL","\n"});
       then str;
     case(RP_STRING(var,value))
       local
         String value;
       equation
-        str = Util.stringAppendList({"Pathvar:", var, ":",value,"\n"});
+        str = System.stringAppendList({"Pathvar:", var, ":",value,"\n"});
       then str;
     case(RP_CONS(var,head,rest))
       local
@@ -1343,15 +1344,15 @@ algorithm
       equation
         headStr = printPatternStr(head);
         restStr = printPatternStr(rest);
-        str = Util.stringAppendList({"Pathvar:", var, " CONS: ",headStr,",",restStr,"\n"});
+        str = System.stringAppendList({"Pathvar:", var, " CONS: ",headStr,",",restStr,"\n"});
       then str;
     case(RP_WILDCARD(var))
       equation
-        str = Util.stringAppendList({"Pathvar:", var, " WILDCARD","\n"});
+        str = System.stringAppendList({"Pathvar:", var, " WILDCARD","\n"});
       then str;
     case(RP_EMPTYLIST(var))
       equation
-        str = Util.stringAppendList({"Pathvar:", var, " EMPTY LIST","\n"});
+        str = System.stringAppendList({"Pathvar:", var, " EMPTY LIST","\n"});
       then str;
     case (_)
       then "Printing of pattern not implemented";

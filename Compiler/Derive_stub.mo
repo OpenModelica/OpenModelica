@@ -421,7 +421,7 @@ algorithm
 				true = RTOpts.debugFlag("failtrace");
         s = Exp.printExpStr(e);
         s2 = Exp.printComponentRefStr(cr);
-        str = Util.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
+        str = System.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
         //print(str);
         Debug.fprint("failtrace", str);
       then

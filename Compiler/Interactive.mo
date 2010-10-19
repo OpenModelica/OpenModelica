@@ -275,7 +275,7 @@ algorithm
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         (res2,newst_1) = evaluate(ISTMTS(xs,semicolon), newst, verbose);
-        res_2 = Util.stringAppendList({res_1,res2});
+        res_2 = System.stringAppendList({res_1,res2});
       then
         (res_2,newst_1);
   end matchcontinue;
@@ -1009,7 +1009,7 @@ protected function getVariableNames
 algorithm
   strlst := getVariableListStr(vars);
   str := Util.stringDelimitList(strlst, ", ");
-  res := Util.stringAppendList({"{",str,"}"});
+  res := System.stringAppendList({"{",str,"}"});
 end getVariableNames;
 
 protected function getVariableListStr
@@ -2359,7 +2359,7 @@ algorithm
         matchApiFunction(istmts, "refactorClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         s1 = Dump.printComponentRefStr(cr);
-        resstr = Util.stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
+        resstr = System.stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -2644,7 +2644,7 @@ algorithm
         matchApiFunction(istmts, "list");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = listClass(cr, p);
-        resstr = Util.stringAppendList({"\"",resstr,"\""});
+        resstr = System.stringAppendList({"\"",resstr,"\""});
       then
         (resstr,st);
 
@@ -2753,7 +2753,7 @@ algorithm
         p_1 = renameComponentFromComponentreplacements(p, comp_reps);
         paths = extractRenamedClassesAsStringList(comp_reps);
         paths_1 = Util.stringDelimitList(paths, ",");
-        paths_2 = Util.stringAppendList({"{",paths_1,"}"});
+        paths_2 = System.stringAppendList({"{",paths_1,"}"});
       then
         (paths_2,p_1);
     case (p,_,_,_)
@@ -4083,7 +4083,7 @@ algorithm
         cr1_str = Absyn.pathString(cr1_pa);
         cr2_pa = Absyn.crefToPath(cr2);
         cr2_str = Absyn.pathString(cr2_pa);
-        res_str = Util.stringAppendList({s1,"In class: ",pa_str,"( ",cr1_str," => ",cr2_str," )\n"});
+        res_str = System.stringAppendList({s1,"In class: ",pa_str,"( ",cr1_str," => ",cr2_str," )\n"});
       then
         res_str;
   end matchcontinue;
@@ -4928,7 +4928,7 @@ algorithm
         path_str = Absyn.pathString(path);
         cr_pa = Absyn.crefToPath(cr);
         cr_str = Absyn.pathString(cr_pa);
-        res_str = Util.stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
+        res_str = System.stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
       then
         res_str;
     case ((comps as COMPONENTS(componentLst = (EXTENDSITEM(the1 = pa,the2 = path) :: res))))
@@ -4937,7 +4937,7 @@ algorithm
         s1 = dumpComponentsToString(res);
         pa_str = Absyn.pathString(pa);
         path_str = Absyn.pathString(path);
-        res_str = Util.stringAppendList({s1,"ex: ",pa_str,"\t exte: ",path_str,"\n"});
+        res_str = System.stringAppendList({s1,"ex: ",pa_str,"\t exte: ",path_str,"\n"});
       then
         res_str;
   end matchcontinue;
@@ -4989,7 +4989,7 @@ algorithm
         compelts_1 = Util.listFlatten(compelts);
         names = Util.listMap(compelts_1, getComponentitemName);
         res = Util.stringDelimitList(names, ", ");
-        res_1 = Util.stringAppendList({"{",res,"}"});
+        res_1 = System.stringAppendList({"{",res,"}"});
       then
         res_1;
     case (_,_) then "Error";
@@ -5605,19 +5605,19 @@ algorithm
     case (Absyn.NAMED_IMPORT(name = id,path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"kind=named, id=",id,", path=",path_str});
+        str = System.stringAppendList({"kind=named, id=",id,", path=",path_str});
       then
         str;
     case (Absyn.QUAL_IMPORT(path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"kind=qualified, path=",path_str});
+        str = System.stringAppendList({"kind=qualified, path=",path_str});
       then
         str;
     case (Absyn.UNQUAL_IMPORT(path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"kind=unqualified, path=",path_str});
+        str = System.stringAppendList({"kind=unqualified, path=",path_str});
       then
         str;
   end matchcontinue;
@@ -5644,13 +5644,13 @@ algorithm
     case (Absyn.EXTENDS(path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"elementtype=extends, path=",path_str});
+        str = System.stringAppendList({"elementtype=extends, path=",path_str});
       then
         str;
     case (Absyn.IMPORT(import_ = import_))
       equation
         import_str = getImportString(import_);
-        str = Util.stringAppendList({"elementtype=import, ",import_str});
+        str = System.stringAppendList({"elementtype=import, ",import_str});
       then
         str;
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
@@ -5662,7 +5662,7 @@ algorithm
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         names_str = Util.stringDelimitList(names, ", ");
-        str = Util.stringAppendList({"elementtype=component, typename=",typename,", names={", names_str,"}, flow=",flowPrefixstr,
+        str = System.stringAppendList({"elementtype=component, typename=",typename,", names={", names_str,"}, flow=",flowPrefixstr,
         ", stream=",streamPrefixstr,", variability=",variability_str,", direction=", dir_str});
       then
         str;
@@ -5695,7 +5695,7 @@ algorithm
         repl = Util.boolString(r_1);
         inout_str = innerOuterStr(inout);
         str_restriction = Absyn.restrString(restr) "compile the classdef string" ;
-        element_str = Util.stringAppendList(
+        element_str = System.stringAppendList(
           {"elementtype=classdef, classname=",id,
           ", classrestriction=",str_restriction});
         sline_str = intString(sline);
@@ -5703,7 +5703,7 @@ algorithm
         eline_str = intString(eline);
         ecol_str = intString(ecol);
         readonly_str = selectString(isReadOnly, "readonly", "writable");
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
           ", elementEndLine=",eline_str,", elementEndColumn=",ecol_str,", final=",finalPrefix,
@@ -5722,7 +5722,7 @@ algorithm
         eline_str = intString(eline);
         ecol_str = intString(ecol);
         readonly_str = selectString(isReadOnly, "readonly", "writable");
-        str = Util.stringAppendList(
+        str = System.stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
           ", elementEndLine=",eline_str,", elementEndColumn=",ecol_str,", final=",finalPrefix,
@@ -5754,16 +5754,16 @@ algorithm
     case (visibility_str,(current :: {})) /* deal with the last element */
       equation
         s1 = getElementInfo(current);
-        element_str = Util.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
-        res = Util.stringAppendList({element_str,"\n"});
+        element_str = System.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
+        res = System.stringAppendList({element_str,"\n"});
       then
         res;
     case (visibility_str,(current :: rest))
       equation
         s1 = getElementInfo(current);
-        element_str = Util.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
+        element_str = System.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
         s2 = constructElementsInfo(visibility_str, rest);
-        res = Util.stringAppendList({element_str,",\n",s2});
+        res = System.stringAppendList({element_str,",\n",s2});
       then
         res;
   end matchcontinue;
@@ -5790,7 +5790,7 @@ algorithm
     case ("",s2,_) then s2;
     case (s1,s2,delimiter)
       equation
-        str = Util.stringAppendList({s1,delimiter,s2});
+        str = System.stringAppendList({s1,delimiter,s2});
       then
         str;
   end matchcontinue;
@@ -5829,7 +5829,7 @@ algorithm
         public_str = constructElementsInfo("public", public_elementitem_list);
         protected_str = constructElementsInfo("protected", protected_elementitem_list);
         elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = Util.stringAppendList({"{ ",elements_str," }"});
+        str = System.stringAppendList({"{ ",elements_str," }"});
       then
         str;
     /* an extended class with parts: model extends M end M; */
@@ -5842,7 +5842,7 @@ algorithm
         public_str = constructElementsInfo("public", public_elementitem_list);
         protected_str = constructElementsInfo("protected", protected_elementitem_list);
         elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = Util.stringAppendList({"{ ",elements_str," }"});
+        str = System.stringAppendList({"{ ",elements_str," }"});
       then
         str;
     /* otherwise */
@@ -6278,7 +6278,7 @@ algorithm
         {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
         res = getModificationNames(extmod);
         res_1 = Util.stringDelimitList(res, ", ");
-        res_2 = Util.stringAppendList({"{",res_1,"}"});
+        res_2 = System.stringAppendList({"{",res_1,"}"});
       then
         res_2;
     case (_,_,_) then "Error";
@@ -7003,7 +7003,7 @@ algorithm
         {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = Util.listSelect1(compelts_1, name, componentitemNamed);
         res = getModificationNames(mod);
         res_1 = Util.stringDelimitList(res, ", ");
-        res_2 = Util.stringAppendList({"{",res_1,"}"});
+        res_2 = System.stringAppendList({"{",res_1,"}"});
       then
         res_2;
     case (_,_,_) then "{}";
@@ -7468,7 +7468,7 @@ algorithm
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = Util.stringAppendList({"{",path_str_lst_no_empty,"}"});
+        res = System.stringAppendList({"{",path_str_lst_no_empty,"}"});
       then
         (res,p_1);
     case (p,(old_class as Absyn.CREF_QUAL(name = _)),new_name)
@@ -7482,7 +7482,7 @@ algorithm
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = Util.stringAppendList({"{",path_str_lst_no_empty,"}"});
+        res = System.stringAppendList({"{",path_str_lst_no_empty,"}"});
       then
         (res,p_1);
   end matchcontinue;
@@ -8533,7 +8533,7 @@ algorithm
   str_eline := intString(el);
   str_ecol := intString(ec);
   dim_str := getClassDimensions(cdef);
-  res_1 := Util.stringAppendList(
+  res_1 := System.stringAppendList(
           {"{\"",res,"\",",cmt,",\"",file,"\",{",strPartial,",",
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
           str_scol,",",str_eline,",",str_ecol,"},",dim_str,"}"}) "composing the final returned string" ;
@@ -8587,7 +8587,7 @@ algorithm
   str_scol := intString(sc);
   str_eline := intString(el);
   str_ecol := intString(ec);
-  res_1 := Util.stringAppendList(
+  res_1 := System.stringAppendList(
           {"{ rec(name=\"",name,"\", partial=",strPartial,", final=",
           strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=",
           cmt,", file=\"",file,"\", readonly=\"",str_readonly,"\", startLine=",
@@ -8604,7 +8604,7 @@ protected function getClassComment
   String s;
 algorithm
   s := getClassComment2(cdef);
-  res := Util.stringAppendList({"\"",s,"\""});
+  res := System.stringAppendList({"\"",s,"\""});
 end getClassComment;
 
 protected function getClassComment2
@@ -8658,7 +8658,7 @@ algorithm
   path := Absyn.crefToPath(cr);
   Absyn.CLASS(_,_,_,_,restr,_,_) := getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
-  res_1 := Util.stringAppendList({"\"",res,"\""});
+  res_1 := System.stringAppendList({"\"",res,"\""});
 end getClassRestriction;
 
 public function isType
@@ -11052,7 +11052,7 @@ algorithm
         comps2 = getProtectedComponentsInClass(cdef);
         s2 = getComponentsInfo(comps2, "\"protected\"", env_2);
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
-        res = Util.stringAppendList({"{",str,"}"});
+        res = System.stringAppendList({"{",str,"}"});
       then
         res;
     case (_,_) then "Error";
@@ -11157,7 +11157,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         comp = getNthComponentInClass(cdef, n);
         str = getComponentModification(comp);
-        str_1 = Util.stringAppendList({"{",str,"}"});
+        str_1 = System.stringAppendList({"{",str,"}"});
       then
         str_1;
     case (_,_,_) then "Error";
@@ -11224,7 +11224,7 @@ algorithm
         Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = getNthConnectionitemInClass(cdef, n);
         str2 = getStringComment(cmt);
         str = getConnectionStr(eq);
-        res = Util.stringAppendList({"{",str,", ",str2,"}"});
+        res = System.stringAppendList({"{",str,", ",str2,"}"});
       then
         res;
     case (_,_,_) then "Error";
@@ -11240,7 +11240,7 @@ protected function getStringComment "function: getStringComment
   String s;
 algorithm
   s := getStringComment2(cmt);
-  res := Util.stringAppendList({"\"",s,"\""});
+  res := System.stringAppendList({"\"",s,"\""});
 end getStringComment;
 
 protected function getStringComment2
@@ -13699,7 +13699,7 @@ algorithm
       equation
         s1 = Dump.printComponentRefStr(cr1);
         s2 = Dump.printComponentRefStr(cr2);
-        str = Util.stringAppendList({s1,",",s2});
+        str = System.stringAppendList({s1,",",s2});
       then
         str;
   end matchcontinue;
@@ -13879,7 +13879,7 @@ algorithm
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        gexpstr_1 = Util.stringAppendList({"{",gexpstr,"}"});
+        gexpstr_1 = System.stringAppendList({"{",gexpstr,"}"});
         res = getComponentitemsAnnotationsFromItems(rest, env);
       then
         (gexpstr_1 :: res);
@@ -14033,7 +14033,7 @@ algorithm
       equation
         s1 = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
         s2 = getComponentitemsModification(rest);
-        res = Util.stringAppendList({s1,",",s2});
+        res = System.stringAppendList({s1,",",s2});
       then
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = SOME(mod)))})
@@ -14846,7 +14846,7 @@ algorithm
       equation
         ((lst as (_ :: _))) = getComponentsInfo2(elts, access, env);
         lst_1 = Util.stringDelimitList(lst, "},{");
-        res = Util.stringAppendList({"{",lst_1,"}"});
+        res = System.stringAppendList({"{",lst_1,"}"});
       then
         res;
     case (_,_,_) then "";
@@ -15110,7 +15110,7 @@ algorithm
       equation
         res = suffixInfos(rest, dims,typeAd,suffix);
         s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
-        str_1 = Util.stringAppendList({str,", ",suffix,",{",s1,"}"});
+        str_1 = System.stringAppendList({str,", ",suffix,",{",s1,"}"});
       then
         (str_1 :: res);
   end matchcontinue;
@@ -15132,7 +15132,7 @@ algorithm
     case (tp,(str :: rest))
       equation
         res = prefixTypename(tp, rest);
-        str_1 = Util.stringAppendList({tp,",",str});
+        str_1 = System.stringAppendList({tp,",",str});
       then
         (str_1 :: res);
   end matchcontinue;
@@ -15156,14 +15156,14 @@ algorithm
       equation
         s1 = stringAppend(c1, ",");
         lst = getComponentitemsName((c2 :: rest));
-        str = Util.stringAppendList({s1,"\"",s2,"\""});
+        str = System.stringAppendList({s1,"\"",s2,"\""});
       then
         (str :: lst);
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE) :: (c2 :: rest)))
       equation
         s1 = stringAppend(c1, ",");
         lst = getComponentitemsName((c2 :: rest));
-        str = Util.stringAppendList({s1,"\"\""});
+        str = System.stringAppendList({s1,"\"\""});
       then
         (str :: lst);
     case ((_ :: rest))
@@ -15174,13 +15174,13 @@ algorithm
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))})
       local String res;
       equation
-        res = Util.stringAppendList({c1,",\"",s2,"\""});
+        res = System.stringAppendList({c1,",\"",s2,"\""});
       then
         {res};
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))})
       local String res;
       equation
-        res = Util.stringAppendList({c1,",\"\""});
+        res = System.stringAppendList({c1,",\"\""});
       then
         {res};
     case ({_}) then {};
@@ -18301,13 +18301,13 @@ algorithm
  /*   case (Absyn.EXTENDS(path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"elementtype=extends, path=",path_str});
+        str = System.stringAppendList({"elementtype=extends, path=",path_str});
       then
         str;
     case (Absyn.IMPORT(import_ = import_))
       equation
         import_str = getImportString(import_);
-        str = Util.stringAppendList({"elementtype=import, ",import_str});
+        str = System.stringAppendList({"elementtype=import, ",import_str});
       then
         str;*/
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
@@ -18339,13 +18339,13 @@ algorithm
  /*   case (Absyn.EXTENDS(path = path))
       equation
         path_str = Absyn.pathString(path);
-        str = Util.stringAppendList({"elementtype=extends, path=",path_str});
+        str = System.stringAppendList({"elementtype=extends, path=",path_str});
       then
         str;
     case (Absyn.IMPORT(import_ = import_))
       equation
         import_str = getImportString(import_);
-        str = Util.stringAppendList({"elementtype=import, ",import_str});
+        str = System.stringAppendList({"elementtype=import, ",import_str});
       then
         str;*/
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
@@ -18704,9 +18704,9 @@ algorithm
         parent_string = Absyn.pathString(pp);
         result_path_lst = Util.listMap1(strlst, joinPaths, pp);
         indent = indent +& "  ";
-        result = Util.stringAppendList(Util.listMap2(result_path_lst,
+        result = System.stringAppendList(Util.listMap2(result_path_lst,
           getClassNamesRecursive, p, indent));
-        res = Util.stringAppendList({indent, parent_string,"\n",result});
+        res = System.stringAppendList({indent, parent_string,"\n",result});
       then
         res;
     case (pp,_,indent)
@@ -18714,7 +18714,7 @@ algorithm
         parent_string = Absyn.pathString(pp);
         indent = indent +& "  ";
         s1 = Error.printMessagesStr();
-        res = Util.stringAppendList({indent, parent_string,"\n","PROBLEM GETTING CLASS NAMES: ", s1});
+        res = System.stringAppendList({indent, parent_string,"\n","PROBLEM GETTING CLASS NAMES: ", s1});
       then res;
   end matchcontinue;
 end getClassNamesRecursive;

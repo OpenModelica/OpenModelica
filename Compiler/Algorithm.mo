@@ -67,6 +67,7 @@ protected import Exp;
 protected import Print;
 protected import Types;
 protected import Util;
+protected import System;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -77,6 +78,16 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end algorithmEmpty;
+
+public function isReinitStatement "returns true if statement is a reinit"
+  input Statement stmt;
+  output Boolean res;
+algorithm
+  res := matchcontinue(stmt)
+    case(DAE.STMT_REINIT(var = _)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isReinitStatement;
 
 public function splitReinits ""
   input list<Algorithm> inAlgs;
@@ -322,7 +333,7 @@ algorithm
         DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = Util.stringAppendList({"(",s,")"});
+        lhs_str = System.stringAppendList({"(",s,")"});
         rhs_str = Exp.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -333,7 +344,7 @@ algorithm
         DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = Util.stringAppendList({"(",s,")"});
+        lhs_str = System.stringAppendList({"(",s,")"});
         rhs_str = Exp.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -364,7 +375,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = Util.stringAppendList({"(",s,")"});
+        lhs_str = System.stringAppendList({"(",s,")"});
         rhs_str = Exp.printExpStr(rhs);
         str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);

@@ -1817,7 +1817,7 @@ algorithm
         s4 = Types.unparseConst(const);
         s5 = Util.if_(impl, "impl", "expl");
         s6 = Exp.typeString(expty);
-        str = Util.stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
+        str = System.stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
         Debug.fprintln("failtrace", str);
       then
         fail();
@@ -2331,7 +2331,7 @@ algorithm
         e_str = Dump.printExpStr(e);
         strs = Util.listMap(es, Dump.printExpStr);
         str = Util.stringDelimitList(strs, ",");
-        elt_str = Util.stringAppendList({"[",str,"]"});
+        elt_str = System.stringAppendList({"[",str,"]"});
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
         Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
@@ -2841,7 +2841,7 @@ algorithm
         dim2_str = Exp.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         el_str = Exp.printListStr(el, Dump.printExpStr, ", ");
-        el_str1 = Util.stringAppendList({"[",el_str,"]"});
+        el_str1 = System.stringAppendList({"[",el_str,"]"});
         Error.addSourceMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str},info);
       then
         fail();
@@ -3249,7 +3249,7 @@ algorithm
         expstrs = Util.listMap(dims, Dump.printExpStr);
         expstr = Util.stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        str = Util.stringAppendList({expstr," impl=",implstr,", in component: ",sp});
+        str = System.stringAppendList({expstr," impl=",implstr,", in component: ",sp});
         Debug.fprintln("failtrace", str);
       then
         fail();
@@ -3812,7 +3812,7 @@ algorithm
       equation
         el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = Util.stringAppendList({"pre(",el_str,")"});
+        s = System.stringAppendList({"pre(",el_str,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
       then
         fail();
@@ -3908,7 +3908,7 @@ algorithm
       equation
         el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = Util.stringAppendList({"inStream(",el_str,")"});
+        s = System.stringAppendList({"inStream(",el_str,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
       then
         fail();
@@ -3970,7 +3970,7 @@ algorithm
       equation
         el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = Util.stringAppendList({"actualStream(",el_str,")"});
+        s = System.stringAppendList({"actualStream(",el_str,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
       then
         fail();
@@ -5729,7 +5729,7 @@ algorithm
         lst = Util.listMap(expl, Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        s = Util.stringAppendList({"der(",s,")"});
+        s = System.stringAppendList({"der(",s,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,sp}, info);
       then fail();
   end matchcontinue;
@@ -5946,7 +5946,7 @@ algorithm
         lst = Util.listMap((dim :: matrices), Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        str = Util.stringAppendList({"cat(",s,")"});
+        str = System.stringAppendList({"cat(",s,")"});
         Error.addSourceMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {str,sp}, info);
       then
         fail();
@@ -7076,7 +7076,7 @@ case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl,pre)
       //print(" error, handler found for " +& name +& "\n");
       lst = Util.listMap(expl, Dump.printExpStr);
       s = Util.stringDelimitList(lst, ", ");
-      s = Util.stringAppendList({name,"(",s,")'.\n"});
+      s = System.stringAppendList({name,"(",s,")'.\n"});
       ps = PrefixUtil.printPrefixStr3(pre);
       Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,ps});
       then
@@ -10075,7 +10075,7 @@ algorithm
         str = Dump.getOptionStr(exp, Exp.printExpStr);
         str_lst = Util.listMap(ds, Exp.dimensionString);
         s = Util.stringDelimitList(str_lst, ", ");
-        s1 = Util.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
+        s1 = System.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
         res = stringAppend(s1, s2);
       then
@@ -12726,7 +12726,7 @@ algorithm
         tps_str = Util.listMap(tps, Types.unparseType);
         tpsstr = Util.stringDelimitList(tps_str, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = Util.stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
+        s = System.stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
         Error.addMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str});
       then
         fail();

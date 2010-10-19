@@ -1075,7 +1075,7 @@ end templPackage;
 /*
 definitions(astDefs,templDefs):
 	'typeview' stringConstant:strRevList 
-	  { ads = typeviewDefsFromFile(Util.stringAppendList(listReverse(strRevList), astDefs) }
+	  { ads = typeviewDefsFromFile(System.stringAppendList(listReverse(strRevList), astDefs) }
 	  definitions(ads, templDefs):(ads,tds) 
 	  => (ads,tds)
 	| 
@@ -1127,7 +1127,7 @@ algorithm
         (startChars, startLinfo) = interleave(chars, linfo);
         (chars, linfo, strRevList) = stringConstant(startChars, startLinfo);
         false = wasFatalError(linfo); //only parse typeview file when no previous errors
-        str = Util.stringAppendList(listReverse(strRevList));
+        str = System.stringAppendList(listReverse(strRevList));
         (astDefs, linfoTV, errOptTV) = typeviewDefsFromFile(str, astDefs);
         linfo = parseErrorPrevPositionOpt(startChars, startLinfo, linfo, errOptTV, false);
         linfo = mergeErrors(linfo, linfoTV);
@@ -6000,7 +6000,7 @@ matchBinding_base:
 	  => LIST_MATCH(headMExp :: mrest)
 	|
 	stringConstant:strRevList 
-	  => STRING_MATCH(Util.stringAppendList(listReverse(strRevList))
+	  => STRING_MATCH(System.stringAppendList(listReverse(strRevList))
 	|
 	literalConstant:(str,litType) 
 	  => LITERAL_MATCH(str,litType)
@@ -6076,7 +6076,7 @@ algorithm
    case (chars, linfo)
       equation
         (chars, linfo, strRevList) = stringConstant(chars, linfo);
-        str = Util.stringAppendList(listReverse(strRevList));
+        str = System.stringAppendList(listReverse(strRevList));
       then (chars, linfo, TplAbsyn.STRING_MATCH(str));
 
    case (chars, linfo)
