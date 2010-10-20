@@ -430,10 +430,8 @@ RML_BEGIN_LABEL(System__basename)
   const char *str = RML_STRINGDATA(rmlA0);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char* res = strrchr(str, '\\');
-  if (res == NULL) {
-    res = strrchr(str, '/');
-    if (res == NULL) { res = str; }
-  }
+  if (res == NULL) { res = strrchr(str, '/'); }
+  if (res == NULL) { res = str; } else { ++res; }
   rmlA0 = (void*) mk_scon(res);
 #else
   char *copy = strdup(str);
