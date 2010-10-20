@@ -4984,7 +4984,12 @@ public function boxIfUnboxedType
   input Type ty;
   output Type outType;
 algorithm
-  outType := Util.if_(isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
+  outType := matchcontinue ty
+    local
+      list<Type> tys;
+    case ((DAE.T_TUPLE(tys),_)) then ((DAE.T_METATUPLE(tys),NONE()));
+    case ty then Util.if_(isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
+  end matchcontinue;
 end boxIfUnboxedType;
 
 public function unboxedType

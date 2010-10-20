@@ -3368,13 +3368,18 @@ case var as VARIABLE(__) then
     let &varInits += defaultValue
     " "
   else
-    match var.value
+    (match var.value
     case SOME(exp) then
       let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls)%>;<%\n%>'
       let &varInits += defaultValue
       " "
     else
-      ""
+      "")
+case var as FUNCTION_PTR(__) then
+  let &ignore = buffer ""
+  let &varDecls += functionArg(var,&ignore)
+  ""
+else let &varDecls += '#error Unknown local variable type<%\n%>' ""
 end varInit;
 
 template varDefaultValue(Variable var, String outStruct, Integer i, String lhsVarName,  Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
@@ -3402,7 +3407,7 @@ case var as FUNCTION_PTR(__) then
   let rettype = '<%name%>_rettype'
   match ty
     case ET_NORETCALL() then
-      let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%>;'
+      let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%><%\n%>;'
       'void(*_<%name%>)(<%typelist%>);<%\n%>'
     else
       let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
@@ -5077,7 +5082,6 @@ case exp as VALUEBLOCK(__) then
   let _ = (valueblockVars(exp) |> var =>
       varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
     )
-  let funArgs = (valueblockVars(exp) |> var => functionArg(var, &ignore) ;separator="\n")
   let resType = expTypeModelica(ty)
   let res = tempDecl(expTypeModelica(ty), &preExp /*BUFC*/)
   let stmts = (body |> stmt =>
@@ -5089,7 +5093,6 @@ case exp as VALUEBLOCK(__) then
       <<
       {
         <%varDeclsInner%>
-        <%funArgs%>
         <%preExpInner%>
         <%stmts%>
         <%preExpRes%>

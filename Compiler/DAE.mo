@@ -665,8 +665,12 @@ public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
 public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
 public constant Type T_BOOL_DEFAULT    = (T_BOOL({}),NONE());
 public constant Type T_ENUMERATION_DEFAULT = 
-  (T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}), NONE);
-public constant Type T_BOXED_DEFAULT    = (T_BOXED((T_NOTYPE(),NONE())),NONE());
+  (T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}), NONE());
+public constant Type T_REAL_BOXED    = (T_BOXED((T_REAL({}),NONE())),NONE());
+public constant Type T_INTEGER_BOXED = (T_BOXED((T_INTEGER({}),NONE())),NONE());
+public constant Type T_STRING_BOXED  = (T_BOXED((T_STRING({}),NONE())),NONE());
+public constant Type T_BOOL_BOXED    = (T_BOXED((T_BOOL({}),NONE())),NONE());
+public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
