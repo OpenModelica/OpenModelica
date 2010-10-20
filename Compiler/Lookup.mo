@@ -911,7 +911,6 @@ algorithm
       Absyn.Path path;
       String name;
       SCode.Restriction re;
-      Env.Cache cache;
     case (cache,env,path)
       equation
         (cache,c,env_1) = lookupClass(cache,env, path, false);

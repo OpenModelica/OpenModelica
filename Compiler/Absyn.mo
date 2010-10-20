@@ -1721,15 +1721,15 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
-   local Exp e1,e2,e11,e21;
+    local
+      Exp e1,e2,e11,e21;
       Ident id;
-     list<NamedArg> nargs;
-     case({},rel,ext_arg)
-    then (({},ext_arg));
-     case(NAMEDARG(id,e1)::nargs,rel,ext_arg) equation
-       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-       ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
-     then((NAMEDARG(id,e11)::nargs,ext_arg));
+    case({},rel,ext_arg) then (({},ext_arg));
+    case(NAMEDARG(id,e1)::nargs,rel,ext_arg)
+      equation
+        ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+        ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+      then((NAMEDARG(id,e11)::nargs,ext_arg));
   end matchcontinue;
 end traverseExpNamedArgs;
 
@@ -1746,15 +1746,15 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
-   local Exp e1,e2,e11,e21;
+    local
+      Exp e1,e2,e11,e21;
       Ident id;
-     list<Exp> pargs;
-     case({},rel,ext_arg)
-    then (({},ext_arg));
-     case(e1::pargs,rel,ext_arg) equation
-       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
-       ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
-     then((e11::pargs,ext_arg));
+    case({},rel,ext_arg) then (({},ext_arg));
+    case(e1::pargs,rel,ext_arg)
+      equation
+        ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+        ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
+      then((e11::pargs,ext_arg));
   end matchcontinue;
 end traverseExpPosArgs;
 

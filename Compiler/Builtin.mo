@@ -58,7 +58,7 @@ protected import Values;
 // Predefined DAE.Types
 // Real arrays
 protected constant DAE.Type T_REAL_ARRAY_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN, DAE.T_REAL_DEFAULT), NONE);
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_REAL_DEFAULT), NONE);
 protected constant DAE.Type T_REAL_ARRAY_1_DEFAULT =
   (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_REAL_DEFAULT), NONE);
 protected constant DAE.Type T_REAL_ARRAY_2_DEFAULT =

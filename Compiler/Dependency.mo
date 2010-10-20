@@ -431,21 +431,25 @@ input Absyn.Import imp;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
-    outDep := matchcontinue(imp,optPath,cname,dep)
-    local Absyn.Path usesName,path,cname,cname2;
+  outDep := matchcontinue(imp,optPath,cname,dep)
+    local
+      Absyn.Path usesName,path,cname2;
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       HashTable2.HashTable ht;
-      case(Absyn.NAMED_IMPORT(path=path),optPath as SOME(cname2),cname,(d,p,env,ht)) equation
+    case(Absyn.NAMED_IMPORT(path=path),optPath as SOME(cname2),cname,(d,p,env,ht))
+      equation
         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
       then d;
 
-      case(Absyn.QUAL_IMPORT(path),optPath as SOME(cname2),cname,(d,p,env,ht)) equation
-         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
+    case(Absyn.QUAL_IMPORT(path),optPath as SOME(cname2),cname,(d,p,env,ht))
+      equation
+        usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
       then d;
 
-      case(Absyn.UNQUAL_IMPORT(path),optPath as SOME(cname2),cname,(d,p,env,ht)) equation
+    case(Absyn.UNQUAL_IMPORT(path),optPath as SOME(cname2),cname,(d,p,env,ht))
+      equation
         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
       then d;
@@ -754,14 +758,13 @@ end buildClassDependsInFuncargs;
 
 protected function buildClassDependsInNamedArgs "build class dependencies from named arguments"
   input list<Absyn.NamedArg> nargs;
-   input Option<Absyn.Path> optPath;
+  input Option<Absyn.Path> optPath;
   input Absyn.Path cname;
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
  outDep := matchcontinue(nargs,optPath,cname,dep)
  local list<Absyn.Exp> args;
-   list<Absyn.NamedArg> nargs;
    AbsynDep.Depends d; Absyn.Program p; Env.Env env;
    Absyn.Exp e;
    HashTable2.HashTable ht;
@@ -979,15 +982,20 @@ protected function buildClassDependsinArrayDim " help function to e.g buildClass
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := matchcontinue(ad,optPath,cname,dep)
-   local AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad; Absyn.Exp e;HashTable2.HashTable ht;
-   case({},optPath,cname,(d,p,env,ht)) then d;
-   case(Absyn.NOSUB()::ad,optPath,cname,(d,p,env,ht)) then buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
-   case(Absyn.SUBSCRIPT(e)::ad,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
-   then d;
- end matchcontinue;
+  outDep := matchcontinue(ad,optPath,cname,dep)
+    local
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
+      Absyn.Exp e;
+      HashTable2.HashTable ht;
+    case({},optPath,cname,(d,p,env,ht)) then d;
+    case(Absyn.NOSUB()::ad,optPath,cname,(d,p,env,ht)) then buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
+    case(Absyn.SUBSCRIPT(e)::ad,optPath,cname,(d,p,env,ht)) equation
+      d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+      d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
+    then d;
+  end matchcontinue;
 end buildClassDependsinArrayDim;
 
 protected function createLocalVariableStruct "
@@ -1105,7 +1113,8 @@ be fully qualified."
 algorithm
   fqPath := matchcontinue(path,scope,className,env,p)
   local
-    Env.Env cenv,env; SCode.Program p_1;
+    Env.Env cenv;
+    SCode.Program p_1;
     Absyn.Path scope2,path2;
     case(path,_,_,env,p) equation
       (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
@@ -1135,7 +1144,8 @@ makes the path fully qualified by looking up the name in the given scope in the 
 algorithm
   fqPath := matchcontinue(path,scope,className,env,p)
   local
-    Env.Env cenv,env; SCode.Program p_1;
+    Env.Env cenv;
+    SCode.Program p_1;
     Absyn.Path scope2,path2;
 
     case(path,scope,className,env,p) equation
@@ -1197,7 +1207,7 @@ public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
   String id;
   Boolean encflag;
   SCode.Restriction restr;
-  list<Env.Frame> env_1,env2,env_2;
+  list<Env.Frame> env_1,env2;
   ClassInf.State ci_state;
   Real t1,t2;
   Env.Cache cache;

@@ -101,16 +101,10 @@ constant Boolean neverUnroll = false;
 // **
 
 public
-type Prefix = Prefix.Prefix "a prefix";
-
-public
 type Mod = DAE.Mod "a modification";
 
 public
 type Ident = DAE.Ident "an identifier";
-
-public
-type Env = Env.Env "an environment";
 
 public
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -280,7 +274,7 @@ public function instantiateClass
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -514,7 +508,7 @@ public function instantiatePartialClass
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -589,7 +583,7 @@ public function instantiateClassImplicit
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -647,7 +641,7 @@ public function instantiateFunctionImplicit
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inIH,inProgram,inPath)
@@ -708,12 +702,12 @@ protected function instClassInProgram
   Instantitates a specifc class in a Program.
   The class must reside on top level."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -780,12 +774,12 @@ protected function instClassInProgramImplicit
   Instantitates a specifc class in a Program using implicit instatiation.
   The class must reside on top level."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -831,12 +825,12 @@ protected function instFunctionInProgramImplicit
   Instantitates a specific function in a Program using implicit instatiation.
   The class must reside on top level."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
@@ -877,12 +871,12 @@ protected function instClassDecls
   adding the class definitions to the environment.
   See also partialInstClassIn."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -948,8 +942,8 @@ public function makeEnvFromProgram
   input SCode.Program prog;
   input SCode.Path c;
   output Env.Cache outCache;
-  output Env env_1;
-  list<Env.Frame> env,env_1;
+  output Env.Env env_1;
+  list<Env.Frame> env;
   Env.Cache cache;
 algorithm
   (cache,env) := Builtin.initialEnv(inCache);
@@ -965,7 +959,7 @@ public function makeSimpleEnvFromProgram
   input SCode.Program prog;
   input SCode.Path c;
   output Env.Cache outCache;
-  output Env env_1;
+  output Env.Env env_1;
   list<Env.Frame> env,env_1;
 algorithm
   env := Builtin.simpleInitialEnv();
@@ -976,12 +970,12 @@ protected function addProgramToEnv
 "function: addProgramToEnv
   Adds all classes in a Program to the environment."
   input Env.Cache inCache;
-  input Env env;
+  input Env.Env env;
   input InstanceHierarchy inIH;
   input SCode.Program p;
   input SCode.Path path;
   output Env.Cache outCache;
-  output Env env_1;
+  output Env.Env env_1;
   output InstanceHierarchy outIH;
   list<Env.Frame> env_1;
 algorithm
@@ -997,7 +991,7 @@ protected function instProgram
   This is used when calling the compiler with a Modelica source code file.
   It is not used in the interactive environment when instantiating a class."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   output Env.Cache outCache;
@@ -1087,11 +1081,11 @@ protected function instProgramImplicit
   Instantiates a program using implicit instantiation.
   Used when instantiating functions."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -1138,11 +1132,11 @@ public function instClass " function: instClass
    o Instantiate all the elements and equations
    o Generate equations from the connection sets built during instantiation"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
@@ -1150,7 +1144,7 @@ public function instClass " function: instClass
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache cache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1289,17 +1283,17 @@ end fixInstClassType;
 
 protected function updateEnumerationEnvironment
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input tuple<DAE.TType, Option<Absyn.Path>> inType;
   input SCode.Class inClass;
   input ClassInf.State inCi_State;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outCache,outEnv) := matchcontinue(inCache,inEnv,inType,inClass,inCi_State)
   local
     Env.Cache cache;
-    Env env,env_1;
+    Env.Env env,env_1;
     tuple<DAE.TType, Option<Absyn.Path>> ty;
     SCode.Class c;
     ClassInf.State ci_state;
@@ -1319,18 +1313,18 @@ end updateEnumerationEnvironment;
 protected function updateEnumerationEnvironment1
 "update enumeration value in environment" 
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Ident inName;
   input list<String> inNames;
   input list<DAE.Var> inVars;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outCache,outEnv) := matchcontinue(inCache,inEnv,inName,inNames,inVars,inPath)
     local
       Env.Cache cache;
-      Env env,env_1,env_2,env_3,compenv;
+      Env.Env env,env_1,env_2,env_3,compenv;
       String name,n,nn;
       list<String> names;
       list<DAE.Var> vars;
@@ -1579,18 +1573,18 @@ protected function instClassBasictype
   NOTE: This function should only be called from instBasictypeBaseclass.
   This is new functionality in Modelica v 2.2."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input CallingScope inCallingScope;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1654,11 +1648,11 @@ public function instClassIn "
   *implicitInstantiation* boolean) can cause circular dependencies
   (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Class inClass;
@@ -1668,7 +1662,7 @@ public function instClassIn "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1707,7 +1701,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env, DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
@@ -1717,7 +1711,7 @@ algorithm
       String className, str1, str2;
 
       Mod aa_1;
-      Prefix aa_2;
+      Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
       SCode.Class aa_5;
@@ -1766,11 +1760,11 @@ public function instClassIn "
   *implicitInstantiation* boolean) can cause circular dependencies
   (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Class inClass;
@@ -1781,7 +1775,7 @@ public function instClassIn "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -1821,10 +1815,10 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
+      tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
-      tuple<Env, DAE.DAElist,
+      tuple<Env.Env, DAE.DAElist,
             Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
             Option<Absyn.ElementAttributes>, DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph 
             > outputs;
@@ -1833,7 +1827,7 @@ algorithm
       String className, str1, str2;
 
       Mod aa_1;
-      Prefix aa_2;
+      Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
       SCode.Class aa_5;
@@ -1986,8 +1980,8 @@ protected function prefixEqualUnlessBasicType
 "Checks if two prefixes are equal, unless the class is a
  basic type, i.e. all reals, integers, enumerations with 
  the same name, etc. are equal."  
-  input Prefix pre1;
-  input Prefix pre2;
+  input Prefix.Prefix pre1;
+  input Prefix.Prefix pre2;
   input SCode.Class cls;
 algorithm
   _ := matchcontinue(pre1, pre2, cls)
@@ -2035,11 +2029,11 @@ public function instClassIn_dispatch
   *implicitInstantiation* boolean) can cause circular dependencies
   (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Class inClass;
@@ -2050,7 +2044,7 @@ public function instClassIn_dispatch
   input ConnectionGraph.ConnectionGraph inGraph;
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -2674,17 +2668,17 @@ public function partialInstClassIn
   The only work performed by this function is to instantiate local classes and
   inherited classes."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Class inClass;
   input Boolean inBoolean;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
@@ -2707,15 +2701,15 @@ algorithm
       InstanceHierarchy ih;
       InstHashTable instHash;
 
-      tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix, Connect.Sets,
+      tuple<Env.Cache, Env.Env, InstanceHierarchy, Mod, Prefix.Prefix, Connect.Sets,
             ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
-      tuple<Env, ClassInf.State> outputs;
+      tuple<Env.Env, ClassInf.State> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
 
       Mod aa_1;
-      Prefix aa_2;
+      Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
       SCode.Class aa_5;
@@ -2749,7 +2743,7 @@ algorithm
     // this fails for 2-3 examples, so disable it for now and check it later
     case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
       local
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
@@ -2812,17 +2806,17 @@ public function partialInstClassIn_dispatch
   The only work performed by this function is to instantiate local classes and
   inherited classes."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Class inClass;
   input Boolean inBoolean;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
@@ -2903,7 +2897,7 @@ protected function equalityConstraint
     Tests if the given elements contain equalityConstraint function and returns
     corresponding DAE.EqualityConstraint."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input list<SCode.Element> inCdefelts;
   //output Env.Cache outCache;
   output DAE.EqualityConstraint outResult;
@@ -2913,7 +2907,7 @@ algorithm
       list<SCode.Element> tail, els;
       String name;
       Env.Cache cache;
-      Env env;
+      Env.Env env;
       Absyn.Path path;
       list<DAE.Type> types;
       Integer dimension;
@@ -2951,7 +2945,7 @@ protected function handleUnitChecking
 "@author: adrpo
  do this unit checking ONLY if we have the flag!"
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input UnitAbsyn.InstStore store;
   input Connect.Sets csets;
   input Prefix.Prefix pre;
@@ -2959,7 +2953,7 @@ protected function handleUnitChecking
   input list<DAE.DAElist> daes;
   input String className "for debugging";
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output UnitAbsyn.InstStore outStore;
 algorithm
   (outCache,outEnv,outStore) := matchcontinue(cache,env,store,csets,pre,compDAE,daes,className)
@@ -3016,11 +3010,11 @@ protected function instClassdef "
   The last two arguments are the same as for instClassIn:
   implicit instantiation and implicit package/function instantiation."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input String className;
@@ -3034,7 +3028,7 @@ protected function instClassdef "
   input Option<DAE.ComponentRef> instSingleCref;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -3108,7 +3102,7 @@ protected function checkExtendsForTypeRestiction
 "@author: adrpo
   This function will check extends for Modelica 3.1 restrictions"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Restriction inRestriction;
   input list<SCode.Element> inSCodeElementLst;   
@@ -3156,11 +3150,11 @@ This function will try to instantiate the
 class definition as a it would extend a basic 
 type"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input String className;
@@ -3174,7 +3168,7 @@ type"
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -3302,11 +3296,11 @@ protected function instClassdef2 "
   The last two arguments are the same as for instClassIn:
   implicit instantiation and implicit package/function instantiation."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input String className;
@@ -3321,7 +3315,7 @@ protected function instClassdef2 "
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -4378,7 +4372,7 @@ protected function instBasictypeBaseclass
   Such classes can not have any other components,
   and can only inherit one basic type."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
@@ -4472,7 +4466,7 @@ Author: BZ, 2009-02
 Helper function for instBasictypeBaseClass
 Handles the fail case rollbacks/deleteCheckpoint of errors."
   input Env.Cache inCache;
-  input Env inEnv1;
+  input Env.Env inEnv1;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
@@ -4526,9 +4520,9 @@ protected function addConnectionSetToEnv
   It is required to evaluate cardinality."
   input Connect.Sets inSets;
   input Prefix.Prefix prefix;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outEnv,outIH) := matchcontinue (inSets,prefix,inEnv,inIH)
@@ -4603,7 +4597,7 @@ protected function filterConnectionSetCrefs
   This function investigates Prefix and filters all connectRefs
   to only contain references starting with actual prefix."
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Connect.Sets outSets;
 algorithm
   outSets := matchcontinue (inSets,inPrefix)
@@ -4631,10 +4625,10 @@ protected function partialInstClassdef
   This function is used by partialInstClassIn for instantiating local
   class definitons and inherited class definitions only."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.ClassDef inClassDef;
@@ -4645,7 +4639,7 @@ protected function partialInstClassdef
   input String inClassName "the class name that contains the elements we are instanting";
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
@@ -4838,15 +4832,15 @@ protected function updateCompeltsMods
   Typed modifiers are needed  to merge modifiers and to be able to
   fully instantiate a component."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
   input ClassInf.State inState;
   input Connect.Sets inSets;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
   output Connect.Sets outSets;
@@ -4985,11 +4979,11 @@ public function instElementList
   3.  Third, 'Flatten the class, apply modifiers and instantiate all local elements.'
       This handles COMPONENT nodes."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst6;
@@ -4998,7 +4992,7 @@ public function instElementList
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -5291,13 +5285,13 @@ public function addClassdefsToEnv
 
   This function adds classdefinitions and
   import statements to the  environment."
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
   input Option<Mod> redeclareMod;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
@@ -5330,13 +5324,13 @@ protected function addClassdefsToEnv2
 "function: addClassdefsToEnv2
   author: PA
   Helper relation to addClassdefsToEnv"
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;  
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
   input Option<Mod> redeclareMod;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outEnv,inIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
@@ -5502,10 +5496,10 @@ public function addComponentsToEnv
   has a boolean expression controlled by parameter(s), these are structural
   parameters."
   input Env.Cache inCache;
-  input Env inEnv1;
+  input Env.Env inEnv1;
   input InstanceHierarchy inIH;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst6;
@@ -5514,7 +5508,7 @@ public function addComponentsToEnv
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
@@ -5656,17 +5650,17 @@ protected function addComponentsToEnv2
   Helper function to addComponentsToEnv.
   Extends the environment with an untyped variable for the component."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTplSCodeElementModLst,inInstDims,inBoolean)
@@ -5810,11 +5804,11 @@ public function instElement "
   or an extends clause.
   Last two bools are implicit instanitation and implicit package instantiation"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input Mod inMod2;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
   input tuple<SCode.Element, Mod> inTplSCodeElementMod6;
@@ -5823,7 +5817,7 @@ public function instElement "
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDAe;
@@ -6380,9 +6374,9 @@ protected function checkMultiplyDeclared
 "Check if variable is multiply declared and
  that all declarations are identical if so."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input Mod mod;
-  input Prefix prefix;
+  input Prefix.Prefix prefix;
   input Connect.Sets csets;
   input ClassInf.State ciState;
   input tuple<SCode.Element, Mod> compTuple;
@@ -6672,17 +6666,17 @@ protected function redeclareType
   contains a redeclare of that element, the type is changed and an updated
   element is returned."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
   input SCode.Element inElement;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input Connect.Sets inSets;
   input Boolean inBoolean;
   input DAE.Mod cmod;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output SCode.Element outElement;
   output Mod outMod;
@@ -6922,12 +6916,12 @@ protected function instVar
   - instantiate normally via instVar_dispatch otherwise
   - report an error if we have modifications on outer"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
   input SCode.Class inClass;
@@ -6942,9 +6936,9 @@ protected function instVar
   input Boolean finalPrefix;
   input Option<Absyn.Info> info;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Env componentDefinitionParentEnv;
+  input Env.Env componentDefinitionParentEnv;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -7254,12 +7248,12 @@ protected function instVar_dispatch "function: instVar_dispatch
   dimensions for userdefined types, such that these can be correctly
   handled by instVar2 (using instArray)"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
   input SCode.Class inClass;
@@ -7275,7 +7269,7 @@ protected function instVar_dispatch "function: instVar_dispatch
   input Option<Absyn.Info> info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -7360,12 +7354,12 @@ protected function instVar2
 "function: instVar2
   Helper function to instVar, does the main work."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
   input SCode.Class inClass;
@@ -7381,7 +7375,7 @@ protected function instVar2
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -7844,10 +7838,10 @@ public function getUsertypeDimensions
   have dimensions. For instance, type Point = Real[3];
   has one dimension of size 3 and the class to instantiate is Real"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input SCode.Class inClass;
   input InstDims inInstDims;
   input Boolean inBoolean;
@@ -8146,7 +8140,7 @@ protected function updateComponentsInEnv
   determined. The type is added/updated to the environment such that other
   components can use it when they are instantiated."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input Mod mod;
@@ -8155,7 +8149,7 @@ protected function updateComponentsInEnv
   input Connect.Sets csets;
   input Boolean impl;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
 protected
@@ -8176,7 +8170,7 @@ protected function updateComponentInEnv
   Helper function to updateComponentsInEnv.
   Does the work for one variable."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input Mod mod;
@@ -8186,7 +8180,7 @@ protected function updateComponentInEnv
   input Boolean impl;
   input HashTable5.HashTable updatedComps;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output HashTable5.HashTable outUpdatedComps;
@@ -8286,8 +8280,8 @@ protected function updateComponentInEnv2
 " Helper function, checks if the component was already instantiated.
   If it was, don't do it again."
   input Env.Cache cache;
-  input Env env;
-  input Env cenv;
+  input Env.Env env;
+  input Env.Env cenv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input Absyn.Path path;
@@ -8309,7 +8303,7 @@ protected function updateComponentInEnv2
   input Boolean impl;
   input HashTable5.HashTable updatedComps;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output HashTable5.HashTable outUpdatedComps;
@@ -8815,12 +8809,12 @@ protected function instArray
   to go through all the array elements and instantiate each array
   element separately."
   input Env.Cache cache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
   input tuple<SCode.Class, SCode.Attributes> inTplSCodeClassSCodeAttributes;
@@ -8837,7 +8831,7 @@ protected function instArray
   input Absyn.Info info;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
@@ -9067,7 +9061,7 @@ public function elabComponentArraydimFromEnv
   Used when components have submodifiers (on e.g. attributes) using
   size to find dimensions of component."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -9124,7 +9118,7 @@ protected function elabComponentArraydimFromEnv2
   investigate binding (DAE.EqMod) and not the component declaration."
   input Env.Cache inCache;
   input DAE.EqMod inEqMod;
-  input Env inEnv;
+  input Env.Env inEnv;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
@@ -9150,7 +9144,7 @@ protected function elabArraydimOpt
   Same functionality as elabArraydim, but takes an optional arraydim.
   In case of NONE, empty DAE.Dimension list is returned."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Path path "Class of declaration";
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
@@ -9158,7 +9152,7 @@ protected function elabArraydimOpt
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
@@ -9176,7 +9170,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,owncref,path,SOME(ad),eq,impl,st,doVect,pre,info)
       equation
         (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, st,doVect, false,pre,info);
@@ -9200,7 +9194,7 @@ protected function elabArraydim
   and then using `complete_arraydime\' or `compatible_arraydim\' to
   check that that the dimension sizes are compatible and complete."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Path path "Class of declaration";
   input Absyn.ArrayDim inArrayDim;
@@ -9209,7 +9203,7 @@ protected function elabArraydim
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Boolean isFunctionInput;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
@@ -9231,7 +9225,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.Properties prop;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
@@ -9316,13 +9310,13 @@ protected function elabArraydimDecl
   When the array dimension size is specified as :, the result
   will contain DAE.DIM_UNKNOWN."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Dimension> outDimensionLst;
@@ -9346,7 +9340,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.Properties prop;
 
     // empty case
@@ -9652,15 +9646,15 @@ public function instClassDecl
   And since packages only can contain constants and class definition, instantiating
   a package does not do anything else."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -9701,15 +9695,15 @@ public function implicitInstantiation
   it is implicitly instantiated and added as a type binding under the
   same name as the class name."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -9759,7 +9753,7 @@ public function makeFullyQualified
   For instance, the model Resistor in Modelica.Electrical.Analog.Basic will given the
   correct environment have the fully qualified name: Modelica.Electrical.Analog.Basic.Resistor"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output Absyn.Path outPath;
@@ -9845,15 +9839,15 @@ public function implicitFunctionInstantiation
   since the variables of a function should not be instantiated as for an
   ordinary class."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
@@ -9917,15 +9911,15 @@ protected function implicitFunctionInstantiation2
   since the variables of a function should not be instantiated as for an
   ordinary class."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<DAE.Function> funcs;
 algorithm
@@ -10573,11 +10567,11 @@ public function implicitFunctionTypeInstantiation
   Extended 2007-06-29, BZ 
   Now this function also handles Derived function."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Class inClass;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inClass)
@@ -10650,12 +10644,12 @@ protected function instOverloadedFunctions
   overloading function definition and register the function types using 
   the overloaded name. It also creates dae elements for the functions."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Absyn.Ident inIdent;
   input list<Absyn.Path> inAbsynPathLst;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<DAE.Function> outFns;
 algorithm 
@@ -10725,12 +10719,12 @@ protected function instExtDecl
   this will be the return type of the function, otherwise the return type 
   will be void."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Ident inIdent;
   input SCode.ClassDef inClassDef;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
@@ -10749,7 +10743,7 @@ algorithm
       list<SCode.Element> els;
       Env.Cache cache;
       InstanceHierarchy ih;
-      Prefix pre;
+      Prefix.Prefix pre;
       
     case (cache,env,ih,n,SCode.PARTS(elementLst=els,externalDecl = SOME(extdecl)),impl,pre,info) /* impl */
       equation 
@@ -10990,11 +10984,11 @@ protected function elabExpListExt
   calls specially, and uses the ordinary Static.elab_exp for other 
   expressions."
   input Env.Cache inCache; 
-  input Env inEnv;
+  input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -11014,7 +11008,7 @@ algorithm
       Absyn.Exp e;
       list<Absyn.Exp> rest;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,_,{},impl,st,_,info) then (cache,{},{},st); 
     case (cache,env,(e :: rest),impl,st,pre,info)
       equation 
@@ -11032,11 +11026,11 @@ protected function elabExpExt
   This special function calls elabExpExt which handles size builtin calls 
   specially, and uses the ordinary Static.elab_exp for other expressions."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -11057,7 +11051,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Absyn.Exp absynExp;
-      Prefix pre;
+      Prefix.Prefix pre;
       
     /* special case for  size */
     case (cache,env,(call as Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
@@ -11090,10 +11084,10 @@ protected function instExtGetFargs
   author: LS
   instantiates function arguments, i.e. actual parameters, in external declaration."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
@@ -11110,7 +11104,7 @@ algorithm
       list<Absyn.Exp> absexps;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,Absyn.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,info)
       equation 
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl, NONE,pre,info);
@@ -11130,7 +11124,7 @@ protected function instExtGetFargs2
   author: LS
   Helper function to instExtGetFargs"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
   output Env.Cache outCache;
@@ -11161,7 +11155,7 @@ protected function instExtGetFargsSingle
   author: LS
   Helper function to instExtGetFargs2, does the work for one argument."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   output Env.Cache outCache;
@@ -11217,10 +11211,10 @@ protected function instExtGetRettype
   author: LS
   Instantiates the return type of an external declaration."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.ExtArg outExtArg;
@@ -11237,7 +11231,7 @@ algorithm
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,_,Absyn.EXTERNALDECL(output_ = NONE),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
 
@@ -11839,10 +11833,10 @@ public function instList
   This is a utility used to do instantiation of list
   of things, collecting the result in another list."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Mod inMod;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input InstFunc instFunc;
@@ -11851,7 +11845,7 @@ public function instList
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -11859,10 +11853,10 @@ public function instList
   output ConnectionGraph.ConnectionGraph outGraph;
   partial function InstFunc
     input Env.Cache inCache;
-    input Env inEnv;
+    input Env.Env inEnv;
     input InstanceHierarchy inIH;
     input Mod inMod;
-    input Prefix inPrefix;
+    input Prefix.Prefix inPrefix;
     input Connect.Sets inSets;
     input ClassInf.State inState;
     input Type_a inTypeA;
@@ -11870,7 +11864,7 @@ public function instList
     input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";    
     input ConnectionGraph.ConnectionGraph inGraph;
     output Env.Cache outCache;
-    output Env outEnv;
+    output Env.Env outEnv;
     output InstanceHierarchy outIH;
     output DAE.DAElist outDAe;
     output Connect.Sets outSets;
@@ -12069,7 +12063,7 @@ protected function instDaeVariableAttributes
   It returns a DAE.VariableAttributes option because
   somtimes a varible does not contain the variable-attr."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input DAE.Type inType;
   input list<Integer> inIntegerLst;
@@ -12161,7 +12155,7 @@ protected function instBoolBinding
   FIXME: check the type of variable for the fixed because
          there is a difference between parameters and variables."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
@@ -12208,7 +12202,7 @@ protected function instRealBinding
   author: LP
   instantiates a real binding and retrieves the value."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
@@ -12255,7 +12249,7 @@ protected function instIntBinding
   author: LP
   instantiates an int binding and retrieves the value."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
@@ -12302,7 +12296,7 @@ protected function instStringBinding
   author: LP
   instantiates a string binding and retrieves the value."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
@@ -12349,7 +12343,7 @@ protected function instEnumerationBinding
   author: LP
   instantiates a enumeration binding and retrieves the value."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
@@ -12492,7 +12486,7 @@ public function makeBinding
   This function looks at the equation part of a modification, and
   if there is a declaration equation builds a DAE.Binding for it."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input SCode.Attributes inAttributes;
   input Mod inMod;
   input DAE.Type inType;
@@ -12586,7 +12580,7 @@ public function instRecordConstructorElt
   a record constructor.
   E.g if the element is Real x; the resulting Var is \"input Real x;\""
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Element inElement;
   input DAE.Mod outerMod;
@@ -12693,7 +12687,7 @@ Called from Interactive.mo, boschsection.
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
@@ -12747,12 +12741,12 @@ end instantiateBoschClass;
 protected function instBoschClassInProgram
 "Helper function for instantiateBoschClass"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
@@ -12827,7 +12821,7 @@ protected function orderConnectEquationsPutNonExpandableFirst
     connect(expandable, non_expandable);
     connect(expandable, expandable);"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH; 
   input Prefix.Prefix inPre;
   input list<SCode.Equation> inEquations;
@@ -13889,7 +13883,7 @@ protected function updateComponentsInEnv2
   author: PA
   Help function to updateComponentsInEnv."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
   input Mod mod;
@@ -13899,7 +13893,7 @@ protected function updateComponentsInEnv2
   input Boolean impl;
   input HashTable5.HashTable updatedComps;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output HashTable5.HashTable outUpdatedComps;
@@ -14003,11 +13997,12 @@ end checkVariabilityOfUpdatedComponent;
 protected function makeFullyQualified2
 "help function to makeFullyQualified"
   input Env.Env env;
-  input Ident  className;
+  input Ident className;
 output Absyn.Path path;
 algorithm
   path := matchcontinue(env,className)
-  local String className; Absyn.Path scope;
+    local
+      Absyn.Path scope;
     case(env,className) equation
       SOME(scope) = Env.getEnvPath(env);
         path = Absyn.joinPaths(scope, Absyn.IDENT(className));
@@ -14187,12 +14182,12 @@ public
 uniontype CachedInstItem
   // *important* inputs/outputs for instClassIn
   record FUNC_instClassIn
-    tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore,
-          Mod, Prefix, Connect.Sets, ClassInf.State, SCode.Class,
+    tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore,
+          Mod, Prefix.Prefix, Connect.Sets, ClassInf.State, SCode.Class,
           Boolean, InstDims, Boolean,ConnectionGraph.ConnectionGraph,
           Option<DAE.ComponentRef>> inputs;
     tuple</*Env.Cache, */
-          Env, 
+          Env.Env, 
           /*InstanceHierarchy, */
           /*UnitAbsyn.InstStore, */
           DAE.DAElist, 
@@ -14208,11 +14203,11 @@ uniontype CachedInstItem
 
   // *important* inputs/outputs for partialInstClassIn
   record FUNC_partialInstClassIn
-    tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix,
+    tuple<Env.Cache, Env.Env, InstanceHierarchy, Mod, Prefix.Prefix,
           Connect.Sets, ClassInf.State, SCode.Class, Boolean,
           InstDims> inputs;
     tuple</*Env.Cache,*/ 
-          Env, 
+          Env.Env, 
           /*InstanceHierarchy,*/ 
           ClassInf.State
          > outputs;
