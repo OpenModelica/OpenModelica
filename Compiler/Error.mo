@@ -276,6 +276,7 @@ public constant ErrorID META_RECORD_FOUND_FAILURE=5011;
 public constant ErrorID META_INVALID_PATTERN=5012;
 public constant ErrorID META_MATCH_INPUT_OUTPUT_NON_CREF=5013;
 public constant ErrorID META_MATCH_GENERAL_FAILURE=5014;
+public constant ErrorID META_CONS_TYPE_MATCH=5015;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -623,7 +624,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
           (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
           (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
-          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)")
+          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
+          (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s.")
           };
 
 protected import ErrorExt;

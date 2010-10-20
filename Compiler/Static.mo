@@ -228,7 +228,7 @@ algorithm
       DAE.Dimension dim1,dim2;
       Boolean impl,a,havereal;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
-      Ident id,expstr,envstr;
+      Ident id,expstr,envstr,str1,str2;
       DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,exp_1,exp_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
       DAE.Properties prop,prop_1,prop1,prop2,prop3;
       list<Env.Frame> env;
@@ -585,14 +585,13 @@ algorithm
 
        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
        (cache,e2_1,DAE.PROP((DAE.T_LIST(t2),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
-
        t1 = Types.getPropType(prop1);
        c1 = Types.propAllConst(prop1);
        t = Types.superType(t1,t2);
        t = Types.superType(t,t); // For example TUPLE should be META_TUPLE; if it's only 1 argument, it might not be
 
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
-       (e2_1,_) = Types.matchType(e2_1, t2, t, true);
+       (e2_1,_) = Types.matchType(e2_1, (DAE.T_LIST(t2),NONE()), (DAE.T_LIST(t),NONE()), true);
 
        // If the second expression is a DAE.LIST, then we can create a DAE.LIST
        // instead of DAE.CONS
@@ -602,6 +601,17 @@ algorithm
        c = Types.constAnd(c1,c2);
        prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
      then (cache,exp,prop,st);
+
+   case (cache,env,e as Absyn.CONS(e1,e2),impl,st,doVect,pre,info)
+     equation
+       {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
+       (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
+       (cache,e2_1,DAE.PROP(t2 as (DAE.T_LIST(_),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
+       expstr = Dump.printExpStr(e);
+       str1 = Types.unparseType(Types.getPropType(prop1));
+       str2 = Types.unparseType(t2);
+       Error.addSourceMessage(Error.META_CONS_TYPE_MATCH, {expstr,str1,str2}, info);
+     then fail();
 
        // The Absyn.LIST() node is used for list expressions that are
        // transformed from Absyn.ARRAY()
@@ -703,7 +713,7 @@ algorithm
         (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE),c),st);
     case (_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "- elabListExp failed, non-matching args in list constructor?");
+        Debug.fprintln("failtrace", "- elabListExp failed, non-matching args in list constructor?");
       then
         fail();
   end matchcontinue;
@@ -4055,66 +4065,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinMMCGetField;
 
-protected function elabBuiltinIfExp "cond,x,y => if cond then x else y"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties,outDae):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s0_1,s1_1,s2_1;
-      DAE.ExpType tp;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s0,s1,s2;
-      Boolean impl;
-      DAE.Type ty,t1,t2;
-      Env.Cache cache;
-      DAE.Properties prop1,prop2;
-      DAE.Const c1,c2,c0;
-      list<DAE.Exp> expList;
-      list<DAE.Type> tys;
-      Integer i;
-      DAE.DAElist dae,dae1,dae2,dae3;
-      Prefix pre;
-
-    case (cache,env,{s0,s1,s2},{},impl,pre,info)
-      equation
-        (cache,s0_1,DAE.PROP((DAE.T_BOOL(_),_),c0),_) = elabExp(cache, env, s0, impl, NONE, true,pre,info);
-        (cache,s1_1,prop1,_) = elabExp(cache, env, s1, impl, NONE, impl,pre,info);
-        (cache,s2_1,prop2,_) = elabExp(cache, env, s2, impl, NONE, impl,pre,info);
-        t1 = Types.getPropType(prop1);
-        t2 = Types.getPropType(prop2);
-        (s1_1,t1) = Types.matchType(s1_1, t1, DAE.T_BOXED_DEFAULT, true);
-        (s2_1,t2) = Types.matchType(s2_1, t2, DAE.T_BOXED_DEFAULT, true);
-        t1 = Types.unboxedType(t1);
-        t2 = Types.unboxedType(t2);
-        ty = Types.superType(t1, t2);
-        ty = Types.superType(ty, ty);
-        tp = Types.elabType(ty);
-        ty = if_exp(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
-        c1 = Types.propAllConst(prop1);
-        c2 = Types.propAllConst(prop2);
-        c = Types.constAnd(c1,c2);
-        c = Types.constAnd(c,c0);
-        s1_1 = makeBuiltinCall("if_exp", {s0_1, s1_1, s2_1}, tp);
-      then
-        (cache,s1_1,DAE.PROP(ty,c));
-    case (_,_,_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinIfExp failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinIfExp;
-
 protected function elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal "mmc_uniontype_metarecord_typedef_equal(x,1,REC1) => bool"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6812,7 +6762,6 @@ algorithm
       
     case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
     case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
-    case "if_exp" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinIfExp;
     case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
   end matchcontinue;
 end elabBuiltinHandler;
