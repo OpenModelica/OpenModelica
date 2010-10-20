@@ -232,6 +232,7 @@ public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
 public constant ErrorID GENERIC_INST_FUNCTION=145;
 public constant ErrorID WRONG_NO_OF_ARGS=146;
 public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=147;
+public constant ErrorID LOOKUP_FUNCTION_GOT_CLASS=148;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -625,7 +626,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
           (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
           (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
-          (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s.")
+          (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s."),
+          (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s.")
           };
 
 protected import ErrorExt;

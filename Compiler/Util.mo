@@ -6710,4 +6710,14 @@ algorithm
   dt := DATETIME(sec,min,hour,mday,mon,year);
 end getCurrentDateTime;
 
+public function isSuccess
+  input Status status;
+  output Boolean bool;
+algorithm
+  bool := matchcontinue status
+    case SUCCESS() then true;
+    case FAILURE() then false;
+  end matchcontinue;
+end isSuccess;
+
 end Util;

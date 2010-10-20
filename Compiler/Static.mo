@@ -8485,7 +8485,7 @@ function: elabCallArgs
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties,Util.SUCCESS()) :=
+  (outCache,SOME((outExp,outProperties))) :=
   elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption,inPrefix,info);
 end elabCallArgs;
       
@@ -8507,11 +8507,9 @@ function: elabCallArgs
   input Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-  output Util.Status status;
+  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
-  (outCache,outExp,outProperties,status) :=
+  (outCache,expProps) :=
   matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.Type t,outtype,restype,functype,tp1;
@@ -8550,6 +8548,7 @@ algorithm
       Integer index;
       list<String> fieldNames;
       list<DAE.Var> vars;
+      Util.Status status;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8579,7 +8578,7 @@ algorithm
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
-        (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()),Util.SUCCESS());
+        (cache,SOME((DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()))));
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, stopElab, st,pre,info)
@@ -8641,7 +8640,7 @@ algorithm
         // call the class normally
         (cache,call_exp,prop_1) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st,pre,info);
       then
-        (cache,call_exp,prop_1,Util.SUCCESS());
+        (cache,SOME((call_exp,prop_1)));
 
     /* Record constructors, user defined or implicit */ // try the hard stuff first
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
@@ -8675,8 +8674,9 @@ algorithm
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
+        expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
       then
-        (cache,call_exp,prop_1,status);
+        (cache,expProps);
 
     /* ------ */
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* Metamodelica extension, added by simbj */
@@ -8685,9 +8685,9 @@ algorithm
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
-        (cache,call_exp,prop,status) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
+        (cache,expProps) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
-        (cache,call_exp,prop,status);
+        (cache,expProps);
 
       /* ..Other functions */
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
@@ -8732,18 +8732,9 @@ algorithm
         (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE,true);
         /* Instantiate any implicit record constructors needed and add them to the dae function tree */
         cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
+        expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
       then
-        (cache,call_exp,prop_1,status);
-
-    case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, no candidates. */
-      equation
-        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
-        fn_str = Absyn.pathString(fn);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        fn_str = fn_str +& " in component " +& pre_str;
-        Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str}, info);
-      then
-        fail();
+        (cache,expProps);
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, with -one- candidate */
       equation
@@ -8756,7 +8747,17 @@ algorithm
         types_str = Types.unparseType(tp1) ;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
       then
-        fail();
+        (cache,NONE());
+
+    case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* class found; not function */
+      equation
+        (cache,SCode.CLASS(restriction = re),_) = Lookup.lookupClass(cache,env,fn,false);
+        false = SCode.isFunctionOrExtFunction(re);
+        fn_str = Absyn.pathString(fn);
+        s = SCode.restrString(re);
+        Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);
+      then
+        (cache,NONE());
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, with candidates */
       equation
@@ -8769,7 +8770,7 @@ algorithm
         //fn_str = fn_str +& " in component " +& pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
       then
-        fail();
+        (cache,NONE());
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
       local
@@ -8781,8 +8782,18 @@ algorithm
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
       then
-        fail();
+        (cache,NONE());
     
+    case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, no candidates. */
+      equation
+        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env,fn);
+        fn_str = Absyn.pathString(fn);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        fn_str = fn_str +& " in component " +& pre_str;
+        Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str}, info);
+      then
+        (cache,NONE());
+
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -8804,11 +8815,9 @@ protected function elabCallArgsMetarecord
   input Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-  output Util.Status status;
+  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
-  (outCache,outExp,outProperties,status) :=
+  (outCache,expProps) :=
   matchcontinue (cache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       DAE.Type t,outtype,restype,functype,tp1;
@@ -8853,7 +8862,7 @@ algorithm
          false = listLength(vars) == listLength(args) + listLength(nargs);
          fn_str = Absyn.pathString(fqPath);
          Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
-      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+      then (cache,NONE());
 
     case (cache,env,t as (DAE.T_METARECORD(index=index,utPath=utPath,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
       equation
@@ -8869,7 +8878,7 @@ algorithm
         true = Util.listFold(newslots, slotAnd, true);
         args_2 = expListFromSlots(newslots);
       then
-        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());
+        (cache,SOME((DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop)));
 
       /* MetaRecord failure */
     case (cache,env,(DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
@@ -8879,7 +8888,7 @@ algorithm
         str = "Failed to match types: Got " +& Types.unparseType(Types.getPropType(prop)) +& " but expected " +& Types.unparseType((DAE.T_TUPLE(tys),NONE()));
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,str},info);
-      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+      then (cache,NONE());
 
       /* MetaRecord failure (args). */
     case (cache,env,(_,SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
@@ -8887,7 +8896,7 @@ algorithm
         args_str = "Failed to elaborate arguments " +& Dump.printExpStr(Absyn.TUPLE(args));
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,args_str},info);
-      then (cache,DAE.ICONST(0),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_VAR),Util.FAILURE());
+      then (cache,NONE());
   end matchcontinue;
 end elabCallArgsMetarecord;
 
