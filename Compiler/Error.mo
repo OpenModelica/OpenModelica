@@ -615,6 +615,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 
 protected import ErrorExt;
 protected import Print;
+protected import RTOpts;
 protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
@@ -981,8 +982,8 @@ algorithm
   outFilename := matchcontinue filename
     case filename
       equation
-        filename = System.stringFindString(filename, "/testsuite/");
-      then filename;
+        true = RTOpts.getRunningTestsuite();
+      then System.basename(filename);
     case filename then filename;
   end matchcontinue;
 end fixFilenameForTestsuite;

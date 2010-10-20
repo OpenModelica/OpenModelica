@@ -44,6 +44,7 @@
 /*
  * Common includes
  */
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -420,6 +421,17 @@ RML_BEGIN_LABEL(System__strcmp)
   if      (res>0) res = 1;
   else if (res<0) res = -1;
   rmlA0 = (void*) mk_icon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__basename)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  char *copy = strdup(str);
+  char *res = basename(copy); /* basename may modify the contents */
+  rmlA0 = (void*) mk_scon(res);
+  free(copy);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
