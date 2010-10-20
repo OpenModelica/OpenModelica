@@ -375,6 +375,17 @@ RML_BEGIN_LABEL(System__strcmp)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__basename)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  char *copy = strdup(str);
+  char *res = basename(copy); /* basename may modify the contents */
+  rmlA0 = (void*) mk_scon(res);
+  free(copy);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__stringFind)
 {
   char *str = RML_STRINGDATA(rmlA0);

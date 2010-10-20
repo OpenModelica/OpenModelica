@@ -4097,28 +4097,28 @@ algorithm
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.BOX(e),t2);
 
     case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_bcon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.BOX(e),t2);
 
     case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.BOX(e),t2);
 
     case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.BOX(e),t2);
 
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
       local Absyn.Path path1,path2;
@@ -4160,30 +4160,13 @@ algorithm
         e_1 = DAE.METARECORDCALL(path, elist, l, -1);
       then (e_1,t2);
 
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_INTEGER(_),_),printFailtrace)
+    case (DAE.BOXED(e),(DAE.T_BOXED(t1),_),t2,printFailtrace)
       equation
-        true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
-      then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,DAE.NO_INLINE),t2);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),printFailtrace)
-      equation
-        true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
-      then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,DAE.NO_INLINE),t2);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),printFailtrace)
-      equation
-        true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
-      then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,DAE.NO_INLINE),t2);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),printFailtrace)
-      equation
-        true = subtype(t1,t2);
-        (e_1,_) = matchType(e,t1,t2,printFailtrace);
-      then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,DAE.NO_INLINE),t2);
+        t1 = unboxedType(t1);
+        (e,t1) = matchType(e,t1,t2,printFailtrace);
+      then (e,(DAE.T_BOXED(t1),NONE()));
+
+      /*
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),printFailtrace)
       equation
         true = subtype(t1,t2);
@@ -4191,6 +4174,7 @@ algorithm
         t = elabType(t2);
       then
         (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE),t2);
+       */
 
       /* See printFailure()
     case (exp,t1,t2,printFailtrace)

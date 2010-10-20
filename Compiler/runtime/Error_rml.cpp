@@ -209,14 +209,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
 {
-  std::string res("{");
+  std::string res("}");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getFullMessage() + res;
     delete errorMessageQueue.top();
     errorMessageQueue.pop();
-    if (!errorMessageQueue.empty()) { res = res + string(","); }
+    if (!errorMessageQueue.empty()) { res = string(",") + res; }
   }
-  res = res + string("}");
+  res = string("{") + res;
   rmlA0 = mk_scon((char*)res.c_str());
   RML_TAILCALLK(rmlSC);
 }

@@ -1168,6 +1168,14 @@ uniontype Exp "Expressions
     Integer index; //Index in the uniontype
   end METARECORDCALL;
 
+  record BOX
+    Exp exp;
+  end BOX;
+
+  record UNBOX
+    Exp exp;
+  end UNBOX;
+
   /* --- */
 
 end Exp;

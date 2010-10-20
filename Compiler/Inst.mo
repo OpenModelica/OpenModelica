@@ -3713,6 +3713,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        tys = Util.listMap(tys, Types.boxIfUnboxedType);
         bc = SOME((DAE.T_METATUPLE(tys),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
@@ -3727,8 +3728,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
-        {ty} = tys;
+        (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         bc = SOME((DAE.T_META_ARRAY(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);

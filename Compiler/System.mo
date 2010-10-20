@@ -840,5 +840,14 @@ creates the Globally Unique IDentifier and return it as String
   external "C";
 end getUUIDStr;
 
+public function basename
+"Returns the name of the file without any leading directory path.
+See man 3 basename."
+  input String filename;
+  output String base;
+  // We need to strdup the input, so we can't use basename() directly
+  external "C" base = System_basename(filename);
+end basename;
+
 end System;
 
