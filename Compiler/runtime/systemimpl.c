@@ -44,7 +44,6 @@
 /*
  * Common includes
  */
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +71,7 @@
 #else
 
 /* includes/defines specific for LINUX/OS X */
+#include <libgen.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <sys/param.h> /* MAXPATHLEN */
@@ -428,10 +428,19 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__basename)
 {
   const char *str = RML_STRINGDATA(rmlA0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  const char* res = strrchr(str, '\\');
+  if (res == NULL) {
+    res = strrchr(str, '/');
+    if (res == NULL) { res = str; }
+  }
+  rmlA0 = (void*) mk_scon(res);
+#else
   char *copy = strdup(str);
   char *res = basename(copy); /* basename may modify the contents */
   rmlA0 = (void*) mk_scon(res);
   free(copy);
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
