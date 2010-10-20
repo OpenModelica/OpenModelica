@@ -347,6 +347,46 @@ realString_rettype realString(modelica_real r)
   return res;
 }
 
+modelica_metatype boxptr_realAdd(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)+mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realSub(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)-mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMul(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)*mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realDiv(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)/mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMod(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(fmod(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
+}
+
+modelica_metatype boxptr_realPow(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(pow(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
+}
+
+modelica_metatype boxptr_realMax(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1) > mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMin(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1) < mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
+}
+
 /* String Character Conversion */
 
 stringCharInt_rettype stringCharInt(modelica_string_t chr)

@@ -125,6 +125,15 @@ realPow_rettype realPow(modelica_real,modelica_real);
 realMax_rettype realMax(modelica_real,modelica_real);
 realMin_rettype realMin(modelica_real,modelica_real);
 
+modelica_metatype boxptr_realAdd(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realSub(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMul(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realDiv(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMod(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realPow(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMax(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMin(modelica_metatype,modelica_metatype);
+
 typedef modelica_real realAbs_rettype;
 typedef modelica_real realNeg_rettype;
 typedef modelica_real realCos_rettype;
