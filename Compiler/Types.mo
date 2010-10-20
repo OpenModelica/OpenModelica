@@ -5239,14 +5239,15 @@ protected function polymorphicBindingStr
   list<Type> tys;
 algorithm
   (str,tys) := binding;
-  str := "(" +& str +& ": " +& Util.stringDelimitList(Util.listMapMap(tys, unboxedType, unparseType), ", ") +& ")";
+  // Don't bother doing this fast; it's just for error messages
+  str := "    " +& str +& ":\n" +& Util.stringDelimitList(Util.listMap1r(Util.listMapMap(tys, unboxedType, unparseType), stringAppend, "      "), "\n");
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
   input PolymorphicBindings bindings;
   output String str;
 algorithm
-  str := Util.stringDelimitList(Util.listMap(bindings, polymorphicBindingStr), ", ");
+  str := Util.stringDelimitList(Util.listMap(bindings, polymorphicBindingStr), "\n");
 end polymorphicBindingsStr;
 
 public function fixPolymorphicRestype
@@ -5621,12 +5622,7 @@ algorithm
   _ := matchcontinue (bindings, solvedBindings, unsolvedBindings, info)
     local
       String bindingsStr, solvedBindingsStr, unsolvedBindingsStr;
-    case (_,_,{},_)
-      equation
-        bindingsStr = polymorphicBindingsStr(bindings);
-        solvedBindingsStr = polymorphicBindingsStr(solvedBindings);
-        unsolvedBindingsStr = polymorphicBindingsStr(unsolvedBindings);
-      then ();
+    case (_,_,{},_) then ();
     case (bindings, solvedBindings, unsolvedBindings,info)
       equation
         bindingsStr = polymorphicBindingsStr(bindings);
@@ -5712,6 +5708,10 @@ algorithm
       Type ty,ty1,ty2;
       list<Type> tys,tys1,tys2,rest;
       String id,id1,id2;
+      list<String> names1;
+      list<DAE.FuncArg> args1,args2;
+      DAE.InlineType inline1,inline2;
+      Option<Absyn.Path> op1;
     case ((ty1 as (DAE.T_POLYMORPHIC_SOLVED(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC_SOLVED(id2),_))::tys2,solvedBindings)
       equation
         false = id1 ==& id2;
@@ -5744,8 +5744,18 @@ algorithm
 
     case ((DAE.T_METATUPLE(tys1),_)::_,(DAE.T_METATUPLE(tys2),_)::rest,solvedBindings)
       equation
-        (tys1,solvedBindings) = solveBindingsThread(tys1,tys2,solvedBindings);
+        (tys1,solvedBindings) = solveBindingsThread(tys1,tys2,false,solvedBindings);
         ty1 = (DAE.T_METATUPLE(tys1),NONE());
+      then (ty1::rest,solvedBindings);
+    
+    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1)::_,(DAE.T_FUNCTION(args2,ty2,inline2),_)::rest,solvedBindings)
+      equation
+        names1 = Util.listMap(args1, Util.tuple21);
+        tys1 = Util.listMap(args1, Util.tuple22);
+        tys2 = Util.listMap(args2, Util.tuple22);
+        (ty1::tys1,solvedBindings) = solveBindingsThread(ty1::tys1,ty2::tys2,false,solvedBindings);
+        args1 = Util.listThreadTuple(names1,tys1);
+        ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
       then (ty1::rest,solvedBindings);
     
     case (tys1,ty::tys2,_)
@@ -5764,21 +5774,26 @@ Horribly complicated function to keep track of what happens...
 "
   input list<Type> tys1;
   input list<Type> tys2;
+  input Boolean changed "if true, something changed and the function will succeed";
   input PolymorphicBindings solvedBindings;
   output list<Type> outTys;
   output PolymorphicBindings outSolvedBindings;
 algorithm
-  (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,solvedBindings)
+  (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,changed,solvedBindings)
     local
       Type ty,ty1,ty2;
       list<Type> tys,tys1,tys2,rest;
       String id,id1,id2;
-    case (ty1::tys1,ty2::tys2,solvedBindings)
+    case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
-        (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,solvedBindings);
+        (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,true,solvedBindings);
       then (ty1::tys2,solvedBindings);
-    case ({},{},solvedBindings) then ({},solvedBindings);
+    case (ty1::tys1,ty2::tys2,changed,solvedBindings)
+      equation
+        (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,changed,solvedBindings);
+      then (ty1::tys2,solvedBindings);
+    case ({},{},true,solvedBindings) then ({},solvedBindings);
   end matchcontinue;
 end solveBindingsThread;
 
@@ -5811,8 +5826,12 @@ protected function replaceSolvedBinding
 algorithm
   outTy := matchcontinue (ty,solvedBindings)
     local
+      list<DAE.FuncArg> args;
       list<Type> tys;
       String id;
+      list<String> names;
+      Option<Absyn.Path> op;
+      DAE.InlineType inline;
     case ((DAE.T_LIST(ty),_),_)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
@@ -5827,9 +5846,18 @@ algorithm
       then ty;
     case ((DAE.T_METATUPLE(tys),_),_)
       equation
-        tys = replaceSolvedBindings(tys, solvedBindings, false);
+        tys = replaceSolvedBindings(tys,solvedBindings,false);
         tys = Util.listMap(tys, unboxedType);
         ty = (DAE.T_METATUPLE(tys),NONE());
+      then ty;
+    case ((DAE.T_FUNCTION(args,ty,inline),op),solvedBindings)
+      equation
+        tys = Util.listMap(args, Util.tuple22);
+        tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
+        ty::tys = Util.listMap(tys, unboxedType);
+        names = Util.listMap(args, Util.tuple21);
+        args = Util.listThreadTuple(names,tys);
+        ty = (DAE.T_FUNCTION(args,ty,inline),op);
       then ty;
     case ((DAE.T_POLYMORPHIC_SOLVED(id),_),_)
       equation
@@ -5917,6 +5945,10 @@ algorithm
       then subtypePolymorphicList(tList1,tList2,bindings);
     case ((DAE.T_TUPLE(tList1),_),(DAE.T_TUPLE(tList2),_),bindings)
       then subtypePolymorphicList(tList1,tList2,bindings);
+    case ((DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_UNIONTYPE(_),SOME(path2)),bindings)
+      equation
+        true = Absyn.pathEqual(path1,path2);
+      then bindings;
     // MM Function Reference. sjoelund
     case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),bindings)
       equation
@@ -5950,6 +5982,12 @@ algorithm
         ids = Util.listMap(tys, polymorphicTypeName);
         bindings = Util.listFold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
+
+    case (actual,expected,_)
+      equation
+        // print("subtypePolymorphic failed: " +& unparseType(actual) +& " and " +& unparseType(expected) +& "\n");
+      then fail();
+
   end matchcontinue;
 end subtypePolymorphic;
 

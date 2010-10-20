@@ -1095,7 +1095,7 @@ algorithm
       list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2; DAE.Type functp;
        Integer funcInstId;
     case(env,path,funcCallExp,expl,divOrMul,ht,store) equation
-       (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,false);
+       (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,NONE());
        funcInstId=tick();
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);

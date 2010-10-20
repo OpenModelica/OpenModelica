@@ -103,21 +103,21 @@ public function lookupType
   input Env.Cache inCache;
   input Env.Env inEnv "environment to search in";
   input Absyn.Path inPath "type to look for";
-  input Boolean inBoolean "Messaage flag, true outputs lookup error messages";
+  input Option<Absyn.Info> msg "Messaage flag, SOME() outputs lookup error messages";
   output Env.Cache outCache;
   output DAE.Type outType "the found type";
   output Env.Env outEnv "The environment the type was found in";
 algorithm
   (outCache,outType,outEnv):=
-  matchcontinue (inCache,inEnv,inPath,inBoolean)
+  matchcontinue (inCache,inEnv,inPath,msg)
     local
       DAE.Type t;
       list<Env.Frame> env_1,env,env_2;
       Absyn.Path path;
       SCode.Class c;
-      Boolean msg;
-      String classname,scope;
+      String classname,scope,ident,s;
       Env.Cache cache;
+      Absyn.Info info;
 
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
@@ -141,7 +141,7 @@ algorithm
         (cache,t,env_1);
 
       // Special classes (function, record, metarecord, external object)
-    case (cache,env,path,msg) local String ident,s;
+    case (cache,env,path,msg)
       equation
         (cache,c,env_1) = lookupClass(cache,env,path,false);
         (cache,t,env_2) = lookupType2(cache,env_1,path,c);
@@ -149,12 +149,12 @@ algorithm
         (cache,t,env_2);
 
        // Error for type not found
-    case (cache,env,path,true)
+    case (cache,env,path,SOME(info))
       equation
         classname = Absyn.pathString(path);
         classname = stringAppend(classname," (its type) ");
         scope = Env.printEnvPathStr(env);
-        Error.addMessage(Error.LOOKUP_ERROR, {classname,scope});
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {classname,scope}, info);
       then
         fail();
   end matchcontinue;
@@ -261,31 +261,6 @@ algorithm
   end matchcontinue;
 end lookupType2;
 
-protected function lookupTypeList
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Path> paths;
-  input Boolean bool;
-  output Env.Cache outCache;
-  output list<DAE.Type> types;
-algorithm
-  (outCache,types) := matchcontinue (inCache, inEnv, paths, bool)
-    local
-      Env.Cache cache;
-      Env.Env env;
-      Absyn.Path first;
-      list<Absyn.Path> rest;
-      DAE.Type ty;
-      list<DAE.Type> tys;
-    case (cache, env, {}, _) then (cache,{});
-    case (cache, env, first::rest, bool)
-      equation
-        (cache, ty, _) = lookupType(cache, env, first, bool);
-        (cache, tys) = lookupTypeList(cache, env, rest, bool);
-      then (cache,ty::tys);
-  end matchcontinue;
-end lookupTypeList;
-
 public function lookupMetarecordsRecursive
 "Takes a list of paths to Uniontypes. Use this list to create a list of T_METARECORD.
 The function is guarded against recursive definitions by accumulating all paths it
@@ -311,7 +286,7 @@ algorithm
       equation
         false = listMember(first, acc);
         acc = first::acc;
-        (cache, ty, _) = lookupType(cache, env, first, true);
+        (cache, ty, _) = lookupType(cache, env, first, SOME(Absyn.dummyInfo));
         uniontypeTypes = Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
         uniontypePaths =  Util.listMap(uniontypeTypes, Types.getUniontypePaths);
         rest = Util.listFlatten(rest :: uniontypePaths);

@@ -9803,7 +9803,7 @@ algorithm
     // A type can exist without a class (i.e. builtin functions)  
     case (cache,env,Absyn.IDENT(s)) 
       equation 
-         (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), false);
+         (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), NONE());
          path_2 = makeFullyQualified2(env_1,s);
       then
         (cache,Absyn.FULLYQUALIFIED(path_2));

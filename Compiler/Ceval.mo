@@ -1481,7 +1481,7 @@ protected
 algorithm
   "constructor" := Absyn.pathLastIdent(funcpath);
   funcpath2:=Absyn.stripLast(funcpath);
-  (_,tp,_) := Lookup.lookupType(cache,env,funcpath2,true);
+  (_,tp,_) := Lookup.lookupType(cache,env,funcpath2,SOME(Absyn.dummyInfo));
   Types.externalObjectConstructorType(tp);
 end cevalIsExternalObjectConstructor;
 

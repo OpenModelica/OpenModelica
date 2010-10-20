@@ -1921,7 +1921,7 @@ algorithm
 
         pathVarList = Util.listMap(argList,extractPathVar);
         // Get recordnames
-        (localCache,ty,_) = Lookup.lookupType(localCache,localEnv,pathName,true);
+        (localCache,ty,_) = Lookup.lookupType(localCache,localEnv,pathName,SOME(info));
         //tyStr = Types.unparseType(ty);
         //Debug.fprintln("matchcase", "- Looked up record cons. func: " +& tyStr);
         (fieldNameList,fieldTypes) = MetaUtil.constructorCallTypeToNamesAndTypes(ty);

@@ -618,7 +618,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s)."),
           (NON_INSTANTIATED_FUNCTION,SYMBOLIC(),ERROR(),"Tried to use function %s, but it was not instantiated."),
           (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s"),
-          (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n    Input bindings: %s\n    Solved bindings: %s\n    Unsolved bindings: %s"),
+          (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n  Input bindings:\n%s\n  Solved bindings:\n%s\n  Unsolved bindings:\n%s"),
           (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"In metarecord call %s: %s"),
           (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
           (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),

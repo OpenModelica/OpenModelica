@@ -4040,7 +4040,7 @@ algorithm
       equation
         (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),SOME(p)),c),_) = elabExp(cache, env, s1, impl, NONE, true,pre,info);
         p2 = Absyn.crefToPath(cref);
-        (cache,(DAE.T_METARECORD(fields = fields),_),env) = Lookup.lookupType(cache,env,p2,true);
+        (cache,(DAE.T_METARECORD(fields = fields),_),env) = Lookup.lookupType(cache,env,p2,SOME(info));
         (var as DAE.TYPES_VAR(type_ = ty)) = Types.varlistLookup(fields, fieldName);
         fieldNum = Util.listPosition(var, fields)+2;
         tp = Types.elabType(ty);
@@ -8617,7 +8617,7 @@ algorithm
         (comps,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1)
-          = Lookup.lookupType(cache, env, fn, true);
+          = Lookup.lookupType(cache, env, fn, SOME(info));
         */
         fargs = Util.listMap(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
@@ -8702,7 +8702,7 @@ algorithm
         Absyn.Path fpath;
       equation
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_)
-          = Lookup.lookupType(cache,env, fn, false);
+          = Lookup.lookupType(cache,env, fn, NONE());
 //        print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
@@ -8733,7 +8733,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
-        (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
         (cache,call_exp,prop,status) = elabCallArgsMetarecord(cache,env,t,args,nargs,impl,stopElab,st,pre,info);
       then
@@ -8826,7 +8826,7 @@ algorithm
         list<Absyn.Exp> t4;
       equation
         t4 = args;
-        failure((_,_,_) = Lookup.lookupType(cache,env, fn, false)) "msg" ;
+        failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
         scope = Env.printEnvPathStr(env);
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
