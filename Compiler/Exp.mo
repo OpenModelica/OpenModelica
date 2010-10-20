@@ -7575,9 +7575,9 @@ algorithm
     case (DAE.LIST(_,es),_)
       local list<Exp> es;
       equation
-        Print.printBuf("<list>{");
+        Print.printBuf("list(");
         printList(es, printExp, ",");
-        Print.printBuf("}");
+        Print.printBuf(")");
       then
         ();
 

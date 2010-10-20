@@ -63,4 +63,16 @@ extern modelica_metatype RTOpts_args(modelica_metatype args) {
   return listReverse(res);
 }
 
+extern int RTOpts_typeinfo() {
+  return type_info;
+}
+
+extern int RTOpts_modelicaOutput() {
+  return modelica_output;
+}
+
+extern int RTOpts_showAnnotations() {
+  return showAnnotations;
+}
+
 }

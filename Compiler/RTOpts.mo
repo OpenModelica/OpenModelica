@@ -52,25 +52,25 @@ end args;
 public function typeinfo
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean = RTOpts_typeinfo();
 end typeinfo;
 
 public function splitArrays
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" splitArrays = RTOpts_splitArrays();
 end splitArrays;
 
 public function paramsStruct
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean = RTOpts_paramsStruct();
 end paramsStruct;
 
 public function modelicaOutput
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean = RTOpts_modelicaOutput();
 end modelicaOutput;
 
 public function debugFlag
@@ -85,13 +85,13 @@ public function setDebugFlag
   input Integer value;
   output Boolean str;
 
-  external "C" ;
+  external "C" str = RTOpts_setDebugFlag(inString,value);
 end setDebugFlag;
 
 public function noProc
   output Integer outInteger;
 
-  external "C" ;
+  external "C" noProc = RTOpts_noProc();
 end noProc;
 
 public function setEliminationLevel
@@ -103,25 +103,25 @@ end setEliminationLevel;
 public function eliminationLevel
   output Integer level;
 
-  external "C" ;
+  external "C" level = RTOpts_level();
 end eliminationLevel;
 
 public function latency
   output Real outReal;
 
-  external "C" ;
+  external "C" outReal = RTOpts_latency();
 end latency;
 
 public function bandwidth
   output Real outReal;
 
-  external "C" ;
+  external "C" outReal = RTOpts_bandwidth();
 end bandwidth;
 
 public function simulationCg
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean = RTOpts_simulationCg();
 end simulationCg;
 
 public function simulationCodeTarget
@@ -130,26 +130,26 @@ public function simulationCodeTarget
  usage: omc [+target=gcc|msvc], default to 'gcc'."
   output String outCodeTarget;
 
-  external "C" ;
+  external "C" outCodeTarget = RTOpts_simulationCodeTarget();
 end simulationCodeTarget;
 
 public function classToInstantiate
   output String modelName;
 
-  external "C";
+  external "C" modelName = RTOpts_classToInstantiate();
 end classToInstantiate;
 
 public function silent
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean = RTOpts_silent();
 end silent;
 
 public function versionRequest
   output Boolean outBoolean;
 
-  external "C";
-  end versionRequest;
+  external "C" outBoolean = RTOpts_versionRequest();
+end versionRequest;
 
 public function acceptMetaModelicaGrammar
 "@author: adrpo 2007-06-11
@@ -157,7 +157,7 @@ public function acceptMetaModelicaGrammar
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
 
-  external "C";
+  external "C" outBoolean = RTOpts_acceptMetaModelicaGrammar();
 end acceptMetaModelicaGrammar;
 
 public function getAnnotationVersion
@@ -168,7 +168,7 @@ public function getAnnotationVersion
      setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   output String annotationVersion;
-  external "C";
+  external "C" annotationVersion = RTOpts_getAnnotationVersion();
 end getAnnotationVersion;
 
 public function setAnnotationVersion
@@ -186,7 +186,7 @@ public function getNoSimplify
    or via the API
      setNoSimplify(true|false);"
   output Boolean noSimplify;
-  external "C";
+  external "C" noSimplify = RTOpts_getNoSimplify();
 end getNoSimplify;
 
 public function setNoSimplify
@@ -201,7 +201,7 @@ public function vectorizationLimit
   "Returns the vectorization limit that is used to determine how large an array
   can be before it no longer is expanded by Static.crefVectorize."
   output Integer limit;
-  external "C";
+  external "C" limit = RTOpts_vectorizationLimit();
 end vectorizationLimit;
 
 public function setVectorizationLimit
@@ -212,7 +212,7 @@ end setVectorizationLimit;
 
 public function showAnnotations
   output Boolean show;
-  external "C";
+  external "C" show = RTOpts_showAnnotations();
 end showAnnotations;
 
 public function setShowAnnotations
@@ -222,6 +222,7 @@ end setShowAnnotations;
 
 public function getRunningTestsuite
   output Boolean runningTestsuite;
+  external "C" runningTestsuite = RTOpts_getRunningTestsuite();
 end getRunningTestsuite;
 
 end RTOpts;

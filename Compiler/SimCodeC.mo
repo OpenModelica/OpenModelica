@@ -20016,6 +20016,50 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
+           DAE.STMT_ASSIGN(exp1 = (i_exp1 as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR())), exp = i_exp),
+           i_context,
+           i_varDecls )
+      local
+        DAE.Exp i_exp;
+        DAE.Exp i_exp1;
+        Tpl.Text i_expPart;
+        Tpl.Text i_varPart;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_varPart, i_preExp, i_varDecls) = scalarLhsCref(emptyTxt, i_exp1, i_context, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeText(txt, i_varPart);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = (modelica_fnptr) "));
+        txt = Tpl.writeText(txt, i_expPart);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then (txt, i_varDecls);
+
+    case ( txt,
+           DAE.STMT_ASSIGN(exp1 = (i_exp1 as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _))), exp = i_exp),
+           i_context,
+           i_varDecls )
+      local
+        DAE.Exp i_exp;
+        DAE.Exp i_exp1;
+        Tpl.Text i_expPart;
+        Tpl.Text i_varPart;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_varPart, i_preExp, i_varDecls) = scalarLhsCref(emptyTxt, i_exp1, i_context, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeText(txt, i_varPart);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = (modelica_fnptr) "));
+        txt = Tpl.writeText(txt, i_expPart);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then (txt, i_varDecls);
+
+    case ( txt,
            DAE.STMT_ASSIGN(exp1 = (i_exp1 as DAE.CREF(componentRef = _)), exp = i_exp),
            i_context,
            i_varDecls )
@@ -23564,8 +23608,9 @@ algorithm
       local
         DAE.ComponentRef i_cr;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_fnptr)boxptr_"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("((modelica_fnptr)boxptr_"));
         txt = functionName(txt, i_cr);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -23576,8 +23621,9 @@ algorithm
       local
         DAE.ComponentRef i_cr;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_fnptr) _"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("((modelica_fnptr) _"));
         txt = crefStr(txt, i_cr);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,

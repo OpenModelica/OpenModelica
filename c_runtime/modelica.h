@@ -44,7 +44,11 @@ extern "C" {
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
 typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
-typedef void(* modelica_fnptr) (void); /*MetaModelica extension, function pointer, added by stefan */
+/* MetaModelica extension.
+We actually store function-pointers in lists, etc...
+So it needs to be void*. If we use a platform with different sizes of function-
+pointers, some changes need to be done to code generation */
+typedef void* modelica_fnptr;
 
 #include <stdlib.h>
 

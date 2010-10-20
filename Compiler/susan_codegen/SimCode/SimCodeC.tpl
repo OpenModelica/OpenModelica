@@ -3651,6 +3651,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
 end extArgF77;
 
 template tempSizeVarName(ComponentRef c, DAE.Exp indices)
+
 ::=
   match indices
   case ICONST(__) then '<%contextCref(c,contextFunction)%>_size_<%integer%>'
@@ -3702,6 +3703,15 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     <<
     <%preExp%>
+    >>
+  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_VAR(__)))
+  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_FUNC(__))) then
+    let &preExp = buffer "" /*BUFD*/
+    let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    <<
+    <%preExp%>
+    <%varPart%> = (modelica_fnptr) <%expPart%>;
     >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
@@ -4306,9 +4316,9 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
     else
       daeExpRecordCrefRhs(t, cr, context, preExp, varDecls)
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
-    '(modelica_fnptr)boxptr_<%functionName(cr)%>'
+    '((modelica_fnptr)boxptr_<%functionName(cr)%>)'
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
-    '(modelica_fnptr) _<%crefStr(cr)%>'
+    '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
 
