@@ -382,6 +382,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,e,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         t = Types.getPropType(prop);
+        (e,t) = Types.matchType(e,t,DAE.T_BOXED_DEFAULT,true);
         e = DAE.META_OPTION(SOME(e));
         c = Types.propAllConst(prop);
         prop1 = DAE.PROP((DAE.T_METAOPTION(t),NONE()),c);

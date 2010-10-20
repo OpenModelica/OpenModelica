@@ -2375,19 +2375,20 @@ algorithm
     local
       DAE.ComponentRef ce,ce_1;
       DAE.ExpType t;
-      DAE.Properties cprop,eprop,prop,msgprop,varprop,valprop;
+      DAE.Properties cprop,eprop,prop,prop1,prop2,msgprop,varprop,valprop;
       SCode.Accessibility acc;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
+      Absyn.Exp e,e1,e2,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
       Boolean impl,onlyCref,tupleExp;
       list<Absyn.Exp> absynExpList,inputExps,expl;
       list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
       Absyn.MatchType matchType;
       list<DAE.Properties> cprops, eprops;
-      String s,i;
+      DAE.Type lt,rt;
+      String s,i,lhs_str,rhs_str,lt_str,rt_str;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<SCode.Statement> tb,fb,sl,elseWhenSt;
@@ -2633,9 +2634,27 @@ algorithm
       then
         fail();
         
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e1 as Absyn.TUPLE(expressions = expl),value = e2,info=info),source,initial_,impl,unrollForLoops)
+      equation
+        Absyn.CALL(functionArgs = _) = e2;
+        _ = Util.listMap(expl,Absyn.expCref);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE,false,pre,info);
+        (cache,e_2,prop2,_) = Static.elabExp(cache,env,e2,impl,NONE,false,pre,info);
+        lt = Types.getPropType(prop1);
+        rt = Types.getPropType(prop2);
+        false = Types.subtype(lt, rt);
+        lhs_str = Exp.printExpStr(e_1);
+        rhs_str = Exp.printExpStr(e_2);
+        lt_str = Types.unparseType(lt);
+        rt_str = Types.unparseType(rt);
+        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
+      then
+        fail();
+
     /* Tuple with rhs not CALL or CONSTANT => Error */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
-      equation 
+      equation
+        // failure(Absyn.CALL(functionArgs = _) = e);
         _ = Util.listMap(expl,Absyn.expCref);
         s = Dump.printExpStr(e);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);

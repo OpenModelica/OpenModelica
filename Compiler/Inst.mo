@@ -3695,9 +3695,9 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,cenv,ih,tys,csets,oDA) =
+        (cache,cenv,ih,{ty},csets,oDA) =
         instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
-        {ty} = tys;
+        ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_METAOPTION(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE,graph);

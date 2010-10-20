@@ -5292,7 +5292,6 @@ algorithm
     case ((DAE.T_METAOPTION(t1),_),bindings)
       equation
         t2 = fixPolymorphicRestype2(t1, bindings);
-        t2 = unboxedType(t2);
       then ((DAE.T_METAOPTION(t2),NONE));
     case ((DAE.T_METATUPLE(tys),_),bindings)
       equation
@@ -5846,7 +5845,6 @@ algorithm
     case ((DAE.T_METAOPTION(ty),_),_)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
-        ty = unboxedType(ty);
         ty = (DAE.T_METAOPTION(ty),NONE());
       then ty;
     case ((DAE.T_METATUPLE(tys),_),_)
@@ -5889,7 +5887,6 @@ algorithm
     case ((DAE.T_METAOPTION(ty),_),_)
       equation
         ty = renamePolymorphicType(ty, prefix);
-        ty = unboxedType(ty);
         ty = (DAE.T_METAOPTION(ty),NONE());
       then ty;
     case ((DAE.T_METATUPLE(tys),_),_)
