@@ -1193,6 +1193,15 @@ algorithm
     case "listStringCharString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListStringCharString;
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
+    // Box/Unbox
+    case "mmc_mk_bcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_mk_rcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_mk_scon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_integer" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_real" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_string" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
