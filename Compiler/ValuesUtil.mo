@@ -1954,7 +1954,7 @@ public function valString2 "function: valString
 "
   input Value inValue;
 algorithm
-  outString:=
+  _ :=
   matchcontinue (inValue)
     local
       String s,s_1,s_2,res,res_1;
@@ -2080,7 +2080,7 @@ algorithm
         Print.printBuf(s);
       then
         ();
-    case(Values.NORETCALL) then ();
+    case(Values.NORETCALL()) then ();
     case (Values.META_FAIL())
       equation
         Print.printBuf("fail()");
@@ -2100,7 +2100,7 @@ protected function valRecordString
   input list<Value> xs;
   input list<String> ids;
 algorithm
-  outString := matchcontinue (xs,ids)
+  _ := matchcontinue (xs,ids)
     local
       Absyn.Path cname;
       String s1,s2,res,id;
@@ -2137,7 +2137,7 @@ protected function valListString "function: valListString
 "
   input list<Value> inValueLst;
 algorithm
-  outString:=
+  _ :=
   matchcontinue (inValueLst)
     local
       Value v;

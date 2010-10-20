@@ -7968,7 +7968,7 @@ protected function classHasLocalClasses
   input Absyn.Class cl;
   output Boolean res;
 algorithm
-  cl := matchcontinue(cl)
+  res := matchcontinue(cl)
   local list<Absyn.ClassPart> parts;
     /* a class with parts */
     case(Absyn.CLASS(body= Absyn.PARTS(classParts = parts))) equation
@@ -17351,7 +17351,7 @@ protected function transformFlatElseIfAlgorithm
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> elseIfbranch;
   output tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> outElseIfbranch;
 algorithm
-  outElseIfBranch := matchcontinue(elseIfbranch)
+  outElseIfbranch := matchcontinue(elseIfbranch)
     local
       Absyn.Exp e1,e11;
       list<Absyn.AlgorithmItem> algitems,algitems1;
@@ -17569,7 +17569,6 @@ algorithm
     local
       Absyn.Exp e1,e2,e11,e21;
       Absyn.Ident id;
-      list<Absyn.NamedArg> nargs;
     case({},rel,ext_arg) then (({},ext_arg));
  	  case(Absyn.NAMEDARG(id,e1)::nargs,rel,ext_arg)
  	    equation
@@ -17597,7 +17596,6 @@ algorithm
     local
       Absyn.Exp e1,e2,e11,e21;
       Absyn.Ident id;
-      list<Absyn.Exp> pargs;
  	  case({},rel,ext_arg) then (({},ext_arg));
  	  case(e1::pargs,rel,ext_arg)
  	    equation
