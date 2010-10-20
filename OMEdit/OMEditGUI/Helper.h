@@ -34,7 +34,9 @@
 #ifndef HELPER_H
 #define HELPER_H
 
+#include <stdlib.h>
 #include <QString>
+#include <QSize>
 
 class Helper
 {
@@ -42,12 +44,16 @@ public:
     static QString applicationName;
     static QString applicationVersion;
     static QString applicationIntroText;
+    static QString OpenModelicaHome;
     static QString omcServerName;
     static QString omFileTypes;
     static QString omFileOpenText;
     static qreal globalXScale;
     static qreal globalYScale;
     static QString ModelicaSimulationMethods;
+    static int treeIndentation;
+    static QSize iconSize;
+    static int headingFontSize;
 };
 
 class GUIMessages

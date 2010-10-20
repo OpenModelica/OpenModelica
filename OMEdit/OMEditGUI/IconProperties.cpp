@@ -32,33 +32,80 @@
  */
 
 #include "IconProperties.h"
-#include "ui_IconProperties.h"
 
 IconProperties::IconProperties(IconAnnotation *icon, QWidget *parent)
-    : QDialog(parent, Qt::WindowTitleHint), ui(new Ui::IconProperties)
+    : QDialog(parent, Qt::WindowTitleHint)
 {
-    ui->setupUi(this);
     setWindowTitle(QString(Helper::applicationName).append(" - Component Properties"));
     setAttribute(Qt::WA_DeleteOnClose);
+    setMinimumSize(400, 300);
+    setModal(true);
     mpIconAnnotation = icon;
-    initializeFields();
+
+    setUpForm();
 }
 
 IconProperties::~IconProperties()
 {
-    delete ui;
+
 }
 
-void IconProperties::initializeFields()
+void IconProperties::setUpForm()
 {
-    ui->mpPropertiesTabWidget->setCurrentIndex(0);
-    ui->mpIconNameTextBox->setText(mpIconAnnotation->getName());
-    //ui->mpIconCommentTextBox->setText(mpIconAnnotation->getComment());
+    mpPropertiesHeading = new QLabel(tr("Properties"));
+    mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
 
-    ui->mpIconModelNameTextBox->setText(mpIconAnnotation->getClassName());
-    //ui->mpIconModelNameTextBox->setText(mpIconAnnotation->getClassName());
+    mHorizontalLine = new QFrame();
+    mHorizontalLine->setFrameShape(QFrame::HLine);
+    mHorizontalLine->setFrameShadow(QFrame::Sunken);
 
-    ui->mpParametersVerticalLayout->setAlignment(Qt::AlignTop);
+    // Create the Tab Widget and add tabs to it
+    mpPropertiesTabWidget = new QTabWidget;
+    //mpPropertiesTabWidget->setCurrentIndex(0);
+    mpGeneralTab = new QWidget(mpPropertiesTabWidget);
+    mpPropertiesTabWidget->addTab(mpGeneralTab, tr("General"));
+    mpParametersTab = new QWidget(mpPropertiesTabWidget);
+    mpPropertiesTabWidget->addTab(mpParametersTab, tr("Parameters"));
+    mpModeifiersTab = new QWidget(mpPropertiesTabWidget);
+    mpPropertiesTabWidget->addTab(mpModeifiersTab, tr("Modifiers"));
+
+    // add group boxes to General Tab
+    QVBoxLayout *vGeneralTabLayout = new QVBoxLayout;
+    // Create the Component Box
+    mpComponentGroup = new QGroupBox(tr("Component"));
+    QGridLayout *gridComponentLayout = new QGridLayout;
+    mpIconNameLabel = new QLabel(tr("Name:"));
+    mpIconNameTextBox = new QLineEdit(mpIconAnnotation->getName());
+    mpIconCommentLabel = new QLabel(tr("Comment:"));
+    mpIconCommentTextBox = new QLineEdit(mpIconAnnotation->getClassName());
+    //mpIconCommentTextBox->setText(mpIconAnnotation->getComment());
+    gridComponentLayout->addWidget(mpIconNameLabel, 0, 0);
+    gridComponentLayout->addWidget(mpIconNameTextBox, 0, 1);
+    gridComponentLayout->addWidget(mpIconCommentLabel, 1, 0);
+    gridComponentLayout->addWidget(mpIconCommentTextBox, 1, 1);
+    mpComponentGroup->setLayout(gridComponentLayout);
+    // Create the Model Box
+    mpModelGroup = new QGroupBox(tr("Model"));
+    QGridLayout *gridModelLayout = new QGridLayout;
+    mpIconModelNameLabel = new QLabel(tr("Name:"));
+    mpIconModelNameTextBox = new QLabel;
+    mpIconModelCommentLabel = new QLabel(tr("Comment:"));
+    mpIconModelCommentTextBox = new QLabel;
+    gridModelLayout->addWidget(mpIconModelNameLabel, 0, 0);
+    gridModelLayout->addWidget(mpIconModelNameTextBox, 0, 1);
+    gridModelLayout->addWidget(mpIconModelCommentLabel, 1, 0);
+    gridModelLayout->addWidget(mpIconModelCommentTextBox, 1, 1);
+    mpModelGroup->setLayout(gridModelLayout);
+    // set General Tab layout
+    vGeneralTabLayout->addWidget(mpComponentGroup);
+    vGeneralTabLayout->addWidget(mpModelGroup);
+    mpGeneralTab->setLayout(vGeneralTabLayout);
+
+    // add items to parameters tab
+    QVBoxLayout *vParametersLayout = new QVBoxLayout;
+    vParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    QGridLayout *gridParametersLayout = new QGridLayout;
+    gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
     for (int i = 0 ; i < mpIconAnnotation->mpIconParametersList.size() ; i++)
     {
@@ -70,24 +117,44 @@ void IconProperties::initializeFields()
         QLineEdit *parameterTextBox = new QLineEdit;
         parameterTextBox->setText(iconParameter->getValue().isEmpty() ?
                                   iconParameter->getDefaultValue() : iconParameter->getValue());
-        parameterTextBox->setMaximumWidth(100);
         mParameterTextBoxesList.append(parameterTextBox);
 
         QLabel *parameterComment = new QLabel;
-        parameterComment->setText(mpIconAnnotation->mpComponentProperties->getComment());
+        parameterComment->setText(iconParameter->getComment());
 
-        QHBoxLayout *horizontalLayout = new QHBoxLayout;
-        horizontalLayout->addWidget(parameterLabel);
-        horizontalLayout->addWidget(parameterTextBox);
-        horizontalLayout->addWidget(parameterComment);
-
-        ui->mpParametersVerticalLayout->addLayout(horizontalLayout);
+        gridParametersLayout->addWidget(parameterLabel, i, 0);
+        gridParametersLayout->addWidget(parameterTextBox, i, 1);
+        gridParametersLayout->addWidget(parameterComment, i, 2);
     }
+    vParametersLayout->addLayout(gridParametersLayout);
+    mpParametersTab->setLayout(vParametersLayout);
+    // add items to modifiers tab
+
+    // Create the buttons
+    mpOkButton = new QPushButton(tr("OK"));
+    mpOkButton->setAutoDefault(true);
+    connect(mpOkButton, SIGNAL(pressed()), this, SLOT(updateIconProperties()));
+    mpCancelButton = new QPushButton(tr("Cancel"));
+    mpCancelButton->setAutoDefault(false);
+    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+
+    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+
+    // Create a layout
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->addWidget(mpPropertiesHeading, 0, 0);
+    mainLayout->addWidget(mHorizontalLine, 1, 0);
+    mainLayout->addWidget(mpPropertiesTabWidget, 2, 0);
+    mainLayout->addWidget(mpButtonBox, 3, 0);
+
+    setLayout(mainLayout);
 }
 
 void IconProperties::updateIconProperties()
 {
-    QString iconName = ui->mpIconNameTextBox->text().trimmed();
+    QString iconName = mpIconNameTextBox->text().trimmed();
     ProjectTab *pProjectTab = mpIconAnnotation->mpGraphicsView->mpParentProjectTab;
     MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
 
@@ -103,10 +170,10 @@ void IconProperties::updateIconProperties()
         {
             if (mpIconAnnotation->mpOMCProxy->renameComponent(pProjectTab->mModelNameStructure,
                                                               mpIconAnnotation->getName(),
-                                                              ui->mpIconNameTextBox->text().trimmed()))
+                                                              mpIconNameTextBox->text().trimmed()))
             {
                 // if renameComponent command is successful update the component with new name
-                mpIconAnnotation->updateName(ui->mpIconNameTextBox->text().trimmed());
+                mpIconAnnotation->updateName(mpIconNameTextBox->text().trimmed());
             }
             else
             {

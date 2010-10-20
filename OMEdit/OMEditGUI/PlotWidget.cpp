@@ -66,7 +66,7 @@ PlotWidget::PlotWidget(MainWindow *pParent)
 
 void PlotWidget::readPlotVariables(QString fileName)
 {
-    QFile simulationResultFile(QString(qApp->applicationDirPath()).append("/tmp/").append(fileName));
+    QFile simulationResultFile(QString(Helper::OpenModelicaHome).append("/tmp/").append(fileName));
     simulationResultFile.open(QIODevice::ReadOnly);
 
     QList<QString> plotVariablesList;

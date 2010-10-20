@@ -56,47 +56,79 @@
 
 class MainWindow;
 class OMCProxy;
+class LibraryWidget;
+class ModelicaTree;
+
+class ModelicaTreeNode : public QTreeWidgetItem
+{
+public:
+    ModelicaTreeNode(QString text, QString tooltip, int type, QTreeWidget *parent = 0);
+    ~ModelicaTreeNode();
+
+    int mType;
+    QString mName;
+    QString mNameStructure;
+};
+
+class ModelicaTree : public QTreeWidget
+{
+    Q_OBJECT
+public:
+    ModelicaTree(LibraryWidget *parent = 0);
+    ~ModelicaTree();
+    void createActions();
+    ModelicaTreeNode* getNode(QString name);
+    void deleteNode(ModelicaTreeNode *item);
+
+    LibraryWidget *mpParentLibraryWidget;
+private:
+    QList<ModelicaTreeNode*> mModelicaTreeNodesList;
+    QAction *mRenameAction;
+    QAction *mCheckModelAction;
+    QAction *mDeleteAction;
+signals:
+    void nodeDeleted();
+public slots:
+    void addNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
+    void openProjectTab(QTreeWidgetItem *item, int column);
+    void showContextMenu(QPoint point);
+    void renameClass();
+    void checkClass();
+    void deleteClass();
+};
 
 class LibraryWidget : public QWidget
 {
     Q_OBJECT
-
 public:
     QTreeWidget *mpProjectsTree;
+    ModelicaTree *mpModelicaTree;
     //Member functions
     LibraryWidget(MainWindow *parent = 0);
     void addModelicaStandardLibrary();
     void loadModelicaLibraryHierarchy(QString value, QString prefixStr=QString());
     void addClass(QString className, QString parentClassName=QString(), QString parentStructure=QString(), bool hasIcon=false);
     void loadModel(QString path);
-    void addModelNode(QString name, QString parentName=QString(), QString parentStructure=QString());
+    void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
     void removeProject();
     bool isTreeItemLoaded(QTreeWidgetItem *item);
     void addGlobalIconObject(IconAnnotation* icon);
     IconAnnotation* getGlobalIconObject(QString className);
     void updateNodeText(QString text, QString textStructure);
-    void createActions();
 
-    QTreeWidgetItem *mSelectedItem;
+    MainWindow *mpParentMainWindow;
+    ModelicaTreeNode *mSelectedModelicaNode;
+signals:
+    void addModelicaTreeNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
 private slots:
     void showLib(QTreeWidgetItem *item);
-    void openProjectTab(QTreeWidgetItem *item, int column);
-    void showContextMenu(QPoint point);
-    void renameClass();
-    void checkClass();
-    void deleteClass();
 private:
     //Member variables
-    MainWindow *mpParentMainWindow;
     QTreeWidget *mpTree;
     QVBoxLayout *mpGrid;
     QList<QString> mTreeList;
     QList<IconAnnotation*> mGlobalIconsList;
-
-    QAction *mRenameAction;
-    QAction *mCheckModelAction;
-    QAction *mDeleteAction;
 };
 
 #endif // LIBRARYWIDGET_H

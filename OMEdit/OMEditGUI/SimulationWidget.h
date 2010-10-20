@@ -34,29 +34,44 @@
 #ifndef SIMULATIONWIDGET_H
 #define SIMULATIONWIDGET_H
 
-#include <QDialog>
-
 #include "mainwindow.h"
 
 class MainWindow;
-
-namespace Ui {
-    class SimulationWidget;
-}
 
 class SimulationWidget : public QDialog
 {
     Q_OBJECT
 public:
-    explicit SimulationWidget(MainWindow *parent = 0);
+    SimulationWidget(MainWindow *parent = 0);
     ~SimulationWidget();
-    void initializeFields();
+    void setUpForm();
     void show();
     bool validate();
 
     MainWindow *mpParentMainWindow;
 private:
-    Ui::SimulationWidget *ui;
+    QLabel *mpSimulationHeading;
+    QFrame *line;
+    QGroupBox *mpSimulationIntervalGroup;
+    QLabel *mpStartTimeLabel;
+    QLineEdit *mpStartTimeTextBox;
+    QLabel *mpStopTimeLabel;
+    QLineEdit *mpStopTimeTextBox;
+    QGroupBox *mpOutputIntervalGroup;
+    QLabel *mpNumberofIntervalLabel;
+    QLineEdit *mpNumberofIntervalsTextBox;
+    QLabel *mpOutputIntervalLabel;
+    QLineEdit *mpOutputIntervalTextBox;
+    QGroupBox *mpIntegrationGroup;
+    QLabel *mpMethodLabel;
+    QComboBox *mpMethodComboBox;
+    QLabel *mpToleranceLabel;
+    QLineEdit *mpToleranceTextBox;
+    QLabel *mpFixedStepSizeLabel;
+    QLineEdit *mpFixedStepSizeTextBox;
+    QPushButton *mpCancelButton;
+    QPushButton *mpSimulateButton;
+    QDialogButtonBox *mpButtonBox;
 public slots:
     void simulate();
 };

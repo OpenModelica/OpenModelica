@@ -32,49 +32,108 @@
  */
 
 #include "SimulationWidget.h"
-#include "ui_SimulationWidget.h"
 
 SimulationWidget::SimulationWidget(MainWindow *parent)
-    : QDialog(parent, Qt::WindowTitleHint), ui(new Ui::SimulationWidget)
+    : QDialog(parent, Qt::WindowTitleHint)
 {
-    ui->setupUi(this);
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
+    setMinimumSize(375, 370);
     mpParentMainWindow = parent;
-
-    ui->mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
-
-    QIntValidator *intValidator = new QIntValidator(this);
-    intValidator->setBottom(0);
-    ui->mpStartTimeTextBox->setValidator(intValidator);
-    ui->mpStopTimeTextBox->setValidator(intValidator);
-    ui->mpNumberofIntervalsTextBox->setValidator(intValidator);
-    ui->mpOutputIntervalTextBox->setValidator(intValidator);
-
-    QDoubleValidator *doubleValidator = new QDoubleValidator(this);
-    doubleValidator->setBottom(0);
-    ui->mpToleranceTextBox->setValidator(doubleValidator);
 }
 
 SimulationWidget::~SimulationWidget()
 {
-    delete ui;
+
 }
 
-void SimulationWidget::initializeFields()
+void SimulationWidget::setUpForm()
 {
-    ui->mpStartTimeTextBox->setText(tr("0"));
-    ui->mpStopTimeTextBox->setText(tr("1"));
-    ui->mpNumberofIntervalsTextBox->setText(tr("500"));
-    ui->mpOutputIntervalTextBox->clear();
-    ui->mpMethodComboBox->clear();
-    ui->mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
-    ui->mpToleranceTextBox->setText(tr("0.0001"));
-    ui->mpFixedStepSizeTextBox->clear();
+    mpSimulationHeading = new QLabel(tr("Simulation Center"));
+    mpSimulationHeading->setFont(QFont("", Helper::headingFontSize));
+
+    line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    // Simulation Interval
+    QGridLayout *gridSimulationIntervalLayout = new QGridLayout;
+    mpSimulationIntervalGroup = new QGroupBox(tr("Simulation Interval"));
+    mpStartTimeLabel = new QLabel(tr("Start Time:"));
+    mpStartTimeTextBox = new QLineEdit(tr("0"));
+    mpStopTimeLabel = new QLabel(tr("Stop Time:"));
+    mpStopTimeTextBox = new QLineEdit(tr("1"));
+
+    gridSimulationIntervalLayout->addWidget(mpStartTimeLabel, 0, 0);
+    gridSimulationIntervalLayout->addWidget(mpStartTimeTextBox, 0, 1);
+    gridSimulationIntervalLayout->addWidget(mpStopTimeLabel, 1, 0);
+    gridSimulationIntervalLayout->addWidget(mpStopTimeTextBox, 1, 1);
+    mpSimulationIntervalGroup->setLayout(gridSimulationIntervalLayout);
+    // Output Interval
+    QGridLayout *gridOutputIntervalLayout = new QGridLayout;
+    mpOutputIntervalGroup = new QGroupBox(tr("Output Interval"));
+    mpNumberofIntervalLabel = new QLabel(tr("Number of Intervals:"));
+    mpNumberofIntervalsTextBox = new QLineEdit(tr("500"));
+    mpOutputIntervalLabel = new QLabel(tr("Output Interval:"));
+    mpOutputIntervalTextBox = new QLineEdit;
+
+    gridOutputIntervalLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
+    gridOutputIntervalLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
+    gridOutputIntervalLayout->addWidget(mpOutputIntervalLabel, 1, 0);
+    gridOutputIntervalLayout->addWidget(mpOutputIntervalTextBox, 1, 1);
+    mpOutputIntervalGroup->setLayout(gridOutputIntervalLayout);
+    // Integration Interval
+    QGridLayout *gridIntegrationLayout = new QGridLayout;
+    mpIntegrationGroup = new QGroupBox(tr("Integration"));
+    mpMethodLabel = new QLabel(tr("Method:"));
+    mpMethodComboBox = new QComboBox;
+    mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
+    mpToleranceLabel = new QLabel(tr("Tolerance:"));
+    mpToleranceTextBox = new QLineEdit(tr("0.0001"));
+    mpFixedStepSizeLabel = new QLabel(tr("Fixed Step Size:"));
+    mpFixedStepSizeTextBox = new QLineEdit;
+
+    gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
+    gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
+    gridIntegrationLayout->addWidget(mpToleranceLabel, 1, 0);
+    gridIntegrationLayout->addWidget(mpToleranceTextBox, 1, 1);
+    gridIntegrationLayout->addWidget(mpFixedStepSizeLabel, 2, 0);
+    gridIntegrationLayout->addWidget(mpFixedStepSizeTextBox, 2, 1);
+    mpIntegrationGroup->setLayout(gridIntegrationLayout);
+
+    // Add the validators
+    QDoubleValidator *doubleValidator = new QDoubleValidator(this);
+    doubleValidator->setBottom(0);
+    mpStartTimeTextBox->setValidator(doubleValidator);
+    mpStopTimeTextBox->setValidator(doubleValidator);
+    mpNumberofIntervalsTextBox->setValidator(doubleValidator);
+    mpOutputIntervalTextBox->setValidator(doubleValidator);
+    mpToleranceTextBox->setValidator(doubleValidator);
+
+    // Create the buttons
+    mpSimulateButton = new QPushButton(tr("Simulate!"));
+    mpSimulateButton->setAutoDefault(true);
+    connect(mpSimulateButton, SIGNAL(pressed()), this, SLOT(simulate()));
+    mpCancelButton = new QPushButton(tr("Cancel"));
+    mpCancelButton->setAutoDefault(false);
+    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+
+    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+
+    // Create a layout
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->addWidget(mpSimulationHeading, 0, 0);
+    mainLayout->addWidget(line, 1, 0);
+    mainLayout->addWidget(mpSimulationIntervalGroup, 2, 0);
+    mainLayout->addWidget(mpOutputIntervalGroup, 3, 0);
+    mainLayout->addWidget(mpIntegrationGroup, 4, 0);
+    mainLayout->addWidget(mpButtonBox, 5, 0);
+
+    setLayout(mainLayout);
 }
 
 void SimulationWidget::show()
 {
-    initializeFields();
     setVisible(true);
 }
 
@@ -83,22 +142,22 @@ void SimulationWidget::simulate()
     if (validate())
     {
         QString simualtionParameters;
-        if (ui->mpStartTimeTextBox->text().isEmpty())
+        if (mpStartTimeTextBox->text().isEmpty())
             simualtionParameters.append(tr("startTime=0"));
         else
-            simualtionParameters.append(tr("startTime=")).append(ui->mpStartTimeTextBox->text());
-        simualtionParameters.append(tr(", stopTime=")).append(ui->mpStopTimeTextBox->text());
-        if (ui->mpNumberofIntervalsTextBox->text().isEmpty())
+            simualtionParameters.append(tr("startTime=")).append(mpStartTimeTextBox->text());
+        simualtionParameters.append(tr(", stopTime=")).append(mpStopTimeTextBox->text());
+        if (mpNumberofIntervalsTextBox->text().isEmpty())
             simualtionParameters.append(tr(", numberOfIntervals=500"));
         else
-            simualtionParameters.append(tr(", numberOfIntervals=")).append(ui->mpNumberofIntervalsTextBox->text());
-        if (!ui->mpOutputIntervalTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", outputInterval=")).append(ui->mpOutputIntervalTextBox->text());
-        simualtionParameters.append(tr(", method=")).append(ui->mpMethodComboBox->currentText());
-        if (!ui->mpToleranceTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", tolerance=")).append(ui->mpToleranceTextBox->text());
-        if (!ui->mpFixedStepSizeTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", fixedStepSize=")).append(ui->mpFixedStepSizeTextBox->text());
+            simualtionParameters.append(tr(", numberOfIntervals=")).append(mpNumberofIntervalsTextBox->text());
+        if (!mpOutputIntervalTextBox->text().isEmpty())
+            simualtionParameters.append(tr(", outputInterval=")).append(mpOutputIntervalTextBox->text());
+        simualtionParameters.append(tr(", method=")).append(mpMethodComboBox->currentText());
+        if (!mpToleranceTextBox->text().isEmpty())
+            simualtionParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
+        if (!mpFixedStepSizeTextBox->text().isEmpty())
+            simualtionParameters.append(tr(", fixedStepSize=")).append(mpFixedStepSizeTextBox->text());
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
 
@@ -111,7 +170,7 @@ void SimulationWidget::simulate()
         }
 
         // show simulation progress bar
-        int endtime = ui->mpNumberofIntervalsTextBox->text().toInt() * ui->mpStopTimeTextBox->text().toInt();
+        int endtime = mpNumberofIntervalsTextBox->text().toInt() * mpStopTimeTextBox->text().toInt();
         QProgressDialog progressBar(this, Qt::WindowTitleHint);
         progressBar.setMinimum(0);
         progressBar.setMaximum(endtime);
@@ -122,7 +181,7 @@ void SimulationWidget::simulate()
         progressBar.show();
         progressBar.setValue(endtime/2);
 
-        mpParentMainWindow->mpOMCProxy->changeDirectory(QString(qApp->applicationDirPath()).append("/tmp"));
+        mpParentMainWindow->mpOMCProxy->changeDirectory(QString(Helper::OpenModelicaHome).append("\\tmp"));
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Enable to simulate the Model '" +
@@ -144,18 +203,18 @@ void SimulationWidget::simulate()
 
 bool SimulationWidget::validate()
 {
-    if (ui->mpStartTimeTextBox->text().isEmpty())
+    if (mpStartTimeTextBox->text().isEmpty())
         mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(
                                                                     GUIMessages::NO_SIMULATION_STARTTIME));
 
-    if (ui->mpStopTimeTextBox->text().isEmpty())
+    if (mpStopTimeTextBox->text().isEmpty())
     {
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
                                                                   GUIMessages::NO_SIMULATION_STOPTIME));
         return false;
     }
 
-    if (ui->mpStopTimeTextBox->text().toInt() <= ui->mpStartTimeTextBox->text().toInt())
+    if (mpStopTimeTextBox->text().toInt() <= mpStartTimeTextBox->text().toInt())
     {
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
                                                                   GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME));

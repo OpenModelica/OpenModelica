@@ -34,7 +34,6 @@ SOURCES += main.cpp\
     CornerItem.cpp \
     ConnectorWidget.cpp \
     Components.cpp \
-    SimulationWidget.cpp \
     PlotWidget.cpp \
     ModelicaEditor.cpp \
     ../3Dpkg/VisualizationWidget.cpp \
@@ -51,8 +50,9 @@ SOURCES += main.cpp\
     ../Pltpkg2/dataSelect.cpp \
     ../Pltpkg2/curve.cpp \
     ../Pltpkg2/compoundWidget.cpp \
-    IconProperties.cpp \
-    IconParameters.cpp
+    IconParameters.cpp \
+    SimulationWidget.cpp \
+    IconProperties.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -78,7 +78,6 @@ HEADERS  += mainwindow.h \
     CornerItem.h \
     ConnectorWidget.h \
     Components.h \
-    SimulationWidget.h \
     PlotWidget.h \
     ModelicaEditor.h \
     ../3Dpkg/VisualizationWidget.h \
@@ -99,8 +98,9 @@ HEADERS  += mainwindow.h \
     ../Pltpkg2/dataSelect.h \
     ../Pltpkg2/curve.h \
     ../Pltpkg2/compoundWidget.h \
-    IconProperties.h \
-    IconParameters.h
+    IconParameters.h \
+    SimulationWidget.h \
+    IconProperties.h
 
 # -------For OMNIorb
 win32 {
@@ -108,7 +108,7 @@ DEFINES += __x86__ \
     __NT__ \
     __OSVERSION__=4 \
     __WIN32__
-LIBS += -L. \
+LIBS += -LC:\\Thesis\\omniORB-4.1.4\\lib\\x86_win32 \
     -lomniORB414_rt \
     -lomnithread34_rt
 
@@ -129,13 +129,11 @@ OTHER_FILES += \
 CONFIG += warn_off
 
 FORMS += \
-    SimulationWidget.ui \
     ../Pltpkg2/preferences.ui \
     ../Pltpkg2/newgraph.ui \
     ../Pltpkg2/graphWindow.ui \
     ../Pltpkg2/dataSelect.ui \
-    ../Pltpkg2/compoundWidget.ui \
-    IconProperties.ui
+    ../Pltpkg2/compoundWidget.ui
 
 RESOURCES += resource_omedit.qrc
 

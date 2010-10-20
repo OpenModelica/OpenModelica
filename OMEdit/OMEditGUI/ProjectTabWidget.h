@@ -78,7 +78,7 @@ public:
     Connector *getConnector();
     void addIconObject(IconAnnotation* icon);
     void deleteIconObject(IconAnnotation* icon);
-    QString getUniqueIconName(QString iconName, int number = 0);
+    QString getUniqueIconName(QString iconName, int number = 1);
     bool checkIconName(QString iconName);
 
     bool mIsCreatingConnector;
@@ -181,6 +181,7 @@ public slots:
     void resetZoom();
     void zoomIn();
     void zoomOut();
+    void updateTabIndexes();
 };
 
 #endif // PROJECTTABWIDGET_H

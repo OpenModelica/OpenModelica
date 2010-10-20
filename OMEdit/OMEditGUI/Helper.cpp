@@ -36,11 +36,15 @@
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "0.0.1";
 QString Helper::applicationIntroText = "Open Modelica Connection Editor";
+QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEditor";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
 qreal Helper::globalXScale = 0.15;
 qreal Helper::globalYScale = 0.15;
+int Helper::treeIndentation = 13;
+QSize Helper::iconSize = QSize(20, 20);
+int Helper::headingFontSize = 18;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 

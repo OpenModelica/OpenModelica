@@ -352,6 +352,17 @@ QVariant IconAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
         emit componentMoved();
         updateSelectionBox();
     }
+    else if (change == QGraphicsItem::ItemRotationHasChanged)
+    {
+        emit componentRotated();
+        //! @todo the selection box inverts with rotation. Fix it!!!!!!!!
+        updateSelectionBox();
+    }
+    else if (change == QGraphicsItem::ItemScaleHasChanged)
+    {
+        emit componentScaled();
+        /*updateSelectionBox();*/
+    }
     return QGraphicsItem::itemChange(change, value);
 }
 
@@ -397,6 +408,7 @@ void IconAnnotation::updateSelectionBox()
 void IconAnnotation::addConnector(Connector *item)
 {
     connect(this, SIGNAL(componentMoved()), item, SLOT(drawConnector()));
+    connect(this, SIGNAL(componentRotated()), item, SLOT(drawConnector()));
 }
 
 void IconAnnotation::resizeIcon(qreal resizeFactorX, qreal resizeFactorY)

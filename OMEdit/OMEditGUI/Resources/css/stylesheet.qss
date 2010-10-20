@@ -39,3 +39,6 @@ QPushButton#ModelicaModelButton:checked, QPushButton#ModelicaTextButton:checked 
 QTextEdit, QLineEdit {
     border: 1px solid gray;
 }
+QMessageBox {
+    background-color: lightgray;
+}

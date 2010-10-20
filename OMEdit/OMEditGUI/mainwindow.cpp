@@ -55,7 +55,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     //Set the name and size of the main window
     splashScreen->showMessage("Loading Widgets", Qt::AlignRight, Qt::white);
     this->setObjectName("MainWindow");
-    this->setWindowTitle(Helper::applicationName);
+    this->setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
     this->setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
     this->setMinimumSize(950, 670);
     this->setContentsMargins(1, 1, 1, 1);
@@ -393,7 +393,7 @@ void MainWindow::openNewModel()
 //! Opens the new model widget.
 void MainWindow::openOMShell()
 {
-    QString omShellPath (getenv("OPENMODELICAHOME"));
+    QString omShellPath (Helper::OpenModelicaHome);
 
     if (omShellPath.isEmpty())
     {

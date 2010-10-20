@@ -157,7 +157,6 @@ NewPackage::NewPackage(MainWindow *parent)
     this->mpParentMainWindow = parent;
     //Set the name and size of the main window
     this->setWindowTitle(QString(Helper::applicationName).append(" - Create New Package"));
-    this->setMaximumSize(375, 140);
     this->setMinimumSize(375, 140);
     this->setModal(true);
 
@@ -202,6 +201,7 @@ void NewPackage::show()
     this->mpParentPackageCombo->addItem(tr(""));
     this->mpParentPackageCombo->addItems(this->mpParentMainWindow->mpOMCProxy->createPackagesList());
     this->mpPackageNameTextBox->setText(tr(""));
+    this->mpPackageNameTextBox->setFocus();
     this->setVisible(true);
 }
 
@@ -261,8 +261,9 @@ void NewPackage::createPackage()
     }
 
     //Add the package to tree
-    this->mpParentMainWindow->mpLibrary->addModelNode(this->mpPackageNameTextBox->text(), this->mpParentPackageCombo->currentText(), packageStructure);
-    this->accept();
+    mpParentMainWindow->mpLibrary->addModelicaNode(this->mpPackageNameTextBox->text(), StringHandler::PACKAGE,
+                                                this->mpParentPackageCombo->currentText(), packageStructure);
+    accept();
 }
 
 NewModel::NewModel(MainWindow *parent)
@@ -271,7 +272,6 @@ NewModel::NewModel(MainWindow *parent)
     this->mpParentMainWindow = parent;
     //Set the name and size of the main window
     this->setWindowTitle(QString(Helper::applicationName).append(" - Create New Model"));
-    this->setMaximumSize(375, 140);
     this->setMinimumSize(375, 140);
     this->setModal(true);
 
@@ -316,6 +316,7 @@ void NewModel::show()
     this->mpParentPackageCombo->addItem(tr(""));
     this->mpParentPackageCombo->addItems(this->mpParentMainWindow->mpOMCProxy->createPackagesList());
     this->mpModelNameTextBox->setText(tr(""));
+    this->mpModelNameTextBox->setFocus();
     this->setVisible(true);
 }
 
@@ -379,9 +380,10 @@ void NewModel::createModel()
     }
 
     //open the new tab in central widget and add the model to tree.
-    this->mpParentMainWindow->mpLibrary->addModelNode(this->mpModelNameTextBox->text(), this->mpParentPackageCombo->currentText(), modelStructure);
-    this->mpParentMainWindow->mpProjectTabs->addNewProjectTab(this->mpModelNameTextBox->text(), modelStructure);
-    this->accept();
+    mpParentMainWindow->mpLibrary->addModelicaNode(this->mpModelNameTextBox->text(), StringHandler::MODEL,
+                                                this->mpParentPackageCombo->currentText(), modelStructure);
+    mpParentMainWindow->mpProjectTabs->addNewProjectTab(this->mpModelNameTextBox->text(), modelStructure);
+    accept();
 }
 
 RenameClassWidget::RenameClassWidget(QString name, QString nameStructure, MainWindow *parent)

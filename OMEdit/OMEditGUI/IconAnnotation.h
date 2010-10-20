@@ -119,6 +119,8 @@ signals:
     void componentMoved();
     void componentDeleted();
     void componentSelected();
+    void componentRotated();
+    void componentScaled();
 public slots:
     void showSelectionBox();
     void resizeIcon(qreal resizeFactorX, qreal resizeFactorY);

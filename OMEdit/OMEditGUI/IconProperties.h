@@ -34,29 +34,40 @@
 #ifndef ICONPROPERTIES_H
 #define ICONPROPERTIES_H
 
-#include <QDialog>
-
 #include "IconAnnotation.h"
 
 class IconAnnotation;
-
-namespace Ui {
-    class IconProperties;
-}
 
 class IconProperties : public QDialog
 {
     Q_OBJECT
 public:
-    explicit IconProperties(IconAnnotation *icon, QWidget *parent = 0);
+    IconProperties(IconAnnotation *icon, QWidget *parent = 0);
     ~IconProperties();
+    void setUpForm();
 
     IconAnnotation *mpIconAnnotation;
 private:
-    Ui::IconProperties *ui;
     QList<QLineEdit*> mParameterTextBoxesList;
-
-    void initializeFields();
+    QLabel *mpPropertiesHeading;
+    QFrame *mHorizontalLine;
+    QTabWidget *mpPropertiesTabWidget;
+    QWidget *mpGeneralTab;
+    QGroupBox *mpComponentGroup;
+    QLabel *mpIconNameLabel;
+    QLineEdit *mpIconNameTextBox;
+    QLabel *mpIconCommentLabel;
+    QLineEdit *mpIconCommentTextBox;
+    QGroupBox *mpModelGroup;
+    QLabel *mpIconModelNameLabel;
+    QLabel *mpIconModelNameTextBox;
+    QLabel *mpIconModelCommentLabel;
+    QLabel *mpIconModelCommentTextBox;
+    QWidget *mpParametersTab;
+    QWidget *mpModeifiersTab;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
 public slots:
     void updateIconProperties();
 };

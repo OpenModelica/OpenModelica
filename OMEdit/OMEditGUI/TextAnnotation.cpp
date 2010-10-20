@@ -234,10 +234,18 @@ void TextAnnotation::checkParameterString(QGraphicsItem *item)
         iconAnnotation = (dynamic_cast<IconAnnotation*>(item));
         foreach (IconParameters *parameter, iconAnnotation->mpIconParametersList)
         {
+            // paramter can be in form R=%R
             parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
             if (parameterString == this->mTextString)
             {
                 this->mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
+                break;
+            }
+            // paramter can be in form %R
+            parameterString = QString("%").append(parameter->getName());
+            if (parameterString == this->mTextString)
+            {
+                this->mTextString = QString(parameter->getDefaultValue());
                 break;
             }
         }

@@ -210,10 +210,8 @@ void GraphicsView::deleteIconObject(IconAnnotation *icon)
 QString GraphicsView::getUniqueIconName(QString iconName, int number)
 {
     QString name;
-    if (number > 0)
-        name = iconName + QString::number(number);
-    else
-        name = iconName;
+    name = iconName + QString::number(number);
+
     foreach (IconAnnotation *icon, mIconsList)
     {
         if (icon->getName() == name)
@@ -681,6 +679,7 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
     connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
+    connect(mpParentMainWindow->mpLibrary->mpModelicaTree, SIGNAL(nodeDeleted()), SLOT(updateTabIndexes()));
 }
 
 //! Returns a pointer to the currently active project tab
@@ -861,6 +860,8 @@ bool ProjectTabWidget::closeProjectTab(int index)
         modelName = tabText(index);
         modelName.chop(1);
         QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+        msgBox->setIcon(QMessageBox::Question);
         msgBox->setText(QString("The model '").append(modelName).append("'").append(QString(" is not saved.")));
         msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
         msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
@@ -906,9 +907,27 @@ bool ProjectTabWidget::closeAllProjectTabs()
     while(count() > 0)
     {
         setCurrentIndex(count()-1);
-        if (!closeProjectTab(count()-1))
+        if (!getCurrentTab()->mIsSaved)
         {
-            return false;
+            QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+            msgBox->setIcon(QMessageBox::Question);
+            msgBox->setText(QString("There are unsaved models opened. Do you still want to quit?"));
+            msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            msgBox->setDefaultButton(QMessageBox::No);
+
+            int answer = msgBox->exec();
+
+            switch (answer)
+            {
+            case QMessageBox::Yes:
+                return true;
+            case QMessageBox::No:
+                return false;
+            default:
+                // should never be reached
+                return false;
+            }
         }
     }
     return true;
@@ -949,4 +968,12 @@ void ProjectTabWidget::zoomIn()
 void ProjectTabWidget::zoomOut()
 {
     this->getCurrentTab()->mpGraphicsView->zoomOut();
+}
+
+void ProjectTabWidget::updateTabIndexes()
+{
+    for (int i = 0 ; i < count() ; i++)
+    {
+        (dynamic_cast<ProjectTab*>(widget(i)))->mTabPosition = i;
+    }
 }

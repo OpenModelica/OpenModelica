@@ -90,7 +90,7 @@ bool OMCProxy::startServer()
     try
     {
         QString msg;
-        QString omHome (getenv("OPENMODELICAHOME"));
+        QString omHome (Helper::OpenModelicaHome);
         if (omHome.isEmpty())
             throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
 
@@ -504,6 +504,7 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
 
 QString OMCProxy::changeDirectory(QString directory)
 {
+    directory = directory.replace("\\", "/");
     sendCommand("cd(\"" + directory + "\")");
     return getResult();
 }
