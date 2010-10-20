@@ -378,10 +378,20 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__basename)
 {
   const char *str = RML_STRINGDATA(rmlA0);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  const char* res = strrchr(str, '\\');
+  if (res == NULL) { res = strrchr(str, '/'); }
+  if (res == NULL) { res = str; } else { ++res; }
+  rmlA0 = (void*) mk_scon(res);
+#else
+  /* The POSIX version uses basename which is a bit more robust.
+   * But it may modify the contents of the pointer.
+   */
   char *copy = strdup(str);
-  char *res = basename(copy); /* basename may modify the contents */
+  char *res = basename(copy);
   rmlA0 = (void*) mk_scon(res);
   free(copy);
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

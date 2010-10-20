@@ -995,6 +995,7 @@ everyone running the testsuite."
   output String outFilename;
 algorithm
   outFilename := matchcontinue filename
+    case "" then ""; // Absyn.dummyInfo
     case filename
       equation
         true = RTOpts.getRunningTestsuite();
