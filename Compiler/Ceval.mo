@@ -1194,6 +1194,7 @@ algorithm
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
     // Box/Unbox
+    case "mmc_mk_bcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
     case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
     case "mmc_mk_rcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
     case "mmc_mk_scon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;

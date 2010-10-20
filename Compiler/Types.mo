@@ -4094,28 +4094,28 @@ algorithm
 
     case (e, t1 as (DAE.T_INTEGER(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
-        true = subtype(t1,t2);
+        (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
     case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
-        true = subtype(t1,t2);
+        (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_bcon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
     case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
-        true = subtype(t1,t2);
+        (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
     case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
-        true = subtype(t1,t2);
+        (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2);
@@ -4130,7 +4130,7 @@ algorithm
         tys1 = Util.listMap(v, getVarType);
         tys2 = Util.listMap(tys1, boxIfUnboxedType);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        e_1 = DAE.METARECORDCALL(path1, elist, l, 0);
+        e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
       then (e_1,t2);
 
     case (e as DAE.CALL(path = _), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (DAE.T_BOXED(t2),_),printFailtrace)
@@ -4157,7 +4157,7 @@ algorithm
         crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
         elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        e_1 = DAE.METARECORDCALL(path, elist, l, 0);
+        e_1 = DAE.METARECORDCALL(path, elist, l, -1);
       then (e_1,t2);
 
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_INTEGER(_),_),printFailtrace)
@@ -6014,5 +6014,27 @@ algorithm
       then bindings;
   end matchcontinue;
 end subtypePolymorphicList;
+
+public function boxVarLst
+  input list<Var> vars;
+  output list<Var> ovars;
+algorithm
+  ovars := matchcontinue vars
+    local
+      Ident name;
+      Attributes attributes;
+      Boolean protected_;
+      Type type_;
+      Binding binding;
+      Option<Const> constOfForIteratorRange;
+      list<Var> rest;
+    case {} then {};
+    case DAE.TYPES_VAR(name,attributes,protected_,type_,binding,constOfForIteratorRange)::rest
+      equation
+        type_ = boxIfUnboxedType(type_);
+        rest = boxVarLst(rest);
+      then DAE.TYPES_VAR(name,attributes,protected_,type_,binding,constOfForIteratorRange)::rest;
+  end matchcontinue;
+end boxVarLst;
 
 end Types;

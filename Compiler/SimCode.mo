@@ -2128,6 +2128,7 @@ algorithm
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
       list<RecordDeclaration> accRecDecls;
       list<Variable> vars;
+      Integer index;
 
       RecordDeclaration recDecl;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
@@ -2146,7 +2147,7 @@ algorithm
       then (accRecDecls,rt_2);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
-    case ((DAE.T_METARECORD(fields = varlst), SOME(path)), accRecDecls, rt)
+    case ((DAE.T_METARECORD(index = index, fields = varlst), SOME(path)), accRecDecls, rt)
       local  String sname;
       equation
         sname = ModUtil.pathStringReplaceDot(path, "_");
@@ -7327,9 +7328,13 @@ protected function matchMetarecordCalls
   output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local list<DAE.Exp> args, exps; DAE.Exp e;
-    case (e as DAE.METARECORDCALL(args = args))
+    local
+      list<DAE.Exp> args, exps;
+      DAE.Exp e;
+      Integer index;
+    case (e as DAE.METARECORDCALL(args = args, index = index))
       equation
+        false = -1 == index;
         exps = getMatchingExpsList(args,matchMetarecordCalls);
       then
         e::exps;

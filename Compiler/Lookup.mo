@@ -229,6 +229,7 @@ algorithm
             DAE.NOMOD,Prefix.NOPRE, Connect.emptySet,
             ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false,
             Inst.INNER_CALL, ConnectionGraph.EMPTY);
+        varlst = Types.boxVarLst(varlst);
         t = (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
       then
         (cache,t,env_2);

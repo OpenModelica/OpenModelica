@@ -104,6 +104,8 @@ struct mmc_string {
     char data[1];	/* `bytes' elements + terminating '\0' */
 };
 
+#define mmc__mk__bcon_rettype mmc_mk_bcon_rettype
+#define mmc__mk__bcon(X) mmc_mk_bcon(X)
 #define mmc__mk__icon_rettype mmc_mk_icon_rettype
 #define mmc__mk__icon(X) mmc_mk_icon(X)
 #define mmc__mk__rcon_rettype mmc_mk_rcon_rettype
@@ -113,11 +115,13 @@ struct mmc_string {
 #define mmc__mk__acon_rettype mmc_mk_acon_rettype
 #define mmc__mk__acon(X) (&(X))
 
+typedef modelica_metatype mmc_mk_bcon_rettype;
 typedef modelica_metatype mmc_mk_icon_rettype;
 typedef modelica_metatype mmc_mk_rcon_rettype;
 typedef modelica_metatype mmc_mk_scon_rettype;
 typedef modelica_metatype mmc_mk_acon_rettype;
 
+#define mmc_mk_bcon(X) (X != 0 ? mmc_mk_icon(1) : mmc_mk_icon(0))
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
 mmc_mk_scon_rettype mmc_mk_scon(const char*);
