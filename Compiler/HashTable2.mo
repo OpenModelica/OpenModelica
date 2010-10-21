@@ -104,8 +104,7 @@ public function add "
   input HashTable hashTable;
   output HashTable outHahsTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHahsTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

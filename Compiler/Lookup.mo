@@ -342,7 +342,7 @@ protected function lookupClass2 "help function to lookupClass, does all the work
   output Env.Env outEnv "The environment in which the class was found (not the environment inside the class)";
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (inCache,outClass,outEnv) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,inPath,inPrevFrames,inState,msg)
     local
       Env.Frame f,frame;
       Env.Cache cache;

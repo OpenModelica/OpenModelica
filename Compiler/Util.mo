@@ -4546,11 +4546,11 @@ public function arrayExpand "function: arrayExpand
   output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
   Integer len,newlen;
-  array<Type_a> newarr,newarr_1;
+  array<Type_a> newarr;
 algorithm
   len := arrayLength(arr);
   newlen := n + len;
-  newarr := fill(v, newlen);
+  newarr := arrayCreate(newlen, v);
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 

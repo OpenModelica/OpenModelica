@@ -233,7 +233,7 @@ input Absyn.Path path;
 input Option<Absyn.Path> scope;
 output Absyn.Path outPath;
 algorithm
-  scope := matchcontinue(path,scope)
+  outPath := matchcontinue(path,scope)
   local Absyn.Path scopePath;
     case(path,NONE) then path;
     case(path,SOME(scopePath)) then Absyn.joinPaths(scopePath,path);
@@ -642,7 +642,7 @@ public function extractProgram " extract a sub-program with the classes that are
   input AbsynDep.AvlTree tree;
   output Absyn.Program outP;
 algorithm
-((outP,_,_)) := Interactive.traverseClasses(p, NONE, extractProgramVisitor, (tree,{},{}), true) "traverse protected" ;
+((outP,_,_)) := Interactive.traverseClasses(p, NONE(), extractProgramVisitor, (tree,{},{}), true) "traverse protected" ;
 end extractProgram;
 
 protected function buildClassDependsinEqns "Build class dependencies from equations"
@@ -721,17 +721,22 @@ protected function buildClassDependsinElseIfEqns ""
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env, HashTable2.HashTable > dep;
   output AbsynDep.Depends outDep;
 algorithm
- elseifeqns := matchcontinue(elseifeqns,optPath,cname,dep)
- local AbsynDep.Depends d; Absyn.Program p; Env.Env env;
-  Absyn.Exp e; list<Absyn.EquationItem> eqns;
-  HashTable2.HashTable ht;
+ outDep := matchcontinue(elseifeqns,optPath,cname,dep)
+   local
+     AbsynDep.Depends d;
+     Absyn.Program p;
+     Env.Env env;
+     Absyn.Exp e;
+     list<Absyn.EquationItem> eqns;
+     HashTable2.HashTable ht;
    case({},optPath,cname,(d,p,env,ht)) then d;
 
-   case((e,eqns)::elseifeqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinElseIfEqns(elseifeqns,optPath,cname,(d,p,env,ht));
-   then d;
+   case((e,eqns)::elseifeqns,optPath,cname,(d,p,env,ht))
+     equation
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinElseIfEqns(elseifeqns,optPath,cname,(d,p,env,ht));
+     then d;
  end matchcontinue;
 end buildClassDependsinElseIfEqns;
 

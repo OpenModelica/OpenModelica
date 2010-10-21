@@ -187,7 +187,7 @@ public function instantiate
   output DAE.DAElist outDAElist;
   output SCode.Program outProgram;
 algorithm
-  (outCache,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram)
+  (outCache,outIH,outDAElist,outProgram) := matchcontinue (inCache,inIH,inProgram)
     local
       list<SCode.Class> pnofunc,pfunc,p,p_1;
       list<Env.Frame> env,envimpl,envimpl_1;
