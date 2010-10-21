@@ -538,6 +538,12 @@ algorithm
       then
         (DAE.STMT_BREAK(source):: es_1);      
   // MetaModelica extension. KS
+    case ((DAE.STMT_FAILURE(body=statementLst,source=source)::es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_FAILURE(statementLst_1,source):: es_1);
     case ((DAE.STMT_TRY(tryBody=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);

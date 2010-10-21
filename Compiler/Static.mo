@@ -891,11 +891,7 @@ algorithm
     case (Absyn.EQ_FAILURE(Absyn.EQUATIONITEM(eq2,comment2,info2)),comment,info,cache,env,pre)
       equation
         (cache,algs) = fromEquationToAlgAssignment(eq2,comment2,info2,cache,env,pre);
-        try = Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs),comment,info);
-        brk = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),comment,info);
-        throw = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
-        catchBreak = Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({brk}),comment,info);
-        res = Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(Absyn.BOOL(true), {try,catchBreak,throw}),comment,info);
+        res = Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs),comment,info);
       then (cache,{res});
     
     case (Absyn.EQ_IF(ifExp = e, equationTrueItems = eqTrueItems, elseIfBranches = eqBranches, equationElseItems = eqElseItems),comment,info,cache,env,pre)
@@ -8860,7 +8856,7 @@ algorithm
     case (cache,env,t as (DAE.T_METARECORD(fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
       equation
          false = listLength(vars) == listLength(args) + listLength(nargs);
-         fn_str = Absyn.pathString(fqPath);
+         fn_str = Types.unparseType(t);
          Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
       then (cache,NONE());
 

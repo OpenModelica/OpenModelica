@@ -755,6 +755,7 @@ algorithm
     case DAE.STMT_ASSERT(cond = e1,msg= e2) then {e1,e2};
     case DAE.STMT_BREAK(source = _) then {};
     case DAE.STMT_RETURN(source = _) then {};
+    case DAE.STMT_FAILURE(body = stmts) then getAllExpsStmts(stmts);
     case DAE.STMT_THROW(source = _) then {};
     case DAE.STMT_TRY(tryBody = stmts)
       equation
@@ -973,6 +974,10 @@ algorithm
         talst2;    
     case (DAE.STMT_BREAK(source = _),_,_) then {};
     case (DAE.STMT_RETURN(source = _),_,_) then {};
+    case (DAE.STMT_FAILURE(body = stmts),func,inTypeA)
+      equation
+        talst = traverseExpsStmts(stmts,func,inTypeA);
+      then talst;
     case (DAE.STMT_THROW(source = _),_,_) then {};
     case (DAE.STMT_TRY(tryBody = stmts),func,inTypeA)
       equation

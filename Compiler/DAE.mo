@@ -546,6 +546,11 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_BREAK;
 
   // MetaModelica extension. KS
+  record STMT_FAILURE
+    list<Statement> body;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_FAILURE;
+
   record STMT_TRY
     list<Statement> tryBody;
     ElementSource source "the origin of the component/equation/algorithm";

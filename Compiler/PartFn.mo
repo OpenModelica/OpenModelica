@@ -924,6 +924,12 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_NORETCALL(e_1,source) :: cdr_1,dae);
+    case(DAE.STMT_FAILURE(stmts,source) :: cdr,dae)
+      equation
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_FAILURE(stmts_1,source) :: cdr_1,dae);
     case(DAE.STMT_TRY(stmts,source) :: cdr,dae)
       equation
         (stmts_1,dae) = elabStmts(stmts,dae);
@@ -1646,6 +1652,12 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_NORETCALL(e,source) :: cdr_1;
+    case(DAE.STMT_FAILURE(stmts,source) :: cdr,dae,p,inputs,current)
+      equation
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
+      then
+        DAE.STMT_FAILURE(stmts_1,source) :: cdr_1;
     case(DAE.STMT_TRY(stmts,source) :: cdr,dae,p,inputs,current)
       equation
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);

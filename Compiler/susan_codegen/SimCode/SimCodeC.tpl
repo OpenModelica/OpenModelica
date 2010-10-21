@@ -3690,6 +3690,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_WHEN(__)         then algStmtWhen(s, context, &varDecls /*BUFC*/)
   case s as STMT_MATCHCASES(__)   then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
   case s as STMT_BREAK(__)        then 'break;<%\n%>'
+  case s as STMT_FAILURE(__)      then algStmtFailure(s, context, &varDecls /*BUFC*/)
   case s as STMT_TRY(__)          then algStmtTry(s, context, &varDecls /*BUFC*/)
   case s as STMT_CATCH(__)        then algStmtCatch(s, context, &varDecls /*BUFC*/)
   case s as STMT_THROW(__)        then 'throw 1;<%\n%>'
@@ -4059,6 +4060,26 @@ case STMT_MATCHCASES(__) then
   if (0 == <%doneVar%>) throw 1; /* Didn't end in a valid state */
   >>
 end algStmtMatchcases;
+
+
+template algStmtFailure(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a failure() algorithm statement."
+::=
+match stmt
+case STMT_FAILURE(__) then
+  let tmp = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+  let stmtBody = (body |> stmt =>
+      algStatement(stmt, context, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  <%tmp%> = 0; /* begin failure */
+  try {
+    <%stmtBody%>
+    <%tmp%> = 1;
+  } catch (int ex) {}
+  if (<%tmp%>) throw 1; /* end failure */
+  >>
+end algStmtFailure;
 
 
 template algStmtTry(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)

@@ -427,7 +427,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
   end ALG_LABEL;
 
   record ALG_FAILURE
-    Statement equ;
+    list<Statement> stmts;
     Option<Comment> comment;
     Absyn.Info info;
   end ALG_FAILURE;
@@ -2595,10 +2595,10 @@ algorithm
     case ALG_GOTO(labelName,comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_GOTO(labelName),NONE(),info);
     
-    case ALG_FAILURE(equ,comment,info)
+    case ALG_FAILURE(body,comment,info)
       equation
-        alg = statementToAlgorithmItem(equ);
-      then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(alg),NONE(),info);
+        algs1 = Util.listMap(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
   end matchcontinue;
 end statementToAlgorithmItem;
 

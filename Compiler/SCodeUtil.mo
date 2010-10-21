@@ -755,10 +755,10 @@ algorithm
     case (Absyn.ALG_GOTO(labelName),comment,info)
     then SCode.ALG_GOTO(labelName,comment,info);
     
-    case (Absyn.ALG_FAILURE(algi),comment,info)
+    case (Absyn.ALG_FAILURE(body),comment,info)
       equation
-        {stmt} = translateClassdefAlgorithmitems({algi});
-      then SCode.ALG_FAILURE(stmt,comment,info);
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_FAILURE(stmts,comment,info);
     
     /*
     case (_,comment,info)

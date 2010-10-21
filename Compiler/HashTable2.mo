@@ -193,9 +193,9 @@ public function delete "
 "
   input Key key;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
+  outHashTable :=
   matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
@@ -204,7 +204,6 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
-      Key key;
       Value value;
       /* adding when already present => Updating value */
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -499,7 +498,7 @@ algorithm
   matchcontinue (valueArray,pos)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
         (pos < size) = true;

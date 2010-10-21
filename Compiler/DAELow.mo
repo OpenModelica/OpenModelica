@@ -9805,6 +9805,12 @@ algorithm
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_BREAK(source)::st);
+  case (DAE.STMT_FAILURE(body=stlst,source=source)::rest,inExp2,inExp3)
+    equation
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_FAILURE(stlst1,source)::st);
   case (DAE.STMT_TRY(tryBody=stlst,source=source)::rest,inExp2,inExp3)
     equation
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
@@ -10148,6 +10154,12 @@ algorithm
         (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
     then
       (DAE.STMT_BREAK(source)::st,vars);
+  case (DAE.STMT_FAILURE(body=stlst,source=source)::rest,inVariables)
+    equation
+        (stlst1,vars) = replaceDummyDerOthersAlgs1(stlst,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_FAILURE(stlst1,source)::st,vars1);
   case (DAE.STMT_TRY(tryBody=stlst,source=source)::rest,inVariables)
     equation
         (stlst1,vars) = replaceDummyDerOthersAlgs1(stlst,inVariables);

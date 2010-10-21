@@ -2126,7 +2126,7 @@ algorithm
       SCode.Class c;
       list<Env.Frame> env_1,env,fs,i_env,prevFrames;
       Env.Frame frame,f;
-      String id,sid,scope;
+      String sid,scope;
       Boolean msg,msgflag;
       Absyn.Path aid,path;
       Env.Cache cache;

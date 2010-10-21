@@ -1551,6 +1551,14 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
+    case (DAE.STMT_FAILURE(body = stmts),i)
+      equation
+        indent(i);
+        Print.printBuf("begin failure\n");
+        ppStmtList(stmts, i+2);
+        Print.printBuf("end try;\n");
+      then
+        ();
     case (DAE.STMT_TRY(tryBody = stmts),i)
       equation
         indent(i);

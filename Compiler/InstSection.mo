@@ -2811,9 +2811,20 @@ algorithm
       then
         (cache,{stmt});
         
-        //------------------------------------------
-    // Part of MetaModelica extension. KS
     //------------------------------------------
+    // Part of MetaModelica extension.
+    //------------------------------------------
+    case (cache,env,ih,pre,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops)
+      local
+        String s;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,sl_1) = instStatements(cache,env,ih,pre,sl,source,initial_,impl,unrollForLoops);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_FAILURE(sl_1,source);
+      then
+        (cache,{stmt});
+
     /* try */
     case (cache,env,ih,pre,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops)
       equation

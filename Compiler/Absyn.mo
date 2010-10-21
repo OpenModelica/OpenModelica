@@ -586,7 +586,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_LABEL;
 
   record ALG_FAILURE
-    AlgorithmItem equ;
+    list<AlgorithmItem> equ;
   end ALG_FAILURE;
   //-------------------------------
 

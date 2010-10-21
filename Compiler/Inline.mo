@@ -884,6 +884,11 @@ algorithm
         e_1 = inlineExp(e,fns);
       then
         DAE.STMT_NORETCALL(e_1,source);
+    case(DAE.STMT_FAILURE(stmts,source),fns)
+      equation
+        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+      then
+        DAE.STMT_FAILURE(stmts_1,source);
     case(DAE.STMT_TRY(stmts,source),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);

@@ -633,7 +633,7 @@ algorithm returns [void* ast] :
   | a=when_clause_a
   | BREAK {a = Absyn__ALG_5fBREAK;}
   | RETURN {a = Absyn__ALG_5fRETURN;}
-  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(al.ast);}
+  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil()));}
   | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
     {
       a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));

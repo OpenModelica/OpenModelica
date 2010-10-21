@@ -2167,20 +2167,20 @@ algorithm
         res;
 
         /* MetaModelica uniontype (but we know which record in the UT it is) */
-    case ((DAE.T_METARECORD(utPath=_),SOME(p)))
+    case ((DAE.T_METARECORD(utPath=_, fields = vs),SOME(p)))
       local Absyn.Path p;
       equation
-        str = Absyn.pathString(p); /* Path of the actual metarecord should be best for error messages... */
-        /*vars = Util.listMap(vs, unparseVar);
+        str = Absyn.pathString(p);
+        vars = Util.listMap(vs, unparseVar);
         vstr = System.stringAppendList(vars);
-        res = System.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});*/
-      then str;
+        res = System.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
+      then res;
 
         /* MetaModelica boxed type */
     case ((DAE.T_BOXED(ty),_))
       equation
         res = unparseType(ty);
-        res = System.stringAppendList({"#boxed(",res,")#"});
+        res = "#" /* this is a box */ +& res;
       then
         res;
 

@@ -1096,6 +1096,17 @@ algorithm
         localAccList = listAppend(localAccList,Util.listCreate(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);
+  	case (localCache,localEnv,ih,DAE.STMT_FAILURE(b,source) :: rest,localAccList,pre)
+  	  local
+  	    list<DAE.Statement> b;
+  	    DAE.Statement elem;
+    		list<DAE.Statement> elems;
+  	  equation
+  	    (localCache,b) = prefixStatements(localCache,localEnv,ih,b,{},pre);
+  	    elem = DAE.STMT_FAILURE(b,source);
+    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
+    	  (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
+    	then (localCache,elems);
   	case (localCache,localEnv,ih,DAE.STMT_TRY(b,source) :: rest,localAccList,pre)
   	  local
   	    list<DAE.Statement> b;

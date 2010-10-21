@@ -865,6 +865,10 @@ package DAE
     record STMT_BREAK
       ElementSource source;
     end STMT_BREAK;
+    record STMT_FAILURE
+      list<Statement> body;
+      ElementSource source;
+    end STMT_FAILURE;
     record STMT_TRY
       list<Statement> tryBody;
       ElementSource source;

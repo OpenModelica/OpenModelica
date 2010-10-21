@@ -2954,11 +2954,16 @@ algorithm
         Print.printBuf("BREAK()");
       then
         ();
-    case Absyn.ALG_FAILURE(algItem)
+    case Absyn.ALG_FAILURE({algItem})
       equation
         Print.printBuf("FAILURE(");
         printAlgorithmitem(algItem);
         Print.printBuf(")");
+      then
+        ();
+    case Absyn.ALG_FAILURE(_)
+      equation
+        Print.printBuf("FAILURE(...)");
       then
         ();
     case (_)
@@ -3131,12 +3136,19 @@ algorithm
         str = is +& "break" +& s3 +& ";";
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(algItem),comment = optcmt)) /* ALG_FAILURE */
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE({algItem}),comment = optcmt)) /* ALG_FAILURE */
       equation
         s1 = unparseAlgorithmStr(0, algItem);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
+      then
+        str;
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(_),comment = optcmt)) /* ALG_FAILURE */
+      equation
+        s3 = unparseCommentOption(optcmt);
+        is = indentStr(i);
+        str = is +& "failure(...)" +& s3 +& ";";
       then
         str;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(matchType=matchType,switchCases=explist), comment = optcmt))
@@ -5991,7 +6003,7 @@ algorithm
     local
       Absyn.Exp assignComponent, value, ifExp, boolExpr;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfAlgorithmBranch,elseWhenAlgorithmBranch;
-      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,tryBody,catchBody;
+      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,tryBody,catchBody,body;
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
@@ -6099,10 +6111,10 @@ algorithm
         Print.printBuf(label);
         Print.printBuf("\" end Absyn.ALG_LABEL;");
       then ();
-    case Absyn.ALG_FAILURE(equ)
+    case Absyn.ALG_FAILURE(body)
       equation
-        Print.printBuf("record Absyn.ALG_FAILURE equ = ");
-        printAlgorithmItemAsCorbaString(equ);
+        Print.printBuf("record Absyn.ALG_FAILURE body = ");
+        printListAsCorbaString(body, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_FAILURE;");
       then ();
   end matchcontinue;
