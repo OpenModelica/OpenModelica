@@ -1287,7 +1287,7 @@ cases2 returns [void* ast] :
   ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression SEMICOLON)?
     {
       if (exp)
-       ast = mk_cons(Absyn__ELSE(es,or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
+       ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
       else
        ast = mk_nil();
     }
