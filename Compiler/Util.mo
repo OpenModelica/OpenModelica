@@ -4861,8 +4861,8 @@ algorithm
     local
       TypeA resA;
       TypeB resB;
-    case(true,resA,_) then ((SOME(resA),NONE));
-    case(false,_,resB) then ((NONE,SOME(resB)));
+    case(true,resA,_) then ((SOME(resA),NONE()));
+    case(false,_,resB) then ((NONE(),SOME(resB)));
   end matchcontinue;
 end if_t;
 
@@ -5602,7 +5602,7 @@ public function applyOption "function: applyOption
   from the application of the function on the value.
   Example:
     applyOption(SOME(1), intString) => SOME(\"1\")
-    applyOption(NONE,    intString) => NONE"
+    applyOption(NONE(),    intString) => NONE"
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output Option<Type_b> outTypeBOption;
@@ -5620,7 +5620,7 @@ algorithm
       Type_b b;
       Type_a a;
       FuncTypeType_aToType_b rel;
-    case (NONE,_) then NONE;
+    case (NONE(),_) then NONE;
     case (SOME(a),rel)
       equation
         b = rel(a);
@@ -6012,7 +6012,7 @@ public function flattenOption "function: flattenOption
 algorithm
   outTypeA := matchcontinue (inTypeAOption,inTypeA)
     local Type_a n,c;
-    case (NONE,n) then n;
+    case (NONE(),n) then n;
     case (SOME(c),n) then c;
   end matchcontinue;
 end flattenOption;

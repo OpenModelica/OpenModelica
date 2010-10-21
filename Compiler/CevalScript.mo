@@ -101,7 +101,7 @@ public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
-  },NONE,NONE),NONE);
+  },NONE(),NONE()),NONE());
 
 protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -113,7 +113,7 @@ protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.
   DAE.TYPES_VAR("timeCompile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
-  },NONE,NONE),NONE);
+  },NONE(),NONE()),NONE());
 
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
@@ -3067,7 +3067,7 @@ algorithm
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
       then
-        (cache,Absyn.RANGE(e1_1,NONE,e3_1));
+        (cache,Absyn.RANGE(e1_1,NONE(),e3_1));
     case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg,info)
       equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg, info);
@@ -3284,7 +3284,7 @@ algorithm
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg, info);
       then
         (cache,SOME(res));
-    case (cache,env,NONE,_,_,msg,info) then (cache,NONE);
+    case (cache,env,NONE(),_,_,msg,info) then (cache,NONE());
   end matchcontinue;
 end cevalAstModopt;
 
@@ -3321,7 +3321,7 @@ algorithm
       equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
-        (cache,Absyn.CLASSMOD(eltargs_1,NONE));
+        (cache,Absyn.CLASSMOD(eltargs_1,NONE()));
   end matchcontinue;
 end cevalAstModification;
 
@@ -3688,7 +3688,7 @@ algorithm
         env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
+          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
         (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -3729,7 +3729,7 @@ algorithm
         env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
+          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
         (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -3766,11 +3766,11 @@ algorithm
       then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path),path));
     case(inTpl) then inTpl;
 
-    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE,path))
+    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path))
       equation
         true = ModUtil.pathEqual(Absyn.IDENT(name),path);
         ts =Absyn.setTimeStampBool(ts,false);
-      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE,path));
+      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path));
     case(inTpl) then inTpl;
   end matchcontinue;
 end setBuildTimeVisitor;
@@ -4322,14 +4322,14 @@ algorithm ostring := matchcontinue( e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE(),NONE(),Ceval.MSG());
     then
       ret;
   case(e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE(),NONE(),Ceval.MSG());
       ret = ValuesUtil.printValStr(val);
     then
       ret;

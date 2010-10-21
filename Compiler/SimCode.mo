@@ -610,7 +610,7 @@ algorithm
       equation
         badcref = DAE.CREF_IDENT("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
       then
-        SIMVAR(badcref, DAELow.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE);
+        SIMVAR(badcref, DAELow.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
   end matchcontinue;
 end cref2simvar;
 
@@ -755,7 +755,7 @@ algorithm
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
@@ -882,7 +882,7 @@ algorithm
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
@@ -1295,7 +1295,7 @@ algorithm
       equation
         expType = Types.elabType(tty);
       then
-        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
+        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE(),{});
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -3440,7 +3440,7 @@ algorithm
       then
         {SES_NONLINEAR(index, resEqs, crefs)};
     /* No analythic jacobian available. Generate non-linear system. */
-    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),block_,helpVarInfo)
+    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE(),DAELow.JAC_NO_ANALYTIC(),block_,helpVarInfo)
       local
         list<tuple<Integer, Integer, DAELow.Equation>> jac;
         Integer index;
@@ -5152,15 +5152,15 @@ algorithm
       Boolean scalar;
       list<Integer> helpVarIndices1,helpVarIndices;
       DAE.ElementSource source;
-    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE,_,source))
+    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE(),_,source))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
-      then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices,source),nextInd1);
+      then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE(),helpVarIndices,source),nextInd1);
 
-    case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE,_,source))
-      then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE,{nextInd},source),nextInd+1);
+    case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE(),_,source))
+      then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE(),{nextInd},source),nextInd+1);
 
     case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_,source))
       equation
@@ -5482,7 +5482,7 @@ algorithm
         helpVars = listAppend(helpVars1,helpVars2);
       then
         (res,helpVars);
-    case (NONE,_,_,_)
+    case (NONE(),_,_,_)
       then ("",{});
   end matchcontinue;
 end buildWhenConditionCheckForEquation;
@@ -6032,7 +6032,7 @@ algorithm
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
       equation
         eqn_lst = DAELow.equationList(eqnarr);
-        singleArrayEquation2(eqn_lst,NONE);
+        singleArrayEquation2(eqn_lst,NONE());
       then
         ();
   end matchcontinue;
@@ -6048,7 +6048,7 @@ algorithm
       list<DAELow.Equation> res;
       Integer i,i1;
     case ({},_) then ();
-    case ((DAELow.ARRAY_EQUATION(index = i) :: res),NONE)
+    case ((DAELow.ARRAY_EQUATION(index = i) :: res),NONE())
       equation
         singleArrayEquation2(res,SOME(i));
       then

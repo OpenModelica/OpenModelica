@@ -230,7 +230,7 @@ protected import RTOpts;
 
 public constant InteractiveSymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
-                 AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE,0,NONE,NONE),AbsynDep.AVLTREENODE(NONE,0,NONE,NONE)),
+                 AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE())),
                  {},
                  {},
                  {},
@@ -1893,7 +1893,7 @@ algorithm
           getApiFunctionArgs(istmts);
         newp = updateProgram(
           Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                         Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
+                         Absyn.PARTS({Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                          Absyn.TOP(),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
       then
@@ -1910,7 +1910,7 @@ algorithm
         newp = updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                      Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
+                      Absyn.PARTS({Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                       Absyn.WITHIN(wpath),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
       then
@@ -1926,7 +1926,7 @@ algorithm
         newp = updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                      Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
+                      Absyn.PARTS({Absyn.PUBLIC({})},NONE()),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                       Absyn.WITHIN(path),Absyn.dummyTimeStamp), p);
         newst = setSymbolTableAST(st, newp);
         resstr = stringAppend(name, "\n");
@@ -2864,13 +2864,13 @@ algorithm
       then
         ((class_1,SOME(pa),
           COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
-    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE,COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
+    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.IDENT(id);
         true = ModUtil.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
-        ((class_1,NONE,
+        ((class_1,NONE(),
           COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
     case ((class_,pa,args))
       local Option<Absyn.Path> pa;
@@ -3369,17 +3369,17 @@ algorithm
       then
         Absyn.MODIFICATION(b,each_,cr_1,
           SOME(Absyn.CLASSMOD(element_args_1,SOME(exp_1))),str);
-    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,NONE)),comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = SOME(Absyn.CLASSMOD(element_args,NONE())),comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
-        Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,NONE)),str);
+        Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,NONE())),str);
     case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = NONE,comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
-        Absyn.MODIFICATION(b,each_,cr_1,NONE,str);
+        Absyn.MODIFICATION(b,each_,cr_1,NONE(),str);
     case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = SOME(Absyn.CONSTRAINCLASS(element_spec2,c))),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
@@ -3391,7 +3391,7 @@ algorithm
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
       then
-        Absyn.REDECLARATION(b,redecl,each_,element_spec_1,NONE);
+        Absyn.REDECLARATION(b,redecl,each_,element_spec_1,NONE());
   end matchcontinue;
 end renameComponentInElementArg;
 
@@ -3456,7 +3456,7 @@ algorithm
       equation
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
-        Absyn.C_MODIFICATION(Absyn.CLASSMOD(element_args_1,NONE));
+        Absyn.C_MODIFICATION(Absyn.CLASSMOD(element_args_1,NONE()));
   end matchcontinue;
 end renameComponentInCode;
 
@@ -3562,7 +3562,7 @@ algorithm
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
         exp3_1 = renameComponentInExp(exp3, old_comp, new_comp);
       then
-        Absyn.RANGE(exp1_1,NONE,exp3_1);
+        Absyn.RANGE(exp1_1,NONE(),exp3_1);
     case (Absyn.TUPLE(expressions = exp_list),old_comp,new_comp)
       equation
         exp_list_1 = renameComponentInExpList(exp_list, old_comp, new_comp);
@@ -4447,7 +4447,7 @@ algorithm
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,SOME(pa),(comps_1,p,env)));
-    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE,(comps,p,env)))
+    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),(comps,p,env)))
       equation
         false = isReadOnly(file_info);
         path_1 = Absyn.IDENT(id);
@@ -4456,7 +4456,7 @@ algorithm
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(),cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
-        ((class_,NONE,(comps_1,p,env)));
+        ((class_,NONE(),(comps_1,p,env)));
     case ((class_ ,paOpt,(comps,p,env))) then   ((class_,paOpt,(comps,p,env)));
   end matchcontinue;
 end extractAllComponentsVisitor;
@@ -4749,7 +4749,7 @@ algorithm
       Components comps,comps_1;
       list<Env.Frame> env;
       list<Absyn.ElementArg> elementargs;
-    case (pa,NONE,comps,env) then comps;  /* the QUALIFIED path for the class */
+    case (pa,NONE(),comps,env) then comps;  /* the QUALIFIED path for the class */
     case (pa,SOME(Absyn.CLASSMOD(elementargs,_)),comps,env)
       equation
         comps_1 = extractComponentsFromElementargs(pa, elementargs, comps, env);
@@ -5367,11 +5367,11 @@ protected function setReplaceableKeywordAttributes
 algorithm
   outAbsynRedeclareKeywordsOption:=
   matchcontinue (inAbsynRedeclareKeywordsOption,inBoolean)
-    case (NONE,false) then NONE;  /* false */
+    case (NONE(),false) then NONE;  /* false */
     case (SOME(Absyn.REPLACEABLE()),false) then NONE;
     case (SOME(Absyn.REDECLARE_REPLACEABLE()),false) then SOME(Absyn.REDECLARE());
     case (SOME(Absyn.REDECLARE()),false) then SOME(Absyn.REDECLARE());
-    case (NONE,true) then SOME(Absyn.REPLACEABLE());  /* true */
+    case (NONE(),true) then SOME(Absyn.REPLACEABLE());  /* true */
     case (SOME(Absyn.REDECLARE()),true) then SOME(Absyn.REDECLARE_REPLACEABLE());
     case (SOME(Absyn.REPLACEABLE()),true) then SOME(Absyn.REPLACEABLE());
     case (SOME(Absyn.REDECLARE_REPLACEABLE()),true) then SOME(Absyn.REDECLARE_REPLACEABLE());
@@ -6673,7 +6673,7 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
       equation
         true = stringEqual(varname, id);
-        optmod = createOptModificationFromEltargs(args,NONE);
+        optmod = createOptModificationFromEltargs(args,NONE());
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
     
@@ -6682,7 +6682,7 @@ algorithm
       equation
         true = stringEqual(varname, id);
       then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE),cond,cmt) :: rest);
+        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE()),cond,cmt) :: rest);
     
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,submodpath,mod)
       equation
@@ -6692,11 +6692,11 @@ algorithm
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
 
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,Absyn.CLASSMOD({},NONE))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,Absyn.CLASSMOD({},NONE()))
       equation
         true = stringEqual(varname, id);
       then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE),cond,cmt) :: rest);
+        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE()),cond,cmt) :: rest);
 
 
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,mod)
@@ -6708,7 +6708,7 @@ algorithm
           SOME(
           Absyn.CLASSMOD(
           {
-          Absyn.MODIFICATION(false,Absyn.NON_EACH(),submod,SOME(mod),NONE)},NONE))),cond,cmt) :: rest);
+          Absyn.MODIFICATION(false,Absyn.NON_EACH(),submod,SOME(mod),NONE())},NONE()))),cond,cmt) :: rest);
     
     case ((comp :: rest),varname,submodident,mod)
       equation
@@ -6772,15 +6772,15 @@ algorithm
       Absyn.Exp e;
       Absyn.ElementArg m;
   	
-  	case ({},cref,Absyn.CLASSMOD({},NONE)) then {}; // Empty modification.
-    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};
+  	case ({},cref,Absyn.CLASSMOD({},NONE())) then {}; // Empty modification.
+    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
     
     // Clear modification m(...)
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))
       equation
         true = stringEqual(name, submodident);
       then
-        Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,NONE)),cmt)::rest;
+        Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,NONE())),cmt)::rest;
     
     // Clear modification, m with no submodifiers
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))
@@ -6804,14 +6804,14 @@ algorithm
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt) :: rest);
     
     // Clear modification, m.n
-     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},NONE))
+     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},NONE()))
       equation
         true = Absyn.crefEqual(cr1, cr2);
       then
         (rest);
     
     // Clear modification m.n first part matches. Check that m is not present in rest of list.
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),cr as Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE))
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),cr as Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE()))
       equation
         true = stringEqual(name1, name2);
         false = findCrefModification(cr,rest);
@@ -6819,18 +6819,18 @@ algorithm
         (rest);
    
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,NONE)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE))
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,NONE())),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE()))
       equation
         true = stringEqual(name1, name2);
-        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
+        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE()));
       then
-        (Absyn.MODIFICATION(f,each_,cr,NONE,cmt) :: rest);
+        (Absyn.MODIFICATION(f,each_,cr,NONE(),cmt) :: rest);
 
    // Clear modification m(...)=expr
-   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,SOME(e))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE))
+   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,SOME(e))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE()))
       equation
         true = stringEqual(name1, name2);
-        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
+        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE()));
       then
         (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD({},SOME(e))),cmt) :: rest);
 
@@ -7530,14 +7530,14 @@ algorithm
         ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
-    case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),NONE,(old_class_path,new_class_path,p,path_str_lst,env)))
+    case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
         true = ModUtil.pathEqual(old_class_path, path_1);
         new_name = Absyn.pathLastIdent(new_class_path);
         path_str = Absyn.pathString(new_class_path);
       then
-        ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE,
+        ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
@@ -7551,7 +7551,7 @@ algorithm
         ((class_1,SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
-    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE,(old_class_path,new_class_path,p,path_str_lst,env)))
+    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
         cenv = Dependency.getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
@@ -7559,7 +7559,7 @@ algorithm
         path_str_1 = Absyn.pathString(path_1);
         path_str = Util.if_(changed, path_str_1, "");
       then
-        ((class_1,NONE,
+        ((class_1,NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
     case ((class_,pa,args))
@@ -8455,7 +8455,7 @@ algorithm
       Absyn.EnumDef edef;
       list<Absyn.Path> plst;
       Absyn.ClassDef c;
-    case (Absyn.PARTS(classParts = p),"") then Absyn.PARTS(p,NONE);
+    case (Absyn.PARTS(classParts = p),"") then Absyn.PARTS(p,NONE());
     case (Absyn.PARTS(classParts = p),cmt) then Absyn.PARTS(p,SOME(cmt));
     case (Absyn.DERIVED(typeSpec = Absyn.TPATH(p,ad),attributes = attr,arguments = arg,comment = cmt),strcmt)
       local
@@ -8477,7 +8477,7 @@ algorithm
         cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
       then
         Absyn.OVERLOAD(plst,cmt_1);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE,p);
+    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p);
     case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,parts = p),cmt) then Absyn.CLASS_EXTENDS(id,args,SOME(cmt),p);
     case (c,_) then c;
   end matchcontinue;
@@ -8496,9 +8496,9 @@ algorithm
     local
       Option<Absyn.Annotation> ann;
       String cmt;
-    case (SOME(Absyn.COMMENT(ann,_)),"") then SOME(Absyn.COMMENT(ann,NONE));
+    case (SOME(Absyn.COMMENT(ann,_)),"") then SOME(Absyn.COMMENT(ann,NONE()));
     case (SOME(Absyn.COMMENT(ann,_)),cmt) then SOME(Absyn.COMMENT(ann,SOME(cmt)));
-    case (NONE,cmt) then SOME(Absyn.COMMENT(NONE,SOME(cmt)));
+    case (NONE(),cmt) then SOME(Absyn.COMMENT(NONE(),SOME(cmt)));
   end matchcontinue;
 end setClassCommentInCommentOpt;
 
@@ -9486,14 +9486,14 @@ algorithm
         newscope = Absyn.joinPaths(path, Absyn.IDENT(id));
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
       then
         vars_1;
     case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
       equation
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id))) "If top scope" ;
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
       then
         vars_1;
     case (Absyn.END_DEFINITION(name = id1),vars)
@@ -9505,7 +9505,7 @@ algorithm
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
         path_1 = Absyn.stripLast(path);
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
       then
         vars_1;
     case (Absyn.END_DEFINITION(name = id1),vars)
@@ -9668,16 +9668,16 @@ algorithm
         (cdef,path);
     
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Real"));
+          Absyn.PARTS({},NONE()),Absyn.dummyInfo),Absyn.IDENT("Real"));
     
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Integer"));
+          Absyn.PARTS({},NONE()),Absyn.dummyInfo),Absyn.IDENT("Integer"));
     
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("String"));
+          Absyn.PARTS({},NONE()),Absyn.dummyInfo),Absyn.IDENT("String"));
     
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Boolean"));
+          Absyn.PARTS({},NONE()),Absyn.dummyInfo),Absyn.IDENT("Boolean"));
     
     case (path,inmodel,_)
       equation
@@ -9914,9 +9914,9 @@ algorithm
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,redecl,io,"",
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),
-          Absyn.INFO("",false,0,0,0,0,ts),NONE)));
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
+          Absyn.INFO("",false,0,0,0,0,ts),NONE())));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
       then
         (newp,"Ok\n");
@@ -9933,9 +9933,9 @@ algorithm
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,redecl,io,"",
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),
-          Absyn.INFO("",false,0,0,0,0,ts),NONE)));
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
+          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
+          Absyn.INFO("",false,0,0,0,0,ts),NONE())));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
       then
         (newp,"Ok\n");
@@ -13541,7 +13541,7 @@ algorithm
       Absyn.Info info;
 
     case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _), info = info,
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)})),_))))
+      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE())),_)})),_))))
       local Absyn.Program lineProgram;
       equation
         lineProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
@@ -13867,11 +13867,11 @@ algorithm
     case ({},env) then {};
     case ((Absyn.COMPONENTITEM(comment = SOME(
       Absyn.COMMENT(
-            SOME(Absyn.ANNOTATION((Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(mod,NONE)),_) :: _))),
+            SOME(Absyn.ANNOTATION((Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(mod,NONE())),_) :: _))),
             _))) :: rest),env)
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE())), false, Absyn.NON_EACH());
         (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) =
@@ -13976,7 +13976,7 @@ algorithm
         res = stringAppend(s2, "}");
       then
         res;
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE,_))) :: (rest as (_ :: _))))
+    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE(),_))) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsAnnotation(rest);
         res = stringAppend("{nada},", str);
@@ -14099,7 +14099,7 @@ algorithm
       equation
         // print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
@@ -14124,7 +14124,7 @@ algorithm
       equation
         //print(Dump.unparseStr(p, false));
         (stripmod,gxmods) = stripGraphicsModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
@@ -14144,7 +14144,7 @@ algorithm
       equation
         //print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
@@ -14167,7 +14167,7 @@ algorithm
     case (p,Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)))}))
       equation
         //print(Dump.unparseStr(p, false));
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE())), false, Absyn.NON_EACH());
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
@@ -15644,8 +15644,8 @@ algorithm
         (c1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
-          Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp),NONE))};
+          Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
+          Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()))};
   end matchcontinue;
 end removeClassInElementitemlist;
 
@@ -15739,8 +15739,8 @@ algorithm
         (c1 :: res);
     case ({},c) then {
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
-          Absyn.dummyInfo,NONE))};
+          Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",Absyn.CLASSDEF(false,c),
+          Absyn.dummyInfo,NONE()))};
   end matchcontinue;
 end replaceClassInElementitemlist;
 
@@ -16357,7 +16357,7 @@ algorithm
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
         SOME(strcmt) = commentToAbsyn(nargs);
       then
-        SOME(Absyn.COMMENT(NONE,SOME(strcmt)));
+        SOME(Absyn.COMMENT(NONE(),SOME(strcmt)));
     case (nargs)
       equation
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
@@ -16451,7 +16451,7 @@ algorithm
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))
       equation
         eltarglst = Util.listMap(nargs, namedargToModification);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD(eltarglst,NONE)),NONE);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD(eltarglst,NONE())),NONE());
       then
         res;
     /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
@@ -16459,7 +16459,7 @@ algorithm
       equation
         eltarglst = Util.listMap(nargs, namedargToModification);
         emod = recordConstructorToModification(e);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD((emod :: eltarglst),NONE)),NONE);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD((emod :: eltarglst),NONE())),NONE());
       then
         res;
     case (e)
@@ -16489,14 +16489,14 @@ algorithm
       list<Absyn.NamedArg> nargs;
     case (Absyn.NAMEDARG(argName = id,argValue = (c as Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))))
       equation
-        Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(elts,_)),NONE) = recordConstructorToModification(c);
+        Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(elts,_)),NONE()) = recordConstructorToModification(c);
         cr_1 = Absyn.CREF_IDENT(id,{});
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr_1,SOME(Absyn.CLASSMOD(elts,NONE)),NONE);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr_1,SOME(Absyn.CLASSMOD(elts,NONE())),NONE());
       then
         res;
     case (Absyn.NAMEDARG(argName = id,argValue = e))
       equation
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(id,{}),SOME(Absyn.CLASSMOD({},SOME(e))),NONE);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(id,{}),SOME(Absyn.CLASSMOD({},SOME(e))),NONE());
       then
         res;
     case (_)
@@ -16943,7 +16943,7 @@ algorithm
 
     case(Absyn.CLASSDEF(r,cl))
       equation
-        ((cl1,_,_)) = transformFlatClass((cl,NONE,0));
+        ((cl1,_,_)) = transformFlatClass((cl,NONE(),0));
       then Absyn.CLASSDEF(r,cl1);
 
     case(Absyn.EXTENDS(path,eargs,annOpt))
@@ -17072,10 +17072,10 @@ algorithm
         eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
         ((e1,_)) = traverseExp(e,transformFlatExp,0);
       then SOME(Absyn.CLASSMOD(eltArgs1,SOME(e1)));
-    case (SOME(Absyn.CLASSMOD(eltArgs,NONE)))
+    case (SOME(Absyn.CLASSMOD(eltArgs,NONE())))
       equation
         eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
-      then SOME(Absyn.CLASSMOD(eltArgs1,NONE));
+      then SOME(Absyn.CLASSMOD(eltArgs1,NONE()));
     case(NONE) then NONE;
   end matchcontinue;
 end transformFlatModificationOption;
@@ -17464,13 +17464,13 @@ algorithm
       then
         ((Absyn.MATRIX(mexpl1),ext_arg_2));
 
-    case ((e as Absyn.RANGE(e1,NONE,e2)),rel,ext_arg)
+    case ((e as Absyn.RANGE(e1,NONE(),e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((Absyn.RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((Absyn.RANGE(e1_1,NONE,e2_1),ext_arg_3));
+        ((Absyn.RANGE(e1_1,NONE(),e2_1),ext_arg_3));
 
     case ((e as Absyn.RANGE(e1,SOME(e2),e3)),rel,ext_arg)
       equation
@@ -18072,7 +18072,7 @@ algorithm
   local
     list<Absyn.ClassPart> parts;
     String ident, baseIdent;
-    case Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},NONE)), restriction = Absyn.R_TYPE())
+    case Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE())), restriction = Absyn.R_TYPE())
     then "(replaceable type " +& ident +& ")";
   end matchcontinue;
 end getDefinitionsReplaceableClass;

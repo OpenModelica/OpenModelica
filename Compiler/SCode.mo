@@ -652,7 +652,7 @@ output String str;
 algorithm str := matchcontinue(oam,comp)
   local
     Absyn.Modification m;
-  case(NONE,_) then "";
+  case(NONE(),_) then "";
   case(SOME(m),comp)
     equation
       str = prettyPrintModifier(m,comp);
@@ -679,12 +679,12 @@ algorithm str := matchcontinue(oam,comp)
       str = comp +& " = " +&Dump.printExpStr(exp);
       then
         str;
-  case(Absyn.CLASSMOD((laea as aea::{}),NONE),comp)
+  case(Absyn.CLASSMOD((laea as aea::{}),NONE()),comp)
     equation
     str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
     then
       str;
-  case(Absyn.CLASSMOD((laea as _::{}),NONE),comp)
+  case(Absyn.CLASSMOD((laea as _::{}),NONE()),comp)
     equation
       str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
     then

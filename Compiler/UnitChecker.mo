@@ -351,7 +351,7 @@ end unifyunits;
 public function newDimlessSpecUnit "creates a new dimensionless unit"
   output UnitAbsyn.SpecUnit su;
 algorithm
-  UnitAbsyn.SPECIFIED(su) := UnitAbsynBuilder.str2unit("1",NONE);
+  UnitAbsyn.SPECIFIED(su) := UnitAbsynBuilder.str2unit("1",NONE());
 end newDimlessSpecUnit;
 
 public function getUnknown "gets the first unknown in a specified unit"

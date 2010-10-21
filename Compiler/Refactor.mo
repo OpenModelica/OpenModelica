@@ -479,7 +479,7 @@ algorithm
 
       then
         SOME(Absyn.CONSTRAINCLASS(resultSpec,com));
-    case(NONE,_,_,_)
+    case(NONE(),_,_,_)
     then NONE;
 	end matchcontinue;
 end refactorConstrainClass;
@@ -822,7 +822,7 @@ algorithm
       Absyn.Exp x1,x2,y1,y2;
       Env.Env env;
 
-    case(x1,y1,x2,y2,NONE,cPath,path,p,env)
+    case(x1,y1,x2,y2,NONE(),cPath,path,p,env)
 
       equation
 
@@ -844,7 +844,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE)),NONE);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -867,7 +867,7 @@ algorithm
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
         rotation = getRotationAnn(rot);
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE)),NONE);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
   end matchcontinue;
 
@@ -904,7 +904,7 @@ algorithm
       Absyn.Exp x1,x2,y1,y2;
       Env.Env env;
 
-    case(x1,y1,x2,y2,NONE,cPath,path,p, env)
+    case(x1,y1,x2,y2,NONE(),cPath,path,p, env)
 
       equation
 
@@ -926,7 +926,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE)),NONE);
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -951,7 +951,7 @@ algorithm
         rotation = getRotationAnn(rot);
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE)),NONE);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
   end matchcontinue;
 
@@ -991,7 +991,7 @@ algorithm
         aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE());
 
   end matchcontinue;
 
@@ -1021,7 +1021,7 @@ algorithm
       equation        
         value = (x1 +. x2) /. 2.0;
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE());
 
   end matchcontinue;
 
@@ -1051,7 +1051,7 @@ algorithm
       equation
         scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE);
+        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE());
 
   end matchcontinue;
 
@@ -1072,7 +1072,7 @@ protected function getFlipAnn"function: getFlipAnn
 algorithm
 
   value := val1 >. val2;
-  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(value)))),NONE);
+  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(value)))),NONE());
 
 end getFlipAnn;
 
@@ -1087,7 +1087,7 @@ protected function getRotationAnn"function: getRotationAnn
 
 algorithm
   rot := rot *. (-1.0);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(rot)))),NONE);
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(rot)))),NONE());
 
 end getRotationAnn;
 
@@ -1638,7 +1638,7 @@ algorithm
         expLst = Util.listMap(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
 
-      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),NONE) :: res,NONE)),com)};//res;
+      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),NONE()) :: res,NONE())),com)};//res;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Line" :: c),res,p)
 
@@ -1773,7 +1773,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
 
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE)}, ex)),com) :: res		;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res		;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
 
@@ -1784,7 +1784,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
 
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE)}, ex)),com) :: res;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
 
@@ -1803,7 +1803,7 @@ algorithm
 
         res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com) :: res;
         coord = getCoordSysAnn(listAppend(res,rest),p);
-        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},NONE)),NONE),Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},NONE)),NONE)},res);
+        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE()),Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE())},res);
         res = transformClassAnnList(rest,context,res,p);
 
       then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com));
@@ -1930,7 +1930,7 @@ algorithm
     case ({},_)
 
     then
-      Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE)}, NONE)), NONE)/*Create default*/;
+      Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())}, NONE)), NONE)/*Create default*/;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
 
@@ -2264,7 +2264,7 @@ algorithm
         true = isLinebasedGraphic(context);
         {} = Util.listSelect(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("lineColor",{}),
-        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE)::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE())::inArgs,resultList,context);
         then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
@@ -2273,7 +2273,7 @@ algorithm
         true = isLineGraphic(context);
         {} = Util.listSelect(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("color",{}),
-        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE)::inArgs,resultList,context);
+        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE())::inArgs,resultList,context);
         then outArgs;
 
     case(inArgs,resultList, context)

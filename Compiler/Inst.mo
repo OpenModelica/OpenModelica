@@ -310,7 +310,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae2);
-        dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE)});
+        dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
       then
         (cache,env_2,ih,dae2);
 
@@ -365,7 +365,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE)});
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE())});
         //System.stopTimer();
         //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
       then
@@ -430,8 +430,8 @@ algorithm oelems := matchcontinue(cache,env,elems)
       oelems = reEvaluateInitialIfEqns2(cache,env,elems);
       oelems = listAppend(selectedBranch,oelems);
       
-      //print("RETURN _INITIAL_ DAE: " +& DAEDump.dumpDAEElementsStr(DAE.DAE(selectedBranch,DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& "\n");
-      //print(" INSTEAD OF: " +& DAEDump.dumpDAEElementsStr(DAE.DAE({elem},DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& "\n");
+      //print("RETURN _INITIAL_ DAE: " +& DAEDump.dumpDAEElementsStr(DAE.DAE(selectedBranch,DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) +& "\n");
+      //print(" INSTEAD OF: " +& DAEDump.dumpDAEElementsStr(DAE.DAE({elem},DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) +& "\n");
     then
       oelems;
   case(cache,env,elem::elems)
@@ -541,7 +541,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE)});
+        dae = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
       then
         (cache,env_2,ih,dae);
 
@@ -559,7 +559,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE)});
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE())});
       then
         (cache,env_2,ih,dae);
 
@@ -1846,7 +1846,7 @@ algorithm
       equation
         (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, csets, ci_state, c, prot, inst_dims);
       then 
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE,NONE,NONE,graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     /*  see if we have it in the cache */
     case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims,impl,_,graph,instSingleCref)
@@ -2087,33 +2087,33 @@ algorithm
         (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
       equation
         tys = instRealClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE));
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
       then
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE,NONE,graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
 
     /* Integer class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
       (c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
       equation
         tys =  instIntegerClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_INTEGER(tys),NONE));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE,NONE,graph);
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_INTEGER(tys),NONE()));
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
 
     /* String class */
     case (cache,env,ih,store,mods,pre,csets, ci_state,
       (c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
       equation
         tys =  instStringClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_STRING(tys),NONE));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE,NONE,graph);
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_STRING(tys),NONE()));
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
 
     /* Boolean class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
       (c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
       equation
         tys =  instBooleanClass(cache,env,mods,pre);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE,NONE,graph);
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE()));
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
 
     // adrpo: 2010-09-27: here we do two things at once, but not correctly!
     // Instantiate enumeration class at top level Prefix.NOPRE 
@@ -2160,7 +2160,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        ty2 = (DAE.T_ENUMERATION(NONE, fq_class, names, tys1, tys), NONE);
+        ty2 = (DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys), NONE);
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = Util.if_(Util.isSome(bc), bc, SOME(ty2));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
@@ -2168,7 +2168,7 @@ algorithm
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
         tys2 = listAppend(tys, tys1); // <--- this is wrong as the tys belong to the component variable not the Enumeration Class!        
       then
-        (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE */,NONE,NONE,graph);
+        (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE */,NONE(),NONE(),graph);
 
    	/* Ignore functions if not implicit instantiation */
     case (cache,env,ih,store,mods,pre,csets,ci_state,cls,_,_,(impl as false),_,graph,_)
@@ -2177,7 +2177,7 @@ algorithm
         clsname = SCode.className(cls);
         //print("Ignore function" +& clsname +& "\n");
       then
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE,NONE,NONE,graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     /* Instantiate a class definition made of parts */
     case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d,info=info)),prot,inst_dims,impl,callscope,graph,instSingleCref)
@@ -2463,17 +2463,17 @@ algorithm
    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{}),NONE()),p);
       then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
@@ -3263,7 +3263,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env, els);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,env,ih,store,dae,csets1,ci_state,tys,bc,NONE,eqConstraint,graph); 
+        (cache,env,ih,store,dae,csets1,ci_state,tys,bc,NONE(),eqConstraint,graph); 
 
     // VERY COMPLICATED CHECKPOINT! TODO! try to simplify it, maybe by sending Prefix.TYPE and checking in instVar!
     // did the previous 
@@ -3397,7 +3397,7 @@ algorithm
        	true = isExternalObject(els);
        	(cache,env,ih,dae,ci_state) = instantiateExternalObject(cache,env,ih,els,impl);
       then
-        (cache,env,ih,store,dae,csets,ci_state,{},NONE,NONE,NONE,graph);
+        (cache,env,ih,store,dae,csets,ci_state,{},NONE(),NONE(),NONE(),graph);
 
     // This rule describes how to instantiate an explicit class definition
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
@@ -3571,7 +3571,7 @@ algorithm
         // Search for equalityConstraint
         eqConstraint = equalityConstraint(cache, env5, els);
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,tys,MetaUtil.fixUniontype(ci_state6,NONE/* no basictype bc*/,inClassDef6),NONE,eqConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,tys,MetaUtil.fixUniontype(ci_state6,NONE/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
     // This rule describes how to instantiate class definition derived from an enumeration 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
@@ -3675,9 +3675,9 @@ algorithm
         (cache,cenv,ih,tys,csets,oDA) =
         instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         ty = Util.listFirst(tys);
-        bc = SOME((DAE.T_LIST(ty),NONE));
+        bc = SOME((DAE.T_LIST(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),modifications = mod, attributes=DA),
@@ -3692,9 +3692,9 @@ algorithm
         (cache,cenv,ih,{ty},csets,oDA) =
         instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
-        bc = SOME((DAE.T_METAOPTION(ty),NONE));
+        bc = SOME((DAE.T_METAOPTION(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),modifications = mod, attributes=DA),
@@ -3707,9 +3707,9 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
-        bc = SOME((DAE.T_METATUPLE(tys),NONE));
+        bc = SOME((DAE.T_METATUPLE(tys),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecs,_),modifications = mod, attributes=DA),
@@ -3723,12 +3723,12 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
-        bc = SOME((DAE.T_META_ARRAY(ty),NONE));
+        bc = SOME((DAE.T_META_ARRAY(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       local
         list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys; DAE.Type ty;
@@ -3738,9 +3738,9 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{},csets);
-        bc = SOME((DAE.T_POLYMORPHIC(className),NONE));
+        bc = SOME((DAE.T_POLYMORPHIC(className),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
@@ -3915,7 +3915,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
         //print(" failure to find: " +& Exp.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
       then {};
     case({},_,_,_,_) then fail();
-    case(inComps,NONE,_,_,_) then inComps;
+    case(inComps,NONE(),_,_,_) then inComps;
       /*
     case( (selem as SCode.CLASSDEF(name=name2))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       local
@@ -4092,7 +4092,7 @@ algorithm
       InstanceHierarchy ih;
 
     case (cache,env,ih,{},_,_,_,localAccTypes,csets)
-      then (cache,env,ih,listReverse(localAccTypes),csets,NONE);
+      then (cache,env,ih,listReverse(localAccTypes),csets,NONE());
 
     case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
       equation
@@ -4690,7 +4690,7 @@ algorithm
 	       to the environment here.
 	      *//*
         cdefelts2 = classdefElts2(extcomps);
-        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2,true,NONE); // Add inherited classes to env
+        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2,true,NONE()); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false);
@@ -4814,7 +4814,7 @@ algorithm omods := matchcontinue(dep,elems)
     equation
       name2 = Absyn.printComponentRefStr(dep);
       true = stringEqual(name2,name1);
-      cmod = DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE);
+      cmod = DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE());
       then
         cmod;
   case(dep,tpl::elems)
@@ -5076,7 +5076,7 @@ algorithm
           instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl, callscope, graph);
         /*s1 = Util.if_(stringEqual("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
-        Error.updateCurrentComponent("",NONE);
+        Error.updateCurrentComponent("",NONE());
         (cache,env_2,ih,store,dae2,csets_2,ci_state_2,tys2,graph) =
           instElementList(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1, els, inst_dims, impl, callscope, graph);
         tys = listAppend(tys1, tys2);
@@ -5722,7 +5722,7 @@ algorithm
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
-          (DAE.T_NOTYPE(),NONE),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
+          (DAE.T_NOTYPE(),NONE()),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
@@ -6254,10 +6254,10 @@ algorithm
         delayTpCheck = cnt > 0 ;
     then (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck)))); // true to delay type checking/elabExp
 
-    case(cache,id,SCode.MOD(fi,ea,subs,NONE))
+    case(cache,id,SCode.MOD(fi,ea,subs,NONE()))
       equation
       (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
-    then (cache,SCode.MOD(fi,ea,subs,NONE));
+    then (cache,SCode.MOD(fi,ea,subs,NONE()));
     case(cache,id,inMod) then (cache,inMod);
   end matchcontinue;
 end removeSelfModReference;
@@ -6890,7 +6890,7 @@ algorithm str := matchcontinue(cc,env,pre)
     list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
     list<tuple<SCode.Element, Mod>> extcomps;
     Option<Absyn.Annotation> annOpt;
-  case(NONE,_,_) then {};
+  case(NONE(),_,_) then {};
   case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
     equation
       (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
@@ -6903,7 +6903,7 @@ algorithm str := matchcontinue(cc,env,pre)
   case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
     equation
       (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
-      compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{},annOpt),NONE)),env,pre);
+      compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{},annOpt),NONE())),env,pre);
     then
       compelts;
 end matchcontinue;
@@ -7322,7 +7322,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix, Util.getOptionOrDefault(info, Absyn.dummyInfo),graph);
         ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
-        Error.updateCurrentComponent("",NONE);
+        Error.updateCurrentComponent("",NONE());
       then
         (cache,compenv,ih,store,dae,csets_1,ty,graph);
 
@@ -7339,13 +7339,13 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n,
                  cl, attr, prot, dims, idxs, inst_dims, impl,
                  comment,io,finalPrefix,Util.getOptionOrDefault(info, Absyn.dummyInfo),graph);
-        Error.updateCurrentComponent("",NONE);
+        Error.updateCurrentComponent("",NONE());
       then
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph);
 
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Error.updateCurrentComponent("",NONE);
+        Error.updateCurrentComponent("",NONE());
       then fail();
   end matchcontinue;
 end instVar_dispatch;
@@ -8362,7 +8362,7 @@ algorithm
         eq = Mod.modEquation(mod_3);
         
         owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE,true, false,pre,rinfo)
+        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,rinfo)
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;        
         /* Instantiate the component */
         (cache,compenv,ih,_,_,csets_1,ty,_) = 
@@ -8942,7 +8942,7 @@ algorithm
       equation
         (i > stop) = true;
       then
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE),graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE()),graph);
 
     /* adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!! */
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,
@@ -9018,7 +9018,7 @@ algorithm
       DAE.DIM_ENUM(literals = {}),dims,idxs,inst_dims,impl,comment,io,finalPrefix,
       info,graph)
       then
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE),graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE()),graph);
 
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
@@ -9176,7 +9176,7 @@ algorithm
         (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, st,doVect, false,pre,info);
       then
         (cache,res);
-    case (cache,env,owncref,path,NONE,eq,impl,st,doVect,_,_) then (cache,{});
+    case (cache,env,owncref,path,NONE(),eq,impl,st,doVect,_,_) then (cache,{});
   end matchcontinue;
 end elabArraydimOpt;
 
@@ -9236,7 +9236,7 @@ algorithm
       then
         (cache, dim);
         
-    case (cache,env,cref,path,ad,NONE,impl,st,doVect, _,pre,info) /* impl */
+    case (cache,env,cref,path,ad,NONE(),impl,st,doVect, _,pre,info) /* impl */
       equation
         (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
@@ -10001,7 +10001,7 @@ algorithm
         prot = false;
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1,
-              ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,INNER_CALL, ConnectionGraph.EMPTY,NONE,info) "how to get this? impl" ;
+              ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,INNER_CALL, ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true,pre,info) "impl" ;
 
         // set the source of this element
@@ -10422,7 +10422,7 @@ algorithm
     local
       Absyn.Path p,newPath;
       DAE.TType tp;
-    case ((tp,NONE()),_) then ((tp,NONE));
+    case ((tp,NONE()),_) then ((tp,NONE()));
     case ((tp,SOME(p)),newPath) then ((tp,SOME(newPath)));
   end matchcontinue;
 end setFullyQualifiedTypename;
@@ -10827,7 +10827,7 @@ algorithm
         explists = Util.listMap(invars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
         {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
-        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE);
+        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE());
       then
         extdecl;
     case (id,els,Absyn.EXTERNALDECL(lang = lang))
@@ -10835,7 +10835,7 @@ algorithm
         inoutvars = Util.listFilter(els, isInoutVar);
         explists = Util.listMap(inoutvars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
-        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps,NONE);
+        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
       then
         extdecl;
     case (_,_,_)
@@ -11264,7 +11264,7 @@ public function instEnumeration
   list<SCode.Element> comp;
 algorithm 
   comp := makeEnumComponents(l, info);
-  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE,{},cmt),info);
+  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE(),{},cmt),info);
 end instEnumeration;
 
 protected function makeEnumComponents
@@ -11668,7 +11668,7 @@ algorithm
       equation
         somep = getOptPath(p);
       then
-        ((DAE.T_ENUMERATION(NONE, p,{},{},{}),somep));
+        ((DAE.T_ENUMERATION(NONE(), p,{},{},{}),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
@@ -11788,7 +11788,7 @@ algorithm
       equation
         somep = getOptPath(p);
       then
-        ((DAE.T_ENUMERATION(NONE, p,{},{},{}),somep));
+        ((DAE.T_ENUMERATION(NONE(), p,{},{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,cl)
@@ -12105,7 +12105,7 @@ algorithm
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
-          start_val,fixed_val,nominal_val,stateSelect_value,NONE,NONE,NONE)));
+          start_val,fixed_val,nominal_val,stateSelect_value,NONE(),NONE(),NONE())));
     /* Integer */
     case (cache,env,mod,tp as (DAE.T_INTEGER(varLstInt = varLst),_),index_list)
       local Option<DAE.Exp> min_val,max_val,start_val;
@@ -12116,7 +12116,7 @@ algorithm
         (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
       then
-        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,NONE,NONE,NONE)));
+        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,NONE(),NONE(),NONE())));
     /* Boolean */
     case (cache,env,mod,tp as (DAE.T_BOOL(varLstBool = varLst),_),index_list)
       local Option<DAE.Exp> start_val;
@@ -12125,7 +12125,7 @@ algorithm
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",false);
       then
-        (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE,NONE,NONE)));
+        (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE())));
     /* String */
     case (cache,env,mod,tp as (DAE.T_STRING(varLstString = varLst),_),index_list)
       local Option<DAE.Exp> start_val;
@@ -12133,7 +12133,7 @@ algorithm
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
       then
-        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE,NONE,NONE)));
+        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE())));
     /* Enumeration */
     case (cache,env,mod,(enumtype as (DAE.T_ENUMERATION(attributeLst=varLst),_)),index_list)
       equation
@@ -12143,9 +12143,9 @@ algorithm
         (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start",false);
         (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",false);
       then
-        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE,NONE,NONE)));
+        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE())));
     case (cache,env,mod,_,_)
-      then (cache,NONE);
+      then (cache,NONE());
   end matchcontinue;
 end instDaeVariableAttributes;
 
@@ -12184,12 +12184,12 @@ algorithm
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         NONE = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Boolean"});
@@ -12231,12 +12231,12 @@ algorithm
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         NONE = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Real"});
@@ -12278,12 +12278,12 @@ algorithm
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         NONE = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Integer"});
@@ -12325,12 +12325,12 @@ algorithm
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         NONE = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
       then
-        (cache,NONE);
+        (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"String"});
@@ -12803,14 +12803,14 @@ algorithm
 
   case(SCode.EXTENDS(path,_,_))
     equation ret = Absyn.pathString(path);
-    then (ret,NONE);
+    then (ret,NONE());
   case(SCode.CLASSDEF(name = name_))
-    then (name_,NONE);
+    then (name_,NONE());
   case(SCode.COMPONENT(component = name_, info=info))
     then (name_,info);
   case(SCode.IMPORT(imp))
     equation name_ = Absyn.printImportString(imp);
-      then (name_,NONE);
+      then (name_,NONE());
 end matchcontinue;
 end extractCurrentName;
 
@@ -13261,7 +13261,7 @@ algorithm
 	    list<DAE.SubMod> lsm,lsm2;
 	    Prefix.Prefix pre;
 
-    case(_,ih,pre,NONE,_) then fail();
+    case(_,ih,pre,NONE(),_) then fail();
 
     case(env,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASSDEF(name=str))
       equation
@@ -13775,7 +13775,7 @@ This function merged derived Absyn.ElementAttributes with the current input SCod
 algorithm v3 := matchcontinue(v1,optDerAttr)
   local Absyn.Direction v2;
     
-  case(v1,NONE) then v1;
+  case(v1,NONE()) then v1;
   case(Absyn.BIDIR(),SOME(Absyn.ATTR(direction=v2))) then v2;
   case(v1,SOME(Absyn.ATTR(direction=Absyn.BIDIR()))) then v1;
   case(v1,SOME(Absyn.ATTR(direction=v2)))

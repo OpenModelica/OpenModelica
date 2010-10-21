@@ -257,7 +257,7 @@ algorithm
         targets = VarTransform.replacementTargets(repl);
         inDae = DAEUtil.removeVariables(inDae,sources);
         inDae = DAEUtil.removeInnerAttrs(inDae,targets);
-        outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
+        outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE());
         // adrpo: send in the sources/targets so we avoid building them again!
         ocsets = changeOuterReferences2(repl,csets,sources,targets);
       then

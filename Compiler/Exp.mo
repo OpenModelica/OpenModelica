@@ -5421,7 +5421,7 @@ algorithm
     case (DAE.CODE(ty = tp)) then tp;
     case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
-    case (DAE.SIZE(_,NONE)) then DAE.ET_INT();
+    case (DAE.SIZE(_,NONE())) then DAE.ET_INT();
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN});
 
     //MetaModelica extension
@@ -6886,10 +6886,10 @@ algorithm
       ae3 = unelabExp(e3);
     then Absyn.RANGE(ae1,SOME(ae2),ae3);
 
-    case(DAE.RANGE(_,e1,NONE,e3)) equation
+    case(DAE.RANGE(_,e1,NONE(),e3)) equation
       ae1 = unelabExp(e1);
       ae3 = unelabExp(e3);
-    then Absyn.RANGE(ae1,NONE,ae3);
+    then Absyn.RANGE(ae1,NONE(),ae3);
 
     case(DAE.TUPLE(expl))
       equation
@@ -8542,7 +8542,7 @@ algorithm
       then
         s;
     
-    case (e as DAE.RANGE(_,start,NONE,stop), _, _, _)
+    case (e as DAE.RANGE(_,start,NONE(),stop), _, _, _)
       equation
         s1 = printExp2Str(start, stringDelimiter, opcreffunc, opcallfunc);
         s3 = printExp2Str(stop, stringDelimiter, opcreffunc, opcallfunc);
@@ -9322,7 +9322,7 @@ algorithm
         (e2_1,c2) = replaceExp(e2, source, target);
         c = c1 + c2;
       then
-        (DAE.RANGE(tp,e1_1,NONE,e2_1),c);
+        (DAE.RANGE(tp,e1_1,NONE(),e2_1),c);
     case (DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2),source,target)
       equation
         (e1_1,c1) = replaceExp(e1, source, target);
@@ -9357,7 +9357,7 @@ algorithm
       equation
         (e1_1,c) = replaceExp(e1, source, target);
       then
-        (DAE.SIZE(e1_1,NONE),c);
+        (DAE.SIZE(e1_1,NONE()),c);
     case (DAE.SIZE(exp = e1,sz = SOME(e2)),source,target)
       equation
         (e1_1,c1) = replaceExp(e1, source, target);
@@ -9708,7 +9708,7 @@ algorithm
         e1_1 = stringifyCrefs(e1);
         e3_1 = stringifyCrefs(e3);
       then
-        DAE.RANGE(t,e1_1,NONE,e3_1);
+        DAE.RANGE(t,e1_1,NONE(),e3_1);
     case (DAE.TUPLE(PR = expl))
       equation
         expl_1 = Util.listMap(expl, stringifyCrefs);
@@ -9734,7 +9734,7 @@ algorithm
       equation
         e1_1 = stringifyCrefs(e1);
       then
-        DAE.SIZE(e1_1,NONE);
+        DAE.SIZE(e1_1,NONE());
     case ((e as DAE.CODE(code = _))) then e;
     case (DAE.REDUCTION(path = p,expr = e1,ident = id,range = e2))
       equation
@@ -11100,7 +11100,7 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((e,ext_arg_3)) = rel((DAE.RANGE(tp,e1_1,NONE,e2_1),ext_arg_2));
+        ((e,ext_arg_3)) = rel((DAE.RANGE(tp,e1_1,NONE(),e2_1),ext_arg_2));
       then
         ((e,ext_arg_3));
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3)),rel,ext_arg)
@@ -11133,7 +11133,7 @@ algorithm
     case ((e as DAE.SIZE(exp = e1,sz = NONE)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((DAE.SIZE(e1_1,NONE),ext_arg_1));
+        ((e,ext_arg_2)) = rel((DAE.SIZE(e1_1,NONE()),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),rel,ext_arg)
@@ -11431,7 +11431,7 @@ algorithm
       equation
         count = countBinary(e1) + countBinary(e2) + countBinary(e3);
       then count;
-    case(DAE.RANGE(_,e1,NONE,e3)) 
+    case(DAE.RANGE(_,e1,NONE(),e3)) 
       equation
         count = countBinary(e1) + countBinary(e3);
       then count;
@@ -11476,7 +11476,7 @@ algorithm
     case(DAE.RANGE(_,e1,SOME(e2),e3)) equation
       count = countMulDiv(e1) + countMulDiv(e2) + countMulDiv(e3);
     then count;
-    case(DAE.RANGE(_,e1,NONE,e3)) equation
+    case(DAE.RANGE(_,e1,NONE(),e3)) equation
       count = countMulDiv(e1) + countMulDiv(e3);
     then count;
     case(DAE.TUPLE(expl)) equation
@@ -12371,7 +12371,7 @@ public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing
 algorithm
   outTpl:= matchcontinue (inExp,func,inTypeA)
   local Exp e;
-    case(NONE,_,inTypeA) then ((NONE,inTypeA));
+    case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
     case(SOME(e),func,inTypeA) equation
       ((e,inTypeA)) = traverseExp(e,func,inTypeA);
      then ((SOME(e),inTypeA));
@@ -13154,7 +13154,7 @@ algorithm
         eLst = Util.listFill(e,i);
       then
         (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),false,eLst), 
-         (DAE.T_ARRAY(d,ty),NONE));      
+         (DAE.T_ARRAY(d,ty),NONE()));      
   end matchcontinue;
 end makeZeroExpression;  
 

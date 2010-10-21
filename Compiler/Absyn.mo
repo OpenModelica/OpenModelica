@@ -1556,13 +1556,13 @@ algorithm
       then
         ((MATRIX(mexpl1),ext_arg_2));
 
-    case ((e as RANGE(e1,NONE,e2)),rel,ext_arg)
+    case ((e as RANGE(e1,NONE(),e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((RANGE(e1_1,NONE,e2_1),ext_arg_3));
+        ((RANGE(e1_1,NONE(),e2_1),ext_arg_3));
     case ((e as RANGE(e1,SOME(e2),e3)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
@@ -1955,7 +1955,7 @@ algorithm b:= matchcontinue(oad1,oad2)
     equation
     true = Util.isListEqualWithCompareFunc(ad1,ad2,subscriptEqual);
     then true;
-  case(NONE,NONE) then true;
+  case(NONE(),NONE()) then true;
   case(_,_) then false;
 end matchcontinue;
 end optArrayDimEqual;
@@ -3018,7 +3018,7 @@ Appends a path to optional 'base'-path.
   input Path lastPath;
   output Path mergedPath;
 algorithm mergedPath := matchcontinue(basePath, lastPath)
-  case(NONE,lastPath) then lastPath;
+  case(NONE(),lastPath) then lastPath;
   case(SOME(mergedPath), lastPath) then pathAppendList({mergedPath,lastPath});
 end matchcontinue;
 end optPathAppend;
@@ -4059,7 +4059,7 @@ algorithm
       list<ForIterator> rest;
       Exp exp;
       case (id,{}) then {};
-      case (id,(_,NONE)::rest)
+      case (id,(_,NONE())::rest)
         equation
           lst=findIteratorInForIteratorsBounds(id,rest);
         then lst;
@@ -4093,7 +4093,7 @@ algorithm
         true = stringEqual(id, id_1);
       then
         (true,{});
-    case (id,(_,NONE)::rest)
+    case (id,(_,NONE())::rest)
       equation
         (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
       then (bool,lst);
@@ -4207,7 +4207,7 @@ algorithm
       list<tuple<ComponentRef, Integer>> lst;
       String id;
       Exp exp;
-      case (id,NONE) then {};
+      case (id,NONE()) then {};
       case (id,SOME(exp))
         equation
           lst=findIteratorInExp(id,exp);

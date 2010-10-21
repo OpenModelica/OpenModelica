@@ -76,34 +76,34 @@ algorithm
      SI system ,with lower cost on Hz and Bq */
      case({}) equation
        registerUnitWeightDefineunits2({
-       SCode.DEFINEUNIT("m",NONE,NONE),
-       SCode.DEFINEUNIT("kg",NONE,NONE),
-       SCode.DEFINEUNIT("s",NONE,NONE),
-       SCode.DEFINEUNIT("A",NONE,NONE),
-       SCode.DEFINEUNIT("k",NONE,NONE),
-       SCode.DEFINEUNIT("mol",NONE,NONE),
-       SCode.DEFINEUNIT("cd",NONE,NONE),
-       SCode.DEFINEUNIT("rad",SOME("m/m"),NONE),
-       SCode.DEFINEUNIT("sr",SOME("m2/m2"),NONE),
+       SCode.DEFINEUNIT("m",NONE(),NONE()),
+       SCode.DEFINEUNIT("kg",NONE(),NONE()),
+       SCode.DEFINEUNIT("s",NONE(),NONE()),
+       SCode.DEFINEUNIT("A",NONE(),NONE()),
+       SCode.DEFINEUNIT("k",NONE(),NONE()),
+       SCode.DEFINEUNIT("mol",NONE(),NONE()),
+       SCode.DEFINEUNIT("cd",NONE(),NONE()),
+       SCode.DEFINEUNIT("rad",SOME("m/m"),NONE()),
+       SCode.DEFINEUNIT("sr",SOME("m2/m2"),NONE()),
        SCode.DEFINEUNIT("Hz",SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("N",SOME("m.kg.s-2"),NONE),
-       SCode.DEFINEUNIT("Pa",SOME("N/m2"),NONE),
-       SCode.DEFINEUNIT("W",SOME("J/s"),NONE),
-       SCode.DEFINEUNIT("J",SOME("N.m"),NONE),
-       SCode.DEFINEUNIT("C",SOME("s.A"),NONE),
-       SCode.DEFINEUNIT("V",SOME("W/A"),NONE),
-       SCode.DEFINEUNIT("F",SOME("C/V"),NONE),
-       SCode.DEFINEUNIT("Ohm",SOME("V/A"),NONE),
-       SCode.DEFINEUNIT("S",SOME("A/V"),NONE),
-       SCode.DEFINEUNIT("Wb",SOME("V.s"),NONE),
-       SCode.DEFINEUNIT("T",SOME("Wb/m2"),NONE),
-       SCode.DEFINEUNIT("H",SOME("Wb/A"),NONE),
-       SCode.DEFINEUNIT("lm",SOME("cd.sr"),NONE),
-       SCode.DEFINEUNIT("lx",SOME("lm/m2"),NONE),
+       SCode.DEFINEUNIT("N",SOME("m.kg.s-2"),NONE()),
+       SCode.DEFINEUNIT("Pa",SOME("N/m2"),NONE()),
+       SCode.DEFINEUNIT("W",SOME("J/s"),NONE()),
+       SCode.DEFINEUNIT("J",SOME("N.m"),NONE()),
+       SCode.DEFINEUNIT("C",SOME("s.A"),NONE()),
+       SCode.DEFINEUNIT("V",SOME("W/A"),NONE()),
+       SCode.DEFINEUNIT("F",SOME("C/V"),NONE()),
+       SCode.DEFINEUNIT("Ohm",SOME("V/A"),NONE()),
+       SCode.DEFINEUNIT("S",SOME("A/V"),NONE()),
+       SCode.DEFINEUNIT("Wb",SOME("V.s"),NONE()),
+       SCode.DEFINEUNIT("T",SOME("Wb/m2"),NONE()),
+       SCode.DEFINEUNIT("H",SOME("Wb/A"),NONE()),
+       SCode.DEFINEUNIT("lm",SOME("cd.sr"),NONE()),
+       SCode.DEFINEUNIT("lx",SOME("lm/m2"),NONE()),
        SCode.DEFINEUNIT("Bq",SOME("s-1"),SOME(0.8)),
-       SCode.DEFINEUNIT("Gy",SOME("J/kg"),NONE),
-       SCode.DEFINEUNIT("Sv",SOME("cd.sr"),NONE),
-       SCode.DEFINEUNIT("kat",SOME("s-1.mol"),NONE)
+       SCode.DEFINEUNIT("Gy",SOME("J/kg"),NONE()),
+       SCode.DEFINEUNIT("Sv",SOME("cd.sr"),NONE()),
+       SCode.DEFINEUNIT("kat",SOME("s-1.mol"),NONE())
        });   then ();
      case(du) equation registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
@@ -139,7 +139,7 @@ algorithm
   _ := matchcontinue(prg)
     case(prg) equation
       true = OptManager.getOption("unitChecking");
-      ((_,_,_)) = Interactive.traverseClasses(prg,NONE,registerUnitInClass,0,false); // defineunits must be in public section.
+      ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
     then ();
       
     case(prg) equation
@@ -237,7 +237,7 @@ algorithm
 
        /* base unit does not not have weight*/
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,NONE,_)} = SCodeUtil.translateElement(du,false);
+       {SCode.DEFINEUNIT(name,NONE(),_)} = SCodeUtil.translateElement(du,false);
        UnitParserExt.addBase(name);
        registerDefineunits2(elts);
      then ();
@@ -350,7 +350,7 @@ protected
 algorithm
   s := emptyStore();
   ht := HashTable.emptyHashTable();
-  st := UnitAbsyn.INSTSTORE(s,ht,NONE);
+  st := UnitAbsyn.INSTSTORE(s,ht,NONE());
 end emptyInstStore;
 
 public function emptyStore "Returns an empty store with 10 empty array elements"
@@ -358,7 +358,7 @@ output UnitAbsyn.Store st;
 protected
 Option<UnitAbsyn.Unit>[:] vector;
 algorithm
-   vector := arrayCreate(10,NONE);
+   vector := arrayCreate(10,NONE());
    st := UnitAbsyn.STORE(vector,0);
 end emptyStore;
 
@@ -724,7 +724,7 @@ algorithm
     then UnitAbsyn.noStore;
 
     case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_),cr) equation
-      unit = str2unit(unitStr,NONE);
+      unit = str2unit(unitStr,NONE());
       unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
        ht = HashTable.add((cr,indx),ht);
@@ -954,7 +954,7 @@ algorithm
 
     case(env,e as DAE.ICONST(i),divOrMul,ht,store) local Integer i; equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
-      u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());
+      u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
        ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
@@ -962,7 +962,7 @@ algorithm
     /* for each constant, add new unspecified unit*/
     case(env,e as DAE.RCONST(r),divOrMul,ht,store)equation
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
-      u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());
+      u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
        ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
@@ -1311,7 +1311,7 @@ algorithm
     case(DAE.DAE(elementLst = {}),store,ht) then (store,ht);
     case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),store,ht) equation
       DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
-      unit = str2unit(unitStr,NONE); /* Scale and offset not used yet*/
+      unit = str2unit(unitStr,NONE()); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
       ht = HashTable.add((cr,indx),ht);
       (store,ht) = buildStores2(DAE.DAE(elts),store,ht);
@@ -1348,8 +1348,8 @@ algorithm
 
     case(DAE.DAE({}),store,ht) then (store,ht);
     case(DAE.DAE(DAE.EQUATION(e1,e2,_)::elts),store,ht) equation
-       (store,ht) = buildStoreExp(e1,store,ht,NONE);
-       (store,ht) = buildStoreExp(e2,store,ht,NONE);
+       (store,ht) = buildStoreExp(e1,store,ht,NONE());
+       (store,ht) = buildStoreExp(e2,store,ht,NONE());
        (store,ht) = buildStores3(DAE.DAE(elts),store,ht);
     then (store,ht);
 
@@ -1428,7 +1428,7 @@ algorithm
     case(NONE) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.ADD(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.SUB(_))) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(_)) then str2unit("1",NONE);
+    case(SOME(_)) then str2unit("1",NONE());
   end matchcontinue;
 end selectConstantUnit;
 

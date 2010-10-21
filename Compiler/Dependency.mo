@@ -221,7 +221,7 @@ protected function extendScope "Extends a scope with an identifier"
 algorithm
   outOptPath := matchcontinue(optPath,id)
   local Absyn.Path p;
-    case(NONE,id) then SOME(Absyn.IDENT(id));
+    case(NONE(),id) then SOME(Absyn.IDENT(id));
     case(SOME(p),id) equation
       p = Absyn.joinPaths(p,Absyn.IDENT(id));
     then SOME(p);
@@ -235,7 +235,7 @@ output Absyn.Path outPath;
 algorithm
   outPath := matchcontinue(path,scope)
   local Absyn.Path scopePath;
-    case(path,NONE) then path;
+    case(path,NONE()) then path;
     case(path,SOME(scopePath)) then Absyn.joinPaths(scopePath,path);
   end matchcontinue;
 end addPathScope;
@@ -370,7 +370,7 @@ algorithm
   local Option<Absyn.Exp> optExp; Absyn.Modification mod;
     AbsynDep.Depends d; Absyn.Program p; Env.Env env;
     list<Absyn.ElementArg> eltArgs;HashTable2.HashTable ht;
-    case(NONE, optPath,cname,(d,p,env,ht)) then d;
+    case(NONE(), optPath,cname,(d,p,env,ht)) then d;
     case(SOME(mod),optPath,cname,(d,p,env,ht)) equation
       d = buildClassDependsInModification(mod,optPath,cname,(d,p,env,ht));
     then d;
@@ -592,7 +592,7 @@ algorithm
     then d;
 
    /* adrpo: TODO! add full support for ForIterators*/
-   case(Absyn.ALG_FOR({(_,NONE)},body),optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.ALG_FOR({(_,NONE())},body),optPath,cname,(d,p,env,ht)) equation
      /* d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht)); */
      d = buildClassDependsinAlgs(body,optPath,cname,(d,p,env,ht));
     then d;
@@ -688,7 +688,7 @@ algorithm
    then d;
 
    /* adrpo: TODO! add the full ForIterators support */
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE)},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE())},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
@@ -828,7 +828,7 @@ protected function buildClassDependsinArrayDimOpt " help function to e.g buildCl
 algorithm
  outDep := matchcontinue(adOpt,optPath,cname,dep)
    local AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;HashTable2.HashTable ht;
-   case(NONE,optPath,cname,(d,p,env,ht)) then d;
+   case(NONE(),optPath,cname,(d,p,env,ht)) then d;
    case(SOME(ad),optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
    then d;
@@ -976,7 +976,7 @@ algorithm
   outDep := matchcontinue(optExp,optPath,cname,dep)
   local AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.Exp e;HashTable2.HashTable ht;
     case(SOME(e),optPath,cname,(d,p,env,ht)) then buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-    case(NONE,optPath,cname,(d,p,env,ht)) then d;
+    case(NONE(),optPath,cname,(d,p,env,ht)) then d;
   end matchcontinue;
 end buildClassDependsInOptExp;
 
@@ -1130,7 +1130,7 @@ algorithm
       print(Absyn.pathString(path2));print("\n");
     then fail();
 
-    case(path,NONE,className,env,p) equation
+    case(path,NONE(),className,env,p) equation
       print("check FQ failed for ");print(Absyn.pathString(path));print("in top scope\n");
       print("env:");print(Env.printEnvStr(env));
     then fail();
@@ -1162,7 +1162,7 @@ algorithm
       print(Absyn.pathString(path2));print("\n");
     then fail();
 
-    case(path,NONE,className,env,p) equation
+    case(path,NONE(),className,env,p) equation
       print("FQ failed for ");print(Absyn.pathString(path));print("in top scope\n");
       print("env:");print(Env.printEnvStr(env));
     then fail();
@@ -1178,7 +1178,7 @@ output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(p,optPath,env)
   local Absyn.Path path;
-    case(p,NONE,env) then env;
+    case(p,NONE(),env) then env;
     case(p,SOME(path),env) then getClassEnvNoElaboration(p,path,env);
 
     /* As a backup, remove a frame. This can be needed to circumvent encapsulated frames */
@@ -1233,7 +1233,7 @@ algorithm
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
         UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        ci_state, cl, false, {},false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
+        ci_state, cl, false, {},false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
     then env_2;
     end matchcontinue;
 end getClassEnvNoElaboration;
@@ -1255,9 +1255,9 @@ protected function extractProgramVisitor "Visitor function to extractProgram"
 algorithm
  outTpl := matchcontinue(inTpl)
  local Absyn.Path path; Absyn.Class cl; String id; AbsynDep.AvlTree tree; list<Absyn.Class> cls; list<Option<Absyn.Path>> pts;
-   case((cl as Absyn.CLASS(name=id),NONE,(tree,cls,pts))) equation
+   case((cl as Absyn.CLASS(name=id),NONE(),(tree,cls,pts))) equation
      _ = AbsynDep.avlTreeGet(tree,Absyn.IDENT(id));
-    then ((cl,NONE,(tree,cl::cls,NONE::pts)));
+    then ((cl,NONE(),(tree,cl::cls,NONE::pts)));
    case((cl as Absyn.CLASS(name=id),SOME(path),(tree,cls,pts))) equation
      _ = AbsynDep.avlTreeGet(tree,Absyn.joinPaths(path,Absyn.IDENT(id)));
    then ((cl,SOME(path),(tree,cl::cls,SOME(path)::pts)));
@@ -1276,8 +1276,8 @@ algorithm
   elementspec := Absyn.EXTENDS(modelName,{},NONE());
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
     Absyn.PARTS({Absyn.PUBLIC({Absyn.ELEMENTITEM(
-      Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elementspec,info,NONE)
-    )})},NONE),info);
+      Absyn.ELEMENT(false,NONE(),Absyn.UNSPECIFIED(),"",elementspec,info,NONE())
+    )})},NONE()),info);
 end createTopLevelTotalClass;
 
 end Dependency;

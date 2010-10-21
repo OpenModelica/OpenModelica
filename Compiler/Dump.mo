@@ -373,7 +373,7 @@ algorithm
         str = System.stringAppendList({" \"",cmt,"\"",s1});
       then
         str;
-    case (SOME(Absyn.COMMENT(annopt,NONE)))
+    case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         str = unparseAnnotationOption(0, annopt);
       then
@@ -420,11 +420,11 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    case (SOME(Absyn.COMMENT(annopt,NONE)))
+    case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
         dumpAnnotationOption(annopt);
-        Print.printBuf(",NONE))");
+        Print.printBuf(",NONE()))");
       then
         ();
   end matchcontinue;
@@ -1339,7 +1339,7 @@ algorithm
     case (Absyn.ANNOTATION(elementArgs = mod))
       equation
         Print.printBuf("ANNOTATION(");
-        printModification(Absyn.CLASSMOD(mod,NONE));
+        printModification(Absyn.CLASSMOD(mod,NONE()));
         Print.printBuf(")");
       then
         ();
@@ -1409,7 +1409,7 @@ algorithm
       Ident s,res;
       Integer i;
       Option<Absyn.Annotation> ann;
-    case (_,NONE) then "";
+    case (_,NONE()) then "";
     case (i,ann)
       equation
         s = unparseAnnotationOption(i, ann);
@@ -1433,19 +1433,19 @@ algorithm
       Integer i;
     case (0,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
         s2 = stringAppend(" annotation", s1);
         str = s2; // stringAppend(s2, "");
       then
         str;
     case (i,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
         is = indentStr(i);
         str = System.stringAppendList({is,"annotation",s1});
       then
         str;
-    case (_,NONE) then "";
+    case (_,NONE()) then "";
   end matchcontinue;
 end unparseAnnotationOption;
 
@@ -1588,7 +1588,7 @@ algorithm
     case (i,Absyn.TEXT(optName = NONE,string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
-        str = System.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
+        str = System.stringAppendList({"/* Absyn.TEXT(NONE(), \"",text,"\", ",s1,"); */"});
       then
         str;
     case(_,_) equation
@@ -3746,7 +3746,7 @@ algorithm
       equation
         Print.printBuf("Absyn.RANGE(");
         printExp(start);
-        Print.printBuf(",NONE,");
+        Print.printBuf(",NONE(),");
         printExp(stop);
         Print.printBuf(")");
       then
@@ -4746,7 +4746,7 @@ algorithm
     local
       Type_a x;
       FuncTypeType_aTo r;
-    case (NONE,_)
+    case (NONE(),_)
       equation
         Print.printBuf("NONE()");
       then
@@ -4914,7 +4914,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 
@@ -4944,7 +4944,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_,def) then def;
+    case (NONE(),_,def) then def;
   end matchcontinue;
 end getOptionStrDefault;
 
@@ -4975,7 +4975,7 @@ algorithm
         str_1 = stringAppend(default_str, str);
       then
         str_1;
-    case (NONE,_,default_str) then "";
+    case (NONE(),_,default_str) then "";
   end matchcontinue;
 end getOptionWithConcatStr;
 

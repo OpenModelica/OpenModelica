@@ -205,11 +205,11 @@ algorithm
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE);
+          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
-        t = (DAE.T_ENUMERATION(NONE, path, names, types, {}), SOME(path));
+        t = (DAE.T_ENUMERATION(NONE(), path, names, types, {}), SOME(path));
         env_3 = Env.extendFrameT(env_3, id, t);
       then
         (cache,t,env_3);
@@ -1653,10 +1653,10 @@ algorithm
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality")
-      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE,NONE),NONE))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE),
-            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE,NONE),NONE))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE)};
+      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),NONE()),NONE()))},
+                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE()),
+            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),NONE()),NONE()))},
+                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE())};
 
   end matchcontinue;
 end createGenericBuiltinFunctions;
@@ -1926,7 +1926,7 @@ algorithm
       equation
         (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
-        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE),info);
+        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE(),{},NONE()),info);
       then
         (cache,env,cl);
     case (cache,env,cl)
@@ -1964,7 +1964,7 @@ algorithm
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
-        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cdefelts,false,NONE());
         (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (cache,env1,funcelts,elts);
@@ -2075,8 +2075,8 @@ algorithm
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
-          Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.NOMOD(),NONE,NONE,NONE,NONE);
+          Absyn.TPATH(Absyn.IDENT(id),NONE()),
+          SCode.NOMOD(),NONE(),NONE(),NONE(),NONE());
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

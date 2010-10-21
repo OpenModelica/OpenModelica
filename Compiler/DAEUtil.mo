@@ -504,7 +504,7 @@ algorithm
       equation
         true = compareUniquedVarWithNonUnique(var,oldVar);
         newVar = nameInnerouterUniqueCref(oldVar);
-        o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
+        o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE(),dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
         u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.UNSPECIFIED()) " unique'ified";
         elist3 = u::{o};
         elist= listAppend(elist3,elist);
@@ -774,8 +774,8 @@ algorithm
     then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),start)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,SOME(start),du,eb,ip,fn));
-    case (NONE,start)
-      then SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),SOME(start),NONE,NONE,NONE,NONE,NONE,NONE));
+    case (NONE(),start)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end matchcontinue;
 end setStartAttr;
 
@@ -797,8 +797,8 @@ algorithm
       Option<Boolean> ip,fn;
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,eb,ip,fn)),unit)
     then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,eb,ip,fn));
-    case (NONE,unit)
-      then SOME(DAE.VAR_ATTR_REAL(NONE,SOME(unit),NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,NONE,NONE));
+    case (NONE(),unit)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end matchcontinue;
 end setUnitAttr;
 
@@ -828,8 +828,8 @@ algorithm
     then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),isProtected)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,SOME(isProtected),fn));
-    case (NONE,isProtected)
-      then SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,SOME(isProtected),NONE));
+    case (NONE(),isProtected)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE()));
   end matchcontinue;
 end setProtectedAttr;
 
@@ -906,8 +906,8 @@ algorithm
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_)),finalPrefix)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(finalPrefix)));
 
-    case (NONE,finalPrefix)
-      then SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,NONE,SOME(finalPrefix)));
+    case (NONE(),finalPrefix)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix)));
   end matchcontinue;
 end setFinalAttr;
 
@@ -1842,7 +1842,7 @@ algorithm
         welts_1 = toModelicaFormElts(welts);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.WHEN_EQUATION(e1_1,welts_1,NONE,source) :: elts_1);
+        (DAE.WHEN_EQUATION(e1_1,welts_1,NONE(),source) :: elts_1);
 
     case ((DAE.IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts,source = source) :: elts))
       equation
@@ -2638,7 +2638,7 @@ algorithm
       equation
         DAE.DAE(sublist_result) = transformIfEqToExpr(DAE.DAE(sublist),onlyConstantEval);
         DAE.DAE(rest_result) = transformIfEqToExpr(DAE.DAE(rest),onlyConstantEval);
-        subresult = DAE.COMP(name,sublist_result,source,NONE);
+        subresult = DAE.COMP(name,sublist_result,source,NONE());
         result = DAE.DAE((subresult :: rest_result));
       then
         result;
@@ -3294,7 +3294,7 @@ Traverse an optional expression, helper function for traverseDAE
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm(ooexp,oextraArg) := matchcontinue(oexp,func,extraArg)
-  case(NONE,func,extraArg) then (NONE,extraArg);
+  case(NONE(),func,extraArg) then (NONE(),extraArg);
   case(SOME(e),func,extraArg)
     local DAE.Exp e;
     equation
@@ -3599,12 +3599,12 @@ algorithm
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
     then (DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::dae2,extraArg);
 
-  case(DAE.WHEN_EQUATION(e1,elist,NONE,source)::dae,func,extraArg)
+  case(DAE.WHEN_EQUATION(e1,elist,NONE(),source)::dae,func,extraArg)
     equation
       (e11,extraArg) = func(e1, extraArg);
       (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.WHEN_EQUATION(e11,elist2,NONE,source)::dae2,extraArg);
+    then (DAE.WHEN_EQUATION(e11,elist2,NONE(),source)::dae2,extraArg);
 
   case(DAE.INITIALEQUATION(e1,e2,source)::dae,func,extraArg)
     equation
@@ -3768,7 +3768,7 @@ algorithm
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_WHEN(e_1,stmts2,NONE,li,source) :: xs_1,extraArg);
+    then (DAE.STMT_WHEN(e_1,stmts2,NONE(),li,source) :: xs_1,extraArg);
 
   case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),func,extraArg)
     equation
@@ -3993,7 +3993,7 @@ algorithm
     case (dae,SOME(p)) equation
       dae = addComponentType(dae,p);
     then dae;
-    case(dae,NONE) then dae;
+    case(dae,NONE()) then dae;
   end matchcontinue;
 end addComponentTypeOpt;
 
@@ -4329,7 +4329,7 @@ end valueStr;
 public function avlTreeNew "Return an empty tree"
   output DAE.AvlTree tree;
 algorithm
-  tree := emptyFuncTree; // DAE.AVLTREENODE(NONE,0,NONE,NONE);
+  tree := emptyFuncTree; // DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
 public function avlTreeToList "return tree as a flat list of tuples"
@@ -4397,7 +4397,7 @@ algorithm
 
       /* empty tree*/
     case (DAE.AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
-    	then DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(key,value)),1,NONE,NONE);
+    	then DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
       /* Replace this node.*/
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
@@ -4439,7 +4439,7 @@ input Option<DAE.AvlTree> t;
 output DAE.AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then DAE.AVLTREENODE(NONE,0,NONE,NONE);
+    case(NONE) then DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -4718,7 +4718,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 

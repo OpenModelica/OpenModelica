@@ -652,7 +652,7 @@ algorithm _ :=
       filename = fixFilenameForTestsuite(filename);
       ErrorExt.updateCurrentComponent(component,b1,filename,i1,i3,i2,i4);
       then ();
-  case(component,NONE)
+  case(component,NONE())
         equation
       ErrorExt.updateCurrentComponent(component,false,"",-1,-1,-1,-1);
       then ();
@@ -749,7 +749,7 @@ algorithm
       Absyn.Info info;
     
     // we DON'T have an info, add message
-    case (inErrorID,inMessageTokens,NONE)
+    case (inErrorID,inMessageTokens,NONE())
       equation
         addMessage(inErrorID, inMessageTokens);
       then ();

@@ -195,7 +195,7 @@ algorithm
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
-        DAE.RANGE(t,e1_1,NONE,e2_1);
+        DAE.RANGE(t,e1_1,NONE(),e2_1);
     case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3))
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);

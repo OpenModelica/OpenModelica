@@ -287,7 +287,7 @@ algorithm
     case Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt)
       equation
         // Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE)), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE())), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
         scodeCmt = translateComment(cmt);
       then
         SCode.DERIVED(t,mod,attr,scodeCmt);
@@ -303,7 +303,7 @@ algorithm
         initals = translateClassdefInitialalgorithms(parts);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE, cmtString)));
+        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
         SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
 
@@ -338,8 +338,8 @@ algorithm
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,NONE)), false, Absyn.NON_EACH());
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE, cmtString)));
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,NONE())), false, Absyn.NON_EACH());
+        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
         SCode.CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals,anns,scodeCmt);
 
@@ -373,32 +373,32 @@ algorithm
       list<Absyn.ElementItem> els;
       list<Absyn.ClassPart> cls;
     // none
-    case (NONE,_) then NONE;
+    case (NONE(),_) then NONE;
     // Already filled.
     case (decl as SOME(Absyn.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.EXTERNAL(_,SOME(ann))::_)
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(ann))::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
 	// Annotation item.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(_::els)::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
 		then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
 	// Next classpart list
-    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC({})::cls)
+    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 
-	case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
+	case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(_::els)::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
 		then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
 	// Next classpart list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED({})::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 	// Next in list
-	case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),_::cls)
+	case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 	// not found
     case (decl,_) then decl;
@@ -960,7 +960,7 @@ algorithm
       SCode.Mod m;
     case(Absyn.ANNOTATION(args))
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        m = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         res = SCode.ANNOTATION(m);
       then
         res;
@@ -1096,7 +1096,7 @@ algorithm
       local Absyn.Path n;
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
       then
         {SCode.EXTENDS(n,mod,NONE())};
@@ -1105,7 +1105,7 @@ algorithm
       local Absyn.Path n; Absyn.Annotation absann; SCode.Annotation ann;
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
         ann = translateAnnotation(absann);
       then
@@ -1269,13 +1269,13 @@ algorithm
       String str;
 
     case(NONE) then NONE;
-    case(SOME(Absyn.COMMENT(NONE,NONE))) then SOME(SCode.COMMENT(NONE,NONE));
-    case(SOME(Absyn.COMMENT(NONE,SOME(str)))) then SOME(SCode.COMMENT(NONE,SOME(str)));
-    case(SOME(Absyn.COMMENT(SOME(absann),NONE)))
+    case(SOME(Absyn.COMMENT(NONE(),NONE()))) then SOME(SCode.COMMENT(NONE(),NONE()));
+    case(SOME(Absyn.COMMENT(NONE(),SOME(str)))) then SOME(SCode.COMMENT(NONE(),SOME(str)));
+    case(SOME(Absyn.COMMENT(SOME(absann),NONE())))
       equation
         ann = translateAnnotation(absann);
       then
-        SOME(SCode.COMMENT(SOME(ann),NONE));
+        SOME(SCode.COMMENT(SOME(ann),NONE()));
     case(SOME(Absyn.COMMENT(SOME(absann),SOME(str))))
       equation
         ann = translateAnnotation(absann);
@@ -1334,7 +1334,7 @@ algorithm
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
-        eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE)}));
+        eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
         then eq;
         */
         print(" failure in SCode==> translateEquation IF_EQ\n");
@@ -1442,20 +1442,20 @@ algorithm
       list<SCode.SubMod> subs;
       list<Absyn.ElementArg> l;
 
-    case (NONE,_,_) then SCode.NOMOD();  /* final */
+    case (NONE(),_,_) then SCode.NOMOD();  /* final */
     case (SOME(Absyn.CLASSMOD({},(SOME(e)))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD({},(NONE))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE);
+    case (SOME(Absyn.CLASSMOD({},(NONE))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
     case (SOME(Absyn.CLASSMOD(l,SOME(e))),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then
         SCode.MOD(finalPrefix,each_,subs,SOME((e,false)));
 
-    case (SOME(Absyn.CLASSMOD(l,NONE)),finalPrefix,each_)
+    case (SOME(Absyn.CLASSMOD(l,NONE())),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,each_,subs,NONE);
+        SCode.MOD(finalPrefix,each_,subs,NONE());
   end matchcontinue;
 end translateMod;
 
@@ -1545,7 +1545,7 @@ algorithm
     case (Absyn.CREF_QUAL(name = i,subScripts = ss,componentRef = path),mod)
       equation
         sub = translateSub(path, mod);
-        mod = SCode.MOD(false,Absyn.NON_EACH(),{sub},NONE);
+        mod = SCode.MOD(false,Absyn.NON_EACH(),{sub},NONE());
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
@@ -1566,7 +1566,7 @@ algorithm
       SCode.Mod m;
       list<SCode.Subscript> l;
     case ({},m) then m;
-    case (l,m) then SCode.MOD(false,Absyn.NON_EACH(),{SCode.IDXMOD(l,m)},NONE);
+    case (l,m) then SCode.MOD(false,Absyn.NON_EACH(),{SCode.IDXMOD(l,m)},NONE());
   end matchcontinue;
 end translateSubSub;
 

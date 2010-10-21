@@ -150,8 +150,8 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = Inst.splitEltsNoComponents(els);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE);
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE());
 
         (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
@@ -298,7 +298,7 @@ algorithm
   tmpelts := Util.listMap(outTplSCodeElementModLst,Util.tuple21);
   (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
-  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,NONE);
+  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,NONE());
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -426,7 +426,7 @@ algorithm
         compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, cc2);
 
         elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
+        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
@@ -1190,7 +1190,7 @@ algorithm
         //Debug.fprintln("debug","Try lookupV " +& id);
         (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id),NONE);
+        env = Env.openScope(env,true,SOME(id),NONE());
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,ht)
       equation
@@ -1198,7 +1198,7 @@ algorithm
         //Debug.fprintln("debug","Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id),NONE);
+        env = Env.openScope(env,true,SOME(id),NONE());
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,_) then (cache,cref);
   end matchcontinue;

@@ -294,7 +294,7 @@ algorithm
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg);
       then
-        (cache,Absyn.RANGE(e1_1,NONE,e3_1));
+        (cache,Absyn.RANGE(e1_1,NONE(),e3_1));
     case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg)
       equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg);
@@ -506,7 +506,7 @@ algorithm
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg);
       then
         (cache,SOME(res));
-    case (cache,env,NONE,_,_,msg) then (cache,NONE);
+    case (cache,env,NONE(),_,_,msg) then (cache,NONE());
   end matchcontinue;
 end cevalAstModopt;
 
@@ -542,7 +542,7 @@ algorithm
       equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg);
       then
-        (cache,Absyn.CLASSMOD(eltargs_1,NONE));
+        (cache,Absyn.CLASSMOD(eltargs_1,NONE()));
   end matchcontinue;
 end cevalAstModification;
 
@@ -647,14 +647,14 @@ algorithm ostring := matchcontinue( e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE(),NONE(),Ceval.MSG());
     then
       ret;
   case(e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val,_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val,_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE(),NONE(),Ceval.MSG());
       ret = ValuesUtil.printValStr(val);
     then
       ret;

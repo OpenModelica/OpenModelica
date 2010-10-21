@@ -290,7 +290,7 @@ end AvlTreeValue;
 public function avlTreeNew "Return an empty tree"
   output AvlTree tree;
 algorithm
-  tree := AVLTREENODE(NONE,0,NONE,NONE);
+  tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
 protected function avlTreeToList "return tree as a flat list of tuples"
@@ -335,7 +335,7 @@ algorithm
 
       /* empty tree*/
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
 		/* Replace this node. NOTE: different from generic impl. Joins the list. */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
@@ -378,7 +378,7 @@ input Option<AvlTree> t;
 output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE,0,NONE,NONE);
+    case(NONE) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -638,7 +638,7 @@ protected function avlTreeGetSubsopt
   output AvlValue outValue;
   AvlTree item;
   algorithm outValue := matchcontinue(inAvlTree,inKey)
-  case(NONE,_) then {};
+  case(NONE(),_) then {};
   case(SOME(item),inKey) then avlTreeGetSubs (item,inKey);
 end matchcontinue;
 end avlTreeGetSubsopt;
@@ -701,7 +701,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 

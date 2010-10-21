@@ -199,7 +199,7 @@ algorithm
   //print("EMPTYCACHE\n");
   arr := listArray({NONE});
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
-  cache := CACHE(arr,NONE,instFuncs);
+  cache := CACHE(arr,NONE(),instFuncs);
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -389,10 +389,10 @@ algorithm
    then AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
 
    // nothing
-   case(AVLTREENODE(NONE,h,l,r),classEnv) equation
+   case(AVLTREENODE(NONE(),h,l,r),classEnv) equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-   then AVLTREENODE(NONE,h,l,r);
+   then AVLTREENODE(NONE(),h,l,r);
   end matchcontinue;
 end updateEnvClassesInTree;
 
@@ -403,7 +403,7 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
 algorithm
   outTree := matchcontinue(tree,classEnv)
   local AvlTree t;
-    case(NONE,classEnv) then NONE;
+    case(NONE(),classEnv) then NONE;
     case(SOME(t),classEnv) equation
       t = updateEnvClassesInTree(t,classEnv);
     then SOME(t);
@@ -1650,7 +1650,7 @@ end AvlTreeValue;
 public function avlTreeNew "Return an empty tree"
   output AvlTree tree;
 algorithm
-  tree := AVLTREENODE(NONE,0,NONE,NONE);
+  tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
 public function avlTreeAdd "
@@ -1680,7 +1680,7 @@ algorithm
     /* adrpo 2010-10-07: what is this??? WHAT is "lskf" KEY??
     // empty tree
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key as "lskf",value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
 		// replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key as "lskf",value)
@@ -1692,7 +1692,7 @@ algorithm
         
     // empty tree
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
 		// replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
@@ -1812,7 +1812,7 @@ protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
   output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE,0,NONE,NONE);
+    case(NONE) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -2099,7 +2099,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 

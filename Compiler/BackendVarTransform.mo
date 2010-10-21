@@ -73,7 +73,7 @@ algorithm
     case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl,source)::es),repl)
       equation
-        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
+        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE());
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es,repl);
       then
@@ -140,30 +140,30 @@ algorithm
     DAE.ExpType tp;
     DAELow.WhenEquation elsePart,elsePart2;
 
-    case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
+    case (DAELow.WHEN_EQ(i,cr,e,NONE()),repl) equation
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(e1);
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE);
-    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE());
 
 			// Replacements makes cr negative, a = -b
-	  case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
-        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE);
+	  case (DAELow.WHEN_EQ(i,cr,e,NONE()),repl) equation
+        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
-    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE());
 
     case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(e1);
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE);
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
 			// Replacements makes cr negative, a = -b
 	  case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
-        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE);
+        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
@@ -196,7 +196,7 @@ algorithm
     case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
       equation
-        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
+        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE());
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es,repl);
       then
@@ -220,9 +220,9 @@ algorithm
     case (((a as DAELow.ALGORITHM(index = id,in_ = expl1,out = expl2)) :: es),repl)
       local Integer id;
       equation
-        expl1 = Util.listMap2(expl1,VarTransform.replaceExp,repl,NONE);
+        expl1 = Util.listMap2(expl1,VarTransform.replaceExp,repl,NONE());
         expl1 = Util.listMap(expl1,Exp.simplify);
-        expl2 = Util.listMap2(expl2,VarTransform.replaceExp,repl,NONE);
+        expl2 = Util.listMap2(expl2,VarTransform.replaceExp,repl,NONE());
         expl2 = Util.listMap(expl2,Exp.simplify);
         es_1 = replaceEquations(es, repl);
       then
@@ -252,7 +252,7 @@ algorithm
    case ((DAELow.IF_EQUATION(indx,eindx,expl) :: es),repl)
      local Integer indx,eindx;
       equation
-        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
+        expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE());
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es, repl);
       then
@@ -277,11 +277,11 @@ algorithm
     DAE.Exp e,e1,e2,cond;
     DAELow.WhenEquation elsePart,elsePart2;
     DAELow.Equation eq;
-    case (DAELow.WHEN_EQ(i,_,cond,eq,NONE),repl)
+    case (DAELow.WHEN_EQ(i,_,cond,eq,NONE()),repl)
       equation
         {eq as DAELow.EQUATION(e1,e2)} = replaceEquations({eq},repl);
         (e1,e2) = shiftUnaryMinusToRHS(e1,e2);
-    then DAELow.WHEN_EQ(i,cond,DAELow.EQUATION(e1,e2),NONE);
+    then DAELow.WHEN_EQ(i,cond,DAELow.EQUATION(e1,e2),NONE());
     case (DAELow.WHEN_EQ(i,cond,eq,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
       {eq as DAELow.EQUATION(e1,e2)} = replaceEquations({eq},repl);

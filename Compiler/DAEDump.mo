@@ -853,7 +853,7 @@ algorithm
       then
         str;
     // No string comment, but possible annotation.
-    case (SOME(SCode.COMMENT(annopt,NONE)))
+    case (SOME(SCode.COMMENT(annopt,NONE())))
       equation
         str = dumpAnnotationOptionStr(annopt);
       then

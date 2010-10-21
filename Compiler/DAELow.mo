@@ -448,7 +448,7 @@ protected import ValuesUtil;
 protected import VarTransform;
 protected import DAELowUtil;
 
-public constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
+public constant BinTree emptyBintree=TREENODE(NONE(),NONE(),NONE()) " Empty binary tree " ;
 
 public function dumpDAELowEqnList
   input list<Equation> inDAELowEqnList;
@@ -578,7 +578,7 @@ protected function hasNoStates
 algorithm
   out := matchcontinue (states)
     // if the tree is empty then there are no states
-    case (TREENODE(NONE,NONE,NONE)) then true;
+    case (TREENODE(NONE(),NONE(),NONE())) then true;
     case (_) then false;
   end matchcontinue;
 end hasNoStates;
@@ -801,9 +801,9 @@ algorithm
       (elsewheneq,vars) = expandDerOperatorWhenEqn(elsewheneq,vars);
     then (WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars);
 
-    case(WHEN_EQ(indx,cr,e1,NONE),vars) equation
+    case(WHEN_EQ(indx,cr,e1,NONE()),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (WHEN_EQ(indx,cr,e1,NONE),vars);
+    then (WHEN_EQ(indx,cr,e1,NONE()),vars);
   end matchcontinue;
 end expandDerOperatorWhenEqn;
 
@@ -915,10 +915,10 @@ algorithm
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_WHEN(e1,stmts,SOME(stmt),hv,source),vars);
 
-    case(DAE.STMT_WHEN(e1,stmts,NONE,hv,source),vars) equation
+    case(DAE.STMT_WHEN(e1,stmts,NONE(),hv,source),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (DAE.STMT_WHEN(e1,stmts,NONE,hv,source),vars);
+    then (DAE.STMT_WHEN(e1,stmts,NONE(),hv,source),vars);
 
     case(DAE.STMT_ASSERT(e1,e2,source),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
@@ -1098,9 +1098,9 @@ algorithm
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        vars_1 = addVar(VAR(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,
+        vars_1 = addVar(VAR(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
         /*
@@ -2690,7 +2690,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         VAR(a,b,c,REAL(),e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(fixed)),NONE,NONE,NONE,NONE,NONE)),
+            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (VAR(varName = a,
@@ -2708,7 +2708,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         VAR(a,b,c,REAL(),e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(fixed)),NONE,NONE,NONE)),
+            SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (VAR(varName = a,
@@ -2726,7 +2726,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         VAR(a,b,c,REAL(),e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(DAE.BCONST(fixed)),NONE,NONE,NONE)),
+            SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (VAR(varName = a,
@@ -2744,7 +2744,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       then
         VAR(a,b,c,REAL(),e,f,g,i,source,
-            SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(fixed)),NONE,NONE,NONE)),
+            SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
   end matchcontinue;
 end setVarFixed;
@@ -4583,7 +4583,7 @@ algorithm
         i_1 = i - 1;
         res = makeWhenClauses(i_1, cond, reinit);
       then
-        (WHEN_CLAUSE(cond,reinit,NONE) :: res);
+        (WHEN_CLAUSE(cond,reinit,NONE()) :: res);
   end matchcontinue;
 end makeWhenClauses;
 
@@ -4612,13 +4612,13 @@ algorithm
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
       then
-        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE),source) :: eqnl),reinit);
+        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE()),source) :: eqnl),reinit);
 
     case ((DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)),rhs = e,source = source) :: xs),i)
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
       then
-        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE),source) :: eqnl),reinit);
+        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE()),source) :: eqnl),reinit);
 
     case ((DAE.REINIT(componentRef = cr,exp = e,source = source) :: xs),i)
       equation
@@ -4631,13 +4631,13 @@ algorithm
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
         e_2 = Exp.simplify(e); // Exp.stringifyCrefs(Exp.simplify(e));
       then
-        ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE),source) :: eqnl),reinit);
+        ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE()),source) :: eqnl),reinit);
     
     case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i)
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
       then
-        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE),source) :: eqnl),reinit);    
+        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE()),source) :: eqnl),reinit);    
     
     // failure  
     case ((el::xs), i)
@@ -6549,7 +6549,7 @@ algorithm
         (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         tp = lowerType(t);
       then
-        (VAR(name,kind_1,dir,tp,NONE,NONE,dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
+        (VAR(name,kind_1,dir,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix), bind, states);
   end matchcontinue;
 end lowerVar;
 
@@ -6590,7 +6590,7 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         tp = lowerType(t);
       then
-        VAR(name,kind_1,dir,tp,bind,NONE,dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
 
     case (_)
       equation
@@ -6638,7 +6638,7 @@ algorithm
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
       then
-        VAR(name,kind_1,dir,tp,bind,NONE,dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        VAR(name,kind_1,dir,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,flowPrefix,streamPrefix);
   end matchcontinue;
 end lowerExtObjVar;
 
@@ -7285,7 +7285,7 @@ public function emptyVars
 algorithm
   arr := arrayCreate(10, {});
   arr2 := arrayCreate(10, {});
-  lst := Util.listFill(NONE, 10);
+  lst := Util.listFill(NONE(), 10);
   emptyarr := listArray(lst);
   outVariables := VARIABLES(arr,arr2,VARIABLE_ARRAY(0,10,emptyarr),10,0);
 end emptyVars;
@@ -9634,7 +9634,7 @@ algorithm
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE),source);
+        res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE()),source);
       then
         (res,inAlgs,ae);
 
@@ -9971,7 +9971,7 @@ algorithm
       equation
         ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1,inAlgs,ae);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE()),source),vars_1,inAlgs,ae);
 
     case (WHEN_EQUATION(whenEquation =
             WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs,ae)
@@ -10416,7 +10416,7 @@ algorithm
       equation
         ((VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(var, vars);
         dummyvar_cr = crefPrefixDer(var);
-        dummyvar = VAR(dummyvar_cr,DUMMY_DER(),dir,tp,NONE,NONE,dim,0,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        dummyvar = VAR(dummyvar_cr,DUMMY_DER(),dir,tp,NONE(),NONE(),dim,0,source,dae_var_attr,comment,flowPrefix,streamPrefix);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = setVarFixed(dummyvar,false);
         vars_1 = addVar(dummyvar, vars);
@@ -12381,7 +12381,7 @@ algorithm
       then
         JAC_NONLINEAR();
     case (daelow,SOME(jac)) then JAC_TIME_VARYING();
-    case (daelow,NONE) then JAC_NO_ANALYTIC();
+    case (daelow,NONE()) then JAC_NO_ANALYTIC();
   end matchcontinue;
 end analyzeJacobian;
 
@@ -12511,7 +12511,7 @@ algorithm
       f = ifBranchesFreeFromVar2(f,repl);
     then DAE.IFEXP(cond,t,f);
     case(e,repl) equation
-      e = VarTransform.replaceExp(e,repl,NONE);
+      e = VarTransform.replaceExp(e,repl,NONE());
     then e;
   end matchcontinue;
 end ifBranchesFreeFromVar2;
@@ -12919,7 +12919,7 @@ algorithm
       then
         (SOME(eqns),inEntrylst);
     // algorithms give no jacobian
-    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE,inEntrylst);
+    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE(),inEntrylst);
     // array equations
     case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
@@ -14702,7 +14702,7 @@ algorithm
       local DAE.ComponentRef nkey;
       equation
         nkey = key;
-      then TREENODE(SOME(TREEVALUE(nkey,value)),NONE,NONE);
+      then TREENODE(SOME(TREEVALUE(nkey,value)),NONE(),NONE());
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),key,value)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
@@ -14725,7 +14725,7 @@ algorithm
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
-        right_1 = treeAdd(TREENODE(NONE,NONE,NONE), key, value);
+        right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,value)
@@ -14743,7 +14743,7 @@ algorithm
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
-        left_1 = treeAdd(TREENODE(NONE,NONE,NONE), key, value);
+        left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
     case (_,_,_)
@@ -14796,7 +14796,7 @@ algorithm
         keystr = Exp.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
-        TREENODE(NONE,NONE,NONE);
+        TREENODE(NONE(),NONE(),NONE());
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key)
       local Option<BinTree> right;
       equation
@@ -14849,7 +14849,7 @@ algorithm
       BinTree left,right_1,right,bt;
       Option<BinTree> rightopt_1;
       Option<TreeValue> treeval;
-    case (TREENODE(value = SOME(treevalue),leftSubTree = NONE,rightSubTree = NONE)) then (treevalue,TREENODE(NONE,NONE,NONE));
+    case (TREENODE(value = SOME(treevalue),leftSubTree = NONE,rightSubTree = NONE)) then (treevalue,TREENODE(NONE(),NONE(),NONE()));
     case (TREENODE(value = SOME(treevalue),leftSubTree = SOME(left),rightSubTree = NONE)) then (treevalue,left);
     case (TREENODE(value = treeval,leftSubTree = left,rightSubTree = SOME(right)))
       local Option<BinTree> left;
@@ -14864,7 +14864,7 @@ algorithm
         failure((_,_) = treeDeleteRightmostValue(right));
         print("right value was empty , left NONE\n");
       then
-        (treeval,TREENODE(NONE,NONE,NONE));
+        (treeval,TREENODE(NONE(),NONE(),NONE()));
     case (bt)
       equation
         print("-tree_delete_rightmost_value failed\n");
@@ -14972,7 +14972,7 @@ algorithm
       list<Key> klst;
       list<Value> vlst;
       BinTree bt;
-    case (NONE,klst,vlst) then (klst,vlst);
+    case (NONE(),klst,vlst) then (klst,vlst);
     case (SOME(bt),klst,vlst)
       equation
         (klst,vlst) = bintreeToList2(bt, klst, vlst);
@@ -16015,8 +16015,8 @@ algorithm
     case INT() then DAE.T_INTEGER_DEFAULT;
     case BOOL() then DAE.T_BOOL_DEFAULT;
     case STRING() then DAE.T_STRING_DEFAULT;
-    case ENUMERATION(strLst) then ((DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),strLst,{},{}),NONE));
-    case EXT_OBJECT(path) then ((DAE.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE,NONE),NONE));
+    case ENUMERATION(strLst) then ((DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{},{}),NONE()));
+    case EXT_OBJECT(path) then ((DAE.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE(),NONE()),NONE()));
   end matchcontinue;
 end generateDaeType;
 
@@ -16490,8 +16490,8 @@ algorithm
         VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst )) = vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend("tearingresidual_",ident);
         crt = DAE.CREF_IDENT(ident_t,identType,subscriptLst);
-         vars_1 = addVar(VAR(crt, VARIABLE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
+         vars_1 = addVar(VAR(crt, VARIABLE(),DAE.BIDIR(),REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         EQUATION(eqn,scalar,source) = equationNth(eqns,residualeqn-1);

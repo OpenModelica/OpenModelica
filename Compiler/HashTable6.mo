@@ -154,7 +154,7 @@ public function emptyHashTable "
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
   arr := arrayCreate(1000, {});
-  lst := Util.listFill(NONE, 100);
+  lst := Util.listFill(NONE(), 100);
   emptyarr := listArray(lst);
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;

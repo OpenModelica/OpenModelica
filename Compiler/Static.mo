@@ -319,7 +319,7 @@ algorithm
       local Absyn.Exp exp;
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
+        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
         exp_1 = Exp.simplify(exp_1);
@@ -343,7 +343,7 @@ algorithm
       local Absyn.Exp exp;
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env, e, impl, st,doVect,pre,info) "Logical unary expressions" ;
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
+        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
         exp_1 = Exp.simplify(exp_1);
@@ -394,7 +394,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e = DAE.META_OPTION(NONE());
-        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST());
+        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_CONST());
       then
         (cache,e,prop1,st);
 
@@ -452,7 +452,7 @@ algorithm
         (cache,e_1,props) = elabTuple(cache,env, e, impl,doVect,pre,info) "Tuple function calls" ;
         (types,consts) = splitProps(props);
       then
-        (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE),DAE.TUPLE_CONST(consts)),st);
+        (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE()),DAE.TUPLE_CONST(consts)),st);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterators=iterators)),impl,st,doVect,pre,info) /* Array-related expressions Elab reduction expressions, including array() constructor */
       local
         DAE.Exp e;
@@ -467,7 +467,7 @@ algorithm
       equation
         (cache,start_1,DAE.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect,pre,info) "Range expressions without step value, e.g. 1:5" ;
         (cache,stop_1,DAE.PROP(stop_t,c_stop),st_2) = elabExp(cache,env, stop, impl, st_1,doVect,pre,info);
-        (start_2,NONE,stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
+        (start_2,NONE(),stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, NONE, stop_2, const, rt, impl,pre);
         exp_2 = DAE.RANGE(rt, start_2, NONE, stop_2);
@@ -503,7 +503,7 @@ algorithm
       equation
         (cache,es_1,DAE.PROP(t,const)) = elabArray(cache,env, es, impl, st,doVect,pre,info) "array expressions, e.g. {1,2,3}" ;
         l = listLength(es_1);
-        arrtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE);
+        arrtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE());
         at = Types.elabType(arrtp);
         a = Types.isArray(t);
         a = boolNot(a); // scalar = !array
@@ -530,7 +530,7 @@ algorithm
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1) "All elts promoted to matrix, therefore unlifting" ;
       then
-        (cache,mexp_1,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE)),NONE),c),st);
+        (cache,mexp_1,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE())),NONE()),c),st);
     case (cache,env,Absyn.CODE(code = c),impl,st,doVect,_,info)
       local Absyn.CodeNode c;
       equation
@@ -622,7 +622,7 @@ algorithm
       Boolean correctTypes;
       DAE.Type t;
     equation
-      t = (DAE.T_LIST((DAE.T_NOTYPE,NONE)),NONE);
+      t = (DAE.T_LIST((DAE.T_NOTYPE,NONE())),NONE());
       prop = DAE.PROP(t,DAE.C_CONST());
     then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
 
@@ -711,7 +711,7 @@ algorithm
         (expExpList, t) = Types.listMatchSuperType(expExpList, typeList, true);
         t2 = Types.elabType(t);
       then
-        (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE),c),st);
+        (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE()),c),st);
     case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- elabListExp failed, non-matching args in list constructor?");
@@ -1463,17 +1463,17 @@ algorithm
   outType:=
   matchcontinue (inEnv,inCode)
     local list<Env.Frame> env;
-    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE,NONE),NONE));
-    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE,NONE),
+    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE(),NONE()),NONE()));
+    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE(),NONE()),
           NONE));
     case (env,Absyn.C_EQUATIONSECTION(boolean = _)) then ((
-          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE,NONE),NONE));
+          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_ALGORITHMSECTION(boolean = _)) then ((
-          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE,NONE),NONE));
-    case (env,Absyn.C_ELEMENT(element = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE,NONE),NONE));
-    case (env,Absyn.C_EXPRESSION(exp = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE,NONE),
+          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE(),NONE()),NONE()));
+    case (env,Absyn.C_ELEMENT(element = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(),NONE()),NONE()));
+    case (env,Absyn.C_EXPRESSION(exp = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE(),NONE()),
           NONE));
-    case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE,NONE),
+    case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(),NONE()),
           NONE));
   end matchcontinue;
 end elabCodeType;
@@ -1557,7 +1557,7 @@ algorithm
       local Absyn.Exp exp;
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
+        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
       then
         (cache,DAE.UNARY(op_1,e_2),DAE.PROP(rtype,c));
@@ -1575,7 +1575,7 @@ algorithm
       local Absyn.Exp exp;
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info) "Logical unary expressions" ;
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
+        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
       then
         (cache,DAE.LUNARY(op_1,e_2),DAE.PROP(rtype,c));
@@ -1617,16 +1617,16 @@ algorithm
         (cache,e_1,props) = elabTuple(cache,env, e, impl,false,pre,info);
         (types,consts) = splitProps(props);
       then
-        (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE),DAE.TUPLE_CONST(consts)));
+        (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE()),DAE.TUPLE_CONST(consts)));
     case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,pre,info) /* Array-related expressions */
       equation
         (cache,start_1,DAE.PROP(start_t,c_start)) = elabGraphicsExp(cache,env, start, impl,pre,info);
         (cache,stop_1,DAE.PROP(stop_t,c_stop)) = elabGraphicsExp(cache,env, stop, impl,pre,info);
-        (start_2,NONE,stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
+        (start_2,NONE(),stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, NONE, stop_2, const, rt, impl,pre);
       then
-        (cache,DAE.RANGE(rt,start_1,NONE,stop_1),DAE.PROP(t,const));
+        (cache,DAE.RANGE(rt,start_1,NONE(),stop_1),DAE.PROP(t,const));
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,pre,info)
       equation
         (cache,start_1,DAE.PROP(start_t,c_start)) = elabGraphicsExp(cache,env, start, impl,pre,info) "Debug.fprintln(\"setr\", \"elab_graphics_exp_range2\") &" ;
@@ -1645,22 +1645,22 @@ algorithm
         at = Types.elabType(t);
         a = Types.isArray(t);
       then
-        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE),const));
+        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE()),const));
     case (cache,env,Absyn.MATRIX(matrix = es),impl,pre,info)
       local list<list<Absyn.Exp>> es;
       equation
-        (cache,_,tps,_) = elabExpListList(cache,env,es,impl,NONE,true,pre,info);
+        (cache,_,tps,_) = elabExpListList(cache,env,es,impl,NONE(),true,pre,info);
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
         havereal = Types.containReal(tps_2);
-        (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,es,impl,NONE,havereal,nmax,true,pre,info);
+        (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,es,impl,NONE(),havereal,nmax,true,pre,info);
         at = Types.elabType(t);
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1);
       then
-        (cache,mexp,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE)),NONE),c));
+        (cache,mexp,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE())),NONE()),c));
     case (cache,_,e,impl,pre,info)
       local Ident es,ps;
       equation
@@ -1694,22 +1694,22 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t1,t3,t2;
       DAE.ExpType et;
       list<String> ns,ne;
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE,(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE,e3,DAE.ET_INT());
+    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE(),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE(),e3,DAE.ET_INT());
     case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,DAE.ET_INT());
     // enumeration has no step value
-    case ((e1,t1 as (DAE.T_ENUMERATION(names = ns),_)),NONE,(e3,(DAE.T_ENUMERATION(names = ne),_)))
+    case ((e1,t1 as (DAE.T_ENUMERATION(names = ns),_)),NONE(),(e3,(DAE.T_ENUMERATION(names = ne),_)))
       equation
         // check if enumtyp start and end are equal
         true = Util.isListEqual(ns,ne,true);
         // convert vars
           et = Types.elabType(t1);
-         then (e1,NONE,e3,et);
-    case ((e1,t1),NONE,(e3,t3))
+         then (e1,NONE(),e3,et);
+    case ((e1,t1),NONE(),(e3,t3))
       equation
         ({e1_1,e3_1},_) = elabArglist({DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},
           {(e1,t1),(e3,t3)});
       then
-        (e1_1,NONE,e3_1,DAE.ET_REAL());
+        (e1_1,NONE(),e3_1,DAE.ET_REAL());
     case ((e1,t1),SOME((e2,t2)),(e3,t3))
       equation
         ({e1_1,e2_1,e3_1},_) = elabArglist(
@@ -1750,7 +1750,7 @@ algorithm
       DAE.ExpType expty;
       Env.Cache cache;
       Prefix pre;
-    case (cache,env,start,NONE,stop,const,_,impl,pre) /* impl as false */
+    case (cache,env,start,NONE(),stop,const,_,impl,pre) /* impl as false */
       equation
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
         (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
@@ -1758,7 +1758,7 @@ algorithm
         n_1 = n + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_INTEGER_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_INTEGER_DEFAULT),NONE()));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       equation
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
@@ -1769,9 +1769,9 @@ algorithm
         n_2 = n_1 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_INTEGER_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_INTEGER_DEFAULT),NONE()));
     /* enumeration has no step value */
-    case (cache,env,start,NONE,stop,const,_,impl,_) /* impl as false */
+    case (cache,env,start,NONE(),stop,const,_,impl,_) /* impl as false */
       local list<String> names; Absyn.Path p;
       equation
         (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
@@ -1781,8 +1781,8 @@ algorithm
         p = Absyn.pathPrefix(p);
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE, p,{},{},{}),NONE)),NONE));
-    case (cache,env,start,NONE,stop,const,_,impl,_) /* as false */
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE(), p,{},{},{}),NONE())),NONE()));
+    case (cache,env,start,NONE(),stop,const,_,impl,_) /* as false */
       local Real startv,stopv,n,n_2;
       equation
         (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
@@ -1793,7 +1793,7 @@ algorithm
         n_1 = n_3 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE()));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       local Real startv,stepv,stopv,n,n_1,n_3;
       equation
@@ -1807,13 +1807,13 @@ algorithm
         n_2 = n_4 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_REAL_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_REAL_DEFAULT),NONE()));
 
     case (cache,_,_,_,_,const,DAE.ET_INT(),_,_)
       then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT), NONE));
 
     case (cache,_,_,_,_,const,DAE.ET_REAL(),_,_)
-      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE));
+      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE()));
 
     case (cache,env,start,step,stop,const,expty,impl,pre)
       local Option<DAE.Exp> step;
@@ -3120,7 +3120,7 @@ algorithm
         (cache,arraycrefe,DAE.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true,pre,info);
         c = Types.dimensionsKnown(arrtp);
         c_1 = Types.boolConstSize(c);
-        exp = DAE.SIZE(arraycrefe,NONE);
+        exp = DAE.SIZE(arraycrefe,NONE());
         prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN, DAE.T_INTEGER_DEFAULT), NONE), c_1);
       then
         (cache,exp,prop);
@@ -3306,7 +3306,7 @@ algorithm
       equation
         arraylist = buildExpList(s, v);
         dimension = intString(v);
-        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),sty),NONE);
+        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),sty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3316,7 +3316,7 @@ algorithm
         (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre);
         arraylist = buildExpList(exp, v);
         dimension = intString(v);
-        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),ty),NONE);
+        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),ty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3393,7 +3393,7 @@ algorithm
           = elabExp(cache,env, matexp, impl, NONE,true,pre,info);
         dim1 = Exp.dimensionSize(d1);
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
-        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
+        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE())),NONE());
         prop = DAE.PROP(newtp,c);
         tp = transposeExpType(tp);
       then
@@ -3409,7 +3409,7 @@ algorithm
         dim2 = Exp.dimensionSize(d2);
         dimMax = intMax(dim1, dim2);
         exp_2 = elabBuiltinTranspose3(expl, 1, dimMax);
-        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
+        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE())),NONE());
         prop = DAE.PROP(newtp,c);
         tp = transposeExpType(tp);
       then
@@ -3419,7 +3419,7 @@ algorithm
       equation
         (cache,exp_1,DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
           = elabExp(cache,env, matexp, impl, NONE,true,pre,info);
-        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
+        newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE())),NONE());
         tp = Types.elabType(newtp);
         exp = makeBuiltinCall("transpose", {exp_1}, tp);
         prop = DAE.PROP(newtp,c);
@@ -4028,7 +4028,7 @@ algorithm
         ty = listNth(tys,i-1);
         tp = Types.elabType(ty);
         s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(i)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
+        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
       then
         (cache,s1_1,DAE.PROP(ty,c));
 
@@ -4037,7 +4037,7 @@ algorithm
         (cache,s1_1,DAE.PROP((DAE.T_METAOPTION(ty),_),c),_) = elabExp(cache, env, s1, impl, NONE, true,pre,info);
         tp = Types.elabType(ty);
         s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(1)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
+        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
       then
         (cache,s1_1,DAE.PROP(ty,c));
     case (cache,env,{s1,Absyn.CREF(cref),Absyn.STRING(fieldName)},{},impl,pre,info) /* Uniontype */
@@ -4056,7 +4056,7 @@ algorithm
         fieldNum = Util.listPosition(var, fields)+2;
         tp = Types.elabType(ty);
         s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(fieldNum)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
+        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
       then
         (cache,s1_1,DAE.PROP(ty,c));
     case (_,_,_,_,_,_,_)
@@ -4374,7 +4374,7 @@ algorithm
         (cache,exp_1,typel,_) = elabExpList(cache,env, expl, impl, NONE,true,pre,info);
         (exp_2,DAE.PROP(tp,c)) = elabBuiltinArray2(exp_1, typel,pre,info);
         len = listLength(expl);
-        newtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(len),tp),NONE);
+        newtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(len),tp),NONE());
         newtp_1 = Types.elabType(newtp);
         scalar = Types.isArray(tp);
         exp = DAE.ARRAY(newtp_1,scalar,exp_1);
@@ -5223,10 +5223,10 @@ algorithm
     case (cache,env,{v1},_,impl,pre,info)
       equation
         (cache, DAE.ARRAY(ty = tp, array = expl),
-         DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE),c),
+         DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE()),c),
          _) = elabExp(cache,env, v1, impl, NONE,true,pre,info);
         true = Exp.dimensionKnown(dim);
-        ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE);
+        ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE())),NONE());
         tp = Types.elabType(ty);
         res = elabBuiltinDiagonal2(expl,tp);
       then
@@ -5237,10 +5237,10 @@ algorithm
         DAE.ExpType tp;
       equation
         (cache,s1_1,
-          DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE),c),
+          DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE()),c),
          _) = elabExp(cache,env, s1, impl, NONE,true, pre,info);
         true = Exp.dimensionKnown(dim);
-        ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE);
+        ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE())),NONE());
         tp = Types.elabType(ty);
         res = makeBuiltinCall("diagonal", {s1_1}, tp);
       then
@@ -5997,7 +5997,7 @@ algorithm
     case (cache,env,{dim},_,impl,pre,info)
       equation
         true = OptManager.getOption("checkModel");
-        (cache,dim_exp,DAE.PROP(type_ = (DAE.T_INTEGER(_), _)),_) = elabExp(cache,env,dim,impl,NONE,true,pre,info);
+        (cache,dim_exp,DAE.PROP(type_ = (DAE.T_INTEGER(_), _)),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN, DAE.DIM_UNKNOWN});
         ety = Types.elabType(ty);
         call = makeBuiltinCall("identity", {dim_exp}, ety);
@@ -6269,7 +6269,7 @@ algorithm
        eltTp = Types.arrayElementType(tp1);
        call = makeBuiltinCall("cross", {e1, e2}, etp);
      then 
-      (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE), DAE.C_VAR()));
+      (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE()), DAE.C_VAR()));
   end matchcontinue;
 end elabBuiltinCross;
 
@@ -6331,7 +6331,7 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true,pre,info);
         // Create argument slots for String function.
-        slots = {SLOT(("x",tp),false,NONE,{}),
+        slots = {SLOT(("x",tp),false,NONE(),{}),
                  SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(0)),{}),
                  SLOT(("leftJustified",DAE.T_BOOL_DEFAULT),false,SOME(DAE.BCONST(true)),{})};
         // Only String(Real) has the significantDigits option.
@@ -6349,7 +6349,7 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true,pre,info);
         
-        slots = {SLOT(("x",tp),false,NONE,{})};
+        slots = {SLOT(("x",tp),false,NONE(),{})};
         
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
           listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("f")),{})}),
@@ -6413,7 +6413,7 @@ algorithm
       c = Types.constAnd(c1,c2);
       res_type = DAE.ET_ARRAY(DAE.ET_REAL, {DAE.DIM_INTEGER(size)});
       call = makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
-    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(size),tp11),NONE),c));
+    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(size),tp11),NONE()),c));
 
     /* linspace(x,y,n) where n is variable time expression */
     case (cache,env,{x,y,n},_,impl,pre,info) equation
@@ -6427,7 +6427,7 @@ algorithm
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
       res_type = DAE.ET_ARRAY(DAE.ET_REAL, {DAE.DIM_UNKNOWN});
       call = makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
-    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN,tp11),NONE),c));
+    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN,tp11),NONE()),c));
   end matchcontinue;
 end elabBuiltinLinspace;
 
@@ -7128,7 +7128,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.TYPES_VAR("flatClass",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,DAE.CALL(Absyn.IDENT("translateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7147,7 +7147,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.TYPES_VAR("flatClass",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,DAE.CALL(Absyn.IDENT("translateModelFMU"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7167,7 +7167,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.TYPES_VAR("flatClass",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,DAE.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -7211,7 +7211,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         {DAE.CODE(Absyn.C_TYPENAME(className), DAE.ET_OTHER()), startTime, stopTime,
         numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},
         false,true,DAE.ET_OTHER(),DAE.NO_INLINE),
-        DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+        DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
@@ -7233,7 +7233,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
@@ -7253,7 +7253,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("buildModelBeast"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       local Absyn.Path className;
@@ -7296,7 +7296,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.SCONST(filename),DAE.ARRAY(DAE.ET_OTHER(),false,vars_1),
           size_exp},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_INTEGER(var_len),DAE.DIM_INTEGER(size)}),DAE.NO_INLINE),DAE.PROP(
           (DAE.T_ARRAY(DAE.DIM_INTEGER(var_len),
-          (DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_REAL_DEFAULT),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          (DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_REAL_DEFAULT),NONE())),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResultSize"),{Absyn.STRING(value = filename)},args,impl,SOME(st),_,_) 
       /* elab_variablenames(vars) => vars\' & list_length(vars) => var_len */  
@@ -7357,9 +7357,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7394,9 +7394,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7432,9 +7432,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7471,9 +7471,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7508,9 +7508,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7542,9 +7542,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7605,9 +7605,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7648,9 +7648,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7686,9 +7686,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre,info);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE()),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre,info);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7788,7 +7788,7 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("readFileNoNumeric"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("listVariables"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_NOTYPE(),NONE)),NONE),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
+          (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
 
     case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("getErrorString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -7911,7 +7911,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("getStateSelect"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "echo"),{bool_exp},{},impl,SOME(st),pre,_)
       equation
@@ -7988,7 +7988,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("dumpXMLDAE"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
 
@@ -8729,7 +8729,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
 
         /* Instantiate the function and add to dae function tree*/
-        (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE,true);
+        (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE(),true);
         /* Instantiate any implicit record constructors needed and add them to the dae function tree */
         cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
@@ -8942,7 +8942,7 @@ algorithm
       then (cache,Util.SUCCESS());
 
       /* Recursive calls (by looking at envinronment) skipped */
-    case(cache,env,name,false,NONE,_,_)
+    case(cache,env,name,false,NONE(),_,_)
       equation
         false = Env.isTopScope(env);
         true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
@@ -8957,7 +8957,7 @@ algorithm
       then (cache,Util.SUCCESS());
 
     /* Class must be looked up*/
-    case(cache,env,name,false,NONE,_,_)
+    case(cache,env,name,false,NONE(),_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -8973,7 +8973,7 @@ algorithm
       then (cache,Util.SUCCESS());
 
     /* Call to function reference variable */
-    case (cache,env,name,false,NONE,_,_)
+    case (cache,env,name,false,NONE(),_,_)
       local
         DAE.ComponentRef cref;
       equation
@@ -9962,7 +9962,7 @@ algorithm
       equation
         ss = makeEmptySlots(fs);
       then
-        (SLOT(fa,false,NONE,{}) :: ss);
+        (SLOT(fa,false,NONE(),{}) :: ss);
   end matchcontinue;
 end makeEmptySlots;
 
@@ -10207,7 +10207,7 @@ algorithm
     case (cache, env, (e :: es), ((farg as (_,vt)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
       equation
         /* FAILTRACE REMOVE
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE,true,pre,info);
+        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
         failure((_,_,_) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false));
         Debug.fprint("failtrace", "elabPositionalInputArgs failed, expected type:");
         Debug.fprint("failtrace", Types.unparseType(vt));
@@ -10471,7 +10471,7 @@ algorithm
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
       equation
-        t = (DAE.T_ANYTYPE(NONE),NONE);
+        t = (DAE.T_ANYTYPE(NONE),NONE());
         et = Types.elabType(t);
       then
         (cache,SOME((DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
@@ -10531,7 +10531,7 @@ algorithm
         expCref = Exp.toExpCref(c);
         exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFunc));
         // This is not done by lookup - only elabCall. So we should do it here.
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE,true);
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE(),true);
       then
         (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO())));
 
@@ -10580,7 +10580,7 @@ algorithm
         list<DAE.Var> v, al;
         Option<Absyn.Path> op;
       then
-        ((DAE.T_ENUMERATION(NONE, p, n, v, al), op));
+        ((DAE.T_ENUMERATION(NONE(), p, n, v, al), op));
     case _ then inType;
   end matchcontinue;
 end fixEnumerationType;
@@ -10622,7 +10622,7 @@ algorithm
   ety := DAE.ET_ARRAY(DAE.ET_ENUMERATION(enumTypeName, enumLiterals, {}),
     {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
-  enumArrayType := (DAE.T_ENUMERATION(NONE, enumTypeName, enumLiterals, {}, {}), NONE);
+  enumArrayType := (DAE.T_ENUMERATION(NONE(), enumTypeName, enumLiterals, {}, {}), NONE);
   enumArrayType := (DAE.T_ARRAY(DAE.DIM_ENUM(enumTypeName, enumLiterals, sz), 
     enumArrayType), NONE);
 end makeEnumerationArray;
@@ -11010,7 +11010,7 @@ algorithm
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
@@ -11028,7 +11028,7 @@ algorithm
         expIdTy = Types.elabType(idTp);                            
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
@@ -11192,7 +11192,7 @@ algorithm
     // types extending basictype
     case (_,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType,applyLimits)
       equation
-        e = crefVectorize(true,e,t,NONE,crefIdType,applyLimits);
+        e = crefVectorize(true,e,t,NONE(),crefIdType,applyLimits);
       then e;
 
     // component reference and an array type with dimensions less than vectorization limit
@@ -11747,7 +11747,7 @@ algorithm
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // no subscript
@@ -11758,7 +11758,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // index
@@ -11817,7 +11817,7 @@ algorithm
         DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
+        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
       then
@@ -13128,37 +13128,37 @@ end elementType;
  * The types are a bit hard to read, but they are simply 1 through 9-dimensional
  * arrays of the basic types. */
 protected constant list<DAE.Type> intarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 protected constant list<DAE.Type> realarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 protected constant list<DAE.Type> stringarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 /* Simply a list of 9 of that basic type; used to match with the array types */
 protected constant list<DAE.Type> inttypes = {
@@ -13299,11 +13299,11 @@ algorithm
         int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_INT());
         real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_REAL());
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        int_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_scalar),NONE);
-        int_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_vector),NONE);
+        int_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_scalar),NONE());
+        int_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_vector),NONE());
         real_scalar = DAE.T_REAL_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE);
-        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE);
+        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE());
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE());
         scalars = {(int_mul,{int_scalar,int_scalar},int_scalar),
           (real_mul,{real_scalar,real_scalar},real_scalar)};
         scalarprod = {(int_mul_sp,{int_vector,int_vector},int_scalar),
@@ -13380,8 +13380,8 @@ algorithm
         real_scalar = DAE.T_REAL_DEFAULT "The POW operator. a^b is only defined for integer exponents, i.e. b must
     be of type Integer" ;
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE);
-        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE);
+        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE());
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE());
         real_pow = DAE.POW(DAE.ET_REAL());
         int_pow = DAE.POW(DAE.ET_INT());
         scalars = {(int_pow,{int_scalar,int_scalar},int_scalar),
@@ -13660,7 +13660,7 @@ algorithm
         n_1 = n - 1;
         t_1 = nDimArray(n_1, t);
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),NONE));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),NONE()));
   end matchcontinue;
 end nDimArray;
 

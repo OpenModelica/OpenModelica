@@ -309,7 +309,7 @@ algorithm
       equation
         (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
         lv2 = setValuesInRecord(lv,names,vals);
-        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE);
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE());
       then
         cty2;
     // A component reference to a record instance.
@@ -318,7 +318,7 @@ algorithm
       equation
         (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
         lv2 = setValuesInRecord(lv,names,vals);
-        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE);
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE());
       then
         cty2;
   end matchcontinue;
@@ -396,7 +396,7 @@ algorithm
       equation
         true = stringEqual(varName3, varName2);
         lv2 = setValuesInRecord(typeslst,names,vals);
-        ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE);
+        ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE());
         tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then tv;
     
@@ -685,7 +685,7 @@ algorithm
     // algorithm assign      
     case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
-        (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
         e1 = replaceComplex(e1,ht2); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
@@ -704,17 +704,17 @@ algorithm
     //while case
     case(env, SCode.ALG_WHILE(boolExpr = ae1,whileBody = algitemlst),ht2)
       equation
-        value = evaluateSingleExpression(ae1,env,NONE,ht2);
+        value = evaluateSingleExpression(ae1,env,NONE(),ht2);
         env1  = evaluateConditionalStatement(value, ae1, algitemlst,env,ht2);
       then
         env1;
     // for loop with a range without step
     case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
       equation 
-        start = evaluateSingleExpression(ae1,env,NONE,ht2);
+        start = evaluateSingleExpression(ae1,env,NONE(),ht2);
         // constant range due to ceval of start/stop
         env1 = addForLoopScope(env,varName,start,SCode.VAR(),SOME(DAE.C_CONST()));
-        stop  = evaluateSingleExpression(ae2,env1,NONE,ht2);
+        stop  = evaluateSingleExpression(ae2,env1,NONE(),ht2);
         step  = Values.INTEGER(1);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
       then
@@ -722,18 +722,18 @@ algorithm
     // for loop with a range with step
     case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
       equation
-        start = evaluateSingleExpression(ae1,env,NONE,ht2);
+        start = evaluateSingleExpression(ae1,env,NONE(),ht2);
         // constant range due to ceval of start/stop/step
         env1 = addForLoopScope(env,varName,start,SCode.VAR(),SOME(DAE.C_CONST()));
-        stop = evaluateSingleExpression(ae3,env1,NONE,ht2);
-        step = evaluateSingleExpression(ae2,env1,NONE,ht2);
+        stop = evaluateSingleExpression(ae3,env1,NONE(),ht2);
+        step = evaluateSingleExpression(ae2,env1,NONE(),ht2);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
       then
         env2;
     // some other expression for range, such as an array!
     case(env, SCode.ALG_FOR({(varName, SOME(ae1))},forBody = algitemlst),ht2)
       equation
-        (Values.ARRAY(valueLst = values)) = evaluateSingleExpression(ae1,env,NONE,ht2);
+        (Values.ARRAY(valueLst = values)) = evaluateSingleExpression(ae1,env,NONE(),ht2);
         start = listNth(values,0);
         // constant range due to ceval of range expression
         env1 = addForLoopScope(env,varName,start,SCode.VAR(),SOME(DAE.C_CONST()));
@@ -796,7 +796,7 @@ algorithm oenv := matchcontinue(inIfs,env,ht2)
   case({},env,ht2) then env;
   case(((ae1,algitemlst)::algrest),env,ht2)
     equation
-      value = evaluateSingleExpression(ae1,env,NONE,ht2);
+      value = evaluateSingleExpression(ae1,env,NONE(),ht2);
       env1 = evaluatePartOfIfStatement(value, ae1, algitemlst, algrest, env,ht2);
     then 
       env1;
@@ -843,7 +843,7 @@ algorithm
     // handle failure, report type error
     case (value,exp,algitemlst,algrest,env, ht2)  
       equation 
-        (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo); 
+        (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo); 
         estr = Exp.printExpStr(daeExp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
@@ -869,9 +869,9 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
     DAE.Type ty,ty2;
 
   // no type to convert into
-  case(inExp,env,NONE,ht2)
+  case(inExp,env,NONE(),ht2)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       e1 = replaceComplex(e1,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
     then
@@ -879,7 +879,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   // some type we need to convert into
   case(inExp,env,SOME(ty),ht2)
     equation
-      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
+      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
@@ -976,7 +976,7 @@ algorithm oenv := matchcontinue(cond,updateExp,algitemlst,env,ht2)
   case(Values.BOOL(true), updateExp,algis,env,ht2)
     equation
       env1 = evaluateConditionalStatement2(algis,env,ht2);
-      value2 = evaluateSingleExpression(updateExp,env1,NONE,ht2);
+      value2 = evaluateSingleExpression(updateExp,env1,NONE(),ht2);
       env2 = evaluateConditionalStatement(value2,updateExp,algis,env1,ht2);
     then
       env2;
@@ -1284,12 +1284,12 @@ algorithm
         DAE.VALBOUND(value2,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.MOD(absynExpOption = NONE),_,ty, ht2)
       equation
-        baseValue = instFunctionArray(ty,NONE);
+        baseValue = instFunctionArray(ty,NONE());
       then
         DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.NOMOD,_,ty, ht2)
       equation
-        baseValue = instFunctionArray(ty,NONE);
+        baseValue = instFunctionArray(ty,NONE());
       then
         DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.MOD(absynExpOption = SOME(absynExp)),_,_, ht2)
@@ -1547,7 +1547,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
 
   case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false,Prefix.NOPRE(),Absyn.dummyInfo);
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);
@@ -1645,7 +1645,7 @@ algorithm outType := matchcontinue(ty,arrayDim,env,ht2)
   case(ty,{},_,ht2) then ty;
   case(ty, (sub1 as Absyn.SUBSCRIPT(exp))::subs1,env,ht2)
     equation
-      (val as Values.INTEGER(x)) = evaluateSingleExpression(exp,env,NONE,ht2);
+      (val as Values.INTEGER(x)) = evaluateSingleExpression(exp,env,NONE(),ht2);
       ty = Types.liftArrayRight(ty,DAE.DIM_INTEGER(x));
       ty = addDims(ty,subs1,env,ht2);
     then

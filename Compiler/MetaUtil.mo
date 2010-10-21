@@ -1094,7 +1094,7 @@ algorithm
     case ((DAE.T_POLYMORPHIC(id),_))
       local
         String id;
-      then Absyn.TPATH(Absyn.IDENT(id),NONE);
+      then Absyn.TPATH(Absyn.IDENT(id),NONE());
 
     case ((DAE.T_META_ARRAY(t),_))
       local

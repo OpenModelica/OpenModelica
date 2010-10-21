@@ -117,7 +117,7 @@ algorithm
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE));
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE()));
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
     case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl,info)
@@ -370,7 +370,7 @@ algorithm
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,NONE);
+        SCode.MOD(finalPrefix,each_,subs_1,NONE());
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))))
       equation
         subs_1 = unelabSubmods(subs);
@@ -524,7 +524,7 @@ algorithm
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
-        Debug.fprintln("updmod", Debug.fcallret1("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE,prop,SOME(e)))),""));
+        Debug.fprintln("updmod", Debug.fcallret1("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e)))),""));
       then
         (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))));
 
@@ -538,7 +538,7 @@ algorithm
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
       then
-        (cache,DAE.MOD(f,each_,subs_1,NONE));
+        (cache,DAE.MOD(f,each_,subs_1,NONE()));
 
     case (cache,env,ih,pre,m,impl,info)
       local String str;
@@ -656,7 +656,7 @@ algorithm
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
-        DAE.MOD(finalPrefix,each_,subs_1,NONE);
+        DAE.MOD(finalPrefix,each_,subs_1,NONE());
     case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,_)))),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
@@ -1178,7 +1178,7 @@ algorithm
       DAE.Mod mod;
       DAE.Exp e;
     
-    case(NONE,_,_,_) then DAE.NOMOD();
+    case(NONE(),_,_,_) then DAE.NOMOD();
     
     case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
                         DAE.PROP((DAE.T_COMPLEX(complexVarLst = varLst),_),_),_)),
@@ -1345,7 +1345,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Mod.lookupCompModification2 failed while searching for:" +& 
           inIdent +& " inside mofifications: " +&
-          printModStr(DAE.MOD(false,Absyn.NON_EACH(),inSubModLst,NONE)));
+          printModStr(DAE.MOD(false,Absyn.NON_EACH(),inSubModLst,NONE())));
       then
         fail();
   end matchcontinue;
@@ -1373,7 +1373,7 @@ algorithm
     case ((inmod as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)),idx)
       equation
         (mod_1,subs_1) = lookupIdxModification2(subs,idx);
-        mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE), mod_1, {}, Prefix.NOPRE());
+        mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE()), mod_1, {}, Prefix.NOPRE());
         eq_1 = indexEqmod(eq, {idx});
         mod_3 = merge(mod_2, DAE.MOD(false,each_,{},eq_1), {}, Prefix.NOPRE());
       then
@@ -1517,7 +1517,7 @@ algorithm
       DAE.EqMod eq;
       Absyn.Exp absynExp;
 
-    case (NONE,_) then NONE;
+    case (NONE(),_) then NONE;
     case (e,{}) then e;
 
     // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) 
@@ -1535,12 +1535,12 @@ algorithm
         e;
 
         // For modifiers without value, apply subscript operator
-    case (SOME(DAE.TYPED(e,NONE,DAE.PROP(t,c),_)),(x :: xs))
+    case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),_)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         exp = Exp.simplify(DAE.ASUB(e,{exp2}));
-        e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c),NONE())), xs);
+        e = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
       then
         e;
 
@@ -1895,7 +1895,7 @@ algorithm
     // Outer assignments take precedence
     case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;
     case ((e as SOME(DAE.UNTYPED(_))),_) then e;
-    case (NONE,e) then e;
+    case (NONE(),e) then e;
   end matchcontinue;
 end mergeEq;
 
@@ -1973,10 +1973,10 @@ algorithm
       DAE.Exp exp1,exp2; DAE.EqMod teq;
     
     // no mods
-    case(NONE,NONE) then true;
+    case(NONE(),NONE()) then true;
     
     // none vs. some (subset) mods
-    case(NONE,SOME(teq)) then true;
+    case(NONE(),SOME(teq)) then true;
     
     // typed mods
     case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2))) 
@@ -2128,7 +2128,7 @@ algorithm
       DAE.Exp exp1,exp2;
 
     // no equ mods
-    case(NONE,NONE) then true;
+    case(NONE(),NONE()) then true;
 
     // typed equmods
     case(SOME(DAE.TYPED(exp1,_,_,_)),SOME(DAE.TYPED(exp2,_,_,_))) 
@@ -2452,7 +2452,7 @@ algorithm
         res = System.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
-    case SOME(DAE.TYPED(e,NONE,prop,_))
+    case SOME(DAE.TYPED(e,NONE(),prop,_))
       equation
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);

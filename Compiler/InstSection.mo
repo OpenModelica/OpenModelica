@@ -660,7 +660,7 @@ algorithm
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
         // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,Exp.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-        dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE,source)});
+        dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
     
@@ -874,7 +874,7 @@ algorithm
       local DAE.ComponentRef cr_2; DAE.ExpType t; Absyn.Path path; list<DAE.Exp> expl; Absyn.FunctionArgs fargs;
         DAE.Exp exp;
       equation 
-        (cache,exp,prop1,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false,pre,info);
+        (cache,exp,prop1,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE(),false,pre,info);
         (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
 
@@ -1065,7 +1065,7 @@ algorithm
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE),fillValue) "types"; 
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE()),fillValue) "types"; 
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
       tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
       aexpl = listAppend(aexpl,aexpl2);      
@@ -1077,13 +1077,13 @@ algorithm
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE),fillValue) "types";  
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE()),fillValue) "types";  
       tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
       aexpl = listAppend({inExp},aexpl2);
       lst = listAppend({propType},lst2); 
       tupleConst = listAppend({DAE.SINGLE_CONST(tconst)},tupleConst2);
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE((DAE.T_TUPLE(lst),NONE),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE((DAE.T_TUPLE(lst),NONE()),DAE.TUPLE_CONST(tupleConst)));
   case(inExp,propCall,propTuple)
     equation
       false = Types.isPropTuple(propCall);
@@ -2079,7 +2079,7 @@ algorithm
         stmt = Algorithm.makeFor(i, e_2, prop, stmts, source);
       then
         (cache,{stmt});
-    //  case (cache,env,pre,{(i,NONE)},sl,initial_,impl,unrollForLoops)
+    //  case (cache,env,pre,{(i,NONE())},sl,initial_,impl,unrollForLoops)
     //    equation       
     //      lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
     //      len=listLength(lst);
@@ -2103,7 +2103,7 @@ algorithm
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
-        // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl, NONE,true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
@@ -2114,12 +2114,12 @@ algorithm
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
       then
         (cache,{stmt});
-    case (cache,env,ih,pre,(i,NONE)::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,(i,NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl); 
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
-        // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl, NONE, true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
@@ -2457,7 +2457,7 @@ algorithm
 
         vb_body = listAppend(tempLoopVarsInit,vb_body);
         vb = Absyn.VALUEBLOCK(tempLoopVars,Absyn.VALUEBLOCKALGORITHMS(vb_body),Absyn.BOOL(true));
-        (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE,true,pre,info);
+        (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE(),true,pre,info);
 
         // _ := { ... }, this will be handled in Codegen.algorithmStatement
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2638,8 +2638,8 @@ algorithm
       equation
         Absyn.CALL(functionArgs = _) = e2;
         _ = Util.listMap(expl,Absyn.expCref);
-        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE,false,pre,info);
-        (cache,e_2,prop2,_) = Static.elabExp(cache,env,e2,impl,NONE,false,pre,info);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
+        (cache,e_2,prop2,_) = Static.elabExp(cache,env,e2,impl,NONE(),false,pre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
         false = Types.subtype(lt, rt);
@@ -3069,7 +3069,7 @@ algorithm
 
     case (tpl as (acref,dimNum))
       equation
-        e=Absyn.RANGE(Absyn.INTEGER(1),NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
       then e;
   end matchcontinue;
 end rangeExpression;

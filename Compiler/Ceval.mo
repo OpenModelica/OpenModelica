@@ -180,13 +180,13 @@ algorithm
 
     case (cache,_,DAE.END(),_,st,SOME(dim),_) then (cache,Values.INTEGER(dim),st);
 
-    case (cache,_,DAE.END(),_,st,NONE, MSG())
+    case (cache,_,DAE.END(),_,st,NONE(), MSG())
       equation
         Error.addMessage(Error.END_ILLEGAL_USE_ERROR, {});
       then
         fail();
 
-    case (cache,_,DAE.END(),_,st,NONE, NO_MSG()) then fail();
+    case (cache,_,DAE.END(),_,st,NONE(), NO_MSG()) then fail();
 
     case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,st,_,msg)
       equation
@@ -257,7 +257,7 @@ algorithm
       then (cache,Values.OPTION(NONE),st);
     case (cache,env,DAE.META_OPTION(SOME(inExp)),impl,st,_,msg)
       equation
-        (cache,value,st) = ceval(cache,env,inExp,impl,st,NONE,msg);
+        (cache,value,st) = ceval(cache,env,inExp,impl,st,NONE(),msg);
       then (cache,Values.OPTION(SOME(value)),st);
 
     // MetaModelica Tuple. sjoelund 2009-07-02 
@@ -5411,14 +5411,14 @@ algorithm ostring := matchcontinue( e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE(),NONE(),MSG());
     then
       ret;
   case(e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val,_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      (_,val,_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE(),NONE(),MSG());
       ret = ValuesUtil.printValStr(val);
     then
       ret;
@@ -5439,7 +5439,7 @@ case(e ::expl)
     Values.Value v;
     list<Values.Value> vs;
   equation
-    (_,v,_) = ceval(Env.emptyCache(), Env.emptyEnv, e,true,NONE,NONE,MSG);
+    (_,v,_) = ceval(Env.emptyCache(), Env.emptyEnv, e,true,NONE(),NONE(),MSG);
     vs = cevalTuple(expl);
   then
     v::vs;
@@ -5451,7 +5451,7 @@ protected function crefEqualValue ""
   input DAE.Binding v;
   output Boolean outBoolean;
 algorithm outBoolean := matchcontinue(c,v)
-  case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE,_,_)))
+  case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE(),_,_)))
     local DAE.ComponentRef c2;
     equation
       true = Exp.crefEqual(c,c2);

@@ -358,10 +358,10 @@ algorithm
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
     
-    case (cache,env,inIH,Prefix.NOPRE(),NONE) then fail();
+    case (cache,env,inIH,Prefix.NOPRE(),NONE()) then fail();
     case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
-    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE)
+    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s)));
       then
@@ -721,7 +721,7 @@ algorithm
       equation
         (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
       then
-        (cache,DAE.SIZE(cref_1,NONE));
+        (cache,DAE.SIZE(cref_1,NONE()));
 
     case (cache,env,ih,DAE.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inlineType = inl),p)
       local Prefix p; DAE.ExpType tp;
@@ -783,7 +783,7 @@ algorithm
         (cache,start_1) = prefixExp(cache, env, ih, start, p);
         (cache,stop_1) = prefixExp(cache, env, ih, stop, p);
       then
-        (cache,DAE.RANGE(t,start_1,NONE,stop_1));
+        (cache,DAE.RANGE(t,start_1,NONE(),stop_1));
 
     case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
       local Prefix p;

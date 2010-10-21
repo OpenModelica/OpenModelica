@@ -153,7 +153,7 @@ algorithm
       DAELow.WhenEquation weq,weq_1;
       DAE.ElementSource source "the origin of the element";
 
-    case(NONE,_) then NONE;
+    case(NONE(),_) then NONE;
     case(SOME(DAELow.EQUATION(e1,e2,source)),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -220,11 +220,11 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
       DAELow.WhenEquation weq,weq_1;
-    case(DAELow.WHEN_EQ(i,cref,e,NONE),fns)
+    case(DAELow.WHEN_EQ(i,cref,e,NONE()),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        DAELow.WHEN_EQ(i,cref,e_1,NONE);
+        DAELow.WHEN_EQ(i,cref,e_1,NONE());
     case(DAELow.WHEN_EQ(i,cref,e,SOME(weq)),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -296,7 +296,7 @@ algorithm
       Option<DAELow.Var> var;
       DAE.ElementSource source "the origin of the element";
 
-    case(NONE,_) then NONE;
+    case(NONE(),_) then NONE;
     case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -656,11 +656,11 @@ algorithm
       then
         res :: cdr_1;
 
-    case(DAE.WHEN_EQUATION(exp,elist,NONE,source) :: cdr,fns)
+    case(DAE.WHEN_EQUATION(exp,elist,NONE(),source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.WHEN_EQUATION(exp_1,elist_1,NONE,source);
+        res = DAE.WHEN_EQUATION(exp_1,elist_1,NONE(),source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
@@ -856,12 +856,12 @@ algorithm
         stmt_1 = inlineStatement(stmt,fns);
       then
         DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source);
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source),fns)
+    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source);
+        DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source);
     case(DAE.STMT_ASSERT(e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);

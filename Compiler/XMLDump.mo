@@ -716,16 +716,16 @@ printed.
         DAE.Exp e;
         Values.Value b;
         DAE.Exp addMMLCode;
-  case(NONE,NONE,_)
+  case(NONE(),NONE(),_)
     equation
     then();
-  case(SOME(e),NONE,addMMLCode)
+  case(SOME(e),NONE(),addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
       dumpStrCloseTag(BIND_VALUE_EXPRESSION);
     then();
-  case(NONE,SOME(b),addMMLCode)
+  case(NONE(),SOME(b),addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
@@ -1750,7 +1750,7 @@ algorithm
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as DAE.RANGE(_,start,NONE,stop))
+    case (e as DAE.RANGE(_,start,NONE(),stop))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLInterval);
@@ -2625,7 +2625,7 @@ algorithm
     local
       Values.Value v;
       DAE.Exp addMMLCode;
-    case (NONE,_,_)  then ();
+    case (NONE(),_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
         dumpStrOpenTagAttr(Content,EXP_STRING,Exp.printExpStr(ValuesUtil.valueExp(v)));

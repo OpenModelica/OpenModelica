@@ -403,11 +403,11 @@ algorithm
         (we_1,dae) = partEvalWhenEq(we,dae);
       then
         (DAELow.WHEN_EQ(i,cref,e_1,SOME(we_1)),dae);
-    case(DAELow.WHEN_EQ(i,cref,e,NONE),dae)
+    case(DAELow.WHEN_EQ(i,cref,e,NONE()),dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
       then
-        (DAELow.WHEN_EQ(i,cref,e_1,NONE),dae);
+        (DAELow.WHEN_EQ(i,cref,e_1,NONE()),dae);
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalWhenEq failed");
@@ -614,13 +614,13 @@ algorithm
       then
         (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source) :: cdr_1,dae);
 
-    case(DAE.WHEN_EQUATION(e,elts,NONE,source) :: cdr,dae)
+    case(DAE.WHEN_EQUATION(e,elts,NONE(),source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.WHEN_EQUATION(e_1,elts_1,NONE,source) :: cdr_1,dae);
+        (DAE.WHEN_EQUATION(e_1,elts_1,NONE(),source) :: cdr_1,dae);
 
     case(DAE.WHEN_EQUATION(e,elts,SOME(el),source) :: cdr,dae)
       equation
@@ -891,13 +891,13 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1,dae);
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source) :: cdr,dae)
+    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source) :: cdr_1,dae);
+        (DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1,dae);
     case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
@@ -1059,7 +1059,7 @@ algorithm
     local
       DAE.Exp e,e_1;
       list<DAE.Function> dae;
-    case(NONE,dae) then (NONE,dae);
+    case(NONE(),dae) then (NONE(),dae);
     case(SOME(e),dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
@@ -1613,13 +1613,13 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source) :: cdr_1;
+        DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1;
     case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
