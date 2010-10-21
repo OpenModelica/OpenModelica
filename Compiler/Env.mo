@@ -212,7 +212,7 @@ public function newEnvironment
   "Creates a new empty environment."
   output Env newEnv;
 algorithm
-  newEnv := Util.listCreate(newFrame(false, NONE, NONE));
+  newEnv := Util.listCreate(newFrame(false,NONE(),NONE()));
 end newEnvironment;
 
 protected function newFrame "function: newFrame

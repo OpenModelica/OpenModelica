@@ -2470,8 +2470,8 @@ algorithm
         COMPONENT(
           literal, Absyn.UNSPECIFIED(), true, false, false,
           ATTR({}, false, false, RO(), CONST(), Absyn.BIDIR()),
-          Absyn.TPATH(Absyn.IDENT("EnumType"), NONE), 
-          NOMOD(), comment, NONE, NONE, NONE);
+          Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
+          NOMOD(), comment,NONE(), NONE,NONE());
     case (ENUM(literal = literal), _)
       local
         String info_str;

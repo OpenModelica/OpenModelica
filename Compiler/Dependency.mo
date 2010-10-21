@@ -1246,7 +1246,7 @@ extract a subset of classes, with the classes that are in the avltree passed as 
   output list<Absyn.Class> outClasses;
   output list<Option<Absyn.Path>> outPaths;
 algorithm
-((_,_,(_,outClasses,outPaths))) := Interactive.traverseClasses(p, NONE, extractProgramVisitor, (tree,{},{}), true) "traverse protected" ;
+((_,_,(_,outClasses,outPaths))) := Interactive.traverseClasses(p,NONE(), extractProgramVisitor, (tree,{},{}), true) "traverse protected" ;
 end extractProgram2;
 
 protected function extractProgramVisitor "Visitor function to extractProgram"

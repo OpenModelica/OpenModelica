@@ -1109,7 +1109,7 @@ algorithm
     case ((_,SOME(p)))
       local
         Absyn.Path p;
-      then Absyn.TPATH(p, NONE);
+      then Absyn.TPATH(p,NONE());
     case t
       local String str;
       equation

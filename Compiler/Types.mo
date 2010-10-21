@@ -1217,7 +1217,7 @@ algorithm
       equation
         path = Absyn.pathPrefix(path); 
       then
-        ((DAE.T_ENUMERATION(SOME(index), path, {}, {}, {}), NONE));
+        ((DAE.T_ENUMERATION(SOME(index), path, {}, {}, {}),NONE()));
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation
         tp = typeOfValue(v);
@@ -1886,7 +1886,7 @@ public function liftArray "function: liftArray
   input DAE.Dimension inDimension;
   output Type outType;
 algorithm
-  outType := (DAE.T_ARRAY(inDimension, inType), NONE);
+  outType := (DAE.T_ARRAY(inDimension, inType),NONE());
 end liftArray;
 
 public function liftArrayListDims "

@@ -289,7 +289,7 @@ algorithm
       Boolean isfatal;
       
       
-    case (_, _, linfo, NONE, _) 
+    case (_, _, linfo,NONE(), _) 
       then (linfo);
     
     case (charspp, linfopp, linfo, SOME(errMsg), isfatal)
@@ -520,7 +520,7 @@ algorithm
         src = System.readFile(file);
         chars = stringListStringChar( src );
         linfo = makeStartLineInfo(chars, file);        
-      then (chars, linfo, NONE);            
+      then (chars, linfo,NONE());            
     
     case (file) 
       equation
@@ -1509,7 +1509,7 @@ algorithm
       String strErr;
     
     case ("\"" :: chars, linfo)
-      then (chars, linfo, NONE);
+      then (chars, linfo,NONE());
           
     case ("\\"::"\"" :: chars, linfo)
       equation
@@ -3871,7 +3871,7 @@ algorithm
     case ("\"" :: chars, linfo, accChars, accStrList)
       equation
         str = stringCharListString(listReverse(accChars));
-      then (chars, linfo, str :: accStrList, NONE);
+      then (chars, linfo, str :: accStrList,NONE());
     
     //escaped new line
     case ("\\"::"n" :: chars, linfo, accChars, accStrList)
@@ -3989,13 +3989,13 @@ algorithm
         (c :: "%" :: chars) = chars;
         equality(c = rquot);
         str = stringCharListString(listReverse(accChars));
-      then (chars, linfo, str :: accStrList, NONE);
+      then (chars, linfo, str :: accStrList,NONE());
     
     case (c :: "%" :: chars, linfo, rquot, accChars, accStrList)
       equation
         equality(c = rquot);
         str = stringCharListString(listReverse(accChars));
-      then (chars, linfo, str :: accStrList, NONE);
+      then (chars, linfo, str :: accStrList,NONE());
     
     case (chars, linfo, rquot, accChars, accStrList)
       equation
@@ -4757,7 +4757,7 @@ algorithm
         expLst = addAccStringChars(expLst, accChars);
         expLst = finalizeLastStringToken(expLst);
         expLst = exp :: expLst;
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
    
    //push new indent level
    case (exp, expLst, indStack, actInd, lineInd, accChars)
@@ -4768,7 +4768,7 @@ algorithm
         expLst = addAccStringChars({}, accChars);
         expLst = finalizeLastStringToken(expLst);
         expLst = exp :: expLst;
-      then (expLst, indStack,  lineInd, NONE);
+      then (expLst, indStack,  lineInd,NONE());
    
    //if the indent is under the base indent level, warn and make it 0 level
    case (exp, expLst, {}, baseInd, lineInd, accChars)
@@ -4843,7 +4843,7 @@ algorithm
    case ( {}, indStack, actInd, _, {})
       equation
         expLst = addAccStringChars({}, {"\n"} );        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
    
    //AccStringChars = {}
    // expLst = ST opened :: _ -> a standalone \n on the line - make permanent
@@ -4852,7 +4852,7 @@ algorithm
        indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
 
    //TODO: this does not work, because the <\n> finalizes the previous ST to be closed 
    //AccStringChars = {}
@@ -4862,7 +4862,7 @@ algorithm
        indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
       
    //AccStringChars = {}
    // expLst = SNL :: _ -> a standalone \n on the line - make permanent
@@ -4870,7 +4870,7 @@ algorithm
    case (expLst as (TplAbsyn.SOFT_NEW_LINE() :: _) , indStack, actInd, _, {})
       equation
         expLst = addAccStringChars(expLst, {"\n"} );        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
    
    //AccStringChars = {}
    // expLst = some expression :: _ -> an exp must be last --> Soft new line
@@ -4878,7 +4878,7 @@ algorithm
    case (expLst as (_ :: _) , indStack, actInd, _, {})
       equation
         expLst = TplAbsyn.SOFT_NEW_LINE() :: expLst;        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
    
    //AccStringChars = (_::_)
    // lineInd >= actInd
@@ -4892,7 +4892,7 @@ algorithm
          = addAccStringChars(expLst, accChars); //must create the ST becase of accChars as (_::_)
         //make the opened last ST be disposable new line
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, true)) :: expLst;        
-      then (expLst, indStack,  actInd, NONE);
+      then (expLst, indStack,  actInd,NONE());
    
    //if the indent is under base indent level, warn and make it 0 level
    //AccStringChars = (_::_)
@@ -5411,7 +5411,7 @@ algorithm
       then (chars, linfo, SOME(elseBr));
    
    case (chars, linfo, lesc, resc)
-      then (chars, linfo, NONE);
+      then (chars, linfo,NONE());
    
   end matchcontinue;
 end elseBranch;
@@ -5419,7 +5419,7 @@ end elseBranch;
 must not fail
 condArgExp:
 	'not' expressionPlus(lesc,resc):lhsExp
-	  => (true, lhsExp, NONE)
+	  => (true, lhsExp,NONE())
 	|
 	expressionPlus(lesc,resc):lhsExp
 	//  condArgRHS:(isNot, rshMExpOpt)
@@ -5462,7 +5462,7 @@ algorithm
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, lhsExp) = expressionPlus(chars, linfo, lesc, resc);        
-      then (chars, linfo, true, lhsExp, NONE);
+      then (chars, linfo, true, lhsExp,NONE());
    
    case (chars, linfo, lesc, resc)
       equation
@@ -5470,7 +5470,7 @@ algorithm
         //(chars, linfo) = interleave(chars, linfo);
         //(chars, linfo, isNot, rhsMExpOpt) = condArgRHS(chars, linfo);
         //isNot = false;        
-      then (chars, linfo, false, lhsExp, NONE);
+      then (chars, linfo, false, lhsExp,NONE());
    
   end matchcontinue;
 end condArgExp;
@@ -5480,7 +5480,7 @@ condArgRHS:
 	|
 	'is' matchBinding:rhsMExp  =>  (false, SOME(rhsMexp))
 	|
-	_ => (false, NONE)
+	_ => (false,NONE())
 */
 /*
 public function condArgRHS
@@ -5531,7 +5531,7 @@ algorithm
    
    
    case (chars, linfo)
-      then (chars, linfo, false, NONE);
+      then (chars, linfo, false,NONE());
    
   end matchcontinue;
 end condArgRHS;

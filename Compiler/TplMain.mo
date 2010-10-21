@@ -613,7 +613,7 @@ public function typedIdents
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_2(out_txt, i_decls);
   out_txt := Tpl.popIter(out_txt);
 end typedIdents;
@@ -1494,7 +1494,7 @@ algorithm
         txt = exp(txt, i_condition);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_1(txt, i_statements);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
@@ -1653,7 +1653,7 @@ algorithm
         list<list<Integer>> rest;
         list<Integer> i_intLst;
       equation
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_54(txt, i_intLst);
         txt = Tpl.popIter(txt);
         txt = Tpl.nextIter(txt);
@@ -1678,7 +1678,7 @@ public function intMatrix
 algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("[ "));
   out_txt := Tpl.pushBlock(out_txt, Tpl.BT_ANCHOR(0));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_55(out_txt, i_lstOfLst);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.popBlock(out_txt);

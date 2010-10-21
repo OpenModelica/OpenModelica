@@ -124,7 +124,7 @@ algorithm
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE, true,pre,info);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache, env, e_1, prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
@@ -337,11 +337,11 @@ algorithm
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
         msg = Util.if_(Types.constIsConst(c), Ceval.MSG, Ceval.NO_MSG);
-        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false, NONE, NONE, msg);
+        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE, msg);
       then
         (cache,SOME(v));
     // Constant evaluation failed, return no value.
-    case (_,_,_,_) then (inCache, NONE);
+    case (_,_,_,_) then (inCache,NONE());
   end matchcontinue;
 end elabModValue;
 
@@ -519,7 +519,7 @@ algorithm
     case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl,info)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE, true,pre,info);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -1158,7 +1158,7 @@ algorithm
       equation
         m = lookupCompModification(inMod,inIdent);
       then
-        DAE.MOD(false, Absyn.NON_EACH(), {DAE.NAMEMOD(inIdent,m)}, NONE);
+        DAE.MOD(false, Absyn.NON_EACH(), {DAE.NAMEMOD(inIdent,m)},NONE());
   end matchcontinue;
 end lookupCompModification12;
 
@@ -1608,7 +1608,7 @@ algorithm
         // put both modifiers in one big modifier
         strPrefix = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
         submods = {DAE.NAMEMOD("", inMod1), DAE.NAMEMOD("", inMod2)}; 
-        m = DAE.MOD(false, Absyn.NON_EACH, submods, NONE);
+        m = DAE.MOD(false, Absyn.NON_EACH, submods,NONE());
         s = s +& "\n\tby using modifiers: " +&  strPrefix +& printSubsStr(submods, true) +& 
         " that do not agree.";
         

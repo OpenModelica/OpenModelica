@@ -473,8 +473,8 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl, NONE);
-        (DAE.CREF(cr2_1,_)) = replaceExp(DAE.CREF(cr2,DAE.ET_REAL()), repl, NONE);
+        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl,NONE());
+        (DAE.CREF(cr2_1,_)) = replaceExp(DAE.CREF(cr2,DAE.ET_REAL()), repl,NONE());
       then
         (cr1_1,cr2_1);
   end matchcontinue;
@@ -496,7 +496,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl, NONE);
+        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl,NONE());
         ocrefs = applyReplacementList(repl,increfs);
       then
         cr1_1::ocrefs;
@@ -520,8 +520,8 @@ algorithm
       VariableReplacements repl;
     case (repl,e1,e2)
       equation
-        (e1) = replaceExp(e1, repl, NONE);
-        (e2) = replaceExp(e2, repl, NONE);
+        (e1) = replaceExp(e1, repl,NONE());
+        (e2) = replaceExp(e2, repl,NONE());
         e1 = Exp.simplify(e1);
         e2 = Exp.simplify(e2);
       then

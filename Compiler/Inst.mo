@@ -421,7 +421,7 @@ algorithm oelems := matchcontinue(cache,env,elems)
   case(cache,env,(elem as DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source))::elems)
     equation
       //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,Exp.printExpStr),", ") +& "\n");
-      (cache,valList) = Ceval.cevalList(cache,env, conds, true, NONE, Ceval.NO_MSG());
+      (cache,valList) = Ceval.cevalList(cache,env, conds, true,NONE(), Ceval.NO_MSG());
       //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
 
       blist = Util.listMap(valList,ValuesUtil.valueBool);
@@ -1220,7 +1220,7 @@ algorithm
 
         ci_state = ClassInf.start(r,Env.getEnvName(env_1));
         (cache,env_3,ih,store,dae1,csets_1,ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
-          = instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, callscope, graph, NONE);
+          = instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, callscope, graph,NONE());
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         //str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
         
@@ -1620,7 +1620,7 @@ algorithm
         ci_state = ClassInf.start(r, Env.getEnvName(env_1));
         c_1 = SCode.classSetPartial(c, false);
         (cache,env_3,ih,store,dae1,csets_1,ci_state_1,tys,bc_ty,_,_,_)
-        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, INNER_CALL, ConnectionGraph.EMPTY, NONE);
+        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, INNER_CALL, ConnectionGraph.EMPTY,NONE());
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         dae = dae1_1;
@@ -2160,7 +2160,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        ty2 = (DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys), NONE);
+        ty2 = (DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys),NONE());
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = Util.if_(Util.isSome(bc), bc, SOME(ty2));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
@@ -2530,7 +2530,7 @@ algorithm
       equation
         failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE, Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
@@ -2540,7 +2540,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE, Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
@@ -3601,14 +3601,14 @@ algorithm
         instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state2, c, false, {}, false, callscope, ConnectionGraph.EMPTY, NONE);
+          ci_state2, c, false, {}, false, callscope, ConnectionGraph.EMPTY,NONE());
 
 
         (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, info);
         new_ci_state = ClassInf.start(r, Env.getEnvName(env3));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true,pre,info) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
@@ -3643,7 +3643,7 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true,pre,info) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
@@ -3867,7 +3867,7 @@ algorithm
     // case({}, _, allComps, className) then {};    
     
     // handle none
-    case(inComps, NONE, allComps, className) then inComps;
+    case(inComps,NONE(), allComps, className) then inComps;
 
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
@@ -4678,7 +4678,7 @@ algorithm
       equation
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -4708,7 +4708,7 @@ algorithm
         partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -4722,7 +4722,7 @@ algorithm
 	       to the environment here.
 	      */
         (cdefelts2,extcomps) = classdefElts2(extcomps, partialPrefix);
-        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2, true, NONE); // Add inherited classes to env
+        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2, true,NONE()); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
@@ -6038,7 +6038,7 @@ algorithm
         
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = isFunctionInput(ci_state, dir);
-        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl, NONE, true, is_function_input,pre,Util.getOptionOrDefault(aInfo,Absyn.dummyInfo));
+        (cache,dims) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl,NONE(), true, is_function_input,pre,Util.getOptionOrDefault(aInfo,Absyn.dummyInfo));
 
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
@@ -6166,7 +6166,7 @@ algorithm
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions
         // (Absyn.IDENT("Integer") is used as a dummie)
-        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true, false,pre,info);
+        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad,NONE(), impl,NONE(),true, false,pre,info);
 
         // Instantiate the component
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
@@ -7466,7 +7466,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
+        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1},NONE(), dae_var_attr, comment,io,finalPrefix,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
@@ -7490,7 +7490,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
+        dae = daeDeclare(cr, ci_state, ty, attr,prot,NONE(), {dims_1},NONE(), dae_var_attr, comment,io,finalPrefix,source,true);
         arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
@@ -7515,7 +7515,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         eOpt = makeVariableBinding(ty,mod,DAE.C_CONST,pre,n,source);
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,source,false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims,NONE(), dae_var_attr, comment,io,finalPrefix,source,false);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -7890,7 +7890,7 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true, false,pre,info);
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(), impl,NONE(),true, false,pre,info);
       then (cache,dim1,cl,DAE.NOMOD);
 
     // Partial function definitions with no output - stefan
@@ -7921,7 +7921,7 @@ algorithm
         mods_3 = Mod.lookupCompModification(mods_2, id);
         (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache,cenv,ih, mods_3, pre, cl, dims, impl);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
-        (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl, NONE,true, false,pre,info);
+        (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl,NONE(),true, false,pre,info);
         res = listAppend(dim2, dim1);
       then
         (cache,res,cl,type_mods);
@@ -7999,7 +7999,7 @@ algorithm
             lit,
             DAE.ATTR(false, false, SCode.RO(), SCode.VAR, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
             false,
-            (DAE.T_NOTYPE(), NONE),
+            (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
             NONE),
           NONE, Env.VAR_UNTYPED(), {});  
@@ -9403,7 +9403,7 @@ algorithm
         //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
         (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
         failure(equality(cnst = DAE.C_VAR()));
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st, NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st,NONE(), Ceval.NO_MSG());
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
         //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& Exp.printExpStr(e) +& ":" +& intString(i));
       then
@@ -11058,9 +11058,9 @@ algorithm
     case (cache,env,(call as Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = (args as {arraycr,dim}),argNames = nargs))),impl,st,pre,info)
       equation         
-        (cache,dimp,prop as DAE.PROP(dimty,_),_) = Static.elabExp(cache, env, dim, impl, NONE,false,pre,info);
+        (cache,dimp,prop as DAE.PROP(dimty,_),_) = Static.elabExp(cache, env, dim, impl,NONE(),false,pre,info);
         (cache, dimp, prop) = Ceval.cevalIfConstant(cache, env, dimp, prop, impl);
-        (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache, env, arraycr, impl, NONE,false,pre,info);
+        (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache, env, arraycr, impl,NONE(),false,pre,info);
         (cache, arraycrefe, arraycrprop) = Ceval.cevalIfConstant(cache, env, arraycrefe, arraycrprop, impl);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
       then
@@ -11108,7 +11108,7 @@ algorithm
       Prefix.Prefix pre;
     case (cache,env,Absyn.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,info)
       equation 
-        (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl, NONE,pre,info);
+        (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
         (cache,extargs) = instExtGetFargs2(cache,env, exps, props);
       then
         (cache,extargs);
@@ -12176,7 +12176,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod,varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE */
@@ -12223,7 +12223,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* non constant expression, return NONE */
@@ -12270,7 +12270,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
-        (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* got non-constant expression, return NONE */
@@ -12317,7 +12317,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
-        (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE */
@@ -12534,7 +12534,7 @@ algorithm
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
         (e_1,_) = Types.matchType(e, e_tp, tp);
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
@@ -12639,7 +12639,7 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, rinfo);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
-        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim, NONE, false, NONE,true, false,Prefix.NOPRE(),rinfo);
+        (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim,NONE(), false,NONE(),true, false,Prefix.NOPRE(),rinfo);
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
           Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY, env);
@@ -13570,7 +13570,7 @@ algorithm
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         rinfo = Util.getOptionOrDefault(info,Absyn.dummyInfo);
-        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true, false,pre,rinfo);
+        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,rinfo);
         (cache,compenv,ih,store,_,_,ty,_) = 
           instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 
@@ -13663,16 +13663,16 @@ algorithm
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t, constFlag = c), _) = 
-          Static.elabExp(cache, env, cond, false, NONE, false, pre, info);
+          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         true = Types.isBoolean(t);
         true = Types.isParameterOrConstant(c);
-        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false, NONE, NONE, Ceval.MSG());
+        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false,NONE(), NONE, Ceval.MSG());
       then
         (b, cache);
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t), _) = 
-          Static.elabExp(cache, env, cond, false, NONE, false, pre, info);
+          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         false = Types.isBoolean(t);
         exp_str = Exp.printExpStr(e);
         type_str = Types.unparseType(t);
@@ -13682,7 +13682,7 @@ algorithm
     case (_, _, _, _, _, info)
       equation
         (cache, e, DAE.PROP(type_ = t, constFlag = c), _) = 
-          Static.elabExp(cache, env, cond, false, NONE, false, pre, info);
+          Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         true = Types.isBoolean(t);
         false = Types.isParameterOrConstant(c);
         exp_str = Exp.printExpStr(e);
@@ -14650,7 +14650,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
@@ -14704,7 +14704,7 @@ algorithm
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
         (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, NONE);
+        arr_1 = arrayUpdate(arr, pos + 1,NONE());
       then
         VALUE_ARRAY(n,size,arr_1);
     case (_,_)

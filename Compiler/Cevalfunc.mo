@@ -222,7 +222,7 @@ algorithm
           DAE.TYPES_VAR(
             varName,
             DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_TYPED(), complexEnv);
+            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_TYPED(), complexEnv);
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -234,7 +234,7 @@ algorithm
         tty = Types.typeOfValue(val1);
         env1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_TYPED(), {});
+            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -256,7 +256,7 @@ algorithm
         binding = makeBinding(mod1,env,tty, ht2);
         env1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,binding,NONE()), NONE, Env.VAR_TYPED(), {});
+            false,tty,binding,NONE()),NONE(), Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -273,7 +273,7 @@ algorithm
         // print("extendEnvWithInputArgs -> NONE component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(adim) +& "\n");        
         env1 = Env.extendFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,binding,NONE()), NONE, Env.VAR_TYPED(), {});
+            false,tty,binding,NONE()),NONE(), Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -309,7 +309,7 @@ algorithm
       equation
         (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
         lv2 = setValuesInRecord(lv,names,vals);
-        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE());
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 ,NONE(),NONE()),NONE());
       then
         cty2;
     // A component reference to a record instance.
@@ -318,7 +318,7 @@ algorithm
       equation
         (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
         lv2 = setValuesInRecord(lv,names,vals);
-        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE());
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 ,NONE(),NONE()),NONE());
       then
         cty2;
   end matchcontinue;
@@ -396,7 +396,7 @@ algorithm
       equation
         true = stringEqual(varName3, varName2);
         lv2 = setValuesInRecord(typeslst,names,vals);
-        ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE());
+        ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 ,NONE(),NONE()),NONE());
         tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then tv;
     
@@ -443,7 +443,7 @@ algorithm oenv := matchcontinue(env, tvars)
       (ty,_) = Types.flattenArrayType(ty);
       Types.simpleType(ty);
       // print("makeComplexEnv -> 1 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
-      env1 = Env.extendFrameV(env, tv, NONE, Env.VAR_TYPED(), {});
+      env1 = Env.extendFrameV(env, tv,NONE(), Env.VAR_TYPED(), {});
       env2 = makeComplexEnv(env1, vars);
     then 
       env2;
@@ -463,7 +463,7 @@ algorithm oenv := matchcontinue(env, tvars)
       // print("makeComplexEnv -> 2 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
       env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-        false,ty,bind,constOfForIteratorRange), NONE, Env.VAR_TYPED(), complexEnv);
+        false,ty,bind,constOfForIteratorRange),NONE(), Env.VAR_TYPED(), complexEnv);
       env2 = makeComplexEnv(env1, vars);
       //print(" done complex array\n");
     then 
@@ -483,7 +483,7 @@ algorithm oenv := matchcontinue(env, tvars)
       // print("makeComplexEnv -> 3 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
       env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,ty,DAE.UNBOUND(),constOfForIteratorRange), NONE, Env.VAR_TYPED(), complexEnv);
+          false,ty,DAE.UNBOUND(),constOfForIteratorRange),NONE(), Env.VAR_TYPED(), complexEnv);
       env2 = makeComplexEnv(env1, vars);
     then 
       env2;
@@ -687,17 +687,17 @@ algorithm
       equation
         (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
         e1 = replaceComplex(e1,ht2); 
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
       then
         env1;
     // assign, tuple assign
     case(env, SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
-        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
         resExp = replaceComplex(resExp,ht2);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
-        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
+        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true,NONE(), NONE, Ceval.MSG());
         env1 = setValues(crefexps,types,values,env);
       then
         env1;
@@ -743,7 +743,7 @@ algorithm
     // error for unknown range
     case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
@@ -761,18 +761,18 @@ algorithm
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE, Ceval.MSG());
       then
         env;
     // assert(false, ...) gives error!
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true, NONE,true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE, Ceval.MSG());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
+        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
         fail();
@@ -873,7 +873,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
     equation
       (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       e1 = replaceComplex(e1,ht2);
-      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
     then
       value;
   // some type we need to convert into
@@ -882,7 +882,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
       (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
-      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true,NONE(), NONE, Ceval.MSG());
     then
       value;
   // failure
@@ -1113,7 +1113,7 @@ protected function addForLoopScope
 algorithm
   baseType := Types.typeOfValue(startValue);
   baseValue := typeOfValue(baseType);
-  newEnv := Env.openScope(env, false, SOME(Env.forScopeName), NONE);
+  newEnv := Env.openScope(env, false, SOME(Env.forScopeName),NONE());
   newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE()), iterVariability, constOfForIteratorRange); 
 end addForLoopScope;
 
@@ -1365,7 +1365,7 @@ algorithm
     case({}, ty , SOME(value))
       then
         value;
-    case({}, ty , NONE)
+    case({}, ty ,NONE())
       equation
         value = typeOfValue(ty);
       then
@@ -1548,7 +1548,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
   case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
       (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
-      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
+      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);
       values2 = Util.listReplaceAt(val2,(x-1),values1);

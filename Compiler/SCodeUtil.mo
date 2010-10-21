@@ -1496,7 +1496,7 @@ algorithm
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(), NONE, false, spec, NONE)
+        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(),NONE(), false, spec,NONE())
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false" ;
       then

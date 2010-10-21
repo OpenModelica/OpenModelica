@@ -1479,7 +1479,7 @@ algorithm
         printElementspec(spec);
         Print.printBuf(", ");
         printInfo(info);
-        Print.printBuf("), NONE)");
+        Print.printBuf("),NONE())");
       then
         ();
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
@@ -3926,7 +3926,7 @@ algorithm
         printExp(exp);
         Print.printBuf(")");
       then ();
-    case ((id, NONE))
+    case ((id,NONE()))
       equation
         Print.printBuf("(");
         Print.printBuf(id);

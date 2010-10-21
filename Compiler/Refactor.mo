@@ -640,7 +640,7 @@ algorithm
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         trans = listAppend({diagramTrans},{iconTrans});
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans, NONE)),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,NONE())),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))
 
       then res;
 
@@ -655,7 +655,7 @@ algorithm
         rot = getRotationDegree(listAppend(res,rest));
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
-        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans}, NONE))/*NONE*/,com)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))*/
+        res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD({diagramTrans},NONE()))/*NONE*/,com)};//:: res; /*SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))*/
 
       then res;
 
@@ -1930,7 +1930,7 @@ algorithm
     case ({},_)
 
     then
-      Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())}, NONE)), NONE)/*Create default*/;
+      Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())},NONE())),NONE())/*Create default*/;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
 
@@ -2637,7 +2637,7 @@ algorithm
 
       equation
 
-        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(1)))), NONE) :: lst;
+        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(1)))),NONE()) :: lst;
 
       then lst;
 
@@ -2793,7 +2793,7 @@ algorithm
       equation
 
         false = isFillColorInList(listAppend(oLst,tLst));
-        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(3)))), NONE)::tLst;
+        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(3)))),NONE())::tLst;
 
       then (oLst,tLst);
 

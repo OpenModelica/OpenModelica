@@ -2079,7 +2079,7 @@ algorithm
         expl = Util.listMap(expl, simplify1);
         e::expl = expl;
         valueLst = Util.listMap(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE, NONE), valueLst, DAE.C_CONST,Prefix.NOPRE());
+        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE,NONE()), valueLst, DAE.C_CONST,Prefix.NOPRE());
       then
         outExp;
   end matchcontinue;

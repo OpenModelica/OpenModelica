@@ -546,7 +546,7 @@ algorithm
     case ({},_,_) then "";
     case ((e :: es),pos,repl)
       equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_1 = VarTransform.replaceExp(e, repl,NONE());
         //s1 = SimCodegen.printExpCppStr(e_1);
         s1 = "NOT WORKING";
         pos_1 = pos + 1;

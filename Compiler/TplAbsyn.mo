@@ -579,7 +579,7 @@ algorithm
         stmts = listReverse(stmts);
         stmts = addOutPrefixes(stmts, oargs, {});
         (stmts, locals, accMMDecls) = inlineLastFunIfSingleCall(iargs, oargs, stmts, locals, accMMDecls);
-        mmFun = MM_FUN(true, tplname, iargs, oargs, locals, stmts, NONE);
+        mmFun = MM_FUN(true, tplname, iargs, oargs, locals, stmts,NONE());
       then 
         transformTemplateDefs(restTDefs, tplPackage, mmFun :: accMMDecls);
     
@@ -608,7 +608,7 @@ algorithm
     case ( iargs, oargs, 
           { MM_ASSIGN(rhs = MM_FN_CALL(fnName = IDENT(fidCalled)) ) },
           {}, 
-          MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts, NONE) :: accMMDecls)
+          MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts,NONE()) :: accMMDecls)
       equation
         true = stringEqual(fidCalled, fidLast);
         equality(iargs = iargsL);
@@ -1477,7 +1477,7 @@ algorithm
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls);
     
     //option without "="
-    case ( (optid, NONE) :: opts, accMMEscOpts,
+    case ( (optid,NONE()) :: opts, accMMEscOpts,
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         defoptval = lookupTupleList(defaultEscOptions, optid);
@@ -4044,27 +4044,27 @@ algorithm
         { (rhsMExp,ebranch), (REST_MATCH(),tbranch) };
     
     // List ... if valLst then / if not valLst then
-    case ( LIST_TYPE(_), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( LIST_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, LIST_MATCH({}), tbranch, ebranchOpt);
     // Option 
-    case ( OPTION_TYPE(_), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( OPTION_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, NONE_MATCH(), tbranch, ebranchOpt);
     // String and Text (auto-converted to String)
-    case ( STRING_TYPE(), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( STRING_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, STRING_MATCH(""), tbranch, ebranchOpt);
     //Integer
-    case ( INTEGER_TYPE(), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( INTEGER_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0", INTEGER_TYPE()), tbranch, ebranchOpt);
     //Real
-    case ( REAL_TYPE(), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( REAL_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("0.0", REAL_TYPE()), tbranch, ebranchOpt);
     //Boolean
-    case ( BOOLEAN_TYPE(), isnot, NONE, tbranch, ebranchOpt, tplPackage)
+    case ( BOOLEAN_TYPE(), isnot,NONE(), tbranch, ebranchOpt, tplPackage)
       then
        casesForTrueFalseCondition(isnot, LITERAL_MATCH("false", BOOLEAN_TYPE()), tbranch, ebranchOpt);
     

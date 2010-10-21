@@ -69,7 +69,7 @@ algorithm
                                     "public import Tpl;\n",
                                     "\n"
                                 }, true));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_3(txt, i_mmDeclarations);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
@@ -200,7 +200,7 @@ algorithm
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("algorithm\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_6(txt, i_sts);
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
@@ -366,7 +366,7 @@ algorithm
         TplAbsyn.TypedIdents i_outArgs;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_9(txt, i_outArgs);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -534,7 +534,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("  equation\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_14(txt, i_statements);
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
@@ -603,7 +603,7 @@ algorithm
         TplAbsyn.TypedIdents i_oas;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_16(txt, i_oas);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -642,7 +642,7 @@ algorithm
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("case ( "));
         txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_12(txt, i_mexps);
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
@@ -695,7 +695,7 @@ algorithm
                                        " :=\n",
                                        "matchcontinue("
                                    }, false));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_11(out_txt, i_inArgs);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
@@ -706,7 +706,7 @@ algorithm
   out_txt := typedIdents(out_txt, i_locals);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.popBlock(out_txt);
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_18(out_txt, i_matchCases, i_outArgs);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
@@ -821,7 +821,7 @@ public function typedIdents
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_22(out_txt, i_decls);
   out_txt := Tpl.popIter(out_txt);
 end typedIdents;
@@ -887,7 +887,7 @@ public function typedIdentsEx
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_24(out_txt, i_decls, i_idPrfx, i_typePrfx);
   out_txt := Tpl.popIter(out_txt);
 end typedIdentsEx;
@@ -974,7 +974,7 @@ algorithm
         list<TplAbsyn.TypeSignature> i_ofTypes;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("tuple<"));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_26(txt, i_ofTypes);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
@@ -1124,7 +1124,7 @@ algorithm
         txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("Tpl.ST_STRING_LIST({\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_28(txt, i_strList);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
@@ -1339,7 +1339,7 @@ algorithm
         list<TplAbsyn.Ident> i_args;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_34(txt, i_args);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -1424,7 +1424,7 @@ algorithm
       equation
         txt = pathIdent(txt, i_fnName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_36(txt, i_args, i_assignStr);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -1628,7 +1628,7 @@ algorithm
       equation
         txt = pathIdent(txt, i_tagName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_38(txt, i_fieldMatchings);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -1656,7 +1656,7 @@ algorithm
         list<TplAbsyn.MatchingExp> i_tupleArgs;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_39(txt, i_tupleArgs);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
@@ -1668,7 +1668,7 @@ algorithm
         list<TplAbsyn.MatchingExp> i_listElts;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_40(txt, i_listElts);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
@@ -1758,7 +1758,7 @@ public function mmStatements
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_42(out_txt, i_stmts);
   out_txt := Tpl.popIter(out_txt);
 end mmStatements;
@@ -1851,7 +1851,7 @@ algorithm
         txt = pathIdent(txt, i_importPackage);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING_LIST({
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING_LIST({
                                                                    "\n",
                                                                    "\n"
                                                                }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -1936,13 +1936,13 @@ algorithm
         txt = pathIdent(txt, i_name);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_46(txt, i_astDefs);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = Tpl.popBlock(txt);
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING_LIST({
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING_LIST({
                                                                    "\n",
                                                                    "\n"
                                                                }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -2102,7 +2102,7 @@ algorithm
         txt = Tpl.writeStr(txt, i_id);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_49(txt, i_recTags);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);

@@ -81,8 +81,8 @@ algorithm
 
     case ((DAELow.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceEquations(es, repl);
@@ -99,7 +99,7 @@ algorithm
 
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_1 = VarTransform.replaceExp(e, repl,NONE());
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
@@ -107,7 +107,7 @@ algorithm
 
     case ((DAELow.RESIDUAL_EQUATION(exp = e,source = source) :: es),repl)
       equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_1 = VarTransform.replaceExp(e, repl,NONE());
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
@@ -141,7 +141,7 @@ algorithm
     DAELow.WhenEquation elsePart,elsePart2;
 
     case (DAELow.WHEN_EQ(i,cr,e,NONE()),repl) equation
-        e1 = VarTransform.replaceExp(e, repl, NONE);
+        e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = Exp.simplify(e1);
         DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
     then DAELow.WHEN_EQ(i,cr1,e2,NONE());
@@ -149,13 +149,13 @@ algorithm
 			// Replacements makes cr negative, a = -b
 	  case (DAELow.WHEN_EQ(i,cr,e,NONE()),repl) equation
         DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
-        e1 = VarTransform.replaceExp(e, repl, NONE);
+        e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = Exp.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
     then DAELow.WHEN_EQ(i,cr1,e2,NONE());
 
     case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
-        e1 = VarTransform.replaceExp(e, repl, NONE);
+        e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = Exp.simplify(e1);
         DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
@@ -164,7 +164,7 @@ algorithm
 	  case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
         DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
-        e1 = VarTransform.replaceExp(e, repl, NONE);
+        e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = Exp.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
@@ -203,8 +203,8 @@ algorithm
          (DAELow.ARRAY_EQUATION(indx,expl2)::es_1);
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceEquations(es, repl);
@@ -212,8 +212,8 @@ algorithm
         (DAELow.EQUATION(e1_2,e2_2) :: es_1);
      case ((DAELow.EQUEQUATION(cr1,cr2) :: es),repl)
       equation
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr1,DAE.ET_OTHER()), repl, NONE);
-        DAE.CREF(cr2,_) = VarTransform.replaceExp(DAE.CREF(cr2,DAE.ET_OTHER()), repl, NONE);
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr1,DAE.ET_OTHER()), repl,NONE());
+        DAE.CREF(cr2,_) = VarTransform.replaceExp(DAE.CREF(cr2,DAE.ET_OTHER()), repl,NONE());
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.EQUEQUATION(cr1,cr2) :: es_1);
@@ -229,14 +229,14 @@ algorithm
         (DAELow.ALGORITHM(id,expl1,expl2) :: es_1);
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e) :: es),repl)
       equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_1 = VarTransform.replaceExp(e, repl,NONE());
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.SOLVED_EQUATION(cr,e_2) :: es_1);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),repl)
       equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_1 = VarTransform.replaceExp(e, repl,NONE());
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
@@ -327,7 +327,7 @@ algorithm
     case ({},_) then {};
 
     case(DAELow.IFEQUATION(conds,tbs,fb) :: es,repl) equation
-       conds1 = Util.listMap2(conds, VarTransform.replaceExp, repl, NONE);
+       conds1 = Util.listMap2(conds, VarTransform.replaceExp, repl,NONE());
         tbs1 = Util.listMap1(tbs,replaceEquations,repl);
         fb1 = replaceEquations(fb,repl);
         es = replaceIfEquations(es,repl);
@@ -365,8 +365,8 @@ algorithm
     case ({},_) then {};
     case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims,source=source) :: es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceMultiDimEquations(es, repl);
@@ -425,8 +425,8 @@ algorithm
     case ({},_) then {};
     case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceStatementLst(es, repl);
@@ -434,8 +434,8 @@ algorithm
         (DAE.STMT_ASSIGN(type_,e1_2,e2_2,source):: es_1);
     case ((DAE.STMT_TUPLE_ASSIGN(type_=type_,expExpLst=expExpLst,exp=e2,source=source)::es),repl)
       equation
-        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -443,7 +443,7 @@ algorithm
     case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e1,source=source)::es),repl)
       local DAE.ComponentRef cr;
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -451,7 +451,7 @@ algorithm
     case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         else_1 = replaceElse(else_,repl);
         es_1 = replaceStatementLst(es, repl);
@@ -463,7 +463,7 @@ algorithm
         DAE.Ident ident;
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -471,7 +471,7 @@ algorithm
     case ((DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -480,7 +480,7 @@ algorithm
       local list<Integer> helpVarIndices;
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -490,15 +490,15 @@ algorithm
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         statement_1::{} = replaceStatementLst({statement}, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_WHEN(e1_2,statementLst_1,SOME(statement_1),helpVarIndices,source):: es_1);
     case ((DAE.STMT_ASSERT(cond=e1,msg=e2,source=source)::es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceStatementLst(es, repl);
@@ -506,15 +506,15 @@ algorithm
         (DAE.STMT_ASSERT(e1_2,e2_2,source):: es_1);
     case ((DAE.STMT_TERMINATE(msg=e1,source=source)::es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TERMINATE(e1_2,source):: es_1);
     case ((DAE.STMT_REINIT(var=e1,value=e2,source=source)::es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
-        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
+        e2_1 = VarTransform.replaceExp(e2, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceStatementLst(es, repl);
@@ -522,7 +522,7 @@ algorithm
         (DAE.STMT_REINIT(e1_2,e2_2,source):: es_1);
     case ((DAE.STMT_NORETCALL(exp=e1,source=source)::es),repl)
       equation
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
@@ -567,8 +567,8 @@ algorithm
         (DAE.STMT_LABEL(str,source):: es_1); 
     case ((DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=expExpLst,source=source)::es),repl)
       equation
-        inputExps = Util.listMap2(inputExps,VarTransform.replaceExp,repl, NONE);
-        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
+        inputExps = Util.listMap2(inputExps,VarTransform.replaceExp,repl,NONE());
+        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl,NONE());
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_MATCHCASES(matchType,inputExps,expExpLst_1,source):: es_1);
@@ -600,7 +600,7 @@ algorithm
     case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
-        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = Exp.simplify(e1_1);
         else_1 = replaceElse(else_,repl);
       then

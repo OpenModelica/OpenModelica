@@ -552,7 +552,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true, SOME(st_1),NONE(), Ceval.MSG());
       then
         ("",st_2);
 
@@ -562,7 +562,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1),NONE(), Ceval.MSG());
       then
         (str,st_2);
 
@@ -587,7 +587,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1),NONE(), Ceval.MSG());
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
@@ -603,7 +603,7 @@ algorithm
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
-        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1),NONE(), Ceval.MSG());
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
         ("",newst);
@@ -922,7 +922,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1),NONE(), Ceval.MSG());
       then
         (value,st_2);
   end matchcontinue;
@@ -1326,7 +1326,7 @@ algorithm
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_UNTYPED(), {});
+          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -2824,7 +2824,7 @@ algorithm
     case (p,comp_reps)
       equation
         comp_rep = firstComponentReplacement(comp_reps);
-        ((p_1,_,_)) = traverseClasses(p, NONE, renameComponentVisitor, comp_rep, true) "traverse protected" ;
+        ((p_1,_,_)) = traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
         res = restComponentReplacementRules(comp_reps);
         p_2 = renameComponentFromComponentreplacements(p_1, res);
       then
@@ -4411,7 +4411,7 @@ protected
 algorithm
   p_1 := SCodeUtil.translateAbsyn2SCode(p);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-  ((p_1,_,(comps,p,env))) := traverseClasses(p, NONE, extractAllComponentsVisitor,
+  ((p_1,_,(comps,p,env))) := traverseClasses(p,NONE(), extractAllComponentsVisitor,
           (COMPONENTS({},0),p,env), true) "traverse protected" ;
 end extractAllComponents;
 
@@ -6776,14 +6776,14 @@ algorithm
     case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
     
     // Clear modification m(...)
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},NONE())))
       equation
         true = stringEqual(name, submodident);
       then
         Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,NONE())),cmt)::rest;
     
     // Clear modification, m with no submodifiers
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {},NONE())))
       equation
         true = stringEqual(name, submodident);
       then
@@ -7465,7 +7465,7 @@ algorithm
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
-        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = System.stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -7479,7 +7479,7 @@ algorithm
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
-        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = System.stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -9908,8 +9908,8 @@ algorithm
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         tppath = Absyn.crefToPath(tp);
-        annotation_ = annotationListToAbsynComment(nargs, NONE);
-        modification = modificationToAbsyn(nargs, NONE);
+        annotation_ = annotationListToAbsynComment(nargs,NONE());
+        modification = modificationToAbsyn(nargs,NONE());
         (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
@@ -9927,8 +9927,8 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         tppath = Absyn.crefToPath(tp);
-        annotation_ = annotationListToAbsynComment(nargs, NONE);
-        modification = modificationToAbsyn(nargs, NONE);
+        annotation_ = annotationListToAbsynComment(nargs,NONE());
+        modification = modificationToAbsyn(nargs,NONE());
         (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
@@ -11308,7 +11308,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        cmt = annotationListToAbsynComment(nargs, NONE);
+        cmt = annotationListToAbsynComment(nargs,NONE());
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},w,ts), p);
       then
@@ -11318,7 +11318,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
-        cmt = annotationListToAbsynComment(nargs, NONE);
+        cmt = annotationListToAbsynComment(nargs,NONE());
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_),ts), p);
       then
@@ -16772,7 +16772,7 @@ output Absyn.Program newP;
 algorithm
   newP := matchcontinue(p)
     case(p) equation
-      ((newP,_,_)) = traverseClasses(p, NONE, transformFlatClass, 0, true) "traverse protected" ;
+      ((newP,_,_)) = traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
       then newP;
   end matchcontinue;
 end transformFlatProgram;

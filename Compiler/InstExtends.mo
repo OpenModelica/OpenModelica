@@ -425,7 +425,7 @@ algorithm
         cl = SCode.CLASS(name2,partialPrefix2,encapsulatedPrefix2,restriction2,classDef,info2);
         compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, cc2);
 
-        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
+        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods,NONE());
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);

@@ -122,14 +122,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
       then
         (cache, t, env);
 

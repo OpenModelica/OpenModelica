@@ -1670,7 +1670,7 @@ algorithm
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs)) :: rest, impl)
       equation
         // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& Exp.typeOfString(rhs));
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE, NONE, Ceval.MSG());
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE, Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then
@@ -1678,7 +1678,7 @@ algorithm
     /*
     case (cache,env,cname,(DAE.EQUATION(exp = DAE.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
       equation
-        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl, NONE, NONE, Ceval.MSG());
+        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE, Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then

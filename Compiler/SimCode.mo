@@ -738,7 +738,7 @@ algorithm
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
@@ -865,7 +865,7 @@ algorithm
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
@@ -6994,7 +6994,7 @@ algorithm
     case (DAE.TYPES_VAR(name=name, type_=typesType))
       equation
         expType = Types.elabType(typesType);
-      then VARIABLE(DAE.CREF_IDENT(name, expType, {}), expType, NONE, {});
+      then VARIABLE(DAE.CREF_IDENT(name, expType, {}), expType,NONE(), {});
   end matchcontinue;
 end typesVar;
 

@@ -7425,7 +7425,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(v));
       then
@@ -10278,7 +10278,7 @@ algorithm
         ((VAR(_,STATE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = crefPrefixDer(cr);
         dummyder = crefPrefixDer(dummyder);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -10287,7 +10287,7 @@ algorithm
       equation
         ((VAR(_,DUMMY_DER(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = crefPrefixDer(cr);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -10296,7 +10296,7 @@ algorithm
       equation
         ((VAR(_,VARIABLE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = crefPrefixDer(cr);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -11069,7 +11069,7 @@ algorithm
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        arr_1 = Util.arrayExpand(expandsize_1, arr,NONE());
         n_1 = n + 1;
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(e));
       then
@@ -13494,7 +13494,7 @@ algorithm
 					values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _)
 			equation
 				((e2, _)) = Exp.traverseExp(e, replaceCrefsWithValues, vars);
-				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false, NONE, NONE, Ceval.MSG());
+				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE, Ceval.MSG());
 			then
 				VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
 		case (_, _) then inVar;
