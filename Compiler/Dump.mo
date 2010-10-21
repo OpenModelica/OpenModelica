@@ -2464,7 +2464,7 @@ algorithm
     local
       Ident s1,str;
       Absyn.Exp e;
-    case NONE then "";
+    case NONE() then "";
     case SOME(e)
       equation
         s1 = printExpStr(e);
@@ -4892,7 +4892,7 @@ end printBool;
 public function getOptionStr "function getOptionStr
 
   Retrieve the string from a string option.
-  If NONE return empty string.
+  If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -4921,7 +4921,7 @@ end getOptionStr;
 public function getOptionStrDefault "function getOptionStrDefault
 
   Retrieve the string from a string option.
-  If NONE return default string.
+  If NONE() return default string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;

@@ -1465,16 +1465,16 @@ algorithm
     local list<Env.Frame> env;
     case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE(),NONE()),
-          NONE));
+          NONE()));
     case (env,Absyn.C_EQUATIONSECTION(boolean = _)) then ((
           DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_ALGORITHMSECTION(boolean = _)) then ((
           DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_ELEMENT(element = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE(),NONE()),NONE()));
     case (env,Absyn.C_EXPRESSION(exp = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE(),NONE()),
-          NONE));
+          NONE()));
     case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE(),NONE()),
-          NONE));
+          NONE()));
   end matchcontinue;
 end elabCodeType;
 
@@ -10524,7 +10524,7 @@ algorithm
         (cache, isBuiltinFunc, path) = isBuiltinFunc(cache,path,pre);
         {t} = typelist;
         (tt,optPath) = t;
-        t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE there";
+        t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE() there";
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);

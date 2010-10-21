@@ -270,7 +270,7 @@ algorithm
         tty = getTypeFromName(apath,env);
         tty = addDims(tty,adim,env, ht2);
         (binding as DAE.VALBOUND(vv,_)) = makeBinding(mod1,env,tty, ht2);
-        // print("extendEnvWithInputArgs -> NONE component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(adim) +& "\n");        
+        // print("extendEnvWithInputArgs -> NONE() component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(adim) +& "\n");        
         env1 = Env.extendFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,tty,binding,NONE()),NONE(), Env.VAR_TYPED(), {});

@@ -1758,7 +1758,7 @@ algorithm
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
-    case (RP_NONE(_), var, nequal,info) // Optimizes comparison with NONE by not creating an empty option to compare with
+    case (RP_NONE(_), var, nequal,info) // Optimizes comparison with NONE() by not creating an empty option to compare with
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("optionNone",{})), Absyn.FUNCTIONARGS({var}, {}));

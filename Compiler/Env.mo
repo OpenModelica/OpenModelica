@@ -837,7 +837,7 @@ public function getEnvPath "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path
   option I.e. it collects all identifiers of each frame until it reaches
   the topmost unnamed frame. If the environment is only the topmost frame,
-  NONE is returned."
+  NONE() is returned."
   input Env inEnv;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm
@@ -1243,7 +1243,7 @@ algorithm
 
     case (fullpath,CACHE(arr,ie,ef),env)
       equation
-        NONE = arr[1];
+        NONE() = arr[1];
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
         //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
@@ -2078,7 +2078,7 @@ end avlTreeGet;
 
 protected function getOptionStr "function getOptionStr
   Retrieve the string from a string option.
-  If NONE return empty string."
+  If NONE() return empty string."
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   output String outString;

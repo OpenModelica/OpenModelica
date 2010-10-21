@@ -442,7 +442,7 @@ uniontype Element "- Elements
   CLASSDEF  (for local class definitions)
   COMPONENT (for local variables). and
   IMPORT    (for import clauses)
-  The baseclass name is initially NONE in the translation,
+  The baseclass name is initially NONE() in the translation,
   and if an element is inherited from a base class it is
   filled in during the instantiation process."
   record EXTENDS "the extends element"
@@ -1005,7 +1005,7 @@ algorithm
       String str,res;
       Absyn.Exp e;
       Boolean b;
-    case NONE then "";
+    case NONE() then "";
     case SOME((e,b))
       equation
         str = Dump.printExpStr(e);

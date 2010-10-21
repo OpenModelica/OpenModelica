@@ -253,11 +253,11 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case({},dae) then ({},dae);
-    case(NONE :: cdr,dae)
+    case( NONE():: cdr,dae)
       equation
         (cdr_1,dae) = partEvalVarLst(cdr,dae);
       then
-        (NONE :: cdr_1,dae);
+        ( NONE():: cdr_1,dae);
     case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp,bindValue,arryDim,index,
                          source,values,comment,flowPrefix,streamPrefix)) :: cdr,dae)
       equation
@@ -324,11 +324,11 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case({},dae) then ({},dae);
-    case(NONE :: cdr,dae)
+    case( NONE():: cdr,dae)
       equation
         (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
-        (NONE :: cdr_1,dae);
+        ( NONE():: cdr_1,dae);
 
     case(SOME(DAELow.EQUATION(e1,e2,source)) :: cdr,dae)
       equation
@@ -1049,7 +1049,7 @@ end elabExpList;
 
 protected function elabExpOption
 "function: elabExpOption
-	elabs an exp option if it is SOME, returns NONE otherwise"
+	elabs an exp option if it is SOME, returns NONE() otherwise"
 	input Option<DAE.Exp> inExp;
 	input list<DAE.Function> inElementList;
 	output Option<DAE.Exp> outExp;

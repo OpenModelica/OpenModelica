@@ -1922,7 +1922,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE)),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to right node" ;
         rkeystr = Exp.printComponentRefStr(rkey);
@@ -1940,7 +1940,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE),right = right),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to left node" ;
         rkeystr = Exp.printComponentRefStr(rkey);
@@ -2041,7 +2041,7 @@ algorithm
         t_1 = treeAdd2(t, key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as NONE)),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to right node" ;
         rkeystr = Exp.printComponentRefStr(rkey);
@@ -2059,7 +2059,7 @@ algorithm
         t_1 = treeAdd2(t, key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
-    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as NONE),right = right),key,value)
+    case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to left node" ;
         rkeystr = Exp.printComponentRefStr(rkey);

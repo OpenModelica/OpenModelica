@@ -306,7 +306,7 @@ protected function avlTreeToList2 "help function to avlTreeToList"
 algorithm
   lst := matchcontinue(tree)
   local Option<AvlTree> r,l; AvlKey k; AvlValue v;
-    case NONE then {};
+    case NONE() then {};
     case(SOME(AVLTREENODE(value = NONE(),left = l,right = r) )) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then lst;
@@ -679,7 +679,7 @@ end avlTreeGetSubs;
 protected function getOptionStr "function getOptionStr
 
   Retrieve the string from a string option.
-  If NONE return empty string.
+  If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;

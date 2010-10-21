@@ -618,7 +618,7 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
   output Boolean outBoolean;
   output SplicedExpData splicedExpData;
   output Env.Env outComponentEnv;
@@ -971,7 +971,7 @@ looks in the types
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output SplicedExpData outSplicedExpData;
   output Env.Env outClassEnv "only used for package constants";
   output Env.Env outComponentEnv "only used for package constants";
@@ -1062,7 +1062,7 @@ public function lookupVarInternal "function: lookupVarInternal
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
   output SplicedExpData splicedExpData;
   output Env.Env outClassEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
   output Env.Env outComponentEnv "the component environment of the variable";  
@@ -1151,7 +1151,7 @@ public function lookupVarInPackages "function: lookupVarInPackages
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
   output Env.Env outComponentEnv;
   output String name "We only return the environment the component was found in; not its FQ name.";
@@ -1303,7 +1303,7 @@ public function lookupVarLocal "function: lookupVarLocal
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";  
   output SplicedExpData splicedExpData;
   output Env.Env outClassEnv;
   output Env.Env outComponentEnv;
@@ -2504,7 +2504,7 @@ protected function lookupVarF "function: lookupVarF
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
+  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output SplicedExpData splicedExpData;  
   output Env.Env outComponentEnv;
   output String name;

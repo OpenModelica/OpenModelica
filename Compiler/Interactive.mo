@@ -6727,7 +6727,7 @@ end setComponentSubmodifierInCompitems;
 protected function createOptModificationFromEltargs
 "function: createOptModificationFromEltargs
   Creates an Modification option from an ElementArg
-  list. If list is empty, NONE is created."
+  list. If list is empty, NONE() is created."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Option<Absyn.Exp> inExpOpt;
   output Option<Absyn.Modification> outAbsynModificationOption;
@@ -12545,7 +12545,7 @@ algorithm
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
       equation
         (cache,c,cenv) = Lookup.lookupClass(Env.emptyCache(), env, tp, true);
-        NONE = Env.getEnvPath(cenv);
+        NONE() = Env.getEnvPath(cenv);
         cref = Absyn.pathToCref(tp);
         then {cref};
 
@@ -12619,7 +12619,7 @@ algorithm
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
         (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, path, true);
-        NONE = Env.getEnvPath(env_1);
+        NONE() = Env.getEnvPath(env_1);
         cref = Absyn.pathToCref(path);
       then
         (cref :: cl);
@@ -16361,7 +16361,7 @@ algorithm
     case (nargs)
       equation
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
-        NONE = commentToAbsyn(nargs);
+        NONE() = commentToAbsyn(nargs);
       then
         NONE();
     case (nargs)
@@ -17834,7 +17834,7 @@ algorithm
       equation
         true = stringEqual(f,f1);
         // we could not get the modification time
-        NONE = System.getFileModificationTime(f);
+        NONE() = System.getFileModificationTime(f);
       then
         NONE(); // report none so that it gets loaded
     case (f, _::rest) // searching in the rest
@@ -17875,7 +17875,7 @@ algorithm
     case (f, lf, pAst, true)
       equation
         // it seems the file was not loaded yet or the one on the disk is newer
-        NONE = getLoadedFileInfo(f, lf);
+        NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f);
         parsed = expandUnionTypes(parsed);
@@ -17888,7 +17888,7 @@ algorithm
     case (f, lf, pAst, false)
       equation
         // it seems the file was not loaded yet or the one on the disk is newer
-        NONE = getLoadedFileInfo(f, lf);
+        NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f);
         parsed = expandUnionTypes(parsed);

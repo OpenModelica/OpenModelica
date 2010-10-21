@@ -475,7 +475,7 @@ algorithm
     case (arr,pos,lastpos)
       equation
         pos_1 = pos + 1;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
         res = valueArrayList2(arr, pos_1, lastpos);
       then
         (res);
@@ -569,7 +569,7 @@ end valueArraySetnth;
 
 public function valueArrayClearnth "
   author: PA
-  Clears the n:th variable in the ValueArray (set to NONE).
+  Clears the n:th variable in the ValueArray (set to NONE()).
 "
   input ValueArray valueArray;
   input Integer pos;
@@ -621,7 +621,7 @@ algorithm
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
       then
         fail();
   end matchcontinue;

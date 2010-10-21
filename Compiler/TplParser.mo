@@ -2852,7 +2852,7 @@ algorithm
       then (chars, linfo, SOME(exp));
    
    case (chars, linfo, _, _)
-      then (chars, linfo, NONE );
+      then (chars, linfo,NONE());
    
   end matchcontinue;
 end escOptionExp;
@@ -2990,7 +2990,7 @@ algorithm
       then (chars, linfo, SOME(id) );
     
     case (chars, linfo)
-      then (chars, linfo, NONE );
+      then (chars, linfo,NONE());
 
   end matchcontinue;
 end indexedByOpt;

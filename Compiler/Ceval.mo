@@ -1105,7 +1105,7 @@ algorithm
         (cache,v,st) = handler(cache,env, args, impl, st, msg);
       then
         (cache,v,st);
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE),dimOpt,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE()),dimOpt,msg)
       equation
         (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
         (cache,newval,st) = cevalCallFunction(cache, env, e, vallst, impl, st, dimOpt, msg);
@@ -6016,7 +6016,7 @@ algorithm
     case (arr,pos,lastpos)
       equation
         pos_1 = pos + 1;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
         res = valueArrayList2(arr, pos_1, lastpos);
       then
         (res);
@@ -6106,7 +6106,7 @@ end valueArraySetnth;
 
 public function valueArrayClearnth
 "author: PA
-  Clears the n:th variable in the ValueArray (set to NONE)."
+  Clears the n:th variable in the ValueArray (set to NONE())."
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
@@ -6152,7 +6152,7 @@ algorithm
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
       then
         fail();
   end matchcontinue;

@@ -4158,7 +4158,7 @@ algorithm
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
 
-    // a NONE means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
+    // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
     case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
       then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
   end matchcontinue;
@@ -4353,7 +4353,7 @@ protected function avlTreeToList2 "help function to avlTreeToList"
 algorithm
   lst := matchcontinue(tree)
   local Option<DAE.AvlTree> r,l; DAE.AvlKey k; DAE.AvlValue v;
-    case NONE then {};
+    case NONE() then {};
     case(SOME(DAE.AVLTREENODE(value = NONE(),left = l,right = r) )) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then lst;
@@ -4696,7 +4696,7 @@ end avlTreeGet;
 protected function getOptionStr "function getOptionStr
 
   Retrieve the string from a string option.
-  If NONE return empty string.
+  If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;

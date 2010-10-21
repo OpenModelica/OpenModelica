@@ -570,7 +570,7 @@ algorithm
         (localCache,pat,temp3,localConstTagEnv,status) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info);
       then (localCache,pat,temp3,localConstTagEnv,status);
 
-        // NONE EXPRESSION
+        // NONE() EXPRESSION
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",_)),localVar,localAsBinds,localCache,localEnv,localConstTagEnv,_)
     then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv,Util.SUCCESS());
 
@@ -635,7 +635,7 @@ algorithm
 
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
 
-        // NONE EXPRESSION
+        // NONE() EXPRESSION
     case (Absyn.CALL(Absyn.CREF_IDENT("NONE",_),Absyn.FUNCTIONARGS({},{})),localVar,
         localAsBinds,localCache,localEnv,localConstTagEnv,_)
       then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv,Util.SUCCESS());

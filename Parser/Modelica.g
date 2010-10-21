@@ -1026,18 +1026,22 @@ name_path_star2 returns [void* ast, int unqual] :
 component_reference returns [void* ast] :
   (dot=DOT)? cr=component_reference2
     {
-      $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr) : cr;
+      $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr.ast) : cr.ast;
     }
   | WILD {$ast = Absyn__WILD;}
   ;
 
-component_reference2 returns [void* ast] :
+component_reference2 returns [void* ast] @init {
+  cr.ast = 0;
+} :
     (id=IDENT | id=OPERATOR) ( arr=array_subscripts )? ( DOT cr=component_reference2 )?
     {
-      if (cr)
-        ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr);
+      if (cr.ast)
+        $ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr.ast);
       else {
-        ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
+        /* Disable this check if it is too slow */
+        modelicaParserAssert(!metamodelica_enabled() || strcmp("NONE",(char*)$id.text->chars) != 0, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you!", component_reference2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        $ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
       }
     }
   ;

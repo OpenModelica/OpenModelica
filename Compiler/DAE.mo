@@ -608,7 +608,7 @@ uniontype Var "- Variables"
     Boolean protected_ "protected" ;
     Type type_ "type" ;
     Binding binding "binding ; equation modification" ;
-    Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE if is NOT a for iterator";
+    Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
 
 end Var;
@@ -690,7 +690,7 @@ public uniontype TType "-TType contains the actual type"
   end T_BOOL;
 
   record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
-    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
+    Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
     list<Var> literalVarLst;

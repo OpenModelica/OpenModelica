@@ -2443,7 +2443,7 @@ algorithm
       DAE.Exp e;
       Values.Value e_val;
       DAE.Properties prop;
-    case NONE then "";
+    case NONE() then "";
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       equation
         str = Exp.printExpStr(e);

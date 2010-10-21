@@ -75,7 +75,7 @@ public
 type ForIterator = tuple<Ident, Option<Exp>>
 "For Iterator -
    these are used in:
-   * for loops where the expression part can be NONE and then the range
+   * for loops where the expression part can be NONE() and then the range
      is taken from an array variable that the iterator is used to index,
      see 3.3.3.2 Several Iterators from Modelica Specification.
    * in array iterators where the expression should always be SOME(Exp),
@@ -83,7 +83,7 @@ type ForIterator = tuple<Ident, Option<Exp>>
 public type ForIterators = list<ForIterator>
 "For Iterators -
    these are used in:
-   * for loops where the expression part can be NONE and then the range
+   * for loops where the expression part can be NONE() and then the range
      is taken from an array variable that the iterator is used to index,
      see 3.3.3.2 Several Iterators from Modelica Specification.
    * in array iterators where the expression should always be SOME(Exp),
@@ -2997,7 +2997,7 @@ end joinPathsOpt;
 
 public function selectPathsOpt "function: selectPathsOpt
   This function selects the second path when the first one
-  is NONE otherwise it will select the first one."
+  is NONE() otherwise it will select the first one."
   input Option<Path> inPath1;
   input Path inPath2;
   output Path outPath;
@@ -3851,7 +3851,7 @@ algorithm outoEle := matchcontinue(ele, oEle)
     Variability v1,v2;
     Direction d1,d2;
     ArrayDim ad1,ad2;
-  case(ele, NONE ) then SOME(ele);
+  case(ele,NONE()) then SOME(ele);
   case(ATTR(b1,bStream1,v1,d1,ad1), SOME(ATTR(b2,bStream2,v2,d2,ad2)))
     equation
       b1 = boolOr(b1,b2);

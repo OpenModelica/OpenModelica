@@ -2089,7 +2089,7 @@ algorithm
         tys = instRealClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
       then
-        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
 
     /* Integer class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
@@ -2097,7 +2097,7 @@ algorithm
       equation
         tys =  instIntegerClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_INTEGER(tys),NONE()));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
 
     /* String class */
     case (cache,env,ih,store,mods,pre,csets, ci_state,
@@ -2105,7 +2105,7 @@ algorithm
       equation
         tys =  instStringClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_STRING(tys),NONE()));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
 
     /* Boolean class */
     case (cache,env,ih,store,mods,pre,csets,ci_state,
@@ -2113,7 +2113,7 @@ algorithm
       equation
         tys =  instBooleanClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE()));
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE */,NONE(),NONE(),graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
 
     // adrpo: 2010-09-27: here we do two things at once, but not correctly!
     // Instantiate enumeration class at top level Prefix.NOPRE 
@@ -2168,7 +2168,7 @@ algorithm
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
         tys2 = listAppend(tys, tys1); // <--- this is wrong as the tys belong to the component variable not the Enumeration Class!        
       then
-        (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE */,NONE(),NONE(),graph);
+        (cache,env_3,ih,store,DAEUtil.emptyDae,csets,ci_state_1,tys2,bc /* NONE() */,NONE(),NONE(),graph);
 
    	/* Ignore functions if not implicit instantiation */
     case (cache,env,ih,store,mods,pre,csets,ci_state,cls,_,_,(impl as false),_,graph,_)
@@ -6340,7 +6340,7 @@ algorithm
     // No envpath, nothing to check.
     case(env,cenv,ci_state,cl)
       equation
-        NONE = Env.getEnvPath(env);
+        NONE() = Env.getEnvPath(env);
       then ();
     // No recursive definition, succeed.
     case(env,cenv,ci_state,SCode.CLASS(name=name))
@@ -6742,7 +6742,7 @@ algorithm
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
           SCode.COMPONENT(component = n1,typeSpec = t,modifications = mod,comment = comment, info = nfo)),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
-                          typeSpec = t2,modifications = old_mod,cc=(cc as NONE)),
+                          typeSpec = t2,modifications = old_mod,cc=(cc as NONE())),
           pre,ci_state,csets,impl,cmod)
       equation
         true = stringEqual(n1, n2);
@@ -8001,7 +8001,7 @@ algorithm
             false,
             (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
-            NONE),
+            NONE()),
           NONE, Env.VAR_UNTYPED(), {});  
       then env;
     case (_, _)
@@ -8232,7 +8232,7 @@ algorithm
       then
         (cache,env,ih,csets,updatedComps);
 
-    // Variable with NONE element is already instantiated.
+    // Variable with NONE() element is already instantiated.
     case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       local DAE.Var ty; Env.InstStatus is;
       equation
@@ -12179,7 +12179,7 @@ algorithm
         (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    /* Non constant expression return NONE */
+    /* Non constant expression return NONE() */
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
@@ -12187,7 +12187,7 @@ algorithm
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
-        NONE = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
+        NONE() = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -12226,7 +12226,7 @@ algorithm
         (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    /* non constant expression, return NONE */
+    /* non constant expression, return NONE() */
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
@@ -12234,7 +12234,7 @@ algorithm
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
-        NONE = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
+        NONE() = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -12273,7 +12273,7 @@ algorithm
         (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    /* got non-constant expression, return NONE */
+    /* got non-constant expression, return NONE() */
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
@@ -12281,7 +12281,7 @@ algorithm
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
-        NONE = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
+        NONE() = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -12320,7 +12320,7 @@ algorithm
         (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    /* Non constant expression return NONE */
+    /* Non constant expression return NONE() */
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
@@ -12328,7 +12328,7 @@ algorithm
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
-        NONE = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
+        NONE() = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE());
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -14602,7 +14602,7 @@ algorithm
     case (arr,pos,lastpos)
       equation
         pos_1 = pos + 1;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
         res = valueArrayList2(arr, pos_1, lastpos);
       then
         (res);
@@ -14692,7 +14692,7 @@ end valueArraySetnth;
 
 public function valueArrayClearnth
 "author: PA
-  Clears the n:th variable in the ValueArray (set to NONE)."
+  Clears the n:th variable in the ValueArray (set to NONE())."
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
@@ -14742,7 +14742,7 @@ algorithm
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
       then
         fail();
   end matchcontinue;

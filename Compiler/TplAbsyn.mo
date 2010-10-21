@@ -2982,7 +2982,7 @@ algorithm
     local
       StringToken st;
       
-    case ( NONE )
+    case NONE()
       then MM_LITERAL("NONE");
     
     case ( SOME(st) )
@@ -4126,7 +4126,7 @@ algorithm
     case ( SOME(ebranch) ) then  ebranch;
     
     //empty map-argument list will generate no code
-    case ( NONE )          then  MAP_ARG_LIST({});
+    case NONE()          then  MAP_ARG_LIST({});
     
     //cannot happen
     case (_ )
@@ -5200,7 +5200,7 @@ algorithm
     
     case ( IDENT(ident = typeident) )
       then 
-        ( NONE, typeident );
+        (NONE(), typeident );
     
     case ( PATH_IDENT(ident = pckgident, path = IDENT(ident = typeident) ) )
       then 
@@ -5273,7 +5273,7 @@ algorithm
       TypeInfo typeinfo;
       list<ASTDef> astDefs;
       
-    case ( NONE, typeident, 
+    case (NONE(), typeident, 
           AST_DEF(
             importPackage = importckg,
             isDefault = true,
@@ -5312,7 +5312,7 @@ algorithm
       then 
         (typepckg, typeinfo);
     
-    case ( NONE, typeident, {} )
+    case (NONE(), typeident, {} )
       equation
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.\n");
@@ -5688,7 +5688,7 @@ algorithm
     local
       PathIdent path, pckgpath;
 
-    case ( _, NONE )
+    case ( _,NONE())
       then 
         ();
     

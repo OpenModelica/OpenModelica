@@ -7495,7 +7495,7 @@ algorithm
     case (VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
         (pos < n) = true;
-        NONE = arr[pos + 1];
+        NONE() = arr[pos + 1];
         print("vararray_nth has NONE!!!\n");
       then
         fail();
@@ -14719,7 +14719,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE)),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to right node";
         rkeystr = Exp.printComponentRefStr(rkey);
@@ -14737,7 +14737,7 @@ algorithm
         t_1 = treeAdd(t, key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE),rightSubTree = right),key,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,value)
       equation
         keystr = Exp.printComponentRefStr(key) "Insert to left node";
         rkeystr = Exp.printComponentRefStr(rkey);
