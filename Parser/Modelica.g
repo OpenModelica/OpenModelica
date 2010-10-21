@@ -291,7 +291,9 @@ composition2 returns [void* ast] :
   )
   ;
 
-external_clause returns [void* ast] :
+external_clause returns [void* ast] @init {
+  retexp.ast = 0;
+} :
         EXTERNAL
         ( lang=language_specification )?
         ( ( retexp=component_reference EQUALS )?
@@ -299,7 +301,7 @@ external_clause returns [void* ast] :
         ( ann1 = annotation )? SEMICOLON
         ( ann2 = external_annotation )?
           {
-            ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
+            ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp.ast), or_nil(expl), mk_some_or_none(ann1));
             ast = mk_cons(Absyn__EXTERNAL(ast, mk_some_or_none(ann2)), mk_nil());
           }
         ;
@@ -535,7 +537,7 @@ element_modification_or_replaceable returns [void* ast] :
     ;
 
 element_modification [void *each, void *final] returns [void* ast] :
-  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr, mk_some_or_none(mod), mk_some_or_none(cmt)); }
+  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt)); }
   ;
 
 element_redeclaration returns [void* ast] :
@@ -770,7 +772,7 @@ algorithm_list returns [void* ast] :
 connect_clause returns [void* ast] :
   CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR 
   {
-    ast = Absyn__EQ_5fCONNECT(cr1,cr2);
+    ast = Absyn__EQ_5fCONNECT(cr1.ast,cr2.ast);
   }
   ;
 
@@ -808,7 +810,7 @@ expression returns [void* ast] :
   ;
 
 part_eval_function_expression returns [void* ast] :
-  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr, fc); }
+  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr.ast, fc); }
   ;
 
 if_expression returns [void* ast] :
@@ -958,7 +960,7 @@ primary returns [void* ast] @declarations {
   | v=STRING           {$ast = Absyn__STRING(mk_scon((char*)$v.text->chars));}
   | T_FALSE            {$ast = Absyn__BOOL(RML_FALSE);}
   | T_TRUE             {$ast = Absyn__BOOL(RML_TRUE);}
-  | ptr=component_reference__function_call {$ast = ptr;}
+  | ptr=component_reference__function_call {$ast = ptr.ast;}
   | DER el=function_call {$ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
   | LPAR el=output_expression_list[&tupleExpressionIsTuple]
     {
@@ -983,12 +985,14 @@ matrix_expression_list returns [void* ast] :
 component_reference__function_call returns [void* ast] :
   cr=component_reference ( fc=function_call )? {
       if (fc != NULL)
-        ast = Absyn__CALL(cr,fc);
-      else
-        ast = Absyn__CREF(cr);
+        $ast = Absyn__CALL(cr.ast,fc);
+      else {
+        modelicaParserAssert(!cr.isNone, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you!", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        $ast = Absyn__CREF(cr.ast);
+      }
     }
   | i=INITIAL LPAR RPAR {
-      ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
+      $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
     }
   ;
 
@@ -1023,24 +1027,26 @@ name_path_star2 returns [void* ast, int unqual] :
     }
   ;
 
-component_reference returns [void* ast] :
+component_reference returns [void* ast, int isNone] :
   (dot=DOT)? cr=component_reference2
     {
       $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr.ast) : cr.ast;
+      $isNone = cr.isNone;
     }
-  | WILD {$ast = Absyn__WILD;}
+  | WILD {$ast = Absyn__WILD; $isNone = false;}
   ;
 
-component_reference2 returns [void* ast] @init {
+component_reference2 returns [void* ast, int isNone] @init {
   cr.ast = 0;
 } :
     (id=IDENT | id=OPERATOR) ( arr=array_subscripts )? ( DOT cr=component_reference2 )?
     {
-      if (cr.ast)
+      if (cr.ast) {
         $ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr.ast);
+        $isNone = false;
+      }
       else {
-        /* Disable this check if it is too slow */
-        modelicaParserAssert(!metamodelica_enabled() || strcmp("NONE",(char*)$id.text->chars) != 0, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you!", component_reference2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        $isNone = metamodelica_enabled() && strcmp("NONE",(char*)$id.text->chars) == 0;
         $ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
       }
     }
