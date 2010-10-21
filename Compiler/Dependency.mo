@@ -1041,10 +1041,11 @@ end createLocalVariableStruct;
 protected function createLocalVariableStruct2 "
 Author BZ 2008-04 Helper function for createLocalVariableStruct
 "
-input list<Absyn.ElementItem> inElem;
-input HashTable2.HashTable inTable;
-output HashTable2.HashTable outTable;
-algorithm _ := matchcontinue(inElem,inTable)
+  input list<Absyn.ElementItem> inElem;
+  input HashTable2.HashTable inTable;
+  output HashTable2.HashTable outTable;
+algorithm
+  outTable := matchcontinue(inElem,inTable)
   local
     list<Absyn.ElementItem> elemis;
     HashTable2.HashTable table1,table2;
@@ -1076,7 +1077,8 @@ Author BZ 2008-04 Helper function for createLocalVariableStruct
   input Absyn.ElementSpec inSpec;
   input HashTable2.HashTable inTable;
   output HashTable2.HashTable outTable;
-algorithm _ := matchcontinue(inSpec,inTable)
+algorithm
+  outTable := matchcontinue(inSpec,inTable)
   local list<Absyn.ComponentItem> comps; HashTable2.HashTable table1;
   case(Absyn.COMPONENTS(components = comps),inTable)
     equation
@@ -1094,7 +1096,7 @@ Author BZ 2008-04 Helper function for createLocalVariableStruct
   input list<Absyn.ComponentItem> inComponents;
   input HashTable2.HashTable inTable;
   output HashTable2.HashTable outTable;
-algorithm _ := matchcontinue(inComponents,inTable)
+algorithm outTable := matchcontinue(inComponents,inTable)
   local list<Absyn.ComponentItem> comps; String id; HashTable2.HashTable table1,table2;
     case({}, inTable) then inTable;
   case((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)))::comps,inTable)
