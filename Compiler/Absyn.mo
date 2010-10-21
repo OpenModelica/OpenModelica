@@ -1902,6 +1902,7 @@ algorithm
         s2 = printComponentRefStr(child);
         s1 = "." +& s2;
       then s1;
+    case (WILD()) then "_";
   end matchcontinue;
 end printComponentRefStr;
 

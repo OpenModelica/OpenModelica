@@ -278,6 +278,7 @@ public constant ErrorID META_INVALID_PATTERN=5012;
 public constant ErrorID META_MATCH_INPUT_OUTPUT_NON_CREF=5013;
 public constant ErrorID META_MATCH_GENERAL_FAILURE=5014;
 public constant ErrorID META_CONS_TYPE_MATCH=5015;
+public constant ErrorID META_STRICT_RML_MATCH_IN_OUT=5016;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -627,7 +628,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
           (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
           (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s."),
-          (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s.")
+          (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s."),
+          (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"Strict RML enforces match expression input and output to be the same as the function's. %s.")
           };
 
 protected import ErrorExt;

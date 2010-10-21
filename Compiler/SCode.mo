@@ -2758,5 +2758,18 @@ algorithm
   end matchcontinue;
 end emptyModOrEquality;
 
+public function isComponentWithDirection
+  input Element elt;
+  input Absyn.Direction dir1;
+  output Boolean b;
+algorithm
+  b := matchcontinue (elt,dir1)
+    local
+      Absyn.Direction dir2;
+    case (COMPONENT(attributes = ATTR(direction = dir2)),dir1) then directionEqual(dir1,dir2);
+    case (_,_) then false;        
+  end matchcontinue;
+end isComponentWithDirection;
+
 end SCode;
 
