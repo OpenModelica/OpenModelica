@@ -365,7 +365,7 @@ public function hash
   input String inString;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger = System_hash(inString);
 end hash;
 
 public function pathDelimiter
@@ -830,7 +830,7 @@ function refEqual
   input  Type_a ref2;
   output Boolean result;
   
-  external "C";
+  external "C" result = System_refEqual(ref1,ref2);
 end refEqual;
 
 public function getUUIDStr "

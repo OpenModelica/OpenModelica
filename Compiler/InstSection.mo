@@ -776,7 +776,7 @@ algorithm
       local  DAE.DAElist trDae; list<DAE.Element> daeElts; 
         DAE.ComponentRef cr_2; DAE.ExpType t; DAE.Properties tprop1,tprop2;
       equation 
-        (cache,e1_1 as DAE.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
+        (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
         (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl);
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl, NONE,true,pre,info);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl);
@@ -800,7 +800,7 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
       then
@@ -814,7 +814,7 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
       then
@@ -826,7 +826,7 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
-        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
@@ -838,7 +838,7 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.REAL(priority)}, {})),initial_,impl,graph)
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
-        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
@@ -850,7 +850,7 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(priority)}, {})),initial_,impl,graph)
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Integer priority;
       equation 
-        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(priority));
       then
@@ -862,8 +862,8 @@ algorithm
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {})),initial_,impl,graph)
       local Absyn.ComponentRef cr1, cr2; DAE.ComponentRef cr1_, cr2_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr1_,t),_,_) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
-        (cache,DAE.CREF(cr2_,t),_,_) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr1_,t),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr2_,t),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
         (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
         (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
@@ -2417,7 +2417,7 @@ algorithm
         // If this is a list assignment, then the Array(...) expression should
         // be evaluated to DAE.LIST
 
-        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         true = MetaUtil.isList(cprop);
 
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
@@ -2503,7 +2503,7 @@ algorithm
     /* v := expr; */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e,info = info),source,initial_,impl,unrollForLoops) 
       equation     
-        (cache,cre,cprop,acc) = Static.elabCref(cache, env, cr, impl, false,pre,info);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache,e_1,eprop,_) = Static.elabExp(cache, env, e, impl, NONE,true,pre,info);
@@ -2522,7 +2522,7 @@ algorithm
         Absyn.Exp e2;
         DAE.Exp e2_2,e2_2_2; 
       equation 
-        (cache,_,cprop,acc) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((_,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true,pre,info);
@@ -2536,7 +2536,7 @@ algorithm
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e, info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true,pre,info);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
@@ -3331,8 +3331,8 @@ algorithm
       equation
         ErrorExt.rollBack("expandableConnectors");        
         // Skip collection of dae functions here they can not be present in connector references
-        (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl, false,pre,info);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false,pre,info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3406,7 +3406,7 @@ algorithm props := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,inf
   case({},_,_,_,_,_) then ();
   case(cr::inrefs,cache,env,affectedConnector,pre,info)
     equation
-      (_,_,prop,_) = Static.elabCref(cache,env,cr,false,false,pre,info);
+      (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.elabTypePropToConst({prop});
       true = Types.isParameterOrConstant(const);
       checkConstantVariability(inrefs,cache,env,affectedConnector,pre,info);
@@ -3415,7 +3415,7 @@ algorithm props := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,inf
   case(cr::inrefs,cache,env,affectedConnector,pre,info)
     local String s1;
     equation
-      (_,_,prop,_) = Static.elabCref(cache,env,cr,false,false,pre,info);
+      (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.elabTypePropToConst({prop});
       false = Types.isParameterOrConstant(const);
       //print(" error for: " +& affectedConnector +& " subscript: " +& Dump.printComponentRefStr(cr) +& " non constant \n");
@@ -3479,8 +3479,8 @@ algorithm
     // both c1 and c2 are expandable
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
-        (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache, env, c1, impl, false,pre,info);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache, env, c2, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache, env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache, env, c2, impl, false,pre,info);
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
@@ -3543,8 +3543,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
         // c2 is expandable
-        failure((_,_,_,_) = Static.elabCref(cache, env, c2, impl, false,pre,info));
-        (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env,c1,impl,false,pre,info);
+        (cache,NONE()) = Static.elabCref(cache, env, c2, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env,c1,impl,false,pre,info);
         // Debug.fprintln("expandable", 
         //   "connect(existing, expandable)(" +& 
         //      Dump.printComponentRefStr(c1) +& ", " +&
@@ -3558,7 +3558,7 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_IDENT(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_) = Static.elabCref(cache,env,c1,impl,false,pre,info));
+        (cache,NONE()) = Static.elabCref(cache,env,c1,impl,false,pre,info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +& 
           Absyn.printComponentRefStr(c1) +& "], " +&
@@ -3571,8 +3571,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre, info));
-        (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre, info);        
+        (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);        
 
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3595,7 +3595,7 @@ algorithm
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
         // elab expandable connector
-        (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
@@ -3656,8 +3656,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre, info));
-        (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre, info);
+        (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3680,7 +3680,7 @@ algorithm
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
         // elab expandable connector
-        (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
@@ -3740,7 +3740,7 @@ algorithm
         //Debug.fprintln("expandable", "env: " +& Env.printEnvStr(env));
         
         // now it should be in the Env, fetch the info!
-        (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache, env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1, impl, false,pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
@@ -3775,8 +3775,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation        
         // both of these are OK
-        (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl, false,pre,info);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false,pre,info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);

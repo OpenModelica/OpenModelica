@@ -3726,6 +3726,29 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <%preExp%>
     <%varPart%> = <%expPart%>;
     >>
+  case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then
+    (match expTypeFromExpShort(exp)
+      case "metatype" then
+        // MetaModelica Array
+        (match exp case ASUB(exp=arr, sub={idx}) then
+        let &preExp = buffer ""
+        let arr1 = daeExp(arr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        <<
+        <%preExp%>
+        arrayUpdate(<%arr1%>,<%idx1%>,<%val1%>);
+        >>)
+        // Modelica Array
+      else
+        let &preExp = buffer "" /*BUFD*/
+        let varPart = daeExpAsub(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let expPart = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        <<
+        <%preExp%>
+        <%varPart%> = <%expPart%>;
+        >>
+    )
   case STMT_ASSIGN(__) then
     let &preExp = buffer "" /*BUFD*/
     let expPart1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -4925,6 +4948,15 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
  "Generates code for an asub expression."
 ::=
+  match expTypeFromExpShort(exp)
+  case "metatype" then
+  // MetaModelica Array
+    (match exp case ASUB(exp=e, sub={idx}) then
+      let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      'arrayGet(<%e1%>,<%idx1%>)')
+  // Modelica Array
+  else
   match exp
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
     'ASUB_EASY_CASE'

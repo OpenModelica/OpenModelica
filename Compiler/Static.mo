@@ -290,13 +290,13 @@ algorithm
       local DAE.Type ty;
       equation
         false = OptManager.getOption("cevalEquation");
-        (cache,exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_) = elabCref(cache,env, cr, impl,doVect,pre,info);
+        (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
       then
         (cache,exp,DAE.PROP(ty,DAE.C_VAR()),st);
 
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info)
       equation
-        (cache,exp,prop,_) = elabCref(cache,env, cr, impl,doVect,pre,info);
+        (cache,SOME((exp,prop,_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
       then
         (cache,exp,prop,st);
 
@@ -1539,7 +1539,7 @@ algorithm
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre,info)
       equation
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
-        (cache,exp,prop,_) = elabCref(cache,env, cr, impl,true /*perform vectorization*/,pre,info);
+        (cache,SOME((exp,prop,_))) = elabCref(cache,env, cr, impl,true /*perform vectorization*/,pre,info);
         Debug.fprint("tcvt","after Static.elabCref in elabGraphicsExp\n");
       then
         (cache,exp,prop);
@@ -10432,22 +10432,20 @@ function: elabCref
   input Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-  output SCode.Accessibility outAccessibility;
+  output Option<tuple<DAE.Exp,DAE.Properties,SCode.Accessibility>> res;
 algorithm
-  (outCache,outExp,outProperties,outAccessibility) :=
+  (outCache,res) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,performVectorization,inPrefix,info)
     local
       DAE.ComponentRef c_1;
-      DAE.Const const;
+      DAE.Const const,const1,const2;
       SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
       Option<Absyn.Path> optPath;
       DAE.Type t;
       DAE.TType tt;
       DAE.Binding binding;
-      DAE.Exp exp;
+      DAE.Exp exp,exp1,exp2;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Boolean impl;
@@ -10463,19 +10461,31 @@ algorithm
       Absyn.Path path,fpath;
       list<DAE.Type> typelist;
       list<String> typelistStr;
-      String typeStr;
+      String typeStr,id;
       DAE.ComponentRef expCref;
       DAE.ExpType expType;
       Option<DAE.Const> forIteratorConstOpt;
       Prefix pre;
+      Absyn.Exp e;
 
     // wildcard
-    case (cache,env,c as Absyn.WILD(),impl,doVect,_,info) /* impl */
+    case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
       equation
         t = (DAE.T_ANYTYPE(NONE),NONE);
         et = Types.elabType(t);
       then
-        (cache,DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO());
+        (cache,SOME((DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
+
+    // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
+    // No vectorization is performed
+    case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,info)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),acc_1))) = elabCref(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,info);
+        (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
+        const = Types.constAnd(const1,const2);
+      then
+        (cache,SOME((DAE.ASUB(exp1,{exp2}),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
 
     // a normal cref
     case (cache,env,c,impl,doVect,pre,info) /* impl */
@@ -10487,7 +10497,7 @@ algorithm
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
       then
-        (cache,exp,DAE.PROP(t, const),acc_1);
+        (cache,SOME((exp,DAE.PROP(t, const),acc_1)));
         
     // An enumeration type => array of enumeration literals.
     case (cache, env, c, impl, doVect, pre, info)
@@ -10503,7 +10513,7 @@ algorithm
         enum_lit_strs = SCode.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
-        (cache,exp,DAE.PROP(t, DAE.C_CONST),SCode.RO());
+        (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST),SCode.RO())));
         
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect,pre,info)
@@ -10523,36 +10533,16 @@ algorithm
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE,true);
       then
-        (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO());
+        (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO())));
 
     // MetaModelica extension
     case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,info)
       local DAE.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        e = DAE.META_OPTION(NONE());
+        Error.addSourceMessage(Error.META_NONE_CREF, {}, info);
       then
-        (cache,e,DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST()),SCode.RO());
-
-    case (cache,env,c,impl,doVect,_,info)
-      equation
-        //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
-        path = Absyn.crefToPath(c);
-        failure((_,_) = Lookup.lookupFunctionsInEnv(cache,env,path));
-        fn_str = Absyn.pathString(path);
-        scope = Env.printEnvPathStr(env);
-        Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info);
-      then
-        fail();
-
-    case (cache,env,c,impl,doVect,pre,info)
-      equation
-        failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
-        s = Dump.printComponentRefStr(c);
-        scope = Env.printEnvPathStr(env);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info); // - no need to add prefix info since problem only depends on the scope?
-      then
-        fail();
+        (cache,NONE());
 
     case (cache,env,c,impl,doVect,pre,info)
       equation
@@ -10564,6 +10554,15 @@ algorithm
         // Debug.traceln("ENVIRONMENT:\n" +& Env.printEnvStr(env));
       then
         fail();
+
+    case (cache,env,c,impl,doVect,pre,info)
+      equation
+        failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
+        s = Dump.printComponentRefStr(c);
+        scope = Env.printEnvPathStr(env);
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info); // - no need to add prefix info since problem only depends on the scope?
+      then
+        (cache,NONE());
   end matchcontinue;
 end elabCref;
 

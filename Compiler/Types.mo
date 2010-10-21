@@ -986,6 +986,11 @@ algorithm
         res = getDimensions(tp);
       then
         (d :: res);
+    case ((DAE.T_META_ARRAY(tp),_))
+      equation
+        res = getDimensions(tp);
+      then
+        (DAE.DIM_UNKNOWN() :: res);
     case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensions(tp);
     case ((_,_)) then {};
@@ -5287,7 +5292,6 @@ algorithm
     case ((DAE.T_META_ARRAY(t1),_),bindings)
       equation
         t2 = fixPolymorphicRestype2(t1, bindings);
-        t2 = unboxedType(t2);
       then ((DAE.T_META_ARRAY(t2),NONE));
     case ((DAE.T_METAOPTION(t1),_),bindings)
       equation

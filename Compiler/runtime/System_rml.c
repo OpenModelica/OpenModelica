@@ -71,29 +71,6 @@ static void free_library(modelica_ptr_t lib);
 static void free_function(modelica_ptr_t func);
 
 /*
- * adrpo 2008-12-02
- * http://www.cse.yorku.ca/~oz/hash.html
- * hash functions which could be useful to replace System__hash:
- */
-/*** djb2 hash ***/
-static inline unsigned long djb2_hash(unsigned char *str)
-{
-  unsigned long hash = 5381;
-  int c;
-  while (c = *str++)  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-  return hash;
-}
-
-/*** sdbm hash ***/
-static inline unsigned long sdbm_hash(unsigned char* str)
-{
-  unsigned long hash = 0;
-  int c;
-  while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
-  return hash;
-}
-
-/*
  * Common implementations
  */
 

@@ -3721,8 +3721,8 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
-        {ty} = tys;
+        (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_META_ARRAY(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);
@@ -11238,7 +11238,7 @@ algorithm
 
     case (cache,env,Absyn.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,info)
       equation 
-        (cache,exp,prop,acc) = Static.elabCref(cache,env, cref, impl,true,pre,info);
+        (cache,SOME((exp,prop,acc))) = Static.elabCref(cache,env, cref, impl,true,pre,info);
         (cache, exp, prop) = Ceval.cevalIfConstant(cache, env, exp, prop, impl);
         (cache,extarg) = instExtGetFargsSingle(cache,env, exp, prop);
       then
@@ -12854,10 +12854,10 @@ algorithm
     case (cache, inEnv, inIH, inPre, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, impl)
       equation
         // type of left var is an expandable connector!
-        (cache,DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_) = 
+        (cache,SOME((DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_))) = 
             Static.elabCref(cache, inEnv, crefLeft, impl, false, inPre,info);
         // type of right left var is an expandable connector!
-        (cache,DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_) = 
+        (cache,SOME((DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_))) = 
             Static.elabCref(cache, inEnv, crefRight, impl, false, inPre,info);
         (cache, equations) = orderConnectEquationsPutNonExpandableFirst(cache, inEnv, inIH, inPre, rest, impl);            
         equations = listAppend(equations, {eq});
@@ -14008,9 +14008,10 @@ algorithm
       SOME(scope) = Env.getEnvPath(env);
         path = Absyn.joinPaths(scope, Absyn.IDENT(className));
       then path;
-    case(env,className) equation
-      NONE = Env.getEnvPath(env);
-    then Absyn.IDENT(className);
+    case(env,className)
+      equation
+        NONE() = Env.getEnvPath(env);
+      then Absyn.IDENT(className);
   end matchcontinue;
 end makeFullyQualified2;
 

@@ -61,4 +61,14 @@ extern int System_stringFind(const char* str, const char* searchStr)
   return SystemImpl__stringFind(str, searchStr);
 }
 
+extern int System_refEqual(void* a, void* b)
+{
+  return a == b;
+}
+
+extern int System_hash(unsigned char* str)
+{
+  return djb2_hash(str);
+}
+
 }
