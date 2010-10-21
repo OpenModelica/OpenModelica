@@ -9891,7 +9891,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = r)),inst_dims)
       equation
         failure(SCode.R_RECORD() = r);
-        true = strictRMLCheck(RTOpts.debugFlag("rml"),c);
+        true = MetaUtil.strictRMLCheck(RTOpts.debugFlag("rml"),c);
         (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,csets,c,inst_dims);
         cache = Env.addDaeFunction(cache, funs);
       then (cache,env,ih);
@@ -14972,87 +14972,5 @@ algorithm
     case (_, _) then inSets;
   end matchcontinue;
 end connectImplicitlyConnectedFlow2;
-
-protected function strictRMLCheck
-"If we are checking for strict RML, and function containing a single statement
-that is a match expression must be on the form (outputs) := matchcontinue (inputs).
-RML does not check this even though it's translated to this internally, so we
-must check for it to warn the user."
-  input Boolean b;
-  input SCode.Class c;
-  output Boolean isOK;
-algorithm
-  isOK := matchcontinue (b,c)
-    local
-      list<SCode.Element> elts,inelts,outelts;
-      list<String> innames,outnames;
-      list<Absyn.Exp> outcrefs,increfs;
-      Absyn.Exp comp,inputs;
-      Absyn.Info info;
-    case (false,_) then true;
-    case (_,SCode.CLASS(info = info, restriction = SCode.R_FUNCTION(), classDef = SCode.PARTS(elementLst = elts, normalAlgorithmLst = {SCode.ALGORITHM({SCode.ALG_ASSIGN(assignComponent = comp, value = Absyn.MATCHEXP(inputExp = inputs))})})))
-      equation
-        outcrefs = MetaUtil.extractListFromTuple(comp,0);
-        increfs = MetaUtil.extractListFromTuple(inputs,0);
-        inelts = Util.listSelect1(elts, Absyn.INPUT(), SCode.isComponentWithDirection);
-        outelts = Util.listSelect1(elts, Absyn.OUTPUT(), SCode.isComponentWithDirection);
-        innames = Util.listMap(inelts, SCode.elementName);
-        outnames = Util.listMap(outelts, SCode.elementName);
-      then strictRMLCheck2(increfs,outcrefs,innames,outnames,info);
-    case (_,_) then true;
-  end matchcontinue;
-end strictRMLCheck;
-
-protected function strictRMLCheck2
-"If we are checking for strict RML, and function containing a single statement
-that is a match expression must be on the form (outputs) := matchcontinue (inputs).
-RML does not check this even though it's translated to this internally, so we
-must check for it to warn the user."
-  input list<Absyn.Exp> increfs;
-  input list<Absyn.Exp> outcrefs;
-  input list<String> innames;
-  input list<String> outnames;
-  input Absyn.Info info;
-  output Boolean b;
-algorithm
-  b := matchcontinue (increfs,outcrefs,innames,outnames,info)
-    local
-      list<String> names;
-    case (increfs,outcrefs,innames,outnames,info)
-      equation
-        true = (listLength(increfs) <> listLength(innames));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of input arguments don't match"}, info);
-      then false;
-    case (increfs,outcrefs,innames,outnames as _::_,info)
-      equation
-        true = (listLength(outcrefs) <> listLength(outnames));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of output arguments don't match"}, info);
-      then false;
-    case (increfs,outcrefs,innames,outnames,info)
-      equation
-        failure(_ = Util.listMap(increfs, Absyn.expCref));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
-      then false;
-    case (increfs,outcrefs,innames,outnames,info)
-      equation
-        failure(_ = Util.listMap(outcrefs, Absyn.expCref));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Output expression was not a tuple of component references"}, info);
-      then false;
-    case (increfs,outcrefs,innames,outnames,info)
-      equation
-        names = Util.listMap(increfs, Absyn.expComponentRefStr);
-        failure(equality(names = innames));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
-      then false;
-    case (increfs,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
-    case (increfs,outcrefs,innames,outnames,info)
-      equation
-        names = Util.listMap(outcrefs, Absyn.expComponentRefStr);
-        failure(equality(names = outnames));
-        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The output does not match"}, info);
-      then false;
-    case (_,_,_,_,_) then true;
-  end matchcontinue;
-end strictRMLCheck2;
 
 end Inst;

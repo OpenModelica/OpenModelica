@@ -1806,6 +1806,7 @@ algorithm
   matchcontinue (inInteractiveStmts,inInteractiveSymbolTable)
     local
       Absyn.Program p_1,p,newp,p1,newp_1;
+      list<Absyn.Class> aclasses;
       String resstr,name,top_names_str,str,resstr_1,res,cmt,s1,res_str;
       Absyn.ComponentRef class_,ident,subident,cr,path,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident;
       Absyn.Exp exp;
@@ -1959,6 +1960,20 @@ algorithm
         failure(p1 = Parser.parse(name));
       then
         ("error",st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        // Check all functions for some stuff RML doesn't
+        // In an API call so we easily can test it
+        matchApiFunction(istmts, "strictRMLCheck");
+        {} = getApiFunctionArgs(istmts);
+        aclasses = getFunctionsInProgram(p);
+        _ = Util.listMap1r(Util.listMap(aclasses, SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
+        resstr = Error.printMessagesStr();
+        resstr = stringAppend("\"", resstr);
+        resstr = stringAppend(resstr, "\"");
+      then
+        (resstr,st);
 
     /* Checks the installation of OpenModelica and tries to find common errors */
     case (istmts, st)
@@ -18776,5 +18791,47 @@ algorithm
       then SYMBOLTABLE(inAST, d, e, i, v, c, l);
   end matchcontinue;
 end setSymbolTableAST;
+
+protected function getFunctionsInProgram
+  input Absyn.Program prog;
+  output list<Absyn.Class> funcs;
+  list<Absyn.Class> classes;
+  list<list<Absyn.Class>> classesList;
+algorithm
+  Absyn.PROGRAM(classes = classes) := prog;
+  classesList := Util.listMap(classes, getAllClassesInClass);
+  funcs := Util.listFold(classes::classesList, getFunctionsInClasses, {});
+end getFunctionsInProgram;
+
+protected function getFunctionsInClasses
+  input list<Absyn.Class> classes;
+  input list<Absyn.Class> acc;
+  output list<Absyn.Class> funcs;
+algorithm
+  funcs := matchcontinue (classes,acc)
+    local
+      list<Absyn.ClassPart> classParts;
+      Absyn.Class cl;
+    case ({},acc) then acc;
+    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION()))::classes,acc)
+      equation
+        funcs = getFunctionsInClasses(classes,cl::acc);
+      then funcs;
+    case (_::classes,acc) then getFunctionsInClasses(classes,acc);
+  end matchcontinue;
+end getFunctionsInClasses;
+
+protected function getAllClassesInClass
+  input Absyn.Class class_;
+  output list<Absyn.Class> outClasses;
+algorithm
+  outClasses := matchcontinue class_
+    local
+      list<Absyn.ClassPart> classParts;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = classParts))
+      then getClassesInParts(classParts);
+    case (_) then {};
+  end matchcontinue;
+end getAllClassesInClass;
 
 end Interactive;
