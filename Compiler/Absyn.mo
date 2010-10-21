@@ -2001,7 +2001,7 @@ algorithm
     local
       Ident str;
       Path p;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(p))
       equation
         str = pathString(p);
@@ -2588,7 +2588,7 @@ algorithm
         res = listAppend(res1, l3);
       then
         res;
-    case (RANGE(start = e1,step = NONE,stop = e2),checkSubs)
+    case (RANGE(start = e1,step = NONE(),stop = e2),checkSubs)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);

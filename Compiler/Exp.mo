@@ -5435,7 +5435,7 @@ algorithm
       equation
         tp = typeof(e);
       then DAE.ET_METAOPTION(tp);
-    case (DAE.META_OPTION(NONE)) then DAE.ET_METAOPTION(DAE.ET_OTHER());
+    case (DAE.META_OPTION(NONE())) then DAE.ET_METAOPTION(DAE.ET_OTHER());
     case (DAE.METARECORDCALL(path=_)) then DAE.ET_UNIONTYPE();
     case e
       equation
@@ -7476,7 +7476,7 @@ algorithm
         Print.printBuf("]");
       then
         ();
-    case (DAE.RANGE(exp = start,expOption = NONE,range = stop),pri1)
+    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop),pri1)
       equation
         pri2 = 41;
         pri3 = printLeftpar(pri1, pri2);
@@ -7557,7 +7557,7 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    case ((e as DAE.SIZE(exp = cr,sz = NONE)),_)
+    case ((e as DAE.SIZE(exp = cr,sz = NONE())),_)
       equation
         str = printExpStr(e);
         Print.printBuf(str);
@@ -8310,7 +8310,7 @@ Returns a string if SOME otherwise ''"
   output String str;
 algorithm 
   str := matchcontinue(oexp)
-    case(NONE) then "";
+    case(NONE()) then "";
     case(SOME(e)) local Exp e; then printExpStr(e);
   end matchcontinue;
 end printOptExpStr;
@@ -8624,7 +8624,7 @@ algorithm
       then
         str;
     
-    case (DAE.SIZE(exp = cr,sz = NONE), _, _, _)
+    case (DAE.SIZE(exp = cr,sz = NONE()), _, _, _)
       equation
         crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
         str = System.stringAppendList({"size(",crstr,")"});
@@ -8666,7 +8666,7 @@ algorithm
         s_2;
 
     // MetaModelica Option
-    case (DAE.META_OPTION(NONE), _, _, _) then "NONE";
+    case (DAE.META_OPTION(NONE()), _, _, _) then "NONE";
     case (DAE.META_OPTION(SOME(e1)), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
@@ -8994,7 +8994,7 @@ algorithm
       then
         false;
     // ranges [start:stop]
-    case (DAE.RANGE(ty = tp1,exp = e11,expOption = NONE,range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = NONE,range = e23))
+    case (DAE.RANGE(ty = tp1,exp = e11,expOption = NONE(),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = NONE(),range = e23))
       equation
         b1 = expEqual(e13, e23);
         b2 = expEqual(e11, e21);
@@ -9036,7 +9036,7 @@ algorithm
       then
         res;
     // size(a)
-    case (DAE.SIZE(exp = e1,sz = NONE),DAE.SIZE(exp = e2,sz = NONE))
+    case (DAE.SIZE(exp = e1,sz = NONE()),DAE.SIZE(exp = e2,sz = NONE()))
       equation
         res = expEqual(e1, e2);
       then
@@ -9316,7 +9316,7 @@ algorithm
         (expl_1,cnt) = replaceExpMatrix(expl, source, target);
       then
         (DAE.MATRIX(t,b,expl_1),cnt);
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2),source,target)
+    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2),source,target)
       equation
         (e1_1,c1) = replaceExp(e1, source, target);
         (e2_1,c2) = replaceExp(e2, source, target);
@@ -9353,7 +9353,7 @@ algorithm
       then
         (DAE.ASUB(e1_1,expl_1),c);
 
-    case (DAE.SIZE(exp = e1,sz = NONE),source,target)
+    case (DAE.SIZE(exp = e1,sz = NONE()),source,target)
       equation
         (e1_1,c) = replaceExp(e1, source, target);
       then
@@ -9703,7 +9703,7 @@ algorithm
         e3_1 = stringifyCrefs(e3);
       then
         DAE.RANGE(t,e1_1,SOME(e2_1),e3_1);
-    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e3))
+    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e3))
       equation
         e1_1 = stringifyCrefs(e1);
         e3_1 = stringifyCrefs(e3);
@@ -9730,7 +9730,7 @@ algorithm
         e2_1 = stringifyCrefs(e2);
       then
         DAE.SIZE(e1_1,SOME(e2_1));
-    case (DAE.SIZE(exp = e1,sz = NONE))
+    case (DAE.SIZE(exp = e1,sz = NONE()))
       equation
         e1_1 = stringifyCrefs(e1);
       then
@@ -9923,7 +9923,7 @@ algorithm
       then
         Graphviz.LNODE("MATRIX",{s},{},{});
     
-    case (DAE.RANGE(exp = start,expOption = NONE,range = stop))
+    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop))
       equation
         t1 = dumpExpGraphviz(start);
         t2 = Graphviz.NODE(":",{},{});
@@ -9962,7 +9962,7 @@ algorithm
       then
         Graphviz.NODE("SIZE",{},{crt,dimt});
     
-    case (DAE.SIZE(exp = cr,sz = NONE))
+    case (DAE.SIZE(exp = cr,sz = NONE()))
       equation
         crt = dumpExpGraphviz(cr);
       then
@@ -10208,7 +10208,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RANGE(exp = start,expOption = NONE,range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
+    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -10266,7 +10266,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.SIZE(exp = cr,sz = NONE),level) /* Graphviz.NODE(\"SIZE\",{},{crt}) */
+    case (DAE.SIZE(exp = cr,sz = NONE()),level) /* Graphviz.NODE(\"SIZE\",{},{crt}) */
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -10832,7 +10832,7 @@ algorithm
         res = listAppend(res1, l3);
       then
         res;
-    case (DAE.RANGE(exp = e1,expOption = NONE,range = e2))
+    case (DAE.RANGE(exp = e1,expOption = NONE(),range = e2))
       equation
         l1 = getCrefFromExp(e1);
         l2 = getCrefFromExp(e2);
@@ -11096,7 +11096,7 @@ algorithm
         ((e,ext_arg_2)) = rel((DAE.MATRIX(tp,scalar,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2)),rel,ext_arg)
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
@@ -11130,7 +11130,7 @@ algorithm
         ((e,ext_arg_2)) = rel((DAE.ASUB(e1_1,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
-    case ((e as DAE.SIZE(exp = e1,sz = NONE)),rel,ext_arg)
+    case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.SIZE(e1_1,NONE()),ext_arg_1));
@@ -13349,7 +13349,7 @@ algorithm
     case (DAE.SCONST(_),_) then {};
     case (DAE.CODE(_,_),_) then {};
     case (DAE.END(),_) then {};
-    case (DAE.META_OPTION(NONE),_) then {};
+    case (DAE.META_OPTION(NONE()),_) then {};
 
     case (e,_)
       equation

@@ -149,7 +149,7 @@ algorithm
       then 
         (false,st2);
     
-    case(NONE::_,_,st2) then (true,st2);
+    case(NONE()::_,_,st2) then (true,st2);
   end matchcontinue;
 end completeCheck;
 

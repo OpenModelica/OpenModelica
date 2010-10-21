@@ -1984,7 +1984,7 @@ algorithm
         list<Absyn.Ident> pathVarList;
       equation
         //Example:
-        // if (x != NONE)    -- Or we get segfaults
+        // if (x != NONE())    -- Or we get segfaults
         // TYPE1 pathVar__1;
         // pathVar__1 = metaMGetField(x,1);
 

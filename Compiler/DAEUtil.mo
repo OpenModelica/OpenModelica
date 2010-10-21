@@ -613,7 +613,7 @@ input list<tuple<DAE.ComponentRef, DAE.Exp>> inlst;
 output Option<DAE.Exp> binding;
 algorithm binding := matchcontinue(currVar,inlst)
   local DAE.ComponentRef cr1,cr2; DAE.Exp e;
-  case(_,{}) then NONE;
+  case(_,{}) then NONE();
   case(cr1,(cr2,e)::inlst)
     equation
       true = Exp.crefEqualNoStringCompare(cr1,cr2);
@@ -953,7 +953,7 @@ algorithm
     local
       String s;
       DAE.Exp r;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r))))
       equation
         s = Exp.printExpStr(r);
@@ -1362,7 +1362,7 @@ algorithm
       list<DAE.Element> rest;
       FuncTypeElementTo f;
       Option<DAE.Element> e_1;
-    case ({},_) then NONE;
+    case ({},_) then NONE();
     case ((e :: rest),f)
       equation
         f(e);
@@ -1448,7 +1448,7 @@ algorithm
         str = stringAppend(s3, s4);
       then
         str;
-    case (((v as DAE.VAR(componentRef = cr,binding = NONE)) :: (lst as (_ :: _))))
+    case (((v as DAE.VAR(componentRef = cr,binding = NONE())) :: (lst as (_ :: _))))
       equation
         s1 = "-,";
         s2 = getBindingsStr(lst);
@@ -1460,7 +1460,7 @@ algorithm
         str = Exp.printExpStr(e);
       then
         str;
-    case ({(v as DAE.VAR(componentRef = cr,binding = NONE))}) then "";
+    case ({(v as DAE.VAR(componentRef = cr,binding = NONE()))}) then "";
   end matchcontinue;
 end getBindingsStr;
 
@@ -1481,7 +1481,7 @@ algorithm (outc,oute) := matchcontinue (inElementLst)
         (outc,oute) = getBindings(inElementLst);
       then
         (cr::outc,e::oute);
-    case (DAE.VAR(componentRef = cr,binding  = NONE) :: inElementLst)
+    case (DAE.VAR(componentRef = cr,binding  = NONE()) :: inElementLst)
       equation
         (outc,oute) = getBindings(inElementLst);
       then (outc,oute);
@@ -1836,7 +1836,7 @@ algorithm
       then
         (DAE.WHEN_EQUATION(e1_1,welts_1,SOME(elt_1),source) :: elts_1);
 
-    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = NONE,source = source) :: elts))
+    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = NONE(),source = source) :: elts))
       equation
         e1_1 = toModelicaFormExp(e1);
         welts_1 = toModelicaFormElts(welts);
@@ -1944,7 +1944,7 @@ algorithm
   outExpExpOption := matchcontinue (inExpExpOption)
     local DAE.Exp e_1,e;
     case (SOME(e)) equation e_1 = toModelicaFormExp(e); then SOME(e_1);
-    case (NONE) then NONE;
+    case (NONE()) then NONE();
   end matchcontinue;
 end toModelicaFormExpOpt;
 
@@ -4354,7 +4354,7 @@ algorithm
   lst := matchcontinue(tree)
   local Option<DAE.AvlTree> r,l; DAE.AvlKey k; DAE.AvlValue v;
     case NONE then {};
-    case(SOME(DAE.AVLTREENODE(value = NONE,left = l,right = r) )) equation
+    case(SOME(DAE.AVLTREENODE(value = NONE(),left = l,right = r) )) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then lst;
     case(SOME(DAE.AVLTREENODE(value=SOME(DAE.AVLTREEVALUE(k,v)),left = l, right = r))) equation
@@ -4396,7 +4396,7 @@ algorithm
       DAE.AvlTree t_1,t,right_1,left_1,bt;
 
       /* empty tree*/
-    case (DAE.AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
+    case (DAE.AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
     	then DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
       /* Replace this node.*/
@@ -4439,7 +4439,7 @@ input Option<DAE.AvlTree> t;
 output DAE.AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
+    case(NONE()) then DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -4744,7 +4744,7 @@ algorithm
         res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
       then
         res;
-    case (DAE.AVLTREENODE(value = NONE,left = l,right = r))
+    case (DAE.AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -4777,7 +4777,7 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := matchcontinue(bt)
-    case(NONE) then 0;
+    case(NONE()) then 0;
     case(SOME(DAE.AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;

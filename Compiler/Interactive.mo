@@ -1839,7 +1839,7 @@ algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = (ident as Absyn.CREF_IDENT(name = _))),
          Absyn.CODE(code = Absyn.C_MODIFICATION(modification =
-           (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))} =
+           (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE()))))} =
           getApiFunctionArgs(istmts);
         (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}),mod, p)  ;
         st = setSymbolTableAST(st, p_1);
@@ -3375,7 +3375,7 @@ algorithm
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
         Absyn.MODIFICATION(b,each_,cr_1,SOME(Absyn.CLASSMOD(element_args_1,NONE())),str);
-    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = NONE,comment = str),old_comp,new_comp)
+    case (Absyn.MODIFICATION(finalItem = b,each_ = each_,componentRef = cr,modification = NONE(),comment = str),old_comp,new_comp)
       equation
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
       then
@@ -3387,7 +3387,7 @@ algorithm
       then
         Absyn.REDECLARATION(b,redecl,each_,element_spec_1,
           SOME(Absyn.CONSTRAINCLASS(element_spec2_1,c)));
-    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = NONE),old_comp,new_comp)
+    case (Absyn.REDECLARATION(finalItem = b,redeclareKeywords = redecl,each_ = each_,elementSpec = element_spec,constrainClass = NONE()),old_comp,new_comp)
       equation
         element_spec_1 = renameComponentInElementSpec(element_spec, old_comp, new_comp);
       then
@@ -3452,7 +3452,7 @@ algorithm
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
         Absyn.C_MODIFICATION(Absyn.CLASSMOD(element_args_1,SOME(exp_1)));
-    case (Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(elementArgLst = element_args,expOption = NONE)),old_comp,new_comp)
+    case (Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(elementArgLst = element_args,expOption = NONE())),old_comp,new_comp)
       equation
         element_args_1 = renameComponentInElementArgList(element_args, old_comp, new_comp);
       then
@@ -3557,7 +3557,7 @@ algorithm
         exp3_1 = renameComponentInExp(exp3, old_comp, new_comp);
       then
         Absyn.RANGE(exp1_1,SOME(exp2_1),exp3_1);
-    case (Absyn.RANGE(start = exp1,step = NONE,stop = exp3),old_comp,new_comp)
+    case (Absyn.RANGE(start = exp1,step = NONE(),stop = exp3),old_comp,new_comp)
       equation
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
         exp3_1 = renameComponentInExp(exp3, old_comp, new_comp);
@@ -5367,8 +5367,8 @@ protected function setReplaceableKeywordAttributes
 algorithm
   outAbsynRedeclareKeywordsOption:=
   matchcontinue (inAbsynRedeclareKeywordsOption,inBoolean)
-    case (NONE(),false) then NONE;  /* false */
-    case (SOME(Absyn.REPLACEABLE()),false) then NONE;
+    case (NONE(),false) then NONE();  /* false */
+    case (SOME(Absyn.REPLACEABLE()),false) then NONE();
     case (SOME(Absyn.REDECLARE_REPLACEABLE()),false) then SOME(Absyn.REDECLARE());
     case (SOME(Absyn.REDECLARE()),false) then SOME(Absyn.REDECLARE());
     case (NONE(),true) then SOME(Absyn.REPLACEABLE());  /* true */
@@ -6152,7 +6152,7 @@ algorithm
       /* special case for clearing modifications */
    /* case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,
       specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
-      inherit,submod,Absyn.CLASSMOD(elementArgLst = {},expOption = NONE),env)
+      inherit,submod,Absyn.CLASSMOD(elementArgLst = {},expOption = NONE()),env)
 
       then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); */
 
@@ -6678,7 +6678,7 @@ algorithm
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
     
     // remove modifier.
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
       equation
         true = stringEqual(varname, id);
       then
@@ -6692,14 +6692,14 @@ algorithm
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
 
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,Absyn.CLASSMOD({},NONE()))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),varname,submod,Absyn.CLASSMOD({},NONE()))
       equation
         true = stringEqual(varname, id);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE()),cond,cmt) :: rest);
 
 
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,mod)
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),varname,submod,mod)
       equation
         true = stringEqual(varname, id);
       then
@@ -6739,7 +6739,7 @@ algorithm
       Option<Absyn.Exp> expOpt;
       Absyn.Exp e;
     case({},SOME(e)) then SOME(Absyn.CLASSMOD({},SOME(e)));
-    case ({},_) then NONE;
+    case ({},_) then NONE();
     case (args,expOpt) then SOME(Absyn.CLASSMOD(args,expOpt));
   end matchcontinue;
 end createOptModificationFromEltargs;
@@ -7027,7 +7027,7 @@ algorithm
       list<Absyn.ElementArg> rest,args;
       Absyn.ComponentRef cr;
     case ({}) then {};
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name),modification = NONE,comment = cmt) :: rest))
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = Absyn.CREF_IDENT(name = name),modification = NONE(),comment = cmt) :: rest))
       equation
         names = getModificationNames(rest);
       then
@@ -7345,7 +7345,7 @@ algorithm
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,SOME(exp)))),cond,cmt) :: rest);
     
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),id2,exp)
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),id2,exp)
       equation
         true = stringEqual(id, id2);
       then
@@ -9298,7 +9298,7 @@ algorithm
       Absyn.Path p;
       Absyn.Ident id;
     case (_,{},cf) then cf;
-    case (p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (class_ as Absyn.CLASS(name = id))),constrainClass = NONE)) :: rest), cf)
+    case (p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (class_ as Absyn.CLASS(name = id))),constrainClass = NONE())) :: rest), cf)
       local Absyn.Path p1;
       equation
         p1 = Absyn.joinPaths(p, Absyn.IDENT(id));
@@ -9988,7 +9988,7 @@ algorithm
 	  io := matchcontinue(str)
 	    case(str) equation
 	      -1 = System.stringFind(str,"replaceable");
-	    then NONE;
+	    then NONE();
 	    case(str) equation
        failure(-1 = System.stringFind(str,"replaceable"));
 	    then SOME(Absyn.REPLACEABLE());
@@ -10911,7 +10911,7 @@ algorithm
       Integer c1,ncomps,res;
       list<Absyn.ComponentItem> complst;
       list<Absyn.ElementItem> lst;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = complst),constrainClass = NONE)) :: lst))
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = complst),constrainClass = NONE())) :: lst))
       equation
         c1 = countComponentsInElts(lst);
         ncomps = listLength(complst);
@@ -12197,7 +12197,7 @@ algorithm
       String id;
       list<Absyn.ElementItem> rest;
     case {} then {};
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,restriction = Absyn.R_PACKAGE())),constrainClass = NONE)) :: rest))
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,restriction = Absyn.R_PACKAGE())),constrainClass = NONE())) :: rest))
       equation
         res = getPackagesInElts(rest);
       then
@@ -12463,14 +12463,14 @@ algorithm
     case {} then {};
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))),constrainClass = NONE)) :: rest))
+                 Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = id))),constrainClass = NONE())) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
         (id :: res);
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-                 Absyn.CLASS(name = id)),constrainClass = NONE)) :: rest))
+                 Absyn.CLASS(name = id)),constrainClass = NONE())) :: rest))
       equation
         res = getClassnamesInElts(rest);
       then
@@ -13294,13 +13294,13 @@ algorithm
       list<Absyn.ElementItem> lst;
       Integer n,c1,c2,newn;
       list<Absyn.ComponentItem> complst;
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE())) :: lst),n)
       equation
         (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
         (str,tp) = getNthPublicConnectorStr(newmodelpath, cdef, p, n);
       then
         (str,tp);
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE())) :: lst),n)
       equation
         (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
         c1 = countPublicConnectors(newmodelpath, p, cdef);
@@ -13308,13 +13308,13 @@ algorithm
         (str,tp) = getNthConnectorStr(p, modelpath, lst, c2);
       then
         (str,tp);
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE())) :: lst),n)
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
         str = getNthCompname(complst, n);
       then
         (str,tp);
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE())) :: lst),n)
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p)
         "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
@@ -13323,13 +13323,13 @@ algorithm
         (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
       then
         (str,tp);
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE())) :: lst),n)
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
         str = getNthCompname(complst, n);
       then
         (str,tp);
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE())) :: lst),n)
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p)
         "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
@@ -13480,7 +13480,7 @@ algorithm
       list<Absyn.ElementItem> lst;
       list<Absyn.ComponentItem> complst;
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE)) :: lst))
+    case (modelpath,p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp),constrainClass = NONE())) :: lst))
       equation
         (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
         c1 = countPublicConnectors(newmodelpath, p, cdef);
@@ -13490,7 +13490,7 @@ algorithm
 
     case (modelpath,p,(Absyn.ELEMENTITEM(element =
       Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst),
-      constrainClass = NONE)) :: lst))
+      constrainClass = NONE())) :: lst))
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
         c1 = listLength(complst);
@@ -13500,7 +13500,7 @@ algorithm
 
     case (modelpath,p,(Absyn.ELEMENTITEM(element =
       Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst),
-      constrainClass = NONE)) :: lst))
+      constrainClass = NONE())) :: lst))
       equation
         (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
         c1 = listLength(complst);
@@ -13554,7 +13554,7 @@ algorithm
         gexpstr = Exp.printExpStr(newexp);
       then
         gexpstr;
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE)) then fail();
+    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE())) then fail();
   end matchcontinue;
 end getConnectionAnnotationStr;
 
@@ -13884,12 +13884,12 @@ algorithm
       then
         (gexpstr_1 :: res);
 
-    case ((Absyn.COMPONENTITEM(comment = NONE) :: (rest as (_ :: _))),env)
+    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),env)
       equation
         res = getComponentitemsAnnotationsFromItems(rest, env);
       then
         ("{}" :: res);
-    case ({Absyn.COMPONENTITEM(comment = NONE)},env) then {"{}"};
+    case ({Absyn.COMPONENTITEM(comment = NONE())},env) then {"{}"};
 
   end matchcontinue;
 end getComponentitemsAnnotationsFromItems;
@@ -13908,7 +13908,7 @@ algorithm
     local
       String str;
       list<Absyn.ComponentItem> lst;
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE))
+    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE()))
       equation
         str = getComponentitemsAnnotation(lst);
       then
@@ -13982,13 +13982,13 @@ algorithm
         res = stringAppend("{nada},", str);
       then
         res;
-    case ((Absyn.COMPONENTITEM(comment = NONE) :: (rest as (_ :: _))))
+    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsAnnotation(rest);
         res = stringAppend("{},", str);
       then
         res;
-    case ({Absyn.COMPONENTITEM(comment = NONE)})
+    case ({Absyn.COMPONENTITEM(comment = NONE())})
       equation
         res = "{}";
       then
@@ -14008,7 +14008,7 @@ algorithm
     local
       String str;
       list<Absyn.ComponentItem> lst;
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE))
+    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE()))
       equation
         str = getComponentitemsModification(lst);
       then
@@ -14041,19 +14041,19 @@ algorithm
         res = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
       then
         res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE)) :: (rest as (_ :: _))))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsModification(rest);
         res = stringAppend("Code(),", str);
       then
         res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE)) :: (rest as (_ :: _))))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
       equation
         str = getComponentitemsModification(rest);
         res = stringAppend("Code(),", str);
       then
         res;
-    case ({Absyn.COMPONENTITEM(comment = NONE)})
+    case ({Absyn.COMPONENTITEM(comment = NONE())})
       equation
         res = "Code()";
       then
@@ -15159,7 +15159,7 @@ algorithm
         str = System.stringAppendList({s1,"\"",s2,"\""});
       then
         (str :: lst);
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE) :: (c2 :: rest)))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)))
       equation
         s1 = stringAppend(c1, ",");
         lst = getComponentitemsName((c2 :: rest));
@@ -15624,7 +15624,7 @@ algorithm
         res = removeClassInElementitemlist(xs, c);
       then
         (a1 :: res);
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE))) :: xs),(c as Absyn.CLASS(name = name)))
+    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE()))) :: xs),(c as Absyn.CLASS(name = name)))
       equation
         false = stringEqual(name1, name);
         res = removeClassInElementitemlist(xs, c);
@@ -15719,7 +15719,7 @@ algorithm
         res = replaceClassInElementitemlist(xs, c);
       then
         (a1 :: res);
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE))) :: xs),(c as Absyn.CLASS(name = name)))
+    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE()))) :: xs),(c as Absyn.CLASS(name = name)))
       equation
         false = stringEqual(name1, name);
         res = replaceClassInElementitemlist(xs, c);
@@ -16025,12 +16025,12 @@ algorithm
         res = getClassFromElementitemlist(xs, name);
       then
         res;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE)) :: xs),name2)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE())) :: xs),name2)
       equation
         true = stringEqual(name1, name2);
       then
         c1;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE)) :: xs),name)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))),constrainClass = NONE())) :: xs),name)
       equation
         false = stringEqual(name1, name);
         res = getClassFromElementitemlist(xs, name);
@@ -16199,7 +16199,7 @@ algorithm
       Absyn.Class class_;
       list<Absyn.ElementItem> rest;
     case {} then {};
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_),constrainClass = NONE)) :: rest))
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_),constrainClass = NONE())) :: rest))
       equation
         res = getClassesInElts(rest);
       then
@@ -16303,7 +16303,7 @@ algorithm
       Absyn.Modification mod;
       Option<Absyn.Modification> res;
       Absyn.NamedArg x;
-    case ({}) then NONE;
+    case ({}) then NONE();
     case ((Absyn.NAMEDARG(argName = "binding",argValue = exp) :: xs)) then SOME(Absyn.CLASSMOD({},SOME(exp)));
     case ((Absyn.NAMEDARG(argName = "modification",argValue = Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))) :: xs)) then SOME(mod);
     case ((x :: xs)) equation res = modificationToAbsyn2(xs); then res;
@@ -16351,7 +16351,7 @@ algorithm
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs) "special case for empty string" ;
         SOME("") = commentToAbsyn(nargs);
       then
-        NONE;
+        NONE();
     case (nargs)
       equation
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
@@ -16363,7 +16363,7 @@ algorithm
         Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
         NONE = commentToAbsyn(nargs);
       then
-        NONE;
+        NONE();
     case (nargs)
       local Option<String> strcmt;
       equation
@@ -16371,7 +16371,7 @@ algorithm
         strcmt = commentToAbsyn(nargs);
       then
         SOME(Absyn.COMMENT(SOME(annotation_),strcmt));
-    case (_) then NONE;
+    case (_) then NONE();
   end matchcontinue;
 end annotationListToAbsynComment2;
 
@@ -16397,7 +16397,7 @@ algorithm
         res = commentToAbsyn(rest);
       then
         res;
-    case (_) then NONE;
+    case (_) then NONE();
   end matchcontinue;
 end commentToAbsyn;
 
@@ -17076,7 +17076,7 @@ algorithm
       equation
         eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
       then SOME(Absyn.CLASSMOD(eltArgs1,NONE()));
-    case(NONE) then NONE;
+    case(NONE()) then NONE();
   end matchcontinue;
 end transformFlatModificationOption;
 
@@ -17821,7 +17821,7 @@ algorithm
       Option<String> optInfo;
     case (f, {}) // we did not find it
       then
-        NONE;
+        NONE();
     case (f, FILE(f1,loadTime,info)::rest) // found it
       equation
         true = stringEqual(f,f1);
@@ -17836,7 +17836,7 @@ algorithm
         // we could not get the modification time
         NONE = System.getFileModificationTime(f);
       then
-        NONE; // report none so that it gets loaded
+        NONE(); // report none so that it gets loaded
     case (f, _::rest) // searching in the rest
       equation
         optInfo = getLoadedFileInfo(f, rest);

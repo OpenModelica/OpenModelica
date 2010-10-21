@@ -330,7 +330,7 @@ algorithm
       then
         name::names;
     // frame without a name
-    case ((FRAME(optName = NONE)::inEnv))
+    case ((FRAME(optName = NONE())::inEnv))
       equation
         names = getScopeNames(inEnv);
       then
@@ -403,7 +403,7 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
 algorithm
   outTree := matchcontinue(tree,classEnv)
   local AvlTree t;
-    case(NONE(),classEnv) then NONE;
+    case(NONE(),classEnv) then NONE();
     case(SOME(t),classEnv) equation
       t = updateEnvClassesInTree(t,classEnv);
     then SOME(t);
@@ -846,14 +846,14 @@ algorithm
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE)}) then SOME(Absyn.IDENT(id));
+    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE())}) then SOME(Absyn.IDENT(id));
     case ((FRAME(optName = SOME(id)) :: rest))
       equation
         SOME(path) = getEnvPath(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
-    case (_) then NONE;
+    case (_) then NONE();
   end matchcontinue;
 end getEnvPath;
 
@@ -1023,7 +1023,7 @@ algorithm
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
+    case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
@@ -1111,7 +1111,7 @@ algorithm
           "}, compframe: []"});
       then
         res;
-    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
+    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE(),instStatus = i,env = env)))
       equation
         res = System.stringAppendList({"v:",n,"\n"});
       then
@@ -1679,7 +1679,7 @@ algorithm
     
     /* adrpo 2010-10-07: what is this??? WHAT is "lskf" KEY??
     // empty tree
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key as "lskf",value)
+    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key as "lskf",value)
       then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
 		// replace this node
@@ -1691,7 +1691,7 @@ algorithm
         bt;*/
         
     // empty tree
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
+    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
 		// replace this node
@@ -1812,7 +1812,7 @@ protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
   output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE(),0,NONE(),NONE());
+    case(NONE()) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -2124,7 +2124,7 @@ algorithm
         res = "\n" +& valueStr(rval) +& ",  " +& s2 +&",  " +& s3;
       then
         res;
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -2156,7 +2156,7 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := matchcontinue(bt)
-    case(NONE) then 0;
+    case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;
@@ -2239,7 +2239,7 @@ algorithm
       then
         lst;
         
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         lst1 = getVariablesFromOptionAvlTree(l);
         lst2 = getVariablesFromOptionAvlTree(r);

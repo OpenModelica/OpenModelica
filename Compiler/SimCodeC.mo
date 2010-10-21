@@ -29160,7 +29160,7 @@ algorithm
       Tpl.Text i_varDecls;
 
     case ( txt,
-           DAE.META_OPTION(exp = NONE),
+           DAE.META_OPTION(exp = NONE()),
            _,
            i_preExp,
            i_varDecls )

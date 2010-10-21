@@ -463,7 +463,7 @@ algorithm
         e = Exp.simplify(e);
       then
         (cache,e,prop,st_1);
-    case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,st,doVect,pre,info)
       equation
         (cache,start_1,DAE.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect,pre,info) "Range expressions without step value, e.g. 1:5" ;
         (cache,stop_1,DAE.PROP(stop_t,c_stop),st_2) = elabExp(cache,env, stop, impl, st_1,doVect,pre,info);
@@ -1618,7 +1618,7 @@ algorithm
         (types,consts) = splitProps(props);
       then
         (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE()),DAE.TUPLE_CONST(consts)));
-    case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,pre,info) /* Array-related expressions */
+    case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,pre,info) /* Array-related expressions */
       equation
         (cache,start_1,DAE.PROP(start_t,c_start)) = elabGraphicsExp(cache,env, start, impl,pre,info);
         (cache,stop_1,DAE.PROP(stop_t,c_stop)) = elabGraphicsExp(cache,env, stop, impl,pre,info);
@@ -10027,7 +10027,7 @@ algorithm
         lst = expListFromSlots(xs);
       then
         (e :: lst);
-    case ((SLOT(expExpOption = NONE) :: xs))
+    case ((SLOT(expExpOption = NONE()) :: xs))
       equation
         lst = expListFromSlots(xs);
       then
@@ -10471,7 +10471,7 @@ algorithm
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
       equation
-        t = (DAE.T_ANYTYPE(NONE),NONE());
+        t = (DAE.T_ANYTYPE(NONE()),NONE());
         et = Types.elabType(t);
       then
         (cache,SOME((DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));

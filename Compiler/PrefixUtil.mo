@@ -716,7 +716,7 @@ algorithm
       then
         (cache,DAE.SIZE(cref_1,SOME(dim_1)));
 
-    case (cache,env,ih,DAE.SIZE(exp = cref,sz = NONE),p)
+    case (cache,env,ih,DAE.SIZE(exp = cref,sz = NONE()),p)
       local Prefix p;
       equation
         (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
@@ -777,7 +777,7 @@ algorithm
       then
         (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
-    case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE,range = stop),p)
+    case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE(),range = stop),p)
       local Prefix p;
       equation
         (cache,start_1) = prefixExp(cache, env, ih, start, p);

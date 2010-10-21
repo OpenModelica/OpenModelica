@@ -122,14 +122,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
       then
         (cache, t, env);
 
@@ -1280,7 +1280,7 @@ Makes an optional DAE.ComponentRef if the input DAE.ComponentRef is a DAE.CREF_I
   output Option<DAE.ComponentRef> ocR;
 algorithm ocR := matchcontinue(incr)
   case(incr as DAE.CREF_IDENT(_,_,_)) then SOME(incr);
-  case(_) then NONE;
+  case(_) then NONE();
   end matchcontinue;
 end makeOptIdentOrNone;
 

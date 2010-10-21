@@ -1839,7 +1839,7 @@ algorithm
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.SIZE(exp = cr,sz = NONE))
+    case (DAE.SIZE(exp = cr,sz = NONE()))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();

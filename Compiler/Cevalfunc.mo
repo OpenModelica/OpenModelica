@@ -1282,7 +1282,7 @@ algorithm
         value2 = instFunctionArray(ty,SOME(value));
       then
         DAE.VALBOUND(value2,DAE.BINDING_FROM_DEFAULT_VALUE());
-    case(SCode.MOD(absynExpOption = NONE),_,ty, ht2)
+    case(SCode.MOD(absynExpOption = NONE()),_,ty, ht2)
       equation
         baseValue = instFunctionArray(ty,NONE());
       then

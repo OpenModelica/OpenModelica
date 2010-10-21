@@ -3062,7 +3062,7 @@ algorithm
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
       then
         (cache,Absyn.RANGE(e1_1,SOME(e2_1),e3_1));
-    case (cache,env,Absyn.RANGE(start = e1,step = NONE,stop = e3),impl,st,msg,info)
+    case (cache,env,Absyn.RANGE(start = e1,step = NONE(),stop = e3),impl,st,msg,info)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
@@ -3317,7 +3317,7 @@ algorithm
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,SOME(e_1)));
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = NONE),impl,st,msg,info)
+    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = NONE()),impl,st,msg,info)
       equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then

@@ -119,7 +119,7 @@ algorithm
        UnitParserExt.registerWeight(n,w);
        registerUnitWeightDefineunits2(du);
      then ();
-     case(SCode.DEFINEUNIT(name=n,weight = NONE)::du) equation
+     case(SCode.DEFINEUNIT(name=n,weight = NONE())::du) equation
        registerUnitWeightDefineunits2(du);
      then ();
      case(_::du) equation
@@ -532,7 +532,7 @@ algorithm
       print("\n");
       printStore2(lst,indx+1);
     then();
-    case(NONE::_,_) then ();
+    case(NONE()::_,_) then ();
   end matchcontinue;
 end printStore2;
 
@@ -1425,7 +1425,7 @@ parent expression as type of a constant expression"
   output UnitAbsyn.Unit unit;
 algorithm
   unit := matchcontinue(op)
-    case(NONE) then UnitAbsyn.UNSPECIFIED();
+    case(NONE()) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.ADD(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.SUB(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(_)) then str2unit("1",NONE());

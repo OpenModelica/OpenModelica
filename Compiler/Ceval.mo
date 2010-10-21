@@ -253,8 +253,8 @@ algorithm
       then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),st);
 
     // MetaModelica Option type. sjoelund 2009-07-01 
-    case (cache,env,DAE.META_OPTION(NONE),impl,st,_,msg)
-      then (cache,Values.OPTION(NONE),st);
+    case (cache,env,DAE.META_OPTION(NONE()),impl,st,_,msg)
+      then (cache,Values.OPTION(NONE()),st);
     case (cache,env,DAE.META_OPTION(SOME(inExp)),impl,st,_,msg)
       equation
         (cache,value,st) = ceval(cache,env,inExp,impl,st,NONE(),msg);
@@ -738,7 +738,7 @@ algorithm
         (cache,v,st_2);
 
     // range first:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) 
+    case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = NONE(),range = stop),impl,st,dim,msg) 
       local Option<Integer> dim;
       equation
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
@@ -759,7 +759,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),st_3);
 
     // range first:last for enumerations.
-    case (cache,env,DAE.RANGE(ty = ety as DAE.ET_ENUMERATION(path = _),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
+    case (cache,env,DAE.RANGE(ty = ety as DAE.ET_ENUMERATION(path = _),exp = start,expOption = NONE(),range = stop),impl,st,dim,msg)
       local 
         Option<Integer> dim;
         DAE.ExpType ety;
@@ -771,7 +771,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),st_2);
 
     // range first:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
+    case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = NONE(),range = stop),impl,st,dim,msg)
       local
         Real start_1,stop_1,step;
         Option<Integer> dim;
@@ -1093,7 +1093,7 @@ algorithm
         (cache,v,st) = cevalBuiltinSize(cache,env, exp, dim, impl, st, msg) "Handle size separately" ;
       then
         (cache,v,st);
-    case (cache,env,DAE.SIZE(exp = exp,sz = NONE),impl,st,_,msg)
+    case (cache,env,DAE.SIZE(exp = exp,sz = NONE()),impl,st,_,msg)
       equation
         (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
       then

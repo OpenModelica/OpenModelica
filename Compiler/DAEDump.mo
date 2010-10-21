@@ -260,7 +260,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
+    case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE(),variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -748,7 +748,7 @@ algorithm
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (_) then "unknown VariableAttributes";
   end matchcontinue;
 end dumpVariableAttributesStr;
@@ -776,7 +776,7 @@ algorithm
              kind = kind,
              direction = dir,
              ty = typ,
-             binding = NONE,
+             binding = NONE(),
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
              source = source,
@@ -844,7 +844,7 @@ algorithm
       Option<SCode.Comment> cmtopt;
       list<String> ann_strl;
     // No comment.
-    case (NONE) then "";
+    case (NONE()) then "";
     // String comment with possible annotation.
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation
@@ -2059,7 +2059,7 @@ algorithm
     case DAE.VAR(componentRef = cr,
              kind = vk,
              direction = vd,
-             binding = NONE,
+             binding = NONE(),
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
       equation
@@ -2395,7 +2395,7 @@ algorithm
       String str,expstr,str_1,str_2;
       DAE.ComponentRef cr;
       DAE.Exp exp;
-    case DAE.VAR(componentRef = cr,binding = NONE)
+    case DAE.VAR(componentRef = cr,binding = NONE())
       equation
         str = Exp.printComponentRefStr(cr);
       then
@@ -2457,7 +2457,7 @@ algorithm
       DAE.DAElist dae;
       Absyn.Path fpath;
       list<DAE.Element> elts;
-    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE)
+    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE())
       equation
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
@@ -2906,7 +2906,7 @@ algorithm
       then
         str;
 
-    case ((DAE.WHEN_EQUATION(condition = c,equations = xs1,elsewhen_ = NONE) :: xs), str)
+    case ((DAE.WHEN_EQUATION(condition = c,equations = xs1,elsewhen_ = NONE()) :: xs), str)
       local
         DAE.Exp c;
       equation
@@ -3129,7 +3129,7 @@ algorithm
              protection=prot,
              ty = typ,
              dims = dims,
-             binding = NONE,
+             binding = NONE(),
              flowPrefix = flowPrefix,
              streamPrefix =  streamPrefix,
              source = source,

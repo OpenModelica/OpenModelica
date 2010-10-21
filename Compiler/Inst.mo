@@ -1374,7 +1374,7 @@ algorithm
     case(false,_,dae) then dae;
 
       /* Only traverse on top scope */
-    case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE((v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE))))::elts)) equation
+    case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE((v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE()))))::elts)) equation
       indx = HashTable.get(DAEUtil.varCref(v),ht);
       SOME(unit) = vec[indx];
       unitStr = UnitAbsynBuilder.unit2str(unit);
@@ -2598,7 +2598,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
       list<DAE.Dimension> lst;
       InstDims inst_dims;
-    case ({},tp) then NONE;
+    case ({},tp) then NONE();
     case (inst_dims,tp)
       equation
         lst = instdimsIntOptList(Util.listLast(inst_dims));
@@ -2915,7 +2915,7 @@ algorithm
       DAE.InlineType inlineType;
       
     case(cache, env, {})
-      then NONE;
+      then NONE();
     case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
          classDef = SCode.PARTS(elementLst = els))) :: _)
       local
@@ -4936,7 +4936,7 @@ algorithm
   matchcontinue (inAbsynArrayDimOption)
     local list<Absyn.Subscript> dim;
     case (SOME(dim)) then dim;
-    case (NONE) then {};
+    case (NONE()) then {};
   end matchcontinue;
 end getOptionArraydim;
 
@@ -7716,7 +7716,7 @@ algorithm eOpt := matchcontinue(tp,mod,const,pre,name,source)
       SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
       true = Types.isEmptyArray(bt);
     then
-      NONE;
+      NONE();
   // If Types.matchProp fails, print an error.
   case (tp, mod, c, pr, n, _)
     local
@@ -7735,7 +7735,7 @@ algorithm eOpt := matchcontinue(tp,mod,const,pre,name,source)
   case (_,mod,_,_,_,_)
     equation
       failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
-    then NONE;
+    then NONE();
 end matchcontinue;
 end makeVariableBinding;
 
@@ -8061,7 +8061,7 @@ algorithm
         res = listAppend(l2, l1);
       then
         res;
-    case (SCode.MOD(subModLst = submods,absynExpOption = NONE))
+    case (SCode.MOD(subModLst = submods,absynExpOption = NONE()))
       equation
         res = getCrefFromSubmods(submods);
       then
@@ -10360,10 +10360,10 @@ algorithm (cr,cond) := matchcontinue(m)
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = SOME(eq as DAE.TYPED(modifierAsExp=e)))))
     equation
       then (inputVar,DAE.NO_DERIVATIVE(e));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE)))
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE())))
     equation
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
-  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE))) // zeroderivative
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE()))) // zeroderivative
   then (inputVar,DAE.ZERO_DERIVATIVE);
 
   case(_) then ("",DAE.ZERO_DERIVATIVE);
@@ -10383,7 +10383,7 @@ algorithm defaultDerivative := matchcontinue(subs,inCache,inEnv,inPrefix)
     Absyn.Path p;
     Absyn.Exp ae;
     SCode.Mod m;
-  case({},inCache,inEnv,inPrefix) then NONE;
+  case({},inCache,inEnv,inPrefix) then NONE();
   case(SCode.NAMEMOD("derivative",(m as SCode.MOD(absynExpOption =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,inCache,inEnv,inPrefix)
     equation
       p = Absyn.crefToPath(acr);
@@ -10946,7 +10946,7 @@ algorithm
   outIdent := matchcontinue (inExternalDecl,inIdent)
     local String id,fid;
     case (Absyn.EXTERNALDECL(funcName = SOME(id)),fid) then id; 
-    case (Absyn.EXTERNALDECL(funcName = NONE),fid) then fid; 
+    case (Absyn.EXTERNALDECL(funcName = NONE()),fid) then fid; 
   end matchcontinue;
 end instExtGetFname;
 
@@ -10974,7 +10974,7 @@ algorithm
   outString := matchcontinue (inExternalDecl)
     local String lang;
     case Absyn.EXTERNALDECL(lang = SOME(lang)) then lang; 
-    case Absyn.EXTERNALDECL(lang = NONE) then "C"; 
+    case Absyn.EXTERNALDECL(lang = NONE()) then "C"; 
   end matchcontinue;
 end instExtGetLang;
 
@@ -11234,7 +11234,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
 
-    case (cache,_,Absyn.EXTERNALDECL(output_ = NONE),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
+    case (cache,_,Absyn.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
 
     case (cache,env,Absyn.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,info)
       equation 
@@ -11824,7 +11824,7 @@ protected function getOptPath
 algorithm
   outAbsynPathOption := matchcontinue (inPath)
     local Absyn.Path p;
-    case Absyn.IDENT(name = "") then NONE;
+    case Absyn.IDENT(name = "") then NONE();
     case p then SOME(p);
   end matchcontinue;
 end getOptPath;
@@ -11958,7 +11958,7 @@ algorithm
       equation
         failure(_ = Mod.lookupCompModification(mod, bind_name));
       then
-        NONE;
+        NONE();
     
     case (mod,DAE.TYPES_VAR(name,binding=binding)::_,etype,index_list,bind_name,useConstValue) 
       equation
@@ -11970,7 +11970,7 @@ algorithm
     then instBinding(mod,varLst,etype,index_list,bind_name,useConstValue);
     
     case (mod,{},etype,index_list,bind_name,useConstValue)
-    then NONE;
+    then NONE();
   end matchcontinue;
 end instBinding;
 
@@ -11981,7 +11981,7 @@ output Option<DAE.Exp> exp;
 algorithm
   exp := matchcontinue(bind)
   local DAE.Exp e; Values.Value v;
-    case(DAE.UNBOUND()) then NONE;
+    case(DAE.UNBOUND()) then NONE();
     case(DAE.EQBOUND(exp=e)) then SOME(e);
     case(DAE.VALBOUND(valBound=v)) equation
       e = ValuesUtil.valueExp(v);
@@ -12030,7 +12030,7 @@ algorithm
       equation
         failure(mod2 = Mod.lookupIdxModification(mod, index));
       then
-        NONE;
+        NONE();
     case (_,_,_,_,_)
       then fail();
   end matchcontinue;
@@ -12440,7 +12440,7 @@ algorithm
         dae = InstSection.instEqEquation(DAE.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
       then
         dae;
-    case (_,_,DAE.MOD(eqModOption = NONE),_,impl) then DAEUtil.emptyDae;
+    case (_,_,DAE.MOD(eqModOption = NONE()),_,impl) then DAEUtil.emptyDae;
     case (_,_,DAE.NOMOD(),_,impl) then DAEUtil.emptyDae;
     case (_,_,DAE.REDECL(finalPrefix = _),_,impl) then DAEUtil.emptyDae;
     case (c,ty1,m,source,impl)
@@ -12529,7 +12529,7 @@ algorithm
       then 
         (cache,binding);
 
-    case (cache,_,_,DAE.MOD(eqModOption = NONE),tp,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.MOD(eqModOption = NONE()),tp,_,_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
@@ -13572,7 +13572,7 @@ algorithm
         rinfo = Util.getOptionOrDefault(info,Absyn.dummyInfo);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,rinfo);
         (cache,compenv,ih,store,_,_,ty,_) = 
-          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY,env);
+          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true,NONE(),io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -13874,7 +13874,7 @@ protected function getCrefFromCond "
 algorithm
   crefs := matchcontinue(cond)
     local  Absyn.Exp e;
-    case(NONE) then {};
+    case(NONE()) then {};
     case SOME(e) then Absyn.getCrefFromExp(e,true);
   end matchcontinue;
 end getCrefFromCond;

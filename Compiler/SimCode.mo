@@ -7297,7 +7297,7 @@ algorithm
     case (DAE.SCONST(_),_) then {};
     case (DAE.CODE(_,_),_) then {};
     case (DAE.END(),_) then {};
-    case (DAE.META_OPTION(NONE),_) then {};
+    case (DAE.META_OPTION(NONE()),_) then {};
 
     case (e,_)
       equation
@@ -7739,7 +7739,7 @@ algorithm
         displayUnitStr = System.stringReplace(displayUnitStr,"\"","");        
         displayUnitStr = System.stringReplace(displayUnitStr,"\\","\\\\");
       then (unitStr, displayUnitStr);
-    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE)) )
+    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE())) )
       equation
         unitStr = Exp.printExpStr(uexp);
         unitStr = System.stringReplace(unitStr,"\"","");
@@ -7811,14 +7811,14 @@ algorithm
       then
         SOME(e);
     /* String - Parameters without value binding. Investigate if it has start value */
-    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = NONE, values = dae_var_attr))
+    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
     /* Parameters without value binding. Investigate if it has start value */
-    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = NONE, values = dae_var_attr))
+    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Exp.isConst(e);

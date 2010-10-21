@@ -632,7 +632,7 @@ algorithm
     //empty iteration segment and 'empty' option is NONE, so do nothing
     case (txt as MEM_TEXT(
             tokens = {},
-            blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE) )) :: _
+            blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()) )) :: _
             ))
       then
         txt;
@@ -1193,7 +1193,7 @@ algorithm
     
     //concat ... i.e. text
     case (BT_ITER(options = ITER_OPTIONS(
-                              separator = NONE,
+                              separator = NONE(),
                               alignNum = 0,
                               wrapWidth = 0)), toks, nchars, isstart, aind)
       equation
@@ -1234,7 +1234,7 @@ algorithm
     
     //no separator and alignment and/or wrapping 
     case (BT_ITER(options = ITER_OPTIONS(
-                              separator = NONE,
+                              separator = NONE(),
                               alignNum = anum,
                               alignOfset = aoffset,
                               alignSeparator = asep,

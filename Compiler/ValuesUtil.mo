@@ -992,7 +992,7 @@ algorithm
         e = valueExp(v);
       then DAE.META_OPTION(SOME(e));
 
-    case (Values.OPTION(NONE)) then DAE.META_OPTION(NONE);
+    case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
 
     case (Values.META_TUPLE(vallist))
       equation

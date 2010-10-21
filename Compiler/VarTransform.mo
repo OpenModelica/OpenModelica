@@ -748,7 +748,7 @@ algorithm outAlgorithmStatementLst := matchcontinue(optStmt,inVariableReplacemen
     equation
     ({stmt2}) = replaceEquationsStmts({stmt},inVariableReplacements,condExpFunc);
     then SOME(stmt2);
-  case(NONE(),_,_) then NONE;
+  case(NONE(),_,_) then NONE();
     end matchcontinue;
 end replaceOptEquationsStmts;
 
@@ -1601,7 +1601,7 @@ algorithm
         expl_1 = replaceExpMatrix(expl, repl, cond);
       then
         DAE.MATRIX(t,b,expl_1);
-    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2)),repl,cond)
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
@@ -1634,7 +1634,7 @@ algorithm
         e1_1 = replaceExp(e1, repl, cond);
       then
         DAE.ASUB(e1_1,expl);
-    case ((e as DAE.SIZE(exp = e1,sz = NONE)),repl,cond)
+    case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
@@ -1797,14 +1797,14 @@ algorithm
       DAE.ComponentRef key;
       DAE.Exp value;
       Option<BinTree> left,right;
-    case (TREENODE(value = NONE,left = NONE,right = NONE),klst,vlst) then (klst,vlst);
+    case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
       then
         ((DAE.CREF(key,DAE.ET_REAL()) :: klst),(value :: vlst));
-    case (TREENODE(value = NONE,left = left,right = right),klst,vlst)
+    case (TREENODE(value = NONE(),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
@@ -1905,7 +1905,7 @@ algorithm
       Option<BinTree> left,right;
       Integer cmpval;
       BinTree t_1,t,right_1,left_1;
-    case (TREENODE(value = NONE,left = NONE,right = NONE),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE(),NONE());
+    case (TREENODE(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE(),NONE());
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,value)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
@@ -2024,7 +2024,7 @@ algorithm
       Option<BinTree2> left,right;
       Integer cmpval;
       BinTree2 t_1,t,right_1,left_1;
-    case (TREENODE2(value = NONE,left = NONE,right = NONE),key,value) then TREENODE2(SOME(TREEVALUE2(key,value)),NONE(),NONE());
+    case (TREENODE2(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE2(SOME(TREEVALUE2(key,value)),NONE(),NONE());
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = right),key,value)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;

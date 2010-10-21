@@ -153,7 +153,7 @@ algorithm
       DAELow.WhenEquation weq,weq_1;
       DAE.ElementSource source "the origin of the element";
 
-    case(NONE(),_) then NONE;
+    case(NONE(),_) then NONE();
     case(SOME(DAELow.EQUATION(e1,e2,source)),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -296,7 +296,7 @@ algorithm
       Option<DAELow.Var> var;
       DAE.ElementSource source "the origin of the element";
 
-    case(NONE(),_) then NONE;
+    case(NONE(),_) then NONE();
     case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);

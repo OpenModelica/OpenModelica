@@ -213,7 +213,7 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);
@@ -229,7 +229,7 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = NONE,index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = NONE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);

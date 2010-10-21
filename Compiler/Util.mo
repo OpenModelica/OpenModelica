@@ -5620,7 +5620,7 @@ algorithm
       Type_b b;
       Type_a a;
       FuncTypeType_aToType_b rel;
-    case (NONE(),_) then NONE;
+    case (NONE(),_) then NONE();
     case (SOME(a),rel)
       equation
         b = rel(a);
@@ -5647,7 +5647,7 @@ algorithm
   outString:=
   matchcontinue (inStringOption)
     local String s;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(s)) then s;
   end matchcontinue;
 end stringOption;
@@ -5684,7 +5684,7 @@ public function genericOption "function: genericOption
   replaceable type Type_a subtypeof Any;
 algorithm unOption := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then {};
+    case (NONE()) then {};
     case (SOME(item)) then {item};
   end matchcontinue;
 end genericOption;
@@ -5699,7 +5699,7 @@ public function isNone
   replaceable type Type_a subtypeof Any;
 algorithm out := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then true;
+    case (NONE()) then true;
     case (_) then false;
   end matchcontinue;
 end isNone;
@@ -5714,20 +5714,20 @@ public function isSome
   replaceable type Type_a subtypeof Any;
 algorithm out := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then false;
+    case (NONE()) then false;
     case (_) then true;
   end matchcontinue;
 end isSome;
 
 public function makeOptIfNonEmptyList "function: stringOption
   author: BZ
-  Construct a Option<Type_a> if the list contains one and only one element. If more, error. On empty=>NONE"
+  Construct a Option<Type_a> if the list contains one and only one element. If more, error. On empty=>NONE()"
   input list<Type_a> unOption;
   output Option<Type_a> inOption;
   replaceable type Type_a subtypeof Any;
 algorithm inOption := matchcontinue (unOption)
     local Type_a item;
-    case ({}) then NONE;
+    case ({}) then NONE();
     case ({item}) then SOME(item);
   end matchcontinue;
 end makeOptIfNonEmptyList;
@@ -5989,7 +5989,7 @@ algorithm
 end intPositive;
 
 public function optionToList "function: optionToList
-  Returns an empty list for NONE and a list containing
+  Returns an empty list for NONE() and a list containing
   the element for SOME(element). To use with listAppend"
   input Option<Type_a> inTypeAOption;
   output list<Type_a> outTypeALst;
@@ -5998,13 +5998,13 @@ algorithm
   outTypeALst:=
   matchcontinue (inTypeAOption)
     local Type_a e;
-    case NONE then {};
+    case NONE() then {};
     case SOME(e) then {e};
   end matchcontinue;
 end optionToList;
 
 public function flattenOption "function: flattenOption
-  Returns the second argument if NONE or the element in SOME(element)"
+  Returns the second argument if NONE() or the element in SOME(element)"
   input Option<Type_a> inTypeAOption;
   input Type_a inTypeA;
   output Type_a outTypeA;

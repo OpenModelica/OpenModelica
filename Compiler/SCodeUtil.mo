@@ -373,7 +373,7 @@ algorithm
       list<Absyn.ElementItem> els;
       list<Absyn.ClassPart> cls;
     // none
-    case (NONE(),_) then NONE;
+    case (NONE(),_) then NONE();
     // Already filled.
     case (decl as SOME(Absyn.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
@@ -806,7 +806,7 @@ algorithm
         res = translateClassdefExternaldecls(rest);
       then
         res;
-    case ({}) then NONE;
+    case ({}) then NONE();
   end matchcontinue;
 end translateClassdefExternaldecls;
 
@@ -1022,7 +1022,7 @@ algorithm
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
       true = name ==& arg;
     then SOME(str);
-    case({},arg) then NONE;
+    case({},arg) then NONE();
     case(_::args,arg) then translateDefineunitParam(args,arg);
   end matchcontinue;
 end translateDefineunitParam;
@@ -1037,7 +1037,7 @@ algorithm
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;
     then SOME(r);
-    case({},arg) then NONE;
+    case({},arg) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
   end matchcontinue;
 end translateDefineunitParam2;
@@ -1092,7 +1092,7 @@ algorithm
       then
         {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),cc)};
 
-    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE()),info)
       local Absyn.Path n;
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
@@ -1268,7 +1268,7 @@ algorithm
       SCode.Annotation ann;
       String str;
 
-    case(NONE) then NONE;
+    case(NONE()) then NONE();
     case(SOME(Absyn.COMMENT(NONE(),NONE()))) then SOME(SCode.COMMENT(NONE(),NONE()));
     case(SOME(Absyn.COMMENT(NONE(),SOME(str)))) then SOME(SCode.COMMENT(NONE(),SOME(str)));
     case(SOME(Absyn.COMMENT(SOME(absann),NONE())))
@@ -1444,7 +1444,7 @@ algorithm
 
     case (NONE(),_,_) then SCode.NOMOD();  /* final */
     case (SOME(Absyn.CLASSMOD({},(SOME(e)))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD({},(NONE))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
+    case (SOME(Absyn.CLASSMOD({},(NONE()))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
     case (SOME(Absyn.CLASSMOD(l,SOME(e))),finalPrefix,each_)
       equation
         subs = translateArgs(l);

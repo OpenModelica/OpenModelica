@@ -1969,7 +1969,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> boxed2any=(
           DAE.T_FUNCTION({("x",typeBoxedAny)},((DAE.T_NOTYPE(),NONE())),DAE.NO_INLINE),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> option2boolean=(
-          DAE.T_FUNCTION({("x",(DAE.T_METAOPTION((DAE.T_ANYTYPE(NONE),NONE())),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE());
+          DAE.T_FUNCTION({("x",(DAE.T_METAOPTION((DAE.T_ANYTYPE(NONE()),NONE())),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> anyInteger2any=(
           DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE())),("x2",DAE.T_INTEGER_DEFAULT)},(DAE.T_NOTYPE(),NONE()),DAE.NO_INLINE),NONE());
@@ -2031,7 +2031,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> array1dStringInt2string =(
 protected constant tuple<DAE.TType, Option<Type_a>> intA2marrayA =(
           DAE.T_FUNCTION({("x1",DAE.T_INTEGER_DEFAULT),("x2",(DAE.T_POLYMORPHIC("A"),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE),NONE());
 protected constant tuple<DAE.TType, Option<Type_a>> marrayAny2int =(
-          DAE.T_FUNCTION({("x1",(DAE.T_ANYTYPE(NONE),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE());
+          DAE.T_FUNCTION({("x1",(DAE.T_ANYTYPE(NONE()),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE());
 protected constant tuple<DAE.TType, Option<Type_a>> marrayAInt2A =(
           DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE())),("x2",DAE.T_INTEGER_DEFAULT)},(DAE.T_POLYMORPHIC("A"),NONE()),DAE.NO_INLINE),NONE());
 protected constant tuple<DAE.TType, Option<Type_a>> marrayA2listA =(

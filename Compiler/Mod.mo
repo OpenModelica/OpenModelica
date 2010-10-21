@@ -113,7 +113,7 @@ algorithm
     case (cache,_,_,_,SCode.NOMOD(),impl,_) then (cache,DAE.NOMOD());
 
     // no top binding
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE())),impl,info)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
       then
@@ -366,7 +366,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> elist;
       
     case (DAE.NOMOD()) then SCode.NOMOD();
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = NONE)))
+    case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = NONE())))
       equation
         subs_1 = unelabSubmods(subs);
       then
@@ -534,7 +534,7 @@ algorithm
       then
         (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,eOpt))));
 
-    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE),impl,info)
+    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE()),impl,info)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
       then
@@ -652,7 +652,7 @@ algorithm
       list<SCode.Element> elist;
       Ident s;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),env,pre)
+    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE())),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
@@ -1517,11 +1517,11 @@ algorithm
       DAE.EqMod eq;
       Absyn.Exp absynExp;
 
-    case (NONE(),_) then NONE;
+    case (NONE(),_) then NONE();
     case (e,{}) then e;
 
     // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) 
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_)),xs) then NONE;
+    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_)),xs) then NONE();
 
     // For modifiers with value, retrieve nth element
     case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),_)),(x :: xs))
@@ -1906,8 +1906,8 @@ public function modEquation "function: modEquation
 algorithm
   outTypesEqModOption := matchcontinue (inMod)
     local Option<DAE.EqMod> e;
-    case DAE.NOMOD() then NONE;
-    case DAE.REDECL(finalPrefix = _) then NONE;
+    case DAE.NOMOD() then NONE();
+    case DAE.REDECL(finalPrefix = _) then NONE();
     case DAE.MOD(eqModOption = e) then e;
   end matchcontinue;
 end modEquation;

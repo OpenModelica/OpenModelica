@@ -307,7 +307,7 @@ algorithm
   lst := matchcontinue(tree)
   local Option<AvlTree> r,l; AvlKey k; AvlValue v;
     case NONE then {};
-    case(SOME(AVLTREENODE(value = NONE,left = l,right = r) )) equation
+    case(SOME(AVLTREENODE(value = NONE(),left = l,right = r) )) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then lst;
     case(SOME(AVLTREENODE(value=SOME(AVLTREEVALUE(k,v)),left = l, right = r))) equation
@@ -334,7 +334,7 @@ algorithm
       AvlTree t_1,t,right_1,left_1,bt;
 
       /* empty tree*/
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
+    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
 		/* Replace this node. NOTE: different from generic impl. Joins the list. */
@@ -378,7 +378,7 @@ input Option<AvlTree> t;
 output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE(),0,NONE(),NONE());
+    case(NONE()) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -657,7 +657,7 @@ algorithm outValue:= matchcontinue (inAvlTree,inKey)
       Boolean b1,b2;
       String s1;
       // end of tree case
-  case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE,right = NONE),key)
+  case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE(),right = NONE()),key)
     equation
       b2 = Absyn.pathPrefixOf(key,rkey);
       rval = Util.if_(b2,rval,{});
@@ -727,7 +727,7 @@ algorithm
         res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
       then
         res;
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -760,7 +760,7 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := matchcontinue(bt)
-    case(NONE) then 0;
+    case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;

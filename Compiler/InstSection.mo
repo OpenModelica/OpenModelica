@@ -1065,7 +1065,7 @@ algorithm
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE()),fillValue) "types"; 
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types"; 
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
       tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
       aexpl = listAppend(aexpl,aexpl2);      
@@ -1077,7 +1077,7 @@ algorithm
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE()),fillValue) "types";  
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";  
       tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
       aexpl = listAppend({inExp},aexpl2);
       lst = listAppend({propType},lst2); 
@@ -2916,7 +2916,7 @@ algorithm
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
         wilds = Util.listFill(DAE.CREF(DAE.WILD, DAE.ET_OTHER), wild_count);
-        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE),NONE()), DAE.C_VAR), wild_count);
+        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR), wild_count);
      then Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     // Otherwise, call Algorithm.makeAssignment as usual.
     case (_, _, _, _, _, _, _)
@@ -4519,7 +4519,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of two enumeration variables */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE),_),vt2,false,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE()),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE()),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);

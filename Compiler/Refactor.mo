@@ -480,7 +480,7 @@ algorithm
       then
         SOME(Absyn.CONSTRAINCLASS(resultSpec,com));
     case(NONE(),_,_,_)
-    then NONE;
+    then NONE();
 	end matchcontinue;
 end refactorConstrainClass;
 
@@ -766,7 +766,7 @@ algorithm
       list<Absyn.ElementArg> rest;
       Option<Real> res;
 
-    case({}) then NONE;
+    case({}) then NONE();
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(ex)))) :: rest)
 

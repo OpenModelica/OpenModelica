@@ -366,7 +366,7 @@ algorithm
     local
       Ident s1,str,cmt;
       Option<Absyn.Annotation> annopt;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         s1 = unparseAnnotationOption(0, annopt);
@@ -407,7 +407,7 @@ algorithm
     local
       Ident str,cmt;
       Option<Absyn.Annotation> annopt;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
@@ -437,7 +437,7 @@ protected function dumpAnnotationOption
 algorithm
   _ := matchcontinue (inAbsynAnnotationOption)
     local list<Absyn.ElementArg> mod;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
@@ -873,7 +873,7 @@ algorithm
       list<Absyn.ElementArg> l;
       Absyn.Exp e;
     case (Absyn.CLASSMOD(elementArgLst = {})) then "";
-    case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE))
+    case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE()))
       equation
         s1 = getStringList(l, unparseElementArgStr, ", ");
         s2 = stringAppend("(", s1);
@@ -1084,7 +1084,7 @@ algorithm
       Option<Ident> id;
       Option<Absyn.ComponentRef> cref;
       list<Absyn.Exp> exps;
-    case Absyn.EXTERNALDECL(funcName = id,lang = NONE,output_ = cref,args = exps)
+    case Absyn.EXTERNALDECL(funcName = id,lang = NONE(),output_ = cref,args = exps)
       equation
         idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
@@ -1229,7 +1229,7 @@ algorithm
       then
         str;
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
-                           funcName = SOME(ident),lang = lang,output_ = NONE,
+                           funcName = SOME(ident),lang = lang,output_ = NONE(),
                            args = expl,annotation_ = ann),annotation_ = ann2),_)
       equation
         langstr = getExtlangStr(lang);
@@ -1244,7 +1244,7 @@ algorithm
       then
         str;
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
-                           funcName = NONE,lang = lang,output_ = NONE,
+                           funcName = NONE(),lang = lang,output_ = NONE(),
                            annotation_ = ann),annotation_ = ann2),_)
       equation
         is = indentStr(i);
@@ -1265,7 +1265,7 @@ protected function getExtlangStr
 algorithm
   outString := matchcontinue (inStringOption)
     local Ident res,str;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(str)) equation res = System.stringAppendList({"\"",str,"\""}); then res;
   end matchcontinue;
 end getExtlangStr;
@@ -1466,7 +1466,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info info;
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
-                        specification = spec,info = info,constrainClass = NONE))
+                        specification = spec,info = info,constrainClass = NONE()))
       equation
         Print.printBuf("Absyn.ELEMENT(");
         printBool(finalPrefix);
@@ -1511,7 +1511,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.TEXT(optName = NONE,string = text,info = info))
+    case (Absyn.TEXT(optName = NONE(),string = text,info = info))
       equation
         Print.printBuf("Absyn.TEXT(");
         Print.printBuf("NONE, \"");
@@ -1559,7 +1559,7 @@ algorithm
         str = System.stringAppendList({s4,s5,";"});
       then
         str;
-    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE(),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
         s1 = selectString(finalPrefix, "final ", "");
         s3 = unparseInnerouterStr(inout);
@@ -1585,7 +1585,7 @@ algorithm
           "); */"});
       then
         str;
-    case (i,Absyn.TEXT(optName = NONE,string = text,info = info))
+    case (i,Absyn.TEXT(optName = NONE(),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
         str = System.stringAppendList({"/* Absyn.TEXT(NONE(), \"",text,"\", ",s1,"); */"});
@@ -1609,7 +1609,7 @@ algorithm
     local
       Ident res;
       Absyn.ConstrainClass constr;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(constr))
       equation
         res = " " +& unparseConstrainclassStr(constr);
@@ -2195,7 +2195,7 @@ algorithm
         res = stringAppend(" if ", s1);
       then
         res;
-    case (NONE) then "";
+    case (NONE()) then "";
   end matchcontinue;
 end unparseComponentCondition;
 
@@ -2208,7 +2208,7 @@ algorithm
   _:=
   matchcontinue (inAbsynArrayDimOption)
     local list<Absyn.Subscript> s;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
@@ -2303,7 +2303,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (NONE) then ();
+    case (NONE()) then ();
   end matchcontinue;
 end printOptModification;
 
@@ -2396,7 +2396,7 @@ algorithm
         str = unparseModificationStr(opt);
       then
         str;
-    case (NONE) then "";
+    case (NONE()) then "";
   end matchcontinue;
 end unparseOptModificationStr;
 
@@ -2413,7 +2413,7 @@ algorithm
       Ident s1,s2,str;
       list<Absyn.ElementArg> l;
       Option<Absyn.Exp> e;
-    case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE)) then "()";  /* Special case for empty modifications */
+    case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE())) then "()";  /* Special case for empty modifications */
     case (Absyn.CLASSMOD(elementArgLst = l, expOption = e))
       equation
         s1 = unparseMod1Str(l);
@@ -3742,7 +3742,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    case Absyn.RANGE(start = start,step = NONE,stop = stop)
+    case Absyn.RANGE(start = start,step = NONE(),stop = stop)
       equation
         Print.printBuf("Absyn.RANGE(");
         printExp(start);
@@ -4322,7 +4322,7 @@ algorithm
         s_2 = stringAppend(s_1, "]");
       then
         s_2;
-    case ((e as Absyn.RANGE(start = start,step = NONE,stop = stop)))
+    case ((e as Absyn.RANGE(start = start,step = NONE(),stop = stop)))
       equation
         s1 = printExpStr(start);
         s3 = printExpStr(stop);
@@ -4989,7 +4989,7 @@ algorithm
   outString:=
   matchcontinue (inStringOption)
     local Ident str,s;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(s))
       equation
         str = System.stringAppendList({" \"",s,"\""});
@@ -5007,7 +5007,7 @@ algorithm
   _:=
   matchcontinue (inStringOption)
     local Ident str,s;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then

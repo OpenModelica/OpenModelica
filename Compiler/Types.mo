@@ -793,7 +793,7 @@ algorithm
       Option<EqMod> eq;
       Mod m;
     case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = {},eqModOption = eq)) then DAE.MOD(f,each_,{},eq);
-    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE))
+    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE()))
       equation
          {} = removeRedecl(subs);
       then
@@ -1260,7 +1260,7 @@ algorithm
       then
         ((DAE.T_LIST(tp),NONE()));
 
-    case Values.OPTION(NONE)
+    case Values.OPTION(NONE())
       equation
         tp = (DAE.T_METAOPTION((DAE.T_NOTYPE,NONE())),NONE());
       then tp;
@@ -2097,7 +2097,7 @@ algorithm
         res = System.stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
         res;
-    case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE),_))
+    case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE()),_))
       equation
         res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
@@ -2580,7 +2580,7 @@ algorithm
       DAE.BindingSource source;
       
     case DAE.UNBOUND() then "UNBOUND";
-    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE,constant_ = f,source = source)
+    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE(),constant_ = f,source = source)
       equation
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
@@ -2649,7 +2649,7 @@ algorithm
       list<Ident> names, attr_names;
       list<Var> vars, attrs;
       Type ty;
-    case (_, (DAE.T_ENUMERATION(index = NONE, path = p, names = names,
+    case (_, (DAE.T_ENUMERATION(index = NONE(), path = p, names = names,
             literalVarLst = vars, attributeLst = attrs), _))
       equation
         vars = makeEnumerationType1(p, vars, names, 1);
@@ -3897,7 +3897,7 @@ algorithm
         (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
         /* Range expressions, e.g. 1:10 */
-    case (DAE.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+    case (DAE.RANGE(ty = t,exp = begin,expOption = NONE(),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
@@ -4020,11 +4020,11 @@ algorithm
         (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
       then
         (DAE.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2));
-    case (DAE.META_OPTION(NONE),_,(DAE.T_METAOPTION(t2),p2),printFailtrace)
+    case (DAE.META_OPTION(NONE()),_,(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
       then
-        (DAE.META_OPTION(NONE),(DAE.T_METAOPTION(t2),p2));
+        (DAE.META_OPTION(NONE()),(DAE.T_METAOPTION(t2),p2));
 
         /* MetaModelica Tuple */
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)

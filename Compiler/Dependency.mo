@@ -206,7 +206,7 @@ algorithm
     local String id;
     case(Absyn.FULLYQUALIFIED(className)) then getClassScope(className);
 
-    case(Absyn.IDENT(id)) then NONE;
+    case(Absyn.IDENT(id)) then NONE();
 
     case(className) equation
       className = Absyn.stripLast(className);
@@ -1257,7 +1257,7 @@ algorithm
  local Absyn.Path path; Absyn.Class cl; String id; AbsynDep.AvlTree tree; list<Absyn.Class> cls; list<Option<Absyn.Path>> pts;
    case((cl as Absyn.CLASS(name=id),NONE(),(tree,cls,pts))) equation
      _ = AbsynDep.avlTreeGet(tree,Absyn.IDENT(id));
-    then ((cl,NONE(),(tree,cl::cls,NONE::pts)));
+    then ((cl,NONE(),(tree,cl::cls,NONE()::pts)));
    case((cl as Absyn.CLASS(name=id),SOME(path),(tree,cls,pts))) equation
      _ = AbsynDep.avlTreeGet(tree,Absyn.joinPaths(path,Absyn.IDENT(id)));
    then ((cl,SOME(path),(tree,cl::cls,SOME(path)::pts)));

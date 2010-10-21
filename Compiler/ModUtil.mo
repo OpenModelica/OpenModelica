@@ -190,7 +190,7 @@ algorithm
         ell_1 = Util.listListThreadTuple(el_1, bl);
       then
         DAE.MATRIX(t,a,ell_1);
-    case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e2))
+    case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e2))
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
@@ -511,7 +511,7 @@ algorithm
     local
       String str;
       Absyn.Path p;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(p))
       equation
         str = pathString(p);

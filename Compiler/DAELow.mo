@@ -1635,7 +1635,7 @@ algorithm
         res = Util.boolAndList({b1,b2,b3});
       then
         res;
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2),vars,knvars)
+    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2),vars,knvars)
       equation
         b1 = isDiscreteExp(e1, vars,knvars);
         b2 = isDiscreteExp(e2, vars,knvars);
@@ -1665,7 +1665,7 @@ algorithm
         res = boolAnd(b1, b2);
       then
         res;
-    case (DAE.SIZE(exp = e1,sz = NONE),vars,knvars)
+    case (DAE.SIZE(exp = e1,sz = NONE()),vars,knvars)
       equation
         res = isDiscreteExp(e1, vars,knvars);
       then
@@ -2684,7 +2684,7 @@ algorithm
               arryDim = g,
               index = i,
               source = source,
-              values = NONE,
+              values = NONE(),
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
@@ -2702,7 +2702,7 @@ algorithm
               arryDim = g,
               index = i,
               source = source,
-              values = NONE,
+              values = NONE(),
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
@@ -2720,7 +2720,7 @@ algorithm
               arryDim = g,
               index = i,
               source = source,
-              values = NONE,
+              values = NONE(),
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
@@ -2738,7 +2738,7 @@ algorithm
               arryDim = g,
               index = i,
               source = source,
-              values = NONE,
+              values = NONE(),
               comment = s,
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
@@ -2894,7 +2894,7 @@ algorithm
         res_1 = Util.stringDelimitList(res, ", ");
       then
         res_1;
-    case (NONE) then "No analytic jacobian available\n";
+    case (NONE()) then "No analytic jacobian available\n";
   end matchcontinue;
 end dumpJacobianStr;
 
@@ -4044,7 +4044,7 @@ algorithm
                      varDirection = dir,
                      varType = var_type,
                      arryDim = arrayDim,
-                     bindExp = NONE,
+                     bindExp = NONE(),
                      index = indx,
                      source = source,
                      values = dae_var_attr,
@@ -4429,7 +4429,7 @@ algorithm
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
 
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE),i,whenList)
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE()),i,whenList)
       equation
         vars = emptyVars();
         (res,reinit) = lowerWhenEqn2(eqnl, i);
@@ -5550,7 +5550,7 @@ algorithm
         inputs = statesAndVarsExp(e, vars);
       then
         (inputs,{exp1});
-    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE))
+    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE()))
       equation
         ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
@@ -6010,7 +6010,7 @@ algorithm
       list<DAE.Exp> arrayElements;
     case (DAE.ARRAY(array = arrayElements))
       then arrayElements;
-    case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE))
+    case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE()))
       local
         Integer start, stop;
         list<Values.Value> vals;
@@ -12814,7 +12814,7 @@ algorithm
         SOME(jac) = calculateJacobianRows(eqn_lst_1, vars, ae, m, mt,differentiateIfExp);
       then
         SOME(jac);
-    case (_,_,_,_,_,_) then NONE;  /* no analythic jacobian available */
+    case (_,_,_,_,_,_) then NONE();  /* no analythic jacobian available */
   end matchcontinue;
 end calculateJacobian;
 
@@ -14698,7 +14698,7 @@ algorithm
       String rkeystr,keystr;
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
-    case (TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE),key,value)
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,value)
       local DAE.ComponentRef nkey;
       equation
         nkey = key;
@@ -14773,7 +14773,7 @@ algorithm
       Option<BinTree> optright_1,left,lleft,lright,topt_1;
       Value rval,cmpval;
       Option<TreeValue> leftval;
-    case ((bt as TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE)),key) then bt;
+    case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) then bt;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),key)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when existing right node" ;
@@ -14783,14 +14783,14 @@ algorithm
         optright_1 = treePruneEmptyNodes(right_1);
       then
         TREENODE(SOME(rightmost),left,optright_1);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(TREENODE(leftval,lleft,lright)),rightSubTree = NONE),key)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(TREENODE(leftval,lleft,lright)),rightSubTree = NONE()),key)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
         keystr = Exp.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         TREENODE(leftval,lleft,lright);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE,rightSubTree = NONE),key)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
         keystr = Exp.printComponentRefStr(key);
@@ -14849,8 +14849,8 @@ algorithm
       BinTree left,right_1,right,bt;
       Option<BinTree> rightopt_1;
       Option<TreeValue> treeval;
-    case (TREENODE(value = SOME(treevalue),leftSubTree = NONE,rightSubTree = NONE)) then (treevalue,TREENODE(NONE(),NONE(),NONE()));
-    case (TREENODE(value = SOME(treevalue),leftSubTree = SOME(left),rightSubTree = NONE)) then (treevalue,left);
+    case (TREENODE(value = SOME(treevalue),leftSubTree = NONE(),rightSubTree = NONE())) then (treevalue,TREENODE(NONE(),NONE(),NONE()));
+    case (TREENODE(value = SOME(treevalue),leftSubTree = SOME(left),rightSubTree = NONE())) then (treevalue,left);
     case (TREENODE(value = treeval,leftSubTree = left,rightSubTree = SOME(right)))
       local Option<BinTree> left;
       equation
@@ -14858,7 +14858,7 @@ algorithm
         rightopt_1 = treePruneEmptyNodes(right_1);
       then
         (value,TREENODE(treeval,left,rightopt_1));
-    case (TREENODE(value = SOME(treeval),leftSubTree = NONE,rightSubTree = SOME(right)))
+    case (TREENODE(value = SOME(treeval),leftSubTree = NONE(),rightSubTree = SOME(right)))
       local TreeValue treeval;
       equation
         failure((_,_) = treeDeleteRightmostValue(right));
@@ -14886,7 +14886,7 @@ algorithm
   outBinTreeOption:=
   matchcontinue (inBinTree)
     local BinTree bt;
-    case TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE) then NONE;
+    case TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()) then NONE();
     case bt then SOME(bt);
   end matchcontinue;
 end treePruneEmptyNodes;
@@ -14939,14 +14939,14 @@ algorithm
       DAE.ComponentRef key;
       Value value;
       Option<BinTree> left,right;
-    case (TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE),klst,vlst) then (klst,vlst);
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(right, klst, vlst);
       then
         ((key :: klst),(value :: vlst));
-    case (TREENODE(value = NONE,leftSubTree = left,rightSubTree = right),klst,vlst)
+    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
@@ -15035,7 +15035,7 @@ algorithm
     local
       Value ld,rd,res;
       BinTree left,right;
-    case (TREENODE(leftSubTree = NONE,rightSubTree = NONE)) then 1;
+    case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
       equation
         ld = bintreeDepth(left);
@@ -15043,12 +15043,12 @@ algorithm
         res = intMax(ld, rd);
       then
         res + 1;
-    case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE))
+    case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
       equation
         ld = bintreeDepth(left);
       then
         ld;
-    case (TREENODE(leftSubTree = NONE,rightSubTree = SOME(right)))
+    case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
         rd = bintreeDepth(right);
       then
@@ -15139,7 +15139,7 @@ algorithm
       local list<list<tuple<DAE.Exp, Boolean>>> es;
       then
         true;
-    case (DAE.RANGE(exp = start,expOption = NONE,range = stop))
+    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop))
       equation
         true = isAlgebraic(start);
         true = isAlgebraic(stop);
@@ -17275,7 +17275,7 @@ algorithm
     list<Integer> range;
     list<DAE.Subscript> subs;
     case({}) then {};
-    case(NONE::dims) equation
+    case(NONE()::dims) equation
       rangelist = arrayDimensionsToRange(dims);
     then {}::rangelist;
     case(SOME(i)::dims) equation
