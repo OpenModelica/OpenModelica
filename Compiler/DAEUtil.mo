@@ -148,7 +148,7 @@ algorithm
       pLst2 = getDerivativePaths(funcDefs);
       paths = Util.listUnion(p1::p2::pLst1,pLst2);
     then paths;
-    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE,lowerOrderDerivatives=pLst1)::funcDefs) equation
+    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE(),lowerOrderDerivatives=pLst1)::funcDefs) equation
       pLst2 = getDerivativePaths(funcDefs);
       paths = Util.listUnion(p1::pLst1,pLst2);
     then paths;
@@ -750,7 +750,7 @@ algorithm
 end setVariableAttributes;
 
 public function setStartAttr "
-  sets the start attribute. If NONE, assumes Real attributes."
+  sets the start attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
   input DAE.Exp start;
   output Option<DAE.VariableAttributes> outAttr;
@@ -803,7 +803,7 @@ algorithm
 end setUnitAttr;
 
 public function setProtectedAttr "
-  sets the start attribute. If NONE, assumes Real attributes.
+  sets the start attribute. If NONE(), assumes Real attributes.
 "
   input Option<DAE.VariableAttributes> attr;
   input Boolean isProtected;
@@ -880,7 +880,7 @@ algorithm
 end setFixedAttr;
 
 public function setFinalAttr "
-  sets the start attribute. If NONE, assumes Real attributes.
+  sets the start attribute. If NONE(), assumes Real attributes.
 "
   input Option<DAE.VariableAttributes> attr;
   input Boolean finalPrefix;
@@ -1670,7 +1670,7 @@ algorithm
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs)) :: rest, impl)
       equation
         // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& Exp.typeOfString(rhs));
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE, Ceval.MSG());
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then
@@ -1678,7 +1678,7 @@ algorithm
     /*
     case (cache,env,cname,(DAE.EQUATION(exp = DAE.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
       equation
-        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE, Ceval.MSG());
+        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE(), Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then
@@ -3763,7 +3763,7 @@ algorithm
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li, source = source)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);

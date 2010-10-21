@@ -2530,7 +2530,7 @@ algorithm
       equation
         failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
@@ -2540,7 +2540,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
@@ -3571,7 +3571,7 @@ algorithm
         // Search for equalityConstraint
         eqConstraint = equalityConstraint(cache, env5, els);
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,tys,MetaUtil.fixUniontype(ci_state6,NONE/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,tys,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
     // This rule describes how to instantiate class definition derived from an enumeration 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
@@ -8002,7 +8002,7 @@ algorithm
             (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
             NONE()),
-          NONE, Env.VAR_UNTYPED(), {});  
+          NONE(), Env.VAR_UNTYPED(), {});  
       then env;
     case (_, _)
       equation
@@ -9142,7 +9142,7 @@ end elabComponentArraydimFromEnv2;
 protected function elabArraydimOpt
 "function: elabArraydimOpt
   Same functionality as elabArraydim, but takes an optional arraydim.
-  In case of NONE, empty DAE.Dimension list is returned."
+  In case of NONE(), empty DAE.Dimension list is returned."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -11805,7 +11805,7 @@ algorithm
       equation
         somep = getOptPath(p);
       then
-        ((DAE.T_COMPLEX(st,l,bc,NONE /* HN ??? */),somep));
+        ((DAE.T_COMPLEX(st,l,bc,NONE()/* HN ??? */),somep));
 
     case (p,st,l,bc,_)
       equation
@@ -12176,7 +12176,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod,varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE() */
@@ -12223,7 +12223,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT, index_list, bind_name,false);
-        (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* non constant expression, return NONE() */
@@ -12270,7 +12270,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
-        (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* got non-constant expression, return NONE() */
@@ -12317,7 +12317,7 @@ algorithm
     case (cache,env,mod,varLst,index_list,bind_name)
       equation
         SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
-        (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE() */
@@ -12534,7 +12534,7 @@ algorithm
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
         (e_1,_) = Types.matchType(e, e_tp, tp);
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, false,NONE(), NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
@@ -13666,7 +13666,7 @@ algorithm
           Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         true = Types.isBoolean(t);
         true = Types.isParameterOrConstant(c);
-        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false,NONE(), NONE, Ceval.MSG());
+        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false,NONE(), NONE(), Ceval.MSG());
       then
         (b, cache);
     case (_, _, _, _, _, info)

@@ -337,7 +337,7 @@ algorithm
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
         msg = Util.if_(Types.constIsConst(c), Ceval.MSG, Ceval.NO_MSG);
-        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE, msg);
+        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE(), msg);
       then
         (cache,SOME(v));
     // Constant evaluation failed, return no value.
@@ -1917,7 +1917,7 @@ same as modEqual with the difference that we allow:
  outer(input arg1: mod1) - modifier to be a subset of
  inner(input arg2: mod2) - modifier,
  IF the subset is cotained in mod2 and those subset matches are equal
- or if outer(expr=NONE) with inner(expr=(SOME))"
+ or if outer(expr=NONE()) with inner(expr=(SOME))"
   input DAE.Mod mod1;
   input DAE.Mod mod2;
   output Boolean equal;
@@ -2236,12 +2236,12 @@ algorithm str := matchcontinue(m,depth)
     String s1,s2;
     Boolean fp;
 
-  case(DAE.MOD(subModLst = subs, eqModOption=NONE),depth) // 0 since we are only interested in this scopes modifier.
+  case(DAE.MOD(subModLst = subs, eqModOption=NONE()),depth) // 0 since we are only interested in this scopes modifier.
     equation
       str = prettyPrintSubs(subs,depth);
     then str;
 
-  case(DAE.MOD(subModLst = subs, eqModOption=NONE),depth) then "";
+  case(DAE.MOD(subModLst = subs, eqModOption=NONE()),depth) then "";
 
   case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),depth)
     local

@@ -304,7 +304,7 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                                    TplAbsyn.MM_STR_TOKEN(Tpl.ST_LINE("Susan is cosmic!\n"))
                                  } ))               
                 },
-                NONE
+                NONE()
                  
                )
               ,TplAbsyn.MM_FUN(true,"MoreFun",
@@ -361,7 +361,7 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                     })
                   })
                 },
-                NONE
+                NONE()
                )
             }
           
@@ -433,7 +433,7 @@ algorithm
       then txt;
 
     case ( txt,
-           NONE,
+           NONE(),
            _ )
       equation
         txt = Tpl.writeStr(txt, \"NONE at all\");

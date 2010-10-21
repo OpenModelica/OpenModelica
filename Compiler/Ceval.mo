@@ -964,14 +964,14 @@ algorithm
         (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
     case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE, NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE(), NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE, NO_MSG());
+        (cache, v, _) = ceval(inCache, inEnv, e, impl,NONE(), NONE(), NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -1010,7 +1010,7 @@ algorithm
          DAE.ExpType cevalExpType;
        equation
          true = Exp.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), NONE, MSG());
+         (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), NONE(), MSG());
          cevalType = Types.typeOfValue(v);
          cevalExpType = Types.elabType(cevalType);
        then
@@ -1725,7 +1725,7 @@ algorithm
       list<Integer> dims;
     case (cache,env,((e,_) :: rest),impl,msg)
       equation
-        (cache,res,_) = ceval(cache,env, e, impl,NONE(), NONE, msg);
+        (cache,res,_) = ceval(cache,env, e, impl,NONE(), NONE(), msg);
         (cache,Values.ARRAY(resl,i::dims)) = cevalMatrixEltRow(cache,env, rest, impl, msg);
         i = i+1;
       then
@@ -5090,7 +5090,7 @@ algorithm
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE, msg);
+        (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE(), msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
@@ -5124,7 +5124,7 @@ algorithm
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache,env, exp, impl,NONE(), NONE, msg);
+        (cache,v,_) = ceval(cache,env, exp, impl,NONE(), NONE(), msg);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
@@ -5141,7 +5141,7 @@ algorithm
         // can for instance come from a modifier, this can cause an infinite loop here if r has no value.
         false=isRecursiveBinding(cr,exp); 
         
-        (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE, msg);
+        (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE(), msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);

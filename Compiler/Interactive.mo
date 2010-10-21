@@ -633,7 +633,7 @@ algorithm
 
     /* for-statement, optimized case, e.g.: for i in 1:1000 loop */
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
-      	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE, stop=stope)))},
+      	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE(), stop=stope)))},
         forBody = algItemList)),st)
       equation
         (startv,st_1) = evaluateExpr(starte, st,info);
@@ -8055,7 +8055,7 @@ algorithm
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.PARTS(classParts = parts,comment = str_opt),info = file_info),
-          NONE,visitor,args,visit_prot)
+          NONE(),visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
       then
@@ -8082,7 +8082,7 @@ algorithm
 
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                       body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,comment = str_opt),info = file_info),
-          NONE,visitor,args,visit_prot)
+          NONE(),visitor,args,visit_prot)
       equation
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
       then

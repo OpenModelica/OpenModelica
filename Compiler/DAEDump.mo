@@ -1607,7 +1607,7 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       Algorithm.Else else_;
-    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE),i)
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE()),i)
       equation
         s3 = stringAppend("when ",Exp.printExpStr(e));
         s5 = stringAppend(s3, " then\n");

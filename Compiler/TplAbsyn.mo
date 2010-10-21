@@ -388,7 +388,7 @@ constant Ident anchorOptionId    = "anchor";
 constant list<MMEscOption> defaultEscOptions = {
   (indexOffsetOptionId, (MM_LITERAL("0"), INTEGER_TYPE()) ),
   (emptyOptionId, (MM_FN_CALL(IDENT("SOME"), {MM_STR_TOKEN(Tpl.ST_STRING(""))}), OPTION_TYPE(STRING_TOKEN_TYPE())) ),
-  (separatorOptionId, (MM_LITERAL("NONE"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),  
+  (separatorOptionId, (MM_LITERAL("NONE()"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),  
   
   (alignNumOptionId, (MM_LITERAL("10"), INTEGER_TYPE()) ),
   (alignNumOffsetOptionId, (MM_LITERAL("0"), INTEGER_TYPE()) ),
@@ -411,8 +411,8 @@ constant list<MMEscOption> defaultEscOptions = {
 
 constant list<MMEscOption> nonSpecifiedIterOptions = {
   (indexOffsetOptionId, (MM_LITERAL("0"), INTEGER_TYPE()) ),
-  (emptyOptionId, (MM_LITERAL("NONE"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),
-  (separatorOptionId, (MM_LITERAL("NONE"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),  
+  (emptyOptionId, (MM_LITERAL("NONE()"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),
+  (separatorOptionId, (MM_LITERAL("NONE()"), OPTION_TYPE(STRING_TOKEN_TYPE())) ),  
   
   (alignNumOptionId, (MM_LITERAL("0"), INTEGER_TYPE()) ),
   (alignNumOffsetOptionId, (MM_LITERAL("0"), INTEGER_TYPE()) ),
@@ -2793,8 +2793,8 @@ algorithm
     case (true, _, true, {}, iopts, _)
       equation
         iopts = listAppend(iopts, nonSpecifiedIterOptions); 
-        ((MM_LITERAL("NONE"),_)) = lookupTupleList(iopts, emptyOptionId);
-        ((MM_LITERAL("NONE"),_)) = lookupTupleList(iopts, separatorOptionId);
+        ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);
+        ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, separatorOptionId);
         ((MM_LITERAL("0"),_))    = lookupTupleList(iopts, alignNumOptionId);
         ((MM_LITERAL("0"),_))    = lookupTupleList(iopts, wrapWidthOptionId);
       then false;
@@ -2807,7 +2807,7 @@ algorithm
     case (true, _, false, {}, iopts, {})
       equation
         iopts = listAppend(iopts, nonSpecifiedIterOptions); 
-        ((MM_LITERAL("NONE"),_)) = lookupTupleList(iopts, emptyOptionId);        
+        ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);        
       then false;
     
     //otherwise use it 
@@ -2983,7 +2983,7 @@ algorithm
       StringToken st;
       
     case NONE()
-      then MM_LITERAL("NONE");
+      then MM_LITERAL("NONE()");
     
     case ( SOME(st) )
       then MM_FN_CALL(IDENT("SOME"), { MM_STR_TOKEN(st) });
@@ -3052,7 +3052,7 @@ algorithm
         mmFun = MM_FUN(false, fname, iargs, oargs,
                   imlicitTxtArg :: extargs,
                   { MM_MATCH(mmmcases) },
-                  NONE
+                  NONE()
                 );
         argvals = Util.listMap(extargs, makeMMArgValue);
         argvals = argval :: argvals;

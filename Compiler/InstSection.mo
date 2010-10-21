@@ -696,7 +696,7 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_) = 
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE, Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -707,7 +707,7 @@ algorithm
       equation 
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE, Ceval.NO_MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.NO_MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -1429,7 +1429,7 @@ algorithm
         //   Error: Variable body.sequence_angleStates[1] not found in scope <global scope>
         //   Error: No constant value for variable body.sequence_angleStates[1] in scope <global scope>.
         // These errors happen because WE HAVE NO ENVIRONMENT, so we cannot lookup or ceval any cref!
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false,NONE(), NONE, Ceval.NO_MSG());
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.NO_MSG());
         dael = assignComplexConstantConstruct(value,assignedCr,source);
         //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav)); 
       then DAE.DAE(dael); 
@@ -1815,7 +1815,7 @@ algorithm
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
-        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl,NONE(), NONE, Ceval.MSG()) "FIXME: Check bounds";
+        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
       then
         (cache,stmts);
@@ -2616,7 +2616,7 @@ algorithm
       equation 
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE, Ceval.MSG());
+        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG());
         (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);

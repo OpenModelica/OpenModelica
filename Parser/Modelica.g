@@ -987,7 +987,7 @@ component_reference__function_call returns [void* ast] :
       if (fc != NULL)
         $ast = Absyn__CALL(cr.ast,fc);
       else {
-        modelicaParserAssert(!cr.isNone, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you!", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        modelicaParserAssert(!cr.isNone, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you! Use NONE() instead.", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__CREF(cr.ast);
       }
     }

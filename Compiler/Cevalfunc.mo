@@ -687,7 +687,7 @@ algorithm
       equation
         (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
         e1 = replaceComplex(e1,ht2); 
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE(), Ceval.MSG());
         env1 = setValue(value, env, ae1);
       then
         env1;
@@ -697,7 +697,7 @@ algorithm
         (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
         resExp = replaceComplex(resExp,ht2);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
-        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true,NONE(), NONE, Ceval.MSG());
+        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true,NONE(), NONE(), Ceval.MSG());
         env1 = setValues(crefexps,types,values,env);
       then
         env1;
@@ -709,7 +709,7 @@ algorithm
       then
         env1;
     // for loop with a range without step
-    case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
+    case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE(), stop=ae2)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE(),ht2);
         // constant range due to ceval of start/stop
@@ -762,7 +762,7 @@ algorithm
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
         (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE, Ceval.MSG());
+        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE(), Ceval.MSG());
       then
         env;
     // assert(false, ...) gives error!
@@ -770,9 +770,9 @@ algorithm
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
         (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE, Ceval.MSG());
+        (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE(), Ceval.MSG());
         (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
+        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE(), Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
         fail();
@@ -873,7 +873,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
     equation
       (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       e1 = replaceComplex(e1,ht2);
-      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE(), Ceval.MSG());
     then
       value;
   // some type we need to convert into
@@ -882,7 +882,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
       (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
-      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true,NONE(), NONE, Ceval.MSG());
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true,NONE(), NONE(), Ceval.MSG());
     then
       value;
   // failure
@@ -1548,7 +1548,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
   case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
       (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo);
-      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE, Ceval.MSG());
+      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true,NONE(), NONE(), Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);
       values2 = Util.listReplaceAt(val2,(x-1),values1);

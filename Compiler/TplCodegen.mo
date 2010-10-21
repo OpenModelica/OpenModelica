@@ -1647,7 +1647,7 @@ algorithm
     case ( txt,
            TplAbsyn.NONE_MATCH() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("NONE"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("NONE()"));
       then txt;
 
     case ( txt,

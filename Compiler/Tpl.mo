@@ -629,7 +629,7 @@ algorithm
       BlockType bt;
       Text txt;
           
-    //empty iteration segment and 'empty' option is NONE, so do nothing
+    //empty iteration segment and 'empty' option is NONE(), so do nothing
     case (txt as MEM_TEXT(
             tokens = {},
             blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()) )) :: _

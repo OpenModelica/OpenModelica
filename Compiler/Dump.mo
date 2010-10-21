@@ -2364,7 +2364,7 @@ algorithm
   _:=
   matchcontinue (inAbsynExpOption)
     local Absyn.Exp e;
-    case NONE
+    case NONE()
       equation
         Print.printBuf("NONE()");
       then

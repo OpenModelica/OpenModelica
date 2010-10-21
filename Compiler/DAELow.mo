@@ -1101,7 +1101,7 @@ algorithm
         vars_1 = addVar(VAR(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
+                            NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
         /*
          * Add equation der(dummy) = sin(time*6628.318530717). This so the solver has something to solve
@@ -9630,7 +9630,7 @@ algorithm
         algs = replaceDummyDerAlgs(indx,inAlgs,dercall, DAE.CREF(dummyder,DAE.ET_REAL()));     
       then (ALGORITHM(indx,in_1,out1,source),algs,ae);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation =
-          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE),source = source),inAlgs,ae)
+          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
@@ -9967,7 +9967,7 @@ algorithm
       then (ARRAY_EQUATION(ds,expl1,source),vars_3,inAlgs,ae1);  /* array equation */
 
     case (WHEN_EQUATION(whenEquation =
-            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars,inAlgs,ae)
+            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE()),source = source),vars,inAlgs,ae)
       equation
         ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
       then
@@ -10278,7 +10278,7 @@ algorithm
         ((VAR(_,STATE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = crefPrefixDer(cr);
         dummyder = crefPrefixDer(dummyder);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -10287,7 +10287,7 @@ algorithm
       equation
         ((VAR(_,DUMMY_DER(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = crefPrefixDer(cr);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -10296,7 +10296,7 @@ algorithm
       equation
         ((VAR(_,VARIABLE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = crefPrefixDer(cr);
-        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -13494,7 +13494,7 @@ algorithm
 					values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _)
 			equation
 				((e2, _)) = Exp.traverseExp(e, replaceCrefsWithValues, vars);
-				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE, Ceval.MSG());
+				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.MSG());
 			then
 				VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
 		case (_, _) then inVar;
@@ -15385,7 +15385,7 @@ algorithm
         tp = Exp.typeof(e);
       then
         {DAE.CREF(cr,tp),e};
-    case WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE))
+    case WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE()))
       equation
         tp = Exp.typeof(e);
       then
@@ -15662,7 +15662,7 @@ algorithm
         talst2 = listAppend(talst,talst1);
       then
         talst2;
-    case (WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE)),func,inTypeA)
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE())),func,inTypeA)
       equation
         tp = Exp.typeof(e);
         talst = func(DAE.CREF(cr,tp),inTypeA);
@@ -16492,7 +16492,7 @@ algorithm
         crt = DAE.CREF_IDENT(ident_t,identType,subscriptLst);
          vars_1 = addVar(VAR(crt, VARIABLE(),DAE.BIDIR(),REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
+                            NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         EQUATION(eqn,scalar,source) = equationNth(eqns,residualeqn-1);
 //        (eqn_1,replace) =  Exp.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));

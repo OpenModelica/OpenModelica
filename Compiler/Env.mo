@@ -197,7 +197,7 @@ public function emptyCache
   array<DAE.FunctionTree> instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
-  arr := listArray({NONE});
+  arr := listArray({NONE()});
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
   cache := CACHE(arr,NONE(),instFuncs);
 end emptyCache;
@@ -710,7 +710,7 @@ algorithm
 						type_,
 						binding,
 						constOfForIteratorRange),
-					NONE, VAR_UNTYPED(), {});
+					NONE(), VAR_UNTYPED(), {});
 			then new_env_1;
 	end matchcontinue;
 end extendFrameForIterator;
