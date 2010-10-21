@@ -215,22 +215,9 @@ algorithm
         (cache,t,env_3);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index),classDef=SCode.PARTS(elementLst = els)))
-      local
-        Integer index;
-        list<SCode.Element> els;
-        list<tuple<SCode.Element,DAE.Mod>> elsModList;
+    case (cache,env_1,path,c as SCode.CLASS(restriction=SCode.R_METARECORD(_,_)))
       equation
-        (cache,utPath) = Inst.makeFullyQualified(cache,env_1,utPath);
-        path = Absyn.joinPaths(utPath, Absyn.IDENT(id));
-        elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
-        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
-            cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet,
-            ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false,
-            Inst.INNER_CALL, ConnectionGraph.EMPTY);
-        varlst = Types.boxVarLst(varlst);
-        t = (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
+        (cache,env_2,t) = buildMetaRecordType(cache,env_1,c);
       then
         (cache,t,env_2);
 
@@ -1781,6 +1768,12 @@ algorithm
       then
         (cache,ty,env_3);
 
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_METARECORD(_,_))),cenv),env,id)
+      equation
+        (cache,env_3,ty) = buildMetaRecordType(cache,env,cdef);
+      then
+        (cache,ty,env_3);
+
         /* Found function */
     case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
       local SCode.Restriction restr; Env.Cache garbageCache;
@@ -2846,5 +2839,35 @@ algorithm
     then ();
   end matchcontinue;
 end assertPackage;
+
+protected function buildMetaRecordType "common function when looking up the type of a metarecord"
+  input Env.Cache cache;
+  input Env.Env env;
+  input SCode.Class cdef;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output Types.Type ftype;
+protected
+  String id;
+  Env.Env env_1;
+  Absyn.Path utPath,path;
+  Integer index;
+  list<DAE.Var> varlst;
+  list<SCode.Element> els;
+algorithm
+  SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index),classDef=SCode.PARTS(elementLst = els)) := cdef;
+  // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& "\n");
+  (cache,utPath) := Inst.makeFullyQualified(cache,env,utPath);
+  path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
+  (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
+    cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+    DAE.NOMOD,Prefix.NOPRE, Connect.emptySet,
+    ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD),
+    {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+  varlst := Types.boxVarLst(varlst);
+  ftype := (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
+  // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
+end buildMetaRecordType;
+
 end Lookup;
 

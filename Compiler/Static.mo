@@ -8778,7 +8778,7 @@ algorithm
       equation
         t4 = args;
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
-        scope = Env.printEnvPathStr(env);
+        scope = Env.printEnvPathStr(env) +& " (looking for a function or record)";
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
       then
