@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <utility>
+#include "rtopts.h"
 
 using namespace std;
 
@@ -59,6 +60,14 @@ static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error m
 static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
 static string lastDeletedCheckpoint = "";
 
+static void push_message(ErrorMessage *msg)
+{
+  if (showErrorMessages)
+    std::cerr << msg->getFullMessage() << std::endl;
+  else
+    errorMessageQueue.push(msg);
+}
+
 /* Adds a message without file info. */
 void add_message(int errorID,
      const char* type,
@@ -77,7 +86,7 @@ void add_message(int errorID,
     ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
     if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
       // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl; fflush(stderr);
-      errorMessageQueue.push(msg);
+      push_message(msg);
     }
   } else {
     ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens,
@@ -86,7 +95,7 @@ void add_message(int errorID,
     if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
       // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
       // std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl; fflush(stderr);
-      errorMessageQueue.push(msg);
+      push_message(msg);
     }
   }
 }
@@ -132,7 +141,7 @@ void add_source_message(int errorID,
        std::string(filename));
   if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
     // std::cerr << "inserting error message "<< msg->getFullMessage() << std::endl; fflush(stderr);
-    errorMessageQueue.push(msg);
+    push_message(msg);
   }
 }
 
