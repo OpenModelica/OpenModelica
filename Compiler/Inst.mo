@@ -3867,6 +3867,11 @@ algorithm
     // handle none
     case(inComps,NONE(), allComps, className) then inComps;
 
+    case(inComps,_,_,_)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then inComps;
+
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
 
@@ -3899,7 +3904,8 @@ Helper function for extractConstantPlusDeps
   input String className;
   input list<String> existing;
   output list<SCode.Element> outComps;
-algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
+algorithm
+  outComps := matchcontinue(inComps, ocr,allComps,className,existing)
   local
     SCode.Element compMod;
     list<SCode.Element> recDeps;
@@ -3927,8 +3933,8 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
     case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         //false = stringEqual(name,name2);
-        allComps = listAppend({selem},allComps);
-        existing = listAppend({name2},existing);
+        allComps = selem::allComps;
+        existing = name2::existing;
         outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
       then //extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
          selem::outComps;
@@ -3940,7 +3946,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
         true = stringEqual(name,name2);
         crefs = getCrefFromMod(scmod);
         allComps = listAppend(inComps,allComps);
-        existing = listAppend({name2},existing);
+        existing = name2::existing;
         recDeps = extractConstantPlusDeps3(crefs,allComps,className,existing);
       then
         selem::recDeps;
@@ -3948,26 +3954,27 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
     case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         false = stringEqual(name,name2);
-        allComps = listAppend({selem},allComps);
+        allComps = selem::allComps;
+        print("instSingleCref filtered out " +& name2 +& "\n");
       then extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
 
     case((compMod as SCode.EXTENDS(baseClassPath=p))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing)
       local Absyn.Path p;
       equation
-        allComps = listAppend({compMod},allComps);
+        allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
         then
           compMod::recDeps;
     case((compMod as SCode.IMPORT(imp=_))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing)
       equation
-        allComps = listAppend({compMod},allComps);
+        allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
 
     case((compMod as SCode.DEFINEUNIT(name=_))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing)
       equation
-        allComps = listAppend({compMod},allComps);
+        allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
@@ -3998,14 +4005,14 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
     equation
       true = stringEqual(className,s1); // in same scope look up.
       acrefs = acr::acrefs;
-      then
-        extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+    then
+      extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case((acr as Absyn.CREF_QUAL(s1,_,_))::acrefs,remainingComps,className,existing)
     equation
       false = stringEqual(className,s1);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
-      then
-        outComps;
+    then
+      outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing) // modifer dep already added
     equation
       true = Util.listContainsWithCompareFunc(s1,existing,stringEqual);

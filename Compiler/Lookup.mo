@@ -1775,10 +1775,7 @@ algorithm
       local SCode.Restriction restr; Env.Cache garbageCache;
       equation
         true = SCode.isFunctionOrExtFunction(restr);
-
-        /* Since function is added to cache, but dae here is not propagated, throw away cache from this call */
-        (garbageCache ,env_1,_) =
-        Inst.implicitFunctionInstantiation(
+        (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
