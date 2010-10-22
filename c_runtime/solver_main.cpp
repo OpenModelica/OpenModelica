@@ -52,8 +52,46 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 #define MAXORD 5
 
 //provides a dummy Jacobian to be used with DASSL
-int dummyJacobianMINE(double *t, double *y, double *yprime, double *pd, double *cj, double *rpar, fortran_integer* ipar)
+int dummy_Jacobian(double *t, double *y, double *yprime, double *pd, double *cj, double *rpar, fortran_integer* ipar)
 {
+	return 0;
+}
+
+//provides a dummy Jacobian to be used with DASSL
+int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj, double *rpar, fortran_integer* ipar)
+{
+	int size_A = globalData->nStates;
+	double* matrixA = new double[size_A*size_A];
+
+	if (functionJacA(t, y, yprime, matrixA)){
+	    cerr << "Error, can not get Matrix A " << endl;
+	    return 1;
+	}
+
+	int k = 0;
+	int l,l1;
+	for (int i=0;i<size_A;i++){
+		for (int j=0;j<size_A;j++,k++){
+			l = i+j*size_A;
+			pd[l] = matrixA[k];
+			if (i==j) pd[l] -= (double)*cj;
+		}
+	}
+	double tmp;
+
+	//transpose jacobian
+	/*for (int i=0;i<size_A;i++){
+		for (int j=0;j<size_A;j++,k++){
+			l = i+j*size_A;
+			l1 = j+i*size_A;
+			tmp = pd[l];
+			pd[l] = pd[l1];
+			pd[l1] = tmp;
+		}
+	}*/
+
+	delete[] matrixA;
+
 	return 0;
 }
 
@@ -395,6 +433,7 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 	extern fortran_integer lrw;
 	extern double *rwork;
 	extern fortran_integer *iwork;
+	double *rpar;
 	extern fortran_integer NG_var;	//->see ddasrt.c LINE 250 (number of constraint functions)
 	extern fortran_integer *jroot;
 	extern double *dummy_delta;
@@ -411,6 +450,7 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 		jroot = new fortran_integer[globalData->nZeroCrossing];
 		// Used when calculating residual for its side effects. (alg. var calc)
 		dummy_delta = new double[globalData->nStates];
+		rpar = new double;
 
 		for(i=0; i<15; i++)
 			info[i] = 0;
@@ -429,6 +469,9 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 		//info[6] = 1;		//prohibit code to decide max. stepsize on its own
 		//rwork[1] = *step;	//define max. stepsize
 		/*********************************************************************/
+		/*********************************************************************/
+		if (jac_flag)
+			info[4] = 1;	//use sub-routine JAC
 	}
 
 	if (trigger){
@@ -447,12 +490,21 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 				cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
 			}
 
+    		if (jac_flag){
 			DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,
 					globalData->statesDerivatives, &tout,
 					info, &reltol, &abstol,
-					&idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
-					&ipar, dummyJacobianMINE, dummy_zeroCrossing,
+						&idid, rwork, &lrw, iwork, &liw, rpar,
+						&ipar, Jacobian, dummy_zeroCrossing,
 					&NG_var, jroot);
+    		}else{
+				DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,
+						globalData->statesDerivatives, &tout,
+						info, &reltol, &abstol,
+						&idid, rwork, &lrw, iwork, &liw, rpar,
+						&ipar, dummy_Jacobian, dummy_zeroCrossing,
+						&NG_var, jroot);
+    		}
 /*
 			if (sim_verbose){
 				cout << " value of idid: " << idid << endl;
@@ -475,7 +527,8 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 			}
 
 			// Since residual function calculates alg vars too.
-			functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0);
+			//functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0);
+			functionODE();
 		}
 		while(idid==-1 && globalData->timeValue <= stop);
     }

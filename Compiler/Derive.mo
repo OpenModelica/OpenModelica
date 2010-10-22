@@ -1250,6 +1250,13 @@ algorithm
       then
         DAE.UNARY(op,e_1);
 
+    // abs(x)
+    case (DAE.CALL(path=fname, expLst={exp},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp) equation
+      Builtin.isAbs(fname);
+      true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+      exp_1 = differentiateExp(exp, tv,differentiateIfExp);
+    then DAE.IFEXP(DAE.RELATION(exp_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), exp_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp_1));
+
         /* der(tanh(x)) = der(x) / cosh(x) */
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
      local  DAE.ExpType tp;

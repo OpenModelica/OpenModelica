@@ -1005,14 +1005,12 @@ algorithm
   end matchcontinue;
 end arrayMapNoCopyHelp1;
 
-
 public function arraySelect 
 "Takes an array and a list with index and output a new array with the indexed elements. 
 Since it will update the array values the returned array must not have the same type, 
 the array will first be initialized with the result of the first call.
 assume the Indecies are in range 1,arrayLength(array). 
 
-See also listMap, arrayMapNoCopy 
   "
   input Type_a[:] array;
   input list<Integer> lst;
@@ -1022,7 +1020,6 @@ algorithm
   outArray := arrayCreate(listLength(lst),array[1]);
   outArray := arraySelectHelp(array,lst,outArray,1);
 end arraySelect;
-
 
 protected function arraySelectHelp "help function to arrayMap"
   input Type_a[:] array;
@@ -1043,7 +1040,7 @@ algorithm
       inArray = arraySelectHelp(array,rest,inArray,i+1);
     then inArray;
     case(_,_,_,i) equation
-      print("arrayMapHelp1 failed\n for i : " +& intString(i));
+      print("arraySelectHelp failed\n for i : " +& intString(i));
     then fail();  
   end matchcontinue;
 end arraySelectHelp;

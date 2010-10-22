@@ -1047,6 +1047,13 @@ algorithm
         res = boolAnd(b1,b2);
       then
         res;
+    case (DAE.IFEXP(_,e1,e2))
+      equation
+        b1 = isConst(e1);
+        b2 = isConst(e2);
+        res = boolAnd(b1,b2);
+      then
+        res;        
     case (DAE.ARRAY(array = ae))  
       equation
         ab = Util.listMap(ae,isConst);  
@@ -10370,12 +10377,104 @@ algorithm
     case (e1,e2,e3)
       equation
         Debug.fprint("failtrace", "-Exp.solve failed\n");
-        /*print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
-        print(" w.r.t ");print(printExpStr(e3));print(" failed\n");*/
+        //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
+        //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
       then
         fail();
   end matchcontinue;
 end solve;
+
+public function solveLin
+"function: solve
+  Solves an equation consisting of a right hand side (rhs) and a
+  left hand side (lhs), with respect to the expression given as
+  third argument, usually a variable."
+  input Exp inExp1;
+  input Exp inExp2;
+  input Exp inExp3;
+  output Exp outExp;
+algorithm
+  outExp := matchcontinue (inExp1,inExp2,inExp3)
+    local
+      Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
+      ComponentRef cr1,cr2;
+    /*
+    case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
+      local Exp debuge1,debuge2,debuge3;
+      equation
+        print("(Exp.mo debugging)  To solve: rhs: " +&
+          printExpStr(debuge1) +& " lhs: " +&
+          printExpStr(debuge2) +& " with respect to: " +&
+          printExpStr(debuge3) +& "\n");
+      then
+        fail();*/
+    
+    // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
+    case (crexp,rhs,crexp2)
+      equation
+        cr1 = crOrDerCr(crexp);
+        cr2 = crOrDerCr(crexp2);
+        true = crefEqual(cr1, cr2);
+        false = expContains(rhs, crexp);
+        res_1 = simplify1(rhs);
+      then
+        res_1;
+
+    // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
+    case (lhs,crexp ,crexp2)
+      equation
+        cr1 = crOrDerCr(crexp);
+        cr2 = crOrDerCr(crexp2);
+        true = crefEqual(cr1, cr2);
+        false = expContains(lhs, crexp);
+        res_1 = simplify1(lhs);
+      then
+        res_1;    
+
+    // solving linear equation system using newton iteration ( converges directly )
+    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        true = hasOnlyFactors(lhs,rhs);
+        lhs = DAE.BINARY(lhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
+        rhs = DAE.BINARY(rhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
+        res = solve2(lhs, rhs, cr);
+        res_1 = simplify1(res);
+      then
+        res_1;
+
+    // solving linear equation system using newton iteration ( converges directly )
+    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        res = solve2(lhs, rhs, cr);
+        res_1 = simplify1(res);
+      then
+        res_1;
+    
+    case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
+      equation
+        rhs = solveLin(lhs,e2,cr);
+        res = solveLin(lhs,e3,cr);
+        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
+      then
+        res_1;
+    
+    case (DAE.IFEXP(e1,e2,e3),rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        lhs = solveLin(rhs,e2,cr);
+        res = solveLin(rhs,e3,cr);
+        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
+      then
+        res_1;
+        
+    case (e1,e2,e3)
+      equation
+        Debug.fprint("failtrace", "-Exp.solve failed\n");
+        //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
+        //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
+      then
+        fail();
+  end matchcontinue;
+end solveLin;
 
 protected function printExpIfDiff ""
   input Exp e1,e2;

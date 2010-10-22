@@ -314,6 +314,7 @@ void function_sampleInit();
 int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
 
 // function for calculation Jacobian
+extern int jac_flag;	// Flag for DASSL to work with analytical Jacobian
 int functionJacA(double *t, double *x, double *xd, double* jac);
 int functionJacB(double *t, double *x, double *xd, double* jac);
 int functionJacC(double *t, double *x, double *xd, double* jac);
