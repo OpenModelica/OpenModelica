@@ -2299,7 +2299,7 @@ protected function cevalVal "Help function to cevalInteractiveFunctions. Handles
   output Env.Cache outCache;
   output Real value;
 algorithm
-  (outCache,value) := matchcontinue(cache,env,st,timeStamp,varName)
+  (outCache,value) := matchcontinue(cache,env,stopt,timeStamp,varName)
   local Real val; list<Real> tV, vV; list<Values.Value> varValues, timeValues;
     Interactive.InteractiveSymbolTable st;
     String filename;
@@ -4179,8 +4179,7 @@ function checkAll
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
+  _ := matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
     local
       list<Absyn.Path> rest;
       Absyn.Path className;

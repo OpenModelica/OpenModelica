@@ -1841,8 +1841,7 @@ protected function extractAlgebraicAndDifferentialEqn
   output list<Equation> outEquationLst2;
   output list<Equation> outEquationLst3;
 algorithm
-  (outEquationLst1,outEquationLst2):=
-  matchcontinue (inEquationLst)
+  (outEquationLst1,outEquationLst2,outEquationLst3):= matchcontinue (inEquationLst)
     local
       list<Equation> resAlgEqn,resDiffEqn,rest,resArrayEqns;
       Equation eqn,alg;
@@ -3277,7 +3276,7 @@ Author: Frenkel TUD 2010-07 function removeSimpleEquations3
   output list<DAE.ComponentRef> outcreflst;
   output VarTransform.VariableReplacements outrepl;
 algorithm
-  (outrepl,outcreflst) := matchcontinue (increflst,inrepl,cr,e,t)
+  (outcreflst,outrepl) := matchcontinue (increflst,inrepl,cr,e,t)
     local
       list<DAE.ComponentRef> crlst;
       VarTransform.VariableReplacements repl,repl_1;
@@ -4414,7 +4413,7 @@ protected function lowerWhenEqn
   output Integer outWhenClauseIndex;
   output list<WhenClause> outWhenClauseLst;
 algorithm
-  (outEquationLst,outVariables,outwhenClauseIndex,outWhenClauseLst):=
+  (outEquationLst,outVariables,outWhenClauseIndex,outWhenClauseLst):=
   matchcontinue (inElement,inWhenClauseIndex,inWhenClauseLst)
     local
       Variables vars;
@@ -10777,7 +10776,7 @@ protected function varStateSelectPrio2
 	input DAE.StateSelect ss;
 	output Real prio;
 algorithm
-	ss := matchcontinue(ss)
+	prio := matchcontinue(ss)
 	  case (DAE.NEVER()) then -10.0;
 	  case (DAE.AVOID()) then 0.0;
 	  case (DAE.DEFAULT()) then 10.0;
@@ -13178,7 +13177,7 @@ public function calculateSizes "function: calculateSizes
   output Integer outny_bool   "number of alg.vars which are bools";
   output Integer outnp_bool   "number of parameters which are bools";    
 algorithm
-  (outnx,outny,outnp,outng,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
+  (outnx,outny,outnp,outng,outng_sample,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
   matchcontinue (inDAELow)
     local
       list<Var> varlst,knvarlst,extvarlst;
@@ -13213,7 +13212,7 @@ protected function calculateNumberZeroCrossings
   output Integer zc;
   output Integer sample;
 algorithm
-  (outCFn) := matchcontinue (zcLst,zc_index,sample_index)
+  (zc,sample) := matchcontinue (zcLst,zc_index,sample_index)
     local
       list<ZeroCrossing> xs;
     
@@ -13712,7 +13711,7 @@ author: Frenkel TUD
   input list<Type_a> inTypeALst;
   input Integer inType;
   input Integer inPlace;
-  output list< tuple<Type_a,Integer,Integer> > outTypeALst;
+  output list< tuple<Type_a,Integer,Integer> > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
   outlist := matchcontinue (inTypeALst,inType,inPlace)
@@ -13921,7 +13920,7 @@ protected function getAllElements1
 "function: getAllElements1
   author: Frenkel TUD
   Helper function for getAllElements."
-  input tuple<Var,Integer,Integer>  invar;
+  input tuple<Var,Integer,Integer>  var1;
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
   output list<tuple<Var,Integer,Integer> > outlist1;
@@ -13930,7 +13929,7 @@ algorithm
     local
       list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
 			DAE.ComponentRef varName1, varName2,c2,c1;
-      Var var1,var2;
+      Var var2;
       Boolean ins;
       Integer typ1,typ2,place1,place2;
     case ((var1,typ1,place1),{}) then ({(var1,typ1,place1)},{});
@@ -14222,7 +14221,7 @@ protected function calculateIndexes2
   output Integer outInteger11; //p_str
   output Integer outInteger12; //dummy_str
 algorithm
-  (outVarLst1,outInteger2,outInteger3,outInteger4,outInteger5,outInteger6,outInteger7):=
+  (outVarLst1,outInteger2,outInteger3,outInteger4,outInteger5,outInteger6,outInteger7,outInteger8,outInteger9,outInteger10,outInteger11,outInteger12):=
   matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7,inInteger8,inInteger9,inInteger10,inInteger11,inInteger12)
     local
       Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
@@ -15896,7 +15895,7 @@ public function getWhenCondition
   Get expression's of condition by when equation"
   input list<WhenClause> inWhenClause;
   input Integer inIndex;
-  output list<DAE.Exp> outExp;
+  output list<DAE.Exp> conditionList;
 algorithm
   conditionList := matchcontinue (inWhenClause, inIndex)
     local
@@ -16937,12 +16936,12 @@ end findDelaySubExpressions;
 public function addDivExpErrorMsgtoExp "
 Author: Frenkel TUD 2010-02, Adds the error msg to Exp.Div.
 "
-input DAE.Exp inExp;
-input tuple<Variables,list<Var>,DivZeroExpReplace> inDlowMode;
-output DAE.Exp outExp;
-output list<DAE.Exp> outDivLst;
+  input DAE.Exp inExp;
+  input tuple<Variables,list<Var>,DivZeroExpReplace> inDlowMode;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outDivLst;
 algorithm 
-  (outExps,outDivLst) := matchcontinue(inExp,inDlowMode)
+  (outExp,outDivLst) := matchcontinue(inExp,inDlowMode)
   case(inExp,inDlowMode as (vars,varlst,dzer))
     local 
       DAE.Exp exp; 
@@ -17457,7 +17456,7 @@ public function generateLinearMatrix
   output array<Integer> outV2;
   output list<list<Integer>> outComps1;
 algorithm 
-  (outJacobian,outv1,outv2,outComps1) :=
+  (outJacobian,outV1,outV2,outComps1) :=
     matchcontinue (inDAELow,functionTree,inComRef1,inComRef2,inAllVar)
     local
       DAE.DAElist dae;
@@ -17596,9 +17595,9 @@ protected function MarkArray
   input list<Integer> inVars1;
   input list<list<Integer>> inVars2;
   input Integer[:] inInt;
-  output Integer[:] outInts;
+  output Integer[:] outJacobian;
 algorithm
-  outJacobian := matchcontinue(inVars1, inVars2,inInt)
+  outJacobian := matchcontinue(inVars1,inVars2,inInt)
     local
       list<Integer> rest;
 			list<list<Integer>> vars;
@@ -17634,7 +17633,7 @@ protected function getVarIndex
   // author : wbraun
   input list<Var> inVars1;
   input list<Var> inVars2;
-  output list<Integer> outInts;
+  output list<Integer> outJacobian;
 algorithm
   outJacobian := matchcontinue(inVars1, inVars2)
     local
@@ -18625,7 +18624,7 @@ public function determineIndices
   input list<Var> inAllVars;
   output list<tuple<String,Integer>> outTuple;
 algorithm
-  out := matchcontinue(inStates, inStates2, inActInd,inAllVars)
+  outTuple := matchcontinue(inStates, inStates2, inActInd,inAllVars)
     local
       list<tuple<String,Integer>> str;
       list<tuple<String,Integer>> erg;
@@ -18652,9 +18651,9 @@ protected function determineIndices2
   input Integer actInd;
   input list<Var> inAllVars;
   output list<tuple<String,Integer>> outTuple;
-  output Integer actInd;
+  output Integer outActInd;
 algorithm
-  out := matchcontinue(inStates, inDStates, actInd, inAllVars)
+  (outTuple,outActInd) := matchcontinue(inStates, inDStates, actInd, inAllVars)
     local
       tuple<String,Integer> str;
       list<tuple<String,Integer>> erg;

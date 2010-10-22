@@ -964,7 +964,7 @@ Author: Frenkel TUD"
   input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
   output list<Boolean> outblst;
 algorithm
-  blst := matchcontinue(inblst,crlst,expl,inVarsandFuncs)
+  outblst := matchcontinue(inblst,crlst,expl,inVarsandFuncs)
     local 
       Integer i,i_1;
       DAE.Exp e,de;
