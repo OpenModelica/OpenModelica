@@ -6131,17 +6131,17 @@ algorithm
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.DEFINE(componentRef = cr1, exp = e1, source = source))
+    case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e1, source = source))
+    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
   end matchcontinue;
