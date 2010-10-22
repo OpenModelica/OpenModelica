@@ -230,6 +230,8 @@ public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
 public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=145;
+public constant ErrorID NON_STREAM_OPERAND_IN_STREAM_OPERATOR = 146;
+public constant ErrorID UNBALANCED_CONNECTOR = 147;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -496,6 +498,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
+          (NON_STREAM_OPERAND_IN_STREAM_OPERATOR(), TRANSLATION(), ERROR(),
+          "Operand %s to operator %s in component %s is not a stream variable."),
+          (UNBALANCED_CONNECTOR(), TRANSLATION(), WARNING(),
+          "Connector %s is not balanced: %s"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"),
           (UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,TRANSLATION(),WARNING(),
