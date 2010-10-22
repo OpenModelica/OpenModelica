@@ -3955,7 +3955,6 @@ algorithm
       equation
         false = stringEqual(name,name2);
         allComps = selem::allComps;
-        print("instSingleCref filtered out " +& name2 +& "\n");
       then extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
 
     case((compMod as SCode.EXTENDS(baseClassPath=p))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing)
