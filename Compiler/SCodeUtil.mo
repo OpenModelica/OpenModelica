@@ -58,6 +58,7 @@ protected import System;
 protected import ExpandableConnectors;
 protected import Inst;
 protected import InstanceHierarchy;
+protected import Types;
 
 public function translateAbsyn2SCode
 "function: translateAbsyn2SCode
@@ -78,9 +79,10 @@ algorithm
 
     case (inProgram)
       equation
-        System.addToRoots(0, Inst.emptyInstHashTable());
+        System.addToRoots(Inst.instHashIndex, Inst.emptyInstHashTable());
+        System.addToRoots(Types.memoryIndex,  Types.createEmptyTypeMemory());        
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
-        // System.addToRoots(2, Ceval.emptyCevalHashTable());
+        // System.addToRoots(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
 
         // set the external flag that signals the presence of inner/outer components in the model

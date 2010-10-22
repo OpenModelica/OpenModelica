@@ -43,7 +43,7 @@ public function removeFirstAndLastChar
   input String inString;
   output String outString;
 
-  external "C" ;
+  external "C";
 end removeFirstAndLastChar;
 
 public function trim
@@ -51,7 +51,7 @@ public function trim
   input String inString2;
   output String outString;
 
-  external "C" ;
+  external "C";
 end trim;
 
 public function trimChar
@@ -832,6 +832,37 @@ function refEqual
   
   external "C";
 end refEqual;
+
+function refInteger
+"@autor: adrpo
+  This function returns the pointer of the given input parameter as integer"
+  replaceable type Type_a subtypeof Any;
+  input  Type_a reference;
+  output Integer result;
+  
+  external "C";
+end refInteger;
+
+function getValueConstructor
+"@autor: adrpo
+  This function returns the constructor of a value as integer.
+  Example:
+    uniontype X
+      record X0 end X0;
+      record X1 end X1;
+      record X2 end X2;
+    end X;
+    X x1 = X1();
+    X x0 = X0();
+    
+    getValueConstructor(x1) = 1;
+    getValueConstructor(x0) = 0;"
+  replaceable type Type_a subtypeof Any;
+  input  Type_a value;
+  output Integer constructor;
+  
+  external "C";
+end getValueConstructor;
 
 public function getUUIDStr "
 creates the Globally Unique IDentifier and return it as String

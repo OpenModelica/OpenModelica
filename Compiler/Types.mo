@@ -68,6 +68,13 @@ public type TupleConst = DAE.TupleConst;
 public type Type = DAE.Type;
 public type Var = DAE.Var;
 
+public
+ type TypeMemoryEntry = tuple<DAE.Type, DAE.ExpType>;
+ type TypeMemoryEntryList = list<TypeMemoryEntry>;
+ type TypeMemoryEntryListArray = TypeMemoryEntryList[:]; 
+ // the index of the type memory in the global table 
+ constant Integer memoryIndex = 1;
+
 protected import Dump;
 protected import Debug;
 protected import Exp;
@@ -454,27 +461,31 @@ local
 end convertFromExpToTypesVar;
 
 protected function convertFromTypesToExpVar ""
-input Var inVars;
-output DAE.ExpVar outVars;
-algorithm outVars := matchcontinue(inVars)
-local
-  String tname;
-  DAE.ExpType tp;
-  Type ty;
-  Var ev;
-  DAE.ExpVar tv;
-  case(ev as DAE.TYPES_VAR(name=tname,type_=ty))
-    equation
-      tp = elabType(ty);
-      tv = DAE.COMPLEX_VAR(tname,tp);
+  input Var inVars;
+  output DAE.ExpVar outVars;
+algorithm 
+  outVars := matchcontinue(inVars)
+    local
+      String tname;
+      DAE.ExpType tp;
+      Type ty;
+      Var ev;
+      DAE.ExpVar tv;
+
+    case(ev as DAE.TYPES_VAR(name=tname,type_=ty))
+      equation
+        tp = elabType(ty);
+        tv = DAE.COMPLEX_VAR(tname,tp);
       then
         tv;
-  case(_)
-    equation
-      print("-Types.convertFromTypesToExpVar failed\n");
-      Debug.fprint("failtrace", "-Types.convertFromTypesToExpVar failed\n");
-    then fail();
-end matchcontinue;
+
+    case(_)
+      equation
+        print("-Types.convertFromTypesToExpVar failed\n");
+        Debug.fprint("failtrace", "-Types.convertFromTypesToExpVar failed\n");
+      then 
+        fail();
+  end matchcontinue;
 end convertFromTypesToExpVar;
 
 public function isTuple "Returns true if type is TUPLE"
@@ -2232,16 +2243,12 @@ algorithm
 end unparseTupleconst;
 
 public function printTypeStr "function: printType
-
-  This function prints a textual description of a Modelica type to a string.  If
-  the type is not one of the primitive types, it simply prints
-  `composite\'.
-"
+  This function prints a textual description of a Modelica type to a string.  
+  If the type is not one of the primitive types, it simply prints composite."
   input Type inType;
   output String str;
 algorithm
-  str :=
-  matchcontinue (inType)
+  str := matchcontinue (inType)
     local
       list<Var> vars;
       list<Ident> l;
@@ -2252,36 +2259,42 @@ algorithm
       list<FuncArg> params;
       list<Type> tys;
       String s1,s2;
+    
     case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = System.stringAppendList({"Integer(",s1,")"});
       then
         str;
+    
     case ((DAE.T_REAL(varLstReal = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = System.stringAppendList({"Real(",s1,")"});
       then
         str;
+    
     case ((DAE.T_STRING(varLstString = vars),_))
       equation
       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
       str = System.stringAppendList({"String(",s1,")"});
       then
         str;
+    
     case ((DAE.T_BOOL(varLstBool = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = System.stringAppendList({"Boolean(",s1,")"});
       then
        str;
+    
     case ((DAE.T_ENUMERATION(names = l, literalVarLst = vars),_))
       equation
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
        str = System.stringAppendList({"Enumeration(",s1,")"});
       then
         str;
+    
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       local String compType;
       equation
@@ -2291,6 +2304,7 @@ algorithm
        str = System.stringAppendList({"composite(",s1,") ", compType});
       then
         str;
+    
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation
         s1 = Exp.dimensionString(dim);
@@ -2298,6 +2312,7 @@ algorithm
         str = System.stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
         str;
+    
     case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),_))
       equation
         s1 = printParamsStr(params);
@@ -2305,6 +2320,7 @@ algorithm
         str = System.stringAppendList({"function(", s1,") => ",s2});
       then
         str;
+    
     case ((DAE.T_TUPLE(tupleType = tys),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
@@ -2312,13 +2328,14 @@ algorithm
       then
         str;
 
-        /* MetaModelica tuple */
+    // MetaModelica tuple
     case ((DAE.T_METATUPLE(types = tys),_))
       equation
         str = printTypeStr((DAE.T_TUPLE(tys),NONE));
       then
         str;
-        /* MetaModelica list */
+    
+    // MetaModelica list
     case ((DAE.T_LIST(listType = ty),_))
       local Type ty;
       equation
@@ -2327,7 +2344,7 @@ algorithm
       then
         str;
 
-        /* MetaModelica Option */
+    // MetaModelica Option
     case ((DAE.T_METAOPTION(optionType = ty),_))
       local Type ty;
       equation
@@ -2335,7 +2352,8 @@ algorithm
          str = System.stringAppendList({"Option<",s1,">"});
       then
         str;
-
+    
+    // MetaModelica Array
     case ((DAE.T_META_ARRAY(ty),_))
       local Type ty;
       equation
@@ -2343,7 +2361,8 @@ algorithm
          str = System.stringAppendList({"array<",s1,">"});
       then
         str;
-
+    
+    // MetaModelica Boxed
     case ((DAE.T_BOXED(ty),_))
       local Type ty;
       equation
@@ -2351,22 +2370,26 @@ algorithm
          str = System.stringAppendList({"boxed<",s1,">"});
       then
         str;
-
+    
+    // MetaModelica polymorphic    
     case ((DAE.T_POLYMORPHIC(s1),_))
       equation
          str = System.stringAppendList({"polymorphic<",s1,">"});
       then
         str;
-
+    
+    // NoType
     case ((DAE.T_NOTYPE(),_))
       then
         "NOTYPE";
+    
+    // AnyType
     case ((DAE.T_ANYTYPE(anyClassType = _),_))
       equation
       then
         "ANYTYPE";
 
-       /* Uniontype, Metarecord */
+    // Uniontype, Metarecord
     case ((_,SOME(path)))
       local Absyn.Path path;
       equation
@@ -2374,9 +2397,10 @@ algorithm
          str = "#" +& s1 +& "#";
       then
         str;
-
-    case ((_,_))
-    then "printTypeStr failed";
+    
+    // All the other ones we don't handle
+    case ((_,_)) then "printTypeStr failed";
+    
   end matchcontinue;
 end printTypeStr;
 
@@ -3497,22 +3521,126 @@ algorithm
   end matchcontinue;
 end getPropType;
 
-public function elabType "function: elabType
-  Elaborates a type
-"
+protected function searchInMememoryLst
+"@author: adrpo
+  This function searches in memory for the DAE.ExpType coressponding to the DAE.Type"
+  input Type inType;
+  input TypeMemoryEntryList inMem;
+  output DAE.ExpType outExpType;
+algorithm
+  outExpType := matchcontinue (inType, inMem)
+    local
+      TypeMemoryEntryList rest;
+      DAE.ExpType expTy;
+      Type ty;
+    
+    // fail if we couldn't find it
+    case (inType, {}) then fail();
+    
+    // see if we have it in memory
+    case (inType, ((ty, expTy))::rest)
+      equation
+        equality(inType = ty);
+      then
+        expTy;
+    
+    // try the next    
+    case (inType, ((ty, expTy))::rest)
+      equation
+        failure(equality(inType = ty));
+        expTy = searchInMememoryLst(inType, rest);
+      then
+        expTy;
+  end matchcontinue;
+end searchInMememoryLst;
+
+public function createEmptyTypeMemory
+"@author: adrpo
+  creates an array, with one element for each record in TType!"
+  output TypeMemoryEntryListArray tyMemory;
+algorithm
+  tyMemory := arrayCreate(21, {});
+end createEmptyTypeMemory;
+
+public function elabType 
+"@author: adrpo
+  searches in the global cache for the translation DAE.Type -> DAE.ExpType
+  if a translation DAE.Type -> DAE.ExpType is not found elabType_dispatch
+  is called and its result is added to the global cache."
+  input Type inType;
+  output DAE.ExpType outExpType;
+algorithm
+  outExpType := matchcontinue (inType)
+    local
+      TypeMemoryEntryListArray tyMem;
+      TypeMemoryEntryList tyLst;
+      DAE.ExpType expTy;
+      TType tt;
+      Integer indexBasedOnValueConstructor;
+
+    // normal execution, do not use type memory.
+    case (inType)
+      equation
+        false = RTOpts.debugFlag("useTypeMemory");
+        // call the function to get the DAE.ExpType translation from DAE.Type
+        expTy = elabType_dispatch(inType);
+      then
+        expTy;
+    
+    // see if we have it in memory
+    case (inType as (tt, _))
+      equation
+        true = RTOpts.debugFlag("useTypeMemory");        
+        // oh the horror. if you don't understand this, contact adrpo
+        // get from global roots
+        tyMem = System.getFromRoots(memoryIndex);
+        // select a list based on the constructor of TType value
+        indexBasedOnValueConstructor = System.getValueConstructor(tt); 
+        tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
+        // search in the list for a translation
+        expTy = searchInMememoryLst(inType, tyLst);
+      then
+        expTy;
+    
+    // we didn't find it, add it
+    case (inType as (tt, _))
+      equation
+        true = RTOpts.debugFlag("useTypeMemory");
+        // call the function to get the DAE.ExpType translation from DAE.Type
+        expTy = elabType_dispatch(inType);
+        // oh the horror. if you don't understand this, contact adrpo
+        // get from global roots        
+        tyMem = System.getFromRoots(memoryIndex);
+        // select a list based on the constructor of TType value
+        indexBasedOnValueConstructor = System.getValueConstructor(tt);        
+        tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
+        // add the translation to the list and set the array
+        tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, (inType, expTy)::tyLst);
+        // set the global cache with the new value
+        System.addToRoots(memoryIndex, tyMem);
+      then 
+        expTy;
+  end matchcontinue;
+end elabType;
+
+protected function elabType_dispatch "function: elabType_dispatch
+  Elaborates a type"
   input Type inType;
   output DAE.ExpType outType;
 algorithm
-  outType:=
-  matchcontinue (inType)
+  outType := matchcontinue (inType)
     local
       Type et,t;
       DAE.ExpType t_1;
       list<DAE.Dimension> dims;
+    
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
     case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
     case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
+
+    case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
+    
     case ((DAE.T_ENUMERATION(path = path, names = names, literalVarLst = varLst),_))
       local
         Absyn.Path path;
@@ -3523,6 +3651,7 @@ algorithm
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
         DAE.ET_ENUMERATION(path,names,ecvl);
+    
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         et = arrayElementType(t);
@@ -3531,20 +3660,26 @@ algorithm
       then
         DAE.ET_ARRAY(t_1,dims);
 
-    case ( (DAE.T_COMPLEX(_,_,SOME(t),_),_))
-      then elabType(t);
+    case ( (DAE.T_COMPLEX(CIS,{},SOME(t),_),_))
+      local
+        ClassInf.State CIS;
+        Absyn.Path name;
+      equation
+        // name = ClassInf.getStateName(CIS);
+        // print("CS: " +& Absyn.pathString(name) +& "\n");
+      then 
+        elabType(t);
 
-    case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
-
-    case ((DAE.T_COMPLEX(CIS,tcvl,_,_),_))
+    case ((DAE.T_COMPLEX(CIS,tcvl,NONE(),_),_))
       local
         list<Var> tcvl;
         ClassInf.State CIS;
         list<DAE.ExpVar> ecvl;
         Absyn.Path name;
       equation
-        ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
         name = ClassInf.getStateName(CIS);
+        // print("CN: " +& Absyn.pathString(name) +& "\n");
+        ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
         t_1 = DAE.ET_COMPLEX(name,ecvl,CIS);
       then
         t_1;
@@ -3594,7 +3729,7 @@ algorithm
         */
       then DAE.ET_OTHER();
   end matchcontinue;
-end elabType;
+end elabType_dispatch;
 
 public function matchProp
 "function: matchProp
