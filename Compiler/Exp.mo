@@ -1390,11 +1390,11 @@ end crefEqualNoStringCompare;
 public function prependSubscriptExp
 "Prepends a subscript to a CREF expression
  For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
-input Exp exp;
-input Subscript subscr;
-output Exp outExp;
+  input Exp exp;
+  input Subscript subscr;
+  output Exp outExp;
 algorithm
-  outexp := matchcontinue(exp,subscr)
+  outExp := matchcontinue(exp,subscr)
   local Type t; ComponentRef cr,cr1,cr2;
     list<Subscript> subs;
     case(DAE.CREF(cr,t),subscr) equation
@@ -2389,7 +2389,7 @@ protected function simplifyCref
   input Type inType;
   output Exp exp;
 algorithm
-  outExpLst := matchcontinue(inCREF, inType)
+  exp := matchcontinue(inCREF, inType)
     local
       Type t,t2;
       list<Subscript> ssl;

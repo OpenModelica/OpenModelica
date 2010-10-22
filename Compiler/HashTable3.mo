@@ -105,10 +105,9 @@ public function add "
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -157,10 +156,9 @@ public function delete "
 "
   input Key key;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (key,hashTable)
+  outHashTable := matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

@@ -587,7 +587,7 @@ public function instantiateClassImplicit
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
-  (outCache,outIH,outDAElist,outEnv) := matchcontinue (inCache,inIH,inProgram,inPath)
+  (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
@@ -833,7 +833,7 @@ protected function instFunctionInProgramImplicit
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
+  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
       list<Env.Frame> env_1,env;
       DAE.DAElist dae;
@@ -1154,7 +1154,7 @@ public function instClass " function: instClass
   output Option<Absyn.ElementAttributes> optDerAttr;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
+  (cache,outEnv,outIH,outStore,outDae,outSets,outType,outState,optDerAttr,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope,inGraph)
     local
       list<Env.Frame> env,env_1,env_3,env_4;
@@ -1593,7 +1593,7 @@ protected function instClassBasictype
   output list<DAE.Var>  outTypeVars "attributes of builtin types";
   output ClassInf.State outState;
 algorithm
-  (outCache,outIH,outEnv,outStore,outDae,outSets,outType,outTypeVars,outState):=
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outTypeVars,outState):=
   matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope)
     local
       list<Env.Frame> env_1,env_3,env;
@@ -2157,7 +2157,7 @@ algorithm
             instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre, csets, ci_state_1, comp, inst_dims, impl,callscope,graph);
         
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
-        eqConstraint = equalityConstraint(cache, env_2, els);
+        eqConstraint = equalityConstraint(env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
         ty2 = (DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys),NONE());
@@ -2896,13 +2896,11 @@ protected function equalityConstraint
   "function: equalityConstraint
     Tests if the given elements contain equalityConstraint function and returns
     corresponding DAE.EqualityConstraint."
-  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<SCode.Element> inCdefelts;
-  //output Env.Cache outCache;
   output DAE.EqualityConstraint outResult;
 algorithm
-  (outCache, outResult) := matchcontinue(inCache, inEnv, inCdefelts)
+  outResult := matchcontinue(inEnv,inCdefelts)
   local
       list<SCode.Element> tail, els;
       String name;
@@ -2914,9 +2912,9 @@ algorithm
       DAE.EqualityConstraint result;
       DAE.InlineType inlineType;
       
-    case(cache, env, {})
+    case(env, {})
       then NONE();
-    case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
+    case(env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
          classDef = SCode.PARTS(elementLst = els))) :: _)
       local
         SCode.Class classDef;
@@ -2936,8 +2934,8 @@ algorithm
         // adrpo: get the inline type of the function
         inlineType = isInlineFunc2(classDef);
       then SOME((path, dimension, inlineType));
-    case(cache, env, _ :: tail)
-      then equalityConstraint(cache, env, tail);
+    case(env, _ :: tail)
+      then equalityConstraint(env, tail);
   end matchcontinue;
 end equalityConstraint;
 
@@ -3260,7 +3258,7 @@ algorithm
         // oh, the horror of backtracking! we need this to make sure that this case failed BEFORE or AFTER it went into instBasictypeBaseclass         
         (cache,ih,store,dae2,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims, info, stopInst);
         // Search for equalityConstraint
-        eqConstraint = equalityConstraint(cache, env, els);
+        eqConstraint = equalityConstraint(env, els);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,env,ih,store,dae,csets1,ci_state,tys,bc,NONE(),eqConstraint,graph); 
@@ -3569,7 +3567,7 @@ algorithm
         UnitParserExt.rollback(); // print("rollback for "+&className+&"\n");
 
         // Search for equalityConstraint
-        eqConstraint = equalityConstraint(cache, env5, els);
+        eqConstraint = equalityConstraint(env5, els);
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,tys,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
@@ -4223,7 +4221,7 @@ protected function instantiateExternalObjectConstructor
 	output DAE.Function fn;
 	output DAE.Type tp;
 algorithm
-	(outCaceh,inIH,fn,tp) := matchcontinue (inCache,env,outIH,cl)
+	(outCache,outIH,fn,tp) := matchcontinue (inCache,env,inIH,cl)
 	local
       Env.Cache cache;
       Env.Env env1;
@@ -5333,7 +5331,7 @@ protected function addClassdefsToEnv2
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outEnv,inIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
+  (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
       list<Env.Frame> env,env_1,env_2,env_3,env1;
       SCode.Class cl,cl2;
@@ -5820,7 +5818,7 @@ public function instElement "
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
-  output DAE.DAElist outDAe;
+  output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output list<DAE.Var> outTypesVarLst;
@@ -6237,7 +6235,7 @@ protected function removeSelfModReference
   output Env.Cache outCache;
   output SCode.Mod outMod;
 algorithm
-  outExp := matchcontinue(inCache,preId,inMod)
+  (outCache,outMod) := matchcontinue(inCache,preId,inMod)
     local
       Absyn.Exp e,e1; String id;
       Absyn.Each ea;
@@ -6880,7 +6878,8 @@ protected function extractConstrainingComps
   input Env.Env env;
   input Prefix.Prefix pre;
   output list<SCode.Element> elems;  
-algorithm str := matchcontinue(cc,env,pre)
+algorithm
+  elems := matchcontinue(cc,env,pre)
   local
     Absyn.Path path,derP;
     list<Absyn.ElementArg> args;
@@ -7383,7 +7382,7 @@ protected function instVar2
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,finalPrefix,outGraph):=
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
@@ -9707,7 +9706,7 @@ public function implicitInstantiation
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outEnv,outIH,outDAEElementLst) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
+  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
@@ -10349,10 +10348,11 @@ Author BZ
 could be used by getDeriveCondition, depending on interpretation of spec compared to constructed libraries.
 helper function for getDeriveAnnotation
 "
-input DAE.SubMod m;
-output String inputVar;
-output DAE.derivativeCond cond;
-algorithm (cr,cond) := matchcontinue(m)
+  input DAE.SubMod m;
+  output String inputVar;
+  output DAE.derivativeCond cond;
+algorithm
+  (inputVar,cond) := matchcontinue(m)
   local
     DAE.EqMod eq;
     DAE.Exp e;
@@ -10418,7 +10418,7 @@ protected function setFullyQualifiedTypename
   input Absyn.Path path;
   output tuple<DAE.TType, Option<Absyn.Path>> resType;
 algorithm
-  resType := matchcontinue (tp,path)
+  resType := matchcontinue (inType,path)
     local
       Absyn.Path p,newPath;
       DAE.TType tp;
@@ -10503,7 +10503,7 @@ function: isInlineFunc4
   input list<SCode.SubMod> inSubModList;
   output DAE.InlineType res;
 algorithm
-  outBoolean := matchcontinue(inSubModList)
+  res := matchcontinue(inSubModList)
     local
       list<SCode.SubMod> cdr;
       Boolean res;
@@ -10575,7 +10575,7 @@ public function implicitFunctionTypeInstantiation
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inClass)
+  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
       SCode.Class stripped_class;
       list<Env.Frame> env_1,env;
@@ -11875,7 +11875,7 @@ public function instList
   end InstFunc;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outCache,outEnv,outIH,outTypeBLst,outSets,outState,outGraph):=
+  (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean,unrollForLoops,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
@@ -12211,7 +12211,7 @@ protected function instRealBinding
   output Env.Cache outCache;
   output Option<Real> outRealOption;
 algorithm
-  (outCache,outRealOption) := matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
+  (outCache,outRealOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       DAE.Exp e;
       Real result;
@@ -12258,7 +12258,7 @@ protected function instIntBinding
   output Env.Cache outCache;
   output Option<Integer> outIntegerOption;
 algorithm
-  (outCache,outIntegerOption) := matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
+  (outCache,outIntegerOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       DAE.Exp e;
       Integer result;
@@ -12827,10 +12827,10 @@ protected function orderConnectEquationsPutNonExpandableFirst
   input Prefix.Prefix inPre;
   input list<SCode.Equation> inEquations;
   input Boolean impl;
-  output Env.Cache inCache;
+  output Env.Cache outCache;
   output list<SCode.Equation> outEquations;
 algorithm
-  outEquations := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl)
+  (outCache,outEquations) := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl)
     local 
       list<SCode.Equation> equations, rest;
       SCode.Equation eq;
@@ -12880,7 +12880,7 @@ protected function sortInnerFirstTplLstElementMod
   input list<tuple<SCode.Element, Mod>> inTplLstElementMod; 
   output list<tuple<SCode.Element, Mod>> outTplLstElementMod;
 algorithm
-  outTplLst_ElementMod := matchcontinue(inTplLstElementMod)
+  outTplLstElementMod := matchcontinue(inTplLstElementMod)
     local
       list<tuple<SCode.Element, Mod>> innerElts, innerouterElts, otherElts, sorted;
 
@@ -13054,7 +13054,7 @@ This function splits the Element list into these categories:
   output list<SCode.Element> classextendsElts;
   output list<SCode.Element> filtered;
 algorithm
-  (impElts,defImpElts,classextendsElts,filtered) := matchcontinue (elts)
+  (impElts,defElts,classextendsElts,filtered) := matchcontinue (elts)
     local
       list<SCode.Element> xs;
       SCode.Element elt;
@@ -13502,7 +13502,7 @@ protected function removeSelfReferenceAndUpdate
  But also instantiate the declared type, if any.
  If it fails (declarations of array dimensions using
  the size of itself) it will just remove the element."
-  input Env.Cache inCache;
+  input Env.Cache cache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
@@ -13520,13 +13520,13 @@ protected function removeSelfReferenceAndUpdate
   input DAE.Mod mods;
   input Boolean finalPrefix;
   input Option<Absyn.Info> info;
-  output Env.Cache o3;
-  output Env.Env o2;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<Absyn.ComponentRef> o1;
 algorithm
-  (o2,o3,outIH,outStore,o1) :=
+  (outCache,outEnv,outIH,outStore,o1) :=
   matchcontinue(cache,inEnv,inIH,store,inRefs,inRef,inPath,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix,info)
     local
       Absyn.Path sty;
@@ -13899,7 +13899,7 @@ protected function updateComponentsInEnv2
   output Connect.Sets outSets;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
-  (outCache,outEnv,outIH,outSets,outUpdatedComps,outDae) :=
+  (outCache,outEnv,outIH,outSets,outUpdatedComps) :=
   matchcontinue (cache,env,inIH,pre,mod,crefs,ci_state,csets,impl,updatedComps)
     local
       list<Env.Frame> env_1,env_2,env;
@@ -14021,7 +14021,7 @@ This function modifies equations into bindings for parameters"
   input DAE.DAElist inEquationsDae "Note: functions from here are not considered";
   output DAE.DAElist outVarsDae;
 algorithm
-  outVars := matchcontinue(inVarsDae,inEquationsDae)
+  outVarsDae := matchcontinue(inVarsDae,inEquationsDae)
   local
     list<DAE.Element> vars, vars1, equations;
     DAE.Element var; DAE.Exp e; DAE.ComponentRef componentRef;
@@ -14339,10 +14339,9 @@ public function add
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input InstHashTable hashTable;
-  output InstHashTable outHahsTable;
+  output InstHashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -14392,9 +14391,9 @@ public function addNoUpdCheck
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input InstHashTable hashTable;
-  output InstHashTable outHahsTable;
+  output InstHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -14431,9 +14430,9 @@ public function delete
   will still contain a lot of incices information."
   input Key key;
   input InstHashTable hashTable;
-  output InstHashTable outHahsTable;
+  output InstHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (key,hashTable)
+  outHashTable := matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

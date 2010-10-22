@@ -630,7 +630,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
           (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s."),
           (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s."),
-          (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"Strict RML enforces match expression input and output to be the same as the function's. %s."),
+          (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"%s. Strict RML enforces match expression input and output to be the same as the function's."),
           (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead.")
           };
 

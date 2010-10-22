@@ -1180,7 +1180,7 @@ protected function elaborateFunction
   output list<String> outLibs;
 algorithm
   (outFunction,outRecordTypes,outIncludes,outLibs):=
-  matchcontinue (inElement,inRecordTypes,includes,libs)
+  matchcontinue (inElement,inRecordTypes,inIncludes,inLibs)
     local
       DAE.Function fn;
       String fn_name_str,fn_name_str_1,retstr,extfnname,lang,retstructtype,extfnname_1,n,str;
@@ -1273,8 +1273,7 @@ protected function typesSimFunctionArg
   input Types.FuncArg inFuncArg;
   output Variable outVar;
 algorithm
-  outString:=
-  matchcontinue (inFuncArg)
+  outVar := matchcontinue (inFuncArg)
     local
       Types.Type tty;
       Exp.Type expType;
@@ -1903,7 +1902,7 @@ protected function helpVarInfoFromWhenConditionChecks
   input list<list<Integer>> comps;
   output list<HelpVarInfo> helpVarList;
 algorithm
-  helpVarLst :=
+  helpVarList :=
   matchcontinue (inDAELow, comps)
     local
       list<Integer> orderOfEquations,orderOfEquations_1;
@@ -2119,7 +2118,7 @@ protected function elaborateRecordDeclarationsForRecord
   output list<RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
-  outStrs :=
+  (outRecordDecls,outReturnTypes) :=
   matchcontinue (inRecordType,inAccRecordDecls,inReturnTypes)
     local
       Absyn.Path path,name;
@@ -2191,7 +2190,7 @@ protected function elaborateNestedRecordDeclarations
   output list<RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
-  outStrs :=
+  (outRecordDecls,outReturnTypes) :=
   matchcontinue (inRecordTypes,inAccRecordDecls,inReturnTypes)
     local
       Types.Type ty;
@@ -3890,7 +3889,7 @@ protected function listMap3passthrough "function listMap3passthrough
   replaceable type Type_d subtypeof Any;
   replaceable type Type_e subtypeof Any;
 algorithm
-  outTypeELst:=
+  (outTypeELst,outTypeD) :=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
     local
       Type_e f_1;
@@ -4361,8 +4360,7 @@ protected function createZeroCrossings
   input DAELow.DAELow dlow;
   output list<DAELow.ZeroCrossing> zc;
 algorithm
-  zeroCrossings :=
-  matchcontinue (dlow)
+  zc := matchcontinue (dlow)
     case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(zeroCrossingLst=zc)))
       then
         zc;
@@ -4843,8 +4841,7 @@ protected function fixIndex
   input SimVars unfixedSimvars;
   output SimVars fixedSimvars;
 algorithm
-  unfixedSimvars :=
-  matchcontinue (fixedSimvars)
+  fixedSimvars := matchcontinue (unfixedSimvars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5023,8 +5020,7 @@ protected function unparseCommentOptionNoAnnotationNoQuote
   input Option<SCode.Comment> absynComment;
   output String commentStr;
 algorithm
-  outString :=
-  matchcontinue (absynComment)
+  commentStr := matchcontinue (absynComment)
     case (SOME(SCode.COMMENT(_, SOME(commentStr)))) then commentStr;
     case (_) then "";
   end matchcontinue;
@@ -5195,7 +5191,7 @@ protected function generateHelpVarsInArrayCondition
   output list<Exp.Exp> outExp;
   output Integer n1;
 algorithm
-  (outHelpVars,outExp,n2) := matchcontinue(n,inExp)
+  (outHelpVars,outExp,n1) := matchcontinue(n,inExp)
     local
       list<Exp.Exp> rest, el, el1;
       Integer nextInd, nextInd1;
@@ -6315,9 +6311,9 @@ protected function splitOutputBlocks2
   input list<list<Integer>> blocks;
   output list<list<Integer>> contBlocks;
   output list<list<Integer>> discBlocks;
-  output DAELow.Variables discVars;
+  output DAELow.Variables outDiscVars;
 algorithm
-  (contBlocks,discBlocks,discVars) := matchcontinue(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks)
+  (contBlocks,discBlocks,outDiscVars) := matchcontinue(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks)
     local list<Integer> blck;
 
     /* discrete block */
@@ -6509,8 +6505,7 @@ protected function getFunctionElementsList
   input DAE.Function inElem;
   output list<DAE.Element> out;
 algorithm
-  outPath:=
-  matchcontinue (inElem)
+  out := matchcontinue (inElem)
     local Absyn.Path path;
     case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(out)}) then out;
     case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body=out)}) then out;

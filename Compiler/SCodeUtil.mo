@@ -1629,7 +1629,7 @@ public function prefixTuple
   input String prefix;
   output tuple<Absyn.Exp, Absyn.Exp> prefixedExpTuple;
 algorithm
-  prefixedExp := matchcontinue(expTuple, prefix)
+  prefixedExpTuple := matchcontinue(expTuple, prefix)
     local
       Absyn.Exp e1,e2;
 

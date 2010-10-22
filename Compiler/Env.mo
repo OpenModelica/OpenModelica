@@ -1406,7 +1406,7 @@ public function cacheAddEnv "Add an environment to the cache"
   input Env env "environment";
   output CacheTree outTree;
 algorithm
-  outTree := matchcontinue(path,tree,env)
+  outTree := matchcontinue(fullpath,tree,env)
     local
       Ident id1,globalID,id2;
       Absyn.Path path;

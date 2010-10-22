@@ -491,7 +491,7 @@ public function inlineCallsInFunctions
 	input Functiontuple inFunctions;
 	output list<DAE.Function> outElementList;
 algorithm
-  outDAElist := matchcontinue(inElementList,inFunctions)
+  outElementList := matchcontinue(inElementList,inFunctions)
     local
       Functiontuple fns;
       list<DAE.Function> cdr,cdr_1;
@@ -543,7 +543,7 @@ protected function inlineDAEElements
 	input Functiontuple inFunctions;
 	output list<DAE.Element> outElementList;
 algorithm
-  outDAElist := matchcontinue(inElementList,inFunctions)
+  outElementList := matchcontinue(inElementList,inFunctions)
     local
       Functiontuple fns;
       list<DAE.Element> cdr,cdr_1,elist,elist_1;
@@ -965,7 +965,7 @@ protected function inlineCall
 	input tuple<DAE.Exp, Functiontuple> inTuple;
 	output tuple<DAE.Exp, Functiontuple> outTuple;
 algorithm
-  outExp := matchcontinue(inTuple)
+  outTuple := matchcontinue(inTuple)
     local
       Functiontuple fns,fns1;
       list<DAE.Element> fn;

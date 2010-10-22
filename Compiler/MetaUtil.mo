@@ -1334,6 +1334,11 @@ algorithm
       then false;
     case (increfs,outcrefs,innames,outnames,info)
       equation
+        false = (listLength(outnames)+listLength(innames)) == listLength(Util.listUnion(innames,outnames));
+        Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"An argument in the output has the same name as one in the input"}, info);
+      then false;
+    case (increfs,outcrefs,innames,outnames,info)
+      equation
         failure(_ = Util.listMap(increfs, Absyn.expCref));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
       then false;

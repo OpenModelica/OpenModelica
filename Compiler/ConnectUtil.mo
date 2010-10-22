@@ -334,7 +334,7 @@ protected function addOuterConnectToSets33 "help function to addOuterconnectToSe
   output list<Connect.Set> outSets;
   output Boolean added;
 algorithm
-  (outCrs,outCrs2,added,outSets) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs,inSets)
+  (outCrs,outCrs2,outSets,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs,inSets)
     local
       DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
       DAE.ElementSource src;
@@ -480,7 +480,7 @@ public function addArrayFlow "function: addArrayFlow
   input Connect.Face d2;
   input Integer dsize;
   input DAE.ElementSource source "the element origin";
-  output Connect.Sets ss_1;
+  output Connect.Sets outSets;
   Connect.Set s1,s2;
   Connect.Sets ss_1;
 algorithm
@@ -585,7 +585,7 @@ public function addArrayStream "function: addArrayStream
   input Connect.Face d2;
   input Integer dsize;
   input DAE.ElementSource source "the element origin";
-  output Connect.Sets ss_1;
+  output Connect.Sets outSets;
   Connect.Set s1,s2;
   Connect.Sets ss_1;
 algorithm
@@ -828,9 +828,9 @@ public function equations
   "From a number of connection sets, this function generates a list of
   equations."
   input Connect.Sets inSets;
-  output DAE.DAElist  outDae;
+  output DAE.DAElist outDae;
 algorithm
-  outDAEElementLst := matchcontinue (inSets)
+  outDae := matchcontinue (inSets)
     local
       DAE.DAElist dae1,dae2,dae;
       list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
@@ -1818,7 +1818,7 @@ helper function for updateConnectionSetTypes"
   input DAE.ComponentRef list2;
   output list<DAE.ComponentRef> list3;
 algorithm 
-  lsit3 := matchcontinue(list1,list2)
+  list3 := matchcontinue(list1,list2)
     local
       list<DAE.ComponentRef> cr1s,cr2s;
       DAE.ComponentRef cr1,cr2;

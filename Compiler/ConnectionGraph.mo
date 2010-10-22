@@ -152,9 +152,9 @@ public function handleOverconstrainedConnectionsInSets
  input Connect.Sets inSets;
  input Boolean isTopScope;
  output Connect.Sets outSets;
- output list<DAE.Element> outDAEElements; 
+ output list<DAE.Element> outDAEElements;
 algorithm
-  outSets := matchcontinue(inGraph, inSets, isTopScope)
+  (outSets,outDAEElements) := matchcontinue(inGraph, inSets, isTopScope)
     local
       ConnectionGraph graph;
       list<DAE.Element> elts;

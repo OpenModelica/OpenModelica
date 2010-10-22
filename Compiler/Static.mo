@@ -729,7 +729,7 @@ public function fromValueblockBodyToAlgs
   output list<Absyn.AlgorithmItem> outAlgs;
   output Env.Cache outCache;
 algorithm
-  (outAlgs,cache) := matchcontinue (body,cache,env,inPrefix)
+  (outAlgs,outCache) := matchcontinue (body,cache,env,inPrefix)
     local
       list<Absyn.AlgorithmItem> algs1,algs2,eqAlgs,algs;
       list<Absyn.EquationItem> eq1;
@@ -765,7 +765,7 @@ protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAs
   output Env.Cache outCache;
   output list<Absyn.AlgorithmItem> algsOut;
 algorithm
-  (outCache,algOut) :=
+  (outCache,algsOut) :=
   matchcontinue (eqsIn,accList,cache,env,inPrefix)
     local
       list<Absyn.AlgorithmItem> localAccList;
@@ -796,7 +796,7 @@ protected function fromEquationBranchesToAlgBranches
   output Env.Cache outCache;
   output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut;
 algorithm
-  (outCache,algOut) :=
+  (outCache,algsOut) :=
   matchcontinue (eqsIn,accList,cache,env,inPrefix)
     local
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> localAccList;
@@ -1234,7 +1234,7 @@ protected function elabArrayIterators
   output list<Ident> iteratorNames;
   output DAE.Type arrayType;
 algorithm
-  (newCache, newEnv, consts, iteratorValues, iteratorNames, arrayDim) :=
+  (newCache, newEnv, consts, iteratorValues, iteratorNames, arrayType) :=
   matchcontinue(cache, env, iterators, implicitInstantiation, st, performVectorization,inPrefix,info)
     local
       Ident iter_name;
@@ -3334,7 +3334,7 @@ protected function makeFillArgListType
   input list<DAE.Properties> dimProps;
   output DAE.Type resType;
 algorithm
-  resProp := matchcontinue(fillType, dimProps)
+  resType := matchcontinue(fillType, dimProps)
     local
       DAE.Properties prop;
       list<DAE.Properties> rest_props;
@@ -3365,7 +3365,7 @@ protected function elabBuiltinTranspose "function: elabBuiltinTranspose
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties,outDae):=
+  (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.ExpType tp;
@@ -3834,7 +3834,7 @@ input DAE.Type t;
 output list<DAE.Exp> outExp;
 output Boolean sc;
 algorithm
-  (outExp) := matchcontinue(inExp,t)
+  (outExp,sc) := matchcontinue(inExp,t)
     local
       DAE.ExpType ty;
       Boolean sc;
@@ -6605,8 +6605,7 @@ protected function dimensionListMaxOne "function: elabBuiltinVector2
   input list<Integer> inIntegerLst;
   output Integer dimensions;
 algorithm
-  outExpExpLst:=
-  matchcontinue (inIntegerLst)
+  dimensions := matchcontinue (inIntegerLst)
     local
       Integer dim;
       list<Integer> dims;
@@ -9038,7 +9037,7 @@ If in future C++ code is generated instead, this is not required, since C++ allo
   output list<DAE.Exp> outArgs;
   output list<Slot> outSlots;
 algorithm
-  (outCache,outArgs,outSlots) := matchcontinue(cache,env,inArgs,fn,slots,impl,inPrefix,info)
+  (outCache,outArgs,outSlots) := matchcontinue(inCache,env,inArgs,fn,slots,impl,inPrefix,info)
     local Env.Cache cache;
       SCode.Class cl;
       Env.Env env_2;
@@ -10653,7 +10652,7 @@ protected function makeASUBArrayAdressing
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
-  outComponentRef := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
+  outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
     local
       DAE.Exp exp1, exp2, aexp1,aexp2;
       Absyn.ComponentRef cref, crefChild;
@@ -10719,7 +10718,7 @@ protected function makeASUBArrayAdressing2
   input Prefix inPrefix;
   output list<DAE.Exp> outExp;
 algorithm
-  outComponentRef := matchcontinue (inSSL,inPrefix)
+  outExp := matchcontinue (inSSL,inPrefix)
     local
       DAE.Exp exp1,exp2,b1,b2;
       list<DAE.Exp> expl1,expl2;
@@ -11422,7 +11421,7 @@ protected function flattenSubscript
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outSub := matchcontinue(inSubs,name, inType)
+  outExp := matchcontinue(inSubs,name, inType)
     local
       String id;
       DAE.Subscript sub1;
@@ -11461,7 +11460,7 @@ public function flattenSubscript2
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outSub := matchcontinue(inSubs,name, inType)
+  outExp := matchcontinue(inSubs,name, inType)
     local
       String id;
       DAE.Subscript sub1;
@@ -11556,7 +11555,7 @@ protected function applySubscript
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outSub := matchcontinue(inSub, inSubs ,name, inType)
+  outExp := matchcontinue(inSub, inSubs ,name, inType)
     local
       String id;
       DAE.Exp exp1,exp2;
@@ -11604,7 +11603,7 @@ protected function applySubscript2
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outSub := matchcontinue(inSub, inSubs, inType )
+  outExp := matchcontinue(inSub, inSubs, inType )
     local
       String id;
       DAE.Exp exp1,exp2;
@@ -11640,7 +11639,7 @@ protected function applySubscript3
   input DAE.ExpType inType;
   output DAE.Exp outExp;
 algorithm
-  outSub := matchcontinue(inSubs,inSub, inType )
+  outExp := matchcontinue(inSubs,inSub, inType )
     local
       String id;
       DAE.Exp exp1,exp2;
@@ -11983,7 +11982,7 @@ protected function elabSubscriptsDims
   output list<DAE.Subscript> outSubs;
   output DAE.Const outConst;
 algorithm
-  (outCache,outSubs,outConst,outDae) := matchcontinue (cache,env,subs,dims,impl,inPrefix,info)
+  (outCache,outSubs,outConst) := matchcontinue (cache,env,subs,dims,impl,inPrefix,info)
     local
       String s1,s2,sp;
       DAE.DAElist dae;
@@ -13836,7 +13835,7 @@ protected function addLocalDecls
   output DAE.DAElist dae;
   output list<Absyn.AlgorithmItem> algs;
 algorithm
-  (outCache,outEnv,dae) := matchcontinue (cache,env,els,impl)
+  (outCache,outEnv,dae,algs) := matchcontinue (cache,env,els,impl)
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2;

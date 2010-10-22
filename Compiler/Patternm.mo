@@ -1326,8 +1326,7 @@ protected function findConstAndWildcards "function: findConstAndWildcards
   input Integer pivot;
   output IndexVector outVec;
 algorithm
-  outVec :=
-  matchcontinue (inList,accList,localPivot)
+  outVec := matchcontinue (inList,accList,pivot)
     local
       DFA.IndexVector localAccList;
       Integer localPivot;
@@ -1360,8 +1359,7 @@ protected function findFirstConstant "function: findFirstConstant
   input Integer ind;
   output Integer outInd;
 algorithm
-  patList :=
-  matchcontinue (patList,ind)
+  outInd := matchcontinue (patList,ind)
     local
       Integer localInd;
       RenamedPat first;
@@ -1383,8 +1381,7 @@ protected function findFirstConstructor "function: findFirstConstructor
   input Integer ind;
   output Integer outInd;
 algorithm
-  patList :=
-  matchcontinue (patList,ind)
+  outInd := matchcontinue (patList,ind)
     local
       RenamedPat first;
       RenamedPatList rest;
@@ -1426,7 +1423,7 @@ protected function createUnionState "function: createUnionState
   output Integer outStamp;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
-  (outstate,outStamp,outSavedStates) :=
+  (outState,outStamp,outSavedStates) :=
   matchcontinue (indVec,patList,rhList,stampCnt,state,firstTime,inSavedStates)
     local
       list<DFA.SimpleState> localSavedStates;
@@ -2067,7 +2064,7 @@ protected function extractSubpatterns "function: extractSubpatterns
   output RenamedPatMatrix outMat;
 algorithm
   outMat :=
-  matchcontinue (varList,indVec,patList,localAccMat)
+  matchcontinue (varList,indVec,patList,accMat)
     local
       RenamedPatList localPatList;
       DFA.RenamedPatMatrix localAccMat;

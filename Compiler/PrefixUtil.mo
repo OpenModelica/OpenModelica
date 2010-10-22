@@ -349,7 +349,7 @@ protected function prefixToCref2 "function: prefixToCref2
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  (outComponentRef,outCache) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
+  (outCache,outComponentRef) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1;
       String i;

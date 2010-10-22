@@ -201,7 +201,7 @@ Update connection sets incase of Absyn.INNEROUTER()"
   output InstHierarchy outIH;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (ocsets,outDae,outIH,outGraph) := matchcontinue(inDae,csets,inIH,inGraph,isTopLevel)
+  (outDae,ocsets,outIH,outGraph) := matchcontinue(inDae,csets,inIH,inGraph,isTopLevel)
     local
       list<DAE.Element> innerVars,outerVars,allDAEelts;
       VarTransform.VariableReplacements repl;
@@ -468,7 +468,7 @@ protected function buildInnerOuterRepl
 	input VarTransform.VariableReplacements inRepl;
 	output VarTransform.VariableReplacements outRepl;
 algorithm
-  repl := matchcontinue(innerVars,outerVars,inRepl)
+  outRepl := matchcontinue(innerVars,outerVars,inRepl)
     local VarTransform.VariableReplacements repl; DAE.Element v;
     case({},_,repl) then repl;
     case(v::innerVars,outerVars,repl)
@@ -637,7 +637,7 @@ public function retrieveOuterConnections
   output Connect.Sets outCsets;
   output list<Connect.OuterConnect> innerOuterConnects;
 algorithm
-  outCsets := matchcontinue(cache,env,ih,pre,csets,topCall)
+  (outCsets,innerOuterConnects) := matchcontinue(cache,env,inIH,pre,csets,topCall)
     local
       list<Connect.Set> setLst;
       list<DAE.ComponentRef> crs;
@@ -832,7 +832,7 @@ protected function addOuterConnectIfEmpty
   input Absyn.Info info;
   output list<Connect.Set> outSetLst;
 algorithm
-  outSetLst := matchcontinue(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
+  outSetLst := matchcontinue(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
        Boolean flowPrefix,streamPrefix;
@@ -1288,7 +1288,7 @@ According to specification modifiers on outer elements is not allowed."
   input Boolean impl;
   output Boolean modd;
 algorithm
-  omodexp := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
+  modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
   local
     String s1,s2,s;
     SCode.Mod scmod1,scmod2;
@@ -2099,9 +2099,9 @@ public function add
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input InstHierarchyHashTable hashTable;
-  output InstHierarchyHashTable outHahsTable;
+  output InstHierarchyHashTable outHashTable;
 algorithm
-  outVariables:=
+  outHashTable :=
   matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
@@ -2149,9 +2149,9 @@ public function addNoUpdCheck
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input InstHierarchyHashTable hashTable;
-  output InstHierarchyHashTable outHahsTable;
+  output InstHierarchyHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -2188,9 +2188,9 @@ public function delete
   will still contain a lot of incices information."
   input Key key;
   input InstHierarchyHashTable hashTable;
-  output InstHierarchyHashTable outHahsTable;
+  output InstHierarchyHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (key,hashTable)
+  outHashTable := matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

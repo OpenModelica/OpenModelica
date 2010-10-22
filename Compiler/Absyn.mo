@@ -3360,7 +3360,7 @@ public function crefSetLastIdent
   input ComponentRef inNewIdent; // ident to replace the old one
   output ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inNewIdent,inComponentRef)
+  outComponentRef := matchcontinue (inComponentRef,inNewIdent)
     local
       ComponentRef cref,cref1,cref2,cref_1;
       Ident id;
@@ -4253,7 +4253,7 @@ protected function findIteratorInSubscripts
   input Integer inInt;
   output list<Integer> outIntLst;
 algorithm
-  outLst := matchcontinue(inString,inSubLst,inInt)
+  outIntLst := matchcontinue(inString,inSubLst,inInt)
     local
       list<Integer> lst;
       Integer n, n_1;

@@ -2408,7 +2408,7 @@ public function initialEnv "function: initialEnv
   list<Env.Frame> envb;
   Env.Cache cache;
 algorithm
-  env := matchcontinue(cache)
+  (outCache,env) := matchcontinue(inCache)
 
   	// First look for cached version
     case (cache) equation
@@ -2903,9 +2903,8 @@ end initialEnv;
 protected function initialEnvMetaModelica
   input list<Env.Frame> inEnv;
   output list<Env.Frame> outEnv;
-
 algorithm
-  out := matchcontinue(inEnv)
+  outEnv := matchcontinue(inEnv)
     local
       list<Env.Frame> env;
     case (env)

@@ -174,7 +174,7 @@ protected function instEEquation
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
-  (outCache,outEnv,outIH,outDae,outSets,outState, outGraph) :=
+  (cache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
     local
       DAE.DAElist dae;
@@ -222,7 +222,7 @@ public function instInitialEquation
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
-  output DAE.DAElist outDAe;
+  output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -1775,7 +1775,7 @@ protected function unrollForLoop
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatement) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
@@ -1870,7 +1870,7 @@ protected function instForStatement
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatement) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
@@ -2026,7 +2026,7 @@ protected function instForStatement_dispatch
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
 algorithm
-  (outCache,outStatement) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
@@ -3100,7 +3100,7 @@ protected function createMatchStatement
   output Env.Cache outCache;
   output DAE.Statement outStmt;
 algorithm
-  (outCache,outStmt,dae) := matchcontinue (cache,env,ih,pre,alg,inBoolean,numError)
+  (outCache,outStmt) := matchcontinue (cache,env,ih,pre,alg,inBoolean,numError)
     local
       DAE.Properties cprop,eprop;
       DAE.Statement stmt;
@@ -3168,7 +3168,7 @@ protected function instIfTrueBranches
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outDaeLst,funcs,outSets,outState,outGraph):=
+  (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
@@ -3407,7 +3407,8 @@ Author BZ, 2009-09
   input String affectedConnector;
   input Prefix inPrefix;
   input Absyn.Info info;
-algorithm props := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
+algorithm
+  _ := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
   local
     Absyn.ComponentRef cr;
     Boolean b2;
@@ -4959,7 +4960,7 @@ protected function createForIteratorArray
   output Env.Cache outCache;
   output list<Absyn.ElementItem> outDecls;
 algorithm
-  (outCache,outDecls,outDae) := matchcontinue (cache,env,iterExp,rangeIdList,b,inPrefix,info)
+  (outCache,outDecls) := matchcontinue (cache,env,iterExp,rangeIdList,b,inPrefix,info)
     case (localCache,localEnv,localIterExp,localRangeIdList,impl,pre,info)
       local
         Env.Env env2,localEnv;
@@ -5020,11 +5021,11 @@ protected function deriveArrayDimAndTempVars
   input list<Absyn.ElementItem> accTempVars;
   input Prefix inPrefix;
   input Absyn.Info info;
-  output Env.Cache cache;
+  output Env.Cache outCache;
   output list<Absyn.Subscript> outList1;
   output list<Absyn.ElementItem> outList2;
 algorithm
-  (cache,outList1,outList2) := matchcontinue (cache,env,rangeList,impl,accList,accTempVars,inPrefix,info)
+  (outCache,outList1,outList2) := matchcontinue (cache,env,rangeList,impl,accList,accTempVars,inPrefix,info)
     local
       list<Absyn.Subscript> localAccList;
       list<Absyn.ElementItem> localAccTempVars;

@@ -170,10 +170,9 @@ public function add "
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -233,7 +232,7 @@ public function addListNoUpd "adds several keys with the same value, using addNu
   input HashTable ht;
   output HashTable outHt;
 algorithm
-  ht := matchcontinue(keys,v,ht)
+  outHt := matchcontinue(keys,v,ht)
   local Key key;
     case ({},v,ht) then ht;
     case(key::keys,v,ht) equation
@@ -251,10 +250,9 @@ public function addNoUpdCheck "
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -293,10 +291,9 @@ public function delete "
 "
   input Key key;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (key,hashTable)
+  outHashTable := matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

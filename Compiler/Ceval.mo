@@ -944,7 +944,7 @@ public function cevalIfConstant
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (inCache, outExp, outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+  (outCache,outExp,outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
     local 
         DAE.Exp e;
         Values.Value v;
@@ -1028,7 +1028,7 @@ public function cevalRangeIfConstant
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache, outExp, outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+  (outCache, outExp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
     case (_, _, DAE.RANGE(ty = ty, exp = e1, range = e2, expOption = e3), _, _)
       local
         DAE.Exp e1, e2;
@@ -2500,13 +2500,13 @@ protected function cevalBuiltinLinspace "
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.InteractiveSymbolTable> st;
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Option<Interactive.InteractiveSymbolTable> st;
+  output Option<Interactive.InteractiveSymbolTable> outST;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outValue,outST):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,st,inMsg)
       local
         DAE.Exp x,y,n; Integer size;
@@ -5759,10 +5759,9 @@ public function add
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input CevalHashTable hashTable;
-  output CevalHashTable outHahsTable;
+  output CevalHashTable outHashTable;
 algorithm
-  outVariables:=
-  matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -5807,9 +5806,9 @@ public function addNoUpdCheck
   If the Key-Value tuple already exists, the function updates the Value."
   input tuple<Key,Value> entry;
   input CevalHashTable hashTable;
-  output CevalHashTable outHahsTable;
+  output CevalHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
@@ -5846,9 +5845,9 @@ public function delete
   will still contain a lot of incices information."
   input Key key;
   input CevalHashTable hashTable;
-  output CevalHashTable outHahsTable;
+  output CevalHashTable outHashTable;
 algorithm
-  outVariables := matchcontinue (key,hashTable)
+  outHashTable := matchcontinue (key,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;

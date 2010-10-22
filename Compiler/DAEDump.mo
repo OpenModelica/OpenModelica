@@ -2262,12 +2262,13 @@ end dumpDebugElement;
 public function dumpFlow "
 Author BZ 2008-07, dump flow properties to string."
   input DAE.Flow var;
-  output String flowStrig;
-algorithm flowString := matchcontinue(var)
-  case DAE.FLOW() then "flow";
-  case DAE.NON_FLOW() then "effort";
-  case DAE.NON_CONNECTOR() then "non_connector";
-end matchcontinue;
+  output String flowString;
+algorithm
+  flowString := matchcontinue(var)
+    case DAE.FLOW() then "flow";
+    case DAE.NON_FLOW() then "effort";
+    case DAE.NON_CONNECTOR() then "non_connector";
+  end matchcontinue;
 end dumpFlow;
 
 public function dumpGraphviz "

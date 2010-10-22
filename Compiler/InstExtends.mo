@@ -1563,7 +1563,7 @@ protected function fixListTuple2
     output Type_B outTypeA;
   end FixBFn;
 algorithm
-  (outCache,outLst) := matchcontinue (cache,env,rest,ht,fixA,fixB)
+  (outCache,outA) := matchcontinue (cache,env,rest,ht,fixA,fixB)
     local
       Type_A a;
       Type_B b;

@@ -12868,7 +12868,7 @@ protected function isAnnotationType
   input String annotationStr;
   input AnnotationType annotationType;
 algorithm
-  res := matchcontinue(annotationStr, annotationType)
+  _ := matchcontinue(annotationStr, annotationType)
     case ("Icon", ICON_ANNOTATION) then ();
     case ("Diagram", DIAGRAM_ANNOTATION) then ();
   end matchcontinue;
@@ -18686,7 +18686,7 @@ protected function joinPaths
   input Absyn.Path parent;
   output Absyn.Path outPath;
 algorithm
-  outPaths:= matchcontinue (child, parent)
+  outPath := matchcontinue (child, parent)
     local
       Absyn.Path r, res;
       String c;

@@ -4355,9 +4355,9 @@ protected function typeConvertMatrixToList
   input Type outType;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExp;
-  output Type outType;
+  output Type actualOutType;
 algorithm
-  (outExp,outType) := matchcontinue (melist,inType,outType,printFailtrace)
+  (outExp,actualOutType) := matchcontinue (melist,inType,outType,printFailtrace)
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> rest, elist, elist_1;

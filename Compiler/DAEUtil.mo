@@ -1003,12 +1003,12 @@ public function getAllMatchingElements "function getAllMatchingElements
 "
   input list<DAE.Element> elist;
   input FuncTypeElementTo cond;
-  output list<DAE.Element> elist;
+  output list<DAE.Element> outElist;
   partial function FuncTypeElementTo
     input DAE.Element inElement;
   end FuncTypeElementTo;
 algorithm
-  elist := matchcontinue(elist,cond)
+  outElist := matchcontinue(elist,cond)
     local
       list<DAE.Element> elist2;
       DAE.Element e;
@@ -1511,8 +1511,7 @@ public function toStream "function: toStram
   input ClassInf.State inState;
   output DAE.Stream outStream;
 algorithm
-  outFlow:=
-  matchcontinue (inBoolean,inState)
+  outStream := matchcontinue (inBoolean,inState)
     case (true,_) then DAE.STREAM();
     case (_,ClassInf.CONNECTOR(path = _)) then DAE.NON_STREAM();
     case (_,_) then DAE.NON_STREAM_CONNECTOR();
@@ -2162,7 +2161,7 @@ protected function getFunctionElements
   input DAE.Function fn;
   output list<DAE.Element> els;
 algorithm
-  exps := matchcontinue fn
+  els := matchcontinue fn
     local
       list<DAE.Element> elements;
     case DAE.FUNCTION(functions = (DAE.FUNCTION_DEF(body = elements)::_)) then elements;
@@ -3843,7 +3842,8 @@ Helper function for traverseDAEEquationsStmts
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm (outElse,extraArg) := matchcontinue(inElse,func,extraArg)
+algorithm
+  (outElse,oextraArg) := matchcontinue(inElse,func,extraArg)
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
@@ -3874,7 +3874,7 @@ Help function to traverseDAE
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outAttr,extraArg) := matchcontinue(attr,func,extraArg)
+  (traversedDaeList,oextraArg) := matchcontinue(attr,func,extraArg)
     local
       Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb;
       Option<DAE.StateSelect> stateSelect;

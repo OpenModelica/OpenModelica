@@ -235,7 +235,7 @@ protected function elabModRedeclareElements
   input Absyn.Info info;
   output list<tuple<SCode.Element, DAE.Mod>> modElts "the elaborated modifiers";
 algorithm
-  (modElts,outDae) := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
+  modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl,info)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
       Absyn.InnerOuter io;
@@ -586,7 +586,7 @@ algorithm
 end updateSubmods;
 
 protected function updateSubmod " "
-    input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
@@ -597,7 +597,7 @@ protected function updateSubmod " "
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
   (outCache,outTypesSubModLst):=
-  matchcontinue (outCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean,info)
     local
       DAE.Mod m_1,m;
       list<Env.Frame> env;
@@ -1768,7 +1768,7 @@ Helper function for mergeSubs, used to detect failures in Mod.merge"
   output DAE.SubMod outSubMod;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  (outTypesSubModLst,outSubMod) := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
+  (outSubMod,outTypesSubModLst) := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
     local
       DAE.SubMod sm,s,s1,s2;
       DAE.Mod m,m1,m2;

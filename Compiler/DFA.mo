@@ -764,7 +764,7 @@ protected function mergeLists "function: mergeLists"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> accList;
   output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outList;
 algorithm
-  outTypeSpec := matchcontinue (idList,tList,accList)
+  outList := matchcontinue (idList,tList,accList)
     local
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localAccList;
     case ({},_,localAccList) then localAccList;

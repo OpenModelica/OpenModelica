@@ -977,7 +977,7 @@ looks in the types
   output Env.Env outComponentEnv "only used for package constants";
   output String name "so the FQ path can be constructed";
 algorithm
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,outSplicedExpData,outClassEnv,outComponentEnv) :=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,outSplicedExpData,outClassEnv,outComponentEnv,name) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
@@ -1135,9 +1135,6 @@ public function lookupVarInPackages "function: lookupVarInPackages
   be performed within that class. I.e. the function performs lookup of
   variables in the class hierarchy.
 
-  Arg1: The environment to search in
-  Arg2: The variable to search for
-  
   Note: the splicedExpData is currently not relevant, since constants are always evaluated to a value. 
         However, this might change in the future since it makes more sense to calculate the constants 
         during setup in runtime (to gain precision and postpone choice of precision to runtime)."
@@ -1156,7 +1153,7 @@ public function lookupVarInPackages "function: lookupVarInPackages
   output Env.Env outComponentEnv;
   output String name "We only return the environment the component was found in; not its FQ name.";
 algorithm 
-  (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv) :=
+  (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv,name) :=
   matchcontinue (inCache,inEnv,inComponentRef,inPrevFrames,inState)
     local
       SCode.Class c;
@@ -1383,8 +1380,7 @@ public function lookupClassLocal "function: lookupClassLocal
   output SCode.Class outClass;
   output Env.Env outEnv;
 algorithm
-  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
-  matchcontinue (inEnv,inIdent)
+  (outClass,outEnv) := matchcontinue (inEnv,inIdent)
     local
       SCode.Class cl;
       list<Env.Frame> env;
@@ -1410,7 +1406,7 @@ return its environment. Helper function used e.g by Inst.mo"
   output Env.Cache outCache;
   output Env.Env classEnv;
 algorithm
-  (outCache,classEnv) := matchcontinue(cache,env,path,mod,msg)
+  (outCache,classEnv) := matchcontinue(inCache,env,path,mod,msg)
     local  Env.Cache cache;
       String cn2;
       Boolean enc2,enc;
@@ -1467,7 +1463,7 @@ public function lookupIdent "function: lookupIdent
   output Env.InstStatus instStatus;
 algorithm
   (outCache,outVar,outTplSCodeElementTypesModOption,instStatus):=
-  matchcontinue (outCache,inEnv,inIdent)
+  matchcontinue (inCache,inEnv,inIdent)
     local
       DAE.Var fv;
       Option<tuple<SCode.Element, DAE.Mod>> c;
@@ -1908,7 +1904,7 @@ public function buildRecordConstructorClass
   output Env.Env outEnv;
   output SCode.Class outClass;
 algorithm
-  (outCache,outEnv,outCache,outClass) :=
+  (outCache,outEnv,outClass) :=
   matchcontinue (cache,inEnv,inClass)
     local
       Env.Cache cache;
@@ -2634,7 +2630,7 @@ protected function makeDimensionSubscript
   input DAE.Dimension inDim;
   output DAE.Subscript outSub;
 algorithm
-  outSubs := matchcontinue(inDim)
+  outSub := matchcontinue(inDim)
     local
       Integer sz;
       list<DAE.Exp> expl;  
