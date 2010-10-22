@@ -3867,122 +3867,122 @@ protected function elabBuiltinInStream "function: elabBuiltinInStream
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input Boolean inImpl;
   input Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type tp;
       DAE.Const c;
-      list<Env.Frame> env;
+      DAE.ExpType t;
+      Env.Env env;
       Absyn.Exp exp;
-      DAE.Dimension dim;
       Boolean impl;
-      Ident s,el_str,pre_str;
-      list<Absyn.Exp> expl;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae;
       Prefix pre;
-            
-    /* a scalar? */
-    case (cache,env,{exp},_,impl,pre,info) /* impl */
-      local DAE.ExpType t; String str;
+
+    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
       equation
-        (cache,exp_1,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        (tp,_) = Types.flattenArrayType(tp);
-        true = Types.basicType(tp);
+        (cache, exp_1, DAE.PROP(tp, c), _) =
+          elabExp(cache, env, exp, impl, NONE(), true, pre, info);
+        exp_2 :: _ = Exp.flattenArrayExpToList(exp_1);
+        (tp, _) = Types.flattenArrayType(tp);
+        validateBuiltinStreamOperator(cache, env, exp_2, tp, "inStream", pre);
         t = Types.elabType(tp);
         exp_2 = makeBuiltinCall("inStream", {exp_1}, t);
       then
-        (cache,exp_2,DAE.PROP(tp,c));
-    case (cache,env,{exp},_,impl,pre,info)
-      local DAE.Exp exp;
-      equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        (tp,_) = Types.flattenArrayType(tp);
-        false = Types.basicType(tp);
-        s = Exp.printExpStr(exp);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.OPERAND_BUILTIN_TYPE, {"inStream",pre_str,s}, info);
-      then
-        fail();
-    case (cache,env,expl,_,_,pre,info)
-      equation
-        el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = System.stringAppendList({"inStream(",el_str,")"});
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
-      then
-        fail();
+        (cache, exp_2, DAE.PROP(tp, c));
   end matchcontinue;
 end elabBuiltinInStream;
 
 protected function elabBuiltinActualStream "function: elabBuiltinActualStream
-  This function elaborates the builtin operator inStream.
-  Input is the arguments to the inStream operator and the environment, Env.Env."
+  This function elaborates the builtin operator actualStream.
+  Input is the arguments to the actualStream operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input Boolean inImpl;
   input Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type tp;
       DAE.Const c;
-      list<Env.Frame> env;
+      DAE.ExpType t;
+      Env.Env env;
       Absyn.Exp exp;
-      DAE.Dimension dim;
       Boolean impl;
-      Ident s,el_str,pre_str;
-      list<Absyn.Exp> expl;
       Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
+      DAE.DAElist dae;
       Prefix pre;
-            
-    /* a scalar? */
-    case (cache,env,{exp},_,impl,pre,info) /* impl */
-      local DAE.ExpType t; String str;
+    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
       equation
-        (cache,exp_1,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        (tp,_) = Types.flattenArrayType(tp);
-        true = Types.basicType(tp);
+        (cache, exp_1, DAE.PROP(tp, c), _) =
+          elabExp(cache, env, exp, impl, NONE(), true, pre, info);
+        exp_2 :: _ = Exp.flattenArrayExpToList(exp_1);
+        (tp, _) = Types.flattenArrayType(tp);
+        validateBuiltinStreamOperator(cache, env, exp_2, tp, "actualStream", pre);
         t = Types.elabType(tp);
         exp_2 = makeBuiltinCall("actualStream", {exp_1}, t);
       then
-        (cache,exp_2,DAE.PROP(tp,c));
-    case (cache,env,{exp},_,impl,pre,info)
-      local DAE.Exp exp;
+        (cache, exp_2, DAE.PROP(tp, c));
+  end matchcontinue;
+end elabBuiltinActualStream;
+
+protected function validateBuiltinStreamOperator
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inOperand;
+  input DAE.Type inType;
+  input String inOperator;
+  input Prefix.Prefix inPrefix;
+algorithm
+  _ := matchcontinue(inCache, inEnv, inOperand, inType, inOperator, inPrefix)
+    local
+      DAE.ComponentRef cr;
+      String pre_str, op_str;
+    // Operand is a stream variable, ok!
+    case (_, _, DAE.CREF(componentRef = cr), _, _, _)
       equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        (tp,_) = Types.flattenArrayType(tp);
-        false = Types.basicType(tp);
-        s = Exp.printExpStr(exp);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.OPERAND_BUILTIN_TYPE, {"actualStream",pre_str,s}, info);
+        (_, DAE.ATTR(streamPrefix = true), _, _, _, _, _, _, _) =
+          Lookup.lookupVar(inCache, inEnv, cr);
+      then
+        ();
+    // Operand is not a stream variable, error!
+    case (_, _, DAE.CREF(componentRef = cr), _, _, _)
+      equation
+        (_, DAE.ATTR(streamPrefix = false), _, _, _, _, _, _, _) =
+          Lookup.lookupVar(inCache, inEnv, cr);
+        op_str = Exp.printComponentRefStr(cr);
+        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
+          {op_str, inOperator, pre_str});
       then
         fail();
-    case (cache,env,expl,_,_,pre,info)
+    // Operand is not even a component reference, error!
+    case (_, _, _, _, _, _)
       equation
-        el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = System.stringAppendList({"actualStream(",el_str,")"});
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
+        false = Exp.isCref(inOperand);
+        op_str = Exp.printExpStr(inOperand);
+        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
+          {op_str, inOperator, pre_str});
       then
         fail();
   end matchcontinue;
-end elabBuiltinActualStream;
+end validateBuiltinStreamOperator;
 
 protected function elabBuiltinMMCGetField "Fetches fields from a boxed datatype:
 Tuple: (a,b,c),2 => b
@@ -10692,6 +10692,15 @@ algorithm
       equation
         tty2 = Exp.crefType(cr);
         exp1 = DAE.CREF(DAE.CREF_IDENT(id2,tty2,essl),ty);
+      then
+        exp1;
+    // Qualified cref, might be a package constant.
+    case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, pre, info)
+      equation
+        (essl as _ :: _) = Exp.crefLastSubs(cr);
+        cr = Exp.crefStripLastSubs(cr);
+        exp1 = makeASUBArrayAdressing2(essl, pre);
+        exp1 = DAE.ASUB(DAE.CREF(cr, ty), exp1);
       then
         exp1;
     // adrpo: return exp1 here instead of exp2
