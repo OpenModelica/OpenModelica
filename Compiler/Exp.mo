@@ -8666,7 +8666,7 @@ algorithm
         s_2;
 
     // MetaModelica Option
-    case (DAE.META_OPTION(NONE()), _, _, _) then "NONE";
+    case (DAE.META_OPTION(NONE()), _, _, _) then "NONE()";
     case (DAE.META_OPTION(SOME(e1)), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
