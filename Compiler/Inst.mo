@@ -96,6 +96,9 @@ public
 constant Boolean alwaysUnroll = true;
 constant Boolean neverUnroll = false;
 
+// the index of the inst hash table in the global table
+constant Integer instHashIndex = 0;
+
 // **
 // These type aliases are introduced to make the code a little more readable.
 // **

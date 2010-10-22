@@ -438,6 +438,7 @@ algorithm
       (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
       (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,DAE.CREF_QUAL(id,tp,subs,cr));   
+    case(cache,_,_,_,DAE.WILD()) then (cache,DAE.WILD());
   end  matchcontinue;
 end prefixSubscriptsInCref;
 
@@ -635,11 +636,12 @@ algorithm
       then
         (cache,e);
 
-    case (cache,env,_,e as DAE.CREF(componentRef = p),pre)
+    case (cache,env,ih,e as DAE.CREF(componentRef = p,ty = t),pre)
       equation 
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+        (cache, p_1) = prefixSubscriptsInCref(cache, env, ih, pre, p);
       then
-        (cache,e);
+        (cache,DAE.CREF(p_1,t));
     
     /*/ handle array subscripts 
     case (cache,env,(e as DAE.ASUB(exp = e1 as DAE.CREF(componentRef = p, ty = t), sub = expl)),pre)

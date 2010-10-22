@@ -1292,11 +1292,12 @@ RML_END_LABEL
 
 void         *rml_external_roots_trail[1024] = {0};
 rml_uint_t    rml_external_roots_trail_size = 1024;
+rml_uint_t    rml_external_roots_trail_index_max = 0;
 
 /* forward my external roots */
 void rml_user_gc(struct rml_xgcstate *state)
 {
-  rml_user_gc_callback(state, rml_external_roots_trail, sizeof(void*));
+  rml_user_gc_callback(state, rml_external_roots_trail, rml_external_roots_trail_index_max*sizeof(void*));
 }
 
 RML_BEGIN_LABEL(System__addToRoots)
@@ -1313,6 +1314,9 @@ RML_BEGIN_LABEL(System__addToRoots)
 
     rml_external_roots_trail[i] = rmlA1;
 
+    // remember the max
+    rml_external_roots_trail_index_max = max(rml_external_roots_trail_index_max, i+1);
+
     RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1326,7 +1330,7 @@ RML_BEGIN_LABEL(System__getFromRoots)
       fprintf(stderr, "System__getFromRoots\n"); fflush(stderr);
     }
 
-    if (i >= rml_external_roots_trail_size)
+    if (i > rml_external_roots_trail_index_max || i >= rml_external_roots_trail_size)
       RML_TAILCALLK(rmlFC);
 
     rmlA0 = rml_external_roots_trail[i];
@@ -3043,6 +3047,26 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__refEqual)
 {
   rmlA0 = (rmlA0 == rmlA1) ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * adrpo: return the pointer of a value as integer
+ */
+RML_BEGIN_LABEL(System__refInteger)
+{
+  rmlA0 = RML_TAGFIXNUM((rml_uint_t)rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * adrpo: return the constructor of the given value
+ */
+RML_BEGIN_LABEL(System__getValueConstructor)
+{
+  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(RML_HDRCTOR(RML_GETHDR(rmlA0))));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
