@@ -37,9 +37,13 @@
 #include <string.h>
 #include <errno.h>
 
+#include "modelica.h"
+
 typedef struct type_desc_s type_description;
 
-#include "modelica.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 enum type_desc_e {
   TYPE_DESC_NONE,
@@ -137,5 +141,9 @@ char *my_strdup(const char *s);
 int getMyBool(const type_description *desc);
 
 void puttype(const type_description *desc);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
