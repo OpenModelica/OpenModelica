@@ -6132,17 +6132,17 @@ algorithm
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
+    case (DAE.DEFINE(componentRef = cr1, exp = e1, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e2);
+        e2 = Exp.simplify(e1);
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
+    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e1, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e2);
+        e2 = Exp.simplify(e1);
       then
         EQUATION(e1,e2,source);
   end matchcontinue;
@@ -17662,9 +17662,12 @@ public function generateSymbolicJacobian
   input DAELow inDAELow;
   input DAE.DAElist inDAEList;
   input list<DAE.ComponentRef> inVars;
+  input list<Var> stateVars;
+  input list<Var> inputVars;
+  input list<Var> paramVars;
   output DAELow outJacobian;
 algorithm
-  outJacobian := matchcontinue(inDAELow, inDAEList, inVars)
+  outJacobian := matchcontinue(inDAELow, inDAEList, inVars, stateVars, inputVars, paramVars)
     local
       DAELow daeLow;
       DAE.DAElist daeList;
@@ -17694,7 +17697,7 @@ algorithm
       list<DAE.Algorithm> derivedAlgorithms;
       list<tuple<Integer, DAE.ComponentRef>> derivedAlgorithmsLookUp;
       
-    case(_, _, {}) equation
+    case(_, _, {}, _, _,_) equation
       jacOrderedVars = emptyVars();
       jacKnownVars = emptyVars();
       jacExternalObjects = emptyVars();
@@ -17710,15 +17713,12 @@ algorithm
       jacobian = DAELOW(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
     then jacobian;
       
-    case(daeLow as DAELOW(orderedVars=orderedVars, knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars, orderedEqs=orderedEqs, removedEqs=removedEqs, initialEqs=initialEqs, arrayEqs=arrayEqs, algorithms=algorithms, eventInfo=eventInfo, extObjClasses=extObjClasses), daeList as DAE.DAE(functions=functions), vars) equation
+    case(daeLow as DAELOW(orderedVars=orderedVars, knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars, orderedEqs=orderedEqs, removedEqs=removedEqs, initialEqs=initialEqs, arrayEqs=arrayEqs, algorithms=algorithms, eventInfo=eventInfo, extObjClasses=extObjClasses), daeList as DAE.DAE(functions=functions), vars, stateVars, inputVars, paramVars) equation
       Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
       Debug.fcall("jacdump", dump, daeLow);
       Debug.fcall("jacdump", print, "##################### daeLow-dump:    input #####################\n\n");
       
-      allVars = listAppend(varList(orderedVars), varList(knownVars));
-      inputVars = Util.listSelect(allVars, isVarOnTopLevelAndInput);
-      paramVars = Util.listSelect(allVars, isParam);
-      stateVars = Util.listSelect(allVars, isStateVar);
+      allVars = listAppend(listAppend(stateVars, inputVars), paramVars);
       
       derivedVariables = generateJacobianVars(varList(orderedVars), vars, stateVars);
       (derivedAlgorithms, derivedAlgorithmsLookUp) = deriveAllAlg(arrayList(algorithms), vars, functions, 0);
@@ -17743,7 +17743,7 @@ algorithm
       Debug.fcall("jacdump", print, "##################### daeLow-dump: jacobian #####################\n");
     then jacobian;  
       
-    case(_, _, _) equation
+    case(_, _, _, _, _,_) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateSymbolicJacobian failed"});
     then fail();
   end matchcontinue;
@@ -18174,7 +18174,7 @@ algorithm
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
       e = DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.ADD(et), DAE.BINARY(e1, DAE.MUL(et), e2_));
-      //e = Exp.simplify(e);
+      e = Exp.simplify(e);
     then e;
       
     // a / b
@@ -18182,7 +18182,7 @@ algorithm
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
       e = DAE.BINARY(DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.SUB(et), DAE.BINARY(e1, DAE.MUL(et), e2_)), DAE.DIV(et), DAE.BINARY(e2, DAE.MUL(et), e2));
-      //e = Exp.simplify(e);
+      e = Exp.simplify(e);
     then e;
     
     // a(x)^b
@@ -18275,7 +18275,7 @@ algorithm
     equation
         nArgs = listLength(expList1);
         (DAE.FUNCTION_DER_MAPPER(derivativeFunction=derFname,conditionRefs=conditions), tp) = Derive.getFunctionMapper(fname, functions);
-        expList2 = deriveExpListwrtstate(expList1, nArgs, conditions, x, functions);
+        expList2 = deriveExpListwrtstate(expList1, nArgs, conditions, x, functions, inputVars, paramVars, stateVars);
         e1 = partialAnalyticalDifferentiation(expList1, expList2, e, derFname, listLength(expList2));  
     then e1;
 
@@ -18286,7 +18286,7 @@ algorithm
         Integer nArgs;
     equation
         nArgs = listLength(expList1);
-        expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions);
+        expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions, inputVars, paramVars, stateVars);
         e1 = partialNumericalDifferentiation(expList1, expList2, x, e);  
     then e1;
            
@@ -18306,9 +18306,12 @@ protected function deriveExpListwrtstate
   input list<tuple<Integer,DAE.derivativeCond>> inConditios;
   input DAE.ComponentRef inState;
   input DAE.FunctionTree inFunctions;
+  input list<Var> inInputVars;
+  input list<Var> inParamVars;
+  input list<Var> inStateVars;
   output list<DAE.Exp> outExpList;
 algorithm
-  outExpList := matchcontinue(inExpList, inLengthExpList, inConditios, inState, inFunctions)
+  outExpList := matchcontinue(inExpList, inLengthExpList, inConditios, inState, inFunctions, inInputVars, inParamVars, inStateVars)
     local
       DAE.ComponentRef x;
       DAE.Exp curr,r1;
@@ -18316,16 +18319,17 @@ algorithm
       DAE.FunctionTree functions;
       Integer LengthExpList,n, argnum;
       list<tuple<Integer,DAE.derivativeCond>> conditions;
-    case ({},_, _,_,_) then ({});
-    case (curr::rest, LengthExpList, conditions, x, functions) equation
+      list<Var> inputVars, paramVars, stateVars;
+    case ({},_,_,_,_,_,_,_) then ({});
+    case (curr::rest, LengthExpList, conditions, x, functions,inputVars, paramVars, stateVars) equation
       n = listLength(rest);
       argnum = LengthExpList - n;
       true = checkcondition(conditions,argnum); 
-      r1 = differentiateWithRespectToX(curr, x, functions, {}, {}, {}); 
-      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions);
+      r1 = differentiateWithRespectToX(curr, x, functions, inputVars, paramVars, stateVars); 
+      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions,inputVars, paramVars, stateVars);
     then (r1::r2);
-    case (curr::rest, LengthExpList, conditions, x, functions) equation
-      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions);
+    case (curr::rest, LengthExpList, conditions, x, functions,inputVars, paramVars, stateVars) equation
+      r2 = deriveExpListwrtstate(rest,LengthExpList,conditions, x, functions,inputVars, paramVars, stateVars);
     then r2;  
   end matchcontinue;
 end deriveExpListwrtstate;
@@ -18335,21 +18339,25 @@ protected function deriveExpListwrtstate2
   input Integer inLengthExpList;
   input DAE.ComponentRef inState;
   input DAE.FunctionTree inFunctions;
+  input list<Var> inInputVars;
+  input list<Var> inParamVars;
+  input list<Var> inStateVars;
   output list<DAE.Exp> outExpList;
 algorithm
-  outExpList := matchcontinue(inExpList, inLengthExpList, inState, inFunctions)
+  outExpList := matchcontinue(inExpList, inLengthExpList, inState, inFunctions, inInputVars, inParamVars, inStateVars)
     local
       DAE.ComponentRef x;
       DAE.Exp curr,r1;
       list<DAE.Exp> rest, r2;
       DAE.FunctionTree functions;
       Integer LengthExpList,n, argnum;
-    case ({}, _, _, _) then ({});
-    case (curr::rest, LengthExpList, x, functions) equation
+      list<Var> inputVars, paramVars, stateVars;    
+    case ({}, _, _, _, _, _, _) then ({});
+    case (curr::rest, LengthExpList, x, functions, inputVars, paramVars, stateVars) equation
       n = listLength(rest);
       argnum = LengthExpList - n;
-      r1 = differentiateWithRespectToX(curr, x, functions, {}, {}, {}); 
-      r2 = deriveExpListwrtstate2(rest,LengthExpList, x, functions);
+      r1 = differentiateWithRespectToX(curr, x, functions, inputVars, paramVars, stateVars); 
+      r2 = deriveExpListwrtstate2(rest,LengthExpList, x, functions, inputVars, paramVars, stateVars);
     then (r1::r2);
   end matchcontinue;
 end deriveExpListwrtstate2;
@@ -18371,11 +18379,13 @@ algorithm
         equality(i = nArgs);
         cond = DAE.ZERO_DERIVATIVE();
       then false;
-        /*    case((i,cond)::rest,nArgs) 
+      case((i,cond)::rest,nArgs) 
+        local
+          DAE.Exp e1;
          equation
          equality(i = nArgs);
-         cond = DAE.NO_DERIVATIVE();
-         then false;*/   
+         DAE.NO_DERIVATIVE(_) = cond;
+         then false;
     case((i,cond)::rest,nArgs) 
       equation
         res = checkcondition(rest,nArgs);
@@ -18628,7 +18638,7 @@ algorithm
       
     case ({}, states, _, _) then {};
     case (curr::rest, states, actInd, allVars) equation
-      (str, actInd) = determineIndices2(states, curr, actInd, allVars);
+      (str, actInd) = determineIndices2(curr, states, actInd, allVars);
       erg = determineIndices(rest, states, actInd, allVars);
       str = listAppend(str, erg);
     then str;
@@ -18637,15 +18647,14 @@ end determineIndices;
 
 protected function determineIndices2
   // function: determineIndices2
-  input list<DAE.ComponentRef> inStates;
   input DAE.ComponentRef inDStates;
-  //input Boolean inSearchForStates;
+  input list<DAE.ComponentRef> inStates;
   input Integer actInd;
   input list<Var> inAllVars;
   output list<tuple<String,Integer>> outTuple;
   output Integer actInd;
 algorithm
-  out := matchcontinue(inStates, inDStates, actInd, inAllVars)
+  out := matchcontinue(inDStates,inStates, actInd, inAllVars)
     local
       tuple<String,Integer> str;
       list<tuple<String,Integer>> erg;
@@ -18653,12 +18662,12 @@ algorithm
       DAE.ComponentRef new, curr, dState;
       list<Var> allVars;
       //String debug1;Integer debug2;
-    case ({}, dState, actInd, allVars) then ({}, actInd);
-    case (curr::rest, dState, actInd, allVars) equation
+    case (dState, {}, actInd, allVars) then ({}, actInd);
+    case (dState,curr::rest, actInd, allVars) equation
       new = differentiateVarWithRespectToX(dState,curr,allVars);
       str = (Exp.printComponentRefStr(new) ,actInd);
       actInd = actInd+1;      
-      (erg, actInd) = determineIndices2(rest, dState, actInd, allVars);
+			(erg, actInd) = determineIndices2(dState, rest, actInd, allVars);
     then (str::erg, actInd);
     case (_,_, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.determineIndices2() failed"});
