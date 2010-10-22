@@ -3732,7 +3732,7 @@ public function matchTypeTupleCall
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
 algorithm
-  (outExp,outTypeLst) :=
+  _ :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
       DAE.Exp e,e_1,e_2;
@@ -5541,7 +5541,7 @@ list of dimensions; otherwise, it fails."
  input Type inType;
  output list<DAE.Dimension> outDims;
 algorithm
-  outType := matchcontinue (inType)
+  outDims := matchcontinue (inType)
     local
       Type ty;
       DAE.Dimension d;

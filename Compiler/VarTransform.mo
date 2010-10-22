@@ -814,7 +814,7 @@ Extract all crefs -> exp to two separate lists.
 input VariableReplacements inVariableReplacements;
 output list<DAE.ComponentRef> crefs;
 output list<DAE.Exp> dsts;
-algorithm (dsts,crefs) := matchcontinue (inVariableReplacements)
+algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
     local
       HashTable2.HashTable ht;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
@@ -1146,7 +1146,7 @@ protected function addReplacementInv "function: addReplacementInv
   Adds the inverse rule of a replacement to the second binary tree
   of VariableReplacements.
 "
-  input HashTable3.HashTable invGt;
+  input HashTable3.HashTable invHt;
   input DAE.ComponentRef src;
   input DAE.Exp dst;
   output HashTable3.HashTable outInvHt;
@@ -1154,7 +1154,7 @@ algorithm
   outInvHt:=
   matchcontinue (invHt,src,dst)
     local
-      HashTable3.HashTable invHt_1,invHt;
+      HashTable3.HashTable invHt_1;
       DAE.ComponentRef src;
       DAE.Exp dst;
       list<DAE.ComponentRef> dests;

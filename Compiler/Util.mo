@@ -1219,7 +1219,7 @@ function listMap_2_tail
     replaceable type Type_c subtypeof Any;
   end FuncTypeType_aToType_bType_c;
 algorithm
-  outLst := matchcontinue(inLst, fn, accumulator1, accumulator2)
+  (outTypeBLst,outTypeCLst) := matchcontinue(inLst, fn, accumulator1, accumulator2)
     local
       Type_a hd; Type_b hdChanged1; Type_c hdChanged2;
       list<Type_a> rest;  list<Type_b> l1, result1; list<Type_c> l2, result2;
@@ -1625,7 +1625,7 @@ function listMap2r_tail
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
 algorithm
-  outLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
+  outTypeDLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
     local
       Type_a hd; Type_d hdChanged;
       list<Type_a> rest;  list<Type_d> l, result;
@@ -2378,7 +2378,7 @@ public function listMapFlat2_tail
     output list<Type_d> outTypeDLst;
   end FuncTypeType_aType_bType_cToType_d;
 algorithm
-  outTypeCLst:=
+  outTypeDLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC,accTypeDLst)
     local
       list<Type_d> f_1;
@@ -2406,7 +2406,7 @@ public function listListAppendLast "appends to the last element of a list of lis
   replaceable type Type_a subtypeof Any;
 algorithm
   outLst := matchcontinue(llst,lst)
-  local list<Type_a> lst1;
+    local list<Type_a> lst1;
     case({},lst) then {lst};
     case({lst1},lst) equation
       lst1 = listAppend(lst1,lst);
@@ -2610,7 +2610,7 @@ public function listFold1 "Like listFold, but relation takes an extra constant a
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm
-  outTypeB:=
+  outTypeC :=
   matchcontinue (inTypeALst,func,inTypeB,inTypeC)
     local
       Type_b b;
@@ -2987,7 +2987,7 @@ public function listThreadMap32 "function: listThreadMap32
     output Type_e outTypeE;
   end FuncTypeType_aType_bType_cToType_dType_e;
 algorithm
-  outTypeCLst:=
+  (outTypeDLst,outTypeELst) :=
   matchcontinue (inTypeALst,inTypeBLst,inTypeCLst,inFuncTypeTypeATypeBTypeCToTypeDTypeE)
     local
       Type_d fr_d;
@@ -5011,8 +5011,7 @@ protected function stringDelimitListAndSeparate2 "function: stringDelimitListAnd
   input Integer inInteger4;
   input Integer inInteger5;
 algorithm
-  outString:=
-  matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
+  _ := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
     local
       String s,str1,str,f,sep1,sep2;
       list<String> r;
@@ -5836,7 +5835,7 @@ public function listSplitEqualParts "function: listSplitEqualParts
   output list<list<Type_a>> outTypeALst1;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outTypeALst1,outTypeALst2):=
+  outTypeALst1 :=
   matchcontinue (inTypeALst,inInteger)
     local
       list<Type_a> a,b,c;
@@ -5867,7 +5866,7 @@ protected function listSplitEqualParts2 "function: listSplitEqualParts
   output list<list<Type_a>> outTypeALst1;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outTypeALst1,outTypeALst2):=
+  (outTypeALst1):=
   matchcontinue (inTypeALst,inInteger)
     local
       list<Type_a> a,b,c;
@@ -6247,7 +6246,7 @@ public function listProduct
   output list<list<Type_a>> outTypeALstLst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALstlst := matchcontinue (inTypeALstLst1, inTypeALstLst2)
+  outTypeALstLst := matchcontinue (inTypeALstLst1, inTypeALstLst2)
     local
       list<list<Type_a>> out;
     case (inTypeALstLst1, inTypeALstLst2)
@@ -6273,7 +6272,7 @@ public function listProduct_acc
   output list<list<Type_a>> outTypeALstLst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
+  outTypeALstLst :=
   matchcontinue (inTypeALst1, inTypeALst2, inTypeALstLst)
     local
       list<list<Type_a>> out, out1, out2, tail1, tail2;
@@ -6682,7 +6681,7 @@ protected function listMapMap_tail
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm
-  outTypeBLst := matchcontinue (lst, acc, fn1, fn2)
+  outLst := matchcontinue (lst, acc, fn1, fn2)
     local
       Type_a a;
       Type_b b;

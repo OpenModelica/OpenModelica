@@ -1609,7 +1609,7 @@ This function renders a (memory-)text to a file."
   input String inFileName;
 
 algorithm
-  outString := matchcontinue (inText, inFileName)
+  _ := matchcontinue (inText, inFileName)
     local
       Text txt;
       String file, str;

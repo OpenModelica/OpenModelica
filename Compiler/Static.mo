@@ -13586,7 +13586,7 @@ protected function makeEnumOperator
   input DAE.Type inType2;
   output tuple<DAE.Operator, list<DAE.Type>, DAE.Type> outOp;
 algorithm
-  outType := matchcontinue(inOp, inType1, inType2)
+  outOp := matchcontinue(inOp, inType1, inType2)
     local
       DAE.ExpType op_ty;
     case (_, (DAE.T_ENUMERATION(path = _), _), (DAE.T_ENUMERATION(path = _), _))

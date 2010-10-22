@@ -1116,7 +1116,7 @@ new locations"
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,outStore) := matchcontinue(functp,funcInstId,funcCallExp,store)
+  (terms,extraTerms,outStore) := matchcontinue(functp,funcInstId,funcCallExp,store)
   local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
     list<DAE.Type> typeLst;
     /* Real */

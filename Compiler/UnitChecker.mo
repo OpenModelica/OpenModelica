@@ -103,7 +103,7 @@ public function isComplete "returns true if the store is complete, else false"
   output Boolean complete;
   output UnitAbsyn.Store stout;
 algorithm
-  complete := matchcontinue(st)
+  (complete,stout) := matchcontinue(st)
     local 
       Option<UnitAbsyn.Unit>[:] vector; Integer indx;
       list<Option<UnitAbsyn.Unit>> lst;
@@ -126,7 +126,7 @@ protected function completeCheck "help function to isComplete"
   output Boolean isComplete;
   output UnitAbsyn.Store stout;
 algorithm
-  _ := matchcontinue(lst,indx,st)
+  (isComplete,stout) := matchcontinue(lst,indx,st)
     local
       UnitAbsyn.Unit u1,u2;
       Boolean comp1;
@@ -160,7 +160,7 @@ public function checkTerm "check if one term is ok"
   output UnitAbsyn.SpecUnit outUnit;
   output UnitAbsyn.Store outSt;
 algorithm
-   (result,outFailingTm,outUnit,outSt) := matchcontinue(tm,st)
+   (result,outUnit,outSt) := matchcontinue(tm,st)
      local
        UnitAbsyn.Store st1,st2,st3,st4;
        UnitAbsyn.UnitCheckResult res1,res2,res3,res4;
@@ -545,7 +545,7 @@ public function powSpecUnit "Power of a specified unit"
   input MMath.Rational expo;
   output UnitAbsyn.SpecUnit uout;
 algorithm
-  u := matchcontinue(suin,expo)
+  uout := matchcontinue(suin,expo)
     local 
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2;
       list<MMath.Rational> unitvec1,unitvec2;
@@ -745,7 +745,7 @@ protected function getParam "returns the next param in list and removes it from 
   output MMath.Rational outexpo;
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
-  (expo,outparams) := matchcontinue(inparams,loc)
+  (found,outexpo,outparams) := matchcontinue(inparams,loc)
     local
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
       String name;
@@ -782,7 +782,7 @@ protected function normalizeParamsValues "normalize the values that the the list
   output UnitAbsyn.SpecUnit uout;
   output UnitAbsyn.Store outSt;
 algorithm
-  (outparams,uout,outSt) := matchcontinue(inparams,suin,st)
+  (uout,outSt) := matchcontinue(inparams,suin,st)
     local
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
       UnitAbsyn.Store st2,st3;

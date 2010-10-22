@@ -1065,7 +1065,8 @@ Author: BZ, 2008-09
 "
   input Value inValue;
   output Boolean outBool;
-algorithm outReal:= matchcontinue (inValue)
+algorithm
+  outBool:= matchcontinue (inValue)
     case (Values.BOOL(outBool)) then outBool;
   end matchcontinue;
 end valueBool;
@@ -2291,7 +2292,7 @@ protected function unparsePtolemyValues "function: unparsePtolemyValues
   input list<Value> inValueLst;
   input list<String> inStringLst;
 algorithm
-  outString := matchcontinue (inValue,inValueLst,inStringLst)
+  _ := matchcontinue (inValue,inValueLst,inStringLst)
     local
       String str,str2,res,v1;
       Value time,s1;
@@ -2323,7 +2324,7 @@ protected function unparsePtolemySet2 "function: unparsePtolemySet2
   input Value inValue1;
   input Value inValue2;
 algorithm
-  outString := matchcontinue (inValue1,inValue2)
+  _ := matchcontinue (inValue1,inValue2)
     local
       String s1,s2,res,res_1;
       Value v1,v2;
