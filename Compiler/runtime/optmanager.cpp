@@ -54,6 +54,7 @@ extern "C"
 		options.insert(std::pair<std::string,bool>("generateBoschCode",false));
 		options.insert(std::pair<std::string,bool>("noTearing",false));
 		options.insert(std::pair<std::string,bool>("noCse",false));
+		options.insert(std::pair<std::string,bool>("dynamicStateSelection", false));
 		options.insert(std::pair<std::string,bool>("evaluatingSystem",false));
 		options.insert(std::pair<std::string,bool>("MOOSEScaleEquations",true));
 		options.insert(std::pair<std::string,bool>("analyticJacobian",false));
@@ -64,7 +65,7 @@ extern "C"
 		options.insert(std::pair<std::string,bool>("reportMatchingError",false));
 		options.insert(std::pair<std::string,bool>("envCache",true));
 		options.insert(std::pair<std::string,bool>("collectZCFromSmooth", true)); // If true zero crossings are collected from expr in smooth(N, expr)
-    options.insert(std::pair<std::string,bool>("noVectorization", false));
+        options.insert(std::pair<std::string,bool>("noVectorization", false));
 		//options.insert(std::pair<std::string,bool>("dummy",false));
 
 /*		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
