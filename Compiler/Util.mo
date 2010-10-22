@@ -4454,20 +4454,20 @@ algorithm
   outTypeAArray:=
   matchcontinue (inTypeA1,inInteger2,inTypeAArray3,inTypeA4)
     local
-      Integer alen,pos,pos_1;
+      Integer alen,pos;
       Type_a[:] res,arr,newarr,res_1;
       Type_a x,fillv;
     case (x,pos,arr,fillv)
       equation
         alen = arrayLength(arr) "Replacing element with index in range of the array" ;
-        (pos < alen) = true;
+        (pos <= alen) = true;
         res = arrayUpdate(arr, pos , x);
       then
         res;
     case (x,pos,arr,fillv)
       equation
-        pos_1 = pos + 1 "Replacing element out of range of array, create new array, and copy elts." ;
-        newarr = fill(fillv, pos_1);
+        //Replacing element out of range of array, create new array, and copy elts.
+        newarr = fill(fillv, pos);
         res = arrayCopy(arr, newarr);
         res_1 = arrayUpdate(res, pos , x);
       then
