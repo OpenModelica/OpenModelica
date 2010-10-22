@@ -1843,7 +1843,7 @@ algorithm
         matrix = simplifyIdentity(1,n);
         e = DAE.ARRAY(
           DAE.ET_ARRAY(
-            DAE.ET_ARRAY(DAE.ET_INT,{DAE.DIM_INTEGER(3)}),
+            DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_INTEGER(3)}),
             {DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}
           ),
           false,matrix);
@@ -2239,14 +2239,14 @@ algorithm
         true = intEq(row,n);
         rowExps = simplifyIdentityMakeRow(n,1,row);
       then
-       {DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT,{DAE.DIM_INTEGER(n)}),true,rowExps)};
+       {DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_INTEGER(n)}),true,rowExps)};
     
     case(row,n) // bottom right
       equation
         true = row < n;
         rowExps = simplifyIdentityMakeRow(n,1,row);
         outExp = simplifyIdentity(row+1,n);
-        arrExp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT,{DAE.DIM_INTEGER(n)}),true,rowExps);
+        arrExp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_INTEGER(n)}),true,rowExps);
       then
         arrExp::outExp;
   end matchcontinue;
@@ -2339,7 +2339,7 @@ traversal function for addNoEventToRelations"
 algorithm
   outTpl := matchcontinue(inTpl)
   local Exp e; Integer i;
-    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),i));
+    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
@@ -2362,7 +2362,7 @@ algorithm
     case (((e as DAE.CALL(path=_)), i))
       equation
         true = isEventTriggeringFunctionExp(e);
-      then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),i));
+      then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),i));
     case ((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToEventTriggeringFunctionsExp;
@@ -12164,7 +12164,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input Exp e1;
 output Exp res;
 algorithm
-  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE);
+  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE());
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
@@ -12821,7 +12821,7 @@ public function expLn
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE);
+  outExp := DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE());
 end expLn;
 
 public function extractCrefsFromExp "
@@ -13119,12 +13119,12 @@ algorithm
       list<DAE.Dimension> dims;
     case DAE.RCONST(_) then DAE.RCONST(0.0);   
     case DAE.ICONST(_) then DAE.RCONST(0.0);   
-    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_REAL, arrayDimensions=dims))
+    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_REAL(), arrayDimensions=dims))
       equation
         (e,_) = makeZeroExpression(dims);
       then
         e;  
-    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_INT, arrayDimensions=dims))
+    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_INT(), arrayDimensions=dims))
       equation
         (e,_) = makeZeroExpression(dims);
       then

@@ -13920,16 +13920,16 @@ protected function getAllElements1
 "function: getAllElements1
   author: Frenkel TUD
   Helper function for getAllElements."
-  input tuple<Var,Integer,Integer>  var1;
+  input tuple<Var,Integer,Integer>  inVar;
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
   output list<tuple<Var,Integer,Integer> > outlist1;
 algorithm
-  (outlist,outlist1) := matchcontinue (var1,inlist)
+  (outlist,outlist1) := matchcontinue (inVar,inlist)
     local
       list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
 			DAE.ComponentRef varName1, varName2,c2,c1;
-      Var var2;
+      Var var1,var2;
       Boolean ins;
       Integer typ1,typ2,place1,place2;
     case ((var1,typ1,place1),{}) then ({(var1,typ1,place1)},{});
