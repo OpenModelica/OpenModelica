@@ -6612,7 +6612,6 @@ algorithm
 end listMapOption;
 
 protected function listMapOption_tail
-"More efficient than: listMap(listMap(listSetDifferenceselectList(lst,{NONE()}), getOption), fn)"
   input list<Option<Type_a>> lst;
   input list<Type_b> acc;
   input FuncTypeType_aToType_b fn;
@@ -6638,6 +6637,54 @@ algorithm
     case (NONE()::xs, acc, fn) then listMapOption_tail(xs, acc, fn);
   end matchcontinue;
 end listMapOption_tail;
+
+public function listMapOption1
+"More efficient than: listMap1(listMap(lst, getOption), fn, arg)
+Also, does not fail if an element is NONE()
+"
+  input list<Option<Type_a>> lst;
+  input Func fn;
+  input Type_b b;
+  output list<Type_c> cl;
+  partial function Func
+    input Type_a a;
+    input Type_b b;
+    output Type_c c;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  cl := listMapOption1_tail(lst, {}, fn, b);
+end listMapOption1;
+
+protected function listMapOption1_tail
+  input list<Option<Type_a>> lst;
+  input list<Type_c> acc;
+  input Func fn;
+  input Type_b b;
+  output list<Type_c> cl;
+  partial function Func
+    input Type_a a;
+    input Type_b b;
+    output Type_c c;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  cl := matchcontinue (lst, acc, fn, b)
+    local
+      Type_a a;
+      Type_c c;
+    case ({}, acc, fn, b) then listReverse(acc);
+    case (SOME(a)::lst, acc, fn, b)
+      equation
+        c = fn(a,b);
+      then listMapOption1_tail(lst, c::acc, fn, b);
+    case (NONE()::lst, acc, fn, b) then listMapOption1_tail(lst, acc, fn, b);
+  end matchcontinue;
+end listMapOption1_tail;
 
 public function listMapMap
 "More efficient than: listMap(listMap(lst, fn1), fn2)

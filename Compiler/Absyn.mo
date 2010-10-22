@@ -66,6 +66,7 @@ package Absyn
 
   The following are the types and uniontypes that are used for the AST:"
 
+protected import Dump;
 protected import System;
 
 public
@@ -2503,15 +2504,15 @@ algorithm
     case (REAL(value = _),checkSubs) then {};
     case (STRING(value = _),checkSubs) then {};
     case (BOOL(value = _),checkSubs) then {};
-    case (CREF(componentRef = cr),false) then {cr};
     case (CREF(componentRef = (cr as WILD)),_) then {};
+    case (CREF(componentRef = cr),false) then {cr};
 
-      case (CREF(componentRef = (cr)),true)
-        local
-          list<Subscript> subs;
-        equation
-          subs = getSubsFromCref(cr);
-          l1 = getCrefsFromSubs(subs);
+    case (CREF(componentRef = (cr)),true)
+      local
+        list<Subscript> subs;
+      equation
+        subs = getSubsFromCref(cr);
+        l1 = getCrefsFromSubs(subs);
       then cr::l1;
 
     case (BINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
@@ -2595,7 +2596,7 @@ algorithm
         res = listAppend(l1, l2);
       then
         res;
-    case (END,checkSubs) then {};
+    case (END(),checkSubs) then {};
 
     case (TUPLE(expressions = expl),checkSubs)
       local list<list<ComponentRef>> crefll;
@@ -2604,6 +2605,36 @@ algorithm
         res = Util.listFlatten(crefll);
       then
         res;
+
+    case (CODE(_),_) then {};
+
+    case (VALUEBLOCK(body = _),_) then {};
+
+    case (AS(exp = e1),checkSubs) then getCrefFromExp(e1,checkSubs);
+    case (CONS(e1,e2),checkSubs)
+      equation
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
+        res = listAppend(l1, l2);
+      then
+        res;
+
+    case (LIST(expl),checkSubs)
+      local
+        list<list<ComponentRef>> crefll;
+      equation
+        crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
+        res = Util.listFlatten(crefll);
+      then
+        res;
+
+    case (MATCHEXP(matchTy = _),checkSubs) then fail();
+    case (VALUEBLOCK(localDecls = _),checkSubs) then fail();
+
+    case (e1,_)
+      equation
+        print("Internal error: Absyn.getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
+      then fail();
   end matchcontinue;
 end getCrefFromExp;
 
@@ -2619,6 +2650,8 @@ algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
       list<ComponentRef> fl1,fl2,res;
       list<ComponentCondition> expl;
       list<NamedArg> nargl;
+      ForIterators iterators;
+      Exp exp;
     case (FUNCTIONARGS(args = expl,argNames = nargl),checkSubs)
       equation
         l1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
@@ -2628,6 +2661,15 @@ algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
         res = listAppend(fl1, fl2);
       then
         res;
+    case (FOR_ITER_FARG(exp,iterators),checkSubs)
+      equation
+        l1 = Util.listMapOption1(Util.listMap(iterators,Util.tuple22),getCrefFromExp,checkSubs);
+        fl1 = Util.listFlatten(l1);
+        fl2 = getCrefFromExp(exp,checkSubs);
+        res = listAppend(fl1, fl2);
+      then
+        res;
+
   end matchcontinue;
 end getCrefFromFarg;
 

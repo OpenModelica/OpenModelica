@@ -8652,7 +8652,7 @@ algorithm
       local list<Exp> es;
       equation
         s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = System.stringAppendList({"list(", s, ")"});
+        s = System.stringAppendList({"List(", s, ")"});
       then
         s;
 
@@ -8661,7 +8661,7 @@ algorithm
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = System.stringAppendList({"cons(", s1, ",", s2, ")"});
+        s_2 = System.stringAppendList({"listCons(", s1, ",", s2, ")"});
       then
         s_2;
 
