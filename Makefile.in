@@ -47,8 +47,10 @@ omshell: mkbuilddirs
 	make -C OMShell -f Makefile.unix
 omplotwindow: mkbuilddirs
 	make -C OMNotebook/ext -f Makefile.unix
+omedit: mkbuilddirs omnotebook
+	make -C OMEdit/OMEditGUI -f Makefile.unix
 
-qtclients: omnotebook omshell omplotwindow
+qtclients: omnotebook omshell omplotwindow omedit
 
 qtclean: qtclean-common
 	make -C OMShell -f Makefile.unix clean
