@@ -1079,9 +1079,9 @@ algorithm
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
       lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";  
       tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
-      aexpl = listAppend({inExp},aexpl2);
-      lst = listAppend({propType},lst2); 
-      tupleConst = listAppend({DAE.SINGLE_CONST(tconst)},tupleConst2);
+      aexpl = inExp::aexpl2;
+      lst = propType::lst2; 
+      tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
     then
       (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE((DAE.T_TUPLE(lst),NONE()),DAE.TUPLE_CONST(tupleConst)));
   case(inExp,propCall,propTuple)

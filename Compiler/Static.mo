@@ -637,7 +637,7 @@ algorithm
       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect,pre,info);
       typeList = Util.listMap(propList, Types.getPropType);
       constList = Types.getConstList(propList);
-      c = Util.listReduce(constList, Types.constAnd) "The case empty list is handled above";
+      c = Util.listFold(constList, Types.constAnd, DAE.C_CONST());
       (es_1, t) = Types.listMatchSuperType(es_1, typeList, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
       tp_1 = Types.elabType(t);
@@ -1381,7 +1381,7 @@ protected function elabCallReduction3
 algorithm
   (cache, env, iterconsts, vals, iter_names, array_type) :=
     elabArrayIterators(inCache, inEnv, reductionIters, impl, inST, doVect, prefix, info);
-  iterconst := Util.listReduce(iterconsts, Types.constAnd);
+  iterconst := Util.listFold(iterconsts, Types.constAnd, DAE.C_CONST());
   env := updateIteratorConst(env, iter_names, iterconsts);
   (cache, exp, DAE.PROP(exp_type, exp_const), st) :=
     elabExp(cache, env, reductionExp, impl, inST, doVect, prefix, info);
@@ -6335,7 +6335,7 @@ algorithm
           listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre, info);
-        c = Util.listReduce(constlist, Types.constAnd);
+        c = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
@@ -6357,7 +6357,7 @@ algorithm
           listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("s")),{})}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre, info);
-        c = Util.listReduce(constlist, Types.constAnd);
+        c = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
@@ -8866,7 +8866,7 @@ algorithm
         fargs = Util.listThreadTuple(fieldNames, tys);
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, {}, pre, info);
-        const = Util.listReduce(constlist, Types.constAnd);
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(t, const);
         t = (DAE.T_UNIONTYPE({}),SOME(utPath));
         prop = getProperties(t, tyconst);
@@ -8880,7 +8880,7 @@ algorithm
       equation
         (cache,daeExp,prop,_) = elabExp(cache,env,Absyn.TUPLE(args),false,st,false,pre,info);
         tys = Util.listMap(vars, Types.getVarType);
-        str = "Failed to match types: Got " +& Types.unparseType(Types.getPropType(prop)) +& " but expected " +& Types.unparseType((DAE.T_TUPLE(tys),NONE()));
+        str = "Failed to match types:\n    actual:   " +& Types.unparseType(Types.getPropType(prop)) +& "\n    expected: " +& Types.unparseType((DAE.T_TUPLE(tys),NONE()));
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,str},info);
       then (cache,NONE());
@@ -10480,7 +10480,7 @@ algorithm
         (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
         const = Types.constAnd(const1,const2);
       then
-        (cache,SOME((DAE.ASUB(exp1,{exp2}),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
+        (cache,SOME((DAE.ASUB(exp1,{exp2}),DAE.PROP(t, const),SCode.WO())));
 
     // a normal cref
     case (cache,env,c,impl,doVect,pre,info) /* impl */
@@ -10591,9 +10591,9 @@ public function applySubscriptsVariability
   output SCode.Variability outVariability;
 algorithm
   outVariability := matchcontinue(inVariability, inSubsConst)
-    case (SCode.PARAM, DAE.C_VAR) then SCode.VAR;
-    case (SCode.CONST, DAE.C_VAR) then SCode.VAR;
-    case (SCode.CONST, DAE.C_PARAM) then SCode.PARAM;
+    case (SCode.PARAM(), DAE.C_VAR()) then SCode.VAR();
+    case (SCode.CONST(), DAE.C_VAR()) then SCode.VAR();
+    case (SCode.CONST(), DAE.C_PARAM()) then SCode.PARAM();
     case (_, _) then inVariability;
   end matchcontinue;
 end applySubscriptsVariability;
@@ -10673,7 +10673,7 @@ algorithm
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,pre,info)
       local DAE.Exp tmpExp;
       equation
-        (_,_,const as DAE.C_VAR) = elabSubscripts(cache,env,assl,impl,pre,info);
+        (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exp1 = makeASUBArrayAdressing2(essl,pre);
         ty2 = Exp.crefType(cr);
         exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty2),exp1);
@@ -10681,7 +10681,7 @@ algorithm
         exp1;
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,ty2,essl),ty),_,doVect,pre,info)
       equation
-        (_,_,const as DAE.C_VAR) = elabSubscripts(cache,env,assl,impl,pre,info);
+        (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exp1 = makeASUBArrayAdressing2( essl,pre);
         exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty),exp1);
       then
@@ -10933,7 +10933,7 @@ algorithm
       equation
         expTy = Types.elabType(t);
       then
-        (cache,DAE.CREF(cr,expTy),DAE.C_VAR,acc);
+        (cache,DAE.CREF(cr,expTy),DAE.C_VAR(),acc);
 
     // adrpo: report a warning if the binding came from a start value!
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix,info)
@@ -12464,7 +12464,7 @@ algorithm
     local DAE.Const const,c1,c2,c3;
     case (_,c1,c2,c3)
       equation
-        const = Util.listReduce({c1,c2,c3}, Types.constAnd);
+        const = Util.listFold({c1,c2,c3}, Types.constAnd, DAE.C_CONST());
       then
         const;
   end matchcontinue;

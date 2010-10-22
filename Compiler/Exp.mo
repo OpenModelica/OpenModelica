@@ -7575,7 +7575,7 @@ algorithm
     case (DAE.LIST(_,es),_)
       local list<Exp> es;
       equation
-        Print.printBuf("list(");
+        Print.printBuf("List(");
         printList(es, printExp, ",");
         Print.printBuf(")");
       then
@@ -7584,7 +7584,7 @@ algorithm
     // MetaModelica list cons
     case (DAE.CONS(_,e1,e2),_)
       equation
-        Print.printBuf("cons(");
+        Print.printBuf("listCons(");
         printExp(e1);
         Print.printBuf(",");
         printExp(e2);
@@ -8643,7 +8643,7 @@ algorithm
     // MetaModelica tuple
     case (DAE.META_TUPLE(es), _, _, _)
       equation
-        s = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
+        s = "Tuple" +& printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
       then
         s;
 
@@ -12285,7 +12285,7 @@ algorithm
 
     case(DAE.ET_ARRAY(elt_tp,dims),n)
       equation
-      dims = listAppend({n},dims);
+      dims = n::dims;
       then DAE.ET_ARRAY(elt_tp,dims);
 
     case(tp,n)

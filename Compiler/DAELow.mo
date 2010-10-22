@@ -14184,7 +14184,7 @@ algorithm
     case ((arryDim as DAE.INDEX(DAE.ICONST(dim)))::rest)
       equation
         dim_lst = getArrayDim(rest);
-        dim_lst1 = listAppend({dim},dim_lst);
+        dim_lst1 = dim::dim_lst;
       then
         dim_lst1;       
   end matchcontinue;
@@ -18582,12 +18582,12 @@ algorithm
       
     case((currStmt as DAE.STMT_ASSERT(cond=e2))::restStatements, var, functions) equation
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
-      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+      derivedStatements1 = currStmt::derivedStatements2;
     then derivedStatements1;
       
     case((currStmt as DAE.STMT_TERMINATE(msg=e2))::restStatements, var, functions) equation
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
-      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+      derivedStatements1 = currStmt::derivedStatements2;
     then derivedStatements1;
       
     case(DAE.STMT_REINIT(value=e2)::restStatements, var, functions) equation
@@ -18602,12 +18602,12 @@ algorithm
       
     case((currStmt as DAE.STMT_RETURN(source=elemSrc))::restStatements, var, functions) equation
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
-      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+      derivedStatements1 = currStmt::derivedStatements2;
     then derivedStatements1;
       
     case((currStmt as DAE.STMT_BREAK(source=elemSrc))::restStatements, var, functions) equation
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
-      derivedStatements1 = listAppend({currStmt}, derivedStatements2);
+      derivedStatements1 = currStmt::derivedStatements2;
     then derivedStatements1;
       
     case(_, _, _) equation

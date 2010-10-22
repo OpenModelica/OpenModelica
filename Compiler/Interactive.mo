@@ -12359,7 +12359,7 @@ algorithm
       equation
         str_path = getQualified(id, w);
         res = getTopQualifiedClassnamesInProgram(Absyn.PROGRAM(rest,w,ts));
-        result = listAppend({str_path}, res);
+        result = str_path::res;
       then
         result;
     case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w, globalBuildTimes=ts))
@@ -13850,7 +13850,7 @@ algorithm
     case ((Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = _)) :: rest),env)
       equation
         res2 = getComponentitemsAnnotations(rest, env);
-        res = listAppend({"{}"}, res2);
+        res = "{}"::res2;
       then
         res;
     case ((_ :: rest),env)

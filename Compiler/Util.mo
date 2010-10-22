@@ -5877,7 +5877,7 @@ algorithm
       equation
         (c,b) = listSplit2(a, {}, divider);
         rec = listSplitEqualParts2(c,divider);
-        rec = listAppend({b},rec);
+        rec = b::rec;
         then
           rec;
   end matchcontinue;

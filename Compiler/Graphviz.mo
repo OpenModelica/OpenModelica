@@ -130,9 +130,9 @@ algorithm
     case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
       equation
         nm = nodename(typ);
-        lbl_1 = listAppend({typ}, lbl);
+        lbl_1 = typ::lbl;
         lblstr = makeLabel(lbl_1);
-        newattr = listAppend({ATTR("label",lblstr)}, attr);
+        newattr = ATTR("label",lblstr)::attr;
         out = makeNode(nm, newattr);
         print(out);
         dumpChildren(nm, children);

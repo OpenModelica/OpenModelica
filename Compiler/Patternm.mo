@@ -193,7 +193,7 @@ algorithm
       equation
         first1 = addAsBindingsHelper(first1,first2);
         rhsList = addAsBindings(rest1,rest2);
-        rhsList = listAppend({first1},rhsList);
+        rhsList = first1::rhsList;
       then rhsList;
     case (_, _)
       equation
@@ -2004,7 +2004,7 @@ algorithm
       DFA.RenamedPatList l;
       DFA.RenamedPat p1,p2;
       equation
-        l = listAppend({p1},{p2});
+        l = {p1,p2};
         tempList = getPathVarsFromConstructHelper(l,{});
       then tempList;
     case (DFA.RP_CALL(pathVar,_,l))

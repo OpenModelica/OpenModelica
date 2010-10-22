@@ -2593,13 +2593,13 @@ algorithm
       equation
         exp1 = crefToExp(cref);
         explist = Types.getAllExps(ty);
-        exps = listAppend({exp1}, explist);
+        exps = exp1::explist;
       then
         exps;
     case DAE.EXTARGEXP(exp = exp1,type_ = ty)
       equation
         explist = Types.getAllExps(ty);
-        exps = listAppend({exp1}, explist);
+        exps = exp1::explist;
       then
         exps;
     case DAE.EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = exp)

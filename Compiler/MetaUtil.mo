@@ -86,7 +86,7 @@ algorithm
       local
         list<DAE.Exp> expList,expList2;
       equation
-        expList2 = listAppend({localE1},expList);
+        expList2 = localE1::expList;
       then DAE.LIST(tLocal,expList2);
     case (tLocal,localE1,localE2) then DAE.CONS(tLocal,localE1,localE2);
   end matchcontinue;

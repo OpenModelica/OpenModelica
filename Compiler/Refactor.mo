@@ -638,7 +638,7 @@ algorithm
         rot = getRotationDegree(listAppend(res,rest));
         iconTrans = getIconTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
         diagramTrans = getDiagramTransformation(x1,y1,x2,y2,rot,cPath,path,p,env);
-        trans = listAppend({diagramTrans},{iconTrans});
+        trans = {diagramTrans,iconTrans};
         res = transformComponentAnnList(rest,context,res,cPath,path,p,env);
         res = {Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Placement",s), SOME(Absyn.CLASSMOD(trans,NONE())),/*NONE,*/com)};//:: res; //SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))
 
