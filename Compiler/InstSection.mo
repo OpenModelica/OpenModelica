@@ -78,17 +78,8 @@ protected import System;
 protected import ErrorExt;
 
 public
-type Prefix = Prefix.Prefix "a prefix";
-
-public
-type Mod = DAE.Mod "a modification";
-
-public
 type Ident = DAE.Ident "an identifier";
 
-public
-type Env = Env.Env "an environment";
-  
 public
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
@@ -100,10 +91,10 @@ public function instEquation
   instEquationCommon with Inital set 
   to NON_INITIAL."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -111,7 +102,7 @@ public function instEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -156,10 +147,10 @@ protected function instEEquation
 "function: instEEquation 
   Instantiation of EEquation, used in for loops and if-equations."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -167,7 +158,7 @@ protected function instEEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache cache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;  
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -209,10 +200,10 @@ public function instInitialEquation
   Instantiates initial equation by calling inst_equation_common with Inital 
   set to INITIAL."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -220,7 +211,7 @@ public function instInitialEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -260,10 +251,10 @@ protected function instEInitialEquation
 "function: instEInitialEquation 
   Instantiates initial EEquation used in for loops and if equations "
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -271,7 +262,7 @@ protected function instEInitialEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -310,10 +301,10 @@ protected function instEquationCommon
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -321,7 +312,7 @@ protected function instEquationCommon
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -341,10 +332,10 @@ protected function instEquationCommon2
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -353,7 +344,7 @@ protected function instEquationCommon2
   input ConnectionGraph.ConnectionGraph inGraph;
   input Integer errorCount;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -389,10 +380,10 @@ protected function instEquationCommonWork
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -400,7 +391,7 @@ protected function instEquationCommonWork
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -1008,7 +999,7 @@ This function detect this case and elaborates expressions without vectorization.
   input DAE.Properties prop "To determine if array equation";
   input DAE.Properties prop2 "To determine if array equation";
   input Boolean impl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outE1;
@@ -1021,7 +1012,7 @@ algorithm
       DAE.DAElist fdae1,fdae2,dae;
       DAE.Exp elabedE1_2, elabedE2_2;
       DAE.Properties prop1, prop2;
-      Prefix pre;
+      Prefix.Prefix pre;
     case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,pre,info) equation
       b3 = Types.isPropTupleArray(prop);
       b4 = Types.isPropTupleArray(prop2);
@@ -1116,9 +1107,9 @@ protected function unroll "function: unroll
   the FOR clause by explicitly repeating the body of the loop once
   for each iteration."
   input Env.Cache inCache;
-  input Env inEnv;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input Env.Env inEnv;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input Ident inIdent;
@@ -1201,12 +1192,12 @@ protected function addForLoopScope
  adrpo NOTE: 
    The variability of the iterator SHOULD 
    be determined by the range constantness!"
-  input Env env;
+  input Env.Env env;
   input Ident iterName;
   input DAE.Type iterType;
   input SCode.Variability iterVariability;
   input Option<DAE.Const> constOfForIteratorRange; 
-  output Env newEnv;
+  output Env.Env newEnv;
 algorithm
   newEnv := Env.openScope(env, false, SOME(Env.forScopeName),NONE());
   newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange); 
@@ -1762,9 +1753,9 @@ protected function unrollForLoop
 "@author: adrpo
  unroll for loops that contains when statements"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -1779,7 +1770,7 @@ algorithm
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -1857,9 +1848,9 @@ end unrollForLoop;
 protected function instForStatement 
 "Helper function for instStatement"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -1874,7 +1865,7 @@ algorithm
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -2013,9 +2004,9 @@ end isSubsLoopDependentHelper;
 protected function instForStatement_dispatch 
 "function for instantiating a for statement"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -2030,7 +2021,7 @@ algorithm
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -2199,10 +2190,10 @@ public function instAlgorithm
   the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2210,7 +2201,7 @@ public function instAlgorithm
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2227,7 +2218,7 @@ algorithm
       list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       SCode.AlgorithmSection algSCode;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2260,10 +2251,10 @@ public function instInitialAlgorithm
   in the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2271,7 +2262,7 @@ public function instInitialAlgorithm
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2288,7 +2279,7 @@ algorithm
       list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -2317,9 +2308,9 @@ public function instStatements
 "function: instStatements 
   This function converts a list of algorithm statements."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input list<SCode.Statement> inAbsynAlgorithmLst;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -2336,7 +2327,7 @@ algorithm
       SCode.Statement x;
       list<SCode.Statement> xs;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.DAElist dae,dae1,dae2;
       InstanceHierarchy ih;
 
@@ -2360,9 +2351,9 @@ function: instStatement
   in the Algorithm module to build a representation of it that can
   be used in the DAE output."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input SCode.Statement inAlgorithm;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -2395,7 +2386,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,el,elseWhenRest;
       SCode.Statement alg;
       Env.Cache cache;
-      Prefix pre; 
+      Prefix.Prefix pre; 
       Absyn.ForIterators forIterators;
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       InstanceHierarchy ih;
@@ -3005,9 +2996,9 @@ protected function loopOverRange
   Unrolling a for loop is explicitly repeating 
   the body of the loop once for each iteration."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Ident inIdent;
   input Values.Value inValue;
   input list<SCode.Statement> inAlgItmLst;
@@ -3093,7 +3084,7 @@ protected function createMatchStatement
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy ih;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input SCode.Statement alg;
   input Boolean inBoolean;
   input Integer numError;
@@ -3106,7 +3097,7 @@ algorithm
       DAE.Statement stmt;
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix localPre;
+      Prefix.Prefix localPre;
       Absyn.Exp exp,e;
       DAE.ComponentRef ce;
       DAE.Exp cre,e_1,e_2;
@@ -3150,10 +3141,10 @@ protected function instIfTrueBranches
  Initialise a list of if-equations,
  if, elseif-1 ... elseif-n."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inTypeALst;
@@ -3161,7 +3152,7 @@ protected function instIfTrueBranches
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<list<DAE.Element>> outDaeLst;
   output Connect.Sets outSets;
@@ -3223,9 +3214,9 @@ protected function instElseIfs
 "function: instElseIfs
   This function helps instStatement to handle elseif parts."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -3248,7 +3239,7 @@ algorithm
       list<SCode.Statement> l;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.DAElist dae,dae1,dae2,dae3;
       InstanceHierarchy ih;
       
@@ -3277,17 +3268,17 @@ protected function instConnect "
   Parameters and constants in connectors should generate appropriate assert statements.
   Hence, a DAE.Element list is returned as well."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3405,7 +3396,7 @@ Author BZ, 2009-09
   input Env.Cache cache;
   input Env.Env env;
   input String affectedConnector;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
 algorithm
   _ := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
@@ -3414,7 +3405,7 @@ algorithm
     Boolean b2;
     DAE.Properties prop;
     DAE.Const const;
-    Prefix pre;
+    Prefix.Prefix pre;
   case({},_,_,_,_,_) then ();
   case(cr::inrefs,cache,env,affectedConnector,pre,info)
     equation
@@ -3442,17 +3433,17 @@ protected function connectExpandableConnectors
 "@author: adrpo
   this function handle the connections of expandable connectors"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3896,10 +3887,10 @@ protected function connectExpandableVariables
   this function handle the connections of expandable connectors
   that contain components"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input list<String> inVariablesUnion;
@@ -3907,7 +3898,7 @@ protected function connectExpandableVariables
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4331,10 +4322,10 @@ public function connectComponents "
   the subcomponents and recursively connects them to each other.
   A DAE.Element list is returned for assert statements."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
   input DAE.Type inType6;
@@ -4350,7 +4341,7 @@ public function connectComponents "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4717,10 +4708,10 @@ protected function connectArrayComponents "
 Traverses arrays of complex connectors and calls connectComponents for each index
 "
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
   input DAE.Type inType6;
@@ -4738,7 +4729,7 @@ Traverses arrays of complex connectors and calls connectComponents for each inde
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4789,7 +4780,7 @@ protected function connectVars
   name to the current path and recursively connecting the components
   using the function connectComponents."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
   input DAE.ComponentRef inComponentRef3;
@@ -4805,7 +4796,7 @@ protected function connectVars
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4955,7 +4946,7 @@ protected function createForIteratorArray
   input Absyn.Exp iterExp;
   input Absyn.ForIterators rangeIdList;
   input Boolean b;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ElementItem> outDecls;
@@ -4978,7 +4969,7 @@ algorithm
         Absyn.Exp localIterExp;
         InstanceHierarchy ih;
         DAE.DAElist dae,dae1,dae2;
-        Prefix pre;
+        Prefix.Prefix pre;
 
       equation
         (localCache,subscriptList,ld) = deriveArrayDimAndTempVars(localCache,localEnv,localRangeIdList,impl,{},{},pre,info);
@@ -5019,7 +5010,7 @@ protected function deriveArrayDimAndTempVars
   input Boolean impl;
   input list<Absyn.Subscript> accList;
   input list<Absyn.ElementItem> accTempVars;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.Subscript> outList1;
@@ -5031,7 +5022,7 @@ algorithm
       list<Absyn.ElementItem> localAccTempVars;
       Env.Env localEnv;
       Env.Cache localCache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (localCache,_,{},_,localAccList,localAccTempVars,_,info) then (localCache,localAccList,localAccTempVars);
     case (localCache,localEnv,(id,SOME(e)) :: restList,localImpl,localAccList,localAccTempVars,pre,info)
       local

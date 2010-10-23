@@ -7110,12 +7110,12 @@ algorithm
       list<Absyn.ComponentItem> compelts_1;
       Absyn.ComponentItem compitem;
       Absyn.Exp exp;
-      Absyn.ComponentRef class_;
+      Absyn.ComponentRef class_,crname;
       Absyn.Program p;
-    case (class_,name,p)
+    case (class_,crname,p)
       equation
         p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        Absyn.IDENT(name) = Absyn.crefToPath(crname);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
         compelts = Util.listMap(comps, getComponentitemsInElement);
@@ -7125,10 +7125,10 @@ algorithm
         res = Dump.printExpStr(exp);
       then
         res;
-      case (class_,name,p)
+      case (class_,crname,p)
       equation
         p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        Absyn.IDENT(name) = Absyn.crefToPath(crname);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
         compelts = Util.listMap(comps, getComponentitemsInElement);
@@ -10064,7 +10064,8 @@ protected function updateComponent
 algorithm
   (outProgram,outString) := matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
     local
-      Absyn.Path modelpath,modelwithin,tp,tppath;
+      Absyn.ComponentRef tp;
+      Absyn.Path modelpath,modelwithin,tppath;
       Option<Absyn.ArrayDim> x;
       Absyn.Program p_1,newp,p;
       list<Absyn.ClassPart> parts;
@@ -10086,7 +10087,7 @@ algorithm
       Absyn.Within w;
       Absyn.TimeStamp ts;
     /* Updating a public component to model that resides inside package */
-    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
@@ -10094,20 +10095,20 @@ algorithm
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToPublic(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,id,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
       then
         (newp,"true");
     /* Updating a protected component to model that resides inside package */
-    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
@@ -10115,14 +10116,14 @@ algorithm
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
         newcdef = addToProtected(cdef,
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,repl,inout,id,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),{
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
       then
@@ -10137,7 +10138,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), publst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
@@ -10159,7 +10160,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         protlst = getProtectedList(parts);
-        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
+        Absyn.ELEMENT(finalPrefix,repl,inout,id,Absyn.COMPONENTS(attr,Absyn.TPATH(_,x),items),info,constr) = getElementContainsName(Absyn.CREF_IDENT(name,{}), protlst);
         Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
         annotation_ = annotationListToAbsynComment(nargs, ann);
         modification = modificationToAbsyn(nargs, mod);
@@ -13811,12 +13812,11 @@ protected function getComponentAnnotationsFromElts
   Helper function to getComponentAnnotations."
   input list<Absyn.Element> comps;
   output String res_1;
+protected
   list<SCode.Class> p_1;
   list<Env.Frame> env;
   list<String> res;
-  String res_1;
-  protected
-     Absyn.Program placementProgram;
+  Absyn.Program placementProgram;
 algorithm
   placementProgram := modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
   p_1 := SCodeUtil.translateAbsyn2SCode(placementProgram);
@@ -14684,7 +14684,8 @@ algorithm
       String d;
       Absyn.ElementAttributes e;
       Absyn.TypeSpec f;
-      Absyn.ComponentItem elt;
+      Absyn.Element elt;
+      Absyn.ComponentItem item;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> i;
       Integer numcomps,newn,n,n_1;
@@ -14694,10 +14695,10 @@ algorithm
 
     case ((Absyn.ELEMENTITEM(element =
       Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,name = d,
-                    specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = (elt :: _)),
+                    specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = (item::_)),
                     info = info,constrainClass = i)) :: _),1)
       then
-        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{elt}),info,i);
+        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{item}),info,i);
 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst))) :: rest),n)
       equation
@@ -14709,16 +14710,16 @@ algorithm
         res;
 
     case ((Absyn.ELEMENTITEM(element =
-      (elt as Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,name = d,
-                            specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = lst),
-                            info = info,constrainClass = i))) :: rest),n)
+      (Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,name = d,
+                     specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = lst),
+                     info = info,constrainClass = i))) :: rest),n)
       equation
         numcomps = listLength(lst);
         (n <= numcomps) = true;
         n_1 = n - 1;
-        elt = listNth(lst, n_1);
+        item = listNth(lst, n_1);
       then
-        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{elt}),info,i);
+        Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(e,f,{item}),info,i);
 
     case ((_ :: rest),n)
       equation
@@ -18713,7 +18714,6 @@ algorithm
       list<String> strlst;
       Absyn.Path pp, modelpath;
       Absyn.Program p;
-      String indent;
       list<Absyn.Path> result_path_lst;
     case (pp,p,indent)
       equation

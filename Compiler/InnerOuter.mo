@@ -65,19 +65,16 @@ protected import ErrorExt;
 
 public
 type Cache     = Env.Cache;
-type Env       = Env.Env;
 type Frame     = Env.Frame;
 type AvlTree   = Env.AvlTree;
 type Item      = Env.Item;
 type Ident     = Env.Ident;
 type CSetsType = Env.CSetsType;
-type Prefix    = Prefix.Prefix;
-type Mod       = DAE.Mod;
 
 uniontype InstResult
   record INST_RESULT
     Cache outCache;
-    Env outEnv;
+    Env.Env outEnv;
     UnitAbsyn.InstStore outStore;
     DAE.DAElist outDae;
     Connect.Sets outSets;
@@ -88,7 +85,7 @@ end InstResult;
 
 uniontype InstInner
   record INST_INNER
-    Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";    
+    Prefix.Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";    
     SCode.Ident name;
     Absyn.InnerOuter io;
     String fullName "full inner component name";
@@ -629,9 +626,9 @@ public function retrieveOuterConnections
  If not, they are kept in the outerConnects for use higher up in the instance
  hierarchy."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input Connect.Sets csets;
   input Boolean topCall;
   output Connect.Sets outCsets;
@@ -693,9 +690,9 @@ end removeInnerPrefixFromCref;
 protected function retrieveOuterConnections2
 "help function to retrieveOuterConnections"
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input list<Connect.OuterConnect> outerConnects;
   input list<Connect.Set> setLst;
   input list<DAE.ComponentRef> crs;
@@ -818,9 +815,9 @@ protected function addOuterConnectIfEmpty
  connection (from inside sub-components) forms
  a connection set of their own."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input list<Connect.Set> setLst;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
@@ -881,9 +878,9 @@ protected function addOuterConnectIfEmptyNoEnv
           with the difference that we only need to find
           one variable in the enviroment."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input list<Connect.Set> setLst;
   input Boolean added "if true, this function does nothing";
   input DAE.ComponentRef cr1;
@@ -964,7 +961,7 @@ protected function lookupVarInnerOuterAttr
  its inner and outer attributes in form of booleans.
  adrpo: Make sure that there are no error messages displayed!"
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy inIH;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -1278,12 +1275,12 @@ public function modificationOnOuter "
 Author BZ, 2008-11
 According to specification modifiers on outer elements is not allowed."
   input Env.Cache cache;
-  input Env env;
+  input Env.Env env;
   input InstHierarchy ih;
   input Prefix.Prefix prefix;
   input String componentName;
   input DAE.ComponentRef cr;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Absyn.InnerOuter io;
   input Boolean impl;
   output Boolean modd;
@@ -1454,13 +1451,13 @@ end prefixOuterDaeVars;
 public function switchInnerToOuterInEnv "
 function switchInnerToOuterInEnv
   switches the inner to outer attributes of a component in the Env."
-  input Env inEnv;
+  input Env.Env inEnv;
   input DAE.ComponentRef inCr;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(inEnv,inCr)
     local
-      Env envIn, envOut, envRest;
+      Env.Env envIn, envOut, envRest;
       DAE.ComponentRef cr;
       Frame f;
     // handle nothingness
@@ -1568,7 +1565,7 @@ algorithm
       DAE.Var instantiated "instantiated component";
       Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
       Env.InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
-      Env env "The environment of the instantiated component. Contains e.g. all sub components";
+      Env.Env env "The environment of the instantiated component. Contains e.g. all sub components";
 
       Boolean flowPrefix "flow" ;
       Boolean streamPrefix "stream" ;
@@ -1607,7 +1604,7 @@ end switchInnerToOuterInAvlTreeValue;
 
 
 public function emptyInstInner
-  input Prefix innerPrefix;
+  input Prefix.Prefix innerPrefix;
   input String name;
   output InstInner outInstInner;
 algorithm
@@ -1619,7 +1616,7 @@ public function lookupInnerVar
  This function lookups the result of instatiation of the inner
  component given an instance hierarchy a prefix and a component name."
   input Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Ident inIdent;
@@ -1631,7 +1628,7 @@ algorithm
       Cache cache;
       String n;
       Absyn.InnerOuter io;
-      Env env;
+      Env.Env env;
       Prefix.Prefix pre;
       InstHierarchy ih;
       TopInstance tih;
@@ -1681,7 +1678,7 @@ algorithm
       Option<Absyn.Path> pathOpt;
       SCode.Element c;
       DAE.DAElist dae;
-      Env innerComponentEnv;
+      Env.Env innerComponentEnv;
       OuterPrefixes outerPrefixes;
     
     /* only add inner elements
@@ -1749,7 +1746,7 @@ algorithm
       Option<Absyn.Path> pathOpt;
       SCode.Element c;
       DAE.DAElist dae;
-      Env innerComponentEnv;
+      Env.Env innerComponentEnv;
       OuterPrefixes outerPrefixes;
 
     // no hashtable, create one!
@@ -1789,7 +1786,7 @@ public function prefixOuterCrefWithTheInnerPrefix
   This function searches for outer crefs and prefixes them with the inner prefix"
   input InstHierarchy inIH;
   input DAE.ComponentRef inOuterComponentRef;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output DAE.ComponentRef outInnerComponentRef;
 algorithm
   outInnerComponentRef := matchcontinue(inIH, inOuterComponentRef, inPrefix)
@@ -1903,7 +1900,7 @@ public function printInnerDefStr
 algorithm
   outStr := matchcontinue(inInstInner)
     local 
-      Prefix innerPrefix;
+      Prefix.Prefix innerPrefix;
       SCode.Ident name;
       Absyn.InnerOuter io;
       Option<InstResult> instResult;

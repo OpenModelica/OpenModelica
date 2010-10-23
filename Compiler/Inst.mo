@@ -45,7 +45,7 @@ package Inst
   This module uses Lookup to lookup classes and variables from the
   environment defined in Env. It uses Connect for generating equations from
   connect statements. The type system defined in Types is used for
-  variable instantiation and type . Mod is used for modifiers and
+  variable instantiation and type . DAE.Mod is used for modifiers and
   merging of modifiers.
 
   The extends language feature is performed by InstExtends. Instantiation of
@@ -102,9 +102,6 @@ constant Integer instHashIndex = 0;
 // **
 // These type aliases are introduced to make the code a little more readable.
 // **
-
-public
-type Mod = DAE.Mod "a modification";
 
 public
 type Ident = DAE.Ident "an identifier";
@@ -963,7 +960,7 @@ public function makeSimpleEnvFromProgram
   input SCode.Path c;
   output Env.Cache outCache;
   output Env.Env env_1;
-  list<Env.Frame> env,env_1;
+  list<Env.Frame> env;
 algorithm
   env := Builtin.simpleInitialEnv();
   (outCache,env_1,_) := addProgramToEnv(inCache,env,InnerOuter.emptyInstHierarchy, prog, c);
@@ -1138,7 +1135,7 @@ public function instClass " function: instClass
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -1579,7 +1576,7 @@ protected function instClassBasictype
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -1654,7 +1651,7 @@ public function instClassIn "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -1704,7 +1701,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env, DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
@@ -1713,7 +1710,7 @@ algorithm
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
 
-      Mod aa_1;
+      DAE.Mod aa_1;
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
@@ -1766,7 +1763,7 @@ public function instClassIn "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -1818,7 +1815,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       InstHashTable instHash;
-      tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
+      tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env.Env, DAE.DAElist,
@@ -1829,7 +1826,7 @@ algorithm
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
 
-      Mod aa_1;
+      DAE.Mod aa_1;
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
@@ -2035,7 +2032,7 @@ public function instClassIn_dispatch
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -2134,7 +2131,7 @@ algorithm
           local
             list<Env.Frame> env_2, env_3;
             list<SCode.Element> els;
-            list<tuple<SCode.Element, Mod>> comp;
+            list<tuple<SCode.Element, DAE.Mod>> comp;
             list<String> names;
             DAE.EqualityConstraint eqConstraint;
             DAE.Type ty, ty2;
@@ -2244,7 +2241,7 @@ protected function instRealClass
   Instantiation of the Real class"
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mods;
+  input DAE.Mod mods;
   input Prefix.Prefix pre;
   output list<DAE.Var> varLst;
 algorithm
@@ -2315,7 +2312,7 @@ protected function instIntegerClass
   Instantiation of the Integer class"
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mods;
+  input DAE.Mod mods;
   input Prefix.Prefix pre;
   output list<DAE.Var> varLst;
 algorithm
@@ -2372,7 +2369,7 @@ protected function instStringClass
   Instantiation of the String class"
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mods;
+  input DAE.Mod mods;
   input Prefix.Prefix pre;
   output list<DAE.Var> varLst;
 algorithm
@@ -2408,7 +2405,7 @@ protected function instBooleanClass
   Instantiation of the Boolean class"
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mods;
+  input DAE.Mod mods;
   input Prefix.Prefix pre;
   output list<DAE.Var> varLst;
 algorithm
@@ -2449,7 +2446,7 @@ protected function instEnumerationClass
   Instantiation of the Enumeration class"
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mods;
+  input DAE.Mod mods;
   input Prefix.Prefix pre;
   output list<DAE.Var> varLst;
 algorithm
@@ -2673,7 +2670,7 @@ public function partialInstClassIn
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -2704,14 +2701,14 @@ algorithm
       InstanceHierarchy ih;
       InstHashTable instHash;
 
-      tuple<Env.Cache, Env.Env, InstanceHierarchy, Mod, Prefix.Prefix, Connect.Sets,
+      tuple<Env.Cache, Env.Env, InstanceHierarchy, DAE.Mod, Prefix.Prefix, Connect.Sets,
             ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
       tuple<Env.Env, ClassInf.State> outputs;
       Absyn.Path fullEnvPathPlusClass;
       Option<Absyn.Path> envPathOpt;
       String className, str1, str2;
 
-      Mod aa_1;
+      DAE.Mod aa_1;
       Prefix.Prefix aa_2;
       Connect.Sets aa_3;
       ClassInf.State aa_4;
@@ -2746,7 +2743,7 @@ algorithm
     // this fails for 2-3 examples, so disable it for now and check it later
     case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
       local
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix.Prefix,
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
             ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.DAElist,
@@ -2811,7 +2808,7 @@ public function partialInstClassIn_dispatch
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -3014,7 +3011,7 @@ protected function instClassdef "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
@@ -3154,7 +3151,7 @@ type"
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
@@ -3186,7 +3183,7 @@ algorithm
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
-      list<tuple<SCode.Element, Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2;
+      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae,daetemp;
@@ -3300,7 +3297,7 @@ protected function instClassdef2 "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
@@ -3333,7 +3330,7 @@ algorithm
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
-      list<tuple<SCode.Element, Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2, comp_cond;
+      list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
       DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae,daetemp;
@@ -3407,7 +3404,7 @@ algorithm
                       normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
           re,prot,inst_dims,impl,callscope,graph,instSingleCref,info,stopInst)
       local 
-        list<Mod> tmpModList;
+        list<DAE.Mod> tmpModList;
         list<Connect.Set> sets;
         list<DAE.ComponentRef> crs, dc;
         list<Connect.OuterConnect> oc;
@@ -3869,11 +3866,6 @@ algorithm
     
     // handle none
     case(inComps,NONE(), allComps, className) then inComps;
-
-    case(inComps,_,_,_)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-      then inComps;
 
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
@@ -4347,14 +4339,14 @@ end getExternalObjectConstructor;
 
 public function printExtcomps
 "prints the tuple of elements and modifiers to stdout"
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
 algorithm
   _ := matchcontinue (inTplSCodeElementModLst)
     local
       String s;
       SCode.Element el;
       DAE.Mod mod;
-      list<tuple<SCode.Element, Mod>> els;
+      list<tuple<SCode.Element, DAE.Mod>> els;
     case ({}) then ();
     case (((el,mod) :: els))
       equation
@@ -4384,7 +4376,7 @@ protected function instBasictypeBaseclass
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
-  input Mod inMod4;
+  input DAE.Mod inMod4;
   input InstDims inInstDims5;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -4478,7 +4470,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
-  input Mod inMod4;
+  input DAE.Mod inMod4;
   input InstDims inInstDims5;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -4634,7 +4626,7 @@ protected function partialInstClassdef
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -4657,7 +4649,7 @@ algorithm
       list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2,classextendselts,compelts;
       list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
       DAE.Mod emods,mods,m,mod_1,mods_1,mods_2;
-      list<tuple<SCode.Element, Mod>> extcomps,allEls2,lst_constantEls;
+      list<tuple<SCode.Element, DAE.Mod>> extcomps,allEls2,lst_constantEls;
       list<SCode.Equation> eqs2,initeqs2,eqs,initeqs;
       list<SCode.AlgorithmSection> alg2,initalg2,alg,initalg;
       Prefix.Prefix pre;
@@ -4807,13 +4799,13 @@ Author: BZ, 2009-08
 Extract modifer for dependent variables(dep).
 "
 input Absyn.ComponentRef dep;
-input list<tuple<SCode.Element, Mod>> elems;
+input list<tuple<SCode.Element, DAE.Mod>> elems;
 output DAE.Mod omods;
 algorithm omods := matchcontinue(dep,elems)
   local
     String name1,name2;
     DAE.Mod cmod;
-    tuple<SCode.Element, Mod> tpl;
+    tuple<SCode.Element, DAE.Mod> tpl;
   case(_,{}) then DAE.NOMOD();
   case(dep,( tpl as (SCode.COMPONENT(component=name1),DAE.NOMOD()))::elems)
       then getModsForDep(dep,elems);
@@ -4842,14 +4834,14 @@ protected function updateCompeltsMods
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input ClassInf.State inState;
   input Connect.Sets inSets;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
   output Connect.Sets outSets;
 algorithm
   (outCache,outEnv,outIH,outTplSCodeElementModLst,outSets):=
@@ -4863,8 +4855,8 @@ algorithm
       Absyn.ComponentRef cref;
       DAE.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
       list<DAE.Mod> ltmod;
-      list<tuple<SCode.Element, Mod>> res,xs,newXS,head;
-      tuple<SCode.Element, Mod> elMod;
+      list<tuple<SCode.Element, DAE.Mod>> res,xs,newXS,head;
+      tuple<SCode.Element, DAE.Mod> elMod;
       SCode.Element comp,redComp;
       ClassInf.State ci_state;
       Boolean impl;
@@ -4954,11 +4946,11 @@ public function addNomod
   Used to transform elements into a uniform list combined from inherited
   elements and ordinary elements."
   input list<SCode.Element> inSCodeElementLst;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
 algorithm
   outTplSCodeElementModLst := matchcontinue (inSCodeElementLst)
     local
-      list<tuple<SCode.Element, Mod>> res;
+      list<tuple<SCode.Element, DAE.Mod>> res;
       SCode.Element x;
       list<SCode.Element> xs;
     case {} then {};
@@ -4989,11 +4981,11 @@ public function instElementList
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst6;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst6;
   input InstDims inInstDims7;
   input Boolean inBoolean8;
   input CallingScope inCallingScope;
@@ -5018,8 +5010,8 @@ algorithm
       list<DAE.Var> tys1,tys2,tys;
       DAE.Mod mod;
       Prefix.Prefix pre;
-      tuple<SCode.Element, Mod> el;
-      list<tuple<SCode.Element, Mod>> els;
+      tuple<SCode.Element, DAE.Mod> el;
+      list<tuple<SCode.Element, DAE.Mod>> els;
       InstDims inst_dims;
       Boolean impl;
       Env.Cache cache;
@@ -5106,7 +5098,7 @@ Author BZ
 Checks so that we only have one modifier for each element.
 Fails on; a(x=3, redeclare Integer x)
 "
-  input Mod m;
+  input DAE.Mod m;
   input Prefix.Prefix pre;
   input String str;
 algorithm _ := matchcontinue(m,pre,str)
@@ -5166,17 +5158,17 @@ protected function classdefElts2
 "function: classdeElts2
   author: PA
   This function filters out the class definitions (ElementMod) list."
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input Boolean partialPrefix;
   output list<SCode.Element> outSCodeElementLst;
-  output list<tuple<SCode.Element, Mod>> outConstEls;
+  output list<tuple<SCode.Element, DAE.Mod>> outConstEls;
 algorithm
   (outSCodeElementLst,outConstEls) := matchcontinue (inTplSCodeElementModLst,partialPrefix)
     local
       list<SCode.Element> cdefs;
       SCode.Element cdef;
-      tuple<SCode.Element, Mod> el;
-      list<tuple<SCode.Element, Mod>> xs, els;
+      tuple<SCode.Element, DAE.Mod> el;
+      list<tuple<SCode.Element, DAE.Mod>> xs, els;
       SCode.Attributes attr;
     case ({},_) then ({},{});
     case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(restriction = SCode.R_PACKAGE())),_) :: xs,true)
@@ -5297,7 +5289,7 @@ public function addClassdefsToEnv
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
-  input Option<Mod> redeclareMod;
+  input Option<DAE.Mod> redeclareMod;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
@@ -5336,7 +5328,7 @@ protected function addClassdefsToEnv2
   input Prefix.Prefix inPrefix;  
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
-  input Option<Mod> redeclareMod;
+  input Option<DAE.Mod> redeclareMod;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
@@ -5417,7 +5409,7 @@ protected function isStructuralParameter
   in an if equation with different number of equations in each branch."
   input SCode.Variability inVariability;
   input Absyn.ComponentRef inComponentRef;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input list<SCode.Equation> inSCodeEquationLst;
   output Boolean outBoolean;
 algorithm
@@ -5427,7 +5419,7 @@ algorithm
       Boolean b1,b2,res;
       SCode.Variability param;
       Absyn.ComponentRef compname;
-      list<tuple<SCode.Element, Mod>> allcomps;
+      list<tuple<SCode.Element, DAE.Mod>> allcomps;
       list<SCode.Equation> eqns;
     /* constants does not need to be checked.
 	 * Must return false here to prevent constants from be outputed
@@ -5505,12 +5497,12 @@ public function addComponentsToEnv
   input Env.Cache inCache;
   input Env.Env inEnv1;
   input InstanceHierarchy inIH;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst6;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst7;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst6;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst7;
   input list<SCode.Equation> inSCodeEquationLst8;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
@@ -5537,7 +5529,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       Option<SCode.Comment> comment;
-      list<tuple<SCode.Element, Mod>> xs,allcomps,comps;
+      list<tuple<SCode.Element, DAE.Mod>> xs,allcomps,comps;
       list<SCode.Equation> eqns;
       InstDims instdims;
       Option<Absyn.Exp> aExp;
@@ -5659,11 +5651,11 @@ protected function addComponentsToEnv2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
@@ -5689,7 +5681,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       Option<SCode.Comment> comment;
-      list<tuple<SCode.Element, Mod>> xs,comps;
+      list<tuple<SCode.Element, DAE.Mod>> xs,comps;
       InstDims inst_dims;
       Option<Absyn.Info> info;
       Option<Absyn.Exp> condition;
@@ -5752,14 +5744,14 @@ protected function getCrefsFromCompdims
   This function collects all variables from the dimensionalities of
   component elements. These variables are candidates for structural
   parameters."
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inTplSCodeElementModLst)
     local
       list<Absyn.ComponentRef> crefs1,crefs2,crefs;
       list<Absyn.Subscript> arraydim;
-      list<tuple<SCode.Element, Mod>> xs;
+      list<tuple<SCode.Element, DAE.Mod>> xs;
     case ({}) then {};
     case (((SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = arraydim)),_) :: xs))
       equation
@@ -5814,11 +5806,11 @@ public function instElement "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
+  input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
-  input tuple<SCode.Element, Mod> inTplSCodeElementMod6;
+  input tuple<SCode.Element, DAE.Mod> inTplSCodeElementMod6;
   input InstDims inInstDims7;
   input Boolean inBoolean8;
   input CallingScope inCallingScope;
@@ -6382,11 +6374,11 @@ protected function checkMultiplyDeclared
  that all declarations are identical if so."
   input Env.Cache cache;
   input Env.Env env;
-  input Mod mod;
+  input DAE.Mod mod;
   input Prefix.Prefix prefix;
   input Connect.Sets csets;
   input ClassInf.State ciState;
-  input tuple<SCode.Element, Mod> compTuple;
+  input tuple<SCode.Element, DAE.Mod> compTuple;
   input InstDims instDims;
   input Boolean impl;
   output Boolean alreadyDeclared;
@@ -6669,13 +6661,13 @@ end removeCrefFromCrefs;
 
 protected function redeclareType
 "function: redeclareType
-  This function takes a Mod and an SCode.Element and if the modification
+  This function takes a DAE.Mod and an SCode.Element and if the modification
   contains a redeclare of that element, the type is changed and an updated
   element is returned."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input SCode.Element inElement;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -6686,7 +6678,7 @@ protected function redeclareType
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output SCode.Element outElement;
-  output Mod outMod;
+  output DAE.Mod outMod;
   output Connect.Sets outSets;
 algorithm
   (outCache,outEnv,outIH,outElement,outMod,outSets) := matchcontinue (inCache,inEnv,inIH,inMod,inElement,inPrefix,inState,inSets,inBoolean,cmod)
@@ -6701,7 +6693,7 @@ algorithm
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<SCode.Comment> comment,comment2;
-      list<tuple<SCode.Element, Mod>> rest;
+      list<tuple<SCode.Element, DAE.Mod>> rest;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
       Env.Cache cache;
@@ -6896,7 +6888,7 @@ algorithm
     SCode.Class cl;
     String name;
     list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
-    list<tuple<SCode.Element, Mod>> extcomps;
+    list<tuple<SCode.Element, DAE.Mod>> extcomps;
     Option<Absyn.Annotation> annOpt;
   case(NONE(),_,_) then {};
   case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
@@ -6928,7 +6920,7 @@ protected function instVar
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
@@ -6978,7 +6970,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       String str;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      Mod modificationOnInnerComponent;
+      DAE.Mod modificationOnInnerComponent;
       list<DAE.Element> daeEls;
       DAE.FunctionTree ftree;
       DAE.ComponentRef cref, crefOuter, crefInner;
@@ -7260,7 +7252,7 @@ protected function instVar_dispatch "function: instVar_dispatch
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
@@ -7308,7 +7300,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       String str;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      Mod modificationOnInnerComponent;
+      DAE.Mod modificationOnInnerComponent;
       DAE.DAElist fdae;
 
    	// impl component environment dae elements for component Variables of userdefined type,
@@ -7366,7 +7358,7 @@ protected function instVar2
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
@@ -7849,7 +7841,7 @@ public function getUsertypeDimensions
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Class inClass;
   input InstDims inInstDims;
@@ -8152,7 +8144,7 @@ protected function updateComponentsInEnv
   input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
-  input Mod mod;
+  input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Connect.Sets csets;
@@ -8182,7 +8174,7 @@ protected function updateComponentInEnv
   input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
-  input Mod mod;
+  input DAE.Mod mod;
   input Absyn.ComponentRef cref;
   input ClassInf.State ci_state;
   input Connect.Sets csets;
@@ -8304,8 +8296,8 @@ protected function updateComponentInEnv2
   input Absyn.InnerOuter io;
   input Option<Absyn.Info> info;
   input SCode.Mod m;
-  input Mod cmod;
-  input Mod mod;
+  input DAE.Mod cmod;
+  input DAE.Mod mod;
   input Absyn.ComponentRef cref;
   input ClassInf.State ci_state;
   input Connect.Sets csets;
@@ -8822,7 +8814,7 @@ protected function instArray
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input ClassInf.State inState;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Ident inIdent;
@@ -9657,7 +9649,7 @@ public function instClassDecl
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -9706,7 +9698,7 @@ public function implicitInstantiation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -9850,7 +9842,7 @@ public function implicitFunctionInstantiation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -9923,7 +9915,7 @@ protected function implicitFunctionInstantiation2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input SCode.Class inClass;
@@ -10624,7 +10616,7 @@ algorithm
         Absyn.Path cn,fpath; 
         Option<list<Absyn.Subscript>> ad;
         SCode.Mod mod1;
-        Mod mod2;
+        DAE.Mod mod2;
         Env.Env cenv,cenv_2;
         SCode.ClassDef part;
         SCode.Class c;
@@ -11846,7 +11838,7 @@ public function instList
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
@@ -11866,7 +11858,7 @@ public function instList
     input Env.Cache inCache;
     input Env.Env inEnv;
     input InstanceHierarchy inIH;
-    input Mod inMod;
+    input DAE.Mod inMod;
     input Prefix.Prefix inPrefix;
     input Connect.Sets inSets;
     input ClassInf.State inState;
@@ -11928,7 +11920,7 @@ protected function instBinding
   Arg 2 are the type variables.
   Arg 3 is the expected type that the modification should have
   Arg 4 is the index list for the element: for T0{1,2} is {1,2}"
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input DAE.Type inType;
   input list<Integer> inIntegerLst;
@@ -12004,7 +11996,7 @@ protected function instBinding2
   This function investigates a modification and extracts the <...>
   modification if the modification is in array of components.
   Help-function to instBinding"
-  input Mod inMod;
+  input DAE.Mod inMod;
   input DAE.Type inType;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12056,7 +12048,7 @@ protected function instStartBindingExp
   Arg 1 is the start modification
   Arg 2 is the expected type that the modification should have
   Arg 3 is the index list for the element: for T0[1,2] it is {1,2}"
-  input Mod mod;
+  input DAE.Mod mod;
   input DAE.Type etype;
   output DAE.StartValue result;
 protected DAE.Type eltType;
@@ -12075,7 +12067,7 @@ protected function instDaeVariableAttributes
   somtimes a varible does not contain the variable-attr."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input DAE.Type inType;
   input list<Integer> inIntegerLst;
   output Env.Cache outCache;
@@ -12167,7 +12159,7 @@ protected function instBoolBinding
          there is a difference between parameters and variables."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12214,7 +12206,7 @@ protected function instRealBinding
   instantiates a real binding and retrieves the value."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12261,7 +12253,7 @@ protected function instIntBinding
   instantiates an int binding and retrieves the value."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12308,7 +12300,7 @@ protected function instStringBinding
   instantiates a string binding and retrieves the value."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12355,7 +12347,7 @@ protected function instEnumerationBinding
   instantiates a enumeration binding and retrieves the value."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
@@ -12413,7 +12405,7 @@ protected function instModEquation
   of a variable, if such an equation exists."
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input DAE.ElementSource source "the origin of the element";
   input Boolean inBoolean;
   output DAE.DAElist outDae;
@@ -12473,7 +12465,7 @@ protected function checkProt
   This function is used to check that a
   protected element is not modified."
   input Boolean inBoolean;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input DAE.ComponentRef inComponentRef;
 algorithm
   _:=
@@ -12499,7 +12491,7 @@ public function makeBinding
   input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Attributes inAttributes;
-  input Mod inMod;
+  input DAE.Mod inMod;
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input String componentName;
@@ -12887,12 +12879,12 @@ protected function sortInnerFirstTplLstElementMod
 "@author: adrpo
   This function will move all the *inner* 
   elements first in the given list of elements"
-  input list<tuple<SCode.Element, Mod>> inTplLstElementMod; 
-  output list<tuple<SCode.Element, Mod>> outTplLstElementMod;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod; 
+  output list<tuple<SCode.Element, DAE.Mod>> outTplLstElementMod;
 algorithm
   outTplLstElementMod := matchcontinue(inTplLstElementMod)
     local
-      list<tuple<SCode.Element, Mod>> innerElts, innerouterElts, otherElts, sorted;
+      list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, sorted;
 
     // no sorting if we don't have any inner/outer in the model
     case (inTplLstElementMod) 
@@ -12918,15 +12910,15 @@ end sortInnerFirstTplLstElementMod;
 public function splitInnerAndOtherTplLstElementMod 
 "@author: adrpo
   Split the elements into inner, inner outer and others"
-  input list<tuple<SCode.Element, Mod>> inTplLstElementMod; 
-  output list<tuple<SCode.Element, Mod>> outInnerTplLstElementMod;
-  output list<tuple<SCode.Element, Mod>> outInnerOuterTplLstElementMod;  
-  output list<tuple<SCode.Element, Mod>> outOtherTplLstElementMod;  
+  input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod; 
+  output list<tuple<SCode.Element, DAE.Mod>> outInnerTplLstElementMod;
+  output list<tuple<SCode.Element, DAE.Mod>> outInnerOuterTplLstElementMod;  
+  output list<tuple<SCode.Element, DAE.Mod>> outOtherTplLstElementMod;  
 algorithm
   (outInnerTplLstElementMod, outInnerOuterTplLstElementMod, outOtherTplLstElementMod) := matchcontinue (inTplLstElementMod)
     local
-      list<tuple<SCode.Element, Mod>> rest,innerComps,innerouterComps,otherComps;
-      tuple<SCode.Element, Mod> comp;
+      list<tuple<SCode.Element, DAE.Mod>> rest,innerComps,innerouterComps,otherComps;
+      tuple<SCode.Element, DAE.Mod> comp;
       Absyn.InnerOuter io;
 
     // empty case
@@ -13254,7 +13246,7 @@ protected function addClassdefsToEnv3
   input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Option<Mod> inMod;
+  input Option<DAE.Mod> inMod;
   input SCode.Element sele;
   output Env.Env oenv;
   output InstanceHierarchy outIH;
@@ -13262,7 +13254,7 @@ protected function addClassdefsToEnv3
 algorithm
   (oenv,outIH,osele) := matchcontinue(env,inIH,inPrefix,inMod,sele)
     local
-	    Mod mo,mo2;
+	    DAE.Mod mo,mo2;
 	    SCode.Element sele2;
 	    Env.Env env2;
 	    String str;
@@ -13291,11 +13283,11 @@ protected function extractCorrectClassMod2
   input list<DAE.SubMod> smod;
   input String name;
   input list<DAE.SubMod> premod;
-  output Mod omod;
+  output DAE.Mod omod;
   output list<DAE.SubMod> restmods;
 algorithm (omod,restmods) := matchcontinue( smod , name , premod)
   local
-    Mod mod;
+    DAE.Mod mod;
     DAE.SubMod sub;
     String id;
     list<DAE.SubMod> rest,rest2;
@@ -13621,7 +13613,7 @@ algorithm
 end replaceClassname;
 
 protected function componentHasCondition
-  input tuple<SCode.Element, Mod> component;
+  input tuple<SCode.Element, DAE.Mod> component;
   output Boolean hasCondition;
 algorithm
   hasCondition := matchcontinue(component)
@@ -13897,7 +13889,7 @@ protected function updateComponentsInEnv2
   input Env.Env env;
   input InstanceHierarchy inIH;
   input Prefix.Prefix pre;
-  input Mod mod;
+  input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Connect.Sets csets;
@@ -14195,7 +14187,7 @@ uniontype CachedInstItem
   // *important* inputs/outputs for instClassIn
   record FUNC_instClassIn
     tuple<Env.Cache, Env.Env, InstanceHierarchy, UnitAbsyn.InstStore,
-          Mod, Prefix.Prefix, Connect.Sets, ClassInf.State, SCode.Class,
+          DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State, SCode.Class,
           Boolean, InstDims, Boolean,ConnectionGraph.ConnectionGraph,
           Option<DAE.ComponentRef>> inputs;
     tuple</*Env.Cache, */
@@ -14215,7 +14207,7 @@ uniontype CachedInstItem
 
   // *important* inputs/outputs for partialInstClassIn
   record FUNC_partialInstClassIn
-    tuple<Env.Cache, Env.Env, InstanceHierarchy, Mod, Prefix.Prefix,
+    tuple<Env.Cache, Env.Env, InstanceHierarchy, DAE.Mod, Prefix.Prefix,
           Connect.Sets, ClassInf.State, SCode.Class, Boolean,
           InstDims> inputs;
     tuple</*Env.Cache,*/ 
@@ -14849,7 +14841,7 @@ end checkModelBalancingFilterByRestriction;
 
 protected function isPartial
   input Boolean partialPrefix;
-  input Mod mods;
+  input DAE.Mod mods;
   output Boolean outPartial;
 algorithm
   outPartial := matchcontinue (partialPrefix,mods)

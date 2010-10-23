@@ -54,7 +54,6 @@ public import Prefix;
 public import InnerOuter;
 public import ClassInf;
 
-type Prefix = Prefix.Prefix;
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Debug;
@@ -65,7 +64,7 @@ protected import System;
 
 public function printPrefixStr "function: printPrefixStr
   Prints a Prefix to a string."
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
@@ -105,12 +104,12 @@ end printPrefixStr;
 
 public function printPrefixStr2 "function: printPrefixStr2
   Prints a Prefix to a string. Designed to be used in Error messages to produce qualified component names"
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
   local 
-    Prefix p;
+    Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p)+&".";        
@@ -119,12 +118,12 @@ end printPrefixStr2;
 
 public function printPrefixStr3 "function: printPrefixStr2
   Prints a Prefix to a string as a component name. Designed to be used in Error messages"
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
   local 
-    Prefix p;
+    Prefix.Prefix p;
   case Prefix.NOPRE() then "<NO COMPONENT>";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
   case p then printPrefixStr(p);        
@@ -133,12 +132,12 @@ end printPrefixStr3;
 
 public function printPrefixStrIgnoreNoPre "function: printPrefixStrIgnoreNoPre
   Prints a Prefix to a string as a component name. Designed to be used in Error messages"
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
   outString :=  matchcontinue (inPrefix)
   local 
-    Prefix p;
+    Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p);        
@@ -147,7 +146,7 @@ end printPrefixStrIgnoreNoPre;
 
 public function printPrefix "function: printPrefix
   Prints a prefix to the Print buffer."
-  input Prefix p;
+  input Prefix.Prefix p;
   String s;
 algorithm
   s := printPrefixStr(p);
@@ -162,10 +161,10 @@ public function prefixAdd "function: prefixAdd
   normal order used when displaying them."
   input String inIdent;
   input list<DAE.Subscript> inIntegerLst;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input SCode.Variability vt;
   input ClassInf.State ci_state;
-  output Prefix outPrefix;
+  output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inIdent,inIntegerLst,inPrefix,vt,ci_state)
     local
@@ -182,8 +181,8 @@ algorithm
 end prefixAdd;
 
 public function prefixFirst
-  input Prefix inPrefix;
-  output Prefix outPrefix;
+  input Prefix.Prefix inPrefix;
+  output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inPrefix)
     local
@@ -199,13 +198,13 @@ end prefixFirst;
 
 public function prefixLast "function: prefixLast
   Returns the last NONPRE Prefix of a prefix"
-  input Prefix inPrefix;
-  output Prefix outPrefix;
+  input Prefix.Prefix inPrefix;
+  output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inPrefix)
     local 
       Prefix.ComponentPrefix p;
-      Prefix res;
+      Prefix.Prefix res;
       Prefix.ClassPrefix cp;
     
     case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),cp))) then res;
@@ -221,8 +220,8 @@ end prefixLast;
 public function prefixStripLast
 "@author: adrpo
  remove the last prefix from the component prefix"
-  input Prefix inPrefix;
-  output Prefix outPrefix;
+  input Prefix.Prefix inPrefix;
+  output Prefix.Prefix outPrefix;
 algorithm
   outPrefix := matchcontinue (inPrefix)
     local
@@ -262,7 +261,7 @@ public function prefixPath "function: prefixPath
   Prefix a Path variable by adding the supplied 
   prefix to it and returning a new Path."
   input Absyn.Path inPath;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
   outPath := matchcontinue (inPath,inPrefix)
@@ -288,7 +287,7 @@ end prefixPath;
 
 public function prefixToPath "function: prefixToPath
   Convert a Prefix to a Path"
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
   outPath := matchcontinue (inPrefix)
@@ -319,7 +318,7 @@ public function prefixCref "function: prefixCref
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input DAE.ComponentRef cref;
   output Env.Cache outCache;
   output DAE.ComponentRef cref_1;
@@ -330,7 +329,7 @@ end prefixCref;
 
 public function prefixToCref "function: prefixToCref
   Convert a prefix to a component reference."
-  input Prefix pre;
+  input Prefix.Prefix pre;
   output DAE.ComponentRef cref_1;  
   DAE.ComponentRef cref_1;
 algorithm
@@ -344,7 +343,7 @@ protected function prefixToCref2 "function: prefixToCref2
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
@@ -377,7 +376,7 @@ end prefixToCref2;
 
 public function prefixToCrefOpt "function: prefixToCref
   Convert a prefix to an optional component reference."
-  input Prefix pre;
+  input Prefix.Prefix pre;
   output Option<DAE.ComponentRef> cref_1;
   Option<DAE.ComponentRef> cref_1;
 algorithm
@@ -387,7 +386,7 @@ end prefixToCrefOpt;
 public function prefixToCrefOpt2 "function: prefixToCrefOpt2
   Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference gives a NONE" 
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output Option<DAE.ComponentRef> outComponentRefOpt;  
 algorithm
@@ -420,7 +419,7 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input DAE.ComponentRef cr;
   output Env.Cache outCache;
   output DAE.ComponentRef outCr;
@@ -446,7 +445,7 @@ protected function prefixSubscripts "help function to prefixSubscriptsInCref, ad
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input list<DAE.Subscript> subs;
   output Env.Cache outCache;
   output list<DAE.Subscript> outSubs;
@@ -467,7 +466,7 @@ protected function prefixSubscript "help function to prefixSubscripts, adds pref
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input DAE.Subscript sub;
   output Env.Cache outCache;
   output DAE.Subscript outSub;
@@ -496,7 +495,7 @@ public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.ComponentRef inCref;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.ComponentRef outCref;
 algorithm
@@ -506,7 +505,7 @@ algorithm
       Env.Env env;
       Absyn.InnerOuter io;
       InstanceHierarchy ih;
-      Prefix innerPrefix, pre;
+      Prefix.Prefix innerPrefix, pre;
       DAE.ComponentRef lastCref, cref, newCref;
       String n;      
     
@@ -575,7 +574,7 @@ public function prefixExp "function: prefixExp
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Exp inExp;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm
@@ -585,7 +584,7 @@ algorithm
       DAE.ComponentRef p_1,p;
       list<Env.Frame> env;
       DAE.ExpType t;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.Operator o;
       list<DAE.Exp> es_1,es,el,el_1;
       Absyn.Path f,fcn;
@@ -599,7 +598,7 @@ algorithm
       list<DAE.Exp> expl;
       Absyn.InnerOuter io;
       InstanceHierarchy ih;
-      Prefix innerPrefix;
+      Prefix.Prefix innerPrefix;
       DAE.ComponentRef lastCref;
       
     // no prefix, return the input expression
@@ -664,7 +663,7 @@ algorithm
         (cache,e2);    
     
     case (cache,env,ih,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
@@ -672,14 +671,14 @@ algorithm
         (cache,DAE.BINARY(e1_1,o,e2_1));
 
     case (cache,env,ih,DAE.UNARY(operator = o,exp = e1),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
       then
         (cache,DAE.UNARY(o,e1_1));
 
     case (cache,env,ih,DAE.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
@@ -687,14 +686,14 @@ algorithm
         (cache,DAE.LBINARY(e1_1,o,e2_1));
 
     case (cache,env,ih,DAE.LUNARY(operator = o,exp = e1),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
       then
         (cache,DAE.LUNARY(o,e1_1));
 
     case (cache,env,ih,DAE.RELATION(exp1 = e1,operator = o,exp2 = e2),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
@@ -702,7 +701,7 @@ algorithm
         (cache,DAE.RELATION(e1_1,o,e2_1));
 
     case (cache,env,ih,DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
         (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
@@ -711,7 +710,7 @@ algorithm
         (cache,DAE.IFEXP(e1_1,e2_1,e3_1));
 
     case (cache,env,ih,DAE.SIZE(exp = cref,sz = SOME(dim)),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
         (cache,dim_1) = prefixExp(cache, env, ih, dim, p);
@@ -719,26 +718,26 @@ algorithm
         (cache,DAE.SIZE(cref_1,SOME(dim_1)));
 
     case (cache,env,ih,DAE.SIZE(exp = cref,sz = NONE()),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
       then
         (cache,DAE.SIZE(cref_1,NONE()));
 
     case (cache,env,ih,DAE.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inlineType = inl),p)
-      local Prefix p; DAE.ExpType tp;
+      local Prefix.Prefix p; DAE.ExpType tp;
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
         (cache,DAE.CALL(f,es_1,b,bi,tp,inl));
 
     case (cache,env,ih,DAE.ARRAY(ty = t,scalar = a,array = {}),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       then
         (cache,DAE.ARRAY(t,a,{}));
 
     /*case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p as Prefix.PREFIX(Prefix.PRE(_,{i},_),_))
-      local Prefix p; Integer i; DAE.Exp e;
+      local Prefix.Prefix p; Integer i; DAE.Exp e;
       equation
         e = listNth(es, i-1);
         Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& Exp.printExp2Str(e) +& "\n");
@@ -746,14 +745,14 @@ algorithm
         (cache,e);    */
 
     case (cache,env,ih,DAE.ARRAY(ty = t,scalar = a,array = es),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
         (cache,DAE.ARRAY(t,a,es_1));
 
     case (cache,env,ih,DAE.TUPLE(PR = es),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
@@ -762,14 +761,14 @@ algorithm
     case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = {}),p)
       local
         Integer a;
-        Prefix p;
+        Prefix.Prefix p;
       then
         (cache,DAE.MATRIX(t,a,{}));
 
     case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = (x :: xs)),p)
       local
         Integer b,a;
-        Prefix p;
+        Prefix.Prefix p;
       equation
         el = Util.listMap(x, Util.tuple21);
         bl = Util.listMap(x, Util.tuple22);
@@ -780,7 +779,7 @@ algorithm
         (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
     case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE(),range = stop),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,start_1) = prefixExp(cache, env, ih, start, p);
         (cache,stop_1) = prefixExp(cache, env, ih, stop, p);
@@ -788,7 +787,7 @@ algorithm
         (cache,DAE.RANGE(t,start_1,NONE(),stop_1));
 
     case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,start_1) = prefixExp(cache, env, ih, start, p);
         (cache,step_1) = prefixExp(cache, env, ih, step, p);
@@ -797,14 +796,14 @@ algorithm
         (cache,DAE.RANGE(t,start_1,SOME(step_1),stop_1));
 
     case (cache,env,ih,DAE.CAST(ty = tp,exp = e),p)
-      local Prefix p; DAE.ExpType tp;
+      local Prefix.Prefix p; DAE.ExpType tp;
       equation
         (cache,e_1) = prefixExp(cache, env, ih, e, p);
       then
         (cache,DAE.CAST(tp,e_1));
 
     case (cache,env,ih,DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
         (cache,iterexp_1) = prefixExp(cache, env, ih, iterexp, p);
@@ -815,7 +814,7 @@ algorithm
       local
         list<DAE.Statement> b;
         list<DAE.Element> lDecls;
-        Prefix p;
+        Prefix.Prefix p;
         DAE.ExpType t;
       equation
         (cache,lDecls) = prefixDecls(cache, env, ih, lDecls, {}, p);
@@ -826,14 +825,14 @@ algorithm
 
     // MetaModelica extension. KS
     case (cache,env,ih,DAE.LIST(t,es),p)
-      local Prefix p;
+      local Prefix.Prefix p;
         DAE.ExpType t;
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then (cache,DAE.LIST(t,es_1));
 
     case (cache,env,ih,DAE.CONS(t,e1,e2),p)
-      local Prefix p;
+      local Prefix.Prefix p;
         DAE.ExpType t;
       equation
         (cache,e1) = prefixExp(cache, env, ih, e1, p);
@@ -841,19 +840,19 @@ algorithm
       then (cache,DAE.CONS(t,e1,e2));
 
     case (cache,env,ih,DAE.META_TUPLE(es),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then (cache,DAE.META_TUPLE(es_1));
 
     case (cache,env,ih,DAE.META_OPTION(SOME(e1)),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
         (cache,e1) = prefixExp(cache, env, ih, e1, p);
       then (cache,DAE.META_OPTION(SOME(e1)));
 
     case (cache,env,ih,DAE.META_OPTION(NONE()),p)
-      local Prefix p;
+      local Prefix.Prefix p;
       equation
       then (cache,DAE.META_OPTION(NONE()));
         // ------------------------
@@ -876,7 +875,7 @@ public function prefixExpList "function: prefixExpList
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input list<DAE.Exp> inExpExpLst;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
 algorithm
@@ -885,7 +884,7 @@ algorithm
       DAE.Exp e_1,e;
       list<DAE.Exp> es_1,es;
       list<Env.Frame> env;
-      Prefix p;
+      Prefix.Prefix p;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -912,14 +911,14 @@ protected function prefixDecls "function: prefixDecls
   input InstanceHierarchy inIH;  
 	input list<DAE.Element> lDecls;
 	input list<DAE.Element> accList;
-  input Prefix p;
+  input Prefix.Prefix p;
   output Env.Cache outCache;
 	output list<DAE.Element> outDecls;
 algorithm
   (outCache,outDecls) := matchcontinue (cache,env,inIH,lDecls,accList,p)
     local
       list<DAE.Element> localAccList;
-      Prefix pre;
+      Prefix.Prefix pre;
       Env.Cache localCache;
       Env.Env localEnv;
       DAE.ElementSource source "the origin of the element";
@@ -982,7 +981,7 @@ protected function prefixStatements "function: prefixStatements
   input InstanceHierarchy inIH;
 	input list<DAE.Statement> stmts;
 	input list<DAE.Statement> accList;
-	input Prefix p;
+	input Prefix.Prefix p;
 	output Env.Cache outCache;
 	output list<DAE.Statement> outStmts;
 algorithm
@@ -992,7 +991,7 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       list<DAE.Statement> localAccList,rest;
-      Prefix pre;
+      Prefix.Prefix pre;
       InstanceHierarchy ih;
       DAE.ElementSource source;
       
@@ -1188,7 +1187,7 @@ protected function prefixElse "function: prefixElse
   input Env.Env env;
   input InstanceHierarchy inIH;
   input DAE.Else elseBranch;
-  input Prefix p;
+  input Prefix.Prefix p;
   output Env.Cache outCache;
   output DAE.Else outElse;
 algorithm
@@ -1196,7 +1195,7 @@ algorithm
     local
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix pre;
+      Prefix.Prefix pre;
       InstanceHierarchy ih;
       
     case (localCache,localEnv,ih,DAE.NOELSE(),pre)

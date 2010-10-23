@@ -115,8 +115,6 @@ protected import CevalScript;
 
 protected constant DAE.Exp defaultOutputFormat = DAE.SCONST("plt");
 
-public type Prefix = Prefix.Prefix "a prefix";
-
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -124,7 +122,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -146,7 +144,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,_,{},impl,st,doVect,_,_) then (cache,{},{},st);
     case (cache,env,(e :: rest),impl,st,doVect,pre,info)
       equation
@@ -167,7 +165,7 @@ public function elabExpListList
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<list<DAE.Exp>> outExpExpLstLst;
@@ -189,7 +187,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,_,{},impl,st,doVect,_,_) then (cache,{},{},st);
     case (cache,env,(e :: rest),impl,st,doVect,pre,info)
@@ -214,7 +212,7 @@ function: elabExp
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -252,7 +250,7 @@ algorithm
       Boolean doVect;
       Absyn.ForIterators iterators;
       DAE.DAElist dae1,dae2,dae3,dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     /* uncomment for debuging
     case (cache,_,inExp,impl,st,doVect,_,info)
@@ -677,7 +675,7 @@ This is used by Inst.mo when handling a var := {...} statement
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -693,7 +691,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       DAE.Properties prop;
       DAE.Const c;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{},prop,_,st,_,_,info)
       then (cache,DAE.LIST(DAE.ET_OTHER(),{}),prop,st);
     case (cache,env,expList,prop as DAE.PROP((DAE.T_LIST(t),_),c),impl,st,doVect,pre,info)
@@ -725,7 +723,7 @@ public function fromValueblockBodyToAlgs
   input Absyn.ValueblockBody body;
   input Env.Cache cache;
   input Env.Env env;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output list<Absyn.AlgorithmItem> outAlgs;
   output Env.Cache outCache;
 algorithm
@@ -733,7 +731,7 @@ algorithm
     local
       list<Absyn.AlgorithmItem> algs1,algs2,eqAlgs,algs;
       list<Absyn.EquationItem> eq1;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (Absyn.VALUEBLOCKALGORITHMS(algs1),cache,_,_)
       then (algs1,cache);
     case (Absyn.VALUEBLOCKMATCHCASE(algs1,eq1,algs2),cache,env,pre)
@@ -761,7 +759,7 @@ protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAs
   input list<Absyn.AlgorithmItem> accList;
   input Env.Cache cache;
   input Env.Env env;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output list<Absyn.AlgorithmItem> algsOut;
 algorithm
@@ -771,7 +769,7 @@ algorithm
       list<Absyn.AlgorithmItem> localAccList;
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix pre;
+      Prefix.Prefix pre;
       Option<Absyn.Comment> comment;
       Absyn.Info info;
       Absyn.Equation first;
@@ -792,7 +790,7 @@ protected function fromEquationBranchesToAlgBranches
   input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> accList;
   input Env.Cache cache;
   input Env.Env env;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut;
 algorithm
@@ -803,7 +801,7 @@ algorithm
       list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> rest;
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix pre;
+      Prefix.Prefix pre;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> algs;
       list<Absyn.EquationItem> eqs;
@@ -822,7 +820,7 @@ protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssig
   input Absyn.Info info;
   input Env.Cache cache;
   input Env.Env env;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output list<Absyn.AlgorithmItem> algStatement;
 algorithm
@@ -830,7 +828,7 @@ algorithm
     local
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix pre;
+      Prefix.Prefix pre;
       String str,strLeft,strRight;
       Absyn.Exp left,right,lhsExp,rhsExp,e;
       Absyn.AlgorithmItem algItem,algItem1,algItem2;
@@ -1058,7 +1056,7 @@ protected function elabCallReduction
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> inST;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -1082,7 +1080,7 @@ algorithm
       Boolean impl,doVect;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       Absyn.ForIterators iterators;
 
     case (cache, env, fn as Absyn.CREF_IDENT("array", {}), exp, iterators, 
@@ -1225,7 +1223,7 @@ protected function elabArrayIterators
   input Boolean implicitInstantiation;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache newCache;
   output Env.Env newEnv;
@@ -1251,7 +1249,7 @@ algorithm
       list<list<Values.Value>> iter_values_list;
       DAE.DAElist dae,dae1,dae2;
       SCode.Variability variability;
-      Prefix pre;
+      Prefix.Prefix pre;
       
     case (_, _, {}, _, _, _,_,_)
       equation
@@ -1359,7 +1357,7 @@ protected function elabCallReduction3
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> inST;
   input Boolean doVect;
-  input Prefix prefix;
+  input Prefix.Prefix prefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -1485,7 +1483,7 @@ public function elabGraphicsExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -1518,7 +1516,7 @@ algorithm
       list<list<DAE.Properties>> tps;
       list<list<tuple<DAE.TType, Option<Absyn.Path>>>> tps_1;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,_,Absyn.INTEGER(value = x),impl,_,info) then (cache,DAE.ICONST(x),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */
     case (cache,_,Absyn.REAL(value = x),impl,_,info)
       local Real x;
@@ -1729,7 +1727,7 @@ protected function elabRangeType "function: elabRangeType
   input DAE.Const inConst5;
   input DAE.ExpType inType6;
   input Boolean inBoolean7;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.Type outType;
 algorithm
@@ -1745,7 +1743,7 @@ algorithm
       Option<Ident> s2opt;
       DAE.ExpType expty;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,start,NONE(),stop,const,_,impl,pre) /* impl as false */
       equation
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
@@ -1806,10 +1804,10 @@ algorithm
           DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_REAL_DEFAULT),NONE()));
 
     case (cache,_,_,_,_,const,DAE.ET_INT(),_,_)
-      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE()));
+      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE()));
 
     case (cache,_,_,_,_,const,DAE.ET_REAL(),_,_)
-      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE()));
+      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE()));
 
     case (cache,env,start,step,stop,const,expty,impl,pre)
       local Option<DAE.Exp> step;
@@ -1841,7 +1839,7 @@ protected function elabTuple "function: elabTuple
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -1861,7 +1859,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,(e :: exps),impl,doVect,pre,info)
       equation
@@ -1884,7 +1882,7 @@ protected function elabPartEvalFunction
   input Option<Interactive.InteractiveSymbolTable> inSymbolTableOption;
   input Boolean inImpl;
   input Boolean inVect;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -1906,7 +1904,7 @@ algorithm
       DAE.Properties prop,prop_1;
       DAE.Type tty,tty_1;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
       list<Slot> slots;
     case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect,pre,info)
       equation
@@ -1984,7 +1982,7 @@ protected function elabArray
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -2003,7 +2001,7 @@ algorithm
       Boolean doVect;
       DAE.Type t; DAE.Const c;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,expl,impl,st,doVect,pre,info) /* impl array contains mixed Integer and Real types */
       equation
@@ -2030,7 +2028,7 @@ protected function elabArrayHasMixedIntReals
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
 algorithm
   elabArrayHasInt(inCache,env, expl, impl, st, performVectorization,inPrefix,info);
@@ -2047,7 +2045,7 @@ protected function elabArrayHasInt
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
 algorithm
   _ := matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
@@ -2061,7 +2059,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,(e :: expl),impl,st,doVect,pre,info) /* impl */
       equation
         (cache,e_1,DAE.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
@@ -2086,7 +2084,7 @@ protected function elabArrayHasReal
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
 algorithm
   _ := matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
@@ -2100,7 +2098,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,(e :: expl),impl,st,doVect,pre,info) /* impl */
       equation
         (cache,e_1,DAE.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect,pre,info);
@@ -2124,7 +2122,7 @@ protected function elabArrayReal
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -2146,7 +2144,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,expl,impl,st,doVect,pre,info) /* impl elaborate each expression, pick first realtype
       and type_convert all expressions to that type */
@@ -2228,7 +2226,7 @@ protected function elabArrayReal2
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
 algorithm
@@ -2240,7 +2238,7 @@ algorithm
       DAE.Exp e,e_1;
       list<tuple<DAE.TType, Option<Absyn.Path>>> ts;
       Ident s,s2,s3,sp;
-      Prefix pre;
+      Prefix.Prefix pre;
     case ({},{},tp,_) then ({},tp);  /* expl to_type new_expl res_type */
     case ((e :: es),(t :: ts),to_type,pre) /* No need for type conversion. */
       equation
@@ -2285,7 +2283,7 @@ protected function elabArray2
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -2309,7 +2307,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache, _, {}, _, _, _,_,_)
       then (cache, {}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST));
@@ -2363,7 +2361,7 @@ protected function elabGraphicsArray
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -2382,7 +2380,7 @@ algorithm
       list<DAE.Exp> es_1;
       list<Absyn.Exp> es;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{e},impl,pre,info) /* impl */
       equation
         (cache,e_1,prop) = elabGraphicsExp(cache,env,e,impl,pre,info);
@@ -2428,7 +2426,7 @@ protected function elabMatrixComma "function elabMatrixComma
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp1;
@@ -2453,7 +2451,7 @@ algorithm
       list<Absyn.Exp> els;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{el},impl,st,havereal,nmax,doVect,pre,info) /* implicit inst. have real nmax dim1 dim2 */
       equation
         (cache,el_1,(prop as DAE.PROP(t1,_)),_) = elabExp(cache,env, el, impl, st,doVect,pre,info);
@@ -2773,7 +2771,7 @@ protected function elabMatrixSemi
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp1;
@@ -2799,7 +2797,7 @@ algorithm
       Env.Cache cache;
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{el},impl,st,havereal,maxn,doVect,pre,info) /* implicit inst. contain real maxn */
       equation
@@ -2865,7 +2863,7 @@ protected function verifyBuiltInHandlerType "
   input Boolean impl;
   input extraFunc typeChecker;
   input String fnName;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -2883,7 +2881,7 @@ algorithm
       DAE.Const c;
       DAE.Properties prop;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
     
     case (cache,env,{s1},impl,typeChecker,fnName,pre,info) /* impl */
       equation
@@ -2906,7 +2904,7 @@ protected function elabBuiltinCardinality
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -2923,7 +2921,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,info)
       equation
@@ -2948,7 +2946,7 @@ protected function elabBuiltinSmooth
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -2968,7 +2966,7 @@ algorithm
       String s1,a1,a2,sp;
       Integer pInt;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{Absyn.INTEGER(pInt),expr},_,impl,pre,info) // if p is 0 just return the expression!
       equation
@@ -3045,7 +3043,7 @@ protected function elabBuiltinSize
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3063,7 +3061,7 @@ algorithm
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
       Integer dim_int;
       DAE.ExpType ety;
@@ -3117,7 +3115,7 @@ algorithm
         c = Types.dimensionsKnown(arrtp);
         c_1 = Types.boolConstSize(c);
         exp = DAE.SIZE(arraycrefe,NONE());
-        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN, DAE.T_INTEGER_DEFAULT),NONE()), c_1);
+        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_INTEGER_DEFAULT),NONE()), c_1);
       then
         (cache,exp,prop);
         
@@ -3141,7 +3139,7 @@ protected function elabBuiltinNDims
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3159,7 +3157,7 @@ algorithm
       list<Absyn.Exp> expl;
       Integer nd;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
 
     case (cache,env,{arraycr},_,impl,pre,info)
@@ -3192,7 +3190,7 @@ protected function elabBuiltinFill "function: elabBuiltinFill
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3215,7 +3213,7 @@ algorithm
       list<Ident> expstrs;
       Env.Cache cache;
       DAE.Const c1;
-      Prefix pre;
+      Prefix.Prefix pre;
       Ceval.Msg msg;
 
     case (cache,env,(s :: dims),_,impl,pre,info) /* impl */
@@ -3276,7 +3274,7 @@ public function elabBuiltinFill2
   input DAE.Type inType;
   input list<Values.Value> inValuesValueLst;
   input DAE.Const constVar;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3296,7 +3294,7 @@ algorithm
       list<Values.Value> rest;
       Env.Cache cache;
       DAE.Const c1;
-      Prefix pre;
+      Prefix.Prefix pre;
       String str;
     case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_)
       equation
@@ -3343,7 +3341,7 @@ algorithm
     case (_, prop :: rest_props)
       equation
         t = makeFillArgListType(fillType, rest_props);
-        t = (DAE.T_ARRAY(DAE.DIM_UNKNOWN, t),NONE());
+        t = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), t),NONE());
       then
         t;
   end matchcontinue;
@@ -3359,7 +3357,7 @@ protected function elabBuiltinTranspose "function: elabBuiltinTranspose
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3381,7 +3379,7 @@ algorithm
       DAE.Exp exp_1,exp;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{matexp},_,impl,pre,info) /* impl try symbolically transpose the ARRAY expression */
       equation
@@ -3545,7 +3543,7 @@ protected function elabBuiltinSum "function: elabBuiltinSum
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3564,7 +3562,7 @@ algorithm
       Env.Cache cache;
       DAE.Type ty,ty2;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{arrexp},_,impl,pre,info) /* impl */
       local String str_exp,str_pre;
@@ -3639,7 +3637,7 @@ protected function elabBuiltinProduct "function: elabBuiltinProduct
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3658,7 +3656,7 @@ algorithm
       DAE.Type ty,ty2;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{arrexp},_,impl,pre,info)
       local String str_exp,str_pre;
@@ -3728,7 +3726,7 @@ protected function elabBuiltinPre "function: elabBuiltinPre
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3748,7 +3746,7 @@ algorithm
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     /* an matrix? */
     case (cache,env,{exp},_,impl,pre,info) /* impl */
@@ -3868,7 +3866,7 @@ protected function elabBuiltinInStream "function: elabBuiltinInStream
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3885,7 +3883,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
       equation
@@ -3909,7 +3907,7 @@ protected function elabBuiltinActualStream "function: elabBuiltinActualStream
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -3926,7 +3924,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
       equation
         (cache, exp_1, DAE.PROP(tp, c), _) =
@@ -3994,7 +3992,7 @@ Metarecord: ut,0,\"field\" => ut[0].field - (first record in the record list of 
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4017,7 +4015,7 @@ algorithm
       list<DAE.Type> tys;
       Integer i;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1,Absyn.INTEGER(i)},{},impl,pre,info) /* Tuple */
       equation
         (cache,s1_1,DAE.PROP((DAE.T_METATUPLE(tys),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
@@ -4068,7 +4066,7 @@ protected function elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal "mmc_union
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4089,7 +4087,7 @@ algorithm
       list<DAE.Exp> expList;
       Integer i,numFields;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields)},{},impl,pre,info)
       equation
@@ -4112,7 +4110,7 @@ protected function elabBuiltinClock " => x"
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4133,7 +4131,7 @@ algorithm
       DAE.Const c, c1, c2;
       list<DAE.Exp> expList;
       String fnName;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{},{},impl,pre,info)
       equation
         s = Absyn.CALL(Absyn.CREF_IDENT("mmc_clock", {}), Absyn.FUNCTIONARGS({},{}));
@@ -4261,7 +4259,7 @@ protected function elabBuiltinInitial "function: elabBuiltinInitial
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4273,7 +4271,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
       DAE.Exp call;
     case (cache,env,{},{},impl,_,info)
@@ -4301,7 +4299,7 @@ protected function elabBuiltinTerminal "function: elabBuiltinTerminal
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4313,7 +4311,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
       DAE.Exp call;
     case (cache,env,{},{},impl,_,info)
@@ -4342,7 +4340,7 @@ protected function elabBuiltinArray "function: elabBuiltinArray
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4363,7 +4361,7 @@ algorithm
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,expl,_,impl,pre,info)
       equation
@@ -4387,7 +4385,7 @@ protected function elabBuiltinArray2 "function elabBuiltinArray2.
 "
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
@@ -4399,7 +4397,7 @@ algorithm
       list<DAE.Properties> tpl;
       list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
       DAE.Properties tp;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
     case (expl,tpl,pre,info)
       equation
@@ -4460,7 +4458,7 @@ protected function elabBuiltinZeros "function: elabBuiltinZeros
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4475,7 +4473,7 @@ algorithm
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,args,_,impl,pre,info)
       equation
@@ -4575,7 +4573,7 @@ protected function elabBuiltinOnes "function: elabBuiltinOnes
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4591,7 +4589,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,args,_,impl,pre,info)
       equation
         (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(1) :: args), {}, impl,pre,info);
@@ -4607,7 +4605,7 @@ protected function elabBuiltinMax
   input list<Absyn.Exp> inFnArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4624,7 +4622,7 @@ protected function elabBuiltinMin
   input list<Absyn.Exp> inFnArgs;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4642,7 +4640,7 @@ protected function elabBuiltinMinMaxCommon
   input String inFnName;
   input list<Absyn.Exp> inFnArgs;
   input Boolean inImpl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4660,7 +4658,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.Properties p;
 
     // min|max(vector)
@@ -4735,7 +4733,7 @@ protected function elabBuiltinFloor "function: elabBuiltinFloor
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4753,7 +4751,7 @@ algorithm
       Env.Cache cache;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{s1},_,impl,pre,info)
       equation
@@ -4772,7 +4770,7 @@ protected function elabBuiltinCeil "function: elabBuiltinCeil
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4790,7 +4788,7 @@ algorithm
       DAE.Type ty;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{s1},_,impl,pre,info) /* impl */
       equation
@@ -4809,7 +4807,7 @@ protected function elabBuiltinAbs "function: elabBuiltinAbs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4828,7 +4826,7 @@ algorithm
       DAE.Type ty,ty2,ety;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{s1},_,impl,pre,info)
       equation
@@ -4852,7 +4850,7 @@ protected function elabBuiltinSqrt "function: elabBuiltinSqrt
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4871,7 +4869,7 @@ algorithm
       DAE.Type ty,ty2;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1},_,impl,pre,info)
       equation
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"sqrt",pre,info);
@@ -4894,7 +4892,7 @@ protected function elabBuiltinDiv "function: elabBuiltinDiv
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4912,7 +4910,7 @@ algorithm
       DAE.Type cty1,cty2;
       DAE.Properties prop;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       case (cache,env,{s1,s2},_,impl,pre,info)
       equation
         // TODO: this is not so nice. s1,s2 are elaborated twice, first in the calls below and then in elabCallArgs.
@@ -4939,7 +4937,7 @@ verify that the input is correct.
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -4957,7 +4955,7 @@ algorithm
       Env.Cache cache;
       String errorString,sp;
       DAE.DAElist dae,dae1,dae2,dae3;
-       Prefix pre;
+       Prefix.Prefix pre;
     case (cache,env,{s1,s2},_,impl,pre,info)
       equation
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
@@ -5037,7 +5035,7 @@ protected function elabBuiltinMod
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5055,7 +5053,7 @@ algorithm
       DAE.Type cty1,cty2;
       DAE.Properties prop;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1,s2},_,impl,pre,info)
       equation
         (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
@@ -5077,7 +5075,7 @@ protected function elabBuiltinRem "function: elabBuiltinRem
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5095,7 +5093,7 @@ algorithm
       DAE.Type cty1,cty2;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
       case (cache,env,{s1,s2},_,impl,pre,info)
       equation
@@ -5120,7 +5118,7 @@ protected function elabBuiltinInteger
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5139,7 +5137,7 @@ algorithm
       DAE.DAElist dae;
       DAE.Type ty;
       String exp_str;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1},_,impl,pre,info)
       equation
         (cache,s1_1,prop) =
@@ -5158,7 +5156,7 @@ protected function elabBuiltinIntegerEnum
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5175,7 +5173,7 @@ algorithm
       Env.Cache cache;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1},_,impl,pre,info)
       equation
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer",pre,info);
@@ -5194,7 +5192,7 @@ protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5215,7 +5213,7 @@ algorithm
       Absyn.Exp v1,s1;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{v1},_,impl,pre,info)
       equation
         (cache, DAE.ARRAY(ty = tp, array = expl),
@@ -5317,7 +5315,7 @@ protected function elabBuiltinDifferentiate "function: elabBuiltinDifferentiate
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5334,7 +5332,7 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{s1,s2},_,impl,pre,info)
       equation
@@ -5370,7 +5368,7 @@ protected function elabBuiltinSimplify "function: elabBuiltinSimplify
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5387,7 +5385,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{s1,Absyn.STRING(value = "Real")},_,impl,pre,info) /* impl */
       equation
         cref_list = Absyn.getCrefFromExp(s1,true);
@@ -5466,7 +5464,7 @@ protected function elabBuiltinNoevent "function: elabBuiltinNoevent
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5482,7 +5480,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{exp},_,impl,pre,info)
       equation
         (cache,exp_1,prop,_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
@@ -5502,7 +5500,7 @@ protected function elabBuiltinEdge "function: elabBuiltinEdge
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5518,7 +5516,7 @@ algorithm
       DAE.Const c;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
       String ps;
     case (cache,env,{exp},_,impl,pre,info) /* Constness: C_VAR */
       equation
@@ -5552,7 +5550,7 @@ protected function elabBuiltinSign "function: elabBuiltinSign
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5573,7 +5571,7 @@ algorithm
       Env.Cache cache;
       DAE.Properties prop;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{exp},_,impl,pre,info) /* Argument to sign must be an Integer or Real expression */
       equation
@@ -5594,7 +5592,7 @@ protected function elabBuiltinDer
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5615,7 +5613,7 @@ algorithm
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // Replace der of constant Real, Integer or array of Real/Integer by zero(s) 
     case (cache,env,{exp},_,impl,pre,info)
@@ -5692,7 +5690,7 @@ protected function elabBuiltinSample "function: elabBuiltinSample
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5708,7 +5706,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
     case (cache,env,{start,interval},_,impl,pre,info)
       equation
@@ -5749,7 +5747,7 @@ protected function elabBuiltinChange "function: elabBuiltinChange
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5768,7 +5766,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
 
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,info) /* simple type, \'discrete\' variable */
@@ -5834,7 +5832,7 @@ protected function elabBuiltinCat "function: elabBuiltinCat
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5858,7 +5856,7 @@ algorithm
       Env.Cache cache;
       DAE.ExpType etp;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
       String sp;
     case (cache,env,(dim :: matrices),_,impl,pre,info) /* impl */
       equation
@@ -5945,7 +5943,7 @@ protected function elabBuiltinIdentity "function: elabBuiltinIdentity
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -5964,7 +5962,7 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       DAE.Type ty;
       DAE.ExpType ety;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.Const c;
       Ceval.Msg msg;
 
@@ -5984,7 +5982,7 @@ algorithm
     case (cache,env,{dim},_,impl,pre,info)
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_VAR()),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
-        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN, DAE.DIM_UNKNOWN});
+        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
         ety = Types.elabType(ty);
         call = makeBuiltinCall("identity", {dim_exp}, ety);
       then
@@ -5994,7 +5992,7 @@ algorithm
       equation
         true = OptManager.getOption("checkModel");
         (cache,dim_exp,DAE.PROP(type_ = (DAE.T_INTEGER(_), _)),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
-        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN, DAE.DIM_UNKNOWN});
+        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
         ety = Types.elabType(ty);
         call = makeBuiltinCall("identity", {dim_exp}, ety);
       then
@@ -6011,7 +6009,7 @@ protected function elabBuiltinIsRoot
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6025,7 +6023,7 @@ algorithm
       Boolean impl;
       Absyn.Exp exp0;
       DAE.Exp exp;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,{exp0},{},impl,pre,info)
       equation
       (cache,exp,_,_) = elabExp(cache, env, exp0, false,NONE(), false,pre,info);
@@ -6046,7 +6044,7 @@ protected function elabBuiltinRooted
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6060,7 +6058,7 @@ algorithm
       Absyn.Exp exp0;
       DAE.Exp exp;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // adrpo: TODO! FIXME!
     //        this operator is not even specified in the specification!
@@ -6085,7 +6083,7 @@ protected function elabBuiltinScalar "function: elab_builtin_
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6101,7 +6099,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{e},_,impl,pre,info) /*  scalar({a}) => a */
       equation
@@ -6133,7 +6131,7 @@ protected function elabBuiltinSkew "
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6155,7 +6153,7 @@ algorithm
       DAE.ExpType etp1,etp2,etp,etp3;
       DAE.Type eltTp;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
       //First, try symbolic simplification
     case (cache,env,{v1},_,impl,pre,info) equation
@@ -6218,7 +6216,7 @@ protected function elabBuiltinCross "
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6239,7 +6237,7 @@ algorithm
       DAE.ExpType etp1,etp2,etp,etp3;
       DAE.Type eltTp;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
       //First, try symbolic simplification
     case (cache,env,{v1,v2},_,impl,pre,info) equation
@@ -6295,7 +6293,7 @@ protected function elabBuiltinString "
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6320,7 +6318,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       list<Slot> slots,newslots;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
     
     // handle most of the stuff
     case (cache,env,args as e::_,nargs,impl,pre,info)
@@ -6376,7 +6374,7 @@ protected function elabBuiltinLinspace "
   input list<Absyn.Exp> expl;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean impl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6392,7 +6390,7 @@ algorithm
       Integer size;
       Env.Cache cache; Env.Env env;
       DAE.DAElist dae,dae1,dae2,dae3;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.ExpType res_type;
 
     /* linspace(x,y,n) where n is constant or parameter */
@@ -6421,9 +6419,9 @@ algorithm
         elabExp(cache,env, n, impl,NONE(),true,pre,info);
       false = Types.isParameterOrConstant(c3);
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
-      res_type = DAE.ET_ARRAY(DAE.ET_REAL, {DAE.DIM_UNKNOWN});
+      res_type = DAE.ET_ARRAY(DAE.ET_REAL, {DAE.DIM_UNKNOWN()});
       call = makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
-    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN,tp11),NONE()),c));
+    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),tp11),NONE()),c));
   end matchcontinue;
 end elabBuiltinLinspace;
 
@@ -6437,7 +6435,7 @@ protected function elabBuiltinVector "function: elabBuiltinVector
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6459,7 +6457,7 @@ algorithm
       list<Integer> dims;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,{e},_,impl,pre,info) /* vector(scalar) = {scalar} */
       equation
@@ -6524,12 +6522,12 @@ protected function checkBuiltinVectorDims
   input Absyn.Exp expr;
   input Env.Env env;
   input list<Integer> dimensions;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
 algorithm
   _ := matchcontinue(expr, env, dimensions,inPrefix)
     local
       Integer dims_larger_than_one;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (_, _, _,_)
       equation
         dims_larger_than_one = countDimsLargerThanOne(dimensions);
@@ -6701,7 +6699,7 @@ public function elabBuiltinHandler "function: elabBuiltinHandler
     input list<Absyn.Exp> inAbsynExpLst;
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
-    input Prefix inPrefix;
+    input Prefix.Prefix inPrefix;
     input Absyn.Info info;
     output Env.Cache outCache;
     output DAE.Exp outExp;
@@ -6768,7 +6766,7 @@ protected function isBuiltinFunc "function: isBuiltinFunc
   or can be found in the builtin environment."
   input Env.Cache inCache;
   input Absyn.Path inPath;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output Boolean outBoolean;
   output Absyn.Path outPath "make the path non-FQ";
@@ -6778,7 +6776,7 @@ algorithm
       Ident id;
       Absyn.Path path;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,Absyn.IDENT(name = id),_)
       equation
         _ = elabBuiltinHandler(id);
@@ -6806,11 +6804,11 @@ end isBuiltinFunc;
 protected function checkSemiSupportedFunctions "Checks for special functions like arccos, ln, etc
 that are not covered by the specification, but is used in many libraries and is available in Dymola"
 input Absyn.Path path;
-input Prefix inPrefix;
+input Prefix.Prefix inPrefix;
 algorithm
   _ := matchcontinue(path,inPrefix)
   local
-    Prefix pre;
+    Prefix.Prefix pre;
     String ps;
     case(Absyn.IDENT("arcsin"),pre) equation
       ps = PrefixUtil.printPrefixStr3(pre);
@@ -6843,7 +6841,7 @@ protected function elabCallBuiltin "function: elabCallBuiltin
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6858,7 +6856,7 @@ algorithm
         input list<Absyn.Exp> inAbsynExpLst;
         input list<Absyn.NamedArg> inNamedArgs;
         input Boolean inBoolean;
-        input Prefix inPrefix;
+        input Prefix.Prefix inPrefix;
         input Absyn.Info info;
         output Env.Cache outCache;
         output DAE.Exp outExp;
@@ -6873,7 +6871,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       Absyn.ComponentRef cr;
 
     /* impl for normal builtin operators and functions */
@@ -6922,7 +6920,7 @@ function: elabCall
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -6945,7 +6943,7 @@ algorithm
       list<Ident> argstrs;
       Env.Cache cache;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,fn,args,nargs,impl,st,pre,info) /* impl LS: Check if a builtin function call, e.g. size()
         and calculate if so */
@@ -7010,12 +7008,12 @@ Determine if a function has a builtin handler or not.
 "
 input Absyn.ComponentRef fn;
 input list<Absyn.Exp> expl;
-input Prefix inPrefix;
+input Prefix.Prefix inPrefix;
 output Boolean b;
 algorithm b := matchcontinue(fn,expl,inPrefix)
 case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl,pre)
   local String name,s,ps; list<String> lst;
-    Prefix pre;
+    Prefix.Prefix pre;
     equation
       _ = elabBuiltinHandler(name);
       //print(" error, handler found for " +& name +& "\n");
@@ -7043,7 +7041,7 @@ protected function elabCallInteractive "function: elabCallInteractive
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -7070,7 +7068,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       list<Absyn.Exp> vars;
       Absyn.Exp size_absyn,exp,bool_exp;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st),_,_) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
           {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
@@ -7783,7 +7781,7 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("readFileNoNumeric"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("listVariables"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
+          (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
 
     case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("getErrorString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -8088,7 +8086,7 @@ protected function getOptionalNamedArg "function: getOptionalNamedArg
   input DAE.Type inType;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input DAE.Exp inExp;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -8105,7 +8103,7 @@ algorithm
       Ident id,id2;
       list<Absyn.NamedArg> xs;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,_,_,_,_,_,{},exp,_,info) then (cache,exp);  /* The expected type */
     case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = exp) :: xs),dexp,pre,info)
       local Absyn.Exp exp;
@@ -8133,7 +8131,7 @@ public function elabUntypedCref "function: elabUntypedCref
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
@@ -8150,7 +8148,7 @@ algorithm
       Absyn.ComponentRef cr;
       Env.Cache cache;
       DAE.ExpType ty2;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = subs),impl,pre,info) /* impl */
       equation
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
@@ -8474,7 +8472,7 @@ function: elabCallArgs
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -8499,7 +8497,7 @@ function: elabCallArgs
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
@@ -8537,7 +8535,7 @@ algorithm
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
       DAE.DAElist dae,dae1,dae2,dae3,dae4,outDae;
-      Prefix pre;
+      Prefix.Prefix pre;
       SCode.Class c;
       SCode.Restriction re;
       Integer index;
@@ -8807,7 +8805,7 @@ protected function elabCallArgsMetarecord
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
@@ -8845,7 +8843,7 @@ algorithm
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
       DAE.DAElist dae,dae1,dae2,dae3,dae4,outDae;
-      Prefix pre;
+      Prefix.Prefix pre;
       SCode.Class c;
       SCode.Restriction re;
       Integer index;
@@ -9031,7 +9029,7 @@ If in future C++ code is generated instead, this is not required, since C++ allo
   input Absyn.Path fn;
   input list<Slot> slots;
   input Boolean impl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outArgs;
@@ -9043,7 +9041,7 @@ algorithm
       Env.Env env_2;
       list<DAE.Exp> args_2;
       list<Slot> slots2;
-      Prefix pre;
+      Prefix.Prefix pre;
       // If we find a class
     case(cache,env,inArgs,fn,slots,impl,pre,info)
       equation
@@ -9424,7 +9422,7 @@ function: elabTypes
   input list<DAE.Type> inTypesTypeLst;
   input Boolean checkTypes "if True, checks types";
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst1;
@@ -9453,7 +9451,7 @@ algorithm
       Types.PolymorphicBindings polymorphicBindings;
       Option<Absyn.Path> p;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // We found a match.
     case (cache,env,args,nargs,((t as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype, inline = isInline),p)) :: trest),checkTypes,impl,pre,info)
@@ -9880,7 +9878,7 @@ protected function elabInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
@@ -9900,7 +9898,7 @@ algorithm
       list<Absyn.NamedArg> narg;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,pre,info)
@@ -10039,7 +10037,7 @@ protected function fillDefaultSlots
   input SCode.Class inClass;
   input Env.Env inEnv;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
@@ -10060,7 +10058,7 @@ algorithm
       DAE.Const c1;
       Ident id;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
     case (cache,(SLOT(an = fa,slotFilled = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre,info)
       equation
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre,info);
@@ -10127,7 +10125,7 @@ protected function elabPositionalInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
@@ -10153,7 +10151,7 @@ algorithm
       Ident id;
       DAE.Properties props;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // the empty case
     case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
@@ -10241,7 +10239,7 @@ protected function elabNamedInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
@@ -10265,7 +10263,7 @@ algorithm
       Env.Cache cache;
       list<DAE.Dimension> ds;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // the empty case
     case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings,_,_)
@@ -10357,7 +10355,7 @@ protected function fillSlot
   input list<DAE.Dimension> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
   input Boolean checkTypes "type checking only if true";
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<Slot> outSlotLst;
 algorithm
@@ -10370,7 +10368,7 @@ algorithm
       list<Slot> xs,newslots;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       Slot s1;
-      Prefix pre;
+      Prefix.Prefix pre;
       String ps;
     
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),slotFilled = false) :: xs),checkTypes as true,pre,info)
@@ -10424,7 +10422,7 @@ function: elabCref
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,SCode.Accessibility>> res;
@@ -10444,13 +10442,12 @@ algorithm
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Boolean impl;
-      Ident s,scope;
       Env.Cache cache;
       Boolean doVect,isBuiltinFunc;
       DAE.ExpType et;
       Absyn.InnerOuter io;
       DAE.DAElist dae,dae1,dae2;
-      String str,fn_str,scope;
+      String s,str,fn_str,scope;
       DAE.Properties props;
       Lookup.SplicedExpData splicedExpData;
       Absyn.Path path,fpath;
@@ -10460,7 +10457,7 @@ algorithm
       DAE.ComponentRef expCref;
       DAE.ExpType expType;
       Option<DAE.Const> forIteratorConstOpt;
-      Prefix pre;
+      Prefix.Prefix pre;
       Absyn.Exp e;
 
     // wildcard
@@ -10648,7 +10645,7 @@ protected function makeASUBArrayAdressing
   input DAE.Exp inExp;
   input Lookup.SplicedExpData splicedExpData;
   input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
@@ -10666,7 +10663,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Types.Type idTp;
-      Prefix pre;
+      Prefix.Prefix pre;
     // return inExp if no vectorization is to be done
     case(inRef,cache,env,impl,inExp,splicedExpData,false,_,info) then inExp;      
     
@@ -10724,7 +10721,7 @@ protected function makeASUBArrayAdressing2
   This function is supposed to remake
   CREFS with a variable subscript to a ASUB"
   input list<DAE.Subscript> inSSL;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output list<DAE.Exp> outExp;
 algorithm
   outExp := matchcontinue (inSSL,inPrefix)
@@ -10737,7 +10734,7 @@ algorithm
       DAE.ExpType ety,ety1,ty2;
       list<DAE.Subscript> subs,subs2;
       DAE.Operator op;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // empty list
     case( {},_ ) then {};
@@ -10907,7 +10904,7 @@ protected function elabCref2
   input DAE.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
   input Lookup.SplicedExpData splicedExpData;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -10934,7 +10931,7 @@ algorithm
       Boolean doVect;
       Lookup.SplicedExpData splicedExpData;     
       DAE.ExpType expIdTy; 
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
@@ -11945,7 +11942,7 @@ public function elabSubscripts
   input Env.Env inEnv;
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
@@ -11962,7 +11959,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // empty list
     case (cache,_,{},_,_,_) then (cache,{},DAE.C_CONST());
@@ -11985,7 +11982,7 @@ protected function elabSubscriptsDims
   input list<Absyn.Subscript> subs;
   input list<DAE.Dimension> dims;
   input Boolean impl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Subscript> outSubs;
@@ -11995,7 +11992,7 @@ algorithm
     local
       String s1,s2,sp;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,subs,dims,impl,pre,info)
       equation
@@ -12023,7 +12020,7 @@ protected function elabSubscriptsDims2
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   input list<DAE.Dimension> inIntegerLst;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
@@ -12043,7 +12040,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // empty list
     case (cache,_,{},_,_,_,_) then (cache,{},DAE.C_CONST());
@@ -12115,7 +12112,7 @@ protected function elabSubscript "function: elabSubscript
   input Env.Env inEnv;
   input Absyn.Subscript inSubscript;
   input Boolean inBoolean;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
@@ -12133,7 +12130,7 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae;
       DAE.Properties prop;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // no subscript      
     case (cache,_,Absyn.NOSUB(),impl,_,_) then (cache,DAE.WHOLEDIM(),DAE.C_CONST());
@@ -12168,7 +12165,7 @@ protected function elabSubscriptType "function: elabSubscriptType
   input DAE.Type inType1;
   input Absyn.Exp inExp2;
   input DAE.Exp inExp3;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Env.Env inEnv;
   output DAE.Subscript outSubscript;
 algorithm
@@ -12178,7 +12175,7 @@ algorithm
       Ident e_str,t_str,p_str;
       DAE.Type t;
       Absyn.Exp e;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_,_) then DAE.INDEX(sub); 
     case ((DAE.T_ENUMERATION(path = _),_),_,sub,_,_) then DAE.INDEX(sub);
@@ -12312,7 +12309,7 @@ The non-selected branch will be replaced by a dummy variable called $undefined s
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean doVect;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp exp;
@@ -12324,7 +12321,7 @@ algorithm
       DAE.Exp e2; DAE.Properties prop1;
       Option<Interactive.InteractiveSymbolTable> st_1;
       DAE.DAElist dae;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     // Select true-branch
     case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
@@ -12350,7 +12347,7 @@ protected function elabIfexp "function: elabIfexp
   input DAE.Properties inProperties7;
   input Boolean inBoolean8;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption9;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -12366,7 +12363,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Ident e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
 
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_)
       equation
@@ -12718,7 +12715,7 @@ public function deoverload "function: deoverload
   input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
   input Absyn.Exp inExp;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
@@ -12734,7 +12731,7 @@ algorithm
       Absyn.Exp exp;
       Ident s,estr,tpsstr,pre_str;
       list<Ident> exps_str,tps_str;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.ExpType ty;
 
     case (((op,params,rtype) :: _),args,_,pre)
@@ -12777,7 +12774,7 @@ protected function computeReturnType "function: computeReturnType
   input DAE.Operator inOperator;
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix)
@@ -12785,7 +12782,7 @@ algorithm
       DAE.Type typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str,pre_str;
       DAE.Dimension n1,n2,m,n,m1,m2,p;
-      Prefix pre;
+      Prefix.Prefix pre;
     
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_)
       equation
@@ -13132,37 +13129,37 @@ end elementType;
  * The types are a bit hard to read, but they are simply 1 through 9-dimensional
  * arrays of the basic types. */
 protected constant list<DAE.Type> intarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE()), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE()), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 protected constant list<DAE.Type> realarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE()), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE()), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 protected constant list<DAE.Type> stringarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE()), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE()), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
 /* Simply a list of 9 of that basic type; used to match with the array types */
 protected constant list<DAE.Type> inttypes = {
@@ -13207,11 +13204,11 @@ algorithm
       DAE.ExpType defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                      realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN})),
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
@@ -13226,11 +13223,11 @@ algorithm
         (cache,types);
     case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                      realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN})),
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
@@ -13239,17 +13236,17 @@ algorithm
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
           (DAE.ADD(DAE.ET_STRING()),
           {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realarrtypes, realtypes, realarrtypes);
-        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN})),
+        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
                              stringtypes, stringarrtypes, stringarrtypes);
-        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN})),
+        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
                              stringarrtypes, stringtypes, stringarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
           realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
@@ -13258,9 +13255,9 @@ algorithm
 
     case (cache,Absyn.SUB(),env,t1,t2)
       equation
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
@@ -13272,22 +13269,22 @@ algorithm
         (cache,types);
     case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
           {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.SUB(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -13303,11 +13300,11 @@ algorithm
         int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_INT());
         real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_REAL());
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        int_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_scalar),NONE());
-        int_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,int_vector),NONE());
+        int_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),int_scalar),NONE());
+        int_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),int_vector),NONE());
         real_scalar = DAE.T_REAL_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE());
-        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE());
+        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_scalar),NONE());
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_vector),NONE());
         scalars = {(int_mul,{int_scalar,int_scalar},int_scalar),
           (real_mul,{real_scalar,real_scalar},real_scalar)};
         scalarprod = {(int_mul_sp,{int_vector,int_vector},int_scalar),
@@ -13316,13 +13313,13 @@ algorithm
           (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
           (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
           (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten(
           {scalars,intscalararrs,realscalararrs,intarrsscalar,
@@ -13331,22 +13328,22 @@ algorithm
         (cache,types);
     case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.MUL(DAE.ET_INT()),
           {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.MUL(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -13358,21 +13355,21 @@ algorithm
         real_div = DAE.DIV(DAE.ET_REAL());
         real_scalar = DAE.T_REAL_DEFAULT;
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realarrscalar});
       then
         (cache,types);
     case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.DIV(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -13384,8 +13381,8 @@ algorithm
         real_scalar = DAE.T_REAL_DEFAULT "The POW operator. a^b is only defined for integer exponents, i.e. b must
     be of type Integer" ;
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_scalar),NONE());
-        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN,real_vector),NONE());
+        real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_scalar),NONE());
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_vector),NONE());
         real_pow = DAE.POW(DAE.ET_REAL());
         int_pow = DAE.POW(DAE.ET_INT());
         scalars = {(int_pow,{int_scalar,int_scalar},int_scalar),
@@ -13398,14 +13395,14 @@ algorithm
         (cache,types);
     case (cache,Absyn.POW_EW(),env,t1,t2)
       equation
-        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.POW(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -13419,9 +13416,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -13433,9 +13430,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -13447,9 +13444,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -13461,9 +13458,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN})),
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN})),
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -13664,7 +13661,7 @@ algorithm
         n_1 = n - 1;
         t_1 = nDimArray(n_1, t);
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),NONE()));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),NONE()));
   end matchcontinue;
 end nDimArray;
 
@@ -13781,9 +13778,13 @@ protected function warnUnsafeRelations "
   input DAE.Type t1,t2;
   input DAE.Exp e1,e2;
   input DAE.Operator op;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
 algorithm 
   _ := matchcontinue(inEnv,variability,t1,t2,e1,e2,op,inPrefix)
+    local 
+      Boolean b1,b2;
+      String stmtString,opString,pre_str;
+      Prefix.Prefix pre;
     // == or != on Real is permitted in functions, so don't print an error if
     // we're in a function.
     case (_, _, _, _, _, _, _, _)
@@ -13792,10 +13793,6 @@ algorithm
       then ();
 
     case(_,DAE.C_VAR(),t1,t2,e1,e2,op,pre)
-      local 
-        Boolean b1,b2;
-        String stmtString,opString,pre_str;
-        Prefix pre;
       equation
         b1 = Types.isReal(t1);
         b2 = Types.isReal(t1);
@@ -13848,7 +13845,7 @@ algorithm
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2;
-      list<tuple<SCode.Element, Inst.Mod>> ld_mod;      
+      list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
       list<Absyn.AlgorithmItem> algs;
       DAE.DAElist dae1;
       list<DAE.Element> dae1_2Elts;

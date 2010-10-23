@@ -59,7 +59,6 @@ public type EqualityConstraint = DAE.EqualityConstraint;
 public type EqMod = DAE.EqMod;
 public type FuncArg = DAE.FuncArg;
 public type Ident = String;
-public type Mod = DAE.Mod;
 public type PolymorphicBindings = list<tuple<String,list<Type>>>;
 public type Properties = DAE.Properties;
 public type SubMod = DAE.SubMod;
@@ -71,7 +70,7 @@ public type Var = DAE.Var;
 public
  type TypeMemoryEntry = tuple<DAE.Type, DAE.ExpType>;
  type TypeMemoryEntryList = list<TypeMemoryEntry>;
- type TypeMemoryEntryListArray = TypeMemoryEntryList[:]; 
+ type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
  // the index of the type memory in the global table 
  constant Integer memoryIndex = 1;
 
@@ -773,8 +772,8 @@ public function stripSubmod
 "function: stripSubmod
   author: PA
   Removes the sub modifiers of a modifier."
-  input Mod inMod;
-  output Mod outMod;
+  input DAE.Mod inMod;
+  output DAE.Mod outMod;
 algorithm
   outMod := matchcontinue (inMod)
     local
@@ -782,7 +781,7 @@ algorithm
       Absyn.Each each_;
       list<SubMod> subs;
       Option<EqMod> eq;
-      Mod m;
+      DAE.Mod m;
     case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)) then DAE.MOD(f,each_,{},eq);
     case (m) then m;
   end matchcontinue;
@@ -792,8 +791,8 @@ public function removeFirstSubsRedecl "
 Author: BZ, 2009-08
 Removed REDECLARE() statements at first level of SubMods
 "
-  input Mod inMod;
-  output Mod outMod;
+  input DAE.Mod inMod;
+  output DAE.Mod outMod;
 algorithm
   outMod:=
   matchcontinue (inMod)
@@ -802,7 +801,7 @@ algorithm
       Absyn.Each each_;
       list<SubMod> subs;
       Option<EqMod> eq;
-      Mod m;
+      DAE.Mod m;
     case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = {},eqModOption = eq)) then DAE.MOD(f,each_,{},eq);
     case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE()))
       equation
@@ -844,9 +843,9 @@ public function removeModList "
 Author BZ, 2009-07
 Delete a list of named modifiers
 "
-input Mod inMod;
+input DAE.Mod inMod;
 input list<String> remStrings;
-output Mod outMod;
+output DAE.Mod outMod;
 String s;
 algorithm outMod := matchcontinue(inMod,remStrings)
   case(inMod,{}) then inMod;
@@ -862,16 +861,16 @@ Author: BZ, 2009-05
 Remove a modifier(/s) on a specified component.
 TODO: implement IDXMOD and a better support for redeclare.
 "
-  input Mod inmod;
+  input DAE.Mod inmod;
   input String componentModified;
-  output Mod outmod;
+  output DAE.Mod outmod;
 algorithm outmod := matchcontinue(inmod,componentModified)
   local
     Boolean b;
     Absyn.Each e;
     list<SubMod> subs;
     Option<EqMod> oem;
-    list<tuple<SCode.Element, Mod>> redecls;
+    list<tuple<SCode.Element, DAE.Mod>> redecls;
   case(DAE.NOMOD(),_) then DAE.NOMOD();
   case((inmod as DAE.REDECL(b,redecls)),componentModified)
     equation
@@ -890,13 +889,13 @@ end removeMod;
 
 protected function removeRedeclareMods "
 "
-input list<tuple<SCode.Element, Mod>> inLst;
+input list<tuple<SCode.Element, DAE.Mod>> inLst;
 input String currComp;
-output list<tuple<SCode.Element, Mod>> outLst;
+output list<tuple<SCode.Element, DAE.Mod>> outLst;
 algorithm outLst := matchcontinue(inLst,currComp)
   local
     SCode.Element comp;
-    Mod mod;
+    DAE.Mod mod;
     String s1;
   case({},_) then {};
   case((comp,mod)::inLst,currComp)
@@ -924,7 +923,7 @@ Helper function for removeMod, removes modifiers in submods;
   output list<SubMod> outsubs;
 algorithm outsubs := matchcontinue(insubs,componentName)
   local
-    Mod m1,m2;
+    DAE.Mod m1,m2;
     list<SubMod> subs1,subs2;
     String s1;
     SubMod sub;
@@ -1047,7 +1046,7 @@ public function valuesToMods
    FIXME: How about other value types, e.g. array, enum etc"
   input list<Values.Value> inValuesValueLst;
   input list<Ident> inIdentLst;
-  output Mod outMod;
+  output DAE.Mod outMod;
 algorithm
   outMod:=
   matchcontinue (inValuesValueLst,inIdentLst)

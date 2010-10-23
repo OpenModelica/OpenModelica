@@ -122,14 +122,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
       then
         (cache, t, env);
 
@@ -1275,9 +1275,13 @@ Makes an optional DAE.ComponentRef if the input DAE.ComponentRef is a DAE.CREF_I
 'NONE' is returned"
   input DAE.ComponentRef incr;
   output Option<DAE.ComponentRef> ocR;
-algorithm ocR := matchcontinue(incr)
-  case(incr as DAE.CREF_IDENT(_,_,_)) then SOME(incr);
-  case(_) then NONE();
+algorithm
+  ocR := matchcontinue(incr)
+    case(incr as DAE.CREF_IDENT(_,_,_))
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then SOME(incr);
+    case(_) then NONE();
   end matchcontinue;
 end makeOptIdentOrNone;
 
@@ -1650,9 +1654,9 @@ algorithm
     /* function_name cardinality */
     case (env,"cardinality")
       then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),NONE()),NONE()))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE()),
+                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE()),
             (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),NONE()),NONE()))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE())};
+                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE())};
 
   end matchcontinue;
 end createGenericBuiltinFunctions;
