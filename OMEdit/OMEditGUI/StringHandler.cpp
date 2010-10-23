@@ -100,7 +100,7 @@ QString StringHandler::getSubStringFromDots(QString value)
     }
     value = value.trimmed();
     QStringList list = value.split(".", QString::SkipEmptyParts);
-    return list.at(list.length() - 1);
+    return list.at(list.count() - 1);
 }
 
 //! Removes the last dot from the string.
