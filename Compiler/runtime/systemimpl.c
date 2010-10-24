@@ -1475,7 +1475,7 @@ RML_BEGIN_LABEL(System__addToRoots)
 
     rml_external_roots_trail[i] = rmlA1;
 
-    // remember the max
+    /* remember the max */
     rml_external_roots_trail_index_max = max(rml_external_roots_trail_index_max, i+1);
 
     RML_TAILCALLK(rmlSC);
