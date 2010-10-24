@@ -540,7 +540,7 @@ algorithm
         //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
-        n = Exp.crefLastIdent(cref);
+        n = ComponentReference.crefLastIdent(cref);
         lastCref = Exp.crefIdent(cref);
         // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
         InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) = 

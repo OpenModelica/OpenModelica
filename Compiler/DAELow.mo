@@ -49,6 +49,7 @@ package DAELow
   in the BLT sorting."
 
 public import Absyn;
+public import ComponentReference;
 public import DAE;
 public import SCode;
 public import Values;
@@ -10644,9 +10645,7 @@ algorithm
     local DAE.ComponentRef cr2; DAE.Ident id1,id2;
     case(VAR(varName=cr2 ),cr )
       equation
-        id1 = Exp.crefLastIdent(cr);
-        id2 = Exp.crefLastIdent(cr2);
-        true = stringEqual(id1, id2);
+        true = ComponentReference.crefLastIdentEqual(cr,cr2);
       then true;
     case(_,_) then false;
   end matchcontinue;

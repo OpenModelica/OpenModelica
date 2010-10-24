@@ -520,9 +520,7 @@ algorithm
     case(outerCr,innerCr)
       equation
         // try to compare last ident first!
-        id1 = Exp.crefLastIdent(outerCr);
-        id2 = Exp.crefLastIdent(innerCr);
-        false = stringEqual(id1, id2);
+        false = ComponentReference.crefLastIdentEqual(outerCr,innerCr);
       then false;
     // try the hard and expensive case.
     case(outerCr,innerCr)

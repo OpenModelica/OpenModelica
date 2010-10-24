@@ -218,43 +218,6 @@ algorithm
 end dumpExp;
 
 
-public function crefLastIdent
-"function: crefLastIdent
-  author: PA
-  Returns the last identfifier of a ComponentRef."
-  input ComponentRef inComponentRef;
-  output Ident outIdent;
-algorithm
-  outIdent:=
-  matchcontinue (inComponentRef)
-    local
-      Ident id,res;
-      ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id)) then id;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastIdent(cr);
-      then
-        res;
-  end matchcontinue;
-end crefLastIdent;
-
-public function crefIdent "
-  Return the last ComponentRef"
-  input ComponentRef inComponentRef;
-  output ComponentRef outSubscriptLst;
-algorithm outSubscriptLst:= matchcontinue (inComponentRef)
-    local
-      Ident id;
-      ComponentRef res,cr;
-    case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefIdent(cr);
-      then
-        res;
-  end matchcontinue;
-end crefIdent;
 
 public function stripCrefIdentSliceSubs "
 Author BZ

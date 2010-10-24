@@ -137,6 +137,62 @@ algorithm
   end matchcontinue;
 end crefLastPath;
 
+public function crefLastIdent
+"function: crefLastIdent
+  author: PA
+  Returns the last identfifier of a ComponentRef."
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Ident outIdent;
+algorithm
+  outIdent:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id)) then id;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastIdent(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastIdent;
+
+public function crefLastCref "
+  Return the last ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:= 
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef res,cr;
+    case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastCref(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastCref;
+
+public function crefLastIdentEqual
+"function: crefLastIdentEqual
+  author: Frenkel TUD
+  Returns true if the ComponentRefs has the same name (the last identifier)."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean equal;
+protected
+  DAE.Ident id1,id2;
+algorithm
+  id1 := crefLastIdent(cr1);
+  id2 := crefLastIdent(cr2);
+  equal := stringEqual(id1, id2);
+end crefLastIdentEqual;
+  
+  
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;

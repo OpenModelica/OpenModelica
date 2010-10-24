@@ -41,6 +41,7 @@ package InstSection
 
 public import Absyn;
 public import ClassInf;
+public import ComponentReference;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
@@ -3853,7 +3854,7 @@ algorithm
     case (cache, topEnv, veCref as DAE.CREF_QUAL(componentRef = _), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       equation
         // get the last one 
-        currentName = Exp.crefLastIdent(veCref);
+        currentName = ComponentReference.crefLastIdent(veCref);
         // strip the last one
         qualCref = Exp.crefStripLastIdent(veCref);
         // strip the last subs

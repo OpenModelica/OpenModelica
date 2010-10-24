@@ -2202,7 +2202,7 @@ algorithm
       equation
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
-        currentPrefixIdent= Exp.crefLastIdent(prefix);
+        currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
         currentPrefix = DAE.CREF_IDENT(currentPrefixIdent,DAE.ET_OTHER(),{});
  		    //	Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
