@@ -37,6 +37,7 @@ CevalScript.mo \
 Cevalfunc.mo \
 ClassInf.mo \
 ClassLoader.mo \
+ComponentReference.mo \
 Connect.mo \
 Constants.mo \
 ConnectionGraph.mo \
