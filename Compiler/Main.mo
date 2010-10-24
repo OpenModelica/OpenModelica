@@ -44,6 +44,7 @@ package Main
 protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
+protected import BackendDump;
 protected import Parser;
 protected import Dump;
 protected import DumpGraphviz;
@@ -780,19 +781,19 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
         dlow = DAELow.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
-        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
         (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", DAELow.dump, dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpMatching, v1);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dump, dlow_1);
+        Debug.fcall("bltdump", BackendDump.dumpMatching, v1);
         (comps) = DAELow.strongComponents(m, mT, v1, v2);
         /**
          * TODO: Activate this when we call it from a command like +d=...
@@ -802,9 +803,9 @@ algorithm
          * str = DAELow.unparseStr(dlow, comps, v1, v2, false,str);
          * //Debug.fcall("flat", DAELow.unparseStr,dlow, comps, v1, v2, true);
         **/
-        // Debug.fcall("eqnsizedump",DAELow.dumpComponentSizes,comps);
-        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
-				str = DAELow.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
+        // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
+        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
+				str = BackendDump.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
 				Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
@@ -926,7 +927,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
         indexed_dlow = DAELow.translateDae(dlow,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
-        Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
+        Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
         //filename = System.stringAppendList({cname_str,".cpp"});
         //funcfilename = System.stringAppendList({cname_str,"_functions.cpp"});

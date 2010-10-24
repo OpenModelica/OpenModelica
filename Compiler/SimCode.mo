@@ -69,6 +69,7 @@ public import SCode;
 public import DAE;
 public import Inline;
 
+protected import BackendDump;
 protected import DAEUtil;
 protected import SCodeUtil;
 protected import ClassInf;
@@ -749,7 +750,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         dlow = DAELow.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", DAELow.dump, dlow);
+        Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
@@ -759,11 +760,11 @@ algorithm
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
-        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dump, indexed_dlow_1);
+        Debug.fcall("bltdump", BackendDump.dumpMatching, ass1);
+        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         a_cref = Absyn.pathToCref(className);
         file_dir = CevalScript.getFileDir(a_cref, p);
@@ -876,7 +877,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = DAELow.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", DAELow.dump, dlow);
+        Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
@@ -886,11 +887,11 @@ algorithm
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
-        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dump, indexed_dlow_1);
+        Debug.fcall("bltdump", BackendDump.dumpMatching, ass1);
+        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         a_cref = Absyn.pathToCref(className);
         file_dir = CevalScript.getFileDir(a_cref, p);
@@ -4076,7 +4077,7 @@ algorithm
       then (rhs_exp_2,entrylst1);     
     case (dlowEq,_,_,_)
       equation
-        DAELow.dumpEqns({dlowEq});
+        BackendDump.dumpEqns({dlowEq});
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},DAELow.equationInfo(dlowEq));
       then
         fail();        

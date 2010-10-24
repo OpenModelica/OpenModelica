@@ -61,6 +61,7 @@ public import Dependency;
 public import Values;
 
 protected import AbsynDep;
+protected import BackendDump;
 protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
@@ -345,7 +346,7 @@ algorithm
         mt = DAELow.transposeMatrix(m);
         /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
         jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
-        res = DAELow.dumpJacobianStr(jac);
+        res = BackendDump.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 
@@ -3506,7 +3507,7 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = DAELow.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
-        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
         (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
@@ -3546,7 +3547,7 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = DAELow.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
-        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
         (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
