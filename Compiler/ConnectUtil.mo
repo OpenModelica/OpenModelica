@@ -1745,7 +1745,7 @@ algorithm
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
       equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+         = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE

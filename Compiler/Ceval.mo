@@ -2203,7 +2203,7 @@ algorithm
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
         currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
-        currentPrefix = DAE.CREF_IDENT(currentPrefixIdent,DAE.ET_OTHER(),{});
+        currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.ET_OTHER(),{});
  		    //	Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
 
@@ -5054,12 +5054,12 @@ algorithm
       DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
 
-    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) /* DAE.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
       equation 
         Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
@@ -5082,60 +5082,60 @@ algorithm
       then
         fail();
 
-    // REDUCTION bindings DAE.CREF_IDENT(id,subsc) 
+    // REDUCTION bindings  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         false = stringEqual(rfn, "array");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache, env, exp, impl,NONE(), NONE(), msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
         
-    // arbitrary expressions, C_VAR, value exists. DAE.CREF_IDENT(id,subsc)
+    // arbitrary expressions, C_VAR, value exists. 
     case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
         (cache,res);
 
-    // arbitrary expressions, C_PARAM, value exists. DAE.CREF_IDENT(id,subsc) 
+    // arbitrary expressions, C_PARAM, value exists.  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
         (cache,res);
 
-    // arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc)
+    // arbitrary expressions. When binding has optional value. 
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
       equation
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache,env, exp, impl,NONE(), NONE(), msg);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
 
-    // arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc) 
+    // arbitrary expressions. When binding has optional value.  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sizelst = Types.getDimensionSizes(tp);
                 
         // TODO: Ugly hack to prevent infinite recursion. If we have a binding r = r that

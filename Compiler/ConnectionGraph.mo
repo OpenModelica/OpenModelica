@@ -333,6 +333,7 @@ protected import System;
 protected import IOStream;
 protected import RTOpts;
 protected import Settings;
+protected import ComponentReference;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.
@@ -791,7 +792,7 @@ protected function resultGraphWithRoots
   HashTableCG.HashTable table0;
   DAE.ComponentRef dummyRoot;
 algorithm
-  dummyRoot := DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+  dummyRoot := ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.ET_INT, {});
   table0 := HashTableCG.emptyHashTable();
   outTable := addRootsToTable(table0, roots, dummyRoot);
 end resultGraphWithRoots;
@@ -940,7 +941,7 @@ algorithm
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
         // create a dummy root
-        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.ET_INT, {});
         // select final roots
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
         
@@ -976,7 +977,7 @@ algorithm
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
         // create a dummy root
-        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        dummyRoot = ComponentReference.makeCrefIdent("__DUMMY_ROOT", DAE.ET_INT, {});
         // select final roots
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
         

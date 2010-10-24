@@ -40,6 +40,7 @@ protected import ErrorExt;
 protected import OptManager;
 protected import Dump;
 protected import System;
+protected import ComponentReference;
 
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
@@ -1061,7 +1062,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // records
   case(value as Values.RECORD(_,vals,names,-1),env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     equation
-      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(str,DAE.ET_OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       complexEnv = makeComplexEnv(Env.newEnvironment(),nlist);
       // print("setValue -> component: " +& str +& " ty: " +& Types.printTypeStr(t) +& "\n");
@@ -1073,7 +1074,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // any other values with ident cref
   case(value,env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     equation
-      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(str,DAE.ET_OTHER(),{}));
       value = mergeValues(value2,value,subs,env,t); 
       env1 = updateVarinEnv(env,str,value,t);
     then
@@ -1081,7 +1082,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // any other values with qualified cref
   case(value,env,me as Absyn.CREF(Absyn.CREF_QUAL(str,subs,child))) 
     equation 
-      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(str,DAE.ET_OTHER(),{}));
       env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
     then
       env1;
@@ -1143,7 +1144,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
   case( ( (frame as Env.FRAME(farg1, st, farg2, farg3, farg4, farg6, farg7,defineUnits) ) :: frames),inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
-      (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, ComponentReference.makeCrefIdent(str,DAE.ET_OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
         Env.FRAME(farg1,st,farg22,farg3,farg4,farg6,farg7,defineUnits) :: frames;    
@@ -1238,7 +1239,7 @@ algorithm
 
     case(env,varName,newVal,ty)
       equation
-        (_,_,t,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,t,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.makeCrefIdent(varName,DAE.ET_OTHER(),{}));
         // print("updateVarinEnv -> component: " +& varName +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         // print("updateVarinEnv -> component: " +& varName +& " ACTUAL ty: " +& Types.printTypeStr(t) +& "\n");
         env1 = Env.updateFrameV(env,
@@ -1490,7 +1491,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,DAE.VALBOUND(value,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(varName,DAE.ET_OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval;
@@ -1671,7 +1672,7 @@ algorithm res := matchcontinue(vals,elems)
   case({},_) then {};
   case(Values.RECORD(orderd=rvals, comp=rcomps)::vals,(e as SCode.COMPONENT(component=s1))::elems)
     equation
-      res1 = createReplacementRulesRecord(DAE.CREF_IDENT(s1,DAE.ET_OTHER,{}),rvals,rcomps);
+      res1 = createReplacementRulesRecord(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER,{}),rvals,rcomps);
       res2 = createReplacementRules(vals,elems);
       res = listAppend(res1,res2);
     then
