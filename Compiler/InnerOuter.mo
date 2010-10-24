@@ -429,7 +429,7 @@ algorithm
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
         //   Exp.printComponentRefStr(cr1) +& " to inner");
         ver1 = Exp.crefFirstIdent(ncr1);
-        ver2 = Exp.crefIdent(cr1);
+        ver2 = ComponentReference.crefLastCref(cr1);
         false = Exp.crefEqual(ver1,ver2);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
@@ -444,7 +444,7 @@ algorithm
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
         //   Exp.printComponentRefStr(cr2) +& " to inner");
         ver1 = Exp.crefFirstIdent(ncr2);
-        ver2 = Exp.crefIdent(cr2);
+        ver2 = ComponentReference.crefLastCref(cr2);
         false = Exp.crefEqual(ver1,ver2);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
@@ -574,8 +574,8 @@ algorithm
     
     case(prefixedCref,innerCref)
       equation
-        c1 = Exp.crefIdent(prefixedCref);
-        c2 = Exp.crefIdent(innerCref);
+        c1 = ComponentReference.crefLastCref(prefixedCref);
+        c2 = ComponentReference.crefLastCref(innerCref);
         true = Exp.crefEqual(c1,c2);
         c3 = Exp.crefSetLastType(innerCref,Exp.crefLastType(prefixedCref));
       then
