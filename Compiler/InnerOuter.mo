@@ -2015,7 +2015,7 @@ algorithm
     case((k,v))
       equation
         str = "{" +&
-         Exp.crefStr(k) +&
+         ComponentReference.crefStr(k) +&
          " opaque InstInner for now, implement printing. " +& "}\n";
       then str;
   end matchcontinue;

@@ -45,6 +45,7 @@ package TaskGraph
   The package uses TaskGraphExt for the task graph datastructure itself, which
   is implemented using Boost Graph Library in C++"
 
+public import ComponentReference;
 public import DAELow;
 public import SCode;
 
@@ -741,7 +742,7 @@ algorithm
         cr2 = Exp.getCrefFromExp(e2);
         crs = listAppend(cr1, cr2);
         crs_1 = Util.listDeleteMember(crs, cr);
-        crs_2 = Util.listMap(crs_1, Exp.crefStr);
+        crs_2 = Util.listMap(crs_1, ComponentReference.crefStr);
         crstr = ComponentReference.crefStr(cr);
         origname_str = Exp.printComponentRefStr(cr);
         TaskGraphExt.storeResult(crstr, tid, true, origname_str);

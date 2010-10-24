@@ -46,6 +46,7 @@ package ConnectUtil
   in DAEUtil.mo."
 
 public import Absyn;
+public import ComponentReference;
 public import Connect;
 public import DAE;
 public import Env;
@@ -1387,7 +1388,7 @@ algorithm
   res := matchcontinue(inElem1, inElem2)
     local
       DAE.ComponentRef cr1, cr2;
-    case ((cr1, _), (cr2, _)) then Exp.crefSortFunc(cr2, cr1);
+    case ((cr1, _), (cr2, _)) then ComponentReference.crefSortFunc(cr2, cr1);
   end matchcontinue;
 end equSetElementLess;
 
