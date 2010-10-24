@@ -10695,8 +10695,8 @@ algorithm
     // Qualified cref, might be a package constant.
     case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, pre, info)
       equation
-        (essl as _ :: _) = Exp.crefLastSubs(cr);
-        cr = Exp.crefStripLastSubs(cr);
+        (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
+        cr = ComponentReference.crefStripLastSubs(cr);
         exp1 = makeASUBArrayAdressing2(essl, pre);
         exp1 = DAE.ASUB(DAE.CREF(cr, ty), exp1);
       then
@@ -11745,8 +11745,8 @@ algorithm
       equation 
         indx_1 = indx + 1;
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
-        DAE.WHOLEDIM()::ss = Exp.crefLastSubs(cr);
-        cr_1 = Exp.crefStripLastSubs(cr);
+        DAE.WHOLEDIM()::ss = ComponentReference.crefLastSubs(cr);
+        cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Exp.unliftArray(et);
         e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
@@ -11756,7 +11756,7 @@ algorithm
     case (cr,indx,ds,et,t,crefIdType) 
       equation 
         indx_1 = indx + 1;
-        {} = Exp.crefLastSubs(cr);
+        {} = ComponentReference.crefLastSubs(cr);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
@@ -11766,8 +11766,8 @@ algorithm
     // index
     case (cr,indx,ds,et,t,crefIdType) 
       equation 
-        (DAE.INDEX(e_1) :: ss) = Exp.crefLastSubs(cr);
-        cr_1 = Exp.crefStripLastSubs(cr);
+        (DAE.INDEX(e_1) :: ss) = ComponentReference.crefLastSubs(cr);
+        cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1,ss);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t,crefIdType);
         expl = Util.listMap1(expl,Exp.prependSubscriptExp,DAE.INDEX(e_1));

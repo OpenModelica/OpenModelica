@@ -283,14 +283,14 @@ algorithm
     case(cr1,cr2,true,false,crs,inCrs)
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr1,crefTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
         newCr = Exp.joinCrefs(cr2,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,crs,inCrs)
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr2,crefTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
         newCr = Exp.joinCrefs(cr1,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
@@ -349,7 +349,7 @@ algorithm
     case(cr1,cr2,true,false,f1,f2,crs,inCrs,_)
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr1,flowTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
         newCr = Exp.joinCrefs(cr2,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f2, inSets);
       then ((newCr,f2,src)::crs,inCrs,sets,true);
@@ -357,7 +357,7 @@ algorithm
     case(cr1,cr2,false,true,f1,f2,crs,inCrs,_)
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr2,flowTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
         newCr = Exp.joinCrefs(cr1,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f1, inSets);
       then ((newCr,f1,src)::crs,inCrs,sets,true);
@@ -413,14 +413,14 @@ algorithm
     case(cr1,cr2,true,false,f1,f2,crs,inCrs)
       equation
         (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr1,streamTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
         newCr = Exp.joinCrefs(cr2,connectorCr);        
       then ((newCr,NONE(),f2,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,f1,f2,crs,inCrs)
       equation
         (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr2,streamTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
         newCr = Exp.joinCrefs(cr1,connectorCr);
       then ((newCr,NONE(),f1,src)::crs,inCrs,true);
 

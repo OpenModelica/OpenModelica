@@ -1051,17 +1051,21 @@ package Util
 end Util;
 
 
+package ComponentReference
+
+	function crefStripLastSubs
+		input DAE.ComponentRef inComponentRef;
+		output DAE.ComponentRef outComponentRef;
+	end crefStripLastSubs;
+
+end ComponentReference;
+
 package Exp
 
 	function crefHasScalarSubscripts
 		input DAE.ComponentRef cr;
 		output Boolean hasScalarSubs;
 	end crefHasScalarSubscripts;
-
-	function crefStripLastSubs
-		input DAE.ComponentRef inComponentRef;
-		output DAE.ComponentRef outComponentRef;
-	end crefStripLastSubs;
 
   function getEnumIndexfromCref
     input DAE.ComponentRef inComponentRef;

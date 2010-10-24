@@ -2429,11 +2429,11 @@ algorithm
      case (crlst,repl,cr,e,t)
       equation
         // is Array
-        (_::_) = Exp.crefLastSubs(cr);
+        (_::_) = ComponentReference.crefLastSubs(cr);
         // check if e is not array
         false = Exp.isArray(e);
         // stripLastIdent
-        sc = Exp.crefStripLastSubs(cr);
+        sc = ComponentReference.crefStripLastSubs(cr);
         ty = Exp.crefLastType(cr);
         // check List
         failure(_ = Util.listFindWithCompareFunc(crlst,sc,Exp.crefEqualNoStringCompare,false));
@@ -4832,7 +4832,7 @@ algorithm
       DAE.ComponentRef cr;
     case (DAE.CREF(componentRef = cr), _)
       equation
-        subscripts = Exp.crefSubs(cr);
+        subscripts = ComponentReference.crefSubs(cr);
         subscript_exprs = Util.listMap(subscripts, Exp.subscriptExp);
         true = isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
@@ -4880,12 +4880,12 @@ algorithm
       list<DAE.Exp> subs;
     case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr, ty = ty) :: _)), sub = subs))
       equation
-        cr = Exp.crefStripLastSubs(cr);
+        cr = ComponentReference.crefStripLastSubs(cr);
       then
         DAE.ASUB(DAE.CREF(cr, ty), subs);
     case (DAE.ASUB(exp = DAE.MATRIX(scalar = (((DAE.CREF(componentRef = cr, ty = ty), _) :: _) :: _)), sub = subs))
       equation
-        cr = Exp.crefStripLastSubs(cr);
+        cr = ComponentReference.crefStripLastSubs(cr);
       then
         DAE.ASUB(DAE.CREF(cr, ty), subs);
     case (_) then arrayVar;
@@ -9414,7 +9414,7 @@ algorithm
     local DAE.ComponentRef cr2; DAE.Ident id1,id2;
     case(BackendDAE.VAR(varName=cr2 ),cr )
       equation
-        true = Exp.crefEqualNoStringCompare(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
+        true = Exp.crefEqualNoStringCompare(ComponentReference.crefStripLastIdent(cr2),ComponentReference.crefStripLastIdent(cr));
       then true;
     case(_,_) then false;
   end matchcontinue;
@@ -12511,8 +12511,8 @@ algorithm
     case ((var1 as BackendDAE.VAR(varName = varName1), typ1, place1), (var2 as BackendDAE.VAR(varName = varName2), typ2, place2) :: rest)
       equation
         (var_lst, var_lst1) = getAllElements1((var1, typ1, place1), rest);
-        c1 = Exp.crefStripLastSubs(varName1);
-        c2 = Exp.crefStripLastSubs(varName2);        
+        c1 = ComponentReference.crefStripLastSubs(varName1);
+        c2 = ComponentReference.crefStripLastSubs(varName2);        
         ins = Exp.crefEqualNoStringCompare(c1, c2); 
         var_lst2 = listAppendTyp(ins, (var2, typ2, place2), var_lst);
         var_lst3 = listAppendTyp(boolNot(ins), (var2, typ2, place2), var_lst1);
@@ -12657,11 +12657,11 @@ algorithm
       Boolean out_val;
     case (BackendDAE.VAR(varName = varName1,arryDim = arryDim),BackendDAE.VAR(varName = varName2,arryDim = arryDim1))
       equation
-        c1 = Exp.crefStripLastSubs(varName1);
-        c2 = Exp.crefStripLastSubs(varName2);
+        c1 = ComponentReference.crefStripLastSubs(varName1);
+        c2 = ComponentReference.crefStripLastSubs(varName2);
         true = Exp.crefEqualNoStringCompare(c1, c2); 
-        subscriptLst = Exp.crefLastSubs(varName1);
-        subscriptLst1 = Exp.crefLastSubs(varName2);
+        subscriptLst = ComponentReference.crefLastSubs(varName1);
+        subscriptLst1 = ComponentReference.crefLastSubs(varName2);
         out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
       then
         out_val;        

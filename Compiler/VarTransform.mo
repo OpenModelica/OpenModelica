@@ -40,6 +40,7 @@ package VarTransform
   along with some functions for performing replacements of variables in equations"
 
 public import ClassInf;
+public import ComponentReference;
 public import DAE;
 public import HashTable2;
 public import HashTable3;
@@ -1036,7 +1037,7 @@ algorithm
         // is Array
         (_::_) = Exp.expLastSubs(e);
         // stripLastIdent
-        sc = Exp.crefStripLastSubs(c);
+        sc = ComponentReference.crefStripLastSubs(c);
         ce = Exp.expStripLastSubs(e);
         ty = Exp.crefLastType(c);
         // calc indexes
@@ -1047,7 +1048,7 @@ algorithm
       equation
         // is Record
         // stripLastIdent
-        sc = Exp.crefStripLastIdent(c);   
+        sc = ComponentReference.crefStripLastIdent(c);   
         ce = Exp.expStripLastIdent(e);     
         // is Record
         DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = Exp.crefLastType(sc);

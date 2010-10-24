@@ -338,9 +338,7 @@ algorithm
         src = sources; // VarTransform.replacementSources(repl);
         dst = targets; // VarTransform.replacementTargets(repl);
         ncr1 = changeOuterReferences4(cr3,src,dst);
-        ver1 = Exp.crefFirstIdent(ncr1);
-        ver2 = Exp.crefFirstIdent(cr1);
-        false = Exp.crefEqual(ver1,ver2);
+        false = ComponentReference.crefFirstCrefEqual(ncr1,cr1);
         recRes = changeOuterReferences3(ocs,repl,src,dst);
       then
         Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2,source)::recRes;
@@ -353,9 +351,7 @@ algorithm
         src = sources; // VarTransform.replacementSources(repl);
         dst = targets; // VarTransform.replacementTargets(repl);
         ncr2 = changeOuterReferences4(cr3,src,dst);
-        ver1 = Exp.crefFirstIdent(ncr2);
-        ver2 = Exp.crefFirstIdent(cr2);
-        false = Exp.crefEqual(ver1,ver2);
+        false = ComponentReference.crefFirstCrefEqual(ncr2,cr2);
         recRes = changeOuterReferences3(ocs,repl,src,dst);
       then
         Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2,source)::recRes;
@@ -428,9 +424,7 @@ algorithm
         ncr1 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
         //   Exp.printComponentRefStr(cr1) +& " to inner");
-        ver1 = Exp.crefFirstIdent(ncr1);
-        ver2 = ComponentReference.crefLastCref(cr1);
-        false = Exp.crefEqual(ver1,ver2);
+        false = ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
         Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source)::recRes;
@@ -443,9 +437,7 @@ algorithm
         ncr2 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
         //   Exp.printComponentRefStr(cr2) +& " to inner");
-        ver1 = Exp.crefFirstIdent(ncr2);
-        ver2 = ComponentReference.crefLastCref(cr2);
-        false = Exp.crefEqual(ver1,ver2);
+        false = ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source)::recRes;
@@ -583,7 +575,7 @@ algorithm
     
     case(prefixedCref,innerCref)
       equation
-        c2 = Exp.crefStripLastIdent(innerCref);
+        c2 = ComponentReference.crefStripLastIdent(innerCref);
         cr3 = extractCommonPart(prefixedCref,c2);
       then
         cr3;
@@ -671,7 +663,7 @@ algorithm
         // transform prefix into cref
         crefPrefix = PrefixUtil.prefixToCref(inPrefix);
         // remove the prefix from the component reference
-        crOuter = Exp.crefStripPrefix(inCref, crefPrefix);
+        crOuter = ComponentReference.crefStripPrefix(inCref, crefPrefix);
       then
         crOuter;
     
@@ -1841,7 +1833,7 @@ algorithm
     case (ifull, ocp, icp)
       equation
         // strip the outer prefix
-        ic = Exp.crefStripPrefix(ifull, ocp);
+        ic = ComponentReference.crefStripPrefix(ifull, ocp);
         // add the inner prefix
         ic = Exp.joinCrefs(icp, ic);
       then

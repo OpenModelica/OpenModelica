@@ -935,7 +935,7 @@ algorithm
     // qualified component reference
     case(cache,env,cr as DAE.CREF_QUAL(ident=_)) equation
        (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
-      cr1 = Exp.crefStripLastIdent(cr);
+      cr1 = ComponentReference.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
       (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
     then (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);

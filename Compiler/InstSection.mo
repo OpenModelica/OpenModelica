@@ -1939,10 +1939,10 @@ algorithm
         list<DAE.Subscript> cref_subs;
         list<DAE.Exp> exp_subs;
       equation
-        cref_subs = Exp.crefSubs(cr);
+        cref_subs = ComponentReference.crefSubs(cr);
         exp_subs = Util.listMap(cref_subs, Exp.subscriptExp);
         true = isSubsLoopDependent(exp_subs, inForIterators);
-        cr = Exp.crefStripSubs(cr);
+        cr = ComponentReference.crefStripSubs(cr);
         cr_type = Exp.crefType(cr);
       then
         (DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), inForIterators);
@@ -3856,9 +3856,9 @@ algorithm
         // get the last one 
         currentName = ComponentReference.crefLastIdent(veCref);
         // strip the last one
-        qualCref = Exp.crefStripLastIdent(veCref);
+        qualCref = ComponentReference.crefStripLastIdent(veCref);
         // strip the last subs
-        qualCref = Exp.crefStripLastSubs(qualCref);
+        qualCref = ComponentReference.crefStripLastSubs(qualCref);
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) = Lookup.lookupVar(cache, topEnv, qualCref);        
         
@@ -5306,7 +5306,7 @@ algorithm
      DAE.ExpType t;
      case (cref as DAE.CREF(_,_)) then cref;
      case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) equation
-       cr = Exp.crefStripLastSubs(cr);
+       cr = ComponentReference.crefStripLastSubs(cr);
        then DAE.CREF(cr,t);
    end matchcontinue;
 end getVectorizedCref;

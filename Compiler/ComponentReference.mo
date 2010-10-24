@@ -214,6 +214,81 @@ algorithm
   id2 := crefLastIdent(cr2);
   equal := stringEqual(id1, id2);
 end crefLastIdentEqual;
+
+public function crefFirstCrefEqual
+"function: crefFirstCrefEqual
+  author: Frenkel TUD
+  Returns true if the ComponentRefs have the same first Cref."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  output Boolean equal;
+protected
+  DAE.ComponentRef pcr1,pcr2;
+algorithm
+  pcr1 := crefFirstCref(cr1);
+  pcr2 := crefFirstCref(cr2);
+  equal := Exp.crefEqual(pcr1,pcr2);
+end crefFirstCrefEqual;
+
+public function crefFirstCrefLastCrefEqual
+"function: crefFirstCrefEqual
+  author: Frenkel TUD
+  Returns true if the ComponentRefs have the same first Cref."
+  input DAE.ComponentRef cr1 "First Cref";
+  input DAE.ComponentRef cr2 "Last Cref";
+  output Boolean equal;
+protected
+  DAE.ComponentRef pcr1,pcr2;
+algorithm
+  pcr1 := crefFirstCref(cr1);
+  pcr2 := crefLastCref(cr2);
+  equal := Exp.crefEqual(pcr1,pcr2);
+end crefFirstCrefLastCrefEqual;
+
+  
+public function crefSubs "
+function: crefSubs
+  Return the all subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
+      then subs;
+    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+      equation
+        res = crefSubs(cr);
+        res = listAppend(subs,res);
+      then
+        res;
+  end matchcontinue;
+end crefSubs;
+
+public function crefLastSubs "
+function: crefLastSubs
+  Return the last subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastSubs(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastSubs;
   
   
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
@@ -270,6 +345,173 @@ public function crefModelicaStr
 algorithm
   outString:= crefToStr("",inComponentRef,"_");
 end crefModelicaStr;
+
+public function stripCrefIdentSliceSubs "
+Author BZ
+Strips the SLICE-subscripts fromt the -last- subscript list. All other subscripts are not changed.
+For example
+x[1].y[{1,2},3,{1,3,7}] => x[1].y[3]
+Alternative names: stripLastSliceSubs"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst=subs, identType = ty))
+      equation
+        subs = removeSliceSubs(subs);
+    then DAE.CREF_IDENT(id,ty,subs);
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
+      equation
+        outCref = stripCrefIdentSliceSubs(cr);
+      then
+        DAE.CREF_QUAL(id,ty,subs,outCref);
+  end matchcontinue;
+end stripCrefIdentSliceSubs;
+
+protected function removeSliceSubs "
+helper function for stripCrefIdentSliceSubs
+"
+input list<DAE.Subscript> subs;
+output list<DAE.Subscript> osubs;
+algorithm
+  osubs := matchcontinue(subs)
+    local DAE.Subscript s;
+    case({}) then {};
+    case(DAE.SLICE(exp=_)::subs) then removeSliceSubs(subs);
+    case(s::subs)
+      equation
+        osubs = removeSliceSubs(subs);
+        then
+          s::osubs;
+  end matchcontinue;
+end removeSliceSubs;
+
+public function crefStripSubs "
+Removes all subscript of a componentref"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+    case (DAE.CREF_IDENT(ident = id,identType = ty))
+    then DAE.CREF_IDENT(id,ty,{});
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, ident=id))
+      equation
+        outCref = crefStripSubs(cr);
+      then
+        DAE.CREF_QUAL(id,ty,{},outCref);
+  end matchcontinue;
+end crefStripSubs;
+
+public function crefStripPrefix
+"Strips a prefix/cref from a component reference"
+  input DAE.ComponentRef cref;
+  input DAE.ComponentRef prefix;
+  output DAE.ComponentRef outCref;
+algorithm
+	outCref := matchcontinue(cref,prefix)
+	  local
+	    list<DAE.Subscript> subs1,subs2;
+	    DAE.ComponentRef cr1,cr2;
+	    DAE.Ident id1,id2;
+	    DAE.ExpType t2;
+	  
+	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
+	    equation
+	      true = stringEqual(id1, id2);
+	      true = Exp.subscriptEqual(subs1,subs2);
+	    then cr1;
+	  
+	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
+	    equation
+	      true = stringEqual(id1, id2);
+	      true = Exp.subscriptEqual(subs1,subs2);
+	    then crefStripPrefix(cr1,cr2);
+  end matchcontinue;
+end crefStripPrefix;
+
+public function crefStripLastIdent
+"Strips the last part of a component reference, i.e ident and subs"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+    local 
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr1,cr;
+      DAE.ExpType t2;
+    
+    case( DAE.CREF_QUAL(id,t2,subs,DAE.CREF_IDENT(_,_,_))) 
+      then 
+        DAE.CREF_IDENT(id,t2,subs);
+
+    case(DAE.CREF_QUAL(id,t2,subs,cr)) 
+      equation
+        cr1 = crefStripLastIdent(cr);
+      then 
+        DAE.CREF_QUAL(id,t2,subs,cr1);
+  end matchcontinue;
+end crefStripLastIdent;
+
+public function crefFirstCref
+"Returns the first part of a component reference, i.e the identifier"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+    local 
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.ExpType t2;
+    
+    case( DAE.CREF_QUAL(id,t2,subs,cr)) then DAE.CREF_IDENT(id,t2,{});
+    case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
+  end matchcontinue;
+end crefFirstCref;
+
+public function crefStripLastSubs
+"function: crefStripLastSubs
+  Strips the last subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,s;
+      DAE.ComponentRef cr_1,cr;
+      DAE.ExpType t2;
+    
+    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs)) then DAE.CREF_IDENT(id,t2,{});
+    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr))
+      equation
+        cr_1 = crefStripLastSubs(cr);
+      then
+        DAE.CREF_QUAL(id,t2,s,cr_1);
+  end matchcontinue;
+end crefStripLastSubs;
+
+public function crefStripFirstIdent
+"Strips the first part of a component reference,
+i.e the identifier and eventual subscripts"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+    local DAE.ComponentRef cr;  
+    case( DAE.CREF_QUAL(componentRef = cr)) then cr;
+  end matchcontinue;
+end crefStripFirstIdent;
 
 
 end ComponentReference;

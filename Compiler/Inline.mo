@@ -44,6 +44,7 @@ package Inline
 
 public import Absyn;
 public import BackendDAE;
+public import ComponentReference;
 public import DAE;
 public import DAELow;
 public import SCode;
@@ -1200,8 +1201,8 @@ algorithm
         fail();
     case((cref,exp) :: cdr,key)
       equation
-        subs = Exp.crefSubs(key);
-        key = Exp.crefStripSubs(key);
+        subs = ComponentReference.crefSubs(key);
+        key = ComponentReference.crefStripSubs(key);
         true = Exp.crefEqual(cref,key);
         e = Exp.applyExpSubscripts(exp,subs);
       then

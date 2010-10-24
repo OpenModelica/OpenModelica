@@ -4183,7 +4183,7 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         ((BackendDAE.VAR(varName = cr) :: _)) = DAELow.varList(vars);
         // We need to strip subs from the name since they are removed in cr.
-        cr_1 = Exp.crefStripLastSubs(cr);
+        cr_1 = ComponentReference.crefStripLastSubs(cr);
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2);
       then
@@ -5229,7 +5229,7 @@ algorithm
     case (BackendDAE.VAR(varName=name))
       equation
         true = Exp.crefIsFirstArrayElt(name);
-        arrayCrefInner = Exp.crefStripLastSubs(name);
+        arrayCrefInner = ComponentReference.crefStripLastSubs(name);
       then SOME(arrayCrefInner);
     case (_)
       then NONE();
@@ -6093,7 +6093,7 @@ algorithm
         (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
         bls = Util.listMap1(exps_1, Exp.expEqual,f);
         true = Util.boolAndList(bls);
-        c = Exp.crefStripLastSubs(c);
+        c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.CREF(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
       then  
         (e12,e22);
@@ -6102,7 +6102,7 @@ algorithm
         (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
         bls = Util.listMap1(exps_1, Exp.expEqual,f);
         true = Util.boolAndList(bls);
-        c = Exp.crefStripLastSubs(c);
+        c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),DAE.CREF(c,tp));
       then  
         (e12,e22);
@@ -6142,14 +6142,14 @@ algorithm
     case (DAE.ARRAY(array = expl))
       equation
         ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
-        crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubs); //Strip last subscripts
+        crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
         _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
     case (DAE.MATRIX(scalar = column))
       equation
         ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
-        crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubs);
+        crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs);
         _ = Util.listReduce(crefs_1, Exp.crefEqualReturn);
       then
         cr;
@@ -6177,7 +6177,7 @@ algorithm
     case (col)
       equation
         ((crefs as (cr :: _))) = Util.listMap(col, Exp.expCrefTuple); //Get all CRefs from the list of tuples.
-        crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubs); //Strip last subscripts
+        crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
         _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
@@ -7729,7 +7729,7 @@ algorithm
       equation
         // Make sure it has no subscripts, i.e. it's a component reference for
         // an entire record instance.
-        {} = Exp.crefLastSubs(cref);
+        {} = ComponentReference.crefLastSubs(cref);
         // Build a DAE.CREF from the record path.
         cref = ComponentReference.pathToCref(record_path);
         record_cref = Exp.crefExp(cref);
