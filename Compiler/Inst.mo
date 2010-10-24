@@ -83,6 +83,7 @@ public import Absyn;
 public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
+public import ComponentReference;
 public import DAE;
 public import Env;
 public import InnerOuter;
@@ -9806,7 +9807,7 @@ algorithm
      // A package constant, first try to look it up local(top frame)
     case (cache,(f::fs) ,path) 
       equation 
-        crPath = Exp.pathToCref(path);
+        crPath = ComponentReference.pathToCref(path);
         (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, {f}, crPath, Lookup.SEARCH_ALSO_BUILTIN());
         path3 = makeFullyQualified2(env,name);
       then
@@ -9815,7 +9816,7 @@ algorithm
     // TODO! FIXME! what do we do here??!!
     case (cache,env,path)
       equation 
-          crPath = Exp.pathToCref(path); 
+          crPath = ComponentReference.pathToCref(path); 
          (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
           path3 = makeFullyQualified2(env,name);
       then
@@ -11600,7 +11601,7 @@ algorithm
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-        path = Exp.crefToPath(vn);
+        path = ComponentReference.crefToPath(vn);
         ty = (tty,SOME(path));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     

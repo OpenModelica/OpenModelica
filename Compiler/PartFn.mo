@@ -496,9 +496,7 @@ algorithm
         fail();
     case(fn as DAE.FUNCTION(path = newFn),DAE.FUNCTION(path = p) :: cdr)
       equation
-        cr1 = Exp.pathToCref(newFn);
-        cr2 = Exp.pathToCref(p);
-        true = Exp.crefEqual(cr1,cr2);
+        true = Absyn.pathEqual(newFn,p);
       then
         fn :: cdr;
     case(fn, el :: cdr)
@@ -1779,9 +1777,7 @@ algorithm
     // fix recursive calls
     case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae,current)))
       equation
-        cref1 = Exp.pathToCref(orig_p);
-        cref2 = Exp.pathToCref(current);
-        true = Exp.crefEqual(cref1,cref2);
+        true = Absyn.pathEqual(orig_p,current);
         new_p = makeNewFnPath(orig_p,p);
         crefs = Util.listMap(inputs,DAEUtil.varCref);
         args2 = Util.listMap(crefs,Exp.crefExp);

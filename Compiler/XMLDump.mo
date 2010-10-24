@@ -79,6 +79,7 @@ package XMLDump
   RCS: $Id$"
 
 public import Absyn;
+public import ComponentReference;
 public import DAE;
 public import DAEEXT;
 public import DAELow;
@@ -891,7 +892,7 @@ algorithm
       case {}  then ();
       case ((crefIndex as DAELow.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
       equation
-        cref=Exp.crefStr(cref_c);
+        cref=ComponentReference.crefStr(cref_c);
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_c));
         Print.printBuf(cref);
         dumpStrCloseTag(ELEMENT);

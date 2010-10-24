@@ -47,6 +47,7 @@ package Types
   modules are constants that could be moved to their own modules."
 
 public import ClassInf;
+public import ComponentReference;
 public import Absyn;
 public import DAE;
 public import Values;
@@ -4292,7 +4293,7 @@ algorithm
         tys2 = Util.listMap(tys1, boxIfUnboxedType);
         expTypes = Util.listMap(tys1, elabType);
         pathList = Util.listMap(l, Absyn.makeIdentPathFromString);
-        crefList = Util.listMap(pathList, Exp.pathToCref);
+        crefList = Util.listMap(pathList, ComponentReference.pathToCref);
         crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
         elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);

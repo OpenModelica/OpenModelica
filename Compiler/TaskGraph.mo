@@ -647,7 +647,7 @@ algorithm
     case ({},_,_) then ();  /* task priority */
     case ((v :: vs),tid,prio)
       equation
-        v_str = Exp.crefStr(v);
+        v_str = ComponentReference.crefStr(v);
         predt = TaskGraphExt.getTask(v_str);
         TaskGraphExt.addEdge(predt, tid, v_str, prio);
         prio_1 = prio + 1;
@@ -656,7 +656,7 @@ algorithm
         ();
     case ((v :: vs),_,_)
       equation
-        v_str = Exp.crefStr(v);
+        v_str = ComponentReference.crefStr(v);
         failure(_ = TaskGraphExt.getTask(v_str));
         print("task ");
         print(v_str);
@@ -742,7 +742,7 @@ algorithm
         crs = listAppend(cr1, cr2);
         crs_1 = Util.listDeleteMember(crs, cr);
         crs_2 = Util.listMap(crs_1, Exp.crefStr);
-        crstr = Exp.crefStr(cr);
+        crstr = ComponentReference.crefStr(cr);
         origname_str = Exp.printComponentRefStr(cr);
         TaskGraphExt.storeResult(crstr, tid, true, origname_str);
         crs2 = buildSystem2(dae, ass1, ass2, rest, tid);
@@ -772,7 +772,7 @@ algorithm
       Integer start;
     case (DAELow.VAR(varName = cf,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix),start)
       equation
-        cfs = Exp.crefStr(cf);
+        cfs = ComponentReference.crefStr(cf);
         name_str = Exp.printComponentRefStr(cf) "print \"adding variable \" & print cfs & print \"\\n\" &" ;
         TaskGraphExt.storeResult(cfs, start, false, name_str);
       then
@@ -797,9 +797,9 @@ algorithm
       equation
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
         tid = TaskGraphExt.newTask("copy");
-        cr2s = Exp.crefStr(cr2);
+        cr2s = ComponentReference.crefStr(cr2);
         TaskGraphExt.addEdge(task, tid, cr2s, 0);
-        crs = Exp.crefStr(cr);
+        crs = ComponentReference.crefStr(cr);
         TaskGraphExt.storeResult(crs, tid, true, origname);
         TaskGraphExt.setTaskType(tid, 6) "See TaskType in TaskGraph.hpp" ;
       then
@@ -807,7 +807,7 @@ algorithm
     case (cr,exp,origname)
       equation
         (task,str) = buildExpression(exp);
-        crs = Exp.crefStr(cr);
+        crs = ComponentReference.crefStr(cr);
         TaskGraphExt.storeResult(crs, task, true, origname);
       then
         ();
@@ -856,7 +856,7 @@ algorithm
 
     case (DAE.CREF(componentRef = cr))
       equation
-        crs = Exp.crefStr(cr) "for state variables and alg. variables" ;
+        crs = ComponentReference.crefStr(cr) "for state variables and alg. variables" ;
         tid = TaskGraphExt.getTask(crs);
       then
         (tid,crs);
@@ -869,7 +869,7 @@ algorithm
 
     case (DAE.CREF(componentRef = cr))
       equation
-        crs = Exp.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
+        crs = ComponentReference.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
         tid = TaskGraphExt.newTask(crs);
       then
         (tid,crs);

@@ -52,9 +52,9 @@ package SimCode
   and SimCodegen modules.
 "
 
-
-public import Exp;
 public import Algorithm;
+public import ComponentReference;
+public import Exp;
 public import Values;
 public import Types;
 public import DAELow;
@@ -1447,9 +1447,7 @@ algorithm
       then -1;
     case (cref, VARIABLE(name=name) :: restOutVars, currentIndex)
       equation
-        crefStr = Exp.crefStr(cref);
-        nameStr = Exp.crefStr(name);
-        true = stringEqual(crefStr, nameStr);
+        true = Exp.crefEqualNoStringCompare(cref,name);
       then currentIndex;
     case (cref, _ :: restOutVars, currentIndex)
       equation
@@ -6713,7 +6711,7 @@ algorithm
     case DAE.CALL(path = path) then path;
     case DAE.CREF(componentRef = cref)
       equation
-        path = Exp.crefToPath(cref);
+        path = ComponentReference.crefToPath(cref);
       then
         path;
   end matchcontinue;
@@ -7687,7 +7685,7 @@ algorithm
       local
         DAE.ComponentRef cref; Absyn.Path p;
       equation
-        cref = Exp.pathToCref(p);
+        cref = ComponentReference.pathToCref(p);
         e = Exp.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
         expLst = getMatchingExpsList(expLst,matchFnRefs);
       then
@@ -7731,7 +7729,7 @@ algorithm
         // an entire record instance.
         {} = Exp.crefLastSubs(cref);
         // Build a DAE.CREF from the record path.
-        cref = Exp.pathToCref(record_path);
+        cref = ComponentReference.pathToCref(record_path);
         record_cref = Exp.crefExp(cref);
         rest_expr = getImplicitRecordConstructors(rest_expr);
       then record_cref :: rest_expr;

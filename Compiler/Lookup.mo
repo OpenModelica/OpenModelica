@@ -47,6 +47,7 @@ package Lookup
 
 public import Absyn;
 public import ClassInf;
+public import ComponentReference;
 public import DAE;
 public import Env;
 public import RTOpts;
@@ -547,13 +548,13 @@ algorithm
       equation 
         id = Absyn.pathLastIdent(path);
         true = id ==& ident;
-      then Exp.pathToCref(path);
+      then ComponentReference.pathToCref(path);
 
     // Named imports, e.g. import A = B.C;  
     case (Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs,ident)
       equation
         true = id ==& ident;
-      then Exp.pathToCref(path);
+      then ComponentReference.pathToCref(path);
 
     // Check next frame.  
     case (_ :: fs,ident) then lookupQualifiedImportedVarInFrame(fs,ident);
@@ -589,7 +590,7 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         f::prevFrames = listReverse(env);
-        cref = Exp.pathToCref(path);
+        cref = ComponentReference.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
         (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
@@ -648,7 +649,7 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
         f::prevFrames = listReverse(env);
-        cref = Exp.pathToCref(path);
+        cref = ComponentReference.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
@@ -1195,7 +1196,7 @@ algorithm
       equation
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
         SOME(scope) = Env.getEnvPath(env);
-        path = Exp.crefToPath(cr);
+        path = ComponentReference.crefToPath(cr);
         id = Absyn.pathLastIdent(path);
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);

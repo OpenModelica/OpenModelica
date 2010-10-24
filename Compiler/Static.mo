@@ -63,6 +63,7 @@ package Static
   The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 public import Absyn;
+public import ComponentReference;
 public import ConnectionGraph;
 public import Convert;
 public import DAE;
@@ -10982,7 +10983,7 @@ algorithm
         Integer i;
         Absyn.Path p;
       equation
-        p = Absyn.joinPaths(p, Exp.crefLastPath(cr));
+        p = Absyn.joinPaths(p, ComponentReference.crefLastPath(cr));
       then
         (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), SCode.RO());
          

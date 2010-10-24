@@ -48,6 +48,7 @@ package DAELowUtil
   in the BLT sorting."
 
 public import DAE;
+public import ComponentReference;
 public import Exp;
 public import Util;
 public import DAELow;
@@ -81,7 +82,7 @@ algorithm
         equation
           print("Error in Exp ");
           print(Exp.printExpStr(e));print("\n Variables: ");
-          strcrefs = Util.listMap(crefs,Exp.crefStr);
+          strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
           print(Util.stringDelimitList(strcrefs,", "));print("\nnot found in DAELow object.\n");
           printcheckDEALowWithErrorMsg(res);
         then

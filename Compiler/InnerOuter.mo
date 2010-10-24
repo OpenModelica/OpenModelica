@@ -37,6 +37,7 @@ package InnerOuter
   RCS: $Id: InnerOuter.mo 4847 2010-01-21 22:45:09Z adrpo $"
 
 import Absyn;
+import ComponentReference;
 import DAE;
 import Env;
 import Prefix;

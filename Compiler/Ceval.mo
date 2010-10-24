@@ -56,6 +56,7 @@ package Ceval
 
 public import Absyn;
 public import AbsynDep;
+public import ComponentReference;
 public import DAE;
 public import Env;
 public import Interactive;
@@ -232,14 +233,14 @@ algorithm
     // MetaModelica Partial Function. sjoelund 
     case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,st,_,MSG())
       equation
-        str = Exp.crefStr(cr);
+        str = ComponentReference.crefStr(cr);
         Error.addMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str});
       then
         fail();
 
     case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)),impl,st,_,MSG())
       equation
-        str = Exp.crefStr(cr);
+        str = ComponentReference.crefStr(cr);
         Error.addMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str});
       then
         fail();
