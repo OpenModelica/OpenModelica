@@ -259,7 +259,8 @@ algorithm
           LINE_INFO(parseInfo = PARSE_INFO(errors = errLstToAdd, wasFatalError = wasFatalErrorToAdd ) )) 
       equation
         errLst = listAppend(errLstToAdd, errLst); //error lists are in reversed order
-        wasFatalError = wasFatalError or wasFatalErrorToAdd;        
+        //let the fatal error state from the first, leading file, only add errors from the other file
+        //wasFatalError = wasFatalError or wasFatalErrorToAdd;        
       then (LINE_INFO(PARSE_INFO(fname, errLst, wasFatalError), lnum, llen, solchars));
     
     case (_,_) 
@@ -570,40 +571,113 @@ algorithm
 end templPackageFromFile;
 
 
-public function typeviewDefsFromFile
-  input  String inFile;
+public function typeviewDefsFromInterfaceFile
+  input TplAbsyn.PathIdent interfaceName;
   input list<TplAbsyn.ASTDef> inAccASTDefs;
   
   output list<TplAbsyn.ASTDef> outASTDefs;
   output LineInfo outLineInfo;
   output Option<String> outErrorOpt;
 algorithm
-  (outASTDefs, outLineInfo, outErrorOpt) := matchcontinue (inFile, inAccASTDefs)
+  (outASTDefs, outLineInfo, outErrorOpt) := matchcontinue (interfaceName, inAccASTDefs)
     local
       String file, src;
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
       list<TplAbsyn.ASTDef> astDefs;
+      TplAbsyn.PathIdent pid;
       
-    case (file, astDefs)
+    case (interfaceName, astDefs)
       equation
+        file = TplAbsyn.pathIdentString(interfaceName) +& ".mo";
         (chars, linfo, errOpt) = openFile(file);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, astDefs) = typeviewDefs(chars, linfo, astDefs);
+        (chars, linfo, pid, astDefs) = interfacePackage(chars, linfo, astDefs);
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
       then (astDefs, linfo, errOpt);            
     
-    case (file,_) 
+    case (_,_) 
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromFile failed for file '" +& file +& "'.\n");
+        Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
       then fail();
                 
   end matchcontinue;
-end typeviewDefsFromFile;
+end typeviewDefsFromInterfaceFile;
 
 
+public function typeviewDefsFromTemplateFile
+  input TplAbsyn.PathIdent packageName;
+  input Boolean isUnqualifiedImport;
+  input list<TplAbsyn.ASTDef> inAccASTDefs;
+  
+  output list<TplAbsyn.ASTDef> outASTDefs;
+  output LineInfo outLineInfo;
+  output Option<String> outErrorOpt;
+algorithm
+  (outASTDefs, outLineInfo, outErrorOpt) := matchcontinue (packageName, isUnqualifiedImport, inAccASTDefs)
+    local
+      String file, src;
+      Option<String> errOpt;
+      list<String> chars;
+      LineInfo linfo;
+      list<TplAbsyn.ASTDef> astDefs;
+      TplAbsyn.PathIdent pid;
+      TplAbsyn.TemplPackage templPackage;
+      list<tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef>> templateDefs;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> astTypes;  
+    case (packageName, isUnqualifiedImport, astDefs)
+      equation
+        file = TplAbsyn.pathIdentString(packageName) +& ".tpl";
+        (chars, linfo, errOpt) = openFile(file);
+        (chars, linfo, templPackage) = templPackage(chars, linfo);
+        (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
+        TplAbsyn.TEMPL_PACKAGE(templateDefs = templateDefs) 
+          = TplAbsyn.fullyQualifyTemplatePackage(templPackage);
+        astTypes = Util.listMap(templateDefs, templateDefToAstDefType);        
+        astDefs = TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes) :: astDefs;        
+      then (astDefs, linfo, errOpt);            
+    
+    case (_,_,_) 
+      equation
+				true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
+      then fail();
+                
+  end matchcontinue;
+end typeviewDefsFromTemplateFile;
+
+
+public function templateDefToAstDefType
+  input tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef> inTemplateDef;
+  output tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> outType;
+algorithm
+  (outType) := matchcontinue (inTemplateDef)
+    local
+      TplAbsyn.Ident id;
+      TplAbsyn.TypeSignature litType;
+      TplAbsyn.TypedIdents iargs, oargs;        
+    case ( (id, TplAbsyn.STR_TOKEN_DEF(value=_)) )
+      then ( (id, TplAbsyn.TI_CONST_TYPE(TplAbsyn.STRING_TOKEN_TYPE())) );            
+    
+    case ( (id, TplAbsyn.LITERAL_DEF(litType = litType)) )
+      then ( (id, TplAbsyn.TI_CONST_TYPE(litType)) );            
+    
+    case ( (id, TplAbsyn.TEMPLATE_DEF(args = iargs)) )
+      equation
+        iargs =  TplAbsyn.imlicitTxtArg :: iargs;
+        oargs = Util.listFilter(iargs, TplAbsyn.isText);
+      then ( (id, TplAbsyn.TI_FUN_TYPE(iargs,oargs,{})) );            
+    
+    case (_) 
+      equation
+				true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "Parse error - TplParser.templateDefToAstDefType failed.\n");
+      then fail();
+                
+  end matchcontinue;
+end templateDefToAstDefType;
 
 /*
 newLine:
@@ -949,12 +1023,13 @@ algorithm
         (chars, linfo, pid) = pathIdent(chars, linfo);        
       then (chars, linfo, TplAbsyn.PATH_IDENT(head, pid));
     
-    case ("." :: chars, linfo, head) 
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        failure( (_, _, _) = pathIdent(chars, linfo));
-        (linfo) = parseError(chars, linfo, "Expected an identifier after '.' at the position.", true);        
-      then (chars, linfo, TplAbsyn.PATH_IDENT(head, TplAbsyn.IDENT("#error#")));
+    // can be followed by .*,  for example 
+    //case ("." :: chars, linfo, head) 
+    //  equation
+    //    (chars, linfo) = interleave(chars, linfo);
+    //    failure( (_, _, _) = pathIdent(chars, linfo));
+    //    (linfo) = parseError(chars, linfo, "Expected an identifier after '.' at the position.", true);        
+    //  then (chars, linfo, TplAbsyn.PATH_IDENT(head, TplAbsyn.IDENT("#error#")));
     
     
     case (chars, linfo, head) 
@@ -1021,7 +1096,7 @@ end pathIdentNoOpt;
 
 /*
 templPackage:
-	'spackage'  pathIdent:pid  stringComment
+	'package'  pathIdent:pid  stringComment
 		definitions(pid,{},{}):(astDefs,templDefs)
 	endDefPathIdent(pid)	
 	=> 	TEMPL_PACKAGE(pid, astDefs,templDefs)
@@ -1052,7 +1127,7 @@ algorithm
     
     case (chars, linfo)
       equation
-        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"s","p","a","c","k","a","g","e"}, true);
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"p","a","c","k","a","g","e"}, true);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, pid) = pathIdentNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
@@ -1072,14 +1147,20 @@ algorithm
                 
   end matchcontinue;
 end templPackage;
+
 /*
 definitions(astDefs,templDefs):
-	'typeview' stringConstant:strRevList 
-	  { ads = typeviewDefsFromFile(System.stringAppendList(listReverse(strRevList), astDefs) }
+	'import' 'interface' pathIdent:pid stringComment ';' 
+	  { ads = typeviewDefsFromInterfaceFile(packageNameToFileName(pid,".mo"), astDefs) }
 	  definitions(ads, templDefs):(ads,tds) 
 	  => (ads,tds)
 	| 
-	absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
+	'import' pathIdent:pid unqualImportPostfix:unq stringComment ';'
+	  { ads = typeviewDefsFromTemplateFile(pid, unq, astDefs) }
+	  definitions(ads, templDefs):(ads,tds) 
+	  => (ads,tds)
+//	|
+//	absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
 	|
 	templDef:(name, td)  definitions(astDefs,(name,td)::templDefs):(ads,tds) => (ads,tds)
 //	|
@@ -1102,8 +1183,9 @@ algorithm
       String str;
       Option<String> errOptTV;
       LineInfo linfo, startLinfo, linfoTV;
-      Boolean isD;
+      Boolean isD, isUnqual;
       TplAbsyn.Ident id, name;
+      TplAbsyn.PathIdent pid;
       TplAbsyn.TypedIdents fields,inargs,outargs;
       tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents> rtag;
       tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
@@ -1121,47 +1203,45 @@ algorithm
         afterKeyword(chars);
       then (startChars, linfo, astDefs, templDefs);
     
-    case ("t"::"y"::"p"::"e"::"v"::"i"::"e"::"w":: chars, linfo, astDefs, templDefs)
+    case ("i"::"m"::"p"::"o"::"r"::"t":: chars, linfo, astDefs, templDefs)
       equation
         afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        ("i"::"n"::"t"::"e"::"r"::"f"::"a"::"c"::"e" :: chars) = chars;
+        afterKeyword(chars);
+        //remember position for a file error
         (startChars, startLinfo) = interleave(chars, linfo);
-        (chars, linfo, strRevList) = stringConstant(startChars, startLinfo);
-        false = wasFatalError(linfo); //only parse typeview file when no previous errors
-        str = System.stringAppendList(listReverse(strRevList));
-        (astDefs, linfoTV, errOptTV) = typeviewDefsFromFile(str, astDefs);
+        (chars, linfo, pid) = pathIdentNoOpt(startChars, startLinfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = stringComment(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);        
+        (chars, linfo) = semicolon(chars, linfo);  
+        
+        (astDefs, linfoTV, errOptTV) = typeviewDefsFromInterfaceFile(pid, astDefs);
         linfo = parseErrorPrevPositionOpt(startChars, startLinfo, linfo, errOptTV, false);
         linfo = mergeErrors(linfo, linfoTV);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, astDefs, templDefs) = definitions(chars, linfo, astDefs, templDefs);
       then (chars, linfo, astDefs, templDefs);
     
-    //error string constant fail
-    case ("t"::"y"::"p"::"e"::"v"::"i"::"e"::"w":: chars, linfo, astDefs, templDefs)
+    case ("i"::"m"::"p"::"o"::"r"::"t":: chars, linfo, astDefs, templDefs)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        failure((_, _, _) = stringConstant(chars, linfo));
-        (linfo) = parseError(chars, linfo, "Expected a file name (a string constant) at the position.", true);                 
-      then (chars, linfo, astDefs, templDefs);
-    //was error, just continue
-    case ("t"::"y"::"p"::"e"::"v"::"i"::"e"::"w":: chars, linfo, astDefs, templDefs)
-      equation
-        afterKeyword(chars);
+        //remember position for a file error
+        (startChars, startLinfo) = interleave(chars, linfo);
+        (chars, linfo, pid) = pathIdentNoOpt(startChars, startLinfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, _) = stringConstant(chars, linfo);
-         true = wasFatalError(linfo);
-         //nothing here, the error was reported, just continue 
-         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, astDefs, templDefs) = definitions(chars, linfo, astDefs, templDefs);
-      then (chars, linfo, astDefs, templDefs);
-    
+        (chars, linfo, isUnqual) = unqualImportPostfix(chars, linfo);
+        (chars, linfo) = stringComment(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);        
+        (chars, linfo) = semicolon(chars, linfo);  
         
-    // **** to be deleted, only 'typeview' imports will be used (likely)
-    case (chars, linfo, astDefs, templDefs)
-      equation
-        (chars, linfo, ad) = absynDef(chars, linfo);
+        (astDefs, linfoTV, errOptTV) = typeviewDefsFromTemplateFile(pid, isUnqual, astDefs);
+        linfo = parseErrorPrevPositionOpt(startChars, startLinfo, linfo, errOptTV, false);
+        linfo = mergeErrors(linfo, linfoTV);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, astDefs, templDefs) = definitions(chars, linfo, ad::astDefs, templDefs);                                     
+        (chars, linfo, astDefs, templDefs) = definitions(chars, linfo, astDefs, templDefs);
       then (chars, linfo, astDefs, templDefs);
     
     case (chars, linfo, astDefs,templDefs)
@@ -1178,40 +1258,33 @@ algorithm
 end definitions;
 
 /*
-typeviewDefs(astDefs):
-	absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
+unqualImportPostfix:
+	'.' '*' => true
 	|
-	_ => astDefs
+	_ => false
 */
-public function typeviewDefs
+public function unqualImportPostfix
   input list<String> inChars;
   input LineInfo inLineInfo;
-  input list<TplAbsyn.ASTDef> inAccASTDefs;
-  
+
   output list<String> outChars;
   output LineInfo outLineInfo;
-  output list<TplAbsyn.ASTDef> outASTDefs;
+  output Boolean outIsUnqual;
 algorithm
-  (outChars, outLineInfo, outASTDefs) := matchcontinue (inChars, inLineInfo, inAccASTDefs)
+  (outChars, outLineInfo, outIsUnqual) := matchcontinue (inChars, inLineInfo)
     local
       list<String> chars;
       LineInfo linfo;
-      TplAbsyn.ASTDef ad;
-      list<TplAbsyn.ASTDef> astDefs;
       
-    case (chars, linfo, astDefs)
+    case ("." :: chars, linfo) 
       equation
-        (chars, linfo, ad) = absynDef(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, astDefs) = typeviewDefs(chars, linfo, ad::astDefs);                                     
-      then (chars, linfo, astDefs);
-    
-    case (chars, linfo, astDefs)
-      then (chars, linfo, astDefs);
-    
+        ("*" :: chars) = chars;                
+      then (chars, linfo, true);
+    case (chars, linfo) 
+      then (chars, linfo, false);
   end matchcontinue;
-end typeviewDefs;
-
+end unqualImportPostfix;	
 
 /*
 //optional, may fail
@@ -1572,6 +1645,100 @@ algorithm
    
   end matchcontinue;
 end semicolon;
+
+
+/*
+interfacePackage(astDefs):
+	'interface' 'package'  pathIdent:pid  stringComment
+		typeviewDefs(astDefs):ads
+	endDefPathIdent(pid)	
+	=> 	(pid, ads)
+*/
+public function interfacePackage
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input list<TplAbsyn.ASTDef> inAccASTDefs;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.PathIdent outPid;
+  output list<TplAbsyn.ASTDef> outAccASTDefs;
+algorithm
+  (outChars, outLineInfo, outPid, outAccASTDefs)
+  := matchcontinue (inChars, inLineInfo, inAccASTDefs)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent pid;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents> rtag;
+      tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo> idti;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rtags;
+      TplAbsyn.TypeSignature ts;
+      list<TplAbsyn.ASTDef> astDefs;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> templDefs;
+    
+    case (chars, linfo, inAccASTDefs)
+      equation
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"i","n","t","e","r","f","a","c","e"}, true);
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"p","a","c","k","a","g","e"}, true);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, pid) = pathIdentNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = stringComment(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, astDefs) = typeviewDefs(chars, linfo, inAccASTDefs); 
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = endDefPathIdent(chars, linfo,pid);       
+      then (chars, linfo, pid, astDefs);
+        
+    case (chars, linfo, _)
+      equation
+        Debug.fprint("failtrace", "!!!Parse error - TplParser.interfacePackage failed.\n");
+      then fail(); 
+                
+  end matchcontinue;
+end interfacePackage;
+
+/*
+typeviewDefs(astDefs):
+	absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
+	|
+	_ => astDefs
+*/
+public function typeviewDefs
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input list<TplAbsyn.ASTDef> inAccASTDefs;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output list<TplAbsyn.ASTDef> outASTDefs;
+algorithm
+  (outChars, outLineInfo, outASTDefs) := matchcontinue (inChars, inLineInfo, inAccASTDefs)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      TplAbsyn.ASTDef ad;
+      list<TplAbsyn.ASTDef> astDefs;
+      
+    case (chars, linfo, astDefs)
+      equation
+        (chars, linfo, ad) = absynDef(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, astDefs) = typeviewDefs(chars, linfo, ad::astDefs);                                     
+      then (chars, linfo, astDefs);
+    
+    case (chars, linfo, astDefs)
+      then (chars, linfo, astDefs);
+    
+  end matchcontinue;
+end typeviewDefs;
+
+
 /*
 absynDef:
 	publicProtected:isD  'package' pathIdent:pid  stringComment 
@@ -2901,7 +3068,7 @@ end expressionNoOptions;
 /*
 mapTailOpt(headExp,lesc,resc):
 	'|>' matchBinding:mexp  
-	indexedByOpt:idxNmOpt //TODO: 'indexedby' in TplAbsyn	
+	indexedByOpt:idxNmOpt //TODO: 'hasindex' in TplAbsyn	
 	'=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
 	|
 	_ => headExp 
@@ -2954,7 +3121,7 @@ end mapTailOpt;
 
 /* 
 indexedByOpt:
-	'indexedby' identifier:id
+	'hasindex' identifier:id
 		=> SOME(id)
 	|
 	_ => NONE
@@ -2982,7 +3149,7 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
-    case ("i"::"n"::"d"::"e"::"x"::"e"::"d"::"b"::"y":: chars, linfo)
+    case ("h"::"a"::"s"::"i"::"n"::"d"::"e"::"x":: chars, linfo)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);

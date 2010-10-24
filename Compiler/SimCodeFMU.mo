@@ -14,6 +14,7 @@ public import Util;
 public import Exp;
 public import RTOpts;
 public import Settings;
+public import SimCodeC;
 
 public function translateModel
   input Tpl.Text in_txt;
@@ -113,12 +114,14 @@ algorithm
         SimCode.SimCode i_simCode;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("<fmiModelDescription\n"));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = fmiModelDescriptionAttributes(txt, i_simCode, i_guid);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(">\n"));
         txt = DefaultExperiment(txt, i_simulationSettingsOpt);
         txt = Tpl.softNewLine(txt);
         txt = ModelVariables(txt, i_modelInfo);
         txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("</fmiModelDescription>"));
       then txt;
 
@@ -143,13 +146,14 @@ algorithm
       String i_guid;
 
     case ( txt,
-           SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(varInfo = SimCode.VARINFO(numStateVars = i_numStateVars, numZeroCrossings = i_numZeroCrossings), name = i_modelInfo_name), fileNamePrefix = i_fileNamePrefix),
+           SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(varInfo = (i_vi as SimCode.VARINFO(numStateVars = i_vi_numStateVars, numZeroCrossings = i_vi_numZeroCrossings)), name = i_modelInfo_name), fileNamePrefix = i_fileNamePrefix),
            i_guid )
       local
         String i_fileNamePrefix;
         Absyn.Path i_modelInfo_name;
-        Integer i_numZeroCrossings;
-        Integer i_numStateVars;
+        Integer i_vi_numZeroCrossings;
+        Integer i_vi_numStateVars;
+        SimCode.VarInfo i_vi;
         Tpl.Text i_numberOfEventIndicators;
         Tpl.Text i_numberOfContinuousStates;
         Tpl.Text i_variableNamingConvention;
@@ -165,7 +169,7 @@ algorithm
         Tpl.Text i_fmiVersion;
       equation
         i_fmiVersion = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("1.0"));
-        i_modelName = dotPath(emptyTxt, i_modelInfo_name);
+        i_modelName = SimCodeC.dotPath(emptyTxt, i_modelInfo_name);
         i_modelIdentifier = Tpl.writeStr(emptyTxt, i_fileNamePrefix);
         i_description = emptyTxt;
         i_author = emptyTxt;
@@ -176,9 +180,8 @@ algorithm
         ret_9 = Util.getCurrentDateTime();
         i_generationDateAndTime = xsdateTime(emptyTxt, ret_9);
         i_variableNamingConvention = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("structured"));
-        i_numberOfContinuousStates = Tpl.writeStr(emptyTxt, intString(i_numStateVars));
-        i_numberOfEventIndicators = Tpl.writeStr(emptyTxt, intString(i_numZeroCrossings));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        i_numberOfContinuousStates = Tpl.writeStr(emptyTxt, intString(i_vi_numStateVars));
+        i_numberOfEventIndicators = Tpl.writeStr(emptyTxt, intString(i_vi_numZeroCrossings));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("fmiVersion=\""));
         txt = Tpl.writeText(txt, i_fmiVersion);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -222,7 +225,6 @@ algorithm
                                 }, false));
         txt = Tpl.writeText(txt, i_numberOfEventIndicators);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
@@ -272,50 +274,6 @@ algorithm
       then txt;
   end matchcontinue;
 end xsdateTime;
-
-public function dotPath
-  input Tpl.Text in_txt;
-  input Absyn.Path in_i_path;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_path)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           Absyn.QUALIFIED(name = i_name, path = i_path) )
-      local
-        Absyn.Path i_path;
-        Absyn.Ident i_name;
-      equation
-        txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
-        txt = dotPath(txt, i_path);
-      then txt;
-
-    case ( txt,
-           Absyn.IDENT(name = i_name) )
-      local
-        Absyn.Ident i_name;
-      equation
-        txt = Tpl.writeStr(txt, i_name);
-      then txt;
-
-    case ( txt,
-           Absyn.FULLYQUALIFIED(path = i_path) )
-      local
-        Absyn.Path i_path;
-      equation
-        txt = dotPath(txt, i_path);
-      then txt;
-
-    case ( txt,
-           _ )
-      then txt;
-  end matchcontinue;
-end dotPath;
 
 public function UnitDefinitions
   input Tpl.Text in_txt;
@@ -385,11 +343,9 @@ algorithm
       local
         SimCode.SimulationSettings i_v;
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("<DefaultExperiment "));
         txt = DefaultExperimentAttribute(txt, i_v);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/>"));
-        txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
@@ -901,7 +857,7 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           SimCode.MODELINFO(varInfo = SimCode.VARINFO(numHelpVars = _), vars = SimCode.SIMVARS(stateVars = i_vars_stateVars, derivativeVars = i_vars_derivativeVars, inputVars = i_vars_inputVars, outputVars = i_vars_outputVars, algVars = i_vars_algVars, paramVars = i_vars_paramVars, intAlgVars = i_vars_intAlgVars, intParamVars = i_vars_intParamVars, boolAlgVars = i_vars_boolAlgVars, boolParamVars = i_vars_boolParamVars, stringAlgVars = i_vars_stringAlgVars, stringParamVars = i_vars_stringParamVars)) )
+           SimCode.MODELINFO(vars = SimCode.SIMVARS(stateVars = i_vars_stateVars, derivativeVars = i_vars_derivativeVars, inputVars = i_vars_inputVars, outputVars = i_vars_outputVars, algVars = i_vars_algVars, paramVars = i_vars_paramVars, intAlgVars = i_vars_intAlgVars, intParamVars = i_vars_intParamVars, boolAlgVars = i_vars_boolAlgVars, boolParamVars = i_vars_boolParamVars, stringAlgVars = i_vars_stringAlgVars, stringParamVars = i_vars_stringParamVars)) )
       local
         list<SimCode.SimVar> i_vars_stringParamVars;
         list<SimCode.SimVar> i_vars_stringAlgVars;
@@ -1002,10 +958,12 @@ algorithm
         SimCode.SimVar i_simVar;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("<ScalarVariable\n"));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = ScalarVariableAttribute(txt, i_simVar, i_causality, i_offset);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(">\n"));
         txt = ScalarVariableType(txt, i_type__, i_unit, i_displayUnit, i_initialValue, i_isFixed);
         txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("</ScalarVariable>"));
       then txt;
 
@@ -1019,29 +977,27 @@ end ScalarVariable;
 
 protected function fun_37
   input Tpl.Text in_txt;
-  input Boolean in_it;
   input String in_i_comment;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_it, in_i_comment)
+  matchcontinue(in_txt, in_i_comment)
     local
       Tpl.Text txt;
-      String i_comment;
 
     case ( txt,
-           false,
+           "" )
+      then txt;
+
+    case ( txt,
            i_comment )
+      local
+        String i_comment;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("description=\""));
         txt = Tpl.writeStr(txt, i_comment);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-      then txt;
-
-    case ( txt,
-           _,
-           _ )
       then txt;
   end matchcontinue;
 end fun_37;
@@ -1071,7 +1027,6 @@ algorithm
         DAELow.VarKind i_varKind;
         Integer i_index;
         Tpl.Text i_alias;
-        Boolean ret_4;
         Tpl.Text i_description;
         Tpl.Text i_variability;
         Integer ret_1;
@@ -1080,12 +1035,10 @@ algorithm
         ret_1 = intAdd(i_index, i_offset);
         i_valueReference = Tpl.writeStr(emptyTxt, intString(ret_1));
         i_variability = getVariablity(emptyTxt, i_varKind);
-        ret_4 = stringEqual(i_comment, "");
-        i_description = fun_37(emptyTxt, ret_4, i_comment);
+        i_description = fun_37(emptyTxt, i_comment);
         i_alias = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("noAlias"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("name=\""));
-        txt = crefStr(txt, i_name);
+        txt = SimCodeC.crefStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "\"\n",
                                     "valueReference=\""
@@ -1107,7 +1060,6 @@ algorithm
                                 }, false));
         txt = Tpl.writeText(txt, i_alias);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
@@ -1181,7 +1133,7 @@ algorithm
            _,
            _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  <Integer/>"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<Integer/>"));
       then txt;
 
     case ( txt,
@@ -1191,13 +1143,11 @@ algorithm
            i_initialValue,
            i_isFixed )
       equation
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("<Real "));
         txt = ScalarVariableTypeCommonAttribute(txt, i_initialValue, i_isFixed);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = ScalarVariableTypeRealAttribute(txt, i_unit, i_displayUnit);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/>"));
-        txt = Tpl.popBlock(txt);
       then txt;
 
     case ( txt,
@@ -1207,7 +1157,7 @@ algorithm
            _,
            _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  <Boolean/>"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<Boolean/>"));
       then txt;
 
     case ( txt,
@@ -1217,7 +1167,7 @@ algorithm
            _,
            _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  <String/>"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<String/>"));
       then txt;
 
     case ( txt,
@@ -1227,7 +1177,7 @@ algorithm
            _,
            _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  <Enumeration/>"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("<Enumeration/>"));
       then txt;
 
     case ( txt,
@@ -1262,7 +1212,7 @@ algorithm
         DAE.Exp i_exp;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("start=\""));
-        txt = initVals(txt, i_exp);
+        txt = SimCodeC.initVal(txt, i_exp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" fixed=\""));
         txt = Tpl.writeStr(txt, Tpl.booleanString(i_isFixed));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
@@ -1277,58 +1227,54 @@ end ScalarVariableTypeCommonAttribute;
 
 protected function fun_42
   input Tpl.Text in_txt;
-  input Boolean in_it;
   input String in_i_unit;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_it, in_i_unit)
+  matchcontinue(in_txt, in_i_unit)
     local
       Tpl.Text txt;
-      String i_unit;
 
     case ( txt,
-           false,
+           "" )
+      then txt;
+
+    case ( txt,
            i_unit )
+      local
+        String i_unit;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("unit=\""));
         txt = Tpl.writeStr(txt, i_unit);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-      then txt;
-
-    case ( txt,
-           _,
-           _ )
       then txt;
   end matchcontinue;
 end fun_42;
 
 protected function fun_43
   input Tpl.Text in_txt;
-  input Boolean in_it;
   input String in_i_displayUnit;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_it, in_i_displayUnit)
+  matchcontinue(in_txt, in_i_displayUnit)
     local
       Tpl.Text txt;
-      String i_displayUnit;
 
     case ( txt,
-           false,
+           "" )
+      then txt;
+
+    case ( txt,
            i_displayUnit )
+      local
+        String i_displayUnit;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("displayUnit=\""));
         txt = Tpl.writeStr(txt, i_displayUnit);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-      then txt;
-
-    case ( txt,
-           _,
-           _ )
       then txt;
   end matchcontinue;
 end fun_43;
@@ -1340,389 +1286,15 @@ public function ScalarVariableTypeRealAttribute
 
   output Tpl.Text out_txt;
 protected
-  Boolean ret_3;
   Tpl.Text i_displayUnit__;
-  Boolean ret_1;
   Tpl.Text i_unit__;
 algorithm
-  ret_1 := stringEqual(i_unit, "");
-  i_unit__ := fun_42(emptyTxt, ret_1, i_unit);
-  ret_3 := stringEqual(i_displayUnit, "");
-  i_displayUnit__ := fun_43(emptyTxt, ret_3, i_displayUnit);
+  i_unit__ := fun_42(emptyTxt, i_unit);
+  i_displayUnit__ := fun_43(emptyTxt, i_displayUnit);
   out_txt := Tpl.writeText(txt, i_unit__);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" "));
   out_txt := Tpl.writeText(out_txt, i_displayUnit__);
 end ScalarVariableTypeRealAttribute;
-
-protected function fun_45
-  input Tpl.Text in_txt;
-  input Boolean in_i_bool;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_bool)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           false )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("false"));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("true"));
-      then txt;
-  end matchcontinue;
-end fun_45;
-
-public function initVals
-  input Tpl.Text in_txt;
-  input DAE.Exp in_i_initialValue;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_initialValue)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           DAE.ICONST(integer = i_integer) )
-      local
-        Integer i_integer;
-      equation
-        txt = Tpl.writeStr(txt, intString(i_integer));
-      then txt;
-
-    case ( txt,
-           DAE.RCONST(real = i_real) )
-      local
-        Real i_real;
-      equation
-        txt = Tpl.writeStr(txt, realString(i_real));
-      then txt;
-
-    case ( txt,
-           DAE.SCONST(string = i_string) )
-      local
-        String i_string;
-        String ret_0;
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        ret_0 = Util.escapeModelicaStringToCString(i_string);
-        txt = Tpl.writeStr(txt, ret_0);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-      then txt;
-
-    case ( txt,
-           DAE.BCONST(bool = i_bool) )
-      local
-        Boolean i_bool;
-      equation
-        txt = fun_45(txt, i_bool);
-      then txt;
-
-    case ( txt,
-           DAE.ENUM_LITERAL(index = i_index) )
-      local
-        Integer i_index;
-      equation
-        txt = Tpl.writeStr(txt, intString(i_index));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("*ERROR* initial value of unknown type"));
-      then txt;
-  end matchcontinue;
-end initVals;
-
-public function crefStr
-  input Tpl.Text in_txt;
-  input DAE.ComponentRef in_i_cr;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_cr)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           DAE.CREF_IDENT(ident = i_ident, subscriptLst = i_subscriptLst) )
-      local
-        list<DAE.Subscript> i_subscriptLst;
-        DAE.Ident i_ident;
-      equation
-        txt = Tpl.writeStr(txt, i_ident);
-        txt = subscriptsStr(txt, i_subscriptLst);
-      then txt;
-
-    case ( txt,
-           DAE.CREF_QUAL(ident = "$DER", componentRef = i_componentRef) )
-      local
-        DAE.ComponentRef i_componentRef;
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("der("));
-        txt = crefStr(txt, i_componentRef);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
-      then txt;
-
-    case ( txt,
-           DAE.CREF_QUAL(ident = i_ident, subscriptLst = i_subscriptLst, componentRef = i_componentRef) )
-      local
-        DAE.ComponentRef i_componentRef;
-        list<DAE.Subscript> i_subscriptLst;
-        DAE.Ident i_ident;
-      equation
-        txt = Tpl.writeStr(txt, i_ident);
-        txt = subscriptsStr(txt, i_subscriptLst);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
-        txt = crefStr(txt, i_componentRef);
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("CREF_NOT_IDENT_OR_QUAL"));
-      then txt;
-  end matchcontinue;
-end crefStr;
-
-protected function lm_48
-  input Tpl.Text in_txt;
-  input list<DAE.Subscript> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           i_s :: rest )
-      local
-        list<DAE.Subscript> rest;
-        DAE.Subscript i_s;
-      equation
-        txt = subscriptStr(txt, i_s);
-        txt = Tpl.nextIter(txt);
-        txt = lm_48(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      local
-        list<DAE.Subscript> rest;
-      equation
-        txt = lm_48(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_48;
-
-public function subscriptsStr
-  input Tpl.Text in_txt;
-  input list<DAE.Subscript> in_i_subscripts;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_subscripts)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           i_subscripts )
-      local
-        list<DAE.Subscript> i_subscripts;
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(",")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_48(txt, i_subscripts);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("]"));
-      then txt;
-  end matchcontinue;
-end subscriptsStr;
-
-protected function fun_50
-  input Tpl.Text in_txt;
-  input DAE.Subscript in_i_subscript;
-  input Tpl.Text in_i_varDecls;
-  input Tpl.Text in_i_preExp;
-
-  output Tpl.Text out_txt;
-  output Tpl.Text out_i_varDecls;
-  output Tpl.Text out_i_preExp;
-algorithm
-  (out_txt, out_i_varDecls, out_i_preExp) :=
-  matchcontinue(in_txt, in_i_subscript, in_i_varDecls, in_i_preExp)
-    local
-      Tpl.Text txt;
-      Tpl.Text i_varDecls;
-      Tpl.Text i_preExp;
-
-    case ( txt,
-           DAE.INDEX(exp = i_exp),
-           i_varDecls,
-           i_preExp )
-      local
-        DAE.Exp i_exp;
-      equation
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, SimCode.contextFunction, i_preExp, i_varDecls);
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           DAE.SLICE(exp = i_exp),
-           i_varDecls,
-           i_preExp )
-      local
-        DAE.Exp i_exp;
-      equation
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, SimCode.contextFunction, i_preExp, i_varDecls);
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           DAE.WHOLEDIM(),
-           i_varDecls,
-           i_preExp )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("WHOLEDIM"));
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           _,
-           i_varDecls,
-           i_preExp )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("UNKNOWN_SUBSCRIPT"));
-      then (txt, i_varDecls, i_preExp);
-  end matchcontinue;
-end fun_50;
-
-public function subscriptStr
-  input Tpl.Text txt;
-  input DAE.Subscript i_subscript;
-
-  output Tpl.Text out_txt;
-protected
-  Tpl.Text i_varDecls;
-  Tpl.Text i_preExp;
-algorithm
-  i_preExp := emptyTxt;
-  i_varDecls := emptyTxt;
-  (out_txt, i_varDecls, i_preExp) := fun_50(txt, i_subscript, i_varDecls, i_preExp);
-end subscriptStr;
-
-protected function fun_52
-  input Tpl.Text in_txt;
-  input Boolean in_i_bool;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_bool)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           false )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(0)"));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(1)"));
-      then txt;
-  end matchcontinue;
-end fun_52;
-
-protected function fun_53
-  input Tpl.Text in_txt;
-  input DAE.Exp in_i_exp;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_exp)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           (i_e as DAE.ICONST(integer = i_integer)) )
-      local
-        Integer i_integer;
-        DAE.Exp i_e;
-      equation
-        txt = Tpl.writeStr(txt, intString(i_integer));
-      then txt;
-
-    case ( txt,
-           (i_e as DAE.RCONST(real = i_real)) )
-      local
-        Real i_real;
-        DAE.Exp i_e;
-      equation
-        txt = Tpl.writeStr(txt, realString(i_real));
-      then txt;
-
-    case ( txt,
-           (i_e as DAE.BCONST(bool = i_bool)) )
-      local
-        Boolean i_bool;
-        DAE.Exp i_e;
-      equation
-        txt = fun_52(txt, i_bool);
-      then txt;
-
-    case ( txt,
-           (i_e as DAE.ENUM_LITERAL(index = i_index)) )
-      local
-        Integer i_index;
-        DAE.Exp i_e;
-      equation
-        txt = Tpl.writeStr(txt, intString(i_index));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("UNKNOWN_EXP"));
-      then txt;
-  end matchcontinue;
-end fun_53;
-
-public function daeExp
-  input Tpl.Text txt;
-  input DAE.Exp i_exp;
-  input SimCode.Context i_context;
-  input Tpl.Text i_preExp;
-  input Tpl.Text i_varDecls;
-
-  output Tpl.Text out_txt;
-  output Tpl.Text out_i_preExp;
-  output Tpl.Text out_i_varDecls;
-algorithm
-  out_txt := fun_53(txt, i_exp);
-  out_i_preExp := i_preExp;
-  out_i_varDecls := i_varDecls;
-end daeExp;
 
 public function fmumodel_identifierFile
   input Tpl.Text in_txt;
@@ -1764,7 +1336,7 @@ algorithm
   end matchcontinue;
 end fmumodel_identifierFile;
 
-protected function fun_56
+protected function fun_46
   input Tpl.Text in_txt;
   input String in_i_modelInfo_directory;
 
@@ -1789,9 +1361,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
   end matchcontinue;
-end fun_56;
+end fun_46;
 
-protected function lm_57
+protected function lm_47
   input Tpl.Text in_txt;
   input list<String> in_items;
 
@@ -1814,7 +1386,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_lib);
         txt = Tpl.nextIter(txt);
-        txt = lm_57(txt, rest);
+        txt = lm_47(txt, rest);
       then txt;
 
     case ( txt,
@@ -1822,12 +1394,12 @@ algorithm
       local
         list<String> rest;
       equation
-        txt = lm_57(txt, rest);
+        txt = lm_47(txt, rest);
       then txt;
   end matchcontinue;
-end lm_57;
+end lm_47;
 
-protected function fun_58
+protected function fun_48
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_libsStr;
@@ -1852,9 +1424,9 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_58;
+end fun_48;
 
-protected function fun_59
+protected function fun_49
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_libsStr;
@@ -1879,7 +1451,7 @@ algorithm
         txt = Tpl.writeText(txt, i_libsStr);
       then txt;
   end matchcontinue;
-end fun_59;
+end fun_49;
 
 public function fmuMakefile
   input Tpl.Text in_txt;
@@ -1914,14 +1486,14 @@ algorithm
         Tpl.Text i_libsStr;
         Tpl.Text i_dirExtra;
       equation
-        i_dirExtra = fun_56(emptyTxt, i_modelInfo_directory);
+        i_dirExtra = fun_46(emptyTxt, i_modelInfo_directory);
         i_libsStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        i_libsStr = lm_57(i_libsStr, i_makefileParams_libs);
+        i_libsStr = lm_47(i_libsStr, i_makefileParams_libs);
         i_libsStr = Tpl.popIter(i_libsStr);
         str_3 = Tpl.textString(i_dirExtra);
-        i_libsPos1 = fun_58(emptyTxt, str_3, i_libsStr);
+        i_libsPos1 = fun_48(emptyTxt, str_3, i_libsStr);
         str_5 = Tpl.textString(i_dirExtra);
-        i_libsPos2 = fun_59(emptyTxt, str_5, i_libsStr);
+        i_libsPos2 = fun_49(emptyTxt, str_5, i_libsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "# Makefile generated by OpenModelica\n",
                                     "\n",

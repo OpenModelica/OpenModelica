@@ -2176,4 +2176,22 @@ algorithm
   out_txt := lm_85(txt, ret_0);
 end genericTest9;
 
+public function implementationTempl
+  input Tpl.Text txt;
+  input String i_str;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.writeStr(txt, i_str);
+end implementationTempl;
+
+public function callImplementationTempl
+  input Tpl.Text txt;
+  input String i_str;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := implementationTempl(txt, i_str);
+end callImplementationTempl;
+
 end test;

@@ -2525,4 +2525,122 @@ algorithm
   end matchcontinue;
 end sConstStringToken;
 
+protected function lm_64
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypedIdents in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_fid, i_ts) :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+        TplAbsyn.TypeSignature i_ts;
+        TplAbsyn.Ident i_fid;
+      equation
+        txt = typeSig(txt, i_ts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_fid);
+        txt = Tpl.nextIter(txt);
+        txt = lm_64(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_64(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_64;
+
+public function sTypedIdents
+  input Tpl.Text txt;
+  input TplAbsyn.TypedIdents i_args;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_64(out_txt, i_args);
+  out_txt := Tpl.popIter(out_txt);
+end sTypedIdents;
+
+public function sFunSignature
+  input Tpl.Text txt;
+  input TplAbsyn.PathIdent i_name;
+  input TplAbsyn.TypedIdents i_iargs;
+  input TplAbsyn.TypedIdents i_oargs;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := pathIdent(txt, i_name);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("("));
+  out_txt := sTypedIdents(out_txt, i_iargs);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(") -> ("));
+  out_txt := sTypedIdents(out_txt, i_oargs);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(")"));
+end sFunSignature;
+
+protected function lm_67
+  input Tpl.Text in_txt;
+  input list<tuple<TplAbsyn.MMExp, TplAbsyn.TypeSignature>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_mexp, i_ts) :: rest )
+      local
+        list<tuple<TplAbsyn.MMExp, TplAbsyn.TypeSignature>> rest;
+        TplAbsyn.TypeSignature i_ts;
+        TplAbsyn.MMExp i_mexp;
+      equation
+        txt = typeSig(txt, i_ts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = mmExp(txt, i_mexp, "=");
+        txt = Tpl.nextIter(txt);
+        txt = lm_67(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<tuple<TplAbsyn.MMExp, TplAbsyn.TypeSignature>> rest;
+      equation
+        txt = lm_67(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_67;
+
+public function sActualMMParams
+  input Tpl.Text txt;
+  input list<tuple<TplAbsyn.MMExp, TplAbsyn.TypeSignature>> i_argValues;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("("));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_67(out_txt, i_argValues);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(")"));
+end sActualMMParams;
+
 end TplCodegen;

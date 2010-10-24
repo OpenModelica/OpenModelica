@@ -304,7 +304,7 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                                    TplAbsyn.MM_STR_TOKEN(Tpl.ST_LINE("Susan is cosmic!\n"))
                                  } ))               
                 },
-                NONE
+                TplAbsyn.GI_TEMPL_FUN()
                  
                )
               ,TplAbsyn.MM_FUN(true,"MoreFun",
@@ -361,7 +361,7 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                     })
                   })
                 },
-                NONE
+                TplAbsyn.GI_TEMPL_FUN()
                )
             }
           
@@ -705,7 +705,7 @@ end Susan;", false, false, "transformAST - pathIdent() + typedIdents()", notPass
         
         //*************
         str = "
-spackage Susan
+interface package Susan
 	package TplAbsyn
 		type Ident = String;
 		type TypedIdents = list<tuple<Ident, PathIdent>>;
@@ -724,7 +724,7 @@ spackage Susan
 end Susan;:)";
         chars = stringListStringChar( str );
         
-        (chars,_, TplAbsyn.TEMPL_PACKAGE(pid, astDefs, {})) = TplParser.templPackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
         /*{ TplAbsyn.AST_DEF(TplAbsyn.IDENT("TplAbsyn"), true, types) } = astDefs;
         (("Ident", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.STRING_TYPE())) 
           :: ("TypedIdents", TplAbsyn.TI_ALIAS_TYPE(TplAbsyn.LIST_TYPE(TplAbsyn.TUPLE_TYPE({TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("Ident")), TplAbsyn.NAMED_TYPE(TplAbsyn.IDENT("PathIdent"))}))))
@@ -757,7 +757,7 @@ end Susan;:)";
         
         //*************
         str = "
-spackage Susan
+interface package Susan
 package builtin
 	function stringListStringChar
 	  input String inString;
@@ -767,11 +767,9 @@ end builtin;
 end Susan;:)";
         chars = stringListStringChar( str );
         
-        (chars,_, tplPackage) = TplParser.templPackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
         
-        tequal = Util.equal(tplPackage,
-          TplAbsyn.TEMPL_PACKAGE(
-            TplAbsyn.IDENT("Susan"), 
+        tequal = Util.equal(astDefs,
             { TplAbsyn.AST_DEF(TplAbsyn.IDENT("builtin"), true, 
              { ("stringListStringChar", 
                   TplAbsyn.TI_FUN_TYPE(
@@ -780,8 +778,8 @@ end Susan;:)";
                      {} )
                )
              } )
-           }, 
-           {}));
+            } ) 
+           and Util.equal(pid, TplAbsyn.IDENT("Susan"));
         
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);
@@ -793,7 +791,7 @@ end Susan;:)";
         
         //*************
         str = "
-spackage Susan
+interface package Susan
 package builtin
 	function stringListStringChar
 	  input String inString;
@@ -996,7 +994,7 @@ end TplAbsyn;
 end Susan;:)";
         chars = stringListStringChar( str );
         
-        (chars,_, tplPackage) = TplParser.templPackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"));
+        (chars,_, pid, astDefs) = TplParser.interfacePackage(chars, TplParser.makeStartLineInfo(chars, "in memory test"),{});
         
         txt = emptyTxt;
         txt = TplCodegen.pathIdent(txt, pid);

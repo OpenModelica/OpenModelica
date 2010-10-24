@@ -1586,6 +1586,32 @@ algorithm
   outString := textString(txt);
 end tplString2;
 
+public function tplString3
+  input Tpl_Fun inFun;
+  input Type_a inArgA;
+  input Type_b inArgB;
+  input Type_c inArgC;
+  output String outString;
+    
+  partial function Tpl_Fun
+    input Text in_txt;
+    input Type_a inArgA;    
+    input Type_b inArgB;
+    input Type_c inArgC;    
+    output Text out_txt;    
+    replaceable type Type_a subtypeof Any;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end Tpl_Fun;  
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any; 
+protected
+  Text txt;
+algorithm
+  txt := inFun(emptyTxt, inArgA, inArgB, inArgC);  
+  outString := textString(txt);
+end tplString3;
 
 public function tplNoret
   input Tpl_Fun inFun;

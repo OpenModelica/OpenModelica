@@ -77,7 +77,7 @@ sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
 susgen:
-	(cd Compiler/susan_codegen/SimCode/GenTest && $(MAKE) -f Makefile)
+	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
 
 

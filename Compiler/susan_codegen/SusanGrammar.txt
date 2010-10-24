@@ -3,6 +3,18 @@
 //*** readable form with left recursion *******
 //*********************************************
 
+//top-level template package, only one per .tpl file for now
+template-package:
+	'package' path-ident (string-comment)? ';' 
+	 (
+	  'import' 'interface' path-ident (string-comment)? ';'
+	  |
+	  'import' path-ident ('.' '*')? (string-comment)? ';'
+	  |
+	  template-def
+	 )*
+	'end' path-ident ';'
+
 template-def:
 	'template' template-signature (string-comment)? '::='  
 	   expression
@@ -141,8 +153,8 @@ fn-call:
 	// path-ident to be able to call an imported function from a package
 
 map-expr:
-	expression '|>'  binding ('indexedby' IDENT)? '=>' expression   // only 1 for the first impl. … left assoc
-	// expression (',' expression)* '|>'  binding  (','  binding)* ('indexedby' IDENT)? '=>'  expression 
+	expression '|>'  binding ('hasindex' IDENT)? '=>' expression   // only 1 for the first impl. … left assoc
+	// expression (',' expression)* '|>'  binding  (','  binding)* ('hasindex' IDENT)? '=>'  expression 
 
 condition:  // we will stick to simple inline only if expression for now ... not <%if cond%> <%endif%> form ... that is ugly looking
 	// Boolean, list, Option, Integer, Real, String, Text
@@ -234,8 +246,13 @@ constant-type:
 type-alias:
 	'type' TYPE '=' type-signature (string-comment)? ';'
 
-//TODO: interface package
-typeview-def:
+//top-level inteface package, only one per .mo file for now
+interface-package:
+	'inteface' 'package'  path-ident  (string-comment)?
+	   interface-def *
+	'end' path-ident ';'
+	
+interface-def:
 	('public' | 'protected')?  
 	'package'  path-ident  (string-comment)?
 	   (
@@ -251,28 +268,11 @@ typeview-def:
 	   )*
 	'end' path-ident ';'
 
-codegen-package:
-	'spackage' path-ident '  (string-comment)? ';'  //syntaxgen, templates , can be just package
-	 (
-	  'typeview' (string-const | verbatim-string-const) //TODO: 'import' 'interface' ??
-	  |
-	  typeview-def //TODO: ?? to be removed from here ??
-	  |
-	  template-def
-	 )*
-	'end' path-ident ';'
-	
-	
-
-
-
-
-
 
 
 //**************************************************
 //*** gramar spec suitable for MM implementation ***
-//*** no left recursion and LL(1) ******************
+//*** no left recursion and LL(k) ******************
 //*** usage of => productions is inspired by MGrammar and OMeta languages
 //**************************************************
 
@@ -339,27 +339,32 @@ pathIdentPath(head):
 	
 
 templPackage:
-	'spackage'  pathIdent:pid  stringComment
+	'package'  pathIdent:pid  stringComment
 		definitions(pid,{},{}):(astDefs,templDefs)
 	endDefPathIdent(pid)	
 	=> 	TEMPL_PACKAGE(pid, listReverse(astDefs),listReverse(templDefs))
 	
 definitions(astDefs,templDefs):
-	'typeview' stringConstant:strRevList 
-	  { ads = typeviewDefsFromFile(stringAppendList(listReverse(strRevList), astDefs) }
+	'import' 'interface' pathIdent:pid stringComment ';' 
+	  { ads = typeviewDefsFromInterfaceFile(pid, astDefs) }
 	  definitions(ads, templDefs):(ads,tds) 
 	  => (ads,tds)
 	| 
-	absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
+	'import' pathIdent:pid unqualImportPostfix:unq stringComment ';'
+	  { ads = typeviewDefsFromTemplateFile(pid, unq, astDefs) }
+	  definitions(ads, templDefs):(ads,tds) 
+	  => (ads,tds)
+//	|
+//	absynDef:ad  definitions(ad::astDefs,templDefs):(ads,tds) => (ads,tds)
 	|
 	templDef:(name, td)  definitions(astDefs,(name,td)::templDefs):(ads,tds) => (ads,tds)
 //	|
 //	error "Expecting 'end' | ['public' | 'protected' ] 'package' definition | template definition starting with an identifier."
 
-typeviewDefs(astDefs):
-	absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
+unqualImportPostfix:
+	'.' '*' => true
 	|
-	_ => astDefs
+	_ => false
 	
 typeSig:
     typeSig_base:base  typeSig_array(base):ts  => ts
@@ -405,6 +410,17 @@ stringCommentRest:
 	~'"' stringCommentRest
 	|
 //TODO:	EOF => error "End of file reached inside string comment"
+
+interfacePackage(astDefs):
+	'interface' 'package'  pathIdent:pid  stringComment
+		typeviewDefs(astDefs):ads
+	endDefPathIdent(pid)	
+	=> 	(pid, ads)
+
+typeviewDefs(astDefs):
+	absynDef:ad  typeviewDefs(ad::astDefs):ads => ads
+	|
+	_ => astDefs
 
 //TODO: is optional rule	
 absynDef:
@@ -574,7 +590,7 @@ mapTailOpt(headExp,lesc,resc):
 	_ => headExp
 
 indexedByOpt:
-	'indexedby' identifier:id
+	'hasindex' identifier:id
 		=> SOME(id)
 	|
 	_ => NONE
@@ -1151,7 +1167,7 @@ escOptionExp(lesc,resc):
 
 
 indexedByOpt:
-	'indexedby' identifier:id
+	'hasindex' identifier:id
 		=> SOME(id)
 	|
 	_ => NONE
