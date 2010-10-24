@@ -62,7 +62,6 @@ public import DAE;
 public import Graphviz;
 
 public type ComponentRef = DAE.ComponentRef;
-public type Exp = DAE.Exp;
 public type Ident = String;
 public type Operator = DAE.Operator;
 public type Type = DAE.ExpType;
@@ -87,7 +86,7 @@ protected import Values;
 protected import ValuesUtil;
 protected import Prefix;
 
-protected constant Exp rconstone=DAE.RCONST(1.0);
+protected constant DAE.Exp rconstone=DAE.RCONST(1.0);
 
 
 public uniontype IntOp
@@ -100,13 +99,13 @@ end IntOp;
 
 public function flattenArrayExpToList "returns all non-array expressions of an array expression as a long list
 E.g. {[1,2;3,4],[4,5;6,7]} => {1,2,3,4,4,5,6,7}"
-  input Exp e;
-  output list<Exp> expLst;
+  input DAE.Exp e;
+  output list<DAE.Exp> expLst;
 algorithm
   expLst := matchcontinue(e)
   local
-    list<Exp> expl;
-    list<list<tuple<Exp,Boolean>>> mexpl;
+    list<DAE.Exp> expl;
+    list<list<tuple<DAE.Exp,Boolean>>> mexpl;
     case(DAE.ARRAY(array=expl)) equation
       expLst = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
     then expLst;
@@ -123,7 +122,7 @@ public function realToIntIfPossible
 "converts to ICONST if possible. If it does
  not fit, a RCONST is returned instead."
 	input Real inVal;
-	output Exp outVal;
+	output DAE.Exp outVal;
 algorithm
   outVal := matchcontinue(inVal)
   	local
@@ -147,7 +146,7 @@ public function safeIntOp
 	input Integer val1;
 	input Integer val2;
 	input IntOp op;
-	output Exp outv;
+	output DAE.Exp outv;
 algorithm
   outv :=
   	matchcontinue(val1, val2, op)
@@ -199,7 +198,7 @@ end safeIntOp;
 
 public function dumpExpWithTitle
   input String title;
-  input Exp exp;
+  input DAE.Exp exp;
   protected String str;
 algorithm
   str := dumpExpStr(exp,0);
@@ -210,7 +209,7 @@ end dumpExpWithTitle;
 
 
 public function dumpExp
-  input Exp exp;
+  input DAE.Exp exp;
   protected String str;
 algorithm
   str := dumpExpStr(exp,0);
@@ -506,7 +505,7 @@ end crefLastSubs;
 public function expLastSubs
 "function: expLastSubs
   Return the last subscripts of a Exp"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output list<Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
@@ -514,7 +513,7 @@ algorithm
     local
       ComponentRef cr;
       list<Subscript> subs;
-      Exp e;
+      DAE.Exp e;
     case (DAE.CREF(componentRef=cr))
       equation
         subs = crefLastSubs(cr);
@@ -580,8 +579,8 @@ end crefStripLastIdent;
 public function expStripLastIdent
 "function: expStripLastIdent
   Strips the last subscripts of a Exp"
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp)
@@ -589,7 +588,7 @@ algorithm
       ComponentRef cr,cr_1;
       Type ty;
       Operator op,op1;
-      Exp e,e_1;
+      DAE.Exp e,e_1;
       Boolean b;
     case (DAE.CREF(componentRef=cr))
       equation
@@ -660,15 +659,15 @@ end crefStripLastSubs;
 public function expStripLastSubs
 "function: expStripLastSubs
   Strips the last subscripts of a Exp"
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp)
     local
       ComponentRef cr,cr_1;
       Type ty;
       Operator op,op1;
-      Exp e,e_1;
+      DAE.Exp e,e_1;
       Boolean b;
 
     case (DAE.CREF(componentRef=cr))
@@ -904,7 +903,7 @@ end identEqual;
 public function isRange
 "function: isRange
   Returns true if expression is a range expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -918,7 +917,7 @@ public function isOne
 "function: isOne
   Returns true if an expression is constant
   and has the value one, otherwise false"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
@@ -927,7 +926,7 @@ algorithm
       Real rzero,rval;
       Boolean res;
       Type t;
-      Exp e;
+      DAE.Exp e;
     case (DAE.ICONST(integer = ival))
       equation
         (ival == 1) = true;
@@ -952,7 +951,7 @@ public function isZero
 "function: isZero
   Returns true if an expression is constant
   and has the value zero, otherwise false"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -962,11 +961,11 @@ algorithm
       Real rzero,rval;
       Boolean res;
       Type t;
-      Exp e;
-      list<Exp> ae;
+      DAE.Exp e;
+      list<DAE.Exp> ae;
       list<Boolean> ab;
-      list<list<tuple<Exp, Boolean>>> scalar;      
-      list<tuple<Exp, Boolean>> aelstlst;       
+      list<list<tuple<DAE.Exp, Boolean>>> scalar;      
+      list<tuple<DAE.Exp, Boolean>> aelstlst;       
     case (DAE.ICONST(integer = ival))
       equation
         (ival == 0) = true;
@@ -1007,7 +1006,7 @@ public function isConst
 "function: isConst
   Returns true if an expression
   is constant otherwise false"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -1018,12 +1017,12 @@ algorithm
       Boolean bval,res,b1,b2;
       Ident sval;
       Operator op;
-      Exp e,e1,e2;
+      DAE.Exp e,e1,e2;
       Type t;
-      list<Exp> ae;
+      list<DAE.Exp> ae;
       list<Boolean> ab;
-      list<list<tuple<Exp, Boolean>>> scalar;      
-      list<tuple<Exp, Boolean>> aelstlst;      
+      list<list<tuple<DAE.Exp, Boolean>>> scalar;      
+      list<tuple<DAE.Exp, Boolean>> aelstlst;      
     case (DAE.ICONST(integer = ival)) then true;
     case (DAE.RCONST(real = rval)) then true;
     case (DAE.BCONST(bool = bval)) then true;
@@ -1076,7 +1075,7 @@ public function isNotConst
 "function isNotConst
   author: PA
   Check if expression is not constant."
-  input Exp e;
+  input DAE.Exp e;
   output Boolean nb;
   Boolean b;
 algorithm
@@ -1105,14 +1104,14 @@ end isRecord;
 public function isRelation
 "function: isRelation
   Returns true if expression is a function expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inExp)
     local
       Boolean b1,b2,res;
-      Exp e1,e2;
+      DAE.Exp e1,e2;
     case (DAE.RELATION(exp1 = _)) then true;
     case (DAE.LUNARY(exp = DAE.RELATION(exp1 = _))) then true;
     case (DAE.LBINARY(exp1 = e1,exp2 = e2))
@@ -1128,7 +1127,7 @@ end isRelation;
 
 public function getRealConst "returns the expression as a Real value.
 Integer constants are cast to Real"
-input Exp e;
+input DAE.Exp e;
 output Real v;
 algorithm
   v := matchcontinue(e)
@@ -1141,7 +1140,7 @@ end getRealConst;
 
 public function getBoolConst "returns the expression as a Boolean value.
 "
-input Exp e;
+input DAE.Exp e;
 output Boolean b;
 algorithm
   b := matchcontinue(e)
@@ -1152,14 +1151,14 @@ end getBoolConst;
 public function getRelations
 "function: getRelations
   Retrieve all function sub expressions in an expression."
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExp)
     local
-      Exp e,e1,e2,cond,tb,fb;
-      list<Exp> rellst1,rellst2,rellst,rellst3,rellst4,xs;
+      DAE.Exp e,e1,e2,cond,tb,fb;
+      list<DAE.Exp> rellst1,rellst2,rellst,rellst3,rellst4,xs;
       Type t;
       Boolean sc;
     case ((e as DAE.RELATION(exp1 = _))) then {e};
@@ -1397,9 +1396,9 @@ end crefEqualNoStringCompare;
 public function prependSubscriptExp
 "Prepends a subscript to a CREF expression
  For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
-  input Exp exp;
+  input DAE.Exp exp;
   input Subscript subscr;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp,subscr)
   local Type t; ComponentRef cr,cr1,cr2;
@@ -1429,11 +1428,11 @@ public function subscriptExp
   Returns the expression in a subscript index.
   If the subscript is not an index the function fails.x"
   input Subscript inSubscript;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inSubscript)
-    local Exp e;
+    local DAE.Exp e;
     case (DAE.INDEX(exp = e)) then e;
   end matchcontinue;
 end subscriptExp;
@@ -1449,7 +1448,7 @@ algorithm
     local
       Boolean res;
       list<Subscript> xs1,xs2;
-      Exp e1,e2;
+      DAE.Exp e1,e2;
       
     // both lists are empty 
     case ({},{}) then true;
@@ -1546,9 +1545,9 @@ expressions given the original expression and then simplify them.
 Note: The subscripts must be INDEX
 
 alternative names: subsriptExp (but already taken), subscriptToAsub"
-  input Exp e;
+  input DAE.Exp e;
   input list<DAE.Subscript> subs; 
-  output Exp res;
+  output DAE.Exp res;
 algorithm
   res := matchcontinue(e,subs)
   local list<DAE.Exp> expl;
@@ -1569,9 +1568,9 @@ end applyExpSubscripts ;
 
 
 public function makeAsub "creates an ASUB given an expression and an index"
-  input Exp e;
+  input DAE.Exp e;
   input Integer indx;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(e,indx)
   local list<DAE.Exp> subs;
@@ -1694,11 +1693,11 @@ end subscriptString;
 
 public function simplify "function simplify
   Simplifies expressions"
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
-    local Exp e, eNew;
+    local DAE.Exp e, eNew;
     case (e)
       equation
         true = RTOpts.getNoSimplify();
@@ -1719,19 +1718,19 @@ public function simplify1
 "function: simplify1
   This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp)
     local
       Real v,rv;
       Integer n,i_1,i;
-      Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,cond,sub;
+      DAE.Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,e3_1,e3,cond,sub;
       Type t,tp_1,tp,tp1,tp2,t1;
       Boolean b,remove_if;
       Ident idn;
-      list<Exp> exps,exps_1,expl_1;
-      list<tuple<Exp, Boolean>> expl;
+      list<DAE.Exp> exps,exps_1,expl_1;
+      list<tuple<DAE.Exp, Boolean>> expl;
       list<Boolean> bls;
       list<Subscript> s,s_1;
       ComponentRef c_1;
@@ -1758,7 +1757,7 @@ algorithm
         Boolean tpl,builtin;
         DAE.InlineType inline;
         Type tp;
-        list<Exp> expl;
+        list<DAE.Exp> expl;
         Absyn.Path fn;
       equation
         expl = Util.listMap(expl,simplify1);
@@ -1773,7 +1772,7 @@ algorithm
         Boolean tpl,builtin;
         DAE.InlineType inline;
         Type tp;
-        list<Exp> expl;
+        list<DAE.Exp> expl;
         Absyn.Path fn;
       equation
         e2 = simplifyBuiltinCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inline));
@@ -1782,7 +1781,7 @@ algorithm
     
     // cast from real to real
     case (DAE.CAST(ty = DAE.ET_REAL(),exp=e ))
-      local Exp e; Real v;
+      local DAE.Exp e; Real v;
       equation
         DAE.RCONST(v) = simplify1(e);
       then 
@@ -1818,7 +1817,7 @@ algorithm
     
     // simplify cast of matrix expressions
     case (DAE.CAST(ty = tp,exp = e))
-      local list<list<tuple<Exp, Boolean>>> exps,exps_1;
+      local list<list<tuple<DAE.Exp, Boolean>>> exps,exps_1;
       equation
         DAE.MATRIX(t,n,exps) = simplify1(e);
         tp1 = unliftArray(tp);
@@ -1830,7 +1829,7 @@ algorithm
     
     // if expression already has a specified cast type.
     case (DAE.CAST(ty = tp,exp = e))
-      local ComponentRef cr; Exp e1; Type t1,t2;
+      local ComponentRef cr; DAE.Exp e1; Type t1,t2;
       equation
         t1 = arrayEltType(tp);
         e1 = simplify1(e);
@@ -1875,7 +1874,7 @@ algorithm
     // simplify matrix
     case DAE.MATRIX( t, i, matr)
       local
-        list<list<tuple<Exp, Boolean>>> matr,matr2;
+        list<list<tuple<DAE.Exp, Boolean>>> matr,matr2;
       equation
         matr2 = Util.listMap(matr,simplifyMatrixRows);
       then
@@ -1891,7 +1890,7 @@ algorithm
 
     // array indexing
     case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp ae1;
+      local DAE.Exp ae1;
       equation
         i_1 = expInt(sub);
         DAE.ARRAY(t,b,exps) = simplify1(e);
@@ -1902,7 +1901,7 @@ algorithm
     
     // matrix indexing 
     case DAE.ASUB(exp = e,sub = sub::{})
-      local list<list<tuple<Exp, Boolean>>> exps; Exp ae1;
+      local list<list<tuple<DAE.Exp, Boolean>>> exps; DAE.Exp ae1;
       equation
         i_1 = expInt(sub);
         DAE.MATRIX(t,n,exps) = simplify1(e);
@@ -1916,7 +1915,7 @@ algorithm
     
     // if expression indexing
     case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp t,ae1;
+      local DAE.Exp t,ae1;
       equation
         _ = expInt(sub);
         DAE.IFEXP(c,t,f) = simplify1(e);
@@ -1927,7 +1926,7 @@ algorithm
     
     // ident cref indexing
     case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp ae1;Type t2;
+      local DAE.Exp ae1;Type t2;
       equation
         _ = expInt(sub);
         DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t) = simplify1(e);
@@ -1940,7 +1939,7 @@ algorithm
     case DAE.ASUB(exp = e,sub = sub::{})
       local
         ComponentRef c;
-        Exp ae1;
+        DAE.Exp ae1;
         Type t2;
       equation
         _ = expInt(sub);
@@ -1952,7 +1951,7 @@ algorithm
     // indexing
     case DAE.ASUB(exp = e,sub = sub::{})
       local
-        Exp ae1;
+        DAE.Exp ae1;
       equation
         _ = expInt(sub);
         e = simplifyAsub(e, sub) "For arbitrary vector operations, e.g (a+b-c)[1] => a[1]+b[1]-c[1]" ;
@@ -2042,8 +2041,8 @@ algorithm
     case DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t)
       local
         Integer lInt;
-        list<Exp> expl_1;
-        Exp exp1;
+        list<DAE.Exp> expl_1;
+        DAE.Exp exp1;
       equation
         exp1 = simplifyCref(c_1,t);
       then
@@ -2057,8 +2056,8 @@ algorithm
 end simplify1;
 
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions"
-  input Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
-  output Exp outExp;
+  input DAE.Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
     local
@@ -2093,14 +2092,14 @@ algorithm
 end simplifyBuiltinCalls;
 
 protected function simplifyBuiltinConstantCalls "simplifies some builtin calls if constant arguments"
-  input Exp exp "assumes already simplified call arguments";
-  output Exp outExp;
+  input DAE.Exp exp "assumes already simplified call arguments";
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
   local 
     Real r,v1,v2; 
     Integer i, j; 
-    Absyn.Path path; Exp e,e1;
+    Absyn.Path path; DAE.Exp e,e1;
     Boolean b;
     
     // der(constant) ==> 0
@@ -2213,12 +2212,12 @@ algorithm
 end simplifyBuiltinConstantCalls;
 
 protected function simplifyMatrixRows ""
-  input list<tuple<Exp, Boolean>> inRow;
-  output list<tuple<Exp, Boolean>> outRow;
+  input list<tuple<DAE.Exp, Boolean>> inRow;
+  output list<tuple<DAE.Exp, Boolean>> outRow;
 algorithm 
   outRow := matchcontinue(inRow)
     local
-      Exp e,e_1;
+      DAE.Exp e,e_1;
       Boolean b;
   
     case({}) then {};
@@ -2313,19 +2312,19 @@ end simplifyIdentityMakeRow;
 
 public function stripNoEvent
 "Function that strips all noEvent() calls in an expression"
-  input Exp e;
-  output Exp outE;
+  input DAE.Exp e;
+  output DAE.Exp outE;
 algorithm
   ((outE,_)) := traverseExp(e,stripNoEventExp,0);
 end stripNoEvent;
 
 protected function stripNoEventExp "
 traversal function for stripNoEvent"
-  input tuple<Exp,Integer/*dummy*/> inTpl;
-  output tuple<Exp,Integer> outTpl;
+  input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
+  output tuple<DAE.Exp,Integer> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
-    local Exp e; Integer i;
+    local DAE.Exp e; Integer i;
     case((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),i)) then ((e,i));
     case((e,i)) then ((e,i));
   end matchcontinue;
@@ -2333,19 +2332,19 @@ end stripNoEventExp;
 
 public function addNoEventToRelations
 "Function that adds a  noEvent() call to all relations in an expression"
-  input Exp e;
-  output Exp outE;
+  input DAE.Exp e;
+  output DAE.Exp outE;
 algorithm
   ((outE,_)) := traverseExp(e,addNoEventToRelationExp,0);
 end addNoEventToRelations;
 
 protected function addNoEventToRelationExp "
 traversal function for addNoEventToRelations"
-  input tuple<Exp,Integer/*dummy*/> inTpl;
-  output tuple<Exp,Integer> outTpl;
+  input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
+  output tuple<DAE.Exp,Integer> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
-  local Exp e; Integer i;
+  local DAE.Exp e; Integer i;
     case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
@@ -2353,19 +2352,19 @@ end addNoEventToRelationExp;
 
 public function addNoEventToEventTriggeringFunctions
 " Function that adds a  noEvent() call to all event triggering functions in an expression"
-  input Exp e;
-  output Exp outE;
+  input DAE.Exp e;
+  output DAE.Exp outE;
 algorithm
   ((outE,_)) := traverseExp(e,addNoEventToEventTriggeringFunctionsExp,0);
 end addNoEventToEventTriggeringFunctions;
 
 protected function addNoEventToEventTriggeringFunctionsExp "
 traversal function for addNoEventToEventTriggeringFunctions"
-  input tuple<Exp,Integer/*dummy*/> inTpl;
-  output tuple<Exp,Integer> outTpl;
+  input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
+  output tuple<DAE.Exp,Integer> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
-  local Exp e; Integer i;
+  local DAE.Exp e; Integer i;
     case (((e as DAE.CALL(path=_)), i))
       equation
         true = isEventTriggeringFunctionExp(e);
@@ -2394,7 +2393,7 @@ protected function simplifyCref
   x[{y,z,q}] to {x[y], x[z], x[q]}"
   input ComponentRef inCREF;
   input Type inType;
-  output Exp exp;
+  output DAE.Exp exp;
 algorithm
   exp := matchcontinue(inCREF, inType)
     local
@@ -2403,7 +2402,7 @@ algorithm
     case(DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,expl_1))) :: _))),t)
       local
         Ident idn;
-        list<Exp> expl_1;
+        list<DAE.Exp> expl_1;
       equation
         exp = simplifyCref2(DAE.CREF(DAE.CREF_IDENT(idn,t2,{}),t),ssl);
       then
@@ -2414,16 +2413,16 @@ end simplifyCref;
 protected function simplifyCref2
 "Helper function for simplifyCref
  Does the recursion."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input list<Subscript> inSsl;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inSsl)
     local
       Ident idn;
       Type t,tp;
-      Exp exp_1, crefExp, exp;
-      list<Exp> expl_1,expl;
+      DAE.Exp exp_1, crefExp, exp;
+      list<DAE.Exp> expl_1,expl;
       Subscript ss;
       list<Subscript> ssl,ssl_2,subs;
       list<ComponentRef> crefs;
@@ -2454,11 +2453,11 @@ end simplifyCref2;
 public function simplify2
 "Advanced simplifications covering several
  terms or factors, like a +2a +3a = 5a "
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
-  local Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
+  local DAE.Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
      Operator op;
     case ((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
       local String s1,s2; Boolean b;
@@ -2483,15 +2482,15 @@ end simplify2;
 protected function simplifyBinaryArray "function: simplifyBinaryArray
   Simplifies binary array expressions,
   e.g. matrix multiplication, etc."
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
     local
-      Exp e_1,e1,e2,res,s1,a1;
+      DAE.Exp e_1,e1,e2,res,s1,a1;
       Type tp;
 
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
@@ -2848,15 +2847,15 @@ public function simplifyScalarProduct
   Simplifies scalar product:
    v1v2, M  v1 and v1  M
   for vectors v1,v2 and matrix M."
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
     local
-      list<Exp> expl,expl1,expl2,expl_1;
-      Exp exp;
+      list<DAE.Exp> expl,expl1,expl2,expl_1;
+      DAE.Exp exp;
       Type tp1,tp2,tp;
       Boolean sc1,sc2,sc;
       Integer size1,size;
@@ -2869,14 +2868,14 @@ algorithm
     // M * v1, use first dimension of M as the dimension of the result, in case the array has dimension 1, i.e. is a scalar.
     case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp1, arrayDimensions = d :: _), scalar = expl1),DAE.ARRAY(scalar = sc,array = expl2))
       local 
-        list<list<tuple<Exp, Boolean>>> expl1;
+        list<list<tuple<DAE.Exp, Boolean>>> expl1;
         DAE.Dimension d;
       equation
         expl_1 = simplifyScalarProductMatrixVector(expl1, expl2);
       then
         DAE.ARRAY(DAE.ET_ARRAY(tp1, {d}),sc,expl_1);
     case (DAE.ARRAY(ty = tp1,scalar = sc,array = expl1),DAE.MATRIX(ty = tp2,integer = size,scalar = expl2))
-      local list<list<tuple<Exp, Boolean>>> expl2;
+      local list<list<tuple<DAE.Exp, Boolean>>> expl2;
       equation
         expl_1 = simplifyScalarProductVectorMatrix(expl1, expl2);
       then
@@ -2892,17 +2891,17 @@ end simplifyScalarProduct;
 protected function simplifyScalarProductMatrixVector
 "function: simplifyScalarProductMatrixVector
   Simplifies scalar product of matrix  vector."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
-  input list<Exp> inExpLst;
-  output list<Exp> outExpLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inTplExpBooleanLstLst,inExpLst)
     local
-      list<Exp> row_1,expl,res,v1;
-      Exp exp;
-      list<tuple<Exp, Boolean>> row;
-      list<list<tuple<Exp, Boolean>>> rows;
+      list<DAE.Exp> row_1,expl,res,v1;
+      DAE.Exp exp;
+      list<tuple<DAE.Exp, Boolean>> row;
+      list<list<tuple<DAE.Exp, Boolean>>> rows;
     case ({},_) then {};
 
     case ((row :: rows),v1)
@@ -2928,15 +2927,15 @@ end simplifyScalarProductMatrixVector;
 protected function simplifyScalarProductMatrixVector1
 "function: simplifyScalarProductMatrixVector1
   Simplifies scalar product of matrix  vector."
-  input list<Exp> inExpLst;
-  input list<Exp> inExpLst1;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  input list<DAE.Exp> inExpLst1;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst,inExpLst1)
     local
-      list<Exp> row,rows,res,v1,expl;
-      Exp exp;
+      list<DAE.Exp> row,rows,res,v1,expl;
+      DAE.Exp exp;
     case ({},_) then {};
     case ((DAE.ARRAY(array=row) :: rows),v1)
       equation
@@ -2951,21 +2950,21 @@ end simplifyScalarProductMatrixVector1;
 protected function simplifyScalarProductVectorMatrix
 "function: simplifyScalarProductVectorMatrix
   Simplifies scalar product of vector  matrix"
-  input list<Exp> inExpLst;
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst,inTplExpBooleanLstLst) // non working
     local
-      list<Exp> row_1,expl,res,v1,expl;
-      Exp exp;
-      tuple<Exp, Boolean> texp;
-      list<tuple<Exp, Boolean>> row;
-      list<list<tuple<Exp, Boolean>>> rows;
+      list<DAE.Exp> row_1,expl,res,v1,expl;
+      DAE.Exp exp;
+      tuple<DAE.Exp, Boolean> texp;
+      list<tuple<DAE.Exp, Boolean>> row;
+      list<list<tuple<DAE.Exp, Boolean>>> rows;
     case (v1,  ((texp :: {}) :: rows)    )
       local
-        list<tuple<Exp, Boolean>> heads;
+        list<tuple<DAE.Exp, Boolean>> heads;
       equation
         heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
         row_1 = Util.listMap(heads, Util.tuple21);
@@ -2975,8 +2974,8 @@ algorithm
         (exp :: {});
     case (v1,(rows))
       local
-        list<tuple<Exp, Boolean>> heads;
-        list<list<tuple<Exp, Boolean>>> tails;
+        list<tuple<DAE.Exp, Boolean>> heads;
+        list<list<tuple<DAE.Exp, Boolean>>> tails;
       equation
         heads = Util.listMap((rows),Util.listFirst);
         tails = Util.listMap((rows),Util.listRest);
@@ -2992,20 +2991,20 @@ end simplifyScalarProductVectorMatrix;
 protected function simplifyVectorScalar
 "function: simplifyVectorScalar
   Simplifies vector scalar operations."
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
     local
-      Exp s1,e1,e;
+      DAE.Exp s1,e1,e;
       Operator op;
       Type tp;
       Boolean sc;
-      list<Exp> es_1,es;
-      list<list<tuple<Exp, Boolean>>> mexpl;
+      list<DAE.Exp> es_1,es;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dims;
     /* scalar operator array */
     case (s1,op,DAE.ARRAY(ty = tp,scalar = sc,array = {})) then DAE.ARRAY(tp,sc,{DAE.BINARY(s1,op,DAE.ICONST(0))});
@@ -3043,19 +3042,19 @@ protected function simplifyVectorBinary
 "function: simlify_binary_array
   author: PA
   Simplifies vector addition and subtraction"
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
     local
       Type tp1,tp2;
       Boolean scalar1,scalar2;
-      Exp e1,e2;
+      DAE.Exp e1,e2;
       Operator op,op2;
-      list<Exp> es_1,es1,es2;
+      list<DAE.Exp> es_1,es1,es2;
     case (DAE.ARRAY(ty = tp1,scalar = scalar1,array = {e1}),
           op,
          DAE.ARRAY(ty = tp2,scalar = scalar2,array = {e2}))
@@ -3078,22 +3077,22 @@ protected function simplifyMatrixBinary
 "function: simlify_binary_matrix
   author: PA
   Simplifies matrix addition and subtraction"
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
     local
       Type tp1,tp2;
-      list<list<tuple<Exp, Boolean>>> scalar;
+      list<list<tuple<DAE.Exp, Boolean>>> scalar;
       Integer integer1,integer2,i1,i2;
-      list<tuple<Exp, Boolean>> e,e1,e2;
+      list<tuple<DAE.Exp, Boolean>> e,e1,e2;
       Operator op,op2;
-      list<list<tuple<Exp, Boolean>>> es_1,es1,es2;
-      list<Exp> el1,el2;
-      Exp exp1;      
+      list<list<tuple<DAE.Exp, Boolean>>> es_1,es1,es2;
+      list<DAE.Exp> el1,el2;
+      DAE.Exp exp1;      
     case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = {e1}),
           op,
          DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
@@ -3164,18 +3163,18 @@ protected function simplifyMatrixBinary1
 "function: simlify_binary_matrix
   author: PA
   Simplifies matrix addition and subtraction"
-  input list<tuple<Exp, Boolean>> inExp1;
+  input list<tuple<DAE.Exp, Boolean>> inExp1;
   input Operator inOperator2;
-  input list<tuple<Exp, Boolean>> inExp3;
-  output list<tuple<Exp, Boolean>> outExp;
+  input list<tuple<DAE.Exp, Boolean>> inExp3;
+  output list<tuple<DAE.Exp, Boolean>> outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
     local
-      Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
       Boolean b1,b2,b;
       Operator op,op2;
-      list<tuple<Exp, Boolean>> es_1,es1,es2;
+      list<tuple<DAE.Exp, Boolean>> es_1,es1,es2;
     case ({(e1,b1)},op,{(e2,b2)})
       equation
         op2 = removeOperatorDimension(op);
@@ -3197,20 +3196,20 @@ protected function simplifyMatrixPow
 "function: simplifyMatrixPow
   author: Frenkel TUD
   Simplifies matrix powers."
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Type inType;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inType,inExp2)
     local
-      list<list<tuple<Exp, Boolean>>> expl_1,expl1,expl2;
-      list<tuple<Exp, Boolean>> el;
+      list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
+      list<tuple<DAE.Exp, Boolean>> el;
       Type tp1,tp;
       Integer size1,i,i_1;
       list<Integer> range;
-      Exp e,m,res;
+      DAE.Exp e,m,res;
     /* A^0=I */
     case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
           DAE.ICONST(integer = i))
@@ -3247,16 +3246,16 @@ protected function simplifyMatrixPow1
   author: Frenkel TUD
   Simplifies matrix powers."
   input list<Integer> inRange;
-  input list<list<tuple<Exp, Boolean>>> inMatrix;
-  input tuple<Exp, Boolean> inValue;
-  output list<list<tuple<Exp, Boolean>>> outMatrix;
+  input list<list<tuple<DAE.Exp, Boolean>>> inMatrix;
+  input tuple<DAE.Exp, Boolean> inValue;
+  output list<list<tuple<DAE.Exp, Boolean>>> outMatrix;
 algorithm
   outMatrix:=
   matchcontinue (inRange,inMatrix,inValue)
     local
-      list<list<tuple<Exp, Boolean>>> rm,rm1;
-      list<tuple<Exp, Boolean>> row,row1;
-      tuple<Exp, Boolean> e;
+      list<list<tuple<DAE.Exp, Boolean>>> rm,rm1;
+      list<tuple<DAE.Exp, Boolean>> row,row1;
+      tuple<DAE.Exp, Boolean> e;
       Integer i;
       list<Integer> rr;
     case ({},{},e)
@@ -3280,14 +3279,14 @@ protected function simplifyMatrixProduct
 "function: simplifyMatrixProduct
   author: PA
   Simplifies matrix products A * B for matrices A and B."
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
     local
-      list<list<tuple<Exp, Boolean>>> expl_1,expl1,expl2;
+      list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
       Type tp;
       Integer size1,size2;
       DAE.Dimension n, p, res_dim;
@@ -3305,15 +3304,15 @@ protected function simplifyMatrixProduct2
 "function: simplifyMatrixProduct2
   author: PA
   Helper function to simplifyMatrixProduct."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst1;
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst2;
-  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst1;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst2;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst:=
   matchcontinue (inTplExpBooleanLstLst1,inTplExpBooleanLstLst2)
     local
-      list<tuple<Exp, Boolean>> res1,e1lst;
-      list<list<tuple<Exp, Boolean>>> res2,rest1,m2;
+      list<tuple<DAE.Exp, Boolean>> res1,e1lst;
+      list<list<tuple<DAE.Exp, Boolean>>> res2,rest1,m2;
     case ((e1lst :: rest1),m2)
       equation
         res1 = simplifyMatrixProduct3(e1lst, m2);
@@ -3330,16 +3329,16 @@ protected function simplifyMatrixProduct3
   Helper function to simplifyMatrixProduct2. Extract each column at
   a time from the second matrix to calculate vector products with the
   first argument."
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
-  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
 algorithm
   outTplExpBooleanLst:=
   matchcontinue (inTplExpBooleanLst,inTplExpBooleanLstLst)
     local
-      list<tuple<Exp, Boolean>> first_col,es,expl;
-      list<list<tuple<Exp, Boolean>>> mat_1,mat;
-      Exp e_1;
+      list<tuple<DAE.Exp, Boolean>> first_col,es,expl;
+      list<list<tuple<DAE.Exp, Boolean>>> mat_1,mat;
+      DAE.Exp e_1;
       Type tp;
       Boolean builtin;
     case ({},_) then {};
@@ -3362,16 +3361,16 @@ protected function simplifyMatrixProduct4
   author: PA
   Helper function to simplifyMatrix3,
   performs a scalar mult of vectors"
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst1;
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst2;
-  output Exp outExp;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst1;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inTplExpBooleanLst1,inTplExpBooleanLst2)
     local
       Type tp,tp_1;
-      Exp e1,e2,e,res;
-      list<tuple<Exp, Boolean>> es1,es2;
+      DAE.Exp e1,e2,e,res;
+      list<tuple<DAE.Exp, Boolean>> es1,es2;
     case ({(e1,_)},{(e2,_)})
       equation
         tp = typeof(e1);
@@ -3392,14 +3391,14 @@ end simplifyMatrixProduct4;
 protected function addCast
 "function: addCast
   Adds a cast of a Type to an expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input Type inType;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp,inType)
     local
-      Exp e;
+      DAE.Exp e;
       Type tp;
     case (e,tp) then DAE.CAST(tp,e);
   end matchcontinue;
@@ -3411,20 +3410,20 @@ protected function simplifyBinarySortConstants
   Sorts all constants of a sum or product to the
   beginning of the expression.
   Also combines expressions like 2a+4a and aaa+3a^3."
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp)
     local
-      list<Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1,e_lst_2;
-      Exp res,e,e1,e2;
+      list<DAE.Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1,e_lst_2;
+      DAE.Exp res,e,e1,e2;
       Type tp;
        String str;
 
       /* e1 * e2 */
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
-        local Exp res1,res2,zero;
+        local DAE.Exp res1,res2,zero;
           Boolean b1,b2,b;
       equation
         res = simplifyBinarySortConstantsMul(e);
@@ -3439,7 +3438,7 @@ algorithm
 
     /* e1 + e2 */
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2)))
-      local Exp res1,res2;
+      local DAE.Exp res1,res2;
       equation
         e_lst = terms(e);
         e_lst_1 = Util.listMap(e_lst,simplify2);
@@ -3461,14 +3460,14 @@ protected function simplifyBinaryCoeff
 "function: simplifyBinaryCoeff
   author: PA
   Combines expressions like 2a+4a and aaa+3a^3, etc"
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp)
     local
-      list<Exp> e_lst,e_lst_1,e1_lst,e2_lst,e2_lst_1;
-      Exp res,res1,e,e1,e2;
+      list<DAE.Exp> e_lst,e_lst_1,e1_lst,e2_lst,e2_lst_1;
+      DAE.Exp res,res1,e,e1,e2;
       Type tp;
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
       equation
@@ -3502,14 +3501,14 @@ protected function simplifyBinaryAddConstants
 "function: simplifyBinaryAddConstants
   author: PA
   Adds all expressions in the list, given that they are constant."
-  input list<Exp> inExpLst;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst)
     local
-      Exp e,e_1,e1;
-      list<Exp> es;
+      DAE.Exp e,e_1,e1;
+      list<DAE.Exp> es;
       Type tp;
     case ({}) then {};
     case ({e}) then {e};
@@ -3531,14 +3530,14 @@ protected function simplifyBinaryMulConstants
 "function: simplifyBinaryMulConstants
   author: PA
   Multiplies all expressions in the list, given that they are constant."
-  input list<Exp> inExpLst;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst)
     local
-      Exp e,e_1,e1;
-      list<Exp> es;
+      DAE.Exp e,e_1,e1;
+      list<DAE.Exp> es;
       Type tp;
     case ({}) then {};
     case ({e}) then {e};
@@ -3556,11 +3555,11 @@ protected function simplifyMul
 "function: simplifyMul
   author: PA
   Simplifies expressions like a*a*a*b*a*b*a"
-  input list<Exp> expl;
-  output list<Exp> expl_1;
+  input list<DAE.Exp> expl;
+  output list<DAE.Exp> expl_1;
 //   list<Ident> sl;
 //   Ident s;
-  list<tuple<Exp, Real>> exp_const,exp_const_1;
+  list<tuple<DAE.Exp, Real>> exp_const,exp_const_1;
 algorithm
 //   sl := Util.listMap(expl, printExpStr);
 //   s := Util.stringDelimitList(sl, ", ");
@@ -3573,16 +3572,16 @@ protected function simplifyMul2
 "function: simplifyMul2
   author: PA
   Helper function to simplifyMul."
-  input list<Exp> inExpLst;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  input list<DAE.Exp> inExpLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   outTplExpRealLst:=
   matchcontinue (inExpLst)
     local
-      Exp e_1,e;
+      DAE.Exp e_1,e;
       Real coeff;
-      list<tuple<Exp, Real>> rest;
-      list<Exp> es;
+      list<tuple<DAE.Exp, Real>> rest;
+      list<DAE.Exp> es;
     case ({}) then {};
     case ((e :: es))
       equation
@@ -3599,15 +3598,15 @@ protected function simplifyMulJoinFactors
   Helper function to simplifyMul.
   Joins expressions that have the same base.
   E.g. {(a,2), (a,4), (b,2)} => {(a,6), (b,2)}"
-  input list<tuple<Exp, Real>> inTplExpRealLst;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   outTplExpRealLst:=
   matchcontinue (inTplExpRealLst)
     local
       Real coeff2,coeff_1,coeff;
-      list<tuple<Exp, Real>> rest_1,res,rest;
-      Exp e;
+      list<tuple<DAE.Exp, Real>> rest_1,res,rest;
+      DAE.Exp e;
     case ({}) then {};
     case (((e,coeff) :: rest))
       equation
@@ -3624,17 +3623,17 @@ protected function simplifyMulJoinFactorsFind
   author: PA
   Helper function to simplifyMulJoinFactors.
   Searches rest of list to find all occurences of a base."
-  input Exp inExp;
-  input list<tuple<Exp, Real>> inTplExpRealLst;
+  input DAE.Exp inExp;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
   output Real outReal;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   (outReal,outTplExpRealLst):=
   matchcontinue (inExp,inTplExpRealLst)
     local
       Real coeff2,coeff3,coeff;
-      list<tuple<Exp, Real>> res,rest;
-      Exp e,e2,e1;
+      list<tuple<DAE.Exp, Real>> res,rest;
+      DAE.Exp e,e2,e1;
       Type tp;
     case (_,{}) then (0.0,{});
     case (e,((e2,coeff) :: rest)) /* e1 == e2 */
@@ -3665,16 +3664,16 @@ protected function simplifyMulMakePow
   Helper function to simplifyMul.
   Makes each item in the list into a pow
   expression, except when exponent is 1.0."
-  input list<tuple<Exp, Real>> inTplExpRealLst;
-  output list<Exp> outExpLst;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inTplExpRealLst)
     local
-      list<Exp> res;
-      Exp e;
+      list<DAE.Exp> res;
+      DAE.Exp e;
       Real r;
-      list<tuple<Exp, Real>> xs;
+      list<tuple<DAE.Exp, Real>> xs;
       Type tp;
     case ({}) then {};
     case (((e,r) :: xs))
@@ -3695,14 +3694,14 @@ protected function simplifyAdd
 "function: simplifyAdd
   author: PA
   Simplifies terms like 2a+4b+2a+a+b"
-  input list<Exp> inExpLst;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst)
     local
-      list<tuple<Exp, Real>> exp_const,exp_const_1;
-      list<Exp> expl_1,expl;
+      list<tuple<DAE.Exp, Real>> exp_const,exp_const_1;
+      list<DAE.Exp> expl_1,expl;
     case (expl)
       equation
         exp_const = simplifyAdd2(expl);
@@ -3722,16 +3721,16 @@ protected function simplifyAdd2
 "function: simplifyAdd2
   author: PA
   Helper function to simplifyAdd"
-  input list<Exp> inExpLst;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  input list<DAE.Exp> inExpLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   outTplExpRealLst:=
   matchcontinue (inExpLst)
     local
-      Exp e_1,e;
+      DAE.Exp e_1,e;
       Real coeff;
-      list<tuple<Exp, Real>> rest;
-      list<Exp> es;
+      list<tuple<DAE.Exp, Real>> rest;
+      list<DAE.Exp> es;
     case ({}) then {};
     case ((e :: es))
       equation
@@ -3753,15 +3752,15 @@ protected function simplifyAddJoinTerms
   Helper function to simplifyAdd.
   Join all terms with the same expression.
   i.e. 2a+4a gives an element (a,6) in the list."
-  input list<tuple<Exp, Real>> inTplExpRealLst;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   outTplExpRealLst:=
   matchcontinue (inTplExpRealLst)
     local
       Real coeff2,coeff3,coeff;
-      list<tuple<Exp, Real>> rest_1,res,rest;
-      Exp e;
+      list<tuple<DAE.Exp, Real>> rest_1,res,rest;
+      DAE.Exp e;
     case ({}) then {};
     case (((e,coeff) :: rest))
       equation
@@ -3777,17 +3776,17 @@ protected function simplifyAddJoinTermsFind
 "function: simplifyAddJoinTermsFind
   author: PA
   Helper function to simplifyAddJoinTerms, finds all occurences of exp."
-  input Exp inExp;
-  input list<tuple<Exp, Real>> inTplExpRealLst;
+  input DAE.Exp inExp;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
   output Real outReal;
-  output list<tuple<Exp, Real>> outTplExpRealLst;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
 algorithm
   (outReal,outTplExpRealLst):=
   matchcontinue (inExp,inTplExpRealLst)
     local
       Real coeff2,coeff3,coeff;
-      list<tuple<Exp, Real>> res,rest;
-      Exp e,e2;
+      list<tuple<DAE.Exp, Real>> res,rest;
+      DAE.Exp e,e2;
     case (_,{}) then (0.0,{});
     case (e,((e2,coeff) :: rest))
       equation
@@ -3809,16 +3808,16 @@ protected function simplifyAddMakeMul
   author: PA
   Makes multiplications of each element
   in the list, except for coefficient 1.0"
-  input list<tuple<Exp, Real>> inTplExpRealLst;
-  output list<Exp> outExpLst;
+  input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inTplExpRealLst)
     local
-      list<Exp> res;
-      Exp e;
+      list<DAE.Exp> res;
+      DAE.Exp e;
       Real r;
-      list<tuple<Exp, Real>> xs;
+      list<tuple<DAE.Exp, Real>> xs;
       Type tp;
     case ({}) then {};
     case (((e,r) :: xs))
@@ -3848,15 +3847,15 @@ protected function makeFactorDivision
   author: PA
   Takes two expression lists (factors) and makes a division of
   the two. If the second list is empty, no division node is created."
-  input list<Exp> inExpLst1;
-  input list<Exp> inExpLst2;
-  output Exp outExp;
+  input list<DAE.Exp> inExpLst1;
+  input list<DAE.Exp> inExpLst2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExpLst1,inExpLst2)
     local
-      list<Exp> const_es1,notconst_es1,es1_1,es1,const_es2,notconst_es2,es2_1,es2;
-      Exp res,res_1,e1,q,q_1,p,p_1;
+      list<DAE.Exp> const_es1,notconst_es1,es1_1,es1,const_es2,notconst_es2,es2_1,es2;
+      DAE.Exp res,res_1,e1,q,q_1,p,p_1;
     case ({},{}) then DAE.RCONST(1.0);
     case (es1,{})
       equation
@@ -3905,16 +3904,16 @@ protected function removeCommonFactors
   Takes two lists of expressions (factors) and removes the
   factors common to both lists. The special case of the
   ident^exp is treated by subtraction of the exponentials."
-  input list<Exp> inExpLst1;
-  input list<Exp> inExpLst2;
-  output list<Exp> outExpLst1;
-  output list<Exp> outExpLst2;
+  input list<DAE.Exp> inExpLst1;
+  input list<DAE.Exp> inExpLst2;
+  output list<DAE.Exp> outExpLst1;
+  output list<DAE.Exp> outExpLst2;
 algorithm
   (outExpLst1,outExpLst2):=
   matchcontinue (inExpLst1,inExpLst2)
     local
-      Exp e2,pow_e,e1,e;
-      list<Exp> es2_1,es1_1,es2_2,es1,es2;
+      DAE.Exp e2,pow_e,e1,e;
+      list<DAE.Exp> es2_1,es1_1,es2_2,es1,es2;
       ComponentRef cr;
       Type tp;
     case ((DAE.BINARY(exp1 = DAE.CREF(componentRef = cr,ty = tp),
@@ -3950,16 +3949,16 @@ protected function findPowFactor
   Helper function to removeCommonFactors.
   Finds a POW expression in a list of factors."
   input ComponentRef inComponentRef;
-  input list<Exp> inExpLst;
-  output Exp outExp;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   (outExp,outExpLst):=
   matchcontinue (inComponentRef,inExpLst)
     local
       ComponentRef cr,cr2;
-      Exp e,pow_e;
-      list<Exp> es;
+      DAE.Exp e,pow_e;
+      list<DAE.Exp> es;
     case (cr,((e as DAE.BINARY(exp1 = DAE.CREF(componentRef = cr2),
                            operator = DAE.POW(ty = _))) :: es))
       equation
@@ -3977,14 +3976,14 @@ end findPowFactor;
 protected function simplifyBinaryAddCoeff2
 "function: simplifyBinaryAddCoeff2
   This function checks for x+x+x+x and returns (x,4.0)"
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
   output Real outReal;
 algorithm
   (outExp,outReal):=
   matchcontinue (inExp)
     local
-      Exp exp,e1,e2,e;
+      DAE.Exp exp,e1,e2,e;
       Real coeff,coeff_1;
       Type tp;
     case ((exp as DAE.CREF(componentRef = _))) then (exp,1.0);
@@ -4017,14 +4016,14 @@ protected function simplifyBinaryMulCoeff2
 "function: simplifyBinaryMulCoeff2
   This function takes an expression XXXXX
   and return (X,5.0) to be used for X^5."
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
   output Real outReal;
 algorithm
   (outExp,outReal):=
   matchcontinue (inExp)
     local
-      Exp e,e1,e2;
+      DAE.Exp e,e1,e2;
       ComponentRef cr;
       Real coeff,coeff_1,coeff_2;
       Type tp;
@@ -4068,20 +4067,20 @@ end simplifyBinaryMulCoeff2;
 protected function simplifyAsub
 "function: simplifyAsub
   This function simplifies array subscripts on vector operations"
-  input Exp inExp;
-  input Exp inSub;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.Exp inSub;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp,inSub)
     local
-      Exp e_1,e,e1_1,e2_1,e1,e2,exp,cond,sub;
+      DAE.Exp e_1,e,e1_1,e2_1,e1,e2,exp,cond,sub;
       Type t,t_1,t2;
       Integer indx,i_1,n;
       Operator op,op2;
       Boolean b;
-      list<Exp> exps,expl_1;
-      list<tuple<Exp, Boolean>> expl;
+      list<DAE.Exp> exps,expl_1;
+      list<tuple<DAE.Exp, Boolean>> expl;
       list<Boolean> bls;
       ComponentRef cr;
       Real r;
@@ -4282,7 +4281,7 @@ algorithm
       then
         exp;
     case (DAE.MATRIX(ty = t,integer = n,scalar = exps),sub)
-      local list<list<tuple<Exp, Boolean>>> exps;
+      local list<list<tuple<DAE.Exp, Boolean>>> exps;
       equation
         indx = expInt(sub);
         i_1 = indx - 1;
@@ -4309,7 +4308,7 @@ algorithm
 end simplifyAsub;
 
 protected function simplifyAsubOperator
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
   input Operator inOperator3;
   output Operator outOperator;
@@ -4328,13 +4327,13 @@ protected function divide
 "function: divide
   author: PA
   divides two expressions."
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
-    local Exp e1,e2;
+    local DAE.Exp e1,e2;
     case (e1,e2) then DAE.BINARY(e1,DAE.DIV(DAE.ET_REAL()),e2);
   end matchcontinue;
 end divide;
@@ -4342,15 +4341,15 @@ end divide;
 protected function removeFactor
 "function: removeFactor
   Remove the factor from the expression (factorize it out)"
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
     local
-      Exp e1,factor1,expr1,one,factor,expr,exp;
-      list<Exp> rest,e2s,e1s,factors_1;
+      DAE.Exp e1,factor1,expr1,one,factor,expr,exp;
+      list<DAE.Exp> rest,e2s,e1s,factors_1;
       Type tp;
       Ident fs,es,factorsstr;
       list<Ident> elst;
@@ -4399,10 +4398,10 @@ protected function gcd
   Return the greatest common divisor expression from two expressions.
   If no common divisor besides a numerical expression can be found,
   the function fails."
-  input Exp e1;
-  input Exp e2;
-  output Exp product;
-  list<Exp> e1s,e2s,factor;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp product;
+  list<DAE.Exp> e1s,e2s,factor;
 algorithm
   e1s := factors(e1);
   e2s := factors(e2);
@@ -4416,15 +4415,15 @@ protected function noFactors
   If a factor list is empty, the expression has no subfactors.
   But the complete expression is then a factor for larger
   expressions, returned by this function."
-  input list<Exp> inExpLst;
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst,inExp)
     local
-      Exp e;
-      list<Exp> lst;
+      DAE.Exp e;
+      list<DAE.Exp> lst;
     case ({},e) then {e};
     case (lst,_) then lst;
   end matchcontinue;
@@ -4434,8 +4433,8 @@ public function negate
 "function: negate
   author: PA
   Negates an expression."
-  input Exp e;
-  output Exp outExp;
+  input DAE.Exp e;
+  output DAE.Exp outExp;
 protected
   Type t;
 algorithm
@@ -4465,14 +4464,14 @@ public function allTerms
 "simliar to terms, but also perform expansion of
  multiplications to reveal more terms, like for instance:
  allTerms((a+b)*(b+c)) => {a*b,a*c,b*b,b*c}"
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExp)
     local
-      list<Exp> f1,f2,res,f2_1;
-      Exp e1,e2,e;
+      list<DAE.Exp> f1,f2,res,f2_1;
+      DAE.Exp e1,e2,e;
       Type tp;
       ComponentRef cr;
 
@@ -4607,13 +4606,13 @@ public function expand "expands products
 For example
 a *(b+c) => a*b + a*c
 " 
-  input Exp e;
-  output Exp outE;
+  input DAE.Exp e;
+  output DAE.Exp outE;
 algorithm
   outE := matchcontinue(e)
   local DAE.ExpType tp;
     DAE.Operator op;
-    Exp e1,e2,e21,e22;
+    DAE.Exp e1,e2,e21,e22;
     case(DAE.BINARY(e1,DAE.MUL(tp),e2)) equation
       DAE.BINARY(e21,op,e22) = expand(e2);
       true = isAddOrSub(op);      
@@ -4654,14 +4653,14 @@ public function terms "
 function: terms
   author: PA
   Returns the terms of the expression if any as a list of expressions"
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExp)
     local
-      list<Exp> f1,f2,res,f2_1;
-      Exp e1,e2,e;
+      list<DAE.Exp> f1,f2,res,f2_1;
+      DAE.Exp e1,e2,e;
       Type tp;
       ComponentRef cr;
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = _),exp2 = e2))
@@ -4706,14 +4705,14 @@ public function quotient
   author: PA
   Returns the quotient of an expression.
   For instance e = p/q returns (p,q) for numerator p and denominator q."
-  input Exp inExp;
-  output Exp num;
-  output Exp denom;
+  input DAE.Exp inExp;
+  output DAE.Exp num;
+  output DAE.Exp denom;
 algorithm
   (num,denom):=
   matchcontinue (inExp)
     local
-      Exp e1,e2,p,q;
+      DAE.Exp e1,e2,p,q;
       Type tp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = _),exp2 = e2)) then (e1,e2);  /* (numerator,denominator) */
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
@@ -4734,14 +4733,14 @@ end quotient;
 public function factors
 "function: factors
   Returns the factors of the expression if any as a list of expressions"
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExp)
     local
-      list<Exp> f1,f2,f1_1,f2_1,res,f2_2;
-      Exp e1,e2,e;
+      list<DAE.Exp> f1,f2,f1_1,f2_1,res,f2_2;
+      DAE.Exp e1,e2,e;
       ComponentRef cr;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
       equation
@@ -4787,15 +4786,15 @@ protected function inverseFactors
   Takes a list of expressions and returns
   each expression in the list inversed.
   For example: inverseFactors {a, 3+b} => {1/a, 1/3+b}"
-  input list<Exp> inExpLst;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst:=
   matchcontinue (inExpLst)
     local
-      list<Exp> es_1,es;
+      list<DAE.Exp> es_1,es;
       Type tp2,tp;
-      Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
     case ({}) then {};
     case ((DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2) :: es))
       equation
@@ -4820,9 +4819,9 @@ end inverseFactors;
 
 public function makeProduct
 "Makes a product of two expressions"
-  input Exp e1;
-  input Exp e2;
-  output Exp product;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp product;
 algorithm
   product := makeProductLst({e1,e2});
 end makeProduct;
@@ -4831,14 +4830,14 @@ public function makeProductLst
 "function: makeProductLst
   Takes a list of expressions an makes a product
   expression multiplying all elements in the list."
-  input list<Exp> inExpLst;
-  output Exp outExp;
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExpLst)
     local
-      Exp e1,res,e,e2,p1;
-      list<Exp> es,rest,lst;
+      DAE.Exp e1,res,e,e2,p1;
+      list<DAE.Exp> es,rest,lst;
       Type tp;
       list<Ident> explst;
       Ident str;
@@ -4927,9 +4926,9 @@ public function makeFraction
 "function: makeFraction
   author: Frenkel TUD
   Makes a fraction of two expressions"
-  input Exp e1;
-  input Exp e2;
-  output Exp fraction;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp fraction;
 algorithm
   fraction := matchcontinue(e1,e2)
     local
@@ -4976,9 +4975,9 @@ end unboxExpType;
 public function makeDiff
 "Takes two expressions and create
  the difference between them"
-  input Exp e1;
-  input Exp e2;
-  output Exp res;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp res;
 algorithm
   res := matchcontinue(e1,e2)
     local
@@ -5006,16 +5005,16 @@ public function makeSum
 "function: makeSum
   Takes a list of expressions an makes a sum
   expression adding all elements in the list."
-  input list<Exp> inExpLst;
-  output Exp outExp;
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExpLst)
     local
-      Exp e1,e2,res;
+      DAE.Exp e1,e2,res;
       Boolean b1;
       Type tp;
-      list<Exp> rest,lst;
+      list<DAE.Exp> rest,lst;
       list<Ident> explst;
       Ident str;
       Operator op;
@@ -5074,15 +5073,15 @@ public function abs
 "function: abs
   author: PA
   Makes the expression absolute. i.e. non-negative."
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp)
     local
       Integer i2,i;
       Real r2,r;
-      Exp e_1,e,e1_1,e2_1,e1,e2;
+      DAE.Exp e_1,e,e1_1,e2_1,e1,e2;
       Type tp;
       Operator op;
     case (DAE.ICONST(integer = i))
@@ -5137,7 +5136,7 @@ algorithm
     Integer i;
     DAE.Dimension d;
     Type ty;
-    list<Exp> expl;
+    list<DAE.Exp> expl;
   case({d},inExp)
     equation
       ty = typeof(inExp);
@@ -5302,8 +5301,8 @@ algorithm
 end unliftArray;
 
 public function unliftExp
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
@@ -5318,7 +5317,7 @@ algorithm
     case DAE.ARRAY(ty = ty, scalar = s, array = a)
       local
         Boolean s;
-        list<Exp> a;
+        list<DAE.Exp> a;
       equation
         ty = unliftArray(ty);
       then
@@ -5326,7 +5325,7 @@ algorithm
     case DAE.MATRIX(ty = ty, integer = i, scalar = s)
       local
         Integer i;
-        list<list<tuple<Exp, Boolean>>> s;
+        list<list<tuple<DAE.Exp, Boolean>>> s;
       equation
         ty = unliftArray(ty);
       then
@@ -5376,7 +5375,7 @@ algorithm
 end isReal;
 
 public function isExpReal ""
-  input Exp e;
+  input DAE.Exp e;
   output Boolean re;
 algorithm
   re := matchcontinue(e)
@@ -5392,7 +5391,7 @@ end isExpReal;
 public function typeof "
 function typeof
   Retrieves the Type of the Expression"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Type outType;
 algorithm
   outType:=
@@ -5400,8 +5399,8 @@ algorithm
     local
       Type tp;
       Operator op;
-      Exp e1,e2,e3,e;
-      list<Exp> explist;
+      DAE.Exp e1,e2,e3,e;
+      list<DAE.Exp> explist;
       list<Type> tylist;
       Absyn.Path p;
     case (DAE.ICONST(integer = _)) then DAE.ET_INT();
@@ -5608,7 +5607,7 @@ end setOpType;
 
 public function isConstFalse
 "Return true if expression is false"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -5620,7 +5619,7 @@ end isConstFalse;
 
 public function isConstTrue
 "Return true if expression is true"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -5633,7 +5632,7 @@ end isConstTrue;
 protected function isConstOne
 "function: isConstOne
   Return true if expression is 1"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
@@ -5661,7 +5660,7 @@ end isConstOne;
 protected function isConstMinusOne
 "function: isConstMinusOne
   Return true if expression is -1"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
@@ -5689,7 +5688,7 @@ end isConstMinusOne;
 public function makeConstZero
 "Generates a zero constant"
 	input Type inType;
-	output Exp const;
+	output DAE.Exp const;
 algorithm
   const := matchcontinue(inType)
     case (DAE.ET_REAL()) then DAE.RCONST(0.0);
@@ -5701,7 +5700,7 @@ end makeConstZero;
 public function makeIntegerExp
 "Creates an integer constant expression given the integer input."
   input Integer i;
-  output Exp e;
+  output DAE.Exp e;
 algorithm
   e := DAE.ICONST(i);
 end makeIntegerExp;
@@ -5711,7 +5710,7 @@ public function makeConstOne
   author: PA
   Create the constant value one, given a type that is INT or REAL"
   input Type inType;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inType)
     case (DAE.ET_INT()) then DAE.ICONST(1);
@@ -5723,9 +5722,9 @@ protected function simplifyBinaryConst
 "function: simplifyBinaryConst
   This function evaluates constant binary expressions."
   input Operator inOperator1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inOperator1,inExp2,inExp3)
     local
@@ -5733,10 +5732,10 @@ algorithm
       Real e2_1,e1_1,v1,v2;
       Operator op;
       Boolean b,b1,b2;
-      Exp exp1,exp2;
+      DAE.Exp exp1,exp2;
     
     case (DAE.ADD(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
-      local Exp val;
+      local DAE.Exp val;
       equation
         val = safeIntOp(e1,e2,ADDOP);
       then
@@ -5762,7 +5761,7 @@ algorithm
       then
         DAE.RCONST(e3);
     case (DAE.SUB(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
-     	local 	Exp val;
+     	local DAE.Exp val;
       equation
 	   		val = safeIntOp(e1,e2,SUBOP);
       then
@@ -5788,7 +5787,7 @@ algorithm
       then
         DAE.RCONST(e3);
     case (DAE.MUL(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
-      local Exp val;
+      local DAE.Exp val;
       equation
         val = safeIntOp(e1,e2,MULOP);
       then
@@ -5815,7 +5814,7 @@ algorithm
         DAE.RCONST(e3);
     case (DAE.DIV(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
      	local
-     	  Exp val;
+     	  DAE.Exp val;
       equation
 	   		val = safeIntOp(e1,e2,DIVOP);
       then
@@ -5842,7 +5841,7 @@ algorithm
       then
         DAE.RCONST(e3);
     case (DAE.POW(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
-      local Exp val;
+      local DAE.Exp val;
       equation
 				val = safeIntOp(e1,e2,POWOP);
       then
@@ -5926,7 +5925,7 @@ algorithm
         DAE.BCONST(b);
     // end adrpo added
     case (op,e1,e2)
-      local Exp e1,e2;
+      local DAE.Exp e1,e2;
       then
         fail();
   end matchcontinue;
@@ -5935,19 +5934,19 @@ end simplifyBinaryConst;
 protected function simplifyBinary
 "function: simplifyBinary
   This function simplifies binary expressions."
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3 "Note: already simplified"; // lhs
-  input Exp inExp4 "Note: aldready simplified"; // rhs
-  output Exp outExp;
+  input DAE.Exp inExp3 "Note: already simplified"; // lhs
+  input DAE.Exp inExp4 "Note: aldready simplified"; // rhs
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp1,inOperator2,inExp3,inExp4)
     local
-      Exp e1_1,e2_1,e3,e,e1,e2,res,e_1,one;
+      DAE.Exp e1_1,e2_1,e3,e,e1,e2,res,e_1,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
       Ident s1,s2;
-      list<Exp> exp_lst,exp_lst_1;
+      list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
     
@@ -6288,15 +6287,15 @@ protected function simplifyBinaryDistributePow
   author: PA
   Distributes the pow operator over a list of expressions.
   ({e1,e2,..,en} , pow_e) =>  {e1^pow_e, e2^pow_e,..,en^pow_e}"
-  input list<Exp> inExpLst;
-  input Exp inExp;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst := matchcontinue (inExpLst,inExp)
     local
-      list<Exp> es_1,es;
+      list<DAE.Exp> es_1,es;
       Type tp;
-      Exp e,pow_e;
+      DAE.Exp e,pow_e;
     
     // handle emptyness
     case ({},_) then {};
@@ -6322,7 +6321,7 @@ protected function createConstOne
 "function: createConstOne
   Creates a constant value one, given a type INT or REAL"
   input Type inType;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inType)
     local Real realv;
@@ -6338,15 +6337,15 @@ end createConstOne;
 protected function simplifyUnary
 "function: simplifyUnary
   Simplifies unary expressions."
-  input Exp inExp1;
+  input DAE.Exp inExp1;
   input Operator inOperator2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp1,inOperator2,inExp3)
     local
       Type ty,ty1;
-      Exp e1,e1_1,e_1,e2,e;
+      DAE.Exp e1,e1_1,e_1,e2,e;
       Integer i_1,i;
       Real r_1,r;
       Boolean b1;
@@ -6468,18 +6467,18 @@ public function containVectorFunctioncall
  functioncall that returns an array, otherwise false.
   Note: the der operator is represented as a
         function call but still return false."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
     local
-      Exp e1,e2,e,e3;
+      DAE.Exp e1,e2,e,e3;
       Boolean res;
       list<Boolean> blst;
-      list<Exp> elst;
-      list<tuple<Exp, Boolean>> flatexplst;
-      list<list<tuple<Exp, Boolean>>> explst;
-      Option<Exp> optexp;
+      list<DAE.Exp> elst;
+      list<tuple<DAE.Exp, Boolean>> flatexplst;
+      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      Option<DAE.Exp> optexp;
     
     // der is not a vector function
     case (DAE.CALL(path = Absyn.IDENT(name = "der"))) then false;
@@ -6641,18 +6640,18 @@ public function containFunctioncall
   is a functioncall, otherwise false.
   Note: the der and pre operators are represented
         as function calls but still returns false."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
     local
-      Exp e1,e2,e,e3;
+      DAE.Exp e1,e2,e,e3;
       Boolean res;
       list<Boolean> blst;
-      list<Exp> elst;
-      list<tuple<Exp, Boolean>> flatexplst;
-      list<list<tuple<Exp, Boolean>>> explst;
-      Option<Exp> optexp;
+      list<DAE.Exp> elst;
+      list<tuple<DAE.Exp, Boolean>> flatexplst;
+      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      Option<DAE.Exp> optexp;
     
     // der(x) is not a function call
     case (DAE.CALL(path = Absyn.IDENT(name = "der"))) then false;
@@ -6775,7 +6774,7 @@ algorithm
         res;
     // size
     case (DAE.SIZE(exp = e1,sz = e2))
-      local Option<Exp> e2;
+      local Option<DAE.Exp> e2;
       equation
         true = containFunctioncall(e1);
       then
@@ -6792,10 +6791,10 @@ end containFunctioncall;
 
 public function unelabExp
 "function: unelabExp
-  Transform an Exp into Absyn.Exp.
+  Transform an DAE.Exp into Absyn.Exp.
   Note: This function currently only works for
   constants and component references."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Absyn.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp)
@@ -6808,14 +6807,14 @@ algorithm
       ComponentRef cr;
       Type t,tp;
       list<Absyn.Exp> expl_1,aexpl;
-      list<Exp> expl;
-      Exp e1,e2,e3;
+      list<DAE.Exp> expl;
+      DAE.Exp e1,e2,e3;
       Operator op;
       Absyn.Exp ae1,ae2,ae3;
       Absyn.Operator aop;
-      list<list<Exp>> mexpl2;
+      list<list<DAE.Exp>> mexpl2;
       list<list<Absyn.Exp>> amexpl;
-      list<list<tuple<Exp,Boolean>>> mexpl;
+      list<list<tuple<DAE.Exp,Boolean>>> mexpl;
       Absyn.ComponentRef acref;
       Absyn.Path path;
       Absyn.CodeNode code;
@@ -6981,7 +6980,7 @@ algorithm
       list<Absyn.Subscript> xs_1;
       list<Subscript> xs;
       Absyn.Exp e_1;
-      Exp e;
+      DAE.Exp e;
     
     // empty list
     case ({}) then {};
@@ -7126,12 +7125,12 @@ public function subscriptsAppend
   subscript is a slice, it is replaced by the slice indexed by
   the new subscript."
   input list<Subscript> inSubscriptLst;
-  input Exp inSubscript;
+  input DAE.Exp inSubscript;
   output list<Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst := matchcontinue (inSubscriptLst,inSubscript)
     local
-      Exp e_1,e;
+      DAE.Exp e_1,e;
       Subscript s;
       list<Subscript> ss_1,ss;
     case ({},_) then {DAE.INDEX(inSubscript)};
@@ -7277,7 +7276,7 @@ public function printSubscript
   input Subscript inSubscript;
 algorithm
   _ := matchcontinue (inSubscript)
-    local Exp e1;
+    local DAE.Exp e1;
     case (DAE.WHOLEDIM())
       equation
         Print.printBuf(":");
@@ -7299,7 +7298,7 @@ end printSubscript;
 public function printExp
 "function: printExp
   This function prints a complete expression."
-  input Exp e;
+  input DAE.Exp e;
 algorithm
   printExp2(e, 0);
 end printExp;
@@ -7307,7 +7306,7 @@ end printExp;
 protected function printExp2
 "function: printExp2
   Helper function to printExp."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
 algorithm
   _ := matchcontinue (inExp,inInteger)
@@ -7316,11 +7315,11 @@ algorithm
       Integer x,pri2_1,pri2,pri3,pri1,i;
       Real r;
       ComponentRef c;
-      Exp e1,e2,e21,e22,e,t,f,start,stop,step,cr,dim,exp,iterexp;
+      DAE.Exp e1,e2,e21,e22,e,t,f,start,stop,step,cr,dim,exp,iterexp;
       Operator op;
       Type ty,ty2;
       Absyn.Path fcn;
-      list<Exp> args,es;
+      list<DAE.Exp> args,es;
     case (DAE.ICONST(integer = x),_)
       equation
         s = intString(x);
@@ -7431,7 +7430,7 @@ algorithm
       then
         ();
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),pri1)
-      local Exp c;
+      local DAE.Exp c;
       equation
         Print.printBuf("if ");
         printExp2(c, 0);
@@ -7476,7 +7475,7 @@ algorithm
       then
         ();
     case (DAE.MATRIX(scalar = es),_)
-      local list<list<tuple<Exp, Boolean>>> es;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
       equation
         Print.printBuf("<matrix>[");
         printList(es, printRow, ";");
@@ -7531,7 +7530,7 @@ algorithm
         ();
     case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i)))::{}),pri1)
       local
-        Exp ae1;
+        DAE.Exp ae1;
       equation
         pri2 = 51;
         pri3 = printLeftpar(pri1, pri2);
@@ -7546,7 +7545,7 @@ algorithm
 
     case (DAE.ASUB(exp = e,sub = ae1),pri1)
       local
-        list<Exp> ae1;
+        list<DAE.Exp> ae1;
       equation
         pri2 = 51;
         pri3 = printLeftpar(pri1, pri2);
@@ -7580,7 +7579,7 @@ algorithm
 
     // MetaModelica list
     case (DAE.LIST(_,es),_)
-      local list<Exp> es;
+      local list<DAE.Exp> es;
       equation
         Print.printBuf("List(");
         printList(es, printExp, ",");
@@ -7780,38 +7779,38 @@ end relopPriority;
 public function makeRealAdd
 "function: makeRealAdd
   Construct an add node of the two expressions of type REAL."
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
-    local Exp e1,e2;
+    local DAE.Exp e1,e2;
     case (e1,e2) then DAE.BINARY(e1,DAE.ADD(DAE.ET_REAL()),e2);
   end matchcontinue;
 end makeRealAdd;
 
 public function makeRealArray
 "function: makeRealArray
-  Construct an array node of an Exp list of type REAL."
-  input list<Exp> inExpLst;
-  output Exp outExp;
+  Construct an array node of an DAE.Exp list of type REAL."
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExpLst)
-    local list<Exp> expl;
+    local list<DAE.Exp> expl;
     case (expl) then DAE.ARRAY(DAE.ET_REAL(),false,expl);
   end matchcontinue;
 end makeRealArray;
 
 public function makeListOfZeros
   input Integer inDimension;
-  output list<Exp> outList;
+  output list<DAE.Exp> outList;
 algorithm
   outList := matchcontinue(inDimension)
     local Integer dimension;
-      Exp head;
-      list<Exp> tail;
+      DAE.Exp head;
+      list<DAE.Exp> tail;
       case(0)
         then {};
       case(dimension) equation
@@ -7823,8 +7822,8 @@ end makeListOfZeros;
 
 public function makeRealArrayOfZeros
   input Integer inDimension;
-  output Exp outExp;
-  list<Exp> l;
+  output DAE.Exp outExp;
+  list<DAE.Exp> l;
 algorithm
   l := makeListOfZeros(inDimension);
   outExp := makeRealArray(l);
@@ -8082,8 +8081,8 @@ end printList;
 protected function printRow
 "function: printRow
   Print a list of expressions to the Print buffer."
-  input list<tuple<Exp, Boolean>> es;
-  list<Exp> es_1;
+  input list<tuple<DAE.Exp, Boolean>> es;
+  list<DAE.Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   printList(es_1, printExp, ",");
@@ -8252,7 +8251,7 @@ algorithm
   outString := matchcontinue (inSubscript)
     local
       Ident s;
-      Exp e1;
+      DAE.Exp e1;
     case (DAE.WHOLEDIM()) then ":";
     case (DAE.INDEX(exp = e1))
       equation
@@ -8277,7 +8276,7 @@ algorithm
   matchcontinue (inSubscript)
     local
       Ident s;
-      Exp e1;
+      DAE.Exp e1;
     case (DAE.WHOLEDIM()) then ":";
     case (DAE.INDEX(exp = e1))
       equation
@@ -8295,7 +8294,7 @@ end printSubscriptStr;
 public function printExpListStr
 "function: printExpListStr
  prints a list of expressions with commas between expressions."
-  input list<Exp> expl;
+  input list<DAE.Exp> expl;
   output String res;
 algorithm
   res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");
@@ -8305,7 +8304,7 @@ end printExpListStr;
 public function printExpListStrNoSpace
 "function: printExpListStrNoSpace
 	same as printExpListStr, but the string will not have any spaces or commas between expressions"
-	input list<Exp> expl;
+	input list<DAE.Exp> expl;
 	output String res;
 algorithm
   res := System.stringAppendList(Util.listMap(expl,printExpStr));
@@ -8313,19 +8312,19 @@ end printExpListStrNoSpace;
 
 public function printOptExpStr "
 Returns a string if SOME otherwise ''"
-  input Option<Exp> oexp;
+  input Option<DAE.Exp> oexp;
   output String str;
 algorithm 
   str := matchcontinue(oexp)
     case(NONE()) then "";
-    case(SOME(e)) local Exp e; then printExpStr(e);
+    case(SOME(e)) local DAE.Exp e; then printExpStr(e);
   end matchcontinue;
 end printOptExpStr;
 
 public function printExpStr
 "function: printExpStr
   This function prints a complete expression."
-  input Exp e;
+  input DAE.Exp e;
   output String s;
 algorithm
   s := printExp2Str(e, "\"",NONE(),NONE());
@@ -8334,7 +8333,7 @@ end printExpStr;
 public function printExp2Str
 "function: printExp2Str
   Helper function to printExpStr."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input String stringDelimiter;
   input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
   input Option<printCallFunc> opcallfunc "function that prints function calls";
@@ -8346,7 +8345,7 @@ public function printExp2Str
     output String outString;
   end printComponentRefStrFunc;  
   partial function printCallFunc
-    input Exp inExp;
+    input DAE.Exp inExp;
     input String stringDelimiter;
     input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
     output String outString;
@@ -8365,10 +8364,10 @@ algorithm
       Real rval;
       ComponentRef c;
       Type t,ty,ty2,tp;
-      Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       Operator op;
       Absyn.Path fcn;
-      list<Exp> args,es;
+      list<DAE.Exp> args,es;
       printComponentRefStrFunc pcreffunc;
       Type_a creffuncparam;
       printCallFunc pcallfunc;
@@ -8539,7 +8538,7 @@ algorithm
         s;
     
     case (DAE.MATRIX(scalar = es,ty=tp), _, _, _)
-      local list<list<tuple<Exp, Boolean>>> es;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
         Type tp; String s3;
       equation
         // s3 = typeString(tp); // adrpo: not used!
@@ -8611,7 +8610,7 @@ algorithm
         res;
     
     case (e as DAE.ASUB(exp = e1,sub = aexpl), _, _, _)
-      local list<Exp> aexpl;
+      local list<DAE.Exp> aexpl;
       equation
         p = expPriority(e);
         pe1 = expPriority(e1);
@@ -8656,7 +8655,7 @@ algorithm
 
     // MetaModelica list
     case (DAE.LIST(_,es), _, _, _)
-      local list<Exp> es;
+      local list<DAE.Exp> es;
       equation
         s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s = System.stringAppendList({"List(", s, ")"});
@@ -8740,7 +8739,7 @@ public function expPriority
  This function is used to output parenthesis
  when needed, e.g., 3(1+2) should output 3(1+2)
  and not 31+2."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Integer outInteger;
 algorithm
   outInteger := matchcontinue (inExp)
@@ -8803,10 +8802,10 @@ end expPriority;
 public function printRowStr
 "function: printRowStr
   Prints a list of expressions to a string."
-  input list<tuple<Exp, Boolean>> es;
+  input list<tuple<DAE.Exp, Boolean>> es;
   input String stringDelimiter;
   output String s;
-  list<Exp> es_1;
+  list<DAE.Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   s := Util.stringDelimitList(Util.listMap3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
@@ -8854,8 +8853,8 @@ end printRightparStr;
 public function expEqual
 "function: expEqual
   Returns true if the two expressions are equal."
-  input Exp inExp1;
-  input Exp inExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp1,inExp2)
@@ -8863,11 +8862,11 @@ algorithm
       Integer c1,c2,i1,i2;
       Ident id1,id2;
       Boolean b1,c1_1,c2_1,b2,res,b3;
-      Exp e11,e12,e21,e22,e1,e2,e13,e23,r1,r2;
+      DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23,r1,r2;
       Operator op1,op2;
       list<Boolean> bs;
       Absyn.Path path1,path2;
-      list<Exp> expl1,expl2;
+      list<DAE.Exp> expl1,expl2;
       Type tp1,tp2;
     
     // check for pointer equality first, if they point to the same thing, they are equal
@@ -9034,7 +9033,7 @@ algorithm
     // array subscripts
     case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = e2,sub = ae2))
       local
-        list<Exp> ae1,ae2;
+        list<DAE.Exp> ae1,ae2;
       equation
         bs = Util.listThreadMap(ae1, ae2, expEqual);
         res = Util.boolAndList(bs);
@@ -9155,15 +9154,15 @@ algorithm
 end operatorEqual;
 
 public function replaceExpListOpt
-"similar to replaceExpList. But with Option<Exp> instead of Exp."
-  input Option<Exp> inExp1;
-  input list<Exp> s;
-  input list<Exp> t;
-  output Option<Exp> outExp;
+"similar to replaceExpList. But with Option<DAE.Exp> instead of Exp."
+  input Option<DAE.Exp> inExp1;
+  input list<DAE.Exp> s;
+  input list<DAE.Exp> t;
+  output Option<DAE.Exp> outExp;
   output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue (inExp1,s,t)
-    local Exp e;
+    local DAE.Exp e;
     case (NONE(),_,_) then (NONE(),0);
     case (SOME(e),s,t) equation
       (e,outInteger) = replaceExpList(e,s,t);
@@ -9174,17 +9173,17 @@ end replaceExpListOpt;
 public function replaceListExp
 "function: replaceListExp.
   Replaces an list of expressions with a expression."
-  input list<Exp> inExpLst;
-  input Exp inExp2;
-  input Exp inExp3;
-  output list<Exp> outExpLst;
+  input list<DAE.Exp> inExpLst;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output list<DAE.Exp> outExpLst;
   output list<Integer> outIntegerLst;
 algorithm
   (outExpLst,outIntegerLst) := matchcontinue (inExpLst,inExp2,inExp3)
     local
-      Exp e,e1,e2,e3;
+      DAE.Exp e,e1,e2,e3;
       Integer c;
-      list<Exp> rest,explst;
+      list<DAE.Exp> rest,explst;
       list<Integer> intlst;
     case ({},_,_) then ({},{});  
     case (e::rest,e2,e3)
@@ -9203,17 +9202,17 @@ public function replaceExpList
         lists must be disjunct
   Useful for instance when replacing several
   variables at once in an expression."
-  input Exp inExp1;
-  input list<Exp> inExpLst2;
-  input list<Exp> inExpLst3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input list<DAE.Exp> inExpLst2;
+  input list<DAE.Exp> inExpLst3;
+  output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue (inExp1,inExpLst2,inExpLst3)
     local
-      Exp e,e_1,e_2,s1,t1;
+      DAE.Exp e,e_1,e_2,s1,t1;
       Integer c1,c2,c;
-      list<Exp> sr,tr;
+      list<DAE.Exp> sr,tr;
     case (e,{},{}) then (e,0);  /* expr, source list, target list */
     case (e,(s1 :: sr),(t1 :: tr))
       equation
@@ -9228,18 +9227,18 @@ end replaceExpList;
 public function replaceExp
 "function: replaceExp
   Helper function to replaceExpList."
-  input Exp inExp1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp expr,source,target,e1_1,e2_1,e1,e2,e3_1,e3,e_1,r_1,e,r,s;
+      DAE.Exp expr,source,target,e1_1,e2_1,e1,e2,e3_1,e3,e_1,r_1,e,r,s;
       Integer c1,c2,c,c3,cnt_1,b,i;
       Operator op;
-      list<Exp> expl_1,expl;
+      list<DAE.Exp> expl_1,expl;
       list<Integer> cnt;
       Absyn.Path path,p;
       Boolean t;
@@ -9316,7 +9315,7 @@ algorithm
         (DAE.ARRAY(tp,c,expl_1),cnt_1);
     case (DAE.MATRIX(ty = t,integer = b,scalar = expl),source,target)
       local
-        list<list<tuple<Exp, Boolean>>> expl_1,expl;
+        list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
         Integer cnt;
         Type t;
       equation
@@ -9351,7 +9350,7 @@ algorithm
         (DAE.CAST(tp,e1_1),c);
 
     case (DAE.ASUB(exp = e1,sub = ae1),source,target)
-      local list<Exp> ae1;
+      local list<DAE.Exp> ae1;
       equation
         (e1_1,c) = replaceExp(e1, source, target);
         (expl_1,cnt) = Util.listMap22(ae1, replaceExp, source, target);
@@ -9422,15 +9421,15 @@ protected function replaceCrefExpSubs
 help function to replaceExp. replaces expressions in subscript list
 from all Crefs.
 "
-  input Exp inExp1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp source,target;
+      DAE.Exp source,target;
       Integer c1,c2,c;
       Operator op;
       Type tp,ety;
@@ -9460,13 +9459,13 @@ protected function replaceExpSubs
 help function to replaceExp. replaces expressions in subscript list
 "
   input list<Subscript> subs;
-  input Exp source;
-  input Exp target;
+  input DAE.Exp source;
+  input DAE.Exp target;
   output list<Subscript> outSubs;
   output Integer cnt;
 algorithm
   (outSubs,cnt) := matchcontinue(subs,source,target)
-    local Exp e; Integer cnt1,cnt2;
+    local DAE.Exp e; Integer cnt1,cnt2;
     // empty list
     case({},_,_) then ({},0);
     // WHOLEDIM == ':' 
@@ -9501,18 +9500,18 @@ protected function replaceExpMatrix
   author: PA
   Helper function to replaceExp,
   traverses Matrix expression list."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
   output Integer outInteger;
 algorithm
   (outTplExpBooleanLstLst,outInteger) := matchcontinue (inTplExpBooleanLstLst1,inExp2,inExp3)
     local
-      Exp str,dst,src;
-      list<tuple<Exp, Boolean>> e_1,e;
+      DAE.Exp str,dst,src;
+      list<tuple<DAE.Exp, Boolean>> e_1,e;
       Integer c1,c2,c;
-      list<list<tuple<Exp, Boolean>>> es_1,es;
+      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
     // empty list
     case ({},str,dst) then ({},0);
     // head :: rest
@@ -9536,17 +9535,17 @@ protected function replaceExpMatrix2
 "function: replaceExpMatrix2
   author: PA
   Helper function to replaceExpMatrix"
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
   output Integer outInteger;
 algorithm
   (outTplExpBooleanLst,outInteger) := matchcontinue (inTplExpBooleanLst1,inExp2,inExp3)
     local
-      list<tuple<Exp, Boolean>> es_1,es;
+      list<tuple<DAE.Exp, Boolean>> es_1,es;
       Integer c1,c2,c;
-      Exp e_1,e,src,dst;
+      DAE.Exp e_1,e,src,dst;
       Boolean b;
     case ({},_,_) then ({},0);
     case (((e,b) :: es),src,dst)
@@ -9571,7 +9570,7 @@ algorithm
   outBoolean := matchcontinue (inComponentRef)
     local
       list<Subscript> subs;
-      list<Exp> exps;
+      list<DAE.Exp> exps;
       list<Boolean> bools;
       ComponentRef cr;
     case (cr)
@@ -9617,17 +9616,17 @@ public function stringifyCrefs
 
   NOTE: This function should not be used in OMC, since the OMC backend no longer
     uses stringified components. It is still used by MathCore though."
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp)
     local
-      Exp e,e1_1,e2_1,e1,e2,e_1,e3_1,e3;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e_1,e3_1,e3;
       ComponentRef cr_1,cr;
       Type t;
       Operator op;
-      list<Exp> expl_1,expl;
+      list<DAE.Exp> expl_1,expl;
       Absyn.Path p;
       Boolean b;
       Integer i;
@@ -9697,7 +9696,7 @@ algorithm
         DAE.ARRAY(t,b,expl_1);
     case ((e as DAE.MATRIX(ty = t,integer = b,scalar = expl)))
       local
-        list<list<tuple<Exp, Boolean>>> expl_1,expl;
+        list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
         Integer b;
       equation
         expl_1 = stringifyCrefsMatrix(expl);
@@ -9759,14 +9758,14 @@ protected function stringifyCrefsMatrix
   author: PA
   Helper function to stringifyCrefs.
   Handles matrix expresion list."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
-  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst:=
   matchcontinue (inTplExpBooleanLstLst)
     local
-      list<tuple<Exp, Boolean>> e_1,e;
-      list<list<tuple<Exp, Boolean>>> es_1,es;
+      list<tuple<DAE.Exp, Boolean>> e_1,e;
+      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
     case ({}) then {};
     case ((e :: es))
       equation
@@ -9781,14 +9780,14 @@ protected function stringifyCrefsMatrix2
 "function: stringifyCrefsMatrix2
   author: PA
   Helper function to stringifyCrefsMatrix"
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
-  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
 algorithm
   outTplExpBooleanLst:=
   matchcontinue (inTplExpBooleanLst)
     local
-      Exp e_1,e;
-      list<tuple<Exp, Boolean>> es_1,es;
+      DAE.Exp e_1,e;
+      list<tuple<DAE.Exp, Boolean>> es_1,es;
       Boolean b;
     case ({}) then {};
     case (((e,b) :: es))
@@ -9803,7 +9802,7 @@ end stringifyCrefsMatrix2;
 public function dumpExpGraphviz
 "function: dumpExpGraphviz
   Creates a Graphviz Node from an Expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inExp)
@@ -9812,11 +9811,11 @@ algorithm
       Integer x,i;
       ComponentRef c;
       Graphviz.Node lt,rt,ct,tt,ft,t1,t2,t3,crt,dimt,expt,itert;
-      Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp;
+      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp;
       Operator op;
       list<Graphviz.Node> argnodes,nodes;
       Absyn.Path fcn;
-      list<Exp> args,es;
+      list<DAE.Exp> args,es;
       Type ty;
     
     case (DAE.END()) then Graphviz.NODE("END",{},{});
@@ -9888,7 +9887,7 @@ algorithm
         Graphviz.LNODE("RELATION",{sym},{},{lt,rt});
     
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f))
-      local Exp c;
+      local DAE.Exp c;
       equation
         ct = dumpExpGraphviz(c);
         tt = dumpExpGraphviz(t);
@@ -9923,7 +9922,7 @@ algorithm
         Graphviz.NODE("TUPLE",{},nodes);
     
     case (DAE.MATRIX(scalar = es))
-      local list<list<tuple<Exp, Boolean>>> es;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
       equation
         s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
         s = System.stringAppendList({"{{", s, "}}"});
@@ -9954,7 +9953,7 @@ algorithm
         Graphviz.LNODE("CAST",{tystr},{},{ct});
     
     case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})))
-      local Exp ae1;
+      local DAE.Exp ae1;
       equation
         ct = dumpExpGraphviz(e);
         istr = intString(i);
@@ -10014,7 +10013,7 @@ end genStringNTime;
 public function dumpExpStr
 "function: dumpExpStr
   Dumps expression to a string."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
   output String outString;
 algorithm
@@ -10023,11 +10022,11 @@ algorithm
       Ident gen_str,res_str,s,s_1,s_2,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id,tpStr;
       Integer level,x,new_level1,new_level2,new_level3,i;
       ComponentRef c;
-      Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp;
+      DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp;
       Operator op;
       list<Ident> argnodes,nodes;
       Absyn.Path fcn;
-      list<Exp> args,es;
+      list<DAE.Exp> args,es;
       Type ty;
     
     case (DAE.END(),level)
@@ -10148,7 +10147,7 @@ algorithm
         res_str;
     
     case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),level) /* Graphviz.NODE(\"IFEXP\",{},{ct,tt,ft}) */
-      local Exp c;
+      local DAE.Exp c;
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -10207,7 +10206,7 @@ algorithm
         res_str;
     
     case (DAE.MATRIX(scalar = es),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
-      local list<list<tuple<Exp, Boolean>>> es;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
       equation
         gen_str = genStringNTime("   |", level);
         s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
@@ -10251,7 +10250,7 @@ algorithm
         res_str;
     
     case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})),level) /* Graphviz.LNODE(\"ASUB\",{s},{},{ct}) */
-      local Exp ae1;
+      local DAE.Exp ae1;
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -10308,18 +10307,18 @@ public function solve
   Solves an equation consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable."
-  input Exp inExp1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
+      DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       ComponentRef cr1,cr2;
     /*
     case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
-      local Exp debuge1,debuge2,debuge3;
+      local DAE.Exp debuge1,debuge2,debuge3;
       equation
         print("(Exp.mo debugging)  To solve: rhs: " +&
           printExpStr(debuge1) +& " lhs: " +&
@@ -10389,18 +10388,18 @@ public function solveLin
   Solves an equation consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable."
-  input Exp inExp1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
+      DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       ComponentRef cr1,cr2;
     /*
     case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
-      local Exp debuge1,debuge2,debuge3;
+      local DAE.Exp debuge1,debuge2,debuge3;
       equation
         print("(Exp.mo debugging)  To solve: rhs: " +&
           printExpStr(debuge1) +& " lhs: " +&
@@ -10477,7 +10476,7 @@ algorithm
 end solveLin;
 
 protected function printExpIfDiff ""
-  input Exp e1,e2;
+  input DAE.Exp e1,e2;
   output String s;
 algorithm 
   s := matchcontinue(e1,e2)
@@ -10499,14 +10498,14 @@ protected function solve2
 "function: solve2
   This function solves an equation e1 = e2 with
   respect to the variable given as an expression e3"
-  input Exp inExp1;
-  input Exp inExp2;
-  input Exp inExp3;
-  output Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
+      DAE.Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
       ComponentRef cr;
     
     // e1 e2 e3 
@@ -10526,7 +10525,7 @@ algorithm
         rhs_1;
 
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)))
-      local Exp invCr; list<Exp> factors;
+      local DAE.Exp invCr; list<DAE.Exp> factors;
       equation
         ({invCr},factors) = Util.listSplitOnTrue1(listAppend(factors(e1),factors(e2)),isInverseCref,cr);
         rhs_1 = makeProductLst(inverseFactors(factors));
@@ -10575,8 +10574,8 @@ end solve2;
 
 protected function hasOnlyFactors "help function to solve2, returns true if equation e1 == e2, has either e1 == 0 or e2 == 0 and the expression only contains
 factors, e.g. a*b*c = 0. In this case we can not solve the equation"
-  input Exp e1;
-  input Exp e2;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
   output Boolean res;
 algorithm
   res := matchcontinue(e1,e2)
@@ -10603,14 +10602,14 @@ public function getTermsContainingX
 "function getTermsContainingX
   Retrieves all terms of an expression containng a variable,
   given as second argument (in the form of an Exp)"
-  input Exp inExp1;
-  input Exp inExp2;
-  output Exp outExp1;
-  output Exp outExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp1;
+  output DAE.Exp outExp2;
 algorithm
   (outExp1,outExp2) := matchcontinue (inExp1,inExp2)
     local
-      Exp xt1,nonxt1,xt2,nonxt2,xt,nonxt,e1,e2,cr,e;
+      DAE.Exp xt1,nonxt1,xt2,nonxt2,xt,nonxt,e1,e2,cr,e;
       Type ty;
       Boolean res;
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty),exp2 = e2),(cr as DAE.CREF(componentRef = _)))
@@ -10698,20 +10697,20 @@ public function expContains
   second one as a sub expression. Only component
   references or der(componentReference) can be
   checked so far."
-  input Exp inExp1;
-  input Exp inExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp1,inExp2)
     local
       Integer i;
-      Exp cr,c1,c2,e1,e2,e,c,t,f,cref;
+      DAE.Exp cr,c1,c2,e1,e2,e,c,t,f,cref;
       Ident s,str;
       Boolean res,res1,res2,res3;
       list<Boolean> reslist;
-      list<Exp> explist,expl_2,args;
-      list<tuple<Exp, Boolean>> expl_1;
-      list<list<tuple<Exp, Boolean>>> expl;
+      list<DAE.Exp> explist,expl_2,args;
+      list<tuple<DAE.Exp, Boolean>> expl_1;
+      list<list<tuple<DAE.Exp, Boolean>>> expl;
       ComponentRef cr1,cr2;
       Operator op;
       Absyn.Path fcn;
@@ -10833,17 +10832,17 @@ public function getCrefFromExp
 "function: getCrefFromExp
   Return a list of all component
   references occuring in the expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output list<ComponentRef> outComponentRefLst;
 algorithm
   outComponentRefLst := matchcontinue (inExp)
     local
       ComponentRef cr;
       list<ComponentRef> l1,l2,res,res1,l3,res2;
-      Exp e1,e2,e3,e;
+      DAE.Exp e1,e2,e3,e;
       Operator op;
-      list<Exp> farg,expl,expl_2;
-      list<tuple<Exp, Boolean>> expl_1;
+      list<DAE.Exp> farg,expl,expl_2;
+      list<tuple<DAE.Exp, Boolean>> expl_1;
     
     case (DAE.ICONST(integer = _)) then {};
     case (DAE.RCONST(real = _)) then {};
@@ -10914,7 +10913,7 @@ algorithm
     case (DAE.MATRIX(scalar = expl))
       local
         list<list<ComponentRef>> res1;
-        list<list<tuple<Exp, Boolean>>> expl;
+        list<list<tuple<DAE.Exp, Boolean>>> expl;
       equation
         expl_1 = Util.listFlatten(expl);
         expl_2 = Util.listMap(expl_1, Util.tuple21);
@@ -10988,14 +10987,14 @@ public function nthArrayExp
 "function: nthArrayExp
   author: PA
   Returns the nth expression of an array expression."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
-  output Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp,inInteger)
     local
-      Exp e;
-      list<Exp> expl;
+      DAE.Exp e;
+      list<DAE.Exp> expl;
       Integer indx;
     case (DAE.ARRAY(array = expl),indx)
       equation
@@ -11009,9 +11008,9 @@ public function expAdd
 "function: expAdd
   author: PA
   Adds two scalar expressions."
-  input Exp e1;
-  input Exp e2;
-  output Exp outExp;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
   Type tp;
   Boolean b;
   Operator op;
@@ -11026,9 +11025,9 @@ public function expMul
 "function: expMul
   author: PA
   Multiplies two scalar expressions."
-  input Exp e1;
-  input Exp e2;
-  output Exp outExp;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
   Type tp;
   Boolean b;
   Operator op;
@@ -11041,7 +11040,7 @@ end expMul;
 
 public function makeCrefExpNoType "similar to makeCrefExp but picks type from componentref"
 input ComponentRef cref;
-output Exp e;
+output DAE.Exp e;
 algorithm
   e := makeCrefExp(cref,crefTypeConsiderSubs(cref));
 end makeCrefExpNoType;
@@ -11051,7 +11050,7 @@ public function makeCrefExp
   Makes an expression of a component reference, given also a type"
   input ComponentRef cref;
   input Type tp;
-  output Exp e;
+  output DAE.Exp e;
 algorithm e:= matchcontinue(cref,tp)
   local Type tp2;
   case(cref,tp) then DAE.CREF(cref,tp);
@@ -11061,7 +11060,7 @@ end makeCrefExp;
 public function makeIndexSubscript
 "function makeIndexSubscript
   Creates a Subscript INDEX from an Exp."
-  input Exp exp;
+  input DAE.Exp exp;
   output Subscript subscript;
 algorithm
   subscript := DAE.INDEX(exp);
@@ -11070,7 +11069,7 @@ end makeIndexSubscript;
 public function expCref
 "function: expCref
   Returns the componentref if exp is a CREF,"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
@@ -11083,7 +11082,7 @@ end expCref;
 public function expCrefTuple
 "function: expCrefTuple
   Returns the componentref if the expression in inTuple is a CREF."
-  input tuple<Exp, Boolean> inTuple;
+  input tuple<DAE.Exp, Boolean> inTuple;
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
@@ -11101,13 +11100,13 @@ public function traverseExp
   The function can potentially change the expression. In such cases,
   the changes are made bottom-up, i.e. a subexpression is traversed
   and changed before the complete expression is traversed."
-  input Exp inExp;
+  input DAE.Exp inExp;
   input FuncExpType func;
   input Type_a inTypeA;
-  output tuple<Exp, Type_a> outTplExpTypeA;
+  output tuple<DAE.Exp, Type_a> outTplExpTypeA;
   partial function FuncExpType
-    input tuple<Exp, Type_a> inTplExpTypeA;
-    output tuple<Exp, Type_a> outTplExpTypeA;
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
@@ -11115,11 +11114,11 @@ algorithm
   outTplExpTypeA:=
   matchcontinue (inExp,func,inTypeA)
     local
-      Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
+      DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
       Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
       Operator op_1,op;
       FuncExpType rel;
-      list<Exp> expl_1,expl;
+      list<DAE.Exp> expl_1,expl;
       Absyn.Path fn_1,fn,path_1,path;
       Boolean t_1,b_1,t,b,scalar_1,scalar;
       Type tp_1,tp;
@@ -11188,7 +11187,7 @@ algorithm
         ((e,ext_arg_2));
     case ((e as DAE.MATRIX(ty = tp,integer = scalar,scalar = expl)),rel,ext_arg)
       local
-        list<list<tuple<Exp, Boolean>>> expl_1,expl;
+        list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
         Integer scalar_1,scalar;
       equation
         (expl_1,ext_arg_1) = traverseExpMatrix(expl, rel, ext_arg);
@@ -11297,14 +11296,14 @@ protected function traverseExpMatrix
 "function: traverseExpMatrix
   author: PA
    Helper function to traverseExp, traverses matrix expressions."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<Exp, Type_a> inTplExpTypeA;
-    output tuple<Exp, Type_a> outTplExpTypeA;
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
@@ -11314,8 +11313,8 @@ algorithm
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
-      list<tuple<Exp, Boolean>> row_1,row;
-      list<list<tuple<Exp, Boolean>>> rows_1,rows;
+      list<tuple<DAE.Exp, Boolean>> row_1,row;
+      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
     case ({},rel,e_arg) then ({},e_arg);
     case ((row :: rows),rel,e_arg)
       equation
@@ -11330,14 +11329,14 @@ protected function traverseExpMatrix2
 "function: traverseExpMatrix2
   author: PA
   Helper function to traverseExpMatrix."
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
   output Type_a outTypeA;
   partial function FuncExpType
-    input tuple<Exp, Type_a> inTplExpTypeA;
-    output tuple<Exp, Type_a> outTplExpTypeA;
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
@@ -11346,8 +11345,8 @@ algorithm
   matchcontinue (inTplExpBooleanLst,func,inTypeA)
     local
       Type_a e_arg,e_arg_1,e_arg_2;
-      Exp e_1,e;
-      list<tuple<Exp, Boolean>> rest_1,rest;
+      DAE.Exp e_1,e;
+      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
       Boolean b;
       FuncExpType rel;
     case ({},_,e_arg) then ({},e_arg);
@@ -11365,14 +11364,14 @@ protected function matrixExpMap1
   author: PA
   Maps a function, taking one extra
   argument over a MATRIX expression list."
-  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
   input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
   input Type_b inTypeB;
-  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
   partial function FuncTypeExpType_bToExp
-    input Exp inExp;
+    input DAE.Exp inExp;
     input Type_b inTypeB;
-    output Exp outExp;
+    output DAE.Exp outExp;
     replaceable type Type_b subtypeof Any;
   end FuncTypeExpType_bToExp;
   replaceable type Type_b subtypeof Any;
@@ -11380,8 +11379,8 @@ algorithm
   outTplExpBooleanLstLst:=
   matchcontinue (inTplExpBooleanLstLst,inFuncTypeExpTypeBToExp,inTypeB)
     local
-      list<tuple<Exp, Boolean>> e_1,e;
-      list<list<tuple<Exp, Boolean>>> es_1,es;
+      list<tuple<DAE.Exp, Boolean>> e_1,e;
+      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
       FuncTypeExpType_bToExp rel;
       Type_b arg;
     case ({},_,_) then {};
@@ -11397,14 +11396,14 @@ end matrixExpMap1;
 protected function matrixExpMap1Help
 "function: matrixExpMap1Help
   Helper function to matrixExpMap1."
-  input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
   input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
   input Type_b inTypeB;
-  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
   partial function FuncTypeExpType_bToExp
-    input Exp inExp;
+    input DAE.Exp inExp;
     input Type_b inTypeB;
-    output Exp outExp;
+    output DAE.Exp outExp;
     replaceable type Type_b subtypeof Any;
   end FuncTypeExpType_bToExp;
   replaceable type Type_b subtypeof Any;
@@ -11412,8 +11411,8 @@ algorithm
   outTplExpBooleanLst:=
   matchcontinue (inTplExpBooleanLst,inFuncTypeExpTypeBToExp,inTypeB)
     local
-      Exp e_1,e;
-      list<tuple<Exp, Boolean>> es_1,es;
+      DAE.Exp e_1,e;
+      list<tuple<DAE.Exp, Boolean>> es_1,es;
       Boolean b;
       FuncTypeExpType_bToExp rel;
       Type_b arg;
@@ -11428,8 +11427,8 @@ algorithm
 end matrixExpMap1Help;
 
 public function CodeVarToCref
-  input Exp inExp;
-  output Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=matchcontinue(inExp)
     local
@@ -11450,12 +11449,12 @@ public function expIntOrder "Function: expIntOrder
 This function takes a list of Exp, assumes they are all ICONST
 and checks wheter the ICONST are in order."
   input Integer expectedValue;
-  input list<Exp> integers;
+  input list<DAE.Exp> integers;
   output Boolean ob;
 algorithm 
   ob := matchcontinue(expectedValue,integers)
     local
-      list<Exp> expl;
+      list<DAE.Exp> expl;
       Integer x1,x2;
       Boolean b;
     case(_,{}) then true;
@@ -11496,11 +11495,11 @@ algorithm
 end varType;
 
 public function countBinary "counts the number of binary operations in an expression"
-  input Exp e;
+  input DAE.Exp e;
   output Integer count;
 algorithm
   count := matchcontinue(e)
-    local Exp e1,e2,e3; list<Exp> expl; list<list<tuple<Exp,Boolean>>> mexpl;
+    local DAE.Exp e1,e2,e3; list<DAE.Exp> expl; list<list<tuple<DAE.Exp,Boolean>>> mexpl;
     case(DAE.BINARY(e1,_,e2)) 
       equation
         count = 1 + countBinary(e1) + countBinary(e2);
@@ -11545,11 +11544,11 @@ algorithm
 end countBinary;
 
 public function countMulDiv "counts the number of multiplications and divisions in an expression"
-  input Exp e;
+  input DAE.Exp e;
   output Integer count;
 algorithm
   count := matchcontinue(e)
-    local Exp e1,e2,e3; list<Exp> expl; list<list<tuple<Exp,Boolean>>> mexpl;
+    local DAE.Exp e1,e2,e3; list<DAE.Exp> expl; list<list<tuple<DAE.Exp,Boolean>>> mexpl;
     case(DAE.BINARY(e1,DAE.MUL(_),e2)) equation
       count = 1 + countMulDiv(e1) + countMulDiv(e2);
     then count;
@@ -11591,7 +11590,7 @@ public function crefExp "
 Author: BZ, 2008-08
 generate an DAE.CREF(ComponentRef, Type) from a ComponenRef, make array type correct from subs"
   input ComponentRef cr;
-  output Exp cref;
+  output DAE.Exp cref;
 algorithm cref := matchcontinue(cr)
   local
     Type ty1,ty2;
@@ -11668,14 +11667,14 @@ algorithm
         b = subscriptContain(ssl1,ssl2);
       then b;
 /*    case(ss1::ssl1, (ss2 as DAE.SLICE(exp)) ::ssl2)
-      local Exp exp;
+      local DAE.Exp exp;
         equation
          b = subscriptContain(ssl1,ssl2);
         then
           b;
           */
     case((ss1 as DAE.INDEX(e1 as DAE.ICONST(i)))::ssl1, (ss2 as DAE.SLICE(e2 as DAE.ARRAY(_,_,expl))) ::ssl2)
-      local Exp e1,e2; Integer i; list<Exp> expl;
+      local DAE.Exp e1,e2; Integer i; list<DAE.Exp> expl;
         equation
         true = subscriptContain2(i,expl);
         b = subscriptContain(ssl1,ssl2);
@@ -11694,14 +11693,14 @@ end subscriptContain;
 protected function subscriptContain2 "
 "
   input Integer inInt;
-  input list<Exp> inExp2;
+  input list<DAE.Exp> inExp2;
   output Boolean contained;
 algorithm
   contained := matchcontinue(inInt,inExp2)
     local
       Boolean b,b2;
-      Exp e1,e2;
-      list<Exp> expl,expl2;
+      DAE.Exp e1,e2;
+      list<DAE.Exp> expl,expl2;
       Integer i,j;
       case(i,( (e1 as DAE.ICONST(j)) :: expl))
         equation
@@ -11733,7 +11732,7 @@ algorithm oint := matchcontinue(insubs)
   local
     Subscript ss;
     list<Subscript> subs;
-    list<Exp> expl;
+    list<DAE.Exp> expl;
     Integer x;
     list<DAE.Dimension> recursive;
     DAE.Exp e;
@@ -11784,7 +11783,7 @@ end crefNotPrefixOf;
 public function isArray " function: isArray
 returns true if expression is an array.
 "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outB;
 algorithm
   outB := matchcontinue(inExp)
@@ -11796,7 +11795,7 @@ end isArray;
 public function isMatrix " function: isArray
 returns true if expression is an array.
 "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outB;
 algorithm
   outB := matchcontinue(inExp)
@@ -11809,13 +11808,13 @@ end isMatrix;
 public function isUnary " function: isArray
 returns true if expression is an array.
 "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outB;
 algorithm
   outB:=
   matchcontinue(inExp)
     local
-      Exp exp1;
+      DAE.Exp exp1;
     case(exp1 as DAE.UNARY(operator =_))
       then
         true;
@@ -11827,7 +11826,7 @@ end isUnary;
 
 public function isCref "
 Author: BZ 2008-06, checks wheter an exp is cref or not."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outB;
 algorithm outB:= matchcontinue(inExp)
     case(DAE.CREF(_,_)) then true;
@@ -11861,13 +11860,13 @@ end crefAppend;
 public function isCrefArray "Function isCrefArray
 Checks wheter a cref is an array or not.
 "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outB;
 algorithm
   outB:=
   matchcontinue(inExp)
     local
-      Exp exp1;
+      DAE.Exp exp1;
     case(exp1 as DAE.CREF(_,DAE.ET_ARRAY(_,_)))
     then
       true;
@@ -11879,7 +11878,7 @@ end isCrefArray;
 
 public function isCrefScalar
   "Checks whether an expression is a scalar cref or not."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output Boolean isScalar;
 algorithm
   isScalar := matchcontinue(inExp)
@@ -11902,11 +11901,11 @@ expCanBeZero(1) => false
 expCanBeZero(a+b) => true  (for a = -b)
 expCanBeZero(1+a^2) => false (all terms positive)
 "
-  input Exp e;
+  input DAE.Exp e;
   output Boolean canBeZero;
 algorithm
   canBeZero := matchcontinue(e)
-    local list<Exp> terms;
+    local list<DAE.Exp> terms;
 
     case(e) equation
       true = isConst(e) and not isZero(e);
@@ -11929,11 +11928,11 @@ constant >= 0
 
 See also expIsPositiveOrZero.
 "
-  input Exp e;
+  input DAE.Exp e;
   output Boolean res;
 algorithm
   res := matchcontinue(e)
-    local Exp e1,e2;
+    local DAE.Exp e1,e2;
 
      /* constant >= 0 */
     case(e) equation
@@ -11952,11 +11951,11 @@ constant >= 0
 a^n, for even n.
 abs(expr)
 "
-  input Exp e;
+  input DAE.Exp e;
   output Boolean res;
 algorithm
   res := matchcontinue(e)
-    local Exp e1,e2;
+    local DAE.Exp e1,e2;
 
      /* constant >= 0 */
     case(e) equation
@@ -11978,7 +11977,7 @@ algorithm
 end expIsPositiveOrZero;
 
 public function isEven "returns true if expression is even"
-  input Exp e;
+  input DAE.Exp e;
   output Boolean even;
 algorithm
   even := matchcontinue(e)
@@ -11993,12 +11992,12 @@ end isEven;
 public function realIfRealInArray "function: realIfRealInArray
 this function takes a list of numbers. If one of them is a real, type real is returned.
 Otherwise Inteteger. Fails on other types."
-  input list<Exp> inExps;
+  input list<DAE.Exp> inExps;
   output Type otype;
 algorithm otype := matchcontinue(inExps)
   local
-    Exp e1,e2;
-    list<Exp> expl;
+    DAE.Exp e1,e2;
+    list<DAE.Exp> expl;
     Type ty,rty;
     case({}) then DAE.ET_INT();
   case( e1 :: expl)
@@ -12022,7 +12021,7 @@ algorithm otype := matchcontinue(inExps)
 end realIfRealInArray;
 
 protected function crOrDerCr "returns the component reference of CREF or der(CREF)"
-  input Exp exp;
+  input DAE.Exp exp;
   output ComponentRef cr;
 algorithm
   cr := matchcontinue(exp)
@@ -12032,8 +12031,8 @@ algorithm
 end crOrDerCr;
 
 protected function crOrDerCrExp
-  input Exp exp;
-  output Exp cr_exp;
+  input DAE.Exp exp;
+  output DAE.Exp cr_exp;
 algorithm
   cr_exp := matchcontinue(exp)
     local DAE.Exp e;  
@@ -12153,8 +12152,8 @@ end replaceSliceSub;
 
 protected function dumpSimplifiedExp
 "a function to dump simplified expressions"
-  input Exp inExp;
-  input Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.Exp outExp;
 algorithm
   _ := matchcontinue(inExp,outExp)
     case(inExp,outExp) equation
@@ -12168,8 +12167,8 @@ algorithm
 end dumpSimplifiedExp;
 
 public function simplify1time "simplify1 with timing"
-  input Exp e;
-  output Exp outE;
+  input DAE.Exp e;
+  output DAE.Exp outE;
 protected
   Real t1,t2;
 algorithm
@@ -12180,7 +12179,7 @@ algorithm
 end simplify1time;
 
 public function boolExp "returns the boolean constant expression of a BOOL"
-input Exp e;
+input DAE.Exp e;
 output Boolean b;
 algorithm
   b := matchcontinue(e)
@@ -12190,14 +12189,14 @@ end boolExp;
 
 protected function simplifyVectorScalarMatrix "Help function to simplifyVectorScalar,
 handles MATRIX expressions"
-  input list<list<tuple<Exp, Boolean>>> mexpl;
+  input list<list<tuple<DAE.Exp, Boolean>>> mexpl;
   input Operator op;
-  input Exp s1;
+  input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
-  output list<list<tuple<Exp, Boolean>>> outExp;
+  output list<list<tuple<DAE.Exp, Boolean>>> outExp;
 algorithm
   outExp := matchcontinue(mexpl,op,s1,arrayScalar)
-  local list<tuple<Exp, Boolean>> row;
+  local list<tuple<DAE.Exp, Boolean>> row;
     case({},op,s1,arrayScalar) then {};
     case(row::mexpl,op,s1,arrayScalar) equation
       row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
@@ -12208,14 +12207,14 @@ end simplifyVectorScalarMatrix;
 
 protected function simplifyVectorScalarMatrixRow "Help function to simplifyVectorScalarMatrix,
 handles MATRIX row"
-  input list<tuple<Exp, Boolean>> row;
+  input list<tuple<DAE.Exp, Boolean>> row;
   input Operator op;
-  input Exp s1;
+  input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
-  output list<tuple<Exp, Boolean>> outExp;
+  output list<tuple<DAE.Exp, Boolean>> outExp;
 algorithm
   outExp := matchcontinue(row,op,s1,arrayScalar)
-  local Exp e; Boolean scalar;
+  local DAE.Exp e; Boolean scalar;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
     case((e,scalar)::row,op,s1,true) equation
@@ -12244,10 +12243,10 @@ end removeOperatorDimension;
 
 protected function simplifyBinarySortConstantsMul
 "Helper relation to simplifyBinarySortConstants"
-  input Exp inExp;
-  output Exp outExp;
- protected list<Exp> e_lst, e_lst_1,const_es1,const_es1_1,notconst_es1;
-  Exp res1,res2;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+ protected list<DAE.Exp> e_lst, e_lst_1,const_es1,const_es1_1,notconst_es1;
+  DAE.Exp res1,res2;
 algorithm
   e_lst  := factors(inExp);
   e_lst_1 := Util.listMap(e_lst,simplify2); // simplify2 for recursive
@@ -12260,21 +12259,21 @@ algorithm
 end simplifyBinarySortConstantsMul;
 
 public function makeNoEvent " adds a noEvent call around an expression"
-input Exp e1;
-output Exp res;
+input DAE.Exp e1;
+output DAE.Exp res;
 algorithm
   res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE());
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
 guared expressions and a default value (the else branch)"
-  input list<Exp> conds "conditions";
-  input list<Exp> tbExps " guarded expressions, for each condition";
-  input Exp fExp "default value, else branch";
-  output Exp ifExp;
+  input list<DAE.Exp> conds "conditions";
+  input list<DAE.Exp> tbExps " guarded expressions, for each condition";
+  input DAE.Exp fExp "default value, else branch";
+  output DAE.Exp ifExp;
 algorithm
   ifExp := matchcontinue(conds,tbExps,fExp)
-  local Exp c,tbExp;
+  local DAE.Exp c,tbExp;
     case({c},{tbExp},fExp)
     then DAE.IFEXP(c,tbExp,fExp);
     case(c::conds,tbExp::tbExps,fExp) equation
@@ -12284,9 +12283,9 @@ algorithm
 end makeNestedIf;
 
 public function makeDiv "Takes two expressions and create a division"
-  input Exp e1;
-  input Exp e2;
-  output Exp res;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp res;
 algorithm
   res := matchcontinue(e1,e2)
     local
@@ -12396,7 +12395,7 @@ end liftArrayR;
 public function typeOfString
 "function typeOfString
   Retrieves the Type of the Expression as a String"
-  input Exp inExp;
+  input DAE.Exp inExp;
   output String str;
   Type ty;
   String str;
@@ -12417,12 +12416,12 @@ algorithm
 end isIntegerOrReal;
 
 protected function isInverseCref " Returns true if expression is 1/cr for a ComponentRef cr"
-input Exp e;
+input DAE.Exp e;
 input ComponentRef cr;
 output Boolean res;
 algorithm
   res := matchcontinue(e,cr)
-  local ComponentRef cr2; Exp e1;
+  local ComponentRef cr2; DAE.Exp e1;
     case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),cr)equation
         true = crefEqual(cr,cr2);
         true = isConstOne(e1);
@@ -12435,19 +12434,19 @@ public function traverseExpList
 "function traverseExpList
  author PA:
  Calls traverseExp for each element of list. (Earier used Util.foldListMap for this, which was a bug)"
- input list<Exp> expl;
+ input list<DAE.Exp> expl;
   input funcType rel;
   input Type_a ext_arg;
-  output tuple<list<Exp>, Type_a> outTpl;
+  output tuple<list<DAE.Exp>, Type_a> outTpl;
   partial function funcType
-    input tuple<Exp, Type_a> tpl1;
-    output tuple<Exp, Type_a> tpl2;
+    input tuple<DAE.Exp, Type_a> tpl1;
+    output tuple<DAE.Exp, Type_a> tpl2;
     replaceable type Type_a subtypeof Any;
   end funcType;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTpl := matchcontinue(expl,rel,ext_arg)
-  local Exp e,e1; list<Exp> expl1;
+  local DAE.Exp e,e1; list<DAE.Exp> expl1;
     case({},rel,ext_arg) then (({},ext_arg));
     case(e::expl,rel,ext_arg) equation
       ((e1,ext_arg)) = traverseExp(e, rel, ext_arg);
@@ -12457,19 +12456,19 @@ algorithm
 end traverseExpList;
 
 public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing for NONE"
-  input Option<Exp> inExp;
+  input Option<DAE.Exp> inExp;
   input FuncExpType func;
   input Type_a inTypeA;
-  output tuple<Option<Exp>, Type_a> outTpl;
+  output tuple<Option<DAE.Exp>, Type_a> outTpl;
   partial function FuncExpType
-    input tuple<Exp, Type_a> inTpl;
-    output tuple<Exp, Type_a> outTpl;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTpl:= matchcontinue (inExp,func,inTypeA)
-  local Exp e;
+  local DAE.Exp e;
     case(NONE(),_,inTypeA) then ((NONE(),inTypeA));
     case(SOME(e),func,inTypeA) equation
       ((e,inTypeA)) = traverseExp(e,func,inTypeA);
@@ -12478,7 +12477,7 @@ algorithm
 end traverseExpOpt;
 
 public function expReal "returns the real value if expression is constant Real"
-  input Exp exp;
+  input DAE.Exp exp;
   output Real r;
 algorithm
   r := matchcontinue(exp) local Integer i;
@@ -12489,7 +12488,7 @@ algorithm
 end expReal;
 
 public function expInt "returns the int value if expression is constant Integer"
-	input Exp exp;
+	input DAE.Exp exp;
 	output Integer i;
 algorithm
 	i := matchcontinue(exp) local Integer i2;
@@ -12500,7 +12499,7 @@ end expInt;
 
 public function isExpCrefOrIfExp
 "Returns true if expression is a componentRef or an if expression"
-  input Exp e;
+  input DAE.Exp e;
   output Boolean res;
 algorithm
   res := matchcontinue(e)
@@ -12513,7 +12512,7 @@ end isExpCrefOrIfExp;
 
 public function isExpCref
 "Returns true if expression is a componentRef"
-  input Exp e;
+  input DAE.Exp e;
   output Boolean res;
 algorithm
   res := matchcontinue(e)
@@ -12527,13 +12526,13 @@ public function expCrefInclIfExpFactors
   Returns the componentref if exp is a CREF, or the factors of CREF if expression is an if expression.
   This is used in e.g. the tearing algorithm to detect potential division by zero in
   expressions like 1/(if b then 1.0 else x) which could lead to division by zero if b is false and x is 0; "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output list<ComponentRef> outComponentRefs;
 algorithm
   outComponentRefs:=
   matchcontinue (inExp)
-    local ComponentRef cr; Exp c,tb,fb;
-      list<Exp> f;
+    local ComponentRef cr; DAE.Exp c,tb,fb;
+      list<DAE.Exp> f;
       list<ComponentRef> crefs;
     case (DAE.CREF(componentRef = cr)) then {cr};
     case(DAE.IFEXP(c,tb,fb)) equation
@@ -12695,7 +12694,7 @@ algorithm
     then
       true;
     case((ss as DAE.SLICE(es1))::ssl, DAE.ET_ARRAY(tty,ad))
-      local Exp es1;
+      local DAE.Exp es1;
       equation
         true = containWholeDim3(es1,ad);
       then
@@ -12715,12 +12714,12 @@ end containWholeDim2;
 
 protected function containWholeDim3 "Function: containWholeDim3
 Verify that a slice adresses all dimensions"
-input Exp inExp;
+input DAE.Exp inExp;
 input list<DAE.Dimension> ad;
 output Boolean ob;
 algorithm ob := matchcontinue(inExp,ad)
   local
-    list<Exp> expl;
+    list<DAE.Exp> expl;
     Integer x1,x2;
     DAE.Dimension d;
   case(DAE.ARRAY(array=expl), d :: _)
@@ -12881,9 +12880,9 @@ public function expSub
 "function: expMul
   author: PA
   Subtracts two scalar expressions."
-  input Exp e1;
-  input Exp e2;
-  output Exp outExp;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
   Type tp;
   Boolean b;
   Operator op;
@@ -12898,9 +12897,9 @@ public function expDiv "
 function expDiv
   author: PA
   Divides two scalar expressions."
-  input Exp e1;
-  input Exp e2;
-  output Exp outExp;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
   Type tp;
   Boolean b;
   Operator op;  
@@ -12915,8 +12914,8 @@ public function expLn
 "function expLn
   author: PA
   Takes the natural logarithm of an expression."
-  input Exp e1;
-  output Exp outExp;
+  input DAE.Exp e1;
+  output DAE.Exp outExp;
   Type tp;
 algorithm
   tp := typeof(e1);
@@ -12926,7 +12925,7 @@ end expLn;
 public function extractCrefsFromExp "
 Author: BZ 2008-06, Extracts all ComponentRef from an exp.
 "
-input Exp inExp;
+input DAE.Exp inExp;
 output list<ComponentRef> ocrefs;
 algorithm ocrefs := matchcontinue(inExp)
   case(inExp)
@@ -12943,8 +12942,8 @@ Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an exp.
 "
-  input tuple<Exp, list<ComponentRef> > inExp;
-  output tuple<Exp, list<ComponentRef> > outExp;
+  input tuple<DAE.Exp, list<ComponentRef> > inExp;
+  output tuple<DAE.Exp, list<ComponentRef> > outExp;
 algorithm outExp := matchcontinue(inExp)
   local
     list<ComponentRef> crefs;
@@ -12961,13 +12960,13 @@ end matchcontinue;
 end traversingComponentRefFinder;
 
 public function extractDivExpFromExp "
-Author: Frenkel TUD 2010-02, Extracts all Division Exp from an exp.
+Author: Frenkel TUD 2010-02, Extracts all Division DAE.Exp from an exp.
 "
-input Exp inExp;
-output list<Exp> outExps;
+input DAE.Exp inExp;
+output list<DAE.Exp> outExps;
 algorithm outExps := matchcontinue(inExp)
   case(inExp)
-    local list<Exp> exps;
+    local list<DAE.Exp> exps;
     equation
       ((_,exps)) = traverseExp(inExp, traversingDivExpFinder, {});
       then
@@ -12979,12 +12978,12 @@ protected function traversingDivExpFinder "
 Author: Frenkel TUD 2010-02
 Returns a list containing, all division exp in an exp.
 "
-  input tuple<Exp, list<Exp> > inExp;
-  output tuple<Exp, list<Exp> > outExp;
+  input tuple<DAE.Exp, list<DAE.Exp> > inExp;
+  output tuple<DAE.Exp, list<DAE.Exp> > outExp;
 algorithm outExp := matchcontinue(inExp)
   local
-    list<Exp> exps;
-    Exp e,e2;
+    list<DAE.Exp> exps;
+    DAE.Exp e,e2;
     Type ty;
   case( (e as DAE.BINARY(operator = DAE.DIV(ty),exp2 = e2), exps) )
     then ((e, e2::exps ));
@@ -13001,8 +13000,8 @@ end traversingDivExpFinder;
 public function containsExp
 "function containsExp
   Author BZ 2008-06 same as expContains, but reversed."
-  input Exp inExp1;
-  input Exp inExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   output Boolean outBoolean;
 algorithm
   outBoolean:= expContains(inExp2,inExp1);
@@ -13100,13 +13099,13 @@ This function takes an exp and tries to print ComponentReferences.
 Uses debugPrint.ComponentRefTypeStr, which gives type information to stdout.
 NOTE Only used for debugging.
 "
-  input Exp inExp;
+  input DAE.Exp inExp;
   output String str;
 algorithm str := matchcontinue(inExp)
   local
     ComponentRef cr;
     String s1,s2,s3;
-    list<Exp> expl;
+    list<DAE.Exp> expl;
     list<String> s1s;
   case(DAE.CREF(cr,_)) then debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
@@ -13209,12 +13208,12 @@ end sizeOf;
 
 protected function simplifyBuiltinConstantDer 
 "returns 0.0 or an array filled with 0.0 if the input is Real, Integer or an array of Real/Integer"
-  input Exp inExp "assumes already simplified constant expression";
-  output Exp outExp;
+  input DAE.Exp inExp "assumes already simplified constant expression";
+  output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExp)
     local
-      Exp e;
+      DAE.Exp e;
       list<DAE.Dimension> dims;
     case DAE.RCONST(_) then DAE.RCONST(0.0);   
     case DAE.ICONST(_) then DAE.RCONST(0.0);   
@@ -13234,7 +13233,7 @@ end simplifyBuiltinConstantDer;
 public function makeZeroExpression
 " creates a Real or array<Real> zero expression with given dimensions, also returns its type"
   input list<DAE.Dimension> inDims;
-  output Exp outExp;
+  output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
   (outExp,outType) := matchcontinue(inDims)
@@ -13242,8 +13241,8 @@ algorithm
       Integer i;
       DAE.Dimension d;
       list<DAE.Dimension> dims;
-      Exp e;
-      list<Exp> eLst;
+      DAE.Exp e;
+      list<DAE.Exp> eLst;
       DAE.Type ty;
     case {} then (DAE.RCONST(0.0), DAE.T_REAL_DEFAULT);
     case d::dims
@@ -13514,7 +13513,7 @@ algorithm
       then
         s;
     case DAE.DIM_EXP(exp = e)
-      local Exp e;
+      local DAE.Exp e;
       equation
         s = printExpStr(e);
       then

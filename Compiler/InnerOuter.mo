@@ -1289,7 +1289,7 @@ algorithm
   local
     String s1,s2,s;
     SCode.Mod scmod1,scmod2;
-    Mod mod1,mod2;
+    DAE.Mod mod1,mod2;
   // if we don't have the same modification on inner report error!
   case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation

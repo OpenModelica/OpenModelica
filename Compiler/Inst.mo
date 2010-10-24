@@ -10209,7 +10209,7 @@ Author: bjozac
 algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
   local
     Absyn.Exp ae;
-    Exp.Exp exp;
+    DAE.Exp exp;
     Absyn.ComponentRef acr;
     Absyn.Path deriveFunc;
     Option<Absyn.Path> defaultDerivative;

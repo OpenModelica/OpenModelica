@@ -142,7 +142,7 @@ algorithm
       Absyn.Path funcpath,func;
       DAE.Operator relop;
       Env.Cache cache;
-      Exp.Exp expExp;
+      DAE.Exp expExp;
       list<Integer> dims;
       list<DAE.Dimension> arrayDims;
       DAE.ComponentRef cr;
@@ -4508,7 +4508,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-      Exp.Exp exp;
+      DAE.Exp exp;
 
     // size(cr)
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)

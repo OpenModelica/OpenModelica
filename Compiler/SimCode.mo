@@ -94,7 +94,7 @@ public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
+type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>; // helpvarindex, expression, whenclause index
 type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
 
 
@@ -296,7 +296,7 @@ uniontype Variable
   record VARIABLE
     DAE.ComponentRef name;
     Exp.Type ty;
-    Option<Exp.Exp> value; // Default value
+    Option<DAE.Exp> value; // Default value
     list<DAE.Exp> instDims;
   end VARIABLE;
 
@@ -730,7 +730,7 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       Ceval.Msg msg;
-      //Exp.Exp fileprefix;
+      //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
@@ -857,7 +857,7 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       Ceval.Msg msg;
-      //Exp.Exp fileprefix;
+      //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
@@ -1039,7 +1039,7 @@ in a list. Removes duplicates."
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   output list<Absyn.Path> res;
-  list<Exp.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
+  list<DAE.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
   list<Absyn.Path> calledfuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
@@ -1056,7 +1056,7 @@ public function getCalledFunctionReferences
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   output list<Absyn.Path> res;
-  list<Exp.Exp> explist,fcallexps;
+  list<DAE.Exp> explist,fcallexps;
   list<Absyn.Path> calledfuncs;
 algorithm
   res := matchcontinue(dae, dlow)
@@ -1962,7 +1962,7 @@ algorithm
     DAELow.EquationArray eqs;
     Integer e;
     Exp.ComponentRef cr2;
-    Exp.Exp exp;
+    DAE.Exp exp;
     Boolean b1,b2;
     case(cr,daelow,{}) then true;
     case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) 
@@ -2054,7 +2054,7 @@ algorithm
     case ((DAE.ALGORITHM(algorithm_ = algorithm_) :: rest), accRecDecls, rt)
       local
         Algorithm.Algorithm algorithm_;
-        list<Exp.Exp> expl;
+        list<DAE.Exp> expl;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         expl = Algorithm.getAllExps(algorithm_);
@@ -2175,7 +2175,7 @@ algorithm
 end elaborateNestedRecordDeclarations;
 
 protected function elaborateRecordDeclarationsForMetarecords
-  input list<Exp.Exp> inExpl;
+  input list<DAE.Exp> inExpl;
   input list<RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
   output list<RecordDeclaration> outRecordDecls;
@@ -2184,7 +2184,7 @@ algorithm
   (outRecordDecls,outReturnTypes) := matchcontinue(inExpl, inAccRecordDecls, inReturnTypes)
     local
       list<String> rt,rt_1,rt_2,fieldNames;
-      list<Exp.Exp> rest;
+      list<DAE.Exp> rest;
       String name;
       Absyn.Path path;
       list<RecordDeclaration> accRecDecls;
@@ -2528,7 +2528,7 @@ algorithm
       list<DAELow.ReinitStatement> reinits;
       list<DAE.ComponentRef> conditionVars;
       Integer index_;
-      list<Exp.Exp> conditions;
+      list<DAE.Exp> conditions;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
     case (DAELow.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq, wc, helpVarInfo,CurrentIndex)
       equation
@@ -2710,10 +2710,10 @@ algorithm
       DAE.Stream streamPrefix;
       DAELow.VarKind kind;
       DAELow.Var v;
-      Exp.Exp e1;
-      Exp.Exp e2;
-      Exp.Exp varexp;
-      Exp.Exp exp_;
+      DAE.Exp e1;
+      DAE.Exp e2;
+      DAE.Exp varexp;
+      DAE.Exp exp_;
       DAELow.Variables vars;
       DAELow.EquationArray eqns;
       DAELow.Equation eqn;
@@ -2865,10 +2865,10 @@ algorithm
       DAE.Stream streamPrefix;
       DAELow.VarKind kind;
       DAELow.Var v;
-      Exp.Exp e1;
-      Exp.Exp e2;
-      Exp.Exp varexp;
-      Exp.Exp exp_;
+      DAE.Exp e1;
+      DAE.Exp e2;
+      DAE.Exp varexp;
+      DAE.Exp exp_;
       DAELow.Variables vars;
       DAELow.EquationArray eqns;
       DAELow.Equation eqn;
@@ -3755,8 +3755,8 @@ protected function replaceDerOpInExpTraverser
   Derive.differentiateExp. Ideally these parts should be fixed so that they can
   handle der-calls, but until that happens we just replace the der-calls with
   crefs."
-  input tuple<Exp.Exp, Option<DAE.ComponentRef>> inExp;
-  output tuple<Exp.Exp, Option<DAE.ComponentRef>> outExp;
+  input tuple<DAE.Exp, Option<DAE.ComponentRef>> inExp;
+  output tuple<DAE.Exp, Option<DAE.ComponentRef>> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
@@ -4236,7 +4236,7 @@ algorithm
     local
       Integer indx,cg_id_1,cg_id;
       list<Integer> ds;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       Exp.ComponentRef cr,origname,cr_1;
       DAELow.Variables vars,knvars;
       DAELow.EquationArray eqns,se,ie;
@@ -4245,7 +4245,7 @@ algorithm
       Algorithm.Algorithm alg,alg1;
       DAELow.EventInfo ev;
       list<Exp.ComponentRef> solvedVars,algOutVars;
-      list<Exp.Exp> algOutExpVars;
+      list<DAE.Exp> algOutExpVars;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       String message,algStr;
       list<DAE.Statement> algStatements;
@@ -5356,8 +5356,8 @@ algorithm
       list<Algorithm.Statement> rest, rest1;
       Integer nextInd, nextInd1, nextInd2;
       list<Integer> helpVarIndices, helpVarIndices1;
-      Exp.Exp condition;
-      list<Exp.Exp> el, el1;
+      DAE.Exp condition;
+      list<DAE.Exp> el, el1;
 	    list<Algorithm.Statement> statementLst;
 	    Algorithm.Statement statement;
   	  Algorithm.Statement elseWhen;
@@ -5406,16 +5406,16 @@ end generateHelpVarsInStatement;
 
 protected function generateHelpVarsInArrayCondition
   input Integer n "Index of next help variable";
-  input list<Exp.Exp> inExp;
+  input list<DAE.Exp> inExp;
   output list<HelpVarInfo> outHelpVars;
-  output list<Exp.Exp> outExp;
+  output list<DAE.Exp> outExp;
   output Integer n1;
 algorithm
   (outHelpVars,outExp,n1) := matchcontinue(n,inExp)
     local
-      list<Exp.Exp> rest, el, el1;
+      list<DAE.Exp> rest, el, el1;
       Integer nextInd, nextInd1;
-      Exp.Exp condition;
+      DAE.Exp condition;
 	    list<HelpVarInfo> helpvars1;
       String newIdent;
       String nextIndStr;
@@ -5482,7 +5482,7 @@ algorithm
       DAELow.Var v;
       Exp.ComponentRef cr;
       DAELow.VarKind kind;
-      Exp.Exp startv;
+      DAE.Exp startv;
       Option<DAE.VariableAttributes> attr;
       list<DAELow.Var> vars;
       DAE.ElementSource source "the origin of the element";
@@ -5508,7 +5508,7 @@ protected function buildWhenConditionChecks3
 " Helper function to build_when_condition_checks.
   Generates code for checking one equation of one when clause.
 "
-  input list<Exp.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
+  input list<DAE.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
   input Integer whenClauseIndex        "When clause index";
   input Integer nextHelpIndex          "Next available help variable index";
   input Boolean isElseWhen					   "Whether this lase is an elsewhen or not";
@@ -5522,8 +5522,8 @@ algorithm
       HelpVarInfo helpInfo;
       Integer helpVarIndex_1,i,helpVarIndex;
       list<HelpVarInfo> helpVarInfoList;
-      Exp.Exp e;
-      list<Exp.Exp> el;
+      DAE.Exp e;
+      list<DAE.Exp> el;
     case ({},_,_,_) then ("",{});
     case ((e :: el),i,helpVarIndex, false)
       equation
@@ -5576,8 +5576,8 @@ algorithm
       list<HelpVarInfo> helpVarInfoList,helpVarInfoList2,helpVarInfoList1;
       DAELow.WhenClause wc;
       list<DAELow.WhenClause> xs;
-      list<Exp.Exp> el;
-      Exp.Exp e;
+      list<DAE.Exp> el;
+      DAE.Exp e;
     case ({},_,_) then ("",{});
     case (((wc as DAELow.WHEN_CLAUSE(reinitStmtLst = {})) :: xs),i,nextHelpIndex) /* skip if there are no reinit statements */
       equation
@@ -5682,10 +5682,10 @@ algorithm
       Boolean isElseWhen;
       Integer nextHelpInd, ind;
       Exp.ComponentRef cr;
-      Exp.Exp exp;
+      DAE.Exp exp;
       String res1,res2,res;
       Option<DAELow.WhenEquation> elsePart;
-      list<Exp.Exp> conditionList;
+      list<DAE.Exp> conditionList;
       list<HelpVarInfo> helpVars1,helpVars2, helpVars;
       list<DAELow.WhenClause> whenClauseList;
     case (SOME(DAELow.WHEN_EQ(ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
@@ -5706,14 +5706,14 @@ end buildWhenConditionCheckForEquation;
 protected function getConditionList
   input list<DAELow.WhenClause> whenClauseList;
   input Integer index;
-  output list<Exp.Exp> conditionList;
+  output list<DAE.Exp> conditionList;
 algorithm
   conditionList := matchcontinue (whenClauseList, index)
     local
       list<DAELow.WhenClause> whenClauseList;
       Integer ind;
-      list<Exp.Exp> conditionList;
-      Exp.Exp e;
+      list<DAE.Exp> conditionList;
+      DAE.Exp e;
 
     case (whenClauseList, ind)
       equation
@@ -5827,8 +5827,8 @@ protected function mixedCollectRelations "function: mixedCollectRelations
 "
   input list<DAELow.Equation> c_eqn;
   input list<DAELow.Equation> d_eqn;
-  output list<Exp.Exp> res;
-  list<Exp.Exp> l1,l2;
+  output list<DAE.Exp> res;
+  list<DAE.Exp> l1,l2;
 algorithm
   l1 := mixedCollectRelations2(c_eqn);
   l2 := mixedCollectRelations2(d_eqn);
@@ -5841,13 +5841,13 @@ protected function mixedCollectRelations2 "function: mixedCollectRelations2
   Helper function to mixed_collect_functions.
 "
   input list<DAELow.Equation> inDAELowEquationLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
   matchcontinue (inDAELowEquationLst)
     local
-      list<Exp.Exp> l1,l2,l3,res;
-      Exp.Exp e1,e2;
+      list<DAE.Exp> l1,l2,l3,res;
+      DAE.Exp e1,e2;
       list<DAELow.Equation> es;
       Exp.ComponentRef cr;
     case ({}) then {};
@@ -5948,7 +5948,7 @@ protected function generateMixedDiscretePossibleValues2 "function: generateMixed
 
   Helper function to generate_mixed_discrete_possible_values.
 "
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input list<DAELow.Var> inDAELowVarLst;
   input Integer inInteger;
   output list<list<String>> outStringLstLst;
@@ -5960,7 +5960,7 @@ algorithm
       Integer cg_id;
       list<list<String>> values;
       list<Integer> dims;
-      list<Exp.Exp> rels;
+      list<DAE.Exp> rels;
       DAELow.Var v;
       list<DAELow.Var> vs;
     case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
@@ -6024,7 +6024,7 @@ on the form v = expr for solving variable v"
 algorithm
   eqn := matchcontinue(v,eqnLst)
     local Exp.ComponentRef cr1,cr;
-      Exp.Exp e2;
+      DAE.Exp e2;
     case (v,(eqn as DAELow.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
       cr1=DAELow.varCref(v);
       true = Exp.crefEqual(cr1,cr);
@@ -6075,15 +6075,15 @@ end isMixedSystem;
 protected function solveTrivialArrayEquation
 "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
 	input Exp.ComponentRef v;
-	input Exp.Exp e1;
-	input Exp.Exp e2;
-	output Exp.Exp outE1;
-	output Exp.Exp outE2;
+	input DAE.Exp e1;
+	input DAE.Exp e2;
+	output DAE.Exp outE1;
+	output DAE.Exp outE2;
 algorithm
   (outE1,outE2) := matchcontinue(v,e1,e2)
     local
-      Exp.Exp e12,e22,vTerm,res,rhs,f;
-      list<Exp.Exp> terms,exps,exps_1,expl_1;
+      DAE.Exp e12,e22,vTerm,res,rhs,f;
+      list<DAE.Exp> terms,exps,exps_1,expl_1;
       Exp.Type tp;
       Boolean b;
       list<Boolean> bls; 
@@ -6127,7 +6127,7 @@ protected function getVectorizedCrefFromExp
   Returns the component ref v if expression is on form
    {v{1},v{2},...v{n}}  for some n.
   TODO: implement for 2D as well."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Exp.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
@@ -6137,8 +6137,8 @@ algorithm
       Exp.ComponentRef cr;
       list<String> strs;
       String s;
-      list<Exp.Exp> expl;
-      list<list<tuple<Exp.Exp, Boolean>>> column;
+      list<DAE.Exp> expl;
+      list<list<tuple<DAE.Exp, Boolean>>> column;
     case (DAE.ARRAY(array = expl))
       equation
         ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
@@ -6162,18 +6162,18 @@ protected function getVectorizedCrefFromExpMatrix
   Helper function for the 2D part of getVectorizedCrefFromExp
   Returns the component ref v if list of expressions is on form
    {v{1},v{2},...v{n}}  for some n."
-  input list<tuple<Exp.Exp, Boolean>> column; //One column in a matrix.
+  input list<tuple<DAE.Exp, Boolean>> column; //One column in a matrix.
   output Exp.ComponentRef outComponentRef; //The expanded column
 algorithm
   outComponentRef:=
   matchcontinue (column)
     local
-      list<tuple<Exp.Exp, Boolean>> col;
+      list<tuple<DAE.Exp, Boolean>> col;
       list<Exp.ComponentRef> crefs,crefs_1;
       Exp.ComponentRef cr;
       list<String> strs;
       String s;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
     case (col)
       equation
         ((crefs as (cr :: _))) = Util.listMap(col, Exp.expCrefTuple); //Get all CRefs from the list of tuples.
@@ -6330,7 +6330,7 @@ protected function skipPreOperator "function: skipPreOperator
   The variable in the pre operator should not be replaced in residual
   functions. This function is passed to replace_exp to ensure this.
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -6353,7 +6353,7 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarDirection dir;
       DAELow.Type tp;
-      Option<Exp.Exp> exp;
+      Option<DAE.Exp> exp;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
       Integer index;
@@ -6626,7 +6626,7 @@ algorithm
       DAE.Function funcelem;
       list<DAE.Function> funcelems;
       list<DAE.Function> elements;
-      list<Exp.Exp> explist,fcallexps,fcallexps_1, fnrefs;
+      list<DAE.Exp> explist,fcallexps,fcallexps_1, fnrefs;
       list<Absyn.ComponentRef> crefs;
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
@@ -6936,7 +6936,7 @@ end hasContinousVar;
 
 protected function getCrefFromExp
 "Assume input Exp is CREF and return the ComponentRef, fail otherwise."
-  input Exp.Exp e;
+  input DAE.Exp e;
   output Absyn.ComponentRef c;
 algorithm
   c :=
@@ -7180,7 +7180,7 @@ end indexSubscriptToExp;
 
 protected function isNotBuiltinCall
 "Return true if the given DAE.CALL is a call but not to a builtin function."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean :=
@@ -7895,15 +7895,15 @@ algorithm
 end listMap1_2;
   
 protected function solve
-  input Exp.Exp lhs;
-  input Exp.Exp rhs;
-  input Exp.Exp exp;
-  output Exp.Exp solvedExp;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Exp exp;
+  output DAE.Exp solvedExp;
 algorithm
   solvedExp := matchcontinue(lhs, rhs, exp)
     local
       DAE.ComponentRef cr;
-      Exp.Exp e1, e2, solved_exp;
+      DAE.Exp e1, e2, solved_exp;
     case (_, _, DAE.CREF(componentRef = cr))
       equation
         false = crefIsDerivative(cr);

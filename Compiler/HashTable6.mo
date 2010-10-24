@@ -27,6 +27,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
+public import DAE;
 public import Exp;
 
 protected import System;
@@ -34,7 +35,7 @@ protected import Util;
 
 public
  type Key = tuple<Exp.ComponentRef,Exp.ComponentRef>;
- type Value = Exp.Exp;
+ type Value = DAE.Exp;
 
 protected function hashFunc "
   author: PA
@@ -73,7 +74,7 @@ protected function dumpTuple
 algorithm
   str := matchcontinue(tpl)
   local
-  Exp.ComponentRef cr1,cr2; Exp.Exp e;
+  Exp.ComponentRef cr1,cr2; DAE.Exp e;
     case(((cr1,cr2),e)) equation
       str = "{" +& Exp.printComponentRefStr(cr1) +& ":" +&  Exp.printComponentRefStr(cr2) +& " ," +& Exp.printExpStr(e) +& "}";
     then str;

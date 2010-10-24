@@ -3095,7 +3095,7 @@ algorithm
 
     // size(A) for an array A with known dimensions. Returns an array of all dimensions of A.
     case (cache,env,{arraycr},_,impl,pre,info)
-      local list<Exp.Exp> dim_expl;
+      local list<DAE.Exp> dim_expl;
       equation
         (cache, arraycrefe, _, _) = elabExp(cache, env, arraycr, impl,NONE(), false, pre, info);
         ety = Exp.typeof(arraycrefe);
