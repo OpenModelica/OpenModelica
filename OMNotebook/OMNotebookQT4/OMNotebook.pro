@@ -21,12 +21,11 @@ win32 {
   include(OMNotebook.config)
 }
 
-LIBS += -L${ANTLRHOME}/lib -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
+LIBS += $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 INCLUDEPATH += $${CORBAINC} \
                $${COIN_INCLUDE} \
                $${SOQT_INCLUDE} \
                /usr/include/qt4/ \
-               ${ANTLRHOME}/include \
                ../NotebookParser \
                ../Pltpkg2 \
                ../3Dpkg
@@ -46,14 +45,11 @@ DEFINES += OMC $${HAVE_COIN} $${USE_CORBA}
 QT += network xml core gui opengl
 
 # Input
-HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
-           ../NotebookParser/AntlrNotebookParser.hpp\
-           ../NotebookParser/AntlrNotebookTreeParser.hpp\
+HEADERS += \
            omc_communicator.hpp \
            omc_communication.h \
            application.h \
            command.h \
-           notebookparser.h \
            serializingvisitor.h \
            cellapplication.h \
            commandunit.h \
@@ -127,9 +123,7 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
            ../3Dpkg/SimulationData.h \
            ../3Dpkg/VisualizationWidget.h
 
-SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
-           ../NotebookParser/AntlrNotebookParser.cpp\
-           ../NotebookParser/AntlrNotebookTreeParser.cpp\
+SOURCES += \
            cellapplication.cpp \
            cellparserfactory.cpp \
            omc_communicator.cpp \
@@ -158,7 +152,6 @@ SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
            notebook.cpp \
            qtapp.cpp \
            xmlparser.cpp \
-           notebookparser.cpp \
            searchform.cpp \
            cellgroup.cpp \
            notebooksocket.cpp \

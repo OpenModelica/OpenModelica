@@ -35,8 +35,6 @@
 
 #include "parserfactory.h"
 #include "xmlparser.h"
-#include "notebookparser.h"
-
 
 namespace IAEX
 {
@@ -59,23 +57,8 @@ namespace IAEX
 
    NBParser *CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
    {
-      // PORT >>filename = filename.stripWhiteSpace();
-	  QString fileName = filename.trimmed();
-
-
-	  if( fileName.endsWith(".onb", Qt::CaseInsensitive) ||
-		  fileName.endsWith(".xml", Qt::CaseInsensitive) ||
-		  fileName.endsWith(".onbz", Qt::CaseInsensitive))
-      {
-		 return new XMLParser(fileName, f, document, readmode);//openXMLFile(filename);
-      }
-      else if(fileName.endsWith(".nb", Qt::CaseInsensitive))
-      {
-		 return new NotebookParser(fileName, f, readmode); //openNotebookFile(filename);
-      }
-      else
-      {
-		 throw runtime_error("Can only open files ending with .onb or .nb,\n(can open old OMNotebooks file that ends with .xml)");
-      }
+     // PORT >>filename = filename.stripWhiteSpace();
+	   QString fileName = filename.trimmed();
+	   return new XMLParser(fileName, f, document, readmode);
    }
 };
