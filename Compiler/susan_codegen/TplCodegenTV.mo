@@ -1,3 +1,4 @@
+interface package TplCodegenTV
 
 package builtin
 	function stringListStringChar
@@ -344,3 +345,5 @@ package TplAbsyn
 	end TemplateDef;
 	
 end TplAbsyn;
+
+end TplCodegenTV;

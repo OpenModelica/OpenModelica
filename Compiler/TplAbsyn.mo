@@ -283,8 +283,6 @@ uniontype MMPackage
   end MM_PACKAGE;
 end MMPackage;
 
-public type MMMatchCase = tuple<list<MatchingExp>, TypedIdents, list<MMExp>>;
-
 public  
 uniontype MMDeclaration
   record MM_IMPORT
@@ -314,7 +312,7 @@ uniontype MMDeclaration
     TypedIdents locals;
     list<MMExp> statements;
     
-    Option<GenInfo> genInfoOpt "internal use only";       
+    GenInfo genInfoOpt "internal use only - a type of elaboration of the funtion.";       
   end MM_FUN;    
 end MMDeclaration;
 
@@ -351,16 +349,20 @@ uniontype MMExp
   end MM_MATCH;  
 end MMExp;
 
+public type MMMatchCase = tuple<list<MatchingExp>, TypedIdents, list<MMExp>>;
+
+constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
 
 
 /* internal types */
+protected
+
 constant Ident imlicitTxt = "txt";
 constant Ident inPrefix = "in_";
 constant Ident outPrefix = "out_";
 //constant Ident imlicitInTxt = "intxt"; //not used ... there can be the same names for in/ou values 
 //constant Ident imlicitOutTxt = "outtxt";
 
-constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
 constant MatchingExp imlicitTxtMExp = BIND_MATCH(imlicitTxt);
 
 constant Ident emptyTxt = "emptyTxt";
@@ -423,8 +425,11 @@ constant list<MMEscOption> nonSpecifiedIterOptions = {
 };
 
 
+public 
+
 type MMEscOption = tuple<Ident,tuple<MMExp, TypeSignature>>;
 type ScopeEnv = list<Scope>;
+
 
 uniontype Scope
   record FUN_SCOPE
@@ -459,7 +464,10 @@ uniontype MapContext
   end MAP_CONTEXT;
 end MapContext;
 
+
 uniontype GenInfo
+  record GI_TEMPL_FUN end GI_TEMPL_FUN;
+  record GI_MATCH_FUN end GI_MATCH_FUN;
   record GI_MAP_FUN
     TypeSignature mapType;
     MapContext mapContext;
@@ -481,6 +489,29 @@ algorithm
       TemplPackage tp;
       list<ASTDef> astDefs;
       
+    case (inTplPackage)
+      equation
+        tp = fullyQualifyTemplatePackage(inTplPackage);
+        TEMPL_PACKAGE(name, astDefs, templateDefs) = tp;
+        mmDeclarations = importDeclarations(astDefs, {}); 
+        mmDeclarations 
+         = transformTemplateDefs(templateDefs, tp, mmDeclarations);
+        mmDeclarations = listReverse(mmDeclarations); 
+      then 
+        MM_PACKAGE(name, mmDeclarations);
+  end matchcontinue;           
+end transformAST;
+
+public function fullyQualifyTemplatePackage
+  input TemplPackage inTplPackage;
+  output TemplPackage outTplPackage;
+algorithm
+  outTplPackage := matchcontinue (inTplPackage)
+    local
+      PathIdent name;
+      list<tuple<Ident,TemplateDef>>  templateDefs;
+      list<ASTDef> astDefs;
+      
     case (TEMPL_PACKAGE(
             name = name,
             astDefs = astDefs,
@@ -488,14 +519,10 @@ algorithm
       equation
         astDefs = fullyQualifyASTDefs(astDefs);
         templateDefs = listMap1Tuple22(templateDefs, fullyQualifyTemplateDef, astDefs);        
-        mmDeclarations = importDeclarations(astDefs, {}); 
-        mmDeclarations 
-         = transformTemplateDefs(templateDefs, TEMPL_PACKAGE(name,astDefs,templateDefs), mmDeclarations);
-        mmDeclarations = listReverse(mmDeclarations); 
       then 
-        MM_PACKAGE(name, mmDeclarations);
+        TEMPL_PACKAGE(name, astDefs, templateDefs);
   end matchcontinue;           
-end transformAST;
+end fullyQualifyTemplatePackage;
 
 
 public function importDeclarations
@@ -579,7 +606,7 @@ algorithm
         stmts = listReverse(stmts);
         stmts = addOutPrefixes(stmts, oargs, {});
         (stmts, locals, accMMDecls) = inlineLastFunIfSingleCall(iargs, oargs, stmts, locals, accMMDecls);
-        mmFun = MM_FUN(true, tplname, iargs, oargs, locals, stmts,NONE());
+        mmFun = MM_FUN(true, tplname, iargs, oargs, locals, stmts, GI_TEMPL_FUN());
       then 
         transformTemplateDefs(restTDefs, tplPackage, mmFun :: accMMDecls);
     
@@ -603,14 +630,16 @@ algorithm
       Ident fidCalled, fidLast;
       TypedIdents locals, iargs, oargs, iargsL, oargsL;
       list<MMDeclaration> accMMDecls;
+      GenInfo genInfo;
     
     // the last call is the only call of the last elaborated function (from makeMatchFun)  
     case ( iargs, oargs, 
           { MM_ASSIGN(rhs = MM_FN_CALL(fnName = IDENT(fidCalled)) ) },
           {}, 
-          MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts,NONE()) :: accMMDecls)
+          MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts, genInfo) :: accMMDecls)
       equation
         true = stringEqual(fidCalled, fidLast);
+        failure(GI_TEMPL_FUN() = genInfo); //we can inline only generated helper functions, not regular template functions 
         equality(iargs = iargsL);
         equality(oargs = oargsL);
       then ( stmts, locals, accMMDecls );
@@ -2065,7 +2094,7 @@ algorithm
       Integer ival;
       Real rval;
       Boolean bval;
-      String reason;
+      String reason, str;
       
     
     //simple template function - one implicit text argument 
@@ -2131,7 +2160,12 @@ algorithm
     case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Error - cannot elaborate function '" +& pathIdentString(fname) +& "'.\n Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n");
+        str = "Error - cannot elaborate function\n  "
+          +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
+          +& "\n  for actual parameters  "
+          +& Tpl.tplString(TplCodegen.sActualMMParams, argvals)
+          +& "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";  
+        Debug.fprint("failtrace", str);             
       then
         fail();
     
@@ -2659,7 +2693,7 @@ algorithm
         // make fun
         mmFun = MM_FUN(false,fname, iargs, oargs, imlicitTxtArg :: extargs,
                         { MM_MATCH( { mmmcEmptyList, mmmcCons, mmFailCons }  ) },
-                        SOME(GI_MAP_FUN(argtype, mapctx))
+                        GI_MAP_FUN(argtype, mapctx)
                 );
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
@@ -2731,7 +2765,7 @@ algorithm
         // make fun
         mmFun = MM_FUN(false, fname, iargs, oargs, imlicitTxtArg :: extargs,
                        { MM_MATCH( mmmcases  ) },
-                       SOME(GI_MAP_FUN(argtype, mapctx))
+                       GI_MAP_FUN(argtype, mapctx)
                 );
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
@@ -3052,7 +3086,7 @@ algorithm
         mmFun = MM_FUN(false, fname, iargs, oargs,
                   imlicitTxtArg :: extargs,
                   { MM_MATCH(mmmcases) },
-                  NONE()
+                  GI_MATCH_FUN()
                 );
         argvals = Util.listMap(extargs, makeMMArgValue);
         argvals = argval :: argvals;
@@ -3134,7 +3168,7 @@ algorithm
 end makeMMArgValue;
 
 
-function isText
+public function isText
   input tuple<Ident, TypeSignature> inArg;
 algorithm
   _:= matchcontinue(inArg)

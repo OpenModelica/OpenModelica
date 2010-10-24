@@ -1,4 +1,4 @@
-//interface package SimCodeTV 
+interface package SimCodeTV 
 
 package builtin
   
@@ -13,12 +13,6 @@ package builtin
     input Integer b;
     output Integer c;
   end intAdd;
-  
-  function stringEqual
-    input String a;
-    input String b;
-    output Boolean res;
-  end stringEqual;
   
 end builtin;
 
@@ -392,6 +386,18 @@ package SimCode
     input DAE.ComponentRef inCref;
     output DAE.ComponentRef derCref;
   end derComponentRef;
+  
+  function hackArrayReverseToCref
+    input DAE.Exp inExp;
+    input Context context; 
+    output DAE.Exp outExp;
+  end hackArrayReverseToCref;
+
+  function hackMatrixReverseToCref
+    input DAE.Exp inExp;
+    input Context context; 
+    output DAE.Exp outExp;
+  end hackMatrixReverseToCref;
 
 end SimCode;
 
@@ -1091,4 +1097,4 @@ package Settings
   end getVersionNr;
 end Settings;
 
-//end SimCodeTV;
+end SimCodeTV;

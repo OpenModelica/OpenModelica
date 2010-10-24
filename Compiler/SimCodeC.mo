@@ -9721,6 +9721,83 @@ end simulationInitFile;
 
 protected function fun_230
   input Tpl.Text in_txt;
+  input Option<DAE.Exp> in_i_initialValue;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_initialValue)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           SOME(i_v) )
+      local
+        DAE.Exp i_v;
+      equation
+        txt = initVal(txt, i_v);
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("0.0 //default"));
+      then txt;
+  end matchcontinue;
+end fun_230;
+
+protected function lm_231
+  input Tpl.Text in_txt;
+  input list<SimCode.SimVar> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           SimCode.SIMVAR(initialValue = i_initialValue, name = i_name) :: rest )
+      local
+        list<SimCode.SimVar> rest;
+        DAE.ComponentRef i_name;
+        Option<DAE.Exp> i_initialValue;
+      equation
+        txt = fun_230(txt, i_initialValue);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" //"));
+        txt = crefStr(txt, i_name);
+        txt = Tpl.nextIter(txt);
+        txt = lm_231(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<SimCode.SimVar> rest;
+      equation
+        txt = lm_231(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_231;
+
+public function initVals
+  input Tpl.Text txt;
+  input list<SimCode.SimVar> i_varsLst;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_231(out_txt, i_varsLst);
+  out_txt := Tpl.popIter(out_txt);
+end initVals;
+
+protected function fun_233
+  input Tpl.Text in_txt;
   input Boolean in_i_bool;
 
   output Tpl.Text out_txt;
@@ -9742,16 +9819,16 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("true"));
       then txt;
   end matchcontinue;
-end fun_230;
+end fun_233;
 
-protected function fun_231
+public function initVal
   input Tpl.Text in_txt;
-  input DAE.Exp in_i_v;
+  input DAE.Exp in_i_initialValue;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_i_v)
+  matchcontinue(in_txt, in_i_initialValue)
     local
       Tpl.Text txt;
 
@@ -9788,7 +9865,7 @@ algorithm
       local
         Boolean i_bool;
       equation
-        txt = fun_230(txt, i_bool);
+        txt = fun_233(txt, i_bool);
       then txt;
 
     case ( txt,
@@ -9809,84 +9886,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("*ERROR* initial value of unknown type"));
       then txt;
   end matchcontinue;
-end fun_231;
-
-protected function fun_232
-  input Tpl.Text in_txt;
-  input Option<DAE.Exp> in_i_initialValue;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_initialValue)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           SOME(i_v) )
-      local
-        DAE.Exp i_v;
-      equation
-        txt = fun_231(txt, i_v);
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("0.0 //default"));
-      then txt;
-  end matchcontinue;
-end fun_232;
-
-protected function lm_233
-  input Tpl.Text in_txt;
-  input list<SimCode.SimVar> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           SimCode.SIMVAR(initialValue = i_initialValue, name = i_name) :: rest )
-      local
-        list<SimCode.SimVar> rest;
-        DAE.ComponentRef i_name;
-        Option<DAE.Exp> i_initialValue;
-      equation
-        txt = fun_232(txt, i_initialValue);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" //"));
-        txt = crefStr(txt, i_name);
-        txt = Tpl.nextIter(txt);
-        txt = lm_233(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      local
-        list<SimCode.SimVar> rest;
-      equation
-        txt = lm_233(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_233;
-
-public function initVals
-  input Tpl.Text txt;
-  input list<SimCode.SimVar> i_varsLst;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_233(out_txt, i_varsLst);
-  out_txt := Tpl.popIter(out_txt);
-end initVals;
+end initVal;
 
 public function commonHeader
   input Tpl.Text txt;

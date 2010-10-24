@@ -1,8 +1,8 @@
 // This file defines templates for transforming Modelica code to C# code.
 
-spackage SimCodeCSharp
+package SimCodeCSharp
 
-typeview "SimCodeTV.mo"
+import interface SimCodeTV;
 
 // SECTION: SIMULATION TARGET, ROOT TEMPLATE
 
@@ -161,7 +161,7 @@ case FUNCTION(__) then
                 else "void"
   let retVar = match outVars 
                case (fv as VARIABLE(__)) :: _ then crefStr(fv.name,simCode) 
-  let varInits = variableDeclarations |> var indexedby i0 => varInit(var, simCode) 
+  let varInits = variableDeclarations |> var hasindex i0 => varInit(var, simCode) 
                  ;separator="\n" ;indexOffset=1 //TODO:special end of line,see varInit    
   let bodyPart = (body |> stmt  => funStatement(stmt, simCode) ;separator="\n")
   <<
@@ -227,7 +227,8 @@ end funStatement;
 
 constant String localRepresentationArrayDefines =
 "var X = states; var Xd = statesDerivatives; var Y = algebraics; var P = parameters; var H = helpVars;
-var preX = savedStates; var preXd = savedStatesDerivatives; var preY = savedAlgebraics; var preH = savedHelpVars;";
+var preX = savedStates; var preXd = savedStatesDerivatives; var preY = savedAlgebraics; var preH = savedHelpVars;
+var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; ";
        
 
 template modelDataMembers(ModelInfo modelInfo, SimCode simCode) ::=
@@ -237,15 +238,21 @@ case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 const int 
   NHELP = <%varInfo.numHelpVars%>, NG = <%varInfo.numZeroCrossings%>,
   NX = <%varInfo.numStateVars%>, NY = <%varInfo.numAlgVars%>, NP = <%varInfo.numParams%>,
+  NYI = <%varInfo.numIntAlgVars%>, NYB = <%varInfo.numBoolAlgVars%>,
+  NPI = <%varInfo.numIntParams%>, NPB = <%varInfo.numBoolParams%>,
   NO = <%varInfo.numOutVars%>, NI = <%varInfo.numInVars%>, NR = <%varInfo.numResiduals%>,
   NEXT = <%varInfo.numExternalObjects%>, NYSTR = <%varInfo.numStringAlgVars%>, NPSTR = <%varInfo.numStringParamVars%>;
 
-public override string ModelName  { get { return "<%dotPath(name)%>"; }}
-public override int HelpVarsCount      { get { return NHELP; } }
-public override int ZeroCrossingsCount { get { return NG; } }
-public override int StatesCount        { get { return NX; } }
-public override int AlgebraicsCount    { get { return NY; } }
-public override int ParametersCount    { get { return NP; } }
+public override string ModelName        { get { return "<%dotPath(name)%>"; }}
+public override int HelpVarsCount       { get { return NHELP; } }
+public override int ZeroCrossingsCount  { get { return NG; } }
+public override int StatesCount         { get { return NX; } }
+public override int AlgebraicsCount     { get { return NY; } }
+public override int AlgebraicsIntCount  { get { return NYI; } }
+public override int AlgebraicsBoolCount { get { return NYB; } }
+public override int ParametersCount     { get { return NP; } }
+public override int ParametersIntCount  { get { return NPI; } }
+public override int ParametersBoolCount { get { return NPB; } }
         
 public override int OutputsCount   { get { return NO; } }
 public override int InputsCount    { get { return NI; } }
@@ -273,9 +280,19 @@ public double <%cref(name, simCode)%> { get { return parameters[<%index%>]; } se
 ******** */%>
 
 
-
+#region VariableInfos
 private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<%{  
+		varInfos("State", vars.stateVars, false, simCode),
+		varInfos("StateDer", vars.derivativeVars, false, simCode),
+		varInfos("Algebraic", vars.algVars, false, simCode),
+		varInfos("AlgebraicInt", vars.intAlgVars, false, simCode),
+		varInfos("AlgebraicBool", vars.boolAlgVars, false, simCode),
+		varInfos("Parameter", vars.paramVars, true, simCode),
+		varInfos("ParameterInt", vars.intParamVars, true, simCode),
+		varInfos("ParameterBool", vars.boolParamVars, true, simCode)
+
+/*		
 		(vars.stateVars |> SIMVAR(__) => <<
 		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.State, <%index%>, false)
 		>> ;separator=",\n"),
@@ -285,22 +302,44 @@ private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 		(vars.algVars |> SIMVAR(__) => <<
 		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.Algebraic, <%index%>, false)
 		>> ;separator=",\n"),
+		(vars.intAlgVars |> SIMVAR(__) => <<
+		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.AlgebraicInt, <%index%>, false)
+		>> ;separator=",\n"),
+		(vars.boolAlgVars |> SIMVAR(__) => <<
+		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.AlgebraicBool, <%index%>, false)
+		>> ;separator=",\n"),		
 		(vars.paramVars |> SIMVAR(__) => <<
 		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.Parameter, <%index%>, true)
+		>> ;separator=",\n"),
+		(vars.intParamVars |> SIMVAR(__) => <<
+		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.ParameterInt, <%index%>, true)
+		>> ;separator=",\n"),
+		(vars.boolParamVars |> SIMVAR(__) => <<
+		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.ParameterBool, <%index%>, true)
 		>> ;separator=",\n")
+*/
+		
 	} ;separator=",\n\n"%>
 };
 public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
+#endregion
 
-private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NP] {
+#region InitialFixed
+private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NYI +NYB + NP + NPI + NPB] {
     <%{ (if vars.stateVars      then "//states\n" + initFixed(vars.stateVars, simCode)),
         (if vars.derivativeVars then "//derivatives\n" + initFixed(vars.derivativeVars, simCode)),
         (if vars.algVars        then "//algebraics\n" + initFixed(vars.algVars, simCode)), 
-        (if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars, simCode))
+        (if vars.intAlgVars     then "//algebraicsInt\n" + initFixed(vars.intAlgVars, simCode)), 
+        (if vars.boolAlgVars    then "//algebraicsBool\n" + initFixed(vars.boolAlgVars, simCode)), 
+        (if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars, simCode)),
+        (if vars.intParamVars   then "//parametersInt\n" + initFixed(vars.intParamVars, simCode)),
+        (if vars.boolParamVars  then "//parametersBool\n" + initFixed(vars.boolParamVars, simCode))
       } ;separator=",\n"%>
 };
 public override bool[] InitialFixed { get { return InitialFixedStatic; } }
+#endregion
 
+#region Constructor - Init Data
 public <%lastIdentOfPath(name)%>() {
     CreateData();
     
@@ -310,17 +349,43 @@ public <%lastIdentOfPath(name)%>() {
 	//**** state derivatives *****
 	//all are default values ... 0.0
 	<%/* TODO: is it correct to have derivatives without initial values at all ?? 
-	  initVals("statesDerivatives", vars.derivativeVars, simCode)*/%>
+	  initVals("statesDerivatives", vars.derivativeVars, simCode)
+	*/%>
 	
 	//**** algebraics *****  
 	<%initVals("algebraics", vars.algVars, simCode)%>
 	
+	//**** algebraics Int *****  
+	<%initVals("algebraicsInt", vars.intAlgVars, simCode)%>
+	
+	//**** algebraics Bool *****  
+	<%initVals("algebraicsBool", vars.boolAlgVars, simCode)%>
+	
 	//**** parameters *****  
 	<%initVals("parameters", vars.paramVars, simCode)%>
+	
+	//**** parameters Int *****  
+	<%initVals("parametersInt", vars.intParamVars, simCode)%>
+	
+	//**** parameters Bool *****  
+	<%initVals("parametersBool", vars.boolParamVars, simCode)%>
 }
-
+#endregion
 >>
 end modelDataMembers;
+
+template varInfos(String typeName, list<SimVar> varsLst, Boolean isMInd, SimCode simCode) ::=
+  if varsLst then 
+    <<
+    #region <%typeName%> variable infos
+    <% varsLst |> SIMVAR(__) => 
+       <<
+	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.<%typeName%>, <%index%>, <%isMInd%>)
+	   >> ;separator=",\n"
+	%>
+    #endregion<%\n%>    
+    >>
+end varInfos;
 
 template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
   varsLst |> sv as SIMVAR(__) =>
@@ -378,7 +443,7 @@ case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 public override void InputFun()
 {
   <% localRepresentationArrayDefines %>
-  <%vars.inputVars |> SIMVAR(__) indexedby i0 => 
+  <%vars.inputVars |> SIMVAR(__) hasindex i0 => 
   <<
   <%cref(name, simCode)%> = inputVars[<%i0%>];
   >> ;separator="\n"%>
@@ -394,7 +459,7 @@ public override void OutputFun()
 {
   <% localRepresentationArrayDefines %>
   // * not yet
-  <%vars.outputVars |> SIMVAR(__) indexedby i0 =>
+  <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
   <<
   //outputVars[<%i0%>] = <%cref(name, simCode)%>;
   >> ;separator="\n"%>  
@@ -414,7 +479,7 @@ public override void FunZeroCrossing(double time, double[] x, double[] xd, doubl
   FunODE();
   FunDAEOutput();
   
-  <%zeroCrossingLst |> ZERO_CROSSING(__) indexedby i0 => zeroCrossing(relation_, i0, simCode) ;separator="\n"%>  
+  <%zeroCrossingLst |> ZERO_CROSSING(__) hasindex i0 => zeroCrossing(relation_, i0, simCode) ;separator="\n"%>  
 
   this.time = timeBackup;
 }
@@ -431,7 +496,7 @@ public override void FunHandleZeroCrossing(int index)
 {  
   <% localRepresentationArrayDefines %>
   switch(index) {
-    <% zeroCrossingsNeedSave |> toSaveLst indexedby i0 =>
+    <% zeroCrossingsNeedSave |> toSaveLst hasindex i0 =>
     <<
     case <%i0%>:
       <% toSaveLst |> SIMVAR(__) =>
@@ -493,7 +558,7 @@ let()= System.tmpTickReset(1)
 public override void FunOnlyZeroCrossings(double time, double[] gout) //TODO:??time in original is *t only ... how is it called?
 {
   <% localRepresentationArrayDefines %>
-  <%zeroCrossingLst |> ZERO_CROSSING(__) indexedby i0 => zeroCrossing(relation_, i0, simCode) ;separator="\n"%>  
+  <%zeroCrossingLst |> ZERO_CROSSING(__) hasindex i0 => zeroCrossing(relation_, i0, simCode) ;separator="\n"%>  
 }
 >>
 end functionOnlyZeroCrossing;
@@ -511,6 +576,9 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                                            case LESSEQ(__)    then '<%e1%>-<%e2%>'
                                            case GREATER(__)
                                            case GREATEREQ(__) then '<%e2%>-<%e1%>'
+                                           case EQUAL(__) then '<%e2%> == <%e1%>'
+                                           case NEQUAL(__) then '<%e2%> != <%e1%>'    			
+                                           else "!!!unsupported ZC operator!!!"
                                           %>) : 1.0; }
     >>    
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
@@ -533,6 +601,10 @@ template zeroCrossingOpFunc(Operator it) ::=
   case GREATER(__)   then "Greater"
   case LESSEQ(__)    then "LessEq"
   case GREATEREQ(__) then "GreaterEq"
+  case EQUAL(__)     then "!!!Equal"
+  case NEQUAL(__)    then "!!!NEqual"
+  else "!!!unsupported ZC operator!!!"
+  
 end zeroCrossingOpFunc;
 
 // New runtime function. What should it do?
@@ -554,7 +626,7 @@ public override void FunWhen(int i)
 {
   <% localRepresentationArrayDefines %>
   switch(i) {
-    <%whenClauses |> SIM_WHEN_CLAUSE(__) indexedby i0 =>
+    <%whenClauses |> SIM_WHEN_CLAUSE(__) hasindex i0 =>
     <<
     case <%i0%>:
       <%functionWhen_caseEquation(whenEq, simCode)%>
@@ -646,7 +718,7 @@ let()= System.tmpTickReset(1)
 void ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
 {
    <% localRepresentationArrayDefines %>
-   <%eqs |> SES_RESIDUAL(__) indexedby i0 =>
+   <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
      let &preExp = buffer ""
      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
    <<
@@ -734,7 +806,7 @@ case SES_LINEAR(__) then
      let expPart = daeExpToReal(eq.exp, context, &preExp, simCode)
      '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>; //set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
   ;separator="\n"%>
-  <%beqs|> it indexedby i0 =>
+  <%beqs|> it hasindex i0 =>
      let &preExp = buffer ""
      let expPart = daeExpToReal(it, context, &preExp, simCode)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>; //set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
@@ -744,7 +816,7 @@ case SES_LINEAR(__) then
     else 
       'SolveLinearSystem(<%aname%>, <%bname%>, <%size%>, <%uid%>);'
   %>
-  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name, simCode)%> = <%bname%>[<%i0%>]; //get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
+  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name, simCode)%> = <%bname%>[<%i0%>]; //get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
   >>
 case SES_MIXED(__) then
   let uid = System.tmpTick()
@@ -753,7 +825,7 @@ case SES_MIXED(__) then
   let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/
   let discLoc2 = 
-    discEqs |> discEq as SES_SIMPLE_ASSIGN(__) indexedby i0 =>
+    discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
         <<
         double discrete_loc2_<%i0%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
         <%cref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
@@ -769,7 +841,7 @@ case SES_MIXED(__) then
   	case discEqs then
       <<
       var discrete_loc2 = new double[<%numDiscVarsStr%>];
-      <%discEqs |> discEq as SES_SIMPLE_ASSIGN(__) indexedby i0 =>
+      <%discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
         <<
         <%cref(discEq.cref, simCode)%> = <%daeExpToReal(exp, context, &preDisc, simCode)%>;
         discrete_loc2[<%i0%>] = <%cref(discEq.cref, simCode)%>;
@@ -784,7 +856,7 @@ case SES_MIXED(__) then
     var values = new double[]{<%values ;separator=", "%>};
     do {
 	  <%
-	    discVars |> SIMVAR(__) indexedby i0 => 
+	    discVars |> SIMVAR(__) hasindex i0 => 
 	      'double discrete_loc_<%i0%> = <%cref(name, simCode)%>;'
 	    ;separator=",\n"
 	   
@@ -812,7 +884,7 @@ case SES_MIXED(__) then
         } else {
             found_solution = 1;
             <% 
-              discVars |> SIMVAR(__) indexedby i0 =>
+              discVars |> SIMVAR(__) hasindex i0 =>
                 <<
                 if ( Math.Abs(discrete_loc_<%i0%> - discrete_loc2_<%i0%>) > 1e-12) found_solution = 0;                
                 >> ;separator="\nelse "
@@ -840,7 +912,7 @@ case SES_MIXED(__) then
                 System.Diagnostics.Debug.WriteLine("Mixed system id=" + <%uid%> + "failed.");
             } else {
               var curValOffset = cur_value_indx*<%numDiscVarsStr%>;
-              <% discVars |> SIMVAR(__) indexedby i0 =>
+              <% discVars |> SIMVAR(__) hasindex i0 =>
                   '<%cref(name, simCode)%> = values[curValOffset+<%i0%>];'
                  ;separator="\n"
               %>
@@ -897,21 +969,29 @@ end cref;
 
 template representationCref(ComponentRef inCref, SimCode simCode) ::=
   cref2simvar(inCref, simCode) |> SIMVAR(__) =>
-	'<%representationArrayName(varKind)%>[<% index %>]'
+	'<%representationArrayName(varKind, type_)%>[<% index %>]'
 end representationCref;
 
-template representationArrayName(VarKind varKind) ::=
+template representationArrayName(VarKind varKind, ExpType type_) ::=
   match varKind 
-  case VARIABLE(__)    then "Y"
+  case VARIABLE(__)    then "Y" + representationArrayNameTypePostfix(type_)
   case STATE(__)       then "X"
   case STATE_DER(__)   then "Xd"
   case DUMMY_DER(__)   then "Y" // => algebraics
   case DUMMY_STATE(__) then "Y" // => algebraics
-  case DISCRETE(__)    then "Y/*d*/"
-  case PARAM(__)       then "P"
+  case DISCRETE(__)    then 'Y<%representationArrayNameTypePostfix(type_)%>/*d*/'
+  case PARAM(__)       then "P" + representationArrayNameTypePostfix(type_)
   case CONST then "CONST_VAR_KIND"
   else "BAD_VARKIND"
 end representationArrayName;
+
+template representationArrayNameTypePostfix(ExpType type_) ::=
+  match type_ 
+  case ET_INT(__)  then "I"
+  case ET_BOOL(__) then "B"
+  case ET_REAL(__) then ""
+  else "BAD_ARRAY_NAME_POSTFIX"
+end representationArrayNameTypePostfix;
 
 template preCref(ComponentRef cr, SimCode simCode) ::=
 '/*pre(<%crefStr(cr, simCode)%>)*/pre<%representationCref(cr, simCode)%>'
@@ -1211,7 +1291,7 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case IFEXP(__)      then daeExpIf(expCond, expThen, expElse, context, &preExp, simCode)
   case CALL(__)       then daeExpCall(inExp, context, &preExp, simCode)
   // PARTEVALFUNCTION
-  case ARRAY(__)      then daeExpArray(ty, scalar, array, context, &preExp, simCode)
+  case ARRAY(__)      then daeExpArray(inExp, context, &preExp, simCode)
   case MATRIX(__)     then daeExpMatrix(inExp, context, &preExp, simCode)
   case RANGE(__)      then "RANGE_NOT_IMPLEMENTED"
   case TUPLE(__)      then "TUPLE_NOT_IMPLEMENTED"
@@ -1293,7 +1373,7 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     let arrType = expTypeArray(aty, listLength(dims))
     let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
     let &preExp += match cref2simvar(ecr.componentRef, simCode) case SIMVAR(__) then  
-         '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%index%>-1, <%representationArrayName(varKind)%>);<%\n%>'
+         '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%index%>-1, /*<%crefStr(ecr.componentRef, simCode)%>*/<%representationArrayName(varKind,type_)%>);<%\n%>'
     tmpArr
 end daeExpCrefRhsArrayBox;
 
@@ -1352,7 +1432,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
 	                 let &constSum = buffer index
 	                 let baseSub = asubSubsripts(dims, subs, &constSum, context, &preExp, simCode)
 	                 <<
-	                 <%representationArrayName(varKind)%>[<%constSum%><%baseSub%>]
+	                 <%representationArrayName(varKind,type_)%>[<%constSum%><%baseSub%>]
 	                 >>	                      
 	              %>
 	    >> 
@@ -1615,29 +1695,32 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   case _ then "daeExpCall:NOT_YET_IMPLEMENTED"
 end daeExpCall;
 
-
-template daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Context context, Text &preExp, SimCode simCode) ::=
-  if scalar then 
+template daeExpArray(Exp aexp, Context context, Text &preExp, SimCode simCode) ::=
+  match hackArrayReverseToCref(aexp, context)
+  case cr as CREF(__) then daeExpCrefRhs(cr, context, &preExp, simCode)
+  case a as ARRAY(__) then
+    if scalar then 
   	  let &arrayVar = buffer ""
-	  let params = array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>' 
+	  let params = a.array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>' 
 	               ;separator=", "
-	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(ty,1)%>(<%listLength(array)%>,-1,new[]{<%params%>});<%\n%>'
+	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(a.ty,1)%>(<%listLength(a.array)%>,-1,new[]{<%params%>});<%\n%>'
 	  arrayVar
-  else
+    else
       "NON_SCALAR_ARRAY_notYetImplemeted"
 end daeExpArray;
 
 template daeExpMatrix(Exp mexp, Context context, Text &preExp, SimCode simCode)
  "Generates code for a cast expression."
 ::=
-  match mexp
+  match hackMatrixReverseToCref(mexp, context)  
+  case cr as CREF(__) then daeExpCrefRhs(cr, context, &preExp, simCode)
   case MATRIX(scalar={{}}) // special case for empty matrix: create dimensional array Real[0,1]
   case MATRIX(scalar={})   // special case for empty array: create dimensional array Real[0,1] 
     then
     let &tmp = buffer ""
     let &preExp += '<%tempDecl("var",&tmp)%> = new <%expTypeArray(ty,2)%>(0,1);<%\n%>'
     tmp
-  //only scalar orthogonal matrix for now
+  //only scalar orthogonal matrix for now  
   case m as MATRIX(scalar=(row1::_)) then
     let &tmp = buffer ""
     let matArr = m.scalar |> row =>

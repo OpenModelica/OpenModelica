@@ -43,9 +43,9 @@
 //   - Code after a case should be indented with 2 spaces if not written on the
 //     same line
 
-spackage SimCodeC
+package SimCodeC
 
-typeview "SimCodeTV.mo"
+import interface SimCodeTV;
 
 template translateModel(SimCode simCode) 
  "Generates C code and Makefile for compiling and running a simulation of a
@@ -1014,7 +1014,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   int input_function()
   {
-    <%vars.inputVars |> SIMVAR(__) indexedby i0 =>
+    <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
       '<%cref(name)%> = localData->inputVars[<%i0%>];'
     ;separator="\n"%>
     return 0;
@@ -1031,7 +1031,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   int output_function()
   {
-    <%vars.outputVars |> SIMVAR(__) indexedby i0 =>
+    <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
       'localData->outputVars[<%i0%>] = <%cref(name)%>;'
     ;separator="\n"%>
     return 0;
@@ -1139,7 +1139,7 @@ template functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave)
     mem_state = get_memory_state();
   
     switch(index) {
-      <%zeroCrossingsNeedSave |> vars indexedby i0 =>
+      <%zeroCrossingsNeedSave |> vars hasindex i0 =>
         <<
         case <%i0%>:
           <%vars |> SIMVAR(__) => 'save(<%cref(name)%>);' ;separator="\n"%>
@@ -1218,7 +1218,7 @@ template functionUpdateDepend(	list<SimEqSystem> allEquationsPlusWhen,
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
     
-  let reinit = (whenClauses |> when indexedby i0 =>
+  let reinit = (whenClauses |> when hasindex i0 =>
   		genreinits(when, &varDecls,i0)
   	;separator="\n")
   <<
@@ -1340,7 +1340,7 @@ template functionWhen(list<SimWhenClause> whenClauses)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let cases = (whenClauses |> SIM_WHEN_CLAUSE(__) indexedby i0 =>
+  let cases = (whenClauses |> SIM_WHEN_CLAUSE(__) hasindex i0 =>
       <<
       case <%i0%>:
         <%functionWhenCaseEquation(whenEq, &varDecls /*BUFC*/)%>
@@ -1833,7 +1833,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFC*/)
        ;separator="\n")   
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) indexedby i0 =>
+     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
                             &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -1917,7 +1917,7 @@ template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUF
  "Generates code for zero crossings."
 ::=
 
-  (zeroCrossings |> ZERO_CROSSING(__) indexedby i0 =>
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     zeroCrossingTpl(i0, relation_, &varDecls /*BUFC*/)
   ;separator="\n")
 end zeroCrossingsTpl;
@@ -1954,7 +1954,7 @@ end zeroCrossingTpl;
 template timeEventsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."
 ::=
-  (zeroCrossings |> ZERO_CROSSING(__) indexedby i0 =>
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
     timeEventTpl(i0, relation_, &varDecls /*BUFC*/)
   ;separator="\n")
 end timeEventsTpl;
@@ -2140,13 +2140,13 @@ case SES_LINEAR(__) then
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFC*/)
      '<%preExp%>set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
   ;separator="\n"%>
-  <%beqs |> exp indexedby i0 =>
+  <%beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
      '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
   ;separator="\n"%>
   solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
+  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
   >>
 end equationLinear;
 
@@ -2160,7 +2160,7 @@ case SES_MIXED(__) then
   let numDiscVarsStr = listLength(discVars) 
   let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/
-  let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) indexedby i0 =>
+  let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
       let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFC*/)
       <<
       <%cref(cref)%> = <%expPart%>;
@@ -2171,7 +2171,7 @@ case SES_MIXED(__) then
   mixed_equation_system(<%numDiscVarsStr%>);
   double values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
   int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
-  <%discVars |> SIMVAR(__) indexedby i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
+  <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
   {
     <%contEqs%>
   }
@@ -2194,14 +2194,14 @@ case SES_NONLINEAR(__) then
   let size = listLength(crefs)
   <<
   start_nonlinear_system(<%size%>);
-  <%crefs |> name indexedby i0 =>
+  <%crefs |> name hasindex i0 =>
     <<
     nls_x[<%i0%>] = extraPolate(<%cref(name)%>);
     nls_xold[<%i0%>] = $P$old<%cref(name)%>;
     >>
   ;separator="\n"%>
   solve_nonlinear_system(residualFunc<%index%>, <%index%>);
-  <%crefs |> name indexedby i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
+  <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
   end_nonlinear_system();<%inlineCrefs(context,crefs)%>
   >>
 end equationNonlinear;
@@ -2331,19 +2331,23 @@ template initVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
 	<<
 	<%match initialValue 
-  	  case SOME(v) then 
-        match v
-        case ICONST(__) then integer
-        case RCONST(__) then real
-        case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
-        case BCONST(__) then if bool then "true" else "false"
-        case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
-        else "*ERROR* initial value of unknown type"
+	  case SOME(v) then initVal(v)
       else "0.0 //default"
     %> //<%crefStr(name)%>
     >>	
   ;separator="\n"
 end initVals;
+
+template initVal(Exp initialValue) 
+::=
+  match initialValue 
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  else "*ERROR* initial value of unknown type"
+end initVal;
 
 template commonHeader()
 ::=
@@ -2512,6 +2516,7 @@ template crefToMStr(ComponentRef cr)
   case CREF_QUAL(__) then '<%ident%><%subscriptsToMStr(subscriptLst)%>P<%crefToMStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToMStr;
+
 
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
@@ -3128,7 +3133,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let &varBox = buffer ""
   let &varUnbox = buffer ""
   let args = (funargs |> arg => funArgUnbox(arg, &varDecls, &varBox) ;separator=", ")
-  let retStr = (outvars |> var as VARIABLE(__) indexedby i1 =>
+  let retStr = (outvars |> var as VARIABLE(__) hasindex i1 =>
     let arg = '<%funRetVar%>.<%retType%>_<%i1%>'
     '<%retVar%>.<%retTypeBoxed%>_<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
@@ -3415,7 +3420,7 @@ case var as FUNCTION_PTR(__) then
     #define <%rettype%>_1 targ1
     typedef struct <%rettype%>_s
     {
-      <%args |> arg indexedby i1 => 
+      <%args |> arg hasindex i1 => 
         <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
     } <%rettype%>;
     <%rettype%>(*_<%name%>)(<%typelist%>);
@@ -4037,7 +4042,7 @@ case STMT_MATCHCASES(__) then
     <%inVarAssignLoop%>
     <% match matchType case MATCHCONTINUE(__) then 'try { /* matchcontinue */' else '{' %>
       switch (<%loopVar%>) {
-        <%caseStmt |> e indexedby i0 =>
+        <%caseStmt |> e hasindex i0 =>
           let &preExp = buffer "" /*BUFD*/
           // the exp always seems to be a valueblock whose result should not be
           // used
@@ -5235,7 +5240,7 @@ template daeExpMetaOption(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a meta modelica option expression."
 ::=
   match exp
-  case META_OPTION(exp=NONE) then
+  case META_OPTION(exp=NONE()) then
     "mmc_mk_none()"
   case META_OPTION(exp=SOME(e)) then
     let expPart = daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
