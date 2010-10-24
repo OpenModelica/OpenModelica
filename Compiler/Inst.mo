@@ -162,7 +162,7 @@ algorithm
   i := tick();
   is := intString(i);
   s := stringAppend("__TMP__", is);
-  outComponentRef := DAE.CREF_IDENT(s,DAE.ET_OTHER(),{});
+  outComponentRef := ComponentReference.makeCrefIdent(s,DAE.ET_OTHER(),{});
 end newIdent;
 
 protected function isNotFunction
@@ -1428,13 +1428,13 @@ algorithm prefixCon := matchcontinue(connectorRef)
     then fail();
 
   case(DAE.CREF_QUAL(name,(ty as DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
-    then DAE.CREF_IDENT(name,ty,subs);
+    then ComponentReference.makeCrefIdent(name,ty,subs);
 
   case(DAE.CREF_QUAL(name,ty,subs,child))
     equation
       child = extractConnectorPrefix(child);
     then
-      DAE.CREF_QUAL(name,ty,subs,child);
+      ComponentReference.makeCrefQual(name,ty,subs,child);
 
 end matchcontinue;
 end extractConnectorPrefix;
@@ -1547,14 +1547,14 @@ algorithm outCref := matchcontinue(cr1,cr2)
     equation
       true = stringEqual(name,name2);
     then
-      DAE.CREF_QUAL(name,ty,subs,child2);
+      ComponentReference.makeCrefQual(name,ty,subs,child2);
 
   case(DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEqual(name,name2);
       outCref = updateCrefTypesWithConnectorPrefix(child,child2);
     then
-      DAE.CREF_QUAL(name,ty,subs,outCref);
+      ComponentReference.makeCrefQual(name,ty,subs,outCref);
   case(cr1,cr2)
     equation
       print(" ***** FAILURE with " +& Exp.printComponentRefStr(cr1) +& " _and_ " +& Exp.printComponentRefStr(cr2) +& "\n");
@@ -4017,8 +4017,10 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
     local
       list<SCode.Element> elems;
       list<String> names;
+      DAE.ComponentRef cref_;
     equation
-      localComps = extractConstantPlusDeps2(remainingComps,SOME(DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{})),{},className,existing);
+      cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
+      localComps = extractConstantPlusDeps2(remainingComps,SOME(cref_),{},className,existing);
       names = SCode.componentNamesFromElts(localComps);
       existing = listAppend(names,existing);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
@@ -4533,7 +4535,7 @@ algorithm
       Env.AvlTree bt2;
       Env.AvlTree bt1;
       list<Env.Item> imp;
-      DAE.ComponentRef prefix_cr;
+      DAE.ComponentRef prefix_cr,cref_;
       list<Env.Frame> fs;
       Boolean enc;
       InstanceHierarchy ih;
@@ -4547,7 +4549,8 @@ algorithm
     case (Connect.SETS(connection = crs),prefix,
         (Env.FRAME(n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
-      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih);
+        cref_ = ComponentReference.makeCrefIdent("",DAE.ET_OTHER(),{});
+      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,cref_),enc,defineUnits) :: fs,ih);
 
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -5043,7 +5046,7 @@ algorithm
 
         // Add the deleted component to the connection set, so that we know
         // which connections to ignore.
-        comp_cr = DAE.CREF_IDENT(comp_name, DAE.ET_OTHER(), {});
+        comp_cr = ComponentReference.makeCrefIdent(comp_name, DAE.ET_OTHER(), {});
         (cache, comp_cr) = PrefixUtil.prefixCref(cache, env, ih, pre, comp_cr);
         csets = ConnectUtil.addDeletedComponent(comp_cr, csets);
 
@@ -5953,7 +5956,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
-        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& PrefixUtil.printPrefixStr(pre) +& "." +& n);
         //The class definition is fetched from the environment. Then the set of modifications 
         //is calculated. The modificions is the result of merging the modifications from 
@@ -6108,7 +6111,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
-        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& PrefixUtil.printPrefixStr(pre) +& "." +& n);
 
         // The class definition is fetched from the environment. Then the set of modifications
@@ -6995,7 +6998,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         fullName = Exp.printComponentRefStr(cref);
         (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));
         
@@ -7032,7 +7035,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         false = Absyn.isInner(io);
         // we should have here any kind of modification!
         false = Mod.modEqual(mod, DAE.NOMOD());
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(cref);
         s2 = Mod.prettyPrintMod(mod, 0);
         s = s1 +&  " " +& s2;
@@ -7069,8 +7072,8 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
-        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
+        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
         
         // update the inner with the outer for easy reference
@@ -7116,7 +7119,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
@@ -7148,7 +7151,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
-        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);        
@@ -7177,7 +7180,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         // add it to the instance hierarchy
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         fullName = Exp.printComponentRefStr(cref);
         (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));        
         
@@ -7231,7 +7234,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         true = RTOpts.debugFlag("failtrace");
-        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         Debug.fprintln("failtrace", "- Inst.instVar failed while instatiating variable: " +&
           Exp.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
           " in scope: " +& Env.printEnvPathStr(env));
@@ -7462,7 +7465,7 @@ algorithm
 
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,ty_2,{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,ty_2,{}));
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -7483,7 +7486,7 @@ algorithm
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,dae1,csets,ty,st,_,_) = 
           instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl);
@@ -7510,7 +7513,7 @@ algorithm
           instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
@@ -7535,7 +7538,7 @@ algorithm
           instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
         start = instStartBindingExp(mod, ty);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
@@ -7571,7 +7574,7 @@ algorithm
           instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,vt);
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -8879,7 +8882,7 @@ algorithm
         (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) =
           instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element

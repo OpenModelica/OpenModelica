@@ -45,6 +45,7 @@ package Derive
 
 public import Absyn;
 public import BackendDAE;
+public import ComponentReference;
 public import DAE;
 public import RTOpts;
 public import DAEUtil;
@@ -339,7 +340,7 @@ algorithm
         cr = DAELow.crefPrefixDer(cr);
       then
         DAE.CREF(cr, tp);
-        //DAE.CREF(DAE.CREF_IDENT(cr_str_1,ty,{}),DAE.ET_REAL());
+        //DAE.CREF(ComponentReference.makeCrefIdent(cr_str_1,ty,{}),DAE.ET_REAL());
 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
@@ -1400,7 +1401,7 @@ algorithm
 
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, differentiateIfExp)
       equation
-        cr = DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, cr);
+        cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
         true = Exp.crefEqual(cr, crx);
         rval = intReal(1);
       then

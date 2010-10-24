@@ -45,6 +45,7 @@ package PrefixUtil
 
 
 public import Absyn;
+public import ComponentReference;
 public import DAE;
 public import Env;
 public import Lookup;
@@ -350,25 +351,28 @@ protected function prefixToCref2 "function: prefixToCref2
 algorithm
   (outCache,outComponentRef) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
     local
-      DAE.ComponentRef cref,cref_1;
+      DAE.ComponentRef cref,cref_1,cref_2,cref_;
       String i;
       list<DAE.Subscript> s;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
+      
     
     case (cache,env,inIH,Prefix.NOPRE(),NONE()) then fail();
     case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s)));
+        cref_ = ComponentReference.makeCrefIdent(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s);
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s,cref)));
+        cref_2 = ComponentReference.makeCrefQual(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s,cref);
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
   end matchcontinue;
@@ -393,7 +397,7 @@ algorithm
   outComponentRefOpt := matchcontinue (inPrefix,inExpComponentRefOption)
     local
       Option<DAE.ComponentRef> cref_1;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cref,cref_;
       String i;
       list<DAE.Subscript> s;
       Prefix.ComponentPrefix xs;
@@ -404,12 +408,14 @@ algorithm
     case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
     case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s)));
+        cref_ = ComponentReference.makeCrefIdent(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s);
+        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
     case (inPrefix as Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s,cref)));
+        cref_ = ComponentReference.makeCrefQual(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s,cref);
+        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
   end matchcontinue;
@@ -432,11 +438,11 @@ algorithm
     
     case(cache,env,inIH,pre,DAE.CREF_IDENT(id,tp,subs)) equation
      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,DAE.CREF_IDENT(id,tp,subs));
+    then (cache,ComponentReference.makeCrefIdent(id,tp,subs));
     case(cache,env,inIH,pre,DAE.CREF_QUAL(id,tp,subs,cr)) equation
       (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
       (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,DAE.CREF_QUAL(id,tp,subs,cr));   
+    then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));   
     case(cache,_,_,_,DAE.WILD()) then (cache,DAE.WILD());
   end  matchcontinue;
 end prefixSubscriptsInCref;

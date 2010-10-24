@@ -48,6 +48,7 @@ package Interactive
 
 public import Absyn;
 public import AbsynDep;
+public import ComponentReference;
 public import OptManager;
 public import SCode;
 public import SCodeUtil;
@@ -1314,7 +1315,7 @@ algorithm
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
@@ -1323,7 +1324,7 @@ algorithm
         env_2;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{})));
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});

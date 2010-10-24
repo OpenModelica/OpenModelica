@@ -39,6 +39,7 @@ package DAEUtil
   This module exports some helper functions to the DAE AST."
 
 public import Absyn;
+public import ComponentReference;
 public import ClassInf;
 public import DAE;
 public import Env;
@@ -49,6 +50,7 @@ public import HashTable;
 
 public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAE.DAElist emptyDae = DAE.DAE({});
+
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -562,12 +564,12 @@ algorithm outCr := matchcontinue(inCr)
     equation
       id = DAE.UNIQUEIO +& id;
     then
-      DAE.CREF_IDENT(id,idt,subs);
+      ComponentReference.makeCrefIdent(id,idt,subs);
   case(DAE.CREF_QUAL(id,idt,subs,child))
     equation
       newChild = nameInnerouterUniqueCref(child);
     then
-      DAE.CREF_QUAL(id,idt,subs,newChild);
+      ComponentReference.makeCrefQual(id,idt,subs,newChild);
 
 end matchcontinue;
 end nameInnerouterUniqueCref;
@@ -589,13 +591,13 @@ algorithm ocr := matchcontinue(cr,removalString)
     equation
       str2 = System.stringReplace(str, removalString, "");
       then
-        DAE.CREF_IDENT(str2,ty,subs);
+        ComponentReference.makeCrefIdent(str2,ty,subs);
   case(DAE.CREF_QUAL(str,ty,subs,child),removalString)
     equation
       child_2 = unNameInnerouterUniqueCref(child,removalString);
       str2 = System.stringReplace(str, removalString, "");
     then
-      DAE.CREF_QUAL(str2,ty,subs,child_2);
+      ComponentReference.makeCrefQual(str2,ty,subs,child_2);
   case(DAE.WILD(),_) then DAE.WILD();
   case(child,_)
     equation
@@ -1572,7 +1574,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getFlowVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}), cr);
+        cr_1 = Exp.joinCrefs(ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1630,7 +1632,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}), cr);
+        cr_1 = Exp.joinCrefs(ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1763,14 +1765,16 @@ algorithm
                innerOuter=io) :: elts))
       local
         DAE.ExpType ty;
+        DAE.ComponentRef cref_;
       equation
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
         ty = Exp.crefType(cr);
+        cref_ = ComponentReference.makeCrefIdent(str_1,ty,{});
       then
-        (DAE.VAR(DAE.CREF_IDENT(str_1,ty,{}),a,b,prot,t,d_1,e,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
+        (DAE.VAR(cref_,a,b,prot,t,d_1,e,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
 
     case ((DAE.DEFINE(componentRef = cr,exp = e,source = source) :: elts))
       local
@@ -1957,7 +1961,7 @@ algorithm
   str := Exp.printComponentRefStr(cr);
   ty := Exp.crefType(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
-  outComponentRef := DAE.CREF_IDENT(str_1,ty,{});
+  outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});
 end toModelicaFormCref;
 
 protected function toModelicaFormExp "function: toModelicaFormExp
@@ -3175,12 +3179,14 @@ Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it m
 algorithm
   outTplExpExpString := matchcontinue (inTplExpExpString)
     local
-      DAE.ComponentRef cr,cr2;
+      DAE.ComponentRef cr,cr2,cref_;
       DAE.ExpType cty,ty;
       Integer oarg;
       list<DAE.Subscript> subs;
     case((DAE.CREF(DAE.CREF_IDENT("time",cty,subs),ty),oarg))
-      then ((DAE.CREF(DAE.CREF_IDENT("globalData->timeValue",cty,subs),ty),oarg));
+      equation
+      cref_ = ComponentReference.makeCrefIdent("globalData->timeValue",cty,subs);
+      then ((DAE.CREF(cref_,ty),oarg));
     case(inTplExpExpString) then inTplExpExpString;
 end matchcontinue;
 end renameTimeToDollarTimeFromCref;
@@ -5088,13 +5094,15 @@ public function simpleInlineDerEuler
 algorithm
   (exp1,crs1) := matchcontinue (exp,crs0)
     local
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref_1,cref_2;
     case (DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.ET_REAL())}),crs0)
       equation
+        cref_1 = ComponentReference.makeCrefQual("$old",DAE.ET_REAL(),{},cr);
+        cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.ET_REAL(),{});
         exp = DAE.BINARY(
-          DAE.BINARY(exp,DAE.SUB(DAE.ET_REAL()),DAE.CREF(DAE.CREF_QUAL("$old",DAE.ET_REAL(),{},cr),DAE.ET_REAL())),
+          DAE.BINARY(exp,DAE.SUB(DAE.ET_REAL()),DAE.CREF(cref_1,DAE.ET_REAL())),
           DAE.DIV(DAE.ET_REAL()),
-          DAE.CREF(DAE.CREF_IDENT("$current_step_size",DAE.ET_REAL(),{}),DAE.ET_REAL()));
+          DAE.CREF(cref_2,DAE.ET_REAL()));
         crs1 = HashTable.add((cr,0),crs0);
       then (exp,crs1);
     case (exp,crs0) then (exp,crs0);

@@ -44,6 +44,7 @@ package InstExtends
 // public imports
 public import Absyn;
 public import ClassInf;
+public import ComponentReference;
 public import DAE;
 public import Env;
 public import HashTableStringToPath;
@@ -1177,6 +1178,7 @@ algorithm
     local
       String id;
       Absyn.Path path;
+      DAE.ComponentRef cref_;
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -1187,8 +1189,9 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
         //Debug.fprintln("debug","Try lookupV " +& id);
-        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,cref_);
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,true,SOME(id),NONE());
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));

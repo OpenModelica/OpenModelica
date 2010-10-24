@@ -1733,7 +1733,7 @@ public function componentFace
 algorithm
   outFace := matchcontinue (env,inIH,inComponentRef)
     local
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref_;
       DAE.Ident id;
       InnerOuter.InstHierarchy ih;
 

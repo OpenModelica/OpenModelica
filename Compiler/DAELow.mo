@@ -605,10 +605,12 @@ algorithm
     local
       BackendDAE.Variables v,vars_1,vars;
       list<BackendDAE.Equation> e,eqns;
+      DAE.ComponentRef cref_;
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        vars_1 = addVar(BackendDAE.VAR(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}), BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,
+        cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.ET_REAL(),{});
+        vars_1 = addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
@@ -619,17 +621,17 @@ algorithm
          * (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
         (vars_1,(BackendDAE.EQUATION(
           DAE.CALL(Absyn.IDENT("der"),
-          {DAE.CREF(DAE.CREF_IDENT("$dummy",{}),DAE.ET_REAL())},false,true,DAE.ET_REAL()),
+          {DAE.CREF(cref_},false,true,DAE.ET_REAL()),
           DAE.CALL(Absyn.IDENT("sin"),{DAE.BINARY(
-            DAE.CREF(DAE.CREF_IDENT("time",{}),DAE.ET_REAL()),
-            DAE.MUL(DAE.ET_REAL()),
-            DAE.RCONST(628.318530717))},false,true,DAE.ET_REAL()))  :: eqns)); */
+          	DAE.CREF(ComponentReference.makeCrefIdent("time",{}),DAE.ET_REAL()),
+          	DAE.MUL(DAE.ET_REAL()),
+          	DAE.RCONST(628.318530717))},false,true,DAE.ET_REAL()))  :: eqns)); */
         /*
          *
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
          */
         (vars_1,(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),
-                          {DAE.CREF(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}),DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
+                          {DAE.CREF(cref_,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.RCONST(0.0), DAE.emptyElementSource)  :: eqns));
 
   end matchcontinue;
@@ -3581,11 +3583,13 @@ algorithm
         (eqnl,(BackendDAE.REINIT(cr,e,source) :: reinit));
 
     case ((DAE.TERMINATE(message = e,source = source) :: xs),i)
+      local DAE.ComponentRef cref_;
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
         e_2 = Exp.simplify(e); // Exp.stringifyCrefs(Exp.simplify(e));
+        cref_ = ComponentReference.makeCrefIdent("_", DAE.ET_OTHER(), {});
       then
-        ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE()),source) :: eqnl),reinit);
+        ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cref_,e_2,NONE()),source) :: eqnl),reinit);
     
     case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i)
       equation
@@ -4561,12 +4565,14 @@ algorithm
         list<DAE.Exp> arrayVars, nonArrayVars;
         list<list<DAE.Exp>> arrayElements;
         list<DAE.Exp> flattenedElements;
+        DAE.ComponentRef cref_;
       equation
         ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
         inputs2 = statesAndVarsExp(e, vars);
         // Split the output variables into variables that depend on the loop
         // variable and variables that don't.
-        iteratorExp = DAE.CREF(DAE.CREF_IDENT(iteratorName, DAE.ET_INT(), {}), DAE.ET_INT());
+        cref_ = ComponentReference.makeCrefIdent(iteratorName, DAE.ET_INT(), {});
+        iteratorExp = DAE.CREF(cref_, DAE.ET_INT());
         (arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, isLoopDependent, iteratorExp);
         arrayVars = Util.listMap(arrayVars, devectorizeArrayVar);
         // Explode array variables into their array elements.
@@ -5016,12 +5022,14 @@ algorithm
       list<DAE.Exp> subExprs, subExprsSimplified;
       list<DAE.Subscript> subscripts;
       DAE.Exp newCref;
+      DAE.ComponentRef cref_;
 
     // A CREF => just simplify the subscripts.
     case (DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType))
       equation
         subscripts = Util.listMap(subscripts, simplifySubscript);
-      then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
+        cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
+      then DAE.CREF(cref_, varType);
         
     // An ASUB => convert to CREF if only constant subscripts.
     case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
@@ -5033,7 +5041,8 @@ algorithm
         // they reference the same element.
         subExprsSimplified = Util.listMap(subExprs, Exp.simplify);
         subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
-      then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
+        cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
+      then DAE.CREF(cref_, varType);
     case (_) then asub;
   end matchcontinue;
 end simplifySubscripts;
@@ -6096,7 +6105,7 @@ algorithm
         p_1;        
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        cr = DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, cr);
+        cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
         (varslst,p) = getVar(cr, vars);
         p_1 = incidenceRowExp1(varslst,p,false);
       then
@@ -14895,7 +14904,7 @@ algorithm
         // add Tearing Var
         BackendDAE.VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst )) = vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend("tearingresidual_",ident);
-        crt = DAE.CREF_IDENT(ident_t,identType,subscriptLst);
+        crt = ComponentReference.makeCrefIdent(ident_t,identType,subscriptLst);
          vars_1 = addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
@@ -15720,7 +15729,7 @@ public function crefPrefixDer
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, inCref);
+  outCref := ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, inCref);
 end crefPrefixDer;
 
 public function makeDerCref
@@ -15728,7 +15737,7 @@ public function makeDerCref
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, inCref);
+  outCref := ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, inCref);
 end makeDerCref;
 
 public function equationSource "Retrieve the source from a BackendDAE.DAELow equation"
@@ -16384,7 +16393,7 @@ algorithm
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$pL");
       id = Util.stringReplaceChar(id, "]", "$pR");
-    then DAE.CREF_IDENT(id, DAE.ET_REAL(), {});
+    then ComponentReference.makeCrefIdent(id, DAE.ET_REAL(), {});
     
     // d(no state)/d(x)
     case(cref, x, _) equation
@@ -16392,7 +16401,7 @@ algorithm
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$pL");
       id = Util.stringReplaceChar(id, "]", "$pR");
-    then DAE.CREF_IDENT(id, DAE.ET_REAL(), {});
+    then ComponentReference.makeCrefIdent(id, DAE.ET_REAL(), {});
       
     case(cref, _, _) local
       String str; 
@@ -16530,7 +16539,7 @@ algorithm
       cref = Exp.expCref(e1);
       cref = makeDerCref(cref);
       //str = derivativeNamePrefix +& Exp.printExpStr(e1);
-      //cref = DAE.CREF_IDENT(str, DAE.ET_REAL(),{});
+      //cref = ComponentReference.makeCrefIdent(str, DAE.ET_REAL(),{});
       e1_ = differentiateWithRespectToX(Exp.crefExp(cref), x, functions, inputVars, paramVars, stateVars);
     then e1_;
     
@@ -16884,7 +16893,7 @@ algorithm
     equation
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
       
-      /*cref = DAE.CREF_IDENT(ident, DAE.ET_INT(), {});
+      /*cref = ComponentReference.makeCrefIdent(ident, DAE.ET_INT(), {});
       cref = differentiateVarWithRespectToX(cref, var, {});
       exp2 = DAE.CREF(cref, DAE.ET_INT());
       

@@ -4846,6 +4846,7 @@ algorithm
       list<Var> vs;
       DAE.ExpType ty2;
       Type ty;
+      DAE.ComponentRef cref_;
     
     // handle empty case
     case ({},_) then {};
@@ -4854,7 +4855,8 @@ algorithm
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cr_1 = Exp.joinCrefs(cr, DAE.CREF_IDENT(id,ty2,{}));
+        cref_ = ComponentReference.makeCrefIdent(id,ty2,{});
+        cr_1 = Exp.joinCrefs(cr, cref_);
         // print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
         res = flowVariables(vs, cr);
       then
@@ -4885,12 +4887,13 @@ algorithm
       list<Var> vs;
       DAE.ExpType ty2;
       Type ty;
-
+      DAE.ComponentRef cref_;      
     case ({},_) then {};
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cr_1 = Exp.joinCrefs(cr, DAE.CREF_IDENT(id,ty2,{}));
+        cref_ = ComponentReference.makeCrefIdent(id,ty2,{});
+        cr_1 = Exp.joinCrefs(cr, cref_);
         res = streamVariables(vs, cr);
       then
         (cr_1 :: res);
@@ -5647,11 +5650,13 @@ algorithm
     local
       list<DAE.Exp> restExp;
       list<Type> restType, rest;
+      DAE.ComponentRef cref_;
     case {} then ({},{});
     case _::rest
       equation
         (restExp,restType) = makeDummyExpAndTypeLists(rest);
-      then (DAE.CREF(DAE.CREF_IDENT("#DummyExp#",DAE.ET_OTHER,{}),DAE.ET_OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE,NONE())),NONE())::restType);
+        cref_  = ComponentReference.makeCrefIdent("#DummyExp#",DAE.ET_OTHER,{});
+      then (DAE.CREF(cref_,DAE.ET_OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE,NONE())),NONE())::restType);
   end matchcontinue;
 end makeDummyExpAndTypeLists;
 

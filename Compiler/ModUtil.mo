@@ -47,7 +47,7 @@ package ModUtil
 public import Absyn;
 public import DAE;
 public import SCode;
-
+public import ComponentReference;
 protected import Exp;
 protected import RTOpts;
 protected import Util;
@@ -267,12 +267,12 @@ algorithm
       equation
         s_1 = stringAppend(str, s);
       then
-        DAE.CREF_IDENT(s_1,ty2,si);
+        ComponentReference.makeCrefIdent(s_1,ty2,si);
     case (str,DAE.CREF_QUAL(ident = s,subscriptLst = si,componentRef = cr, identType = ty2))
       equation
         s_1 = stringAppend(str, s);
       then
-        DAE.CREF_QUAL(s_1,ty2, si,cr);
+        ComponentReference.makeCrefQual(s_1,ty2, si,cr);
   end matchcontinue;
 end stringPrefixCref;
 

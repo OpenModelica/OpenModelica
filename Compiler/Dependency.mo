@@ -41,6 +41,7 @@ package Dependency
 
 public import Absyn;
 public import AbsynDep;
+public import ComponentReference;
 public import SCode;
 public import Env;
 public import Interactive;
@@ -810,7 +811,7 @@ algorithm
       compString = Absyn.printComponentRefStr(cr);
       cr = Absyn.crefStripLastSubs(cr);
       path = Absyn.crefToPath(cr);
-      failure(_ = HashTable2.get(DAE.CREF_IDENT(compString, DAE.ET_OTHER(),{}),ht)) "do not add local variables to depndencies";
+      failure(_ = HashTable2.get(ComponentReference.makeCrefIdent(compString, DAE.ET_OTHER(),{}),ht)) "do not add local variables to depndencies";
       (usesName as Absyn.FULLYQUALIFIED(_)) = absynMakeFullyQualified(path,optPath,cname,env,p);
       d = AbsynDep.addDependency(d,cname2,usesName);
     then ((e,(optPath,cname,(d,p,env,ht))));
@@ -1101,7 +1102,7 @@ algorithm outTable := matchcontinue(inComponents,inTable)
     case({}, inTable) then inTable;
   case((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)))::comps,inTable)
     equation
-      table1 = HashTable2.add((DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ICONST(0)),inTable);
+      table1 = HashTable2.add((ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}),DAE.ICONST(0)),inTable);
       table2 = createLocalVariableStruct4(comps,table1);
       then
         table1;

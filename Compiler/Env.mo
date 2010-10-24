@@ -82,9 +82,11 @@ package Env
   uniform lookup mechanism "
 
 public import Absyn;
+public import ComponentReference;
+public import ClassInf;
 public import DAE;
 public import SCode;
-public import ClassInf;
+
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
@@ -224,10 +226,12 @@ protected function newFrame "function: newFrame
   output Frame outFrame;
   AvlTree httypes;
   AvlTree ht;
+  DAE.ComponentRef cref_;
 algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  outFrame := FRAME(inName,inType,ht,httypes,{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
+  cref_ := ComponentReference.makeCrefIdent("",DAE.ET_OTHER(),{});
+  outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),enc,{});
 end newFrame;
 
 public function isTyped "

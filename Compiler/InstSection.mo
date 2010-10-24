@@ -728,7 +728,7 @@ algorithm
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // adrpo: the iterator is not in the environment, this would fail!
         // (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
-        //  = Lookup.lookupVar(cache,env, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
+        //  = Lookup.lookupVar(cache,env, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
         Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Non-constant iteration bounds", "No suggestion"}, info);
       then
         fail();
@@ -1486,7 +1486,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         tp = ValuesUtil.valueExpType(v);
-        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,tp,{}));
+        cr2 = Exp.crefAppend(cr,ComponentReference.makeCrefIdent(n,tp,{}));
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
         eqns = listAppend(eqns,eqnsArray);
@@ -1494,7 +1494,7 @@ algorithm
         eqns;
     case(Values.RECORD(p, v::vals, n::names, index),cr,source)
       equation
-        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_INT,{}));
+        cr2 = Exp.crefAppend(cr,ComponentReference.makeCrefIdent(n,DAE.ET_INT,{}));
         eqns2 = assignComplexConstantConstruct(v,cr2,source);
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqns = listAppend(eqns,eqns2);
@@ -1806,7 +1806,7 @@ algorithm
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});        
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
+        = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
       then
@@ -1962,8 +1962,10 @@ algorithm
       local
         Absyn.Ident iter_name;
         DAE.Exp iter_exp;
+        DAE.ComponentRef cref_;
       equation
-        iter_exp = DAE.CREF(DAE.CREF_IDENT(iter_name, DAE.ET_INT(), {}), DAE.ET_INT()); 
+        cref_ = ComponentReference.makeCrefIdent(iter_name, DAE.ET_INT(), {});
+        iter_exp = DAE.CREF(cref_, DAE.ET_INT()); 
         true = isSubsLoopDependentHelper(subscripts, iter_exp);
       then
         true;

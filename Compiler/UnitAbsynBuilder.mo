@@ -6,7 +6,7 @@ This module contains functions fro building UnitAbsyn terms that are used for bu
 for unit checker module
 
 "
-
+public import ComponentReference;
 public import UnitAbsyn;
 public import DAE;
 public import MMath;
@@ -846,15 +846,18 @@ algorithm
   (outParams,outHt,outNextElt) := matchcontinue(params,ht,nextElt)
   local Integer indx; String name; MMath.Rational r;
     tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
+    DAE.ComponentRef cref_;
     case({},ht,nextElt) then ({},ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-      indx = HashTable.get(DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}),ht);
+      cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
+      indx = HashTable.get(cref_,ht);
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-        ht = HashTable.add((DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}),nextElt),ht);
+        cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
+        ht = HashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
 
@@ -949,14 +952,14 @@ algorithm
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = HashTable.get(DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),ht);
+      indx = HashTable.get(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(env,e as DAE.ICONST(i),divOrMul,ht,store) local Integer i; equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = HashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
@@ -964,7 +967,7 @@ algorithm
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = HashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     case(env,DAE.CAST(_,e1),divOrMul,ht,store) equation
@@ -1369,19 +1372,22 @@ protected function buildStoreExp " build stores from constants in expressions an
 algorithm
   (outStore,outHt) := matchcontinue(exp,store,ht,parentOp)
   local Real r; String s1; Integer i,indx; UnitAbsyn.Unit unit; DAE.Exp e1,e2; DAE.Operator op;
+    DAE.ComponentRef cref_;
     /* Constant on top level, e.g. x = 1 => unspecified type */
     case(DAE.RCONST(r),store,ht,parentOp) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = realString(r);
-      ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
+      cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
+      ht = HashTable.add((cref_,indx),ht);
     then (store,ht);
 
    case(DAE.CAST(_,DAE.ICONST(i)),store,ht,parentOp) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = intString(i);
-      ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
+      cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
+      ht = HashTable.add((cref_,indx),ht);
     then (store,ht);
 
     case(DAE.BINARY(e1,op,e2),store,ht,parentOp) equation

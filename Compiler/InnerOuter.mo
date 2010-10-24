@@ -1216,7 +1216,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
 
         // search in instance hierarchy
         instInner = get(cref, ht);
@@ -1240,7 +1240,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
         
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
         
         // search in instance hierarchy we had a failure
         failure(instInner = get(cref, ht));
@@ -1671,13 +1671,14 @@ algorithm
       DAE.DAElist dae;
       Env.Env innerComponentEnv;
       OuterPrefixes outerPrefixes;
+      DAE.ComponentRef cref_;
     
     /* only add inner elements
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name))
       equation
         false = Absyn.isInner(inInnerOuter);
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
         // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& Exp.printComponentRefStr(cref) +& "\n");
       then
         ih;*/
@@ -1697,7 +1698,8 @@ algorithm
          inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        cref_ = ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {});
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, cref_);
         // add to hashtable!
         // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy adding: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
@@ -1709,7 +1711,7 @@ algorithm
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
-        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));
+        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.ET_OTHER(), {}));
         // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy failure for: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then

@@ -75,6 +75,7 @@ algorithm
       BackendDAE.VariableArray vararr,knvararr;
       array<Integer> ass1,ass2;
       list<list<Integer>> blocks;
+      DAE.ComponentRef cref_;
 
     case ((dae as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
       equation
@@ -88,7 +89,8 @@ algorithm
         knvars = DAELow.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
-        addVariables({BackendDAE.VAR(DAE.CREF_IDENT("sim_time",DAE.ET_REAL(),{}),BackendDAE.VARIABLE(),
+        cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.ET_REAL(),{});
+        addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
                       DAE.INPUT(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
                       NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
@@ -366,7 +368,7 @@ algorithm
         c_name = name;
         //id = System.stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
         id = c_name;
-        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
@@ -402,7 +404,7 @@ algorithm
         c_name = name;
         //id = System.stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
         id = c_name;
-        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
@@ -516,14 +518,15 @@ algorithm
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
       Integer pos_1,pos;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref_;
       list<DAE.Exp> es;
     case (repl,{},_) then repl;
     case (repl,(DAE.CREF(componentRef = cr) :: es),pos)
       equation
         pstr = intString(pos);
         str = System.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(DAE.CREF_IDENT(str,DAE.ET_REAL(),{}),DAE.ET_REAL()));
+        cref_ = ComponentReference.makeCrefIdent(str,DAE.ET_REAL(),{});
+        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(cref_,DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then

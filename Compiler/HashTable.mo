@@ -24,6 +24,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
+public import ComponentReference;
 public import DAE;
 
 protected import Exp;
@@ -60,27 +61,27 @@ protected
 HashTable t;
 algorithm
   t := emptyHashTable();
-  t := add((DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),2),t);
-  t := add((DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),4),t);
-  t := add((DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),6),t);
+  t := add((ComponentReference.makeCrefIdent("a",DAE.ET_OTHER(),{}),2),t);
+  t := add((ComponentReference.makeCrefIdent("b",DAE.ET_OTHER(),{}),4),t);
+  t := add((ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),6),t);
   dumpHashTable(t);
 
-  print("b =");print(intString(get(DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),t)));print("\n");
-  print("a =");print(intString(get(DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),t)));print("\n");
-  print("c =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
-  t := add((DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),66),t);
-  t := add((DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),22),t);
-  t := add((DAE.CREF_IDENT("q",DAE.ET_OTHER(),{}),123),t);
+  print("b =");print(intString(get(ComponentReference.makeCrefIdent("b",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("a =");print(intString(get(ComponentReference.makeCrefIdent("a",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("c =");print(intString(get(ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),t)));print("\n");
+  t := add((ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),66),t);
+  t := add((ComponentReference.makeCrefIdent("a",DAE.ET_OTHER(),{}),22),t);
+  t := add((ComponentReference.makeCrefIdent("q",DAE.ET_OTHER(),{}),123),t);
 
-  print("b' =");print(intString(get(DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),t)));print("\n");
-  print("a' =");print(intString(get(DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),t)));print("\n");
-  print("c' =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("b' =");print(intString(get(ComponentReference.makeCrefIdent("b",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("a' =");print(intString(get(ComponentReference.makeCrefIdent("a",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),t)));print("\n");
   dumpHashTable(t);
-  t := delete(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t);
-  t := add((DAE.CREF_IDENT("cc",DAE.ET_OTHER(),{}),567),t);
+  t := delete(ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),t);
+  t := add((ComponentReference.makeCrefIdent("cc",DAE.ET_OTHER(),{}),567),t);
 
   dumpHashTable(t);
-  print("c' =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(ComponentReference.makeCrefIdent("c",DAE.ET_OTHER(),{}),t)));print("\n");
 
 end test;
 

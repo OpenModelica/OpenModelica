@@ -610,7 +610,7 @@ algorithm
     
     case (cref, _)
       equation
-        badcref = DAE.CREF_IDENT("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
+        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
       then
         SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
   end matchcontinue;
@@ -1280,6 +1280,7 @@ algorithm
       Types.Type tty;
       Exp.Type expType;
       String name;
+      DAE.ComponentRef cref_;
     case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _)))
       local
         list<Types.FuncArg> args;
@@ -1295,8 +1296,9 @@ algorithm
     case ((name,tty))
       equation
         expType = Types.elabType(tty);
+        cref_  = ComponentReference.makeCrefIdent(name, expType, {});
       then
-        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE(),{});
+        VARIABLE(cref_,expType,NONE(),{});
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -3417,7 +3419,7 @@ algorithm
         crefs = Util.listMap(var_lst, DAELow.varCref);
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
-        crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
+        crefs1 = Util.listAddElementFirst(ComponentReference.makeCrefIdent("shift",DAE.ET_REAL(),{}),crefs);
         eqn_lst1 = Util.listAddElementFirst(BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),eqn_lst);
         tcrs = Util.listMap1r(t,listNth,crefs1);
         repl = makeResidualReplacements(tcrs);
@@ -6309,14 +6311,13 @@ algorithm
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
       Integer pos_1,pos;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr,cref_;
       list<Exp.ComponentRef> crs;
     case (repl,{},_) then repl;
     case (repl,(cr :: crs),pos)
       equation
-        repl_1 = VarTransform.addReplacement(repl, cr, 
-          DAE.CREF(DAE.CREF_IDENT("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN}), {DAE.INDEX(DAE.ICONST(pos))}), 
-                   DAE.ET_REAL()));
+        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN}), {DAE.INDEX(DAE.ICONST(pos))});
+        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(cref_, DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -7206,10 +7207,12 @@ algorithm
       String name;
       Types.Type typesType;
       Exp.Type expType;
+      DAE.ComponentRef cref_;
     case (DAE.TYPES_VAR(name=name, type_=typesType))
       equation
         expType = Types.elabType(typesType);
-      then VARIABLE(DAE.CREF_IDENT(name, expType, {}), expType,NONE(), {});
+        cref_ = ComponentReference.makeCrefIdent(name, expType, {});
+      then VARIABLE(cref_, expType,NONE(), {});
   end matchcontinue;
 end typesVar;
 

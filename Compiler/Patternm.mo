@@ -40,6 +40,7 @@ package Patternm
   matchcontinue expression."
 
 public import Absyn;
+public import ComponentReference;
 public import DFA;
 public import Env;
 public import SCode;
@@ -2799,7 +2800,7 @@ algorithm
         Env.Cache localCache; Env.Env localEnv;
       equation
         (_,t,_)=
-        Lookup.lookupVar(localCache,localEnv,DAE.CREF_IDENT(id,{}));
+        Lookup.lookupVar(localCache,localEnv,ComponentReference.makeCrefIdent(id,{}));
         rp = fromTypeToRenamedPat(t);
         localAccList = listAppend(localAccList,{rp});
         (localCache,localAccList) = getVarTypes(restExp,localAccList);

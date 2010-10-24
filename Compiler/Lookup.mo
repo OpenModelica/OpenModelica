@@ -591,7 +591,7 @@ algorithm
       equation
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        cref = Exp.joinCrefs(cref,ComponentReference.makeCrefIdent(ident,DAE.ET_OTHER(),{}));
         (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
         (cache,true);
@@ -650,7 +650,7 @@ algorithm
       equation 
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        cref = Exp.joinCrefs(cref,ComponentReference.makeCrefIdent(ident,DAE.ET_OTHER(),{}));
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
         unique = boolNot(more);
@@ -1201,7 +1201,7 @@ algorithm
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
       then
         (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -2528,7 +2528,7 @@ algorithm
       Option<DAE.Exp> texp;
       DAE.Type t,ty1,ty2;
       Option<Absyn.Path> p;
-      DAE.ComponentRef xCref,tCref;
+      DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
       DAE.ExpType eType;
@@ -2544,8 +2544,9 @@ algorithm
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ss);
         tty = Types.elabType(ty);     
-        ty2_2 = Types.elabType(ty);        
-        splicedExp = DAE.CREF(DAE.CREF_IDENT(id,ty2_2, ss),tty);
+        ty2_2 = Types.elabType(ty);
+        cref_ = ComponentReference.makeCrefIdent(id,ty2_2, ss);
+        splicedExp = DAE.CREF(cref_,tty);
         //print("splicedExp ="+&Exp.dumpExpStr(splicedExp,0)+&"\n");
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
@@ -2565,7 +2566,7 @@ algorithm
         ty = sliceDimensionType(ty1,ty);
         ss = addArrayDimensions(ty2,ss);
         ty2_2 = Types.elabType(ty2);
-        xCref = DAE.CREF_QUAL(id,ty2_2,ss,tCref);
+        xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
         eType = Types.elabType(ty);
         splicedExp = DAE.CREF(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);

@@ -1196,7 +1196,7 @@ algorithm
         
     case(env,{},{}) then env;
     case(env,name::iter_names,c::iter_const) equation
-      (_,_,ty,bind,forIterConst,_,_,_,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
+      (_,_,ty,bind,forIterConst,_,_,_,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{}));
       env = Env.extendFrameForIterator(env,name,ty,bind,constToVariability(c),forIterConst);
       //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
       env = updateIteratorConst(env,iter_names,iter_const);
@@ -1329,21 +1329,25 @@ algorithm
       Real r;
       DAE.Exp e1;
       Values.Value v;
+      DAE.ComponentRef cref_;
     case(e, {}, id) then {};
     case(e, Values.INTEGER(i)::valLst, id)
       equation
-        (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),DAE.ICONST(i));
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
+        (e1,_) = Exp.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),DAE.ICONST(i));
         expl = elabCallReduction2(e, valLst, id);
       then e1::expl;
     case(e, Values.REAL(r) :: valLst, id)
       equation
-        (e1,_) = Exp.replaceExp(e, DAE.CREF(DAE.CREF_IDENT(id, DAE.ET_OTHER(), {}), DAE.ET_OTHER()), DAE.RCONST(r));
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
+        (e1,_) = Exp.replaceExp(e, DAE.CREF(cref_, DAE.ET_OTHER()), DAE.RCONST(r));
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl;
     case(e, (v as Values.ENUM_LITERAL(index = _)) :: valLst, id)
       equation
         e1 = ValuesUtil.valueExp(v);
-        (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),e1);
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
+        (e1,_) = Exp.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),e1);
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl; 
   end matchcontinue;
@@ -8154,13 +8158,13 @@ algorithm
       equation
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
       then
-        (cache,DAE.CREF_IDENT(id,DAE.ET_OTHER(),subs_1));
+        (cache,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),subs_1));
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = subs,componentRef = cr),impl,pre,info)
       equation
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
       then
-        (cache,DAE.CREF_QUAL(id,DAE.ET_OTHER(),subs_1,cr_1));
+        (cache,ComponentReference.makeCrefQual(id,DAE.ET_OTHER(),subs_1,cr_1));
   end matchcontinue;
 end elabUntypedCref;
 
@@ -8177,12 +8181,12 @@ algorithm
       DAE.ComponentRef cref;
       Absyn.Path path;
     case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
-    case (Absyn.IDENT(name = id)) then DAE.CREF_IDENT(id,DAE.ET_OTHER(),{});
+    case (Absyn.IDENT(name = id)) then ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
     case (Absyn.QUALIFIED(name = id,path = path))
       equation
         cref = pathToComponentRef(path);
       then
-        DAE.CREF_QUAL(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cref);
+        ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cref);
   end matchcontinue;
 end pathToComponentRef;
 
@@ -10658,7 +10662,7 @@ algorithm
       list<DAE.Subscript> essl;
       String id,id2;
       DAE.ExpType ty,ty2;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref_;
       DAE.Const const;
       list<Env.Frame> env;
       Boolean impl;
@@ -10674,14 +10678,16 @@ algorithm
         (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exp1 = makeASUBArrayAdressing2(essl,pre);
         ty2 = Exp.crefType(cr);
-        exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty2),exp1);
+        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
+        exp1 = DAE.ASUB(DAE.CREF(cref_,ty2),exp1);
       then
         exp1;
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,ty2,essl),ty),_,doVect,pre,info)
       equation
         (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exp1 = makeASUBArrayAdressing2( essl,pre);
-        exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty),exp1);
+        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
+        exp1 = DAE.ASUB(DAE.CREF(cref_,ty),exp1);
       then
         exp1;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,_,info)
@@ -10689,7 +10695,8 @@ algorithm
         DAE.ExpType tty2;
       equation
         tty2 = Exp.crefType(cr);
-        exp1 = DAE.CREF(DAE.CREF_IDENT(id2,tty2,essl),ty);
+        cref_ = ComponentReference.makeCrefIdent(id2,tty2,essl);
+        exp1 = DAE.CREF(cref_,ty);
       then
         exp1;
     // Qualified cref, might be a package constant.
@@ -10736,6 +10743,7 @@ algorithm
       list<DAE.Subscript> subs,subs2;
       DAE.Operator op;
       Prefix.Prefix pre;
+      DAE.ComponentRef cref_;
 
     // empty list
     case( {},_ ) then {};
@@ -10756,7 +10764,8 @@ algorithm
       equation
         expl1 = makeASUBArrayAdressing2(subs,pre);
         expl2 = makeASUBArrayAdressing2(subs2,pre);
-        exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ety1),expl2);
+        cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
+        exp1 = DAE.ASUB(DAE.CREF(cref_,ety1),expl2);
       then
         (exp1::expl1);
     // an binary expression as index
@@ -10840,15 +10849,15 @@ algorithm
       equation
         subs_1 = fillSubscripts(subs, t);
       then
-        DAE.CREF_IDENT(id,ty2,subs_1);
+        ComponentReference.makeCrefIdent(id,ty2,subs_1);
     // qualified ident with non-empty subscrips
     case (e as (DAE.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref,identType = ty2 )),t)
       equation
         // TODO!FIXME!
-        // DAE.CREF_IDENT(id, ty2, subs) = fillCrefSubscripts(DAE.CREF_IDENT(id, ty2, subs),t);
+        // ComponentReference.makeCrefIdent(id, ty2, subs) = fillCrefSubscripts(ComponentReference.makeCrefIdent(id, ty2, subs),t);
         cref_1 = fillCrefSubscripts(cref, t);
       then
-        DAE.CREF_QUAL(id,ty2,subs,cref_1);
+        ComponentReference.makeCrefQual(id,ty2,subs,cref_1);
   end matchcontinue;
 end fillCrefSubscripts;
 
@@ -11396,13 +11405,14 @@ algorithm
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1, expl2;
       list<DAE.Subscript> ssl;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cref,cref_2;
       String id;
       DAE.ExpType ety,ty2;
     // a component reference
     case(exp1 as DAE.CREF(cref, ety),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       equation
-        exp1 = DAE.CREF(DAE.CREF_QUAL(id,ty2, ssl,cref),ety);
+        cref_2 = ComponentReference.makeCrefQual(id,ty2, ssl,cref);
+        exp1 = DAE.CREF(cref_2,ety);
       then exp1;
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(id,_, ssl),ety))
@@ -11437,10 +11447,12 @@ algorithm
       DAE.Exp exp1,exp2;
       DAE.ExpType ety;
       list<DAE.Exp> expl1;
+      DAE.ComponentRef cref_;
     // empty list
     case({},id,ety)
       equation
-        exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{}),ety);
+        cref_ = ComponentReference.makeCrefIdent(id,ety,{});
+        exp1 = DAE.CREF(cref_,ety);
       then
         exp1;
     // some subscripts present
@@ -11569,6 +11581,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       DAE.ExpType ety,tmpy,crty;
       list<DAE.Dimension> arrDim;
+      DAE.ComponentRef cref_;
 
     case(exp2,exp1 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
       equation
@@ -11590,7 +11603,8 @@ algorithm
       equation
         true = Exp.isValidSubscript(exp1);
         crty = Exp.unliftArray(ety) "only subscripting one dimension, unlifting once ";
-        exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{DAE.INDEX(exp1)}),crty);
+        cref_ = ComponentReference.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
+        exp1 = DAE.CREF(cref_,crty);
       then exp1;
 
     case(exp1, exp2, id ,ety)
@@ -11619,11 +11633,13 @@ algorithm
       DAE.ExpType ety,ty2,crty;
       list<DAE.Dimension> iLst;
       Boolean scalar;
+      DAE.ComponentRef cref_;
 
     case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
       equation
         crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
-        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),crty);
+        cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
+        exp2 = DAE.CREF(cref_,crty);
       then exp2;
 
     case(exp1 as DAE.ICONST(integer=_), exp2 as DAE.ARRAY(_,_,expl1),ety )
@@ -11655,11 +11671,13 @@ algorithm
       DAE.ExpType ety,ty2,crty;
       list<DAE.Dimension> iLst;
       Boolean scalar;
+      DAE.ComponentRef cref_;
 
     case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety )
       equation
         crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
-        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),crty);
+        cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
+        exp2 = DAE.CREF(cref_,crty);
       then exp2;
 
     case( exp2 as DAE.ARRAY(_,_,expl1), exp1 as DAE.ICONST(integer=_),ety)
@@ -11874,7 +11892,7 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,info)
       equation
         // Debug.traceln("Try elabSucscriptsDims " +& id);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n"); 
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
@@ -11883,29 +11901,29 @@ algorithm
         /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/
         (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
       then       
-        (cache,DAE.CREF_IDENT(id,ty,ss_1),const);
+        (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const);
     // QUAL,with no subscripts => looking for var
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
       then
-        (cache,DAE.CREF_QUAL(id,ty,{},cr),const);
+        (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const);
     // QUAL,with no subscripts second case => look for class
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
       then
-        (cache,DAE.CREF_QUAL(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
+        (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
     // QUAL,with constant subscripts
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
       equation
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
@@ -11916,7 +11934,7 @@ algorithm
         (cache,cr,const2) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
         const = Types.constAnd(const1, const2);
       then
-        (cache,DAE.CREF_QUAL(id,ty,ss_1,cr),const);
+        (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const);
 
     // failure
     case (cache,env,cr,crefPrefix,impl,info)
@@ -12323,16 +12341,19 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st_1;
       DAE.DAElist dae;
       Prefix.Prefix pre;
+      DAE.ComponentRef cref_;
 
     // Select true-branch
     case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
+      cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
       (cache,e2,prop1,st_1) = elabExp(cache,env, tbranch, impl, st,doVect,pre,info);
-    then (cache,DAE.IFEXP(cond,e2,DAE.CREF(DAE.CREF_IDENT("$undefined",DAE.ET_OTHER(),{}),DAE.ET_OTHER())),prop1,st_1);
+    then (cache,DAE.IFEXP(cond,e2,DAE.CREF(cref_,DAE.ET_OTHER())),prop1,st_1);
 
     // Select false-branch
     case(cache,env,false,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
+      cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
       (cache,e2,prop1,st_1) = elabExp(cache,env, fbranch, impl, st,doVect,pre,info);
-    then (cache,DAE.IFEXP(cond,DAE.CREF(DAE.CREF_IDENT("$undefined",DAE.ET_OTHER(),{}),DAE.ET_OTHER()),e2),prop1,st_1);
+    then (cache,DAE.IFEXP(cond,DAE.CREF(cref_,DAE.ET_OTHER()),e2),prop1,st_1);
   end matchcontinue;
 end elabIfexpBranch;
 
@@ -12504,12 +12525,12 @@ algorithm
       DAE.ExpType ty2;
     case (cache,env,DAE.CREF_IDENT(ident = n,identType = ty2, subscriptLst = ss),prefixCr,impl) /* impl */
       equation
-        cr = Exp.joinCrefs(prefixCr,DAE.CREF_IDENT(n,ty2,{}));
+        cr = Exp.joinCrefs(prefixCr,ComponentReference.makeCrefIdent(n,ty2,{}));
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
       then
-        (cache,DAE.CREF_IDENT(n,ty2,ss_1));
+        (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
   end matchcontinue;
 end canonCref2;
 
@@ -12546,24 +12567,24 @@ algorithm
     // an unqualified component reference
     case (cache,env,DAE.CREF_IDENT(ident = n,subscriptLst = ss),impl) /* impl */ 
       equation 
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
         ty2 = Types.elabType(t);
       then
-        (cache,DAE.CREF_IDENT(n,ty2,ss_1));
+        (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
 
     // a qualified component reference
     case (cache,env,DAE.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
       equation
-        (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         ty2 = Types.elabType(t);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
-       //(cache,c_1) = canonCref2(cache, env, c, DAE.CREF_IDENT(n,ty2,ss), impl);
+       //(cache,c_1) = canonCref2(cache, env, c, ComponentReference.makeCrefIdent(n,ty2,ss), impl);
        (cache, c_1) = canonCref(cache, componentEnv, c, impl);
       then
-        (cache,DAE.CREF_QUAL(n,ty2, ss_1,c_1));
+        (cache,ComponentReference.makeCrefQual(n,ty2, ss_1,c_1));
 
     // failtrace
     case (cache,env,cr,_)
