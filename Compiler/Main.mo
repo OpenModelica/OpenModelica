@@ -43,6 +43,7 @@ package Main
 
 protected import Absyn;
 protected import AbsynDep;
+protected import BackendDAE;
 protected import Parser;
 protected import Dump;
 protected import DumpGraphviz;
@@ -760,9 +761,9 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
-      DAELow.DAELow dlow,dlow_1;
+      BackendDAE.DAELow dlow,dlow_1;
       list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
+      array<Integer> v1,v2;
       list<list<Integer>> comps;
       list<SCode.Class> p;
       Absyn.Program ap;
@@ -785,7 +786,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
@@ -826,19 +827,19 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
-  input DAELow.DAELow inDAELow1;
-  input Integer[:] inIntegerArray2;
-  input Integer[:] inIntegerArray3;
+  input BackendDAE.DAELow inDAELow1;
+  input array<Integer> inIntegerArray2;
+  input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer n,nx,ny,np;
-      DAELow.DAELow indexed_dae,indexed_dae_1,dae;
+      BackendDAE.DAELow indexed_dae,indexed_dae_1,dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
-      Integer[:] ass1,ass2;
+      array<Integer> ass1,ass2;
       list<list<Integer>> comps;
     case (_,_,_,_)
       equation
@@ -891,17 +892,17 @@ protected function simcodegen
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
-  input DAELow.DAELow inDAELow5;
-  input Integer[:] inIntegerArray6;
-  input Integer[:] inIntegerArray7;
-  input DAELow.IncidenceMatrix inIncidenceMatrix8;
-  input DAELow.IncidenceMatrixT inIncidenceMatrixT9;
+  input BackendDAE.DAELow inDAELow5;
+  input array<Integer> inIntegerArray6;
+  input array<Integer> inIntegerArray7;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
   input list<list<Integer>> inIntegerLstLst10;
 algorithm
   _:=
   matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
-      DAELow.DAELow indexed_dlow,indexed_dlow_1,dlow;
+      BackendDAE.DAELow indexed_dlow,indexed_dlow_1,dlow;
       String cname_str,filename,funcfilename,init_filename,makefilename,file_dir;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -909,7 +910,7 @@ algorithm
       list<SCode.Class> p;
       Absyn.Program ap;
       DAE.DAElist dae;
-      Integer[:] ass1,ass2;
+      array<Integer> ass1,ass2;
       list<Integer>[:] m,mt;
       list<list<Integer>> comps;
       Env.Cache cache;

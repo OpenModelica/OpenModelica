@@ -10,7 +10,7 @@ SimCodeC.mo : SimCodeC.tpl SimCodeTV.mo
 	cp -pf $@ ../../
 	@echo " "
 
-SimCodeCSharp.mo : SimCodeCSharp.tpl
+SimCodeCSharp.mo : SimCodeCSharp.tpl SimCodeTV.mo
 	@echo " ** SimCodeCSharp template compilation ** "
 	$(OMC) +d=failtrace $<
 	cp -pf $@ ../../

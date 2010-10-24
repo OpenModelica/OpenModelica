@@ -5,7 +5,7 @@ protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
 public import Tpl;
 
 public import SimCode;
-public import DAELow;
+public import BackendDAE;
 public import System;
 public import Absyn;
 public import DAE;
@@ -1068,7 +1068,7 @@ algorithm
       local
         DAE.ComponentRef i_name;
         String i_comment;
-        DAELow.VarKind i_varKind;
+        BackendDAE.VarKind i_varKind;
         Integer i_index;
         Tpl.Text i_alias;
         Boolean ret_4;
@@ -1120,7 +1120,7 @@ end ScalarVariableAttribute;
 
 public function getVariablity
   input Tpl.Text in_txt;
-  input DAELow.VarKind in_i_varKind;
+  input BackendDAE.VarKind in_i_varKind;
 
   output Tpl.Text out_txt;
 algorithm
@@ -1130,19 +1130,19 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           DAELow.DISCRETE() )
+           BackendDAE.DISCRETE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("discrete"));
       then txt;
 
     case ( txt,
-           DAELow.PARAM() )
+           BackendDAE.PARAM() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("parameter"));
       then txt;
 
     case ( txt,
-           DAELow.CONST() )
+           BackendDAE.CONST() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("constant"));
       then txt;

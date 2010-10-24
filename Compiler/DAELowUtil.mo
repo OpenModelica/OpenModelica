@@ -47,18 +47,19 @@ package DAELowUtil
   It also includes the tarjan algorithm to detect strong components
   in the BLT sorting."
 
+public import BackendDAE;
 public import DAE;
 public import ComponentReference;
 public import Exp;
 public import Util;
-public import DAELow;
 
+protected import DAELow;
 protected import Debug;
 
 public function checkDEALowWithErrorMsg"function: checkDEALowWithErrorMsg
   author: Frenkel TUD
   run checkDEALow and prints all errors"
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
 algorithm  
   expCrefs := checkDEALow(inDAELow);
@@ -98,16 +99,16 @@ public function checkDEALow "function: checkDEALow
   part of the DAELow object. Returns all component references
   which not part of the DAELow object. 
 "
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
 algorithm
   outBool:=
   matchcontinue (inDAELow)
     local
-      DAELow.Variables vars1,vars2,allvars;
-      list<DAELow.Var> varlst1,varlst2,allvarslst;
+      BackendDAE.Variables vars1,vars2,allvars;
+      list<BackendDAE.Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs;
-    case (DAELow.DAELOW(orderedVars = vars1,knownVars = vars2))
+    case (BackendDAE.DAELOW(orderedVars = vars1,knownVars = vars2))
       equation
         varlst1 = DAELow.varList(vars1);
         varlst2 = DAELow.varList(vars2);
@@ -126,14 +127,14 @@ end checkDEALow;
 
 protected function checkDEALowExp
   input DAE.Exp inExp;
-  input DAELow.Variables inVars;
+  input BackendDAE.Variables inVars;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
 algorithm
   outExpCrefs :=
   matchcontinue (inExp,inVars)
     local  
       DAE.Exp exp;
-      DAELow.Variables vars;
+      BackendDAE.Variables vars;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
@@ -146,13 +147,13 @@ algorithm
 end checkDEALowExp;
 
 protected function traversecheckDEALowExp
-	input tuple<DAE.Exp, tuple<DAELow.Variables,list<DAE.ComponentRef>>> inTuple;
-	output tuple<DAE.Exp, tuple<DAELow.Variables,list<DAE.ComponentRef>>> outTuple;
+	input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> inTuple;
+	output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> outTuple;
 algorithm
 	outTuple := matchcontinue(inTuple)
 		local
 			DAE.Exp e;
-			DAELow.Variables vars;
+			BackendDAE.Variables vars;
 			DAE.ComponentRef cr;
 			list<DAE.ComponentRef> crefs;
 		case ((e as (DAE.CREF(DAE.CREF_IDENT("time",_,_), _)),(vars,crefs)))

@@ -53,6 +53,7 @@ package SimCode
 "
 
 public import Algorithm;
+public import BackendDAE;
 public import ComponentReference;
 public import Exp;
 public import Values;
@@ -115,7 +116,7 @@ uniontype SimCode
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> removedEquations;
     list<DAE.Statement> algorithmAndEquationAsserts;
-    list<DAELow.ZeroCrossing> zeroCrossings;
+    list<BackendDAE.ZeroCrossing> zeroCrossings;
     list<list<SimVar>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
@@ -128,7 +129,7 @@ uniontype SimCode
     String fileNamePrefix;
     
     //*** a protected section *** not exported to SimCodeTV
-    DAELow.DAELow daeLow "hidden from typeview - exprerimental; used by cref2simvar() for cref -> SIMVAR mapping available in templates";
+    BackendDAE.DAELow daeLow "hidden from typeview - exprerimental; used by cref2simvar() for cref -> SIMVAR mapping available in templates";
   
   end SIMCODE;
 end SimCode;
@@ -209,7 +210,7 @@ end SimVars;
 uniontype SimVar
   record SIMVAR
     DAE.ComponentRef name;
-    DAELow.VarKind varKind;
+    BackendDAE.VarKind varKind;
     String comment;
     String unit;
     String displayUnit;
@@ -359,8 +360,8 @@ end SimEqSystem;
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
     list<DAE.ComponentRef> conditionVars;
-    list<DAELow.ReinitStatement> reinits;
-    Option<DAELow.WhenEquation> whenEq;
+    list<BackendDAE.ReinitStatement> reinits;
+    Option<BackendDAE.WhenEquation> whenEq;
     list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
   end SIM_WHEN_CLAUSE;
 end SimWhenClause;
@@ -584,25 +585,25 @@ public function cref2simvar
 algorithm
   outSimVar := matchcontinue(inCref, simCode)
     local
-      DAELow.Variables vars;
-      DAELow.Var daelowvar;
+      BackendDAE.Variables vars;
+      BackendDAE.Var daelowvar;
       DAE.ComponentRef cref, badcref;
       SimVar sv;
     
-    case (cref, SIMCODE(daeLow = DAELow.DAELOW(orderedVars = vars))) 
+    case (cref, SIMCODE(daeLow = BackendDAE.DAELOW(orderedVars = vars))) 
       equation
         ((daelowvar :: _), _) = DAELow.getVar(cref, vars);        
       then dlowvarToSimvar(daelowvar);
     
-    case (cref, SIMCODE(daeLow = DAELow.DAELOW(knownVars = vars))) 
+    case (cref, SIMCODE(daeLow = BackendDAE.DAELOW(knownVars = vars))) 
       equation
         ((daelowvar :: _), _) = DAELow.getVar(cref, vars);        
       then dlowvarToSimvar(daelowvar);
     
-    case (DAE.CREF_QUAL(ident = "$DER", componentRef = cref), SIMCODE(daeLow = DAELow.DAELOW(orderedVars = vars))) 
+    case (DAE.CREF_QUAL(ident = "$DER", componentRef = cref), SIMCODE(daeLow = BackendDAE.DAELOW(orderedVars = vars))) 
       equation
         ((daelowvar :: _), _) = DAELow.getVar(cref, vars);
-        DAELow.VAR(varKind = DAELow.STATE()) = daelowvar;
+        BackendDAE.VAR(varKind = BackendDAE.STATE()) = daelowvar;
         sv = dlowvarToSimvar(daelowvar);
       then derVarFromStateVar(sv);
     
@@ -610,7 +611,7 @@ algorithm
       equation
         badcref = DAE.CREF_IDENT("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
       then
-        SIMVAR(badcref, DAELow.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
   end matchcontinue;
 end cref2simvar;
 
@@ -658,18 +659,18 @@ public function generateModelCodeFMU
    template-based code generator on it."
   input SCode.Program program;
   input DAE.DAElist dae;
-  input DAELow.DAELow indexedDAELow;
+  input BackendDAE.DAELow indexedDAELow;
   input DAE.FunctionTree functionTree;
   input Absyn.Path className;
   input String filenamePrefix;
   input String fileDir;
   input array<Integer> equationIndices;
   input array<Integer> variableIndices;
-  input DAELow.IncidenceMatrix incidenceMatrix;
-  input DAELow.IncidenceMatrix incidenceMatrixT;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input BackendDAE.IncidenceMatrix incidenceMatrixT;
   input list<list<Integer>> strongComponents;
   input Option<SimulationSettings> simSettingsOpt;
-  output DAELow.DAELow outIndexedDAELow;
+  output BackendDAE.DAELow outIndexedDAELow;
   output list<String> libs;
   output Real timeSimCode;
   output Real timeTemplates;
@@ -709,7 +710,7 @@ public function translateModelFMU
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-  output DAELow.DAELow outDAELow;
+  output BackendDAE.DAELow outDAELow;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
@@ -721,7 +722,7 @@ algorithm
       list<SCode.Class> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
       list<list<Integer>> comps;
@@ -751,7 +752,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
@@ -786,18 +787,18 @@ public function generateModelCode
    template-based code generator on it."
   input SCode.Program program;
   input DAE.DAElist dae;
-  input DAELow.DAELow indexedDAELow;
+  input BackendDAE.DAELow indexedDAELow;
   input DAE.FunctionTree functionTree;
   input Absyn.Path className;
   input String filenamePrefix;
   input String fileDir;
   input array<Integer> equationIndices;
   input array<Integer> variableIndices;
-  input DAELow.IncidenceMatrix incidenceMatrix;
-  input DAELow.IncidenceMatrix incidenceMatrixT;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input BackendDAE.IncidenceMatrix incidenceMatrixT;
   input list<list<Integer>> strongComponents;
   input Option<SimulationSettings> simSettingsOpt;
-  output DAELow.DAELow outIndexedDAELow;
+  output BackendDAE.DAELow outIndexedDAELow;
   output list<String> libs;
   output Real timeSimCode;
   output Real timeTemplates;
@@ -836,7 +837,7 @@ public function translateModel
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-  output DAELow.DAELow outDAELow;
+  output BackendDAE.DAELow outDAELow;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
@@ -848,7 +849,7 @@ algorithm
       list<SCode.Class> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
       list<list<Integer>> comps;
@@ -878,7 +879,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
@@ -985,13 +986,13 @@ end isFunctionPtr;
 public function createFunctions
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   input DAE.FunctionTree functionTree;
   input Absyn.Path inPath;
   output list<String> libs;
   output list<String> includes;
   output list<Function> functions;
-  output DAELow.DAELow outDAELow;
+  output BackendDAE.DAELow outDAELow;
   output DAE.DAElist outDAE;
 algorithm
   (libs, includes, functions, outDAELow, outDAE) :=
@@ -1003,7 +1004,7 @@ algorithm
       list<DAE.Function> funcelems,part_func_elems, funcRefElems, funcNormal;
       list<SCode.Class> p;
       DAE.DAElist dae;
-      DAELow.DAELow dlow;
+      BackendDAE.DAELow dlow;
       Absyn.Path path;
       list<Function> fns;
       SimCode sc;
@@ -1037,7 +1038,7 @@ public function getCalledFunctions
 "Goes through the DAELow structure, finds all function calls, and returns them
 in a list. Removes duplicates."
   input DAE.DAElist dae;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<Absyn.Path> res;
   list<DAE.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
   list<Absyn.Path> calledfuncs;
@@ -1054,7 +1055,7 @@ public function getCalledFunctionReferences
 "Goes through the DAELow structure, finds all function references calls, 
  and returns them in a list. Removes duplicates."
   input DAE.DAElist dae;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<Absyn.Path> res;
   list<DAE.Exp> explist,fcallexps;
   list<Absyn.Path> calledfuncs;
@@ -1077,7 +1078,7 @@ end getCalledFunctionReferences;
 
 protected function generateExternalObjectIncludes
 "Generates the library paths for external objects"
-  input DAELow.DAELow daelow;
+  input BackendDAE.DAELow daelow;
   output list<String> includes;
   output list<String> libs;
 algorithm
@@ -1085,8 +1086,8 @@ algorithm
   matchcontinue (daelow)
     local
       list<list<String>> libsL,includesL;
-      DAELow.ExternalObjectClasses extObjs;
-    case DAELow.DAELOW(extObjClasses = extObjs)
+      BackendDAE.ExternalObjectClasses extObjs;
+    case BackendDAE.DAELOW(extObjClasses = extObjs)
       equation
         (includesL, libsL) = Util.listMap_2(extObjs, generateExternalObjectInclude);
         includes = Util.listListUnion(includesL);
@@ -1097,7 +1098,7 @@ end generateExternalObjectIncludes;
 
 protected function generateExternalObjectInclude
 "Helper function to generateExteralObjectInclude"
-  input DAELow.ExternalObjectClass extObjCls;
+  input BackendDAE.ExternalObjectClass extObjCls;
   output list<String> includes;
   output list<String> libs;
 algorithm
@@ -1106,7 +1107,7 @@ algorithm
     local
       Option<Absyn.Annotation> ann1,ann2;
       list<String> includes1,libs1,includes2,libs2;
-    case (DAELow.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
+    case (BackendDAE.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
       											destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
       equation
         (includes1,libs1) = generateExtFunctionIncludes(ann1);
@@ -1478,11 +1479,11 @@ end elaborateStatement;
 // Copied from SimCodegen.generateSimulationCode.
 protected function createSimCode
   input DAE.FunctionTree functionTree;
-  input DAELow.DAELow inDAELow2;
+  input BackendDAE.DAELow inDAELow2;
   input array<Integer> inIntegerArray3;
   input array<Integer> inIntegerArray4;
-  input DAELow.IncidenceMatrix inIncidenceMatrix5;
-  input DAELow.IncidenceMatrixT inIncidenceMatrixT6;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix5;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT6;
   input list<list<Integer>> inIntegerLstLst7;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -1502,7 +1503,7 @@ algorithm
       Integer n_h,nres,maxDelayedExpIndex;
       list<HelpVarInfo> helpVarInfo,helpVarInfo1;
       DAE.DAElist dae;
-      DAELow.DAELow dlow,dlow2;
+      BackendDAE.DAELow dlow,dlow2;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
       Absyn.Path class_;
@@ -1519,7 +1520,7 @@ algorithm
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<Algorithm.Statement> algorithmAndEquationAsserts;
-      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
@@ -1528,8 +1529,8 @@ algorithm
       list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
-      DAELow.Variables orderedVars,knownVars,vars;
-      list<DAELow.Var> varlst,varlst1,varlst2;
+      BackendDAE.Variables orderedVars,knownVars,vars;
+      list<BackendDAE.Var> varlst,varlst1,varlst2;
       list<Function> functionList;
       
       list<JacobianMatrix> LinearMats;
@@ -1575,15 +1576,15 @@ algorithm
       	varlst1 = DAELow.varList(knownVars);
       	varlst2 = listAppend(varlst,varlst1);  
       	vars = DAELow.listVar(varlst2);         
-        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
-        (allEquationsPlusWhen,_) = listMap1_2(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
-        (stateContEquations,_) = listMap1_2(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
-        (nonStateContEquations,_) = listMap1_2(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
-        (nonStateDiscEquations,_) = listMap1_2(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
-        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
-        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
-        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
-        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (allEquationsPlusWhen,_) = listMap1_2(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (stateContEquations,_) = listMap1_2(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (nonStateContEquations,_) = listMap1_2(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (nonStateDiscEquations,_) = listMap1_2(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));        
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));        
         // add equations with only parameters as division expression
         allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
         parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
@@ -1631,7 +1632,7 @@ end createSimCode;
 
 protected function createLinearModelMatrixes
   input DAE.FunctionTree functions;
-  input DAELow.DAELow inDAELow2;
+  input BackendDAE.DAELow inDAELow2;
   input array<Integer> inIntegerArray3;
   input array<Integer> inIntegerArray4;
   output list<JacobianMatrix> JacobianMatrixes;
@@ -1640,11 +1641,11 @@ algorithm
   matchcontinue (functions,inDAELow2,inIntegerArray3,inIntegerArray4)
     local
       DAE.DAElist dae;
-      DAELow.DAELow dlow,deriveddlow1,deriveddlow2;
+      BackendDAE.DAELow dlow,deriveddlow1,deriveddlow2;
       array<Integer> ass1,ass2;
 
-      //DAELow.Variables v,kv;
-      list<DAELow.Var> derivedVariables, varlst,varlst1,varlst2, states, inputvars,inputvars2, outputvars, paramvars;
+      //BackendDAE.Variables v,kv;
+      list<BackendDAE.Var> derivedVariables, varlst,varlst1,varlst2, states, inputvars,inputvars2, outputvars, paramvars;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars;
 
       array<Integer> v1,v2;
@@ -1655,20 +1656,20 @@ algorithm
       list<SimEqSystem> JacDEquations;
       list<SimVar> JacAVars, JacBVars, JacCVars, JacDVars;
  
-      DAELow.Variables v,kv,exv;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray e,re,ie;
-      array<DAELow.MultiDimEquation> ae;
+      BackendDAE.Variables v,kv,exv;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray e,re,ie;
+      array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
-      DAELow.EventInfo ev;
-      DAELow.ExternalObjectClasses eoc;
-      list<DAELow.Equation> e_lst,re_lst,ie_lst;
+      BackendDAE.EventInfo ev;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<BackendDAE.Equation> e_lst,re_lst,ie_lst;
       list<DAE.Algorithm> algs;
-      list<DAELow.MultiDimEquation> ae_lst;
+      list<BackendDAE.MultiDimEquation> ae_lst;
  
       list<JacobianMatrix> LinearMats;   
 
-    case (functions,dlow as DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),ass1,ass2)
+    case (functions,dlow as BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),ass1,ass2)
       equation
         true = RTOpts.debugFlag("linearization");
         Debug.fcall("linmodel",print,"Generate Linear Model Matrices\n");
@@ -1697,7 +1698,7 @@ algorithm
         //e_lst = replaceDerOpInEquationList(e_lst);
         //e_lst = solveDAELow(e_lst, varlst, arrayList(ass2));
         //e = DAELow.listEquation(e_lst);
-        //dlow = DAELow.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        //dlow = BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
         // Create SimCode structure for Jacobian or rather for Linearization
 
         // Differentiate the System w.r.t states for matrices A and C
@@ -1761,8 +1762,8 @@ algorithm
 end createLinearModelMatrixes;
 
 protected function varIndexComparerDAELow
-  input DAELow.Var lhs;
-  input DAELow.Var rhs;
+  input BackendDAE.Var lhs;
+  input BackendDAE.Var rhs;
   output Boolean res;
 algorithm
   res :=
@@ -1770,13 +1771,13 @@ algorithm
       local
       Integer lhsIndex;
       Integer rhsIndex;
-    case (DAELow.VAR(index=lhsIndex), DAELow.VAR(index=rhsIndex))
+    case (BackendDAE.VAR(index=lhsIndex), BackendDAE.VAR(index=rhsIndex))
       then rhsIndex < lhsIndex;
   end matchcontinue;
 end varIndexComparerDAELow;
 
 protected function extractDelayedExpressions
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<tuple<Integer, DAE.Exp>> delayedExps;
   output Integer maxDelayedExpIndex;
 algorithm
@@ -1838,16 +1839,16 @@ algorithm
 end createMakefileParams;
 
 protected function generateHelpVarInfo
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input list<list<Integer>> comps;
   output list<HelpVarInfo> outHelpVarInfo;
-  output DAELow.DAELow outDAELow;
+  output BackendDAE.DAELow outDAELow;
 algorithm
   (outHelpVarInfo, outDAELow) :=
   matchcontinue (dlow, comps)
     case (dlow, comps)
       local
-        DAELow.DAELow dlow2;
+        BackendDAE.DAELow dlow2;
         list<HelpVarInfo> helpVarInfo1;
         list<HelpVarInfo> helpVarInfo;
       equation
@@ -1859,7 +1860,7 @@ end generateHelpVarInfo;
 
 protected function helpVarInfoFromWhenConditionChecks
 "Return a list of help variables that were introduced by when conditions?"
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   input list<list<Integer>> comps;
   output list<HelpVarInfo> helpVarList;
 algorithm
@@ -1867,14 +1868,14 @@ algorithm
   matchcontinue (inDAELow, comps)
     local
       list<Integer> orderOfEquations,orderOfEquations_1;
-      list<DAELow.Equation> eqnl;
+      list<BackendDAE.Equation> eqnl;
       Integer n;
       list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
-      DAELow.DAELow dlow;
-      DAELow.EquationArray eqns;
-      list<DAELow.WhenClause> whenClauseList;
+      BackendDAE.DAELow dlow;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.WhenClause> whenClauseList;
       list<list<Integer>> blocks;
-    case ((dlow as DAELow.DAELOW(orderedEqs = eqns,eventInfo = DAELow.EVENT_INFO(whenClauseLst = whenClauseList))),blocks)
+    case ((dlow as BackendDAE.DAELOW(orderedEqs = eqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList))),blocks)
       equation
         orderOfEquations = generateEquationOrder(blocks);
         eqnl = DAELow.equationList(eqns);
@@ -1901,21 +1902,21 @@ For all discrete variables in the model, generate code that checks if they have 
 that add events to the event queue: if (change(<discretevar>)) { AddEvent(c1);...;AddEvent(cn)}
 
 "
-  input DAELow.DAELow daelow;
+  input BackendDAE.DAELow daelow;
   input list<list<Integer>> comps;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input DAELow.IncidenceMatrix m;
-  input DAELow.IncidenceMatrixT mT;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
   output String outString;
 algorithm
   outString := matchcontinue(daelow,comps,ass1,ass2,m,mT)
     local String s1,s2;
       list<Integer> b;
       list<list<Integer>> blocks;
-      DAELow.Variables v;
-      list<DAELow.Var> vLst;
-    case (daelow as DAELow.DAELOW(orderedVars = v),blocks,ass1,ass2,m,mT)
+      BackendDAE.Variables v;
+      list<BackendDAE.Var> vLst;
+    case (daelow as BackendDAE.DAELOW(orderedVars = v),blocks,ass1,ass2,m,mT)
       equation
       vLst = DAELow.varList(v);
       vLst = Util.listSelect(vLst,DAELow.isVarDiscrete); // select all discrete vars.
@@ -1928,9 +1929,9 @@ algorithm
 end buildDiscreteVarChanges;
 
 protected function buildDiscreteVarChangesVar "help function to buildDiscreteVarChanges"
-  input DAELow.Var var;
-  input DAELow.DAELow daelow;
-  input DAELow.IncidenceMatrixT mT;
+  input BackendDAE.Var var;
+  input BackendDAE.DAELow daelow;
+  input BackendDAE.IncidenceMatrixT mT;
   output String outString;
 algorithm
   outString := matchcontinue(var,daelow,mT)
@@ -1938,7 +1939,7 @@ algorithm
       Exp.ComponentRef cr;
       Integer varIndx;
       list<Integer> eqns;
-    case(var as DAELow.VAR(varName=cr,index=varIndx), daelow,mT) equation
+    case(var as BackendDAE.VAR(varName=cr,index=varIndx), daelow,mT) equation
       eqns = mT[varIndx+1]; // eqns containing var
       true = crefNotInWhenEquation(cr,daelow,eqns);
       outString = buildDiscreteVarChangesAddEvent(0,cr);
@@ -1951,21 +1952,21 @@ end buildDiscreteVarChangesVar;
 protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations
 given as indices which is a when_equation"
   input Exp.ComponentRef cr;
-  input DAELow.DAELow daelow;
+  input BackendDAE.DAELow daelow;
   input list<Integer> eqns;
   output Boolean res;
 algorithm
   res := matchcontinue(cr,daelow,eqns)
   local
-    DAELow.EquationArray eqs;
+    BackendDAE.EquationArray eqs;
     Integer e;
     Exp.ComponentRef cr2;
     DAE.Exp exp;
     Boolean b1,b2;
     case(cr,daelow,{}) then true;
-    case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) 
+    case(cr,daelow as BackendDAE.DAELOW(orderedEqs=eqs),e::eqns) 
       equation
-        DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
+        BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
         //We can asume the same component refs are solved in any else-branch.
         b1 = Exp.crefEqual(cr,cr2);
         b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
@@ -2204,20 +2205,20 @@ algorithm
 end elaborateRecordDeclarationsForMetarecords;
 
 protected function createExtObjInfo
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output ExtObjInfo extObjInfo;
 algorithm
   extObjInfo :=
   matchcontinue (dlow)
     local
-      DAELow.Variables evars;
-      DAELow.ExternalObjectClasses eclasses;
-      list<DAELow.Var> evarLst;
+      BackendDAE.Variables evars;
+      BackendDAE.ExternalObjectClasses eclasses;
+      list<BackendDAE.Var> evarLst;
       list<String> includes;
       list<ExtConstructor> constructors;
       list<ExtDestructor> destructors;
       list<ExtAlias> aliases;
-    case (dlow as DAELow.DAELOW(externalObjects=evars, extObjClasses=eclasses))
+    case (dlow as BackendDAE.DAELOW(externalObjects=evars, extObjClasses=eclasses))
       equation
         evarLst = DAELow.varList(evars);
         (includes, _) = generateExternalObjectIncludes(dlow);
@@ -2227,8 +2228,8 @@ algorithm
 end createExtObjInfo;
 
 protected function extractExtObjInfo2
-  input list<DAELow.Var> varLst;
-  input DAELow.ExternalObjectClasses eclasses;
+  input list<BackendDAE.Var> varLst;
+  input BackendDAE.ExternalObjectClasses eclasses;
   output list<ExtConstructor> constructors;
   output list<ExtDestructor> destructors;
   output list<ExtAlias> aliases;
@@ -2236,8 +2237,8 @@ algorithm
   (constructors, destructors, aliases) :=
   matchcontinue (varLst, eclasses)
     local
-      DAELow.Var v;
-      list<DAELow.Var> vs;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
       list<ExtConstructor> constructors1;
       list<ExtDestructor> destructors1;
       list<ExtAlias> aliases1;
@@ -2255,8 +2256,8 @@ algorithm
 end extractExtObjInfo2;
 
 protected function createExtObjInfoSingle
-  input DAELow.Var var;
-  input DAELow.ExternalObjectClasses eclasses;
+  input BackendDAE.Var var;
+  input BackendDAE.ExternalObjectClasses eclasses;
   output list<ExtConstructor> constructors;
   output list<ExtDestructor> destructors;
   output list<ExtAlias> aliases;
@@ -2273,18 +2274,18 @@ algorithm
     case (_, {})
       then fail();
     // alias
-    case (DAELow.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),
-                     varKind=DAELow.EXTOBJ(_)), _)
+    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),
+                     varKind=BackendDAE.EXTOBJ(_)), _)
       then ({}, {}, {(name, cr)});
-    case (DAELow.VAR(varName=name), {})
+    case (BackendDAE.VAR(varName=name), {})
       equation
         print("generateExternalObjectConstructorCall for var:");
         print(Exp.printComponentRefStr(name));print(" failed\n");
       then fail();
     // found class
-    case (DAELow.VAR(varName=name, bindExp=SOME(DAE.CALL(expLst=args)),
-                     varKind=DAELow.EXTOBJ(path1)),
-          DAELow.EXTOBJCLASS(
+    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CALL(expLst=args)),
+                     varKind=BackendDAE.EXTOBJ(path1)),
+          BackendDAE.EXTOBJCLASS(
             path=path2,
             constructor=DAE.FUNCTION(
               functions={DAE.FUNCTION_EXT(
@@ -2304,12 +2305,12 @@ algorithm
 end createExtObjInfoSingle;
 
 protected function createAlgorithmAndEquationAsserts
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<Algorithm.Statement> algorithmAndEquationAsserts;
 algorithm
   algorithmAndEquationAsserts :=
   matchcontinue (dlow)
-    case(DAELow.DAELOW(algorithms=algs))
+    case(BackendDAE.DAELOW(algorithms=algs))
       local
         array<Algorithm.Algorithm> algs;
         list<Algorithm.Statement> res;
@@ -2343,15 +2344,15 @@ algorithm
 end createAlgorithmAndEquationAssertsFromAlgs;
 
 protected function createRemovedEquations
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<SimEqSystem> removedEquations;
 algorithm
   removedEquations :=
   matchcontinue (dlow)
     local
-      DAELow.EquationArray r;
-      list<DAELow.Equation> removedEquationsTmp;
-    case (DAELow.DAELOW(removedEqs=r))
+      BackendDAE.EquationArray r;
+      list<BackendDAE.Equation> removedEquationsTmp;
+    case (BackendDAE.DAELOW(removedEqs=r))
       equation
         removedEquationsTmp = DAELow.equationList(r);
 
@@ -2362,17 +2363,17 @@ algorithm
 end createRemovedEquations;
 
 protected function extractDiscreteModelVars
-  input DAELow.DAELow dlow;
-  input DAELow.IncidenceMatrixT mT;
+  input BackendDAE.DAELow dlow;
+  input BackendDAE.IncidenceMatrixT mT;
   output list<DAE.ComponentRef> discreteModelVars;
 algorithm
   discreteModelVars :=
   matchcontinue (dlow, mT)
     local
-      DAELow.Variables v;
-      list<DAELow.Var> vLst;
+      BackendDAE.Variables v;
+      list<BackendDAE.Var> vLst;
       list<DAE.ComponentRef> vLst2;
-    case (DAELow.DAELOW(orderedVars=v), mT)
+    case (BackendDAE.DAELOW(orderedVars=v), mT)
       equation
         vLst = DAELow.varList(v);
         // select all discrete vars.
@@ -2386,9 +2387,9 @@ algorithm
 end extractDiscreteModelVars;
 
 protected function varNotSolvedInWhen
-  input DAELow.Var var;
-  input DAELow.DAELow dlow;
-  input DAELow.IncidenceMatrixT mT;
+  input BackendDAE.Var var;
+  input BackendDAE.DAELow dlow;
+  input BackendDAE.IncidenceMatrixT mT;
   output Boolean include;
 algorithm
   include :=
@@ -2397,7 +2398,7 @@ algorithm
       Exp.ComponentRef cr;
       Integer varIndx;
       list<Integer> eqns;
-    case(var as DAELow.VAR(varName=cr, index=varIndx), dlow, mT)
+    case(var as BackendDAE.VAR(varName=cr, index=varIndx), dlow, mT)
       equation
         eqns = mT[varIndx + 1];
         true = crefNotInWhenEquation(cr, dlow, eqns);
@@ -2408,15 +2409,15 @@ algorithm
 end varNotSolvedInWhen;
 
 protected function createSimWhenClauses
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input list<HelpVarInfo> helpVarInfo;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
   matchcontinue (dlow,helpVarInfo)
     local
-      list<DAELow.WhenClause> wc;
-    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(whenClauseLst=wc)),helpVarInfo)
+      list<BackendDAE.WhenClause> wc;
+    case (BackendDAE.DAELOW(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc)),helpVarInfo)
       equation
         simWhenClauses = createSimWhenClausesWithEqs(wc, wc, helpVarInfo, dlow, 0);
       then
@@ -2425,27 +2426,27 @@ algorithm
 end createSimWhenClauses;
 
 protected function createSimWhenClausesWithEqs
-  input list<DAELow.WhenClause> whenClauses;
-  input list<DAELow.WhenClause> allwhenClauses;
+  input list<BackendDAE.WhenClause> whenClauses;
+  input list<BackendDAE.WhenClause> allwhenClauses;
   input list<HelpVarInfo> helpVarInfo;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input Integer currentWhenClauseIndex;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
   matchcontinue (whenClauses, allwhenClauses, helpVarInfo, dlow, currentWhenClauseIndex)
     local
-      DAELow.WhenClause whenClause;
-      list<DAELow.WhenClause> wc,wc1;
-      DAELow.EquationArray eqs;
-      list<DAELow.Equation> eqsLst;
-      Option<DAELow.WhenEquation> whenEq;
+      BackendDAE.WhenClause whenClause;
+      list<BackendDAE.WhenClause> wc,wc1;
+      BackendDAE.EquationArray eqs;
+      list<BackendDAE.Equation> eqsLst;
+      Option<BackendDAE.WhenEquation> whenEq;
       SimWhenClause simWhenClause;
       Integer nextIndex;
       list<SimWhenClause> simWhenClauses;
     case ({}, _, _, _, _)
       then {};
-    case (whenClause :: wc, wc1, helpVarInfo, DAELow.DAELOW(orderedEqs=eqs), currentWhenClauseIndex)
+    case (whenClause :: wc, wc1, helpVarInfo, BackendDAE.DAELOW(orderedEqs=eqs), currentWhenClauseIndex)
       equation
         eqsLst = DAELow.equationList(eqs);
         whenEq = findWhenEquation(eqsLst, currentWhenClauseIndex);
@@ -2457,17 +2458,17 @@ algorithm
 end createSimWhenClausesWithEqs;
 
 protected function findWhenEquation
-  input list<DAELow.Equation> eqs;
+  input list<BackendDAE.Equation> eqs;
   input Integer index;
-  output Option<DAELow.WhenEquation> whenEq;
+  output Option<BackendDAE.WhenEquation> whenEq;
 algorithm
   whenEq :=
   matchcontinue (eqs, index)
     local
-      DAELow.WhenEquation eq,eq1;
-      list<DAELow.Equation> restEqs;
+      BackendDAE.WhenEquation eq,eq1;
+      list<BackendDAE.Equation> restEqs;
       Integer eqindex;
-    case ((DAELow.WHEN_EQUATION(whenEquation = eq)) :: restEqs, index)
+    case ((BackendDAE.WHEN_EQUATION(whenEquation = eq)) :: restEqs, index)
       equation
         eq1 = findWhenEquation1(eq,index);
       then SOME(eq1);
@@ -2483,26 +2484,26 @@ end findWhenEquation;
 protected function findWhenEquation1
 "function: findWhenEquation1
   Helper function to findWhenEquation."
-  input DAELow.WhenEquation inWEqn;
+  input BackendDAE.WhenEquation inWEqn;
   input Integer inInteger;
-  output DAELow.WhenEquation outWEqn;
+  output BackendDAE.WhenEquation outWEqn;
 algorithm
   outWEqn := matchcontinue (inWEqn,inInteger)
     local
       Integer wc_ind,index;
-      DAELow.WhenEquation weqn,we,we1;
+      BackendDAE.WhenEquation weqn,we,we1;
                
-    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = NONE()),index)
+    case(weqn as BackendDAE.WHEN_EQ(index = wc_ind,elsewhenPart = NONE()),index)
       equation
         (index == wc_ind) = true;
       then
         weqn;  
-    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+    case(weqn as BackendDAE.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
       equation
         (index == wc_ind) = true;
       then
         weqn;              
-    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+    case(weqn as BackendDAE.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
       equation
         we1 = findWhenEquation1(we,index);
       then
@@ -2511,9 +2512,9 @@ algorithm
 end findWhenEquation1;
 
 protected function whenClauseToSimWhenClause
-  input DAELow.WhenClause whenClause;
-  input Option<DAELow.WhenEquation> whenEq;
-  input list<DAELow.WhenClause> whenClauses;
+  input BackendDAE.WhenClause whenClause;
+  input Option<BackendDAE.WhenEquation> whenEq;
+  input list<BackendDAE.WhenClause> whenClauses;
   input list<HelpVarInfo> helpVarInfo;
   input Integer CurrentIndex;
   output SimWhenClause simWhenClause;
@@ -2522,13 +2523,13 @@ algorithm
   matchcontinue (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
     local
       DAE.Exp cond;
-      input list<DAELow.WhenClause> wc;
-      list<DAELow.ReinitStatement> reinits;
+      input list<BackendDAE.WhenClause> wc;
+      list<BackendDAE.ReinitStatement> reinits;
       list<DAE.ComponentRef> conditionVars;
       Integer index_;
       list<DAE.Exp> conditions;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
-    case (DAELow.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq, wc, helpVarInfo,CurrentIndex)
+    case (BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq, wc, helpVarInfo,CurrentIndex)
       equation
         conditions = getConditionList(wc, CurrentIndex);
         conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
@@ -2542,7 +2543,7 @@ protected function createEquations
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<list<Integer>> comps;
@@ -2554,28 +2555,28 @@ algorithm
     local
       list<Integer> comp;
       list<list<Integer>> restComps;
-      list<DAELow.Equation> equations_2;
+      list<BackendDAE.Equation> equations_2;
       SimEqSystem equation_;
       Integer index;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Var v;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Var v;
       list<Integer> zcEqns;
     case (includeWhen, skipDiscInZc, genDiscrete, dlow, ass1, ass2, {}, helpVarInfo)
       then {};
     /* ignore when equations if we should not generate them */
     case (false, skipDiscInZc, genDiscrete, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
-        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
-        (DAELow.WHEN_EQUATION(_,_),_) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (BackendDAE.WHEN_EQUATION(_,_),_) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         equations = createEquations(false, skipDiscInZc, genDiscrete, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equations;
     /* ignore discrete if we should not generate them */
     case (includeWhen, skipDiscInZc, false, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
-        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
-        (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (BackendDAE.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
         equations = createEquations(includeWhen, skipDiscInZc, false, dlow, ass1, ass2, restComps, helpVarInfo);
       then
@@ -2583,8 +2584,8 @@ algorithm
     /* ignore discrete in zero crossing if we should not generate them */
     case (includeWhen, true, genDiscrete, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
-        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
-        (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (BackendDAE.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
         zcEqns = DAELow.zeroCrossingsEquations(dlow);
         true = listMember(index, zcEqns);
@@ -2632,7 +2633,7 @@ protected function createEquationsLin
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
   input DAE.FunctionTree functions;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<list<Integer>> comps;
@@ -2644,12 +2645,12 @@ algorithm
     local
       list<Integer> comp;
       list<list<Integer>> restComps;
-      list<DAELow.Equation> equations_2;
+      list<BackendDAE.Equation> equations_2;
       SimEqSystem equation_;
       Integer index;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Var v;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Var v;
       list<Integer> zcEqns;
     case (includeWhen, skipDiscInZc, genDiscrete, functions, dlow, ass1, ass2, {}, helpVarInfo)
       then {};
@@ -2690,7 +2691,7 @@ end createEquationsLin;
 
 protected function createEquation
   input Integer eqNum;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<HelpVarInfo> helpVarInfo;
@@ -2700,21 +2701,21 @@ algorithm
   matchcontinue (eqNum, dlow, ass1, ass2, helpVarInfo)
     local
       list<Integer> restEqNums;
-      list<DAELow.Equation> eqnsList;
+      list<BackendDAE.Equation> eqnsList;
       Exp.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      DAELow.VarKind kind;
-      DAELow.Var v;
+      BackendDAE.VarKind kind;
+      BackendDAE.Var v;
       DAE.Exp e1;
       DAE.Exp e2;
       DAE.Exp varexp;
       DAE.Exp exp_;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Equation eqn;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
       String varname;
       String name;
       String c_name;
@@ -2727,34 +2728,34 @@ algorithm
       array<Algorithm.Algorithm> algs;
       list<DAE.Statement> algStatements;
       list<DAE.Exp> inputs,outputs;
-      DAELow.VariableArray vararr;
-      array<DAELow.MultiDimEquation> ae;
+      BackendDAE.VariableArray vararr;
+      array<BackendDAE.MultiDimEquation> ae;
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
-      list<DAELow.WhenClause> wcl;
+      list<BackendDAE.WhenClause> wcl;
       Integer wcIndex;
       DAE.ComponentRef left;
       DAE.Exp right;
       list<DAE.Exp> conditions;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
-      DAELow.WhenEquation whenEquation;
+      BackendDAE.WhenEquation whenEquation;
     /* when eq */
     case (eqNum,
-          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns, eventInfo=DAELow.EVENT_INFO(whenClauseLst=wcl)),
+          BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns, eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
           ass1, ass2, helpVarInfo)
       equation
-        (DAELow.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        DAELow.WHEN_EQ(wcIndex, left, right, _) = whenEquation;
+        (BackendDAE.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        BackendDAE.WHEN_EQ(wcIndex, left, right, _) = whenEquation;
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
       then
         SES_WHEN(left, right, conditionsWithHindex);
     /* single equation: non-state */
     case (eqNum,
-          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+          BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, helpVarInfo)
       equation
-        (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = kind))
+        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
@@ -2763,10 +2764,10 @@ algorithm
         SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
     case (eqNum,
-          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+          BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, helpVarInfo)
       equation
-        (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = DAELow.STATE()))
+        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         cr = DAELow.makeDerCref(cr);
         exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
@@ -2774,10 +2775,10 @@ algorithm
         SES_SIMPLE_ASSIGN(cr, exp_);
     /* non-state non-linear */
     case (e,
-          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2, helpVarInfo)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = kind)) =
+        ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
@@ -2789,10 +2790,10 @@ algorithm
         SES_NONLINEAR(index, resEqs, {cr});
     /* state nonlinear */
     case (e,
-          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2, helpVarInfo)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = DAELow.STATE())) =
+        ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE())) =
           getEquationAndSolvedVar(e, eqns, vars, ass2);
         cr_1 = DAELow.crefPrefixDer(cr);
         varexp = DAE.CREF(cr_1, DAE.ET_REAL());
@@ -2804,15 +2805,15 @@ algorithm
         SES_NONLINEAR(index, resEqs, {cr_1});
 
     /* Algorithm for single variable. */
-    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
+    case (e, BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
+        BackendDAE.Var v;
         DAE.ComponentRef varOutput;
         DAE.ElementSource source "the origin of the element";
       equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
@@ -2823,16 +2824,16 @@ algorithm
         SES_ALGORITHM(algStatements);
 
     /* inverse Algorithm for single variable . */
-    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
+    case (e, BackendDAE.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
+        BackendDAE.Var v;
         DAE.ComponentRef varOutput;
         String algStr,message;
         DAE.ElementSource source "the origin of the element";
       equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
@@ -2845,7 +2846,7 @@ end createEquation;
 
 protected function createEquationLin
   input Integer eqNum;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<HelpVarInfo> helpVarInfo;
@@ -2855,21 +2856,21 @@ algorithm
   matchcontinue (eqNum, dlow, ass1, ass2, helpVarInfo)
     local
       list<Integer> restEqNums;
-      list<DAELow.Equation> eqnsList;
+      list<BackendDAE.Equation> eqnsList;
       Exp.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      DAELow.VarKind kind;
-      DAELow.Var v;
+      BackendDAE.VarKind kind;
+      BackendDAE.Var v;
       DAE.Exp e1;
       DAE.Exp e2;
       DAE.Exp varexp;
       DAE.Exp exp_;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Equation eqn;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
       String varname;
       String name;
       String c_name;
@@ -2882,21 +2883,21 @@ algorithm
       array<Algorithm.Algorithm> algs;
       list<DAE.Statement> algStatements;
       list<DAE.Exp> inputs,outputs;
-      DAELow.VariableArray vararr;
-      array<DAELow.MultiDimEquation> ae;
+      BackendDAE.VariableArray vararr;
+      array<BackendDAE.MultiDimEquation> ae;
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
-      list<DAELow.WhenClause> wcl;
+      list<BackendDAE.WhenClause> wcl;
       Integer wcIndex;
       DAE.ComponentRef left;
       DAE.Exp right;
 
     /* single equation: non-state */
     case (eqNum,
-          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+          BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, helpVarInfo)
       equation
-        (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = kind))
+        (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         exp_ = Exp.solveLin(e1, e2, varexp);
@@ -2905,10 +2906,10 @@ algorithm
 /*
     // non-state non-linear 
     case (e,
-          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2, helpVarInfo)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = kind)) =
+        ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
@@ -2920,15 +2921,15 @@ algorithm
         SES_NONLINEAR(index, resEqs, {cr});
 */
     /* Algorithm for single variable. */
-    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
+    case (e, BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
+        BackendDAE.Var v;
         DAE.ComponentRef varOutput;
         DAE.ElementSource source "the origin of the element";
       equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
@@ -2939,16 +2940,16 @@ algorithm
         SES_ALGORITHM(algStatements);
 
     /* inverse Algorithm for single variable . */
-    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
+    case (e, BackendDAE.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
+        BackendDAE.Var v;
         DAE.ComponentRef varOutput;
         String algStr,message;
         DAE.ElementSource source "the origin of the element";
       equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
@@ -2987,8 +2988,8 @@ algorithm
 end addHindexForCondition;
 
 protected function createNonlinearResidualEquations
-  input list<DAELow.Equation> eqs;
-  input array<DAELow.MultiDimEquation> arrayEqs;
+  input list<BackendDAE.Equation> eqs;
+  input array<BackendDAE.MultiDimEquation> arrayEqs;
   input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output list<SimEqSystem> eqSystems;
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
@@ -3000,10 +3001,10 @@ algorithm
       DAE.ExpType tp;
       DAE.Exp res_exp,res_exp,e1,e2,e;
       String var,indx_str,stmt;
-      list<DAELow.Equation> rest,rest2;
-      array<DAELow.MultiDimEquation> aeqns;
+      list<BackendDAE.Equation> rest,rest2;
+      array<BackendDAE.MultiDimEquation> aeqns;
       VarTransform.VariableReplacements repl;
-      DAELow.Equation eq;
+      BackendDAE.Equation eq;
       list<SimEqSystem> eqSystemsRest;
       list<Integer> ds;
       list<Option<Integer>> ad;
@@ -3011,7 +3012,7 @@ algorithm
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;
       DAE.ComponentRef left;      
     case ({}, _, inEntrylst) then ({},inEntrylst);
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
       equation
         tp = Exp.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
@@ -3020,7 +3021,7 @@ algorithm
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
-    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, inEntrylst)
       equation
         res_exp = Exp.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
@@ -3028,9 +3029,9 @@ algorithm
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
     /* An array equation */
-    case ((DAELow.ARRAY_EQUATION(index=aindx) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), aeqns, inEntrylst)
       equation
-        DAELow.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
+        BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
         tp = Exp.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
@@ -3042,7 +3043,7 @@ algorithm
       then 
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst2);
         
-    case ((eq as DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(left = left, right = e2)))::rest,aeqns,inEntrylst)
+    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,aeqns,inEntrylst)
       equation
         // This following does not work. It does not take index or elseWhen into account.
         // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
@@ -3119,7 +3120,7 @@ end applyResidualReplacementsEqn;
 
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
-  input DAELow.DAELow inDAELow1;
+  input BackendDAE.DAELow inDAELow1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<Integer> inIntegerLst4;
@@ -3130,23 +3131,23 @@ algorithm
   matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
     local
       String rettp,fn;
-      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
-      list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
-      DAELow.Variables vars_1,vars,knvars,exvars;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqns_1,eqns,se,ie;
-      DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
+      list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
+      BackendDAE.Variables vars_1,vars,knvars,exvars;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns_1,eqns,se,ie;
+      BackendDAE.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
       array<list<Integer>> m,m_1,mt_1;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
       String s;
-      array<DAELow.MultiDimEquation> ae,ae1;
-      list<DAELow.MultiDimEquation> mdelst;
+      array<BackendDAE.MultiDimEquation> ae,ae1;
+      list<BackendDAE.MultiDimEquation> mdelst;
       array<Algorithm.Algorithm> al;
-      DAELow.EventInfo ev;
+      BackendDAE.EventInfo ev;
       array<Integer> ass1,ass2;
       list<Integer> block_;
-      DAELow.ExternalObjectClasses eoc;
+      BackendDAE.ExternalObjectClasses eoc;
       list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
       Integer numValues;
       list<SimVar> simVarsDisc;
@@ -3158,7 +3159,7 @@ algorithm
       String dstr,dstr1,dstr2;
       list<String> dlstr;
     /* mixed system of equations, continuous part only */
-    case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    case (false,(daelow as BackendDAE.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -3173,7 +3174,7 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        cont_subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -3184,7 +3185,7 @@ algorithm
       then
         equations_;
     /* mixed system of equations, both continous and discrete eqns*/
-    case (true,(dlow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    case (true,(dlow as BackendDAE.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -3199,7 +3200,7 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        cont_subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -3214,12 +3215,12 @@ algorithm
       then
         {SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims)};
         /* continuous system of equations try tearing algorithm*/
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    case (genDiscrete,(daelow as BackendDAE.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       local
-        DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
+        BackendDAE.DAELow subsystem_dae_1,subsystem_dae_2;
         array<Integer> v1,v2,v1_1,v2_1;
-        DAELow.IncidenceMatrix m_2,m_3;
-        DAELow.IncidenceMatrixT mT_2,mT_3;
+        BackendDAE.IncidenceMatrix m_2,m_3;
+        BackendDAE.IncidenceMatrixT mT_2,mT_3;
         list<list<Integer>> comps,comps_1;
         list<Integer> comps_flat;
         list<list<Integer>> r,t;
@@ -3237,11 +3238,11 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
+        subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
@@ -3255,7 +3256,7 @@ algorithm
       then
         {equation_};
     /* continuous system of equations */
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    case (genDiscrete,(daelow as BackendDAE.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -3269,7 +3270,7 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -3290,7 +3291,7 @@ end createOdeSystem;
 
 protected function createOdeSystemLin
   input Boolean genDiscrete "if true generate discrete equations";
-  input DAELow.DAELow inDAELow1;
+  input BackendDAE.DAELow inDAELow1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<Integer> inIntegerLst4;
@@ -3301,23 +3302,23 @@ algorithm
   matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
     local
       String rettp,fn;
-      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
-      list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
-      DAELow.Variables vars_1,vars,knvars,exvars;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqns_1,eqns,se,ie;
-      DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
+      list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
+      BackendDAE.Variables vars_1,vars,knvars,exvars;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns_1,eqns,se,ie;
+      BackendDAE.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
       array<list<Integer>> m,m_1,mt_1;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
       String s;
-      array<DAELow.MultiDimEquation> ae,ae1;
-      list<DAELow.MultiDimEquation> mdelst;
+      array<BackendDAE.MultiDimEquation> ae,ae1;
+      list<BackendDAE.MultiDimEquation> mdelst;
       array<Algorithm.Algorithm> al;
-      DAELow.EventInfo ev;
+      BackendDAE.EventInfo ev;
       array<Integer> ass1,ass2;
       list<Integer> block_;
-      DAELow.ExternalObjectClasses eoc;
+      BackendDAE.ExternalObjectClasses eoc;
       list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
       Integer numValues;
       list<SimVar> simVarsDisc;
@@ -3329,7 +3330,7 @@ algorithm
       String dstr,dstr1,dstr2;
       list<String> dlstr;
     /* continuous system of equations */
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    case (genDiscrete,(daelow as BackendDAE.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -3343,7 +3344,7 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -3351,7 +3352,7 @@ algorithm
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         // Jacobian of a Linear System is always linear 
         //jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        jac_tp = DAELow.JAC_TIME_VARYING();
+        jac_tp = BackendDAE.JAC_TIME_VARYING();
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
@@ -3375,9 +3376,9 @@ protected function generateTearingSystem "function: generateTearingSystem
   input list<Integer> inIntegerLst6;
   input Boolean mixedEvent "true if generating the mixed system event code";
   input Boolean genDiscrete;
-  input DAELow.DAELow inDAELow;
-  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
-  input DAELow.JacobianType inJacobianType;
+  input BackendDAE.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input BackendDAE.JacobianType inJacobianType;
   input list<HelpVarInfo> helpVarInfo;
   output SimEqSystem equation_;
 algorithm
@@ -3387,25 +3388,25 @@ algorithm
       array<Integer> ass1,ass2;
       list<Integer> block_,block_1,r,t;
       Integer index;
-      DAELow.DAELow daelow,daelow1;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
-      DAELow.Variables v,kv,exv;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqn,eqn1,reeqn,ineq;
-      list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
-      list<DAELow.Var> var_lst;
+      BackendDAE.DAELow daelow,daelow1;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
+      BackendDAE.Variables v,kv,exv;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqn,eqn1,reeqn,ineq;
+      list<BackendDAE.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
+      list<BackendDAE.Var> var_lst;
       list<DAE.ComponentRef> crefs,crefs1,tcrs;
-      array<DAELow.MultiDimEquation> ae;
+      array<BackendDAE.MultiDimEquation> ae;
       Boolean genDiscrete;
       String str_id,size_str,func_name,start_stmt,end_stmt;
       VarTransform.VariableReplacements repl;
       array<DAE.Algorithm> algorithms;
-      DAELow.EventInfo eventInfo;
-      DAELow.ExternalObjectClasses extObjClasses;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;
       list<SimEqSystem> simeqnsystem,simeqnsystem1,resEqs;
     case (ass1,ass2,block_,r,t,mixedEvent,_,
-          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp,helpVarInfo)
+          daelow as BackendDAE.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp,helpVarInfo)
            /* no analythic jacobian available. Generate non-linear system */
       equation
         // get equations and variables
@@ -3416,7 +3417,7 @@ algorithm
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
-        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),eqn_lst);
+        eqn_lst1 = Util.listAddElementFirst(BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),eqn_lst);
         tcrs = Util.listMap1r(t,listNth,crefs1);
         repl = makeResidualReplacements(tcrs);
         // get residual eqns and other eqns
@@ -3426,7 +3427,7 @@ algorithm
         // replace tearing variables in other equations with x_loc[..]
         eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
         eqn1 = DAELow.listEquation(eqn_lst2);
-        daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        daelow1=BackendDAE.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generade code for other equations
         simeqnsystem = Util.listMap4(block_1,createEquation,daelow1, ass1, ass2, helpVarInfo);
         (resEqs,_) = createNonlinearResidualEquations(reqns, ae, {});
@@ -3446,37 +3447,37 @@ protected function generateTearingSystem1
  "function: generateTearingSystem1
   author: Frenkel TUD
   Helper function to generateTearingSystem1"
-  input list<DAELow.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inDAELowEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
-  output list<DAELow.Equation> outDAELowEquationLst;
+  output list<BackendDAE.Equation> outDAELowEquationLst;
 algorithm
   outDAELowEquationLst := matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
       DAE.Exp e1,e2,e1_1,e2_1;
-      list<DAELow.Equation> rest,rest2;
-      array<DAELow.MultiDimEquation> aeqns;
+      list<BackendDAE.Equation> rest,rest2;
+      array<BackendDAE.MultiDimEquation> aeqns;
       VarTransform.VariableReplacements repl;
       DAE.ElementSource source;
     case ({},_) then {};
-    case ((DAELow.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
         e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
         e2_1 = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
       then
-        DAELow.EQUATION(e1_1,e2_1,source) :: rest2;
-    case ((DAELow.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
+        BackendDAE.EQUATION(e1_1,e2_1,source) :: rest2;
+    case ((BackendDAE.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
       equation
         rest2 = generateTearingSystem1(rest,repl);
         e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
       then
-        DAELow.RESIDUAL_EQUATION(e1_1,source) :: rest2;
+        BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
   end matchcontinue;
 end generateTearingSystem1;
 
 protected function extractDiscEqs
-  input list<DAELow.Equation> disc_eqn;
-  input list<DAELow.Var> disc_var;
+  input list<BackendDAE.Equation> disc_eqn;
+  input list<BackendDAE.Var> disc_var;
   output list<SimEqSystem> discEqsOut;
 algorithm
   discEqsOut :=
@@ -3487,11 +3488,11 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp varexp,expr,e1,e2;
       String var,indx_str,cr_str,stmt,stmt2;
-      list<DAELow.Equation> eqns;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
     case ({},_) then {};
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
       equation
         cr = DAELow.varCref(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
@@ -3503,10 +3504,10 @@ algorithm
 end extractDiscEqs;
 
 protected function extractValuesAndDims
-  input list<DAELow.Equation> inDAELowEquationLst1;
-  input list<DAELow.Var> inDAELowVarLst2;
-  input list<DAELow.Equation> inDAELowEquationLst3;
-  input list<DAELow.Var> inDAELowVarLst4;
+  input list<BackendDAE.Equation> inDAELowEquationLst1;
+  input list<BackendDAE.Var> inDAELowVarLst2;
+  input list<BackendDAE.Equation> inDAELowEquationLst3;
+  input list<BackendDAE.Var> inDAELowVarLst4;
   output list<String> valuesRet;
   output list<Integer> value_dims;
 algorithm
@@ -3519,8 +3520,8 @@ algorithm
       list<String> values_2,ss;
       String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
       Integer disc_len,values_len;
-      list<DAELow.Equation> cont_e,disc_e;
-      list<DAELow.Var> cont_v,disc_v;
+      list<BackendDAE.Equation> cont_e,disc_e;
+      list<BackendDAE.Var> cont_v,disc_v;
     case (cont_e,cont_v,disc_e,disc_v)
       equation
         rels = mixedCollectRelations(cont_e, disc_e);
@@ -3536,9 +3537,9 @@ end extractValuesAndDims;
 protected function createOdeSystem2
   input Boolean mixedEvent "true if generating the mixed system event code";
   input Boolean genDiscrete;
-  input DAELow.DAELow inDAELow;
-  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
-  input DAELow.JacobianType inJacobianType;
+  input BackendDAE.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input BackendDAE.JacobianType inJacobianType;
   input list<Integer> block_;
   input list<HelpVarInfo> helpVarInfo; 
   output list<SimEqSystem> equations_;
@@ -3548,15 +3549,15 @@ algorithm
     (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,block_,helpVarInfo)
     local
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
-      DAELow.DAELow dae,d;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
-      DAELow.Variables v,kv;
-      DAELow.EquationArray eqn;
-      list<DAELow.Equation> eqn_lst;
-      list<DAELow.Var> var_lst;
+      BackendDAE.DAELow dae,d;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
+      BackendDAE.Variables v,kv;
+      BackendDAE.EquationArray eqn;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
       list<DAE.ComponentRef> crefs;
-      array<DAELow.MultiDimEquation> ae;
+      array<BackendDAE.MultiDimEquation> ae;
       Boolean genDiscrete;
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
@@ -3581,27 +3582,27 @@ algorithm
     /* constant jacobians. Linear system of equations (A x = b) where
        A and b are constants. TODO: implement symbolic gaussian elimination
        here. Currently uses dgesv as for next case */
-    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,(d as BackendDAE.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_CONSTANT(),block_,helpVarInfo)
       local
-        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       equation
         eqn_size = DAELow.equationSize(eqn);
         // NOTE: Not impl. yet, use time_varying...
         equations_ = createOdeSystem2(mixedEvent, genDiscrete, d, SOME(jac),
-                                     DAELow.JAC_TIME_VARYING(), block_,helpVarInfo);
+                                     BackendDAE.JAC_TIME_VARYING(), block_,helpVarInfo);
       then
         equations_;
 
     /* constant jacobians. Linear system of equations (A x = b) where
        A and b are constants. TODO: implement symbolic gaussian elimination
        here. Currently uses dgesv as for next case */
-    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,(d as BackendDAE.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       local
-        list<tuple<Integer, Integer, DAELow.Equation>> jac;
-        DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+        BackendDAE.DAELow subsystem_dae_1,subsystem_dae_2;
         array<Integer> v1,v2,v1_1,v2_1;
-        DAELow.IncidenceMatrix m,m_1,m_2,m_3;
-        DAELow.IncidenceMatrixT mt_1,mT_2,mT_3;
+        BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
+        BackendDAE.IncidenceMatrixT mt_1,mT_2,mT_3;
         list<list<Integer>> comps,comps_1;
         list<Integer> comps_flat;
         list<list<Integer>> r,t;
@@ -3612,7 +3613,7 @@ algorithm
         m = DAELow.incidenceMatrix(d);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(d, m_1, mt_1, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
@@ -3626,15 +3627,15 @@ algorithm
           
     /* Time varying jacobian. Linear system of equations that needs to
        be solved during runtime. */
-    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_,helpVarInfo)
+    case (mixedEvent,_,(d as BackendDAE.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       local
-        list<DAELow.Var> dlowVars;
+        list<BackendDAE.Var> dlowVars;
         list<SimVar> simVars;
-        list<DAELow.Equation> dlowEqs;
+        list<BackendDAE.Equation> dlowEqs;
         list<DAE.Exp> beqs;
-        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
         list<tuple<Integer, Integer, SimEqSystem>> simJac;
-        array<DAELow.MultiDimEquation> arrayEqs;
+        array<BackendDAE.MultiDimEquation> arrayEqs;
       equation
         dlowVars = DAELow.varList(v);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
@@ -3644,9 +3645,9 @@ algorithm
       then
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
     /* Time varying nonlinear jacobian. Non-linear system of equations. */
-    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),block_,helpVarInfo)
+    case (mixedEvent,_,BackendDAE.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),BackendDAE.JAC_NONLINEAR(),block_,helpVarInfo)
       local
-        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
         Integer index;
       equation
         eqn_lst = DAELow.equationList(eqn);
@@ -3657,9 +3658,9 @@ algorithm
       then
         {SES_NONLINEAR(index, resEqs, crefs)};
     /* No analythic jacobian available. Generate non-linear system. */
-    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE(),DAELow.JAC_NO_ANALYTIC(),block_,helpVarInfo)
+    case (mixedEvent,_,BackendDAE.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE(),BackendDAE.JAC_NO_ANALYTIC(),block_,helpVarInfo)
       local
-        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
         Integer index;
       equation
         eqn_lst = DAELow.equationList(eqn);
@@ -3679,16 +3680,16 @@ end createOdeSystem2;
      
 protected function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."
-  input list<DAELow.Equation> inEqns;
-  output list<DAELow.Equation> outEqns;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
 algorithm
   outEqns := Util.listMap(inEqns, replaceDerOpInEquation);
 end replaceDerOpInEquationList;     
          
 protected function replaceDerOpMultiDimEquations
 "Replaces all der(cref) with $DER.cref in an multidimequation."
-	input DAELow.MultiDimEquation inMultiDimEquation;
-	output DAELow.MultiDimEquation outMultiDimEquation;
+	input BackendDAE.MultiDimEquation inMultiDimEquation;
+	output BackendDAE.MultiDimEquation outMultiDimEquation;
 algorithm
   outMultiDimEquation := matchcontinue(inMultiDimEquation)
     local
@@ -3696,23 +3697,23 @@ algorithm
       DAE.Exp e1,e1_1,e2,e2_1;
       DAE.ElementSource source;
 
-    case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2,source))
+    case(BackendDAE.MULTIDIM_EQUATION(ilst,e1,e2,source))
       equation
         e1_1 = replaceDerOpInExp(e1);
         e2_1 = replaceDerOpInExp(e2);
       then
-        DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
+        BackendDAE.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
     case(inMultiDimEquation) then inMultiDimEquation; 
   end matchcontinue;
 end replaceDerOpMultiDimEquations;
 
 protected function replaceDerOpInEquation
   "Replaces all der(cref) with $DER.cref in an equation."
-  input DAELow.Equation inEqn;
-  output DAELow.Equation outEqn;
+  input BackendDAE.Equation inEqn;
+  output BackendDAE.Equation outEqn;
 algorithm
   outEqn := matchcontinue(inEqn)
-    case (DAELow.EQUATION(exp = e1, scalar = e2, source = src))
+    case (BackendDAE.EQUATION(exp = e1, scalar = e2, source = src))
       local
         DAE.Exp e1, e2;
         DAE.ElementSource src;
@@ -3720,7 +3721,7 @@ algorithm
         e1 = replaceDerOpInExp(e1);
         e2 = replaceDerOpInExp(e2);
       then
-        DAELow.EQUATION(e1, e2, src);
+        BackendDAE.EQUATION(e1, e2, src);
     case (_) then inEqn;
   end matchcontinue;
 end replaceDerOpInEquation;
@@ -3787,14 +3788,14 @@ protected function generateRelaxationSystem "function: generateRelaxationSystem
   Generates the actual simulation code for the relaxed system of equation
 "
   input Boolean mixedEvent "true if generating the mixed system event code";
-  input DAELow.IncidenceMatrix inM;
-  input DAELow.IncidenceMatrixT inMT;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<Integer> inIntegerLst4;
   input list<Integer> inIntegerLst5;
   input list<Integer> inIntegerLst6;
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   input list<HelpVarInfo> helpVarInfo;
   output list<SimEqSystem> outEqns;
 algorithm
@@ -3804,24 +3805,24 @@ algorithm
       array<Integer> ass1,ass2,ass1_1,ass2_1;
       list<Integer> block_,block_1,block_2,r,t;
       Integer size;
-      DAELow.DAELow daelow,daelow1;
-      DAELow.Variables v,v1,kv,exv;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqn,eqn1,reeqn,ineq;
-      list<DAELow.Equation> eqn_lst,reqn_lst;
-      list<DAELow.Var> var_lst,tvar_lst;
+      BackendDAE.DAELow daelow,daelow1;
+      BackendDAE.Variables v,v1,kv,exv;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqn,eqn1,reeqn,ineq;
+      list<BackendDAE.Equation> eqn_lst,reqn_lst;
+      list<BackendDAE.Var> var_lst,tvar_lst;
       list<DAE.ComponentRef> crefs;
-      array<DAELow.MultiDimEquation> ae;
+      array<BackendDAE.MultiDimEquation> ae;
       VarTransform.VariableReplacements repl;
       array<DAE.Algorithm> algorithms;
-      DAELow.EventInfo eventInfo;
-      DAELow.ExternalObjectClasses extObjClasses;
-      DAELow.IncidenceMatrix m;
-      DAELow.IncidenceMatrixT mT;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mT;
       list<SimEqSystem> eqns,reqns,alleqns;
       VarTransform.VariableReplacements repl,repl_1;
     case (mixedEvent,m,mT,ass1,ass2,block_,r,t,
-          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),helpVarInfo) 
+          daelow as BackendDAE.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),helpVarInfo) 
       equation
         // get equations and variables
         eqn_lst = DAELow.equationList(eqn);
@@ -3841,7 +3842,7 @@ algorithm
         block_2 = Util.listIntRange(size);
         ass1_1 = listArray(block_2);
         ass2_1 = listArray(block_2);        
-        daelow1=DAELow.DAELOW(v1,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        daelow1=BackendDAE.DAELOW(v1,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generate code for relaxation equations
         reqns = generateRelaxedResidualEqns(block_2,mixedEvent,daelow1, ass1_1, ass2_1, helpVarInfo);
         alleqns = listAppend(reqns,eqns);
@@ -3861,7 +3862,7 @@ Author: Frenkel TUD 2010-09 function getRelaxationReplacements
   input list<Integer> inBlock;
   input array<Integer> inAss2;
   input list<DAE.ComponentRef> inCrefs;
-  input list<DAELow.Equation> inEqnLst;
+  input list<BackendDAE.Equation> inEqnLst;
   input VarTransform.VariableReplacements inRepl;
   output VarTransform.VariableReplacements outRepl;
   output list<SimEqSystem> outEqns;
@@ -3873,8 +3874,8 @@ algorithm
       array<Integer> ass2;
       list<DAE.ComponentRef> crefs;
       DAE.ComponentRef c;
-      list<DAELow.Equation> eqnLst;
-      DAELow.Equation eqn;
+      list<BackendDAE.Equation> eqnLst;
+      BackendDAE.Equation eqn;
       VarTransform.VariableReplacements repl,repl1,repl2;
       DAE.Exp exp,e1,e2,varexp,exps;
       list<SimEqSystem> seqns;
@@ -3897,19 +3898,19 @@ end getRelaxationReplacements;
 protected function solveEquation"
 Author: Frenkel TUD 2010-09 function solveEquation
   solves a equation"
-  input DAELow.Equation inEqn;
+  input BackendDAE.Equation inEqn;
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inEqn,inExp)
     local
       DAE.Exp exp,e1,e2,sol;
-    case (DAELow.EQUATION(exp = e1,scalar = e2),exp)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),exp)
       equation
         sol = solve(e1, e2, exp);
       then 
         sol;
-    case (DAELow.RESIDUAL_EQUATION(exp = e1),exp)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1),exp)
       equation
         // TODO: use type correct Zero
         sol = solve(e1, DAE.RCONST(0.0), exp);
@@ -3925,11 +3926,11 @@ Author: Frenkel TUD 2010-09 function getRelaxedResidualEqns
   input list<Integer> inBlock;
   input array<Integer> inAss2;
   input list<DAE.ComponentRef> inCrefs;
-  input list<DAELow.Var> inVarLst;
-  input list<DAELow.Equation> inEqnLst;
+  input list<BackendDAE.Var> inVarLst;
+  input list<BackendDAE.Equation> inEqnLst;
   input VarTransform.VariableReplacements inRepl;
-  output list<DAELow.Equation> outEqnLst;
-  output list<DAELow.Var> outVarLst;
+  output list<BackendDAE.Equation> outEqnLst;
+  output list<BackendDAE.Var> outVarLst;
 algorithm
   (outEqnLst,outVarLst) := matchcontinue (inBlock,inAss2,inCrefs,inVarLst,inEqnLst,inRepl)
     local
@@ -3938,12 +3939,12 @@ algorithm
       array<Integer> ass2;
       list<DAE.ComponentRef> crefs;
       DAE.ComponentRef c;
-      list<DAELow.Equation> eqnLst,eqnLst1;
-      DAELow.Equation eqn,eqn1;
+      list<BackendDAE.Equation> eqnLst,eqnLst1;
+      BackendDAE.Equation eqn,eqn1;
       VarTransform.VariableReplacements repl,repl1,repl2;
       DAE.Exp exp,e1,e2,varexp;
-      list<DAELow.Var> varlst,varlst1;
-      DAELow.Var var;
+      list<BackendDAE.Var> varlst,varlst1;
+      BackendDAE.Var var;
     case ({},_,_,_,_,_) then ({},{});
     case (e::block_,ass2,crefs,varlst,eqnLst,repl)
       equation
@@ -3963,7 +3964,7 @@ Author: Frenkel TUD 2010-09 function generateRelaxedResidualEqns
   generates the equations for the residual eqns"
   input list<Integer> inBlock;
   input Boolean mixedEvent "true if generating the mixed system event code"; 
-  input DAELow.DAELow daelow;
+  input BackendDAE.DAELow daelow;
   input array<Integer> Ass1;
   input array<Integer> Ass2;
   input list<HelpVarInfo> helpVarInfo;  
@@ -3973,24 +3974,24 @@ algorithm
     local
       Integer r;
       list<Integer> block_;
-      DAELow.IncidenceMatrix m;
-      DAELow.IncidenceMatrixT mT;
-      list<tuple<Integer, Integer, DAELow.Equation>> jac;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mT;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       list<SimVar> simVars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       SimEqSystem reqn;
-      DAELow.Variables v;
-      list<DAELow.Var> dlowVars;
-      DAELow.EquationArray eqn;
-      list<DAELow.Equation> dlowEqs;
-      array<DAELow.MultiDimEquation> ae;      
+      BackendDAE.Variables v;
+      list<BackendDAE.Var> dlowVars;
+      BackendDAE.EquationArray eqn;
+      list<BackendDAE.Equation> dlowEqs;
+      array<BackendDAE.MultiDimEquation> ae;      
     case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
       equation
        reqn = createEquation(r,daelow, Ass1, Ass2, helpVarInfo);        
       then 
         {reqn};
-    case (block_ as _::_::_,mixedEvent,daelow as DAELow.DAELOW(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
+    case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAELOW(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
         dlowVars = DAELow.varList(v);
         dlowEqs = DAELow.equationList(eqn);
@@ -4006,8 +4007,8 @@ algorithm
 end generateRelaxedResidualEqns;
 
 protected function jacToSimjac
-  input tuple<Integer, Integer, DAELow.Equation> jac;
-  input DAELow.Variables v;
+  input tuple<Integer, Integer, BackendDAE.Equation> jac;
+  input BackendDAE.Variables v;
   output tuple<Integer, Integer, SimEqSystem> simJac;
 algorithm
   simJac :=
@@ -4018,7 +4019,7 @@ algorithm
       DAE.Exp e;
       DAE.Exp rhs_exp;
       DAE.Exp rhs_exp_1;
-    case ((row, col, DAELow.RESIDUAL_EQUATION(exp=e)), v)
+    case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e)), v)
       equation
 //        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
 //        rhs_exp_1 = Exp.simplify(rhs_exp);
@@ -4028,9 +4029,9 @@ algorithm
 end jacToSimjac;
 
 protected function dlowEqToExp
-  input DAELow.Equation dlowEq;
-  input DAELow.Variables v;
-  input array<DAELow.MultiDimEquation> arrayEqs;
+  input BackendDAE.Equation dlowEq;
+  input BackendDAE.Variables v;
+  input array<BackendDAE.MultiDimEquation> arrayEqs;
   input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output DAE.Exp exp_;
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
@@ -4042,17 +4043,17 @@ algorithm
       DAE.Exp e;
       DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
       DAE.ExpType tp,tp1;
-      DAELow.Equation dlowEq;
+      BackendDAE.Equation dlowEq;
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;  
-     case (DAELow.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
+     case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
         rhs_exp = DAELow.getEqnsysRhsExp(e, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
       then (rhs_exp_1,inEntrylst);
-    case (DAELow.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
@@ -4060,9 +4061,9 @@ algorithm
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
       then (rhs_exp_2,inEntrylst);
-    case (DAELow.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
+    case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
       equation
-        DAELow.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
+        BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
@@ -4131,9 +4132,9 @@ end listMap3passthrough;
 protected function createSingleArrayEqnCode
   input Boolean mixedEvent "true if generating the mixed system event code";
   input Boolean genDiscrete;
-  input DAELow.DAELow inDAELow;
-  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
-  input DAELow.JacobianType inJacobianType;
+  input BackendDAE.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input BackendDAE.JacobianType inJacobianType;
   input list<Integer> block_;
   input list<HelpVarInfo> helpVarInfo; 
   output list<SimEqSystem> equations_;  
@@ -4147,24 +4148,24 @@ algorithm
       DAE.Exp e1,e2;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
-      list<DAELow.Equation> re;
+      list<BackendDAE.Equation> re;
       DAE.ComponentRef cr,origname,cr_1;
-      DAELow.Variables vars,knvars,exvars;
-      DAELow.EquationArray eqns,se,ie,eqns_1;
-      array<DAELow.MultiDimEquation> ae;
+      BackendDAE.Variables vars,knvars,exvars;
+      BackendDAE.EquationArray eqns,se,ie,eqns_1;
+      array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
-      DAELow.EventInfo ev;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac,jac1;
-      DAELow.JacobianType jac_tp;
+      BackendDAE.EventInfo ev;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac,jac1;
+      BackendDAE.JacobianType jac_tp;
       array<list<Integer>> m,m_1,mt_1;
       DAE.ElementSource source "the origin of the element";
-      DAELow.AliasVariables av;
-      DAELow.ExternalObjectClasses eoc;
-      DAELow.DAELow subsystem_dae;
+      BackendDAE.AliasVariables av;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.DAELow subsystem_dae;
       SimEqSystem equation_;
 
     case (mixedEvent,genDiscrete,
-          DAELow.DAELOW(orderedVars = vars,
+          BackendDAE.DAELOW(orderedVars = vars,
                         knownVars = knvars,
                         externalObjects = exvars,
                         aliasVars = av,
@@ -4177,9 +4178,9 @@ algorithm
                         extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo) /* eqn code cg var_id extra functions */
       local String cr_1_str;
       equation
-        (DAELow.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
-        DAELow.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
-        ((DAELow.VAR(varName = cr) :: _)) = DAELow.varList(vars);
+        (BackendDAE.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
+        BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
+        ((BackendDAE.VAR(varName = cr) :: _)) = DAELow.varList(vars);
         // We need to strip subs from the name since they are removed in cr.
         cr_1 = Exp.crefStripLastSubs(cr);
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
@@ -4187,7 +4188,7 @@ algorithm
       then
         {equation_};
     case (mixedEvent,genDiscrete,
-          DAELow.DAELOW(orderedVars = vars,
+          BackendDAE.DAELOW(orderedVars = vars,
                         knownVars = knvars,
                         externalObjects = exvars,
                         aliasVars = av,
@@ -4200,14 +4201,14 @@ algorithm
                         extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo) /* eqn code cg var_id extra functions */
       local String cr_1_str;
       equation
-        (DAELow.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
-        DAELow.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
+        (BackendDAE.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
+        BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         DAE.ARRAY(scalar=true,array=ea1) = e1;
         DAE.ARRAY(scalar=true,array=ea2) = e2;
         ealst = Util.listThreadTuple(ea1,ea2);
         re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         eqns_1 = DAELow.listEquation(re); 
-        subsystem_dae = DAELow.DAELOW(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+        subsystem_dae = BackendDAE.DAELOW(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
          m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -4226,8 +4227,8 @@ algorithm
 end createSingleArrayEqnCode;
 
 protected function createSingleAlgorithmCode
-  input DAELow.DAELow inDAELow;
-  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input BackendDAE.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   output SimEqSystem equation_;
 algorithm
   equation_ := matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption)
@@ -4236,22 +4237,22 @@ algorithm
       list<Integer> ds;
       DAE.Exp e1,e2;
       Exp.ComponentRef cr,origname,cr_1;
-      DAELow.Variables vars,knvars;
-      DAELow.EquationArray eqns,se,ie;
-      array<DAELow.MultiDimEquation> ae;
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.EquationArray eqns,se,ie;
+      array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       Algorithm.Algorithm alg,alg1;
-      DAELow.EventInfo ev;
+      BackendDAE.EventInfo ev;
       list<Exp.ComponentRef> solvedVars,algOutVars;
       list<DAE.Exp> algOutExpVars;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       String message,algStr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source "the origin of the element";
 
-    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
+    case (BackendDAE.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
       equation
-        (DAELow.ALGORITHM(indx,_,algOutExpVars,_) :: _) = DAELow.equationList(eqns);
+        (BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) :: _) = DAELow.equationList(eqns);
         alg = al[indx + 1];
         solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
@@ -4261,9 +4262,9 @@ algorithm
         equation_ = SES_ALGORITHM(algStatements);
       then equation_;
     /* Error message, inverse algorithms not supported yet */
-    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
+    case (BackendDAE.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
       equation
-        (DAELow.ALGORITHM(indx,_,algOutExpVars,source) :: _) = DAELow.equationList(eqns);
+        (BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) :: _) = DAELow.equationList(eqns);
         alg = al[indx + 1];
         solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
@@ -4351,7 +4352,7 @@ algorithm
 end createSingleArrayEqnCode2;
 
 protected function createResidualEquations
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   output list<SimEqSystem> residualEquations;
@@ -4359,16 +4360,16 @@ algorithm
   residualEquations :=
   matchcontinue (dlow, ass1, ass2)
     local
-      list<DAELow.Var> vars_lst;
-      list<DAELow.Equation> eqns_lst, se_lst, ie_lst, ie2_lst;
-      list<DAELow.Equation> residualEquationsTmp;
-      DAELow.Variables vars, knvars;
-      DAELow.EquationArray eqns, se, ie;
-      array<DAELow.MultiDimEquation> ae;
+      list<BackendDAE.Var> vars_lst;
+      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst;
+      list<BackendDAE.Equation> residualEquationsTmp;
+      BackendDAE.Variables vars, knvars;
+      BackendDAE.EquationArray eqns, se, ie;
+      array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
-      DAELow.EventInfo ev;
-      list<tuple<DAELow.Equation, list<DAE.Exp>>> divexplst;
-    case ((dlow as DAELow.DAELOW(orderedVars=vars,
+      BackendDAE.EventInfo ev;
+      list<tuple<BackendDAE.Equation, list<DAE.Exp>>> divexplst;
+    case ((dlow as BackendDAE.DAELOW(orderedVars=vars,
                                  knownVars=knvars,
                                  orderedEqs=eqns,
                                  removedEqs=se,
@@ -4411,7 +4412,7 @@ algorithm
 end createResidualEquations;
 
 protected function dlowEqToSimEqSystem
-  input DAELow.Equation inEquation;
+  input BackendDAE.Equation inEquation;
   output SimEqSystem outEquation;
 algorithm
   outEquation:=
@@ -4419,36 +4420,36 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp exp_;
-    case (DAELow.SOLVED_EQUATION(cr, exp_, _))
+    case (BackendDAE.SOLVED_EQUATION(cr, exp_, _))
       then SES_SIMPLE_ASSIGN(cr, exp_);
-    case (DAELow.RESIDUAL_EQUATION(exp_, _))
+    case (BackendDAE.RESIDUAL_EQUATION(exp_, _))
       then SES_RESIDUAL(exp_);
   end matchcontinue;
 end dlowEqToSimEqSystem;
 
 protected function failUnlessResidual
-  input DAELow.Equation eq;
+  input BackendDAE.Equation eq;
 algorithm
   _ :=
   matchcontinue (eq)
-    case (DAELow.RESIDUAL_EQUATION(exp=_)) then ();
+    case (BackendDAE.RESIDUAL_EQUATION(exp=_)) then ();
   end matchcontinue;
 end failUnlessResidual;
 
 protected function createInitialEquations
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<SimEqSystem> initialEquations;
 algorithm
   initialEquations := matchcontinue (dlow)
     local
-      list<DAELow.Equation> initialEquationsTmp;
-      list<DAELow.Equation> initialEquationsTmp2;
-      list<DAELow.Var> vars_lst;
-      list<DAELow.Var> knvars_lst;
-      list<DAELow.Equation> eqns_lst;
-      DAELow.Variables vars;
-      DAELow.Variables knvars;
-    case (DAELow.DAELOW(orderedVars=vars, knownVars=knvars))
+      list<BackendDAE.Equation> initialEquationsTmp;
+      list<BackendDAE.Equation> initialEquationsTmp2;
+      list<BackendDAE.Var> vars_lst;
+      list<BackendDAE.Var> knvars_lst;
+      list<BackendDAE.Equation> eqns_lst;
+      BackendDAE.Variables vars;
+      BackendDAE.Variables knvars;
+    case (BackendDAE.DAELOW(orderedVars=vars, knownVars=knvars))
       equation
         initialEquationsTmp2 = {};
         // vars
@@ -4474,19 +4475,19 @@ algorithm
 end createInitialEquations;
 
 protected function createParameterEquations
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output list<SimEqSystem> parameterEquations;
 algorithm
   parameterEquations := matchcontinue (dlow)
     local
-      list<DAELow.Equation> parameterEquationsTmp;
-      list<DAELow.Equation> tempEqs;
-      list<DAELow.Var> vars_lst;
-      list<DAELow.Var> knvars_lst;
-      list<DAELow.Equation> eqns_lst;
-      DAELow.Variables vars;
-      DAELow.Variables knvars;
-    case (DAELow.DAELOW(orderedVars=vars, knownVars=knvars))
+      list<BackendDAE.Equation> parameterEquationsTmp;
+      list<BackendDAE.Equation> tempEqs;
+      list<BackendDAE.Var> vars_lst;
+      list<BackendDAE.Var> knvars_lst;
+      list<BackendDAE.Equation> eqns_lst;
+      BackendDAE.Variables vars;
+      BackendDAE.Variables knvars;
+    case (BackendDAE.DAELOW(orderedVars=vars, knownVars=knvars))
       equation
         parameterEquationsTmp = {};
         // kvars params
@@ -4510,20 +4511,20 @@ algorithm
 end createParameterEquations;
 
 protected function createInitialAssignmentsFromStart
-  input list<DAELow.Var> vars;
-  output list<DAELow.Equation> initialEquations;
+  input list<BackendDAE.Var> vars;
+  output list<BackendDAE.Equation> initialEquations;
 algorithm
   initialEquations := matchcontinue (vars)
     local
-      DAELow.Equation initialEquation;
-      list<DAELow.Var> restVars;
+      BackendDAE.Equation initialEquation;
+      list<BackendDAE.Var> restVars;
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef name;
       DAE.Exp startv;
       DAE.ElementSource source "the origin of the element";
 
     case ({}) then {};
-    case (DAELow.VAR(values=attr, varName=name, source=source) :: restVars)
+    case (BackendDAE.VAR(values=attr, varName=name, source=source) :: restVars)
       /* also add an assignment for variables that have non-constant
          expressions, e.g. parameter values, as start.  NOTE: such start
          attributes can then not be changed in the text file, since the initial
@@ -4531,7 +4532,7 @@ algorithm
       equation
         startv = DAEUtil.getStartAttr(attr);
         false = Exp.isConst(startv);
-        initialEquation = DAELow.SOLVED_EQUATION(name, startv, source);
+        initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source);
         initialEquations = createInitialAssignmentsFromStart(restVars);
       then
         (initialEquation :: initialEquations);
@@ -4544,14 +4545,14 @@ algorithm
 end createInitialAssignmentsFromStart;
 
 protected function createInitialParamAssignments
-  input list<DAELow.Var> vars;
-  output list<DAELow.Equation> initialEquations;
+  input list<BackendDAE.Var> vars;
+  output list<BackendDAE.Equation> initialEquations;
 algorithm
   initialEquations :=
   matchcontinue (vars)
     local
-      DAELow.Equation initialEquation;
-      list<DAELow.Var> restVars;
+      BackendDAE.Equation initialEquation;
+      list<BackendDAE.Var> restVars;
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef cr;
       DAE.Exp startv;
@@ -4559,10 +4560,10 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case ({}) then {};
-    case (DAELow.VAR(varName=cr, bindExp=SOME(e), source = source) :: restVars)
+    case (BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source) :: restVars)
       equation
         false = Exp.isConst(e);
-        initialEquation = DAELow.SOLVED_EQUATION(cr, e, source);
+        initialEquation = BackendDAE.SOLVED_EQUATION(cr, e, source);
         initialEquations = createInitialParamAssignments(restVars);
       then
         (initialEquation :: initialEquations);
@@ -4575,11 +4576,11 @@ algorithm
 end createInitialParamAssignments;
 
 protected function createZeroCrossings
-  input DAELow.DAELow dlow;
-  output list<DAELow.ZeroCrossing> zc;
+  input BackendDAE.DAELow dlow;
+  output list<BackendDAE.ZeroCrossing> zc;
 algorithm
   zc := matchcontinue (dlow)
-    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(zeroCrossingLst=zc)))
+    case (BackendDAE.DAELOW(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zc)))
       then
         zc;
     case (_)
@@ -4591,8 +4592,8 @@ algorithm
 end createZeroCrossings;
 
 protected function createZeroCrossingsNeedSave
-  input list<DAELow.ZeroCrossing> zeroCrossings;
-  input DAELow.DAELow dlow;
+  input list<BackendDAE.ZeroCrossing> zeroCrossings;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<list<Integer>> blocks;
@@ -4601,14 +4602,14 @@ algorithm
   needSave :=
   matchcontinue (zeroCrossings, dlow, ass1, ass2, blocks)
     local
-      DAELow.ZeroCrossing zc;
-      list<DAELow.ZeroCrossing> rest_zc;
+      BackendDAE.ZeroCrossing zc;
+      list<BackendDAE.ZeroCrossing> rest_zc;
       list<Integer> eql;
       list<SimVar> needSaveTmp;
       list<list<SimVar>> needSave_rest;
     case ({}, _, _, _, _)
       then {};
-    case ((zc as DAELow.ZERO_CROSSING(occurEquLst=eql)) :: rest_zc, dlow,
+    case ((zc as BackendDAE.ZERO_CROSSING(occurEquLst=eql)) :: rest_zc, dlow,
           ass1, ass2, blocks)
       equation
         needSaveTmp = createZeroCrossingNeedSave(dlow, ass1, ass2, eql,
@@ -4620,7 +4621,7 @@ algorithm
 end createZeroCrossingsNeedSave;
 
 protected function createZeroCrossingNeedSave
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
   input list<Integer> eqns2;
@@ -4635,29 +4636,29 @@ algorithm
       list<Integer> block_,rest;
       DAE.ComponentRef cr;
       String cr_str,save_stmt,rettp,fn,stmt;
-      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
-      list<DAELow.Var> var_lst,cont_var,disc_var,cont_var1;
-      DAELow.Variables vars, vars_1,knvars,exvars;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqns_1,eqns,se,ie;
-      DAELow.DAELow cont_subsystem_dae,dlow;
+      list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<BackendDAE.Var> var_lst,cont_var,disc_var,cont_var1;
+      BackendDAE.Variables vars, vars_1,knvars,exvars;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns_1,eqns,se,ie;
+      BackendDAE.DAELow cont_subsystem_dae,dlow;
       array<list<Integer>> m,m_1,mt_1;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
       list<String> retrec,arg,init,stmts,cleanups,stmts_1;
       DAE.DAElist dae;
-      array<DAELow.MultiDimEquation> ae;
+      array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
-      DAELow.EventInfo ev;
+      BackendDAE.EventInfo ev;
       array<Integer> ass1,ass2;
       list<list<Integer>> blocks;
-      DAELow.ExternalObjectClasses eoc;
-      DAELow.Var dlowvar;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.Var dlowvar;
       SimVar simvar;
     case (_,_,_,{},_)
       then {};
     /* zero crossing for mixed system */
-    case ((dlow as DAELow.DAELOW(vars, knvars, exvars, av, eqns, se, ie, ae,
+    case ((dlow as BackendDAE.DAELOW(vars, knvars, exvars, av, eqns, se, ie, ae,
                                       al, ev, eoc)),
           ass1, ass2, (eqn :: rest), blocks)
       equation
@@ -4665,20 +4666,20 @@ algorithm
         block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (dlowvar as DAELow.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
+        (dlowvar as BackendDAE.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
         simvar = dlowvarToSimvar(dlowvar);
       then
         (simvar :: crs);
     /* zero crossing for single equation */
-    case ((dlow as DAELow.DAELOW(orderedVars = vars)), ass1, ass2,
+    case ((dlow as BackendDAE.DAELOW(orderedVars = vars)), ass1, ass2,
           (eqn :: rest), blocks)
       local
-        DAELow.Variables vars;
+        BackendDAE.Variables vars;
       equation
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (dlowvar as DAELow.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
+        (dlowvar as BackendDAE.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
         simvar = dlowvarToSimvar(dlowvar);
       then
@@ -4688,7 +4689,7 @@ end createZeroCrossingNeedSave;
 
 protected function createModelInfo
   input Absyn.Path class_;
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input Integer numHelpVars;
   input Integer numResiduals;
   input String fileDir;
@@ -4726,7 +4727,7 @@ algorithm
 end createModelInfo;
 
 protected function createVarInfo
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input Integer numOutVars;
   input Integer numInVars;
   input Integer numHelpVars;
@@ -4756,22 +4757,22 @@ algorithm
 end createVarInfo;
 
 protected function createVars
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   output SimVars varsOut;
 algorithm
   varsOut :=
   matchcontinue (dlow)
     local
-      list<DAELow.Var> var_lst;
-      list<DAELow.Var> knvar_lst;
-      list<DAELow.Var> extvar_lst;
-      DAELow.Variables vars;
-      DAELow.Variables knvars;
-      DAELow.Variables extvars;
+      list<BackendDAE.Var> var_lst;
+      list<BackendDAE.Var> knvar_lst;
+      list<BackendDAE.Var> extvar_lst;
+      BackendDAE.Variables vars;
+      BackendDAE.Variables knvars;
+      BackendDAE.Variables extvars;
       SimVars varsTmp;
-      DAELow.EquationArray ie;
-      list<DAELow.Equation> ie_lst;
-    case (DAELow.DAELOW(orderedVars = vars,
+      BackendDAE.EquationArray ie;
+      list<BackendDAE.Equation> ie_lst;
+    case (BackendDAE.DAELOW(orderedVars = vars,
                         knownVars = knvars,
                         externalObjects = extvars,
                         initialEqs=ie))
@@ -4801,22 +4802,22 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
-  input list<DAELow.Var> varList;
+  input list<BackendDAE.Var> varList;
   output SimVars varsOut;
 algorithm
   varsOut :=
   matchcontinue (varList)
     local
-      DAELow.Var var;
+      BackendDAE.Var var;
       Exp.ComponentRef cr, origname;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAELow.Var> vs;
+      list<BackendDAE.Var> vs;
       SimVars varsTmp1;
       SimVars varsTmp2;
       SimVars vars;
@@ -4840,7 +4841,7 @@ end extractVarsFromList;
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
 protected function extractVarFromVar
-  input DAELow.Var dlowVar;
+  input BackendDAE.Var dlowVar;
   output SimVars varsOut;
 algorithm
   varsOut :=
@@ -4921,7 +4922,7 @@ algorithm
   matchcontinue (state)
     local
       DAE.ComponentRef name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
       Option<DAE.Exp> initVal;
@@ -4933,14 +4934,14 @@ algorithm
       equation
         name = DAELow.crefPrefixDer(name);
       then
-        SIMVAR(name, DAELow.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, NONE());      
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref)))
       equation
         name = DAELow.crefPrefixDer(name);
         arrayCref = DAELow.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, DAELow.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, SOME(arrayCref));
   end matchcontinue;
 end derVarFromStateVar;
@@ -5101,7 +5102,7 @@ algorithm
    matchcontinue(inVars,index)
        local
       DAE.ComponentRef name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
       Option<DAE.Exp> initVal;
@@ -5136,7 +5137,7 @@ end varIndexComparer;
 
 protected function fixInitialThing
   input SimVars simvarsIn;
-  input list<DAELow.Equation> initialEqs;
+  input list<BackendDAE.Equation> initialEqs;
   output SimVars simvarsOut;
 algorithm
   simvarsOut :=
@@ -5186,14 +5187,14 @@ end simvarFixed;
 
 protected function nonFixifyIfHasInit
   input SimVar simvarIn;
-  input list<DAELow.Equation> initialEqs;
+  input list<BackendDAE.Equation> initialEqs;
   output SimVar simvarOut;
 algorithm
   simvarOut :=
   matchcontinue (simvarIn, initialEqs)
     local
       DAE.ComponentRef name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
       Option<DAE.Exp> initVal;
@@ -5216,7 +5217,7 @@ algorithm
 end nonFixifyIfHasInit;
 
 protected function getArrayCref
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Option<DAE.ComponentRef> arrayCref;
 algorithm
   arrayCref :=
@@ -5224,7 +5225,7 @@ algorithm
     local
       DAE.ComponentRef name;
       DAE.ComponentRef arrayCrefInner;
-    case (DAELow.VAR(varName=name))
+    case (BackendDAE.VAR(varName=name))
       equation
         true = Exp.crefIsFirstArrayElt(name);
         arrayCrefInner = Exp.crefStripLastSubs(name);
@@ -5246,32 +5247,32 @@ end unparseCommentOptionNoAnnotationNoQuote;
 
 protected function generateHelpVarsForWhenStatements
 	input list<HelpVarInfo> inHelpVarInfo;
-	input DAELow.DAELow inDAELow;
+	input BackendDAE.DAELow inDAELow;
 	output list<HelpVarInfo> outHelpVarInfo;
-	output DAELow.DAELow outDAELow;
+	output BackendDAE.DAELow outDAELow;
 algorithm
   (outHelpVarInfo,outDAELow) :=
   matchcontinue (inHelpVarInfo,inDAELow)
     local
       list<HelpVarInfo> helpvars, helpvars1;
-      DAELow.Variables orderedVars;
-      DAELow.Variables knownVars;
-      DAELow.Variables externalObjects;
-      DAELow.AliasVariables aliasVars;
-      DAELow.EquationArray orderedEqs;
-      DAELow.EquationArray removedEqs;
-      DAELow.EquationArray initialEqs;
-      array<DAELow.MultiDimEquation> arrayEqs;
+      BackendDAE.Variables orderedVars;
+      BackendDAE.Variables knownVars;
+      BackendDAE.Variables externalObjects;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EquationArray removedEqs;
+      BackendDAE.EquationArray initialEqs;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
       array<Algorithm.Algorithm> algorithms,algorithms2;
       list<Algorithm.Algorithm> algLst;
-      DAELow.EventInfo eventInfo;
-      DAELow.ExternalObjectClasses extObjClasses;
-    case	(helpvars,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;
+    case	(helpvars,BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
       removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (helpvars1,algLst,_) = generateHelpVarsInAlgorithms(listLength(helpvars),arrayList(algorithms));
         algorithms2 = listArray(algLst);
-      then (listAppend(helpvars,helpvars1),DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
+      then (listAppend(helpvars,helpvars1),BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
         removedEqs,initialEqs,arrayEqs,algorithms2,eventInfo,extObjClasses));
     case (_,_)
       equation
@@ -5437,21 +5438,21 @@ end generateHelpVarsInArrayCondition;
 protected function selectContinuousEquations
 "function selectContinuousEquations
   Returns only the equations that are solved for a continous variable."
-  input list<DAELow.Equation> eqnLst;
+  input list<BackendDAE.Equation> eqnLst;
   input Integer eqnIndx; // iterator, starts at 1..n
 	input array<Integer> ass2;
-	input DAELow.DAELow daelow;
-	output list<DAELow.Equation> outEqnLst;
+	input BackendDAE.DAELow daelow;
+	output list<BackendDAE.Equation> outEqnLst;
 algorithm
   outEqnLst := matchcontinue(eqnLst,eqnIndx,ass2,daelow)
     local
-      DAELow.VariableArray vararr;
-      DAELow.Var var;
+      BackendDAE.VariableArray vararr;
+      BackendDAE.Var var;
       Integer v,v_1;
       Boolean b;
-      DAELow.Equation e;
+      BackendDAE.Equation e;
     case({},eqnIndx,ass2,daelow) then {};
-    case(e::eqnLst,eqnIndx,ass2,daelow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr)))
+    case(e::eqnLst,eqnIndx,ass2,daelow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr)))
      equation
        v = ass2[eqnIndx];
        v_1 = v - 1;
@@ -5470,30 +5471,30 @@ protected function generateInitialEquationsFromStart "function: generateInitialE
   fixed set to true is converted by this function. Fixed set to false
   means an initial guess, and is not considered here.
 "
-  input list<DAELow.Var> inDAELowVarLst;
-  output list<DAELow.Equation> outDAELowEquationLst;
+  input list<BackendDAE.Var> inDAELowVarLst;
+  output list<BackendDAE.Equation> outDAELowEquationLst;
 algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowVarLst)
     local
-      list<DAELow.Equation> eqns;
-      DAELow.Var v;
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Var v;
       Exp.ComponentRef cr;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.Exp startv;
       Option<DAE.VariableAttributes> attr;
-      list<DAELow.Var> vars;
+      list<BackendDAE.Var> vars;
       DAE.ElementSource source "the origin of the element";
 
     case ({}) then {};
-    case (((v as DAELow.VAR(varName = cr,varKind = kind,values = attr,source=source)) :: vars)) /* add equations for variables with fixed = true */
+    case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)) :: vars)) /* add equations for variables with fixed = true */
       equation
         true = DAELow.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
         startv = DAEUtil.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
       then
-        (DAELow.EQUATION(DAE.CREF(cr,DAE.ET_OTHER()),startv,source) :: eqns);
+        (BackendDAE.EQUATION(DAE.CREF(cr,DAE.ET_OTHER()),startv,source) :: eqns);
     case ((_ :: vars))
       equation
         eqns = generateInitialEquationsFromStart(vars);
@@ -5560,7 +5561,7 @@ end buildWhenConditionChecks3;
 protected function buildWhenConditionChecks2
 " This function outputs checks for all when clauses that do not have equations but reinit statements.
 "
-  input list<DAELow.WhenClause> inDAELowWhenClauseLst1 "List of when clauses";
+  input list<BackendDAE.WhenClause> inDAELowWhenClauseLst1 "List of when clauses";
   input Integer whenClauseIndex "index of the first when clause in inDAELowWhenClauseLst1";
   input Integer nextHelpVarIndex;
   output String outString;
@@ -5572,18 +5573,18 @@ algorithm
       Integer i_1,i,nextHelpIndex,numberOfNewHelpVars,nextHelpIndex_1;
       String res,res2,res1;
       list<HelpVarInfo> helpVarInfoList,helpVarInfoList2,helpVarInfoList1;
-      DAELow.WhenClause wc;
-      list<DAELow.WhenClause> xs;
+      BackendDAE.WhenClause wc;
+      list<BackendDAE.WhenClause> xs;
       list<DAE.Exp> el;
       DAE.Exp e;
     case ({},_,_) then ("",{});
-    case (((wc as DAELow.WHEN_CLAUSE(reinitStmtLst = {})) :: xs),i,nextHelpIndex) /* skip if there are no reinit statements */
+    case (((wc as BackendDAE.WHEN_CLAUSE(reinitStmtLst = {})) :: xs),i,nextHelpIndex) /* skip if there are no reinit statements */
       equation
         i_1 = i + 1;
         (res,helpVarInfoList) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
       then
         (res,helpVarInfoList);
-    case (((wc as DAELow.WHEN_CLAUSE(condition = DAE.ARRAY(array = el))) :: xs),i,nextHelpIndex)
+    case (((wc as BackendDAE.WHEN_CLAUSE(condition = DAE.ARRAY(array = el))) :: xs),i,nextHelpIndex)
       equation
         i_1 = i + 1;
         (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
@@ -5594,7 +5595,7 @@ algorithm
         helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
       then
         (res,helpVarInfoList);
-    case (((wc as DAELow.WHEN_CLAUSE(condition = e)) :: xs),i,nextHelpIndex)
+    case (((wc as BackendDAE.WHEN_CLAUSE(condition = e)) :: xs),i,nextHelpIndex)
       equation
         i_1 = i + 1;
         (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
@@ -5620,8 +5621,8 @@ protected function buildWhenConditionChecks4
   of all the when clauses that does not contain equations (only reinit).
 "
   input list<Integer> orderOfEquations                "The sorting order of the equations.";
-  input list<DAELow.Equation> inDAELowEquationLst     "List of equations.";
-  input list<DAELow.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
+  input list<BackendDAE.Equation> inDAELowEquationLst     "List of equations.";
+  input list<BackendDAE.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
   input Integer nextHelpVarIndex                      "index of the next generated help variable.";
   output String outString                             "Generated event checking code";
   output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";
@@ -5633,16 +5634,16 @@ algorithm
       String res2,res1,res;
       list<HelpVarInfo> helpVarInfoList2,helpVarInfoList1,helpVarInfoList;
       list<Integer> rest;
-      list<DAELow.Equation> eqnl;
-      list<DAELow.WhenClause> whenClauseList;
-      DAELow.WhenEquation whenEq;
+      list<BackendDAE.Equation> eqnl;
+      list<BackendDAE.WhenClause> whenClauseList;
+      BackendDAE.WhenEquation whenEq;
 
     case ({},_,_,_) then ("",{});
 
 		/* equation is a WHEN_EQUATION */
     case ((eqn :: rest),eqnl,whenClauseList,nextHelpIndex)
       equation
-        DAELow.WHEN_EQUATION(whenEquation=whenEq) = listNth(eqnl, eqn-1);
+        BackendDAE.WHEN_EQUATION(whenEquation=whenEq) = listNth(eqnl, eqn-1);
         (res2, helpVarInfoList2) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
         (res1, helpVarInfoList1) = buildWhenConditionCheckForEquation(SOME(whenEq), whenClauseList, false,
                                        nextHelpIndex + listLength(helpVarInfoList2));
@@ -5667,8 +5668,8 @@ end buildWhenConditionChecks4;
 protected function buildWhenConditionCheckForEquation "
 	Generates eventchecking code given a when equation.
 "
-  input Option<DAELow.WhenEquation> whenEq            "The equation to check for";
-  input list<DAELow.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
+  input Option<BackendDAE.WhenEquation> whenEq            "The equation to check for";
+  input list<BackendDAE.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
   input Boolean isElseWhen                            "Whether the equation is inside an elsewhen or not.";
   input Integer nextHelpIndex                         "Next avalable help variable index.";
   output String outString                             "Generated event checking code";
@@ -5682,11 +5683,11 @@ algorithm
       Exp.ComponentRef cr;
       DAE.Exp exp;
       String res1,res2,res;
-      Option<DAELow.WhenEquation> elsePart;
+      Option<BackendDAE.WhenEquation> elsePart;
       list<DAE.Exp> conditionList;
       list<HelpVarInfo> helpVars1,helpVars2, helpVars;
-      list<DAELow.WhenClause> whenClauseList;
-    case (SOME(DAELow.WHEN_EQ(ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
+      list<BackendDAE.WhenClause> whenClauseList;
+    case (SOME(BackendDAE.WHEN_EQ(ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
       equation
         conditionList = getConditionList(whenClauseList, ind);
         (res1,helpVars1) = buildWhenConditionChecks3(conditionList, ind, nextHelpInd,isElseWhen);
@@ -5702,24 +5703,24 @@ algorithm
 end buildWhenConditionCheckForEquation;
 
 protected function getConditionList
-  input list<DAELow.WhenClause> whenClauseList;
+  input list<BackendDAE.WhenClause> whenClauseList;
   input Integer index;
   output list<DAE.Exp> conditionList;
 algorithm
   conditionList := matchcontinue (whenClauseList, index)
     local
-      list<DAELow.WhenClause> whenClauseList;
+      list<BackendDAE.WhenClause> whenClauseList;
       Integer ind;
       list<DAE.Exp> conditionList;
       DAE.Exp e;
 
     case (whenClauseList, ind)
       equation
-        DAELow.WHEN_CLAUSE(condition=DAE.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
+        BackendDAE.WHEN_CLAUSE(condition=DAE.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
       then conditionList;
     case (whenClauseList, ind)
       equation
-        DAELow.WHEN_CLAUSE(condition=e) = listNth(whenClauseList, ind);
+        BackendDAE.WHEN_CLAUSE(condition=e) = listNth(whenClauseList, ind);
       then {e};
   end matchcontinue;
 end getConditionList;
@@ -5763,18 +5764,18 @@ protected function buildDiscreteVarChangesVar2
  ZeroCrossing(i) generate 'if change(v) needToIterate=1;)'"
   input Integer eqn;
   input Exp.ComponentRef cr;
-  input DAELow.DAELow daelow;
+  input BackendDAE.DAELow daelow;
   output String outString;
 algorithm
   outString := matchcontinue(eqn,cr,daelow)
-  local DAELow.EquationArray eqns;
-    DAELow.Equation e;
-    list<DAELow.ZeroCrossing> zcLst;
+  local BackendDAE.EquationArray eqns;
+    BackendDAE.Equation e;
+    list<BackendDAE.ZeroCrossing> zcLst;
     String crStr;
     list<String> strLst;
     list<Integer> zcIndxLst;
 
-    case(eqn,cr,daelow as DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(zeroCrossingLst = zcLst)))
+    case(eqn,cr,daelow as BackendDAE.DAELOW(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)))
      equation
      		zcIndxLst = zeroCrossingsContainIndex(eqn,0,zcLst);
 				strLst = Util.listMap1(zcIndxLst,buildDiscreteVarChangesAddEvent,cr);
@@ -5790,13 +5791,13 @@ protected function zeroCrossingsContainIndex "Returns the zero crossing indices 
 given by input index."
   input Integer eqn "equation index";
   input Integer i "iterator for zc starts at 0 to n-1 zero crossings";
-  input	list<DAELow.ZeroCrossing> zcLst;
+  input	list<BackendDAE.ZeroCrossing> zcLst;
   output list<Integer> eqns;
 algorithm
   eqns := matchcontinue(eqn,i,zcLst)
     local list<Integer> eqnLst;
     case (_,_,{}) then {};
-    case(eqn,i,DAELow.ZERO_CROSSING(occurEquLst=eqnLst)::zcLst) equation
+    case(eqn,i,BackendDAE.ZERO_CROSSING(occurEquLst=eqnLst)::zcLst) equation
       true = listMember(eqn,eqnLst);
       eqns = zeroCrossingsContainIndex(eqn,i+1,zcLst);
     then  i::eqns;
@@ -5823,8 +5824,8 @@ end buildDiscreteVarChangesAddEvent;
 protected function mixedCollectRelations "function: mixedCollectRelations
   author: PA
 "
-  input list<DAELow.Equation> c_eqn;
-  input list<DAELow.Equation> d_eqn;
+  input list<BackendDAE.Equation> c_eqn;
+  input list<BackendDAE.Equation> d_eqn;
   output list<DAE.Exp> res;
   list<DAE.Exp> l1,l2;
 algorithm
@@ -5838,7 +5839,7 @@ protected function mixedCollectRelations2 "function: mixedCollectRelations2
 
   Helper function to mixed_collect_functions.
 "
-  input list<DAELow.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inDAELowEquationLst;
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
@@ -5846,10 +5847,10 @@ algorithm
     local
       list<DAE.Exp> l1,l2,l3,res;
       DAE.Exp e1,e2;
-      list<DAELow.Equation> es;
+      list<BackendDAE.Equation> es;
       Exp.ComponentRef cr;
     case ({}) then {};
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es))
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es))
       equation
         l1 = Exp.getRelations(e1);
         l2 = Exp.getRelations(e2);
@@ -5857,7 +5858,7 @@ algorithm
         res = Util.listFlatten({l1,l2,l3});
       then
         res;
-    case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
+    case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
       equation
         l1 = Exp.getRelations(e1);
         l2 = mixedCollectRelations2(es);
@@ -5947,7 +5948,7 @@ protected function generateMixedDiscretePossibleValues2 "function: generateMixed
   Helper function to generate_mixed_discrete_possible_values.
 "
   input list<DAE.Exp> inExpExpLst;
-  input list<DAELow.Var> inDAELowVarLst;
+  input list<BackendDAE.Var> inDAELowVarLst;
   input Integer inInteger;
   output list<list<String>> outStringLstLst;
   output list<Integer> outIntegerLst;
@@ -5959,18 +5960,18 @@ algorithm
       list<list<String>> values;
       list<Integer> dims;
       list<DAE.Exp> rels;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
     case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
     case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
-        DAELow.BOOL() = DAELow.varType(v);
+        BackendDAE.BOOL() = DAELow.varType(v);
         (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
       then
         (({"1.0","0.0"} :: values),(2 :: dims));
     case (rels,(v :: vs),_)
       equation
-        DAELow.INT() = DAELow.varType(v);
+        BackendDAE.INT() = DAELow.varType(v);
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables."});
       then
@@ -5996,12 +5997,12 @@ protected function splitMixedEquations "function: splitMixedEquations
    efficient for small systems of mixed equations < 100)
   3. The equations not selected in step 2 are continuous equations.
 "
-  input list<DAELow.Equation> eqnLst;
-  input list<DAELow.Var> varLst;
-  output list<DAELow.Equation> contEqnLst;
-  output list<DAELow.Var> contVarLst;
-  output list<DAELow.Equation> discEqnLst;
-  output list<DAELow.Var> discVarLst;
+  input list<BackendDAE.Equation> eqnLst;
+  input list<BackendDAE.Var> varLst;
+  output list<BackendDAE.Equation> contEqnLst;
+  output list<BackendDAE.Var> contVarLst;
+  output list<BackendDAE.Equation> discEqnLst;
+  output list<BackendDAE.Var> discVarLst;
 algorithm
   (contEqnLst,contVarLst,discEqnLst,discVarLst):=
   matchcontinue (eqnLst,varLst)
@@ -6016,18 +6017,18 @@ end splitMixedEquations;
 
 protected function findDiscreteEquation "help function to splitMixedEquations, finds the discrete equation
 on the form v = expr for solving variable v"
-  input DAELow.Var v;
-  input list<DAELow.Equation> eqnLst;
-  output DAELow.Equation eqn;
+  input BackendDAE.Var v;
+  input list<BackendDAE.Equation> eqnLst;
+  output BackendDAE.Equation eqn;
 algorithm
   eqn := matchcontinue(v,eqnLst)
     local Exp.ComponentRef cr1,cr;
       DAE.Exp e2;
-    case (v,(eqn as DAELow.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
+    case (v,(eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
       cr1=DAELow.varCref(v);
       true = Exp.crefEqual(cr1,cr);
     then eqn;
-    case(v,(eqn as DAELow.EQUATION(e2,DAE.CREF(cr,_),_))::_) equation
+    case(v,(eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_) equation
       cr1=DAELow.varCref(v);
       true = Exp.crefEqual(cr1,cr);
     then eqn;
@@ -6048,14 +6049,14 @@ protected function isMixedSystem "function: isMixedSystem
   Returns true if the list of variables is an equation system contains
   both discrete and continuous variables.
 "
-  input list<DAELow.Var> inDAELowVarLst;
-  input list<DAELow.Equation> inEqns;
+  input list<BackendDAE.Var> inDAELowVarLst;
+  input list<BackendDAE.Equation> inEqns;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inDAELowVarLst,inEqns)
-    local list<DAELow.Var> vs;
-      list<DAELow.Equation> eqns;
+    local list<BackendDAE.Var> vs;
+      list<BackendDAE.Equation> eqns;
 				/* A single algorithm section (consists of several eqns) is not mixed system */
       case (vs,eqns) equation
         singleAlgorithmSection2(eqns,NONE());
@@ -6190,15 +6191,15 @@ protected function singleAlgorithmSection
 "function: singleAlgorithmSection
   author: PA
   Checks if a dae (subsystem) consists of a single algorithm section."
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
 algorithm
   _:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Equation> eqn_lst;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqnarr;
-    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
+      list<BackendDAE.Equation> eqn_lst;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqnarr;
+    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
       equation
         eqn_lst = DAELow.equationList(eqnarr);
         singleAlgorithmSection2(eqn_lst,NONE());
@@ -6208,21 +6209,21 @@ algorithm
 end singleAlgorithmSection;
 
 protected function singleAlgorithmSection2
-  input list<DAELow.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inDAELowEquationLst;
   input Option<Integer> Index;  
 algorithm
   _:=
   matchcontinue (inDAELowEquationLst,Index)
     local 
-      list<DAELow.Equation> res;
+      list<BackendDAE.Equation> res;
       Integer i,i1;
     case ({},_) then ();
-    case ((DAELow.ALGORITHM(index = i) :: res),NONE())
+    case ((BackendDAE.ALGORITHM(index = i) :: res),NONE())
       equation
         singleAlgorithmSection2(res,SOME(i));
       then
         ();      
-    case ((DAELow.ALGORITHM(index = i) :: res),SOME(i1))
+    case ((BackendDAE.ALGORITHM(index = i) :: res),SOME(i1))
       equation
         true = intEq(i,i1);
         singleAlgorithmSection2(res,SOME(i1));
@@ -6235,15 +6236,15 @@ protected function singleArrayEquation
 "function: singleArrayEquation
   author: PA
   Checks if a dae (subsystem) consists of a single array equation."
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
 algorithm
   _:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Equation> eqn_lst;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqnarr;
-    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
+      list<BackendDAE.Equation> eqn_lst;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqnarr;
+    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
       equation
         eqn_lst = DAELow.equationList(eqnarr);
         singleArrayEquation2(eqn_lst,NONE());
@@ -6253,21 +6254,21 @@ algorithm
 end singleArrayEquation;
 
 protected function singleArrayEquation2
-  input list<DAELow.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inDAELowEquationLst;
   input Option<Integer> Index;
 algorithm
   _:=
   matchcontinue (inDAELowEquationLst,Index)
     local 
-      list<DAELow.Equation> res;
+      list<BackendDAE.Equation> res;
       Integer i,i1;
     case ({},_) then ();
-    case ((DAELow.ARRAY_EQUATION(index = i) :: res),NONE())
+    case ((BackendDAE.ARRAY_EQUATION(index = i) :: res),NONE())
       equation
         singleArrayEquation2(res,SOME(i));
       then
         ();
-    case ((DAELow.ARRAY_EQUATION(index = i) :: res),SOME(i1))
+    case ((BackendDAE.ARRAY_EQUATION(index = i) :: res),SOME(i1))
       equation
         true = intEq(i,i1);
         singleArrayEquation2(res,SOME(i1));
@@ -6343,14 +6344,14 @@ protected function transformXToXd "function transformXToXd
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)
 "
-  input DAELow.Var inVar;
-  output DAELow.Var outVar;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
 algorithm
   outVar := matchcontinue (inVar)
     local
       Exp.ComponentRef cr;
       DAE.VarDirection dir;
-      DAELow.Type tp;
+      BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
@@ -6360,8 +6361,8 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       DAE.ElementSource source "the origin of the element";
-    case (DAELow.VAR(varName = cr,
-                     varKind = DAELow.STATE(),
+    case (BackendDAE.VAR(varName = cr,
+                     varKind = BackendDAE.STATE(),
                      varDirection = dir,
                      varType = tp,
                      bindExp = exp,
@@ -6376,10 +6377,10 @@ algorithm
       equation
         cr = DAELow.crefPrefixDer(cr);
       then
-        DAELow.VAR(cr,DAELow.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
 
     case (v)
-      local DAELow.Var v;
+      local BackendDAE.Var v;
       then
         v;
   end matchcontinue;
@@ -6391,20 +6392,20 @@ protected function getEquationAndSolvedVar
   Retrieves the equation and the variable solved in that equation
   given an equation number and the variable assignments2"
   input Integer inInteger;
-  input DAELow.EquationArray inEquationArray;
-  input DAELow.Variables inVariables;
+  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.Variables inVariables;
   input array<Integer> inIntegerArray;
-  output DAELow.Equation outEquation;
-  output DAELow.Var outVar;
+  output BackendDAE.Equation outEquation;
+  output BackendDAE.Var outVar;
 algorithm
   (outEquation,outVar):=
   matchcontinue (inInteger,inEquationArray,inVariables,inIntegerArray)
     local
       Integer e_1,v,e;
-      DAELow.Equation eqn;
-      DAELow.Var var;
-      DAELow.EquationArray eqns;
-      DAELow.Variables vars;
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
       array<Integer> ass2;
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
@@ -6427,7 +6428,7 @@ protected function isPartOfMixedSystem
 "function: isPartOfMixedSystem
   Helper function to generateZeroCrossing2, returns true if any equation
   in the equation list of a zero-crossing is part of a mixed system."
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   input Integer inInteger;
   input list<list<Integer>> inIntegerLstLst;
   input array<Integer> inIntegerArray;
@@ -6437,16 +6438,16 @@ algorithm
   matchcontinue (inDAELow,inInteger,inIntegerLstLst,inIntegerArray)
     local
       list<Integer> block_;
-      list<DAELow.Equation> eqn_lst;
-      list<DAELow.Var> var_lst;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
       Boolean res;
-      DAELow.DAELow dae;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
+      BackendDAE.DAELow dae;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
       Integer e;
       list<list<Integer>> blocks;
       array<Integer> ass2;
-    case ((dae as DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
+    case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
       equation
         block_ = DAELow.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -6462,7 +6463,7 @@ protected function getZcMixedSystem
   Helper function to generateZeroCrossing2,
   returns true if any equation in the equation list
   of a zero-crossing is part of a mixed system."
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   input Integer inInteger;
   input list<list<Integer>> inIntegerLstLst;
   input array<Integer> inIntegerArray;
@@ -6472,15 +6473,15 @@ algorithm
   matchcontinue (inDAELow,inInteger,inIntegerLstLst,inIntegerArray)
     local
       list<Integer> block_;
-      list<DAELow.Equation> eqn_lst;
-      list<DAELow.Var> var_lst;
-      DAELow.DAELow dae;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
+      BackendDAE.DAELow dae;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
       Integer e;
       list<list<Integer>> blocks;
       array<Integer> ass2;
-    case ((dae as DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
+    case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
       equation
         block_ = DAELow.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -6495,20 +6496,20 @@ protected function splitOutputBlocks
   parts, one for continous output variables and one for discrete output values.
   This must be done to ensure that discrete variables are calculated before and
   after a discrete event."
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input DAELow.IncidenceMatrix m;
-  input DAELow.IncidenceMatrix mT;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mT;
   input list<list<Integer>> blocks;
   output list<list<Integer>> contBlocks;
   output list<list<Integer>> discBlocks;
 algorithm
   (contBlocks,discBlocks) := matchcontinue(dlow,ass1,ass2,m,mT,blocks)
-    local DAELow.Variables vars,vars2,knvars;
-      list<DAELow.Var> varLst, varLstDiscrete;
-      DAELow.EquationArray eqns;
-    case (dlow as DAELow.DAELOW(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
+    local BackendDAE.Variables vars,vars2,knvars;
+      list<BackendDAE.Var> varLst, varLstDiscrete;
+      BackendDAE.EquationArray eqns;
+    case (dlow as BackendDAE.DAELOW(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
       varLst = DAELow.varList(vars);
       varLstDiscrete = Util.listSelect(varLst,DAELow.isVarDiscrete);
       vars2 = DAELow.listVar(varLstDiscrete);
@@ -6518,18 +6519,18 @@ algorithm
 end splitOutputBlocks;
 
 protected function splitOutputBlocks2
-  input DAELow.Variables discVars;
-  input DAELow.Variables vars;
-  input DAELow.Variables knvars;
-  input DAELow.EquationArray eqns;
+  input BackendDAE.Variables discVars;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  input BackendDAE.EquationArray eqns;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input DAELow.IncidenceMatrix m;
-  input DAELow.IncidenceMatrix mT;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mT;
   input list<list<Integer>> blocks;
   output list<list<Integer>> contBlocks;
   output list<list<Integer>> discBlocks;
-  output DAELow.Variables outDiscVars;
+  output BackendDAE.Variables outDiscVars;
 algorithm
   (contBlocks,discBlocks,outDiscVars) := matchcontinue(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks)
     local list<Integer> blck;
@@ -6554,17 +6555,17 @@ end splitOutputBlocks2;
 protected function blockSolvesDiscrete
 "Help function to splitOutputBlocks
  succeds if the block solves for any discrete variable."
-  input DAELow.Variables discVars;
-  input DAELow.Variables vars;
-  input DAELow.Variables knvars;
-  input DAELow.EquationArray eqns;
+  input BackendDAE.Variables discVars;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  input BackendDAE.EquationArray eqns;
   input list<Integer> blck;
   input array<Integer> ass2;
-  input DAELow.IncidenceMatrixT mT;
-  output DAELow.Variables outDiscVars;
+  input BackendDAE.IncidenceMatrixT mT;
+  output BackendDAE.Variables outDiscVars;
 algorithm
   outDiscVars := matchcontinue(discVars,vars,knvars,eqns,blck,ass2,mT)
-    local list<DAELow.Equation> eqn_lst; list<DAELow.Var> var_lst;
+    local list<BackendDAE.Equation> eqn_lst; list<BackendDAE.Var> var_lst;
       /* Solves a discrete variable, typically in when-clause */
     case(discVars,vars,knvars,eqns,blck,ass2,mT)
       equation
@@ -6576,7 +6577,7 @@ algorithm
       /* Equation has variablity discrete time */
     case(discVars,vars,knvars,eqns,blck,ass2,mT) equation
       (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, discVars, ass2);
-      var_lst = Util.listMap1(var_lst,DAELow.setVarKind,DAELow.DISCRETE());
+      var_lst = Util.listMap1(var_lst,DAELow.setVarKind,BackendDAE.DISCRETE());
       discVars = DAELow.addVars(var_lst,discVars);
       _::_ = Util.listSelect2(eqn_lst,discVars,knvars,DAELow.isDiscreteEquation);
       discVars = DAELow.addVars(var_lst,discVars);
@@ -6872,32 +6873,32 @@ end useZerocrossing;
 
 protected function isNonState
 "Fails if the given variable kind is state."
-  input DAELow.VarKind inVarKind;
+  input BackendDAE.VarKind inVarKind;
 algorithm
   _ :=
   matchcontinue (inVarKind)
-    case (DAELow.VARIABLE()) then ();
-    case (DAELow.DUMMY_DER()) then ();
-    case (DAELow.DUMMY_STATE()) then ();
-    case (DAELow.DISCRETE()) then ();
-    case (DAELow.STATE_DER()) then ();
+    case (BackendDAE.VARIABLE()) then ();
+    case (BackendDAE.DUMMY_DER()) then ();
+    case (BackendDAE.DUMMY_STATE()) then ();
+    case (BackendDAE.DISCRETE()) then ();
+    case (BackendDAE.STATE_DER()) then ();
   end matchcontinue;
 end isNonState;
 
 protected function hasDiscreteVar
 "Returns true if var list contains a discrete time variable."
-  input list<DAELow.Var> inDAELowVarLst;
+  input list<BackendDAE.Var> inDAELowVarLst;
   output Boolean outBoolean;
 algorithm
   outBoolean :=
   matchcontinue (inDAELowVarLst)
     local
       Boolean res;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
-    case ((DAELow.VAR(varKind=DAELow.DISCRETE()) :: _)) then true;
-    case ((DAELow.VAR(varType=DAELow.INT()) :: _)) then true;
-    case ((DAELow.VAR(varType=DAELow.BOOL()) :: _)) then true;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
+    case ((BackendDAE.VAR(varKind=BackendDAE.DISCRETE()) :: _)) then true;
+    case ((BackendDAE.VAR(varType=BackendDAE.INT()) :: _)) then true;
+    case ((BackendDAE.VAR(varType=BackendDAE.BOOL()) :: _)) then true;
     case ((v :: vs))
       equation
         res = hasDiscreteVar(vs);
@@ -6909,20 +6910,20 @@ end hasDiscreteVar;
 
 protected function hasContinousVar
 "Returns true if var list contains a continous time variable."
-  input list<DAELow.Var> inDAELowVarLst;
+  input list<BackendDAE.Var> inDAELowVarLst;
   output Boolean outBoolean;
 algorithm
   outBoolean :=
   matchcontinue (inDAELowVarLst)
     local
       Boolean res;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
-    case ((DAELow.VAR(varKind=DAELow.VARIABLE()) :: _)) then true;
-    case ((DAELow.VAR(varKind=DAELow.STATE()) :: _)) then true;
-    case ((DAELow.VAR(varKind=DAELow.STATE_DER()) :: _)) then true;
-    case ((DAELow.VAR(varKind=DAELow.DUMMY_DER()) :: _)) then true;
-    case ((DAELow.VAR(varKind=DAELow.DUMMY_STATE()) :: _)) then true;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
     case ((v :: vs))
       equation
         res = hasContinousVar(vs);
@@ -6956,49 +6957,49 @@ algorithm
 end getCrefFromExp;
 
 protected function isVarDiscrete
-  input DAELow.Type tp;
-  input DAELow.VarKind kind;
+  input BackendDAE.Type tp;
+  input BackendDAE.VarKind kind;
   output Boolean res;
 algorithm
   res :=
   matchcontinue (tp, kind)
-    case (DAELow.REAL(), DAELow.DISCRETE()) then true;
-    case (_, DAELow.DISCRETE()) then true;
-    case (DAELow.INT(), _) then true;
-    case (DAELow.BOOL(), _) then true;
-    case (DAELow.ENUMERATION(_), _) then true;
+    case (BackendDAE.REAL(), BackendDAE.DISCRETE()) then true;
+    case (_, BackendDAE.DISCRETE()) then true;
+    case (BackendDAE.INT(), _) then true;
+    case (BackendDAE.BOOL(), _) then true;
+    case (BackendDAE.ENUMERATION(_), _) then true;
     case (_,_) then false;
   end matchcontinue;
 end isVarDiscrete;
 
 /* TODO: Is this correct? */
 protected function isVarAlg
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.VarKind kind;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* bool variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.BOOL()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.BOOL()))
       then false;      
     /* int variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.INT()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.INT()))
       then false;
     /* string variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.STRING()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.STRING()))
       then false;
     /* non-string variable */
-    case (DAELow.VAR(varKind = kind))
+    case (BackendDAE.VAR(varKind = kind))
       equation
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
       then true;
     case (_)
@@ -7008,21 +7009,21 @@ end isVarAlg;
 
 /* TODO: Is this correct? */
 protected function isVarStringAlg
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.VarKind kind;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.STRING()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.STRING()))
       equation
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
       then true;
     case (_)
@@ -7031,22 +7032,22 @@ algorithm
 end isVarStringAlg;
 
 protected function isVarIntAlg
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.VarKind kind;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* int variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.INT()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.INT()))
       equation
         
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
       then true;
     case (_)
@@ -7055,22 +7056,22 @@ algorithm
 end isVarIntAlg;
 
 protected function isVarBoolAlg
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.VarKind kind;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* int variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.BOOL()))
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as BackendDAE.BOOL()))
       equation
         
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
       then true;
     case (_)
@@ -7080,22 +7081,22 @@ end isVarBoolAlg;
 
 /* TODO: Is this correct? */
 protected function isVarParam
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* bool variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
       then false;      
     /* int variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.INT()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
       then false;
     /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
       then false;
     /* non-string variable */
     case (var)
@@ -7109,16 +7110,16 @@ end isVarParam;
 
 /* TODO: Is this correct? */
 protected function isVarStringParam
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
       equation
         true = DAELow.isParam(var);
       then true;
@@ -7128,16 +7129,16 @@ algorithm
 end isVarStringParam;
 
 protected function isVarIntParam
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.INT()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
       equation
         true = DAELow.isParam(var);
       then true;
@@ -7147,16 +7148,16 @@ algorithm
 end isVarIntParam;
 
 protected function isVarBoolParam
-  input DAELow.Var var;
+  input BackendDAE.Var var;
   output Boolean result;
 algorithm
   result :=
   matchcontinue (var)
     local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
+      BackendDAE.Type typeVar;
+      list<BackendDAE.VarKind> kind_lst;
     /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
       equation
         true = DAELow.isParam(var);
       then true;
@@ -7212,14 +7213,14 @@ algorithm
 end typesVar;
 
 protected function dlowvarToSimvar
-  input DAELow.Var dlowVar;
+  input BackendDAE.Var dlowVar;
   output SimVar simVar;
 algorithm
   simVar :=
   matchcontinue (dlowVar)
     local
       Exp.ComponentRef cr, origname;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       list<Exp.Subscript> inst_dims;
       Integer indx;
@@ -7227,14 +7228,14 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Option<SCode.Comment> comment;
-      DAELow.Type tp;
+      BackendDAE.Type tp;
       String orignameStr, commentStr, name, unit, displayUnit;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
-    case ((dlowVar as DAELow.VAR(varName = cr,
+    case ((dlowVar as BackendDAE.VAR(varName = cr,
                                  varKind = kind,
                                  varDirection = dir,
                                  arryDim = inst_dims,
@@ -7744,7 +7745,7 @@ protected function addDivExpErrorMsgtosimJac
 "function addDivExpErrorMsgtosimJac
   helper for addDivExpErrorMsgtoSimEqSystem."
   input tuple<Integer, Integer, SimEqSystem> inJac;
-  input tuple<DAELow.Variables,list<DAELow.Var>,DAELow.DivZeroExpReplace> inDlowMode;
+  input tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace> inDlowMode;
   output tuple<Integer, Integer, SimEqSystem> outJac;
   output list<DAE.Exp> outDivLst;
 algorithm
@@ -7766,7 +7767,7 @@ protected function addDivExpErrorMsgtoSimEqSystem
 "function addDivExpErrorMsgtoSimEqSystem
   Traverses all subexpressions of an expression of an equation."
   input SimEqSystem inSES;
-  input tuple<DAELow.Variables,list<DAELow.Var>,DAELow.DivZeroExpReplace> inDlowMode;
+  input tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace> inDlowMode;
   output SimEqSystem outSES;
   output list<DAE.Exp> outDivLst;
 algorithm
@@ -7964,10 +7965,10 @@ algorithm
 end extractVarUnit;
 
 protected function getInitialValue
-"Extract initial value from DAELow.Variable, if it has any
+"Extract initial value from BackendDAE.Variable, if it has any
 
 (merged and modified generateInitData3 and generateInitData4)"
-  input DAELow.Var daelowVar;
+  input BackendDAE.Var daelowVar;
   output Option<DAE.Exp> initVal;
 algorithm
   initVal := matchcontinue(daelowVar)
@@ -7975,63 +7976,63 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Values.Value value;
       DAE.Exp e;
-    case (DAELow.VAR(varKind = DAELow.VARIABLE(), varType = DAELow.STRING(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = BackendDAE.STRING(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.VARIABLE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.DISCRETE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.STATE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.DUMMY_DER(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.DUMMY_STATE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = SOME(value)))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
         true = Exp.isConst(e);
       then
         SOME(e);
-    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = SOME(value)))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
         true = Exp.isConst(e);
       then
         SOME(e);
     /* String - Parameters without value binding. Investigate if it has start value */
-    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = NONE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Exp.isConst(e);
       then
         SOME(e);
     /* Parameters without value binding. Investigate if it has start value */
-    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = NONE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Exp.isConst(e);

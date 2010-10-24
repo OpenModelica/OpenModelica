@@ -5,7 +5,7 @@ protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
 public import Tpl;
 
 public import SimCode;
-public import DAELow;
+public import BackendDAE;
 public import System;
 public import Absyn;
 public import DAE;
@@ -179,7 +179,7 @@ algorithm
         list<SimCode.SimEqSystem> i_allEquationsPlusWhen;
         list<SimCode.HelpVarInfo> i_helpVarInfo;
         list<list<SimCode.SimVar>> i_zeroCrossingsNeedSave;
-        list<DAELow.ZeroCrossing> i_zeroCrossings;
+        list<BackendDAE.ZeroCrossing> i_zeroCrossings;
         list<SimCode.SimEqSystem> i_nonStateDiscEquations;
         list<DAE.Statement> i_algorithmAndEquationAsserts;
         list<SimCode.SimEqSystem> i_removedEquations;
@@ -4211,7 +4211,7 @@ end functionDaeRes;
 
 public function functionZeroCrossing
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossings;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossings;
 
   output Tpl.Text out_txt;
 protected
@@ -4378,7 +4378,7 @@ end functionHandleZeroCrossing;
 
 public function functionInitSample
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossings;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossings;
 
   output Tpl.Text out_txt;
 protected
@@ -4678,7 +4678,7 @@ end functionUpdateDepend;
 
 public function functionOnlyZeroCrossing
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossings;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossings;
 
   output Tpl.Text out_txt;
 protected
@@ -5007,7 +5007,7 @@ end functionStoreDelayed;
 
 protected function lm_123
   input Tpl.Text in_txt;
-  input list<DAELow.ReinitStatement> in_items;
+  input list<BackendDAE.ReinitStatement> in_items;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -5028,8 +5028,8 @@ algorithm
            i_reinit :: rest,
            i_varDecls )
       local
-        list<DAELow.ReinitStatement> rest;
-        DAELow.ReinitStatement i_reinit;
+        list<BackendDAE.ReinitStatement> rest;
+        BackendDAE.ReinitStatement i_reinit;
         Tpl.Text i_body;
         Tpl.Text i_preExp;
       equation
@@ -5046,7 +5046,7 @@ algorithm
            _ :: rest,
            i_varDecls )
       local
-        list<DAELow.ReinitStatement> rest;
+        list<BackendDAE.ReinitStatement> rest;
       equation
         (txt, i_varDecls) = lm_123(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -5077,8 +5077,8 @@ algorithm
            i_varDecls )
       local
         list<SimCode.SimWhenClause> rest;
-        list<DAELow.ReinitStatement> i_reinits;
-        Option<DAELow.WhenEquation> i_whenEq;
+        list<BackendDAE.ReinitStatement> i_reinits;
+        Option<BackendDAE.WhenEquation> i_whenEq;
         Integer i_i0;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
@@ -5158,7 +5158,7 @@ end functionWhen;
 
 public function functionWhenCaseEquation
   input Tpl.Text in_txt;
-  input Option<DAELow.WhenEquation> in_i_when;
+  input Option<BackendDAE.WhenEquation> in_i_when;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -5171,12 +5171,12 @@ algorithm
       Tpl.Text i_varDecls;
 
     case ( txt,
-           SOME((i_weq as DAELow.WHEN_EQ(right = i_weq_right, left = i_weq_left))),
+           SOME((i_weq as BackendDAE.WHEN_EQ(right = i_weq_right, left = i_weq_left))),
            i_varDecls )
       local
         DAE.ComponentRef i_weq_left;
         DAE.Exp i_weq_right;
-        DAELow.WhenEquation i_weq;
+        BackendDAE.WhenEquation i_weq;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
@@ -5205,7 +5205,7 @@ end functionWhenCaseEquation;
 
 public function functionWhenReinitStatement
   input Tpl.Text in_txt;
-  input DAELow.ReinitStatement in_i_reinit;
+  input BackendDAE.ReinitStatement in_i_reinit;
   input Tpl.Text in_i_preExp;
   input Tpl.Text in_i_varDecls;
 
@@ -5221,7 +5221,7 @@ algorithm
       Tpl.Text i_varDecls;
 
     case ( txt,
-           DAELow.REINIT(value = i_value, stateVar = i_stateVar),
+           BackendDAE.REINIT(value = i_value, stateVar = i_stateVar),
            i_preExp,
            i_varDecls )
       local
@@ -5310,7 +5310,7 @@ end lm_128;
 
 protected function fun_129
   input Tpl.Text in_txt;
-  input list<DAELow.ReinitStatement> in_i_reinits;
+  input list<BackendDAE.ReinitStatement> in_i_reinits;
   input Tpl.Text in_i_ifthen;
   input Tpl.Text in_i_helpIf;
   input Tpl.Text in_i_helpInits;
@@ -5390,7 +5390,7 @@ algorithm
            i_varDecls,
            i_int )
       local
-        list<DAELow.ReinitStatement> i_reinits;
+        list<BackendDAE.ReinitStatement> i_reinits;
         list<tuple<DAE.Exp, Integer>> i_conditions;
         Tpl.Text i_ifthen;
         Tpl.Text i_helpIf;
@@ -5416,7 +5416,7 @@ end genreinits;
 
 protected function fun_131
   input Tpl.Text in_txt;
-  input DAELow.ReinitStatement in_i_reinit;
+  input BackendDAE.ReinitStatement in_i_reinit;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5432,7 +5432,7 @@ algorithm
       Tpl.Text i_preExp;
 
     case ( txt,
-           DAELow.REINIT(value = i_value, stateVar = i_stateVar),
+           BackendDAE.REINIT(value = i_value, stateVar = i_stateVar),
            i_varDecls,
            i_preExp )
       local
@@ -5457,7 +5457,7 @@ end fun_131;
 
 protected function lm_132
   input Tpl.Text in_txt;
-  input list<DAELow.ReinitStatement> in_items;
+  input list<BackendDAE.ReinitStatement> in_items;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5483,8 +5483,8 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<DAELow.ReinitStatement> rest;
-        DAELow.ReinitStatement i_reinit;
+        list<BackendDAE.ReinitStatement> rest;
+        BackendDAE.ReinitStatement i_reinit;
       equation
         (txt, i_varDecls, i_preExp) = fun_131(txt, i_reinit, i_varDecls, i_preExp);
         txt = Tpl.nextIter(txt);
@@ -5496,7 +5496,7 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<DAELow.ReinitStatement> rest;
+        list<BackendDAE.ReinitStatement> rest;
       equation
         (txt, i_varDecls, i_preExp) = lm_132(txt, rest, i_varDecls, i_preExp);
       then (txt, i_varDecls, i_preExp);
@@ -5505,7 +5505,7 @@ end lm_132;
 
 public function functionWhenReinitStatementThen
   input Tpl.Text txt;
-  input list<DAELow.ReinitStatement> i_reinits;
+  input list<BackendDAE.ReinitStatement> i_reinits;
   input Tpl.Text i_preExp;
   input Tpl.Text i_varDecls;
 
@@ -5525,7 +5525,7 @@ end functionWhenReinitStatementThen;
 
 protected function fun_134
   input Tpl.Text in_txt;
-  input DAELow.ReinitStatement in_i_reinit;
+  input BackendDAE.ReinitStatement in_i_reinit;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5541,7 +5541,7 @@ algorithm
       Tpl.Text i_preExp;
 
     case ( txt,
-           DAELow.REINIT(value = i_value, stateVar = i_stateVar),
+           BackendDAE.REINIT(value = i_value, stateVar = i_stateVar),
            i_varDecls,
            i_preExp )
       local
@@ -5566,7 +5566,7 @@ end fun_134;
 
 protected function lm_135
   input Tpl.Text in_txt;
-  input list<DAELow.ReinitStatement> in_items;
+  input list<BackendDAE.ReinitStatement> in_items;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5592,8 +5592,8 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<DAELow.ReinitStatement> rest;
-        DAELow.ReinitStatement i_reinit;
+        list<BackendDAE.ReinitStatement> rest;
+        BackendDAE.ReinitStatement i_reinit;
       equation
         (txt, i_varDecls, i_preExp) = fun_134(txt, i_reinit, i_varDecls, i_preExp);
         txt = Tpl.nextIter(txt);
@@ -5605,7 +5605,7 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<DAELow.ReinitStatement> rest;
+        list<BackendDAE.ReinitStatement> rest;
       equation
         (txt, i_varDecls, i_preExp) = lm_135(txt, rest, i_varDecls, i_preExp);
       then (txt, i_varDecls, i_preExp);
@@ -5614,7 +5614,7 @@ end lm_135;
 
 public function functionWhenReinitStatementElse
   input Tpl.Text txt;
-  input list<DAELow.ReinitStatement> i_reinits;
+  input list<BackendDAE.ReinitStatement> i_reinits;
   input Tpl.Text i_preExp;
   input Tpl.Text i_varDecls;
 
@@ -7358,7 +7358,7 @@ end functionCheckForDiscreteVarChanges;
 
 protected function lm_177
   input Tpl.Text in_txt;
-  input list<DAELow.ZeroCrossing> in_items;
+  input list<BackendDAE.ZeroCrossing> in_items;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -7376,10 +7376,10 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           DAELow.ZERO_CROSSING(relation_ = i_relation__) :: rest,
+           BackendDAE.ZERO_CROSSING(relation_ = i_relation__) :: rest,
            i_varDecls )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
         DAE.Exp i_relation__;
         Integer i_i0;
       equation
@@ -7393,7 +7393,7 @@ algorithm
            _ :: rest,
            i_varDecls )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
       equation
         (txt, i_varDecls) = lm_177(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -7402,7 +7402,7 @@ end lm_177;
 
 public function zeroCrossingsTpl
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossings;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossings;
   input Tpl.Text i_varDecls;
 
   output Tpl.Text out_txt;
@@ -7508,7 +7508,7 @@ end zeroCrossingTpl;
 
 protected function lm_181
   input Tpl.Text in_txt;
-  input list<DAELow.ZeroCrossing> in_items;
+  input list<BackendDAE.ZeroCrossing> in_items;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -7526,10 +7526,10 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           DAELow.ZERO_CROSSING(relation_ = i_relation__) :: rest,
+           BackendDAE.ZERO_CROSSING(relation_ = i_relation__) :: rest,
            i_varDecls )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
         DAE.Exp i_relation__;
         Integer i_i0;
       equation
@@ -7543,7 +7543,7 @@ algorithm
            _ :: rest,
            i_varDecls )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
       equation
         (txt, i_varDecls) = lm_181(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -7552,7 +7552,7 @@ end lm_181;
 
 public function timeEventsTpl
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossings;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossings;
   input Tpl.Text i_varDecls;
 
   output Tpl.Text out_txt;

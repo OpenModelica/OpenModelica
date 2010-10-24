@@ -46,7 +46,7 @@ package SimCode
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<DAE.Statement> algorithmAndEquationAsserts;
-      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
@@ -191,8 +191,8 @@ package SimCode
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
       list<DAE.ComponentRef> conditionVars;
-      list<DAELow.ReinitStatement> reinits;
-      Option<DAELow.WhenEquation> whenEq;
+      list<BackendDAE.ReinitStatement> reinits;
+      Option<BackendDAE.WhenEquation> whenEq;
       list<tuple<DAE.Exp, Integer>> conditions;
     end SIM_WHEN_CLAUSE;
   end SimWhenClause;
@@ -248,7 +248,7 @@ package SimCode
   uniontype SimVar
     record SIMVAR
       DAE.ComponentRef name;
-      DAELow.VarKind varKind;
+      BackendDAE.VarKind varKind;
       String comment;
       String unit;
       String displayUnit;
@@ -396,7 +396,7 @@ package SimCode
 end SimCode;
 
 
-package DAELow
+package BackendDAE
 
   uniontype VarKind "- Variable kind"
     record VARIABLE end VARIABLE;
@@ -434,7 +434,7 @@ package DAELow
     end WHEN_EQ;
   end WhenEquation;
   
-end DAELow;
+end BackendDAE;
 
 package System
 

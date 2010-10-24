@@ -5,7 +5,7 @@ protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
 public import Tpl;
 
 public import SimCode;
-public import DAELow;
+public import BackendDAE;
 public import System;
 public import Absyn;
 public import DAE;
@@ -99,7 +99,7 @@ algorithm
         list<SimCode.SimEqSystem> i_allEquationsPlusWhen;
         list<SimCode.HelpVarInfo> i_helpVarInfo;
         list<SimCode.SimEqSystem> i_allEquations;
-        list<DAELow.ZeroCrossing> i_zeroCrossings;
+        list<BackendDAE.ZeroCrossing> i_zeroCrossings;
         list<SimCode.SimEqSystem> i_nonStateDiscEquations;
         list<SimCode.SimEqSystem> i_removedEquations;
         list<SimCode.SimEqSystem> i_nonStateContEquations;
@@ -2495,7 +2495,7 @@ end functionOutput;
 
 protected function lm_71
   input Tpl.Text in_txt;
-  input list<DAELow.ZeroCrossing> in_items;
+  input list<BackendDAE.ZeroCrossing> in_items;
   input SimCode.SimCode in_i_simCode;
 
   output Tpl.Text out_txt;
@@ -2512,10 +2512,10 @@ algorithm
       then txt;
 
     case ( txt,
-           DAELow.ZERO_CROSSING(relation_ = i_relation__) :: rest,
+           BackendDAE.ZERO_CROSSING(relation_ = i_relation__) :: rest,
            i_simCode )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
         DAE.Exp i_relation__;
         Integer i_i0;
       equation
@@ -2529,7 +2529,7 @@ algorithm
            _ :: rest,
            i_simCode )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
       equation
         txt = lm_71(txt, rest, i_simCode);
       then txt;
@@ -2538,7 +2538,7 @@ end lm_71;
 
 public function functionZeroCrossing
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossingLst;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossingLst;
   input SimCode.SimCode i_simCode;
 
   output Tpl.Text out_txt;
@@ -2917,7 +2917,7 @@ end functionUpdateDepend;
 
 protected function lm_81
   input Tpl.Text in_txt;
-  input list<DAELow.ZeroCrossing> in_items;
+  input list<BackendDAE.ZeroCrossing> in_items;
   input SimCode.SimCode in_i_simCode;
 
   output Tpl.Text out_txt;
@@ -2934,10 +2934,10 @@ algorithm
       then txt;
 
     case ( txt,
-           DAELow.ZERO_CROSSING(relation_ = i_relation__) :: rest,
+           BackendDAE.ZERO_CROSSING(relation_ = i_relation__) :: rest,
            i_simCode )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
         DAE.Exp i_relation__;
         Integer i_i0;
       equation
@@ -2951,7 +2951,7 @@ algorithm
            _ :: rest,
            i_simCode )
       local
-        list<DAELow.ZeroCrossing> rest;
+        list<BackendDAE.ZeroCrossing> rest;
       equation
         txt = lm_81(txt, rest, i_simCode);
       then txt;
@@ -2960,7 +2960,7 @@ end lm_81;
 
 public function functionOnlyZeroCrossing
   input Tpl.Text txt;
-  input list<DAELow.ZeroCrossing> i_zeroCrossingLst;
+  input list<BackendDAE.ZeroCrossing> i_zeroCrossingLst;
   input SimCode.SimCode i_simCode;
 
   output Tpl.Text out_txt;
@@ -3203,7 +3203,7 @@ end functionStoreDelayed;
 
 protected function lm_87
   input Tpl.Text in_txt;
-  input list<DAELow.ReinitStatement> in_items;
+  input list<BackendDAE.ReinitStatement> in_items;
   input SimCode.SimCode in_i_simCode;
 
   output Tpl.Text out_txt;
@@ -3220,10 +3220,10 @@ algorithm
       then txt;
 
     case ( txt,
-           DAELow.REINIT(value = i_value, stateVar = i_stateVar) :: rest,
+           BackendDAE.REINIT(value = i_value, stateVar = i_stateVar) :: rest,
            i_simCode )
       local
-        list<DAELow.ReinitStatement> rest;
+        list<BackendDAE.ReinitStatement> rest;
         DAE.ComponentRef i_stateVar;
         DAE.Exp i_value;
         Tpl.Text i_valueExp;
@@ -3245,7 +3245,7 @@ algorithm
            _ :: rest,
            i_simCode )
       local
-        list<DAELow.ReinitStatement> rest;
+        list<BackendDAE.ReinitStatement> rest;
       equation
         txt = lm_87(txt, rest, i_simCode);
       then txt;
@@ -3275,8 +3275,8 @@ algorithm
            i_simCode )
       local
         list<SimCode.SimWhenClause> rest;
-        list<DAELow.ReinitStatement> i_reinits;
-        Option<DAELow.WhenEquation> i_whenEq;
+        list<BackendDAE.ReinitStatement> i_reinits;
+        Option<BackendDAE.WhenEquation> i_whenEq;
         Integer i_i0;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
@@ -3365,7 +3365,7 @@ end functionWhen;
 
 public function functionWhen_caseEquation
   input Tpl.Text in_txt;
-  input Option<DAELow.WhenEquation> in_i_it;
+  input Option<BackendDAE.WhenEquation> in_i_it;
   input SimCode.SimCode in_i_simCode;
 
   output Tpl.Text out_txt;
@@ -3377,12 +3377,12 @@ algorithm
       SimCode.SimCode i_simCode;
 
     case ( txt,
-           SOME((i_weq as DAELow.WHEN_EQ(right = i_weq_right, left = i_weq_left))),
+           SOME((i_weq as BackendDAE.WHEN_EQ(right = i_weq_right, left = i_weq_left))),
            i_simCode )
       local
         DAE.ComponentRef i_weq_left;
         DAE.Exp i_weq_right;
-        DAELow.WhenEquation i_weq;
+        BackendDAE.WhenEquation i_weq;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
@@ -5030,7 +5030,7 @@ algorithm
            SimCode.SIMVAR(varKind = i_varKind, index = i_index) )
       local
         Integer i_index;
-        DAELow.VarKind i_varKind;
+        BackendDAE.VarKind i_varKind;
       equation
         txt = representationArrayName(txt, i_varKind);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
@@ -5059,7 +5059,7 @@ end representationCref;
 
 public function representationArrayName
   input Tpl.Text in_txt;
-  input DAELow.VarKind in_i_varKind;
+  input BackendDAE.VarKind in_i_varKind;
 
   output Tpl.Text out_txt;
 algorithm
@@ -5069,43 +5069,43 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           DAELow.VARIABLE() )
+           BackendDAE.VARIABLE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Y"));
       then txt;
 
     case ( txt,
-           DAELow.STATE() )
+           BackendDAE.STATE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("X"));
       then txt;
 
     case ( txt,
-           DAELow.STATE_DER() )
+           BackendDAE.STATE_DER() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Xd"));
       then txt;
 
     case ( txt,
-           DAELow.DUMMY_DER() )
+           BackendDAE.DUMMY_DER() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Y"));
       then txt;
 
     case ( txt,
-           DAELow.DUMMY_STATE() )
+           BackendDAE.DUMMY_STATE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Y"));
       then txt;
 
     case ( txt,
-           DAELow.DISCRETE() )
+           BackendDAE.DISCRETE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Y/*d*/"));
       then txt;
 
     case ( txt,
-           DAELow.PARAM() )
+           BackendDAE.PARAM() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("P"));
       then txt;
@@ -5113,7 +5113,7 @@ algorithm
     case ( txt,
            i_CONST )
       local
-        DAELow.VarKind i_CONST;
+        BackendDAE.VarKind i_CONST;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("CONST_VAR_KIND"));
       then txt;
@@ -7264,7 +7264,7 @@ algorithm
            i_arrType,
            i_tmpArr )
       local
-        DAELow.VarKind i_varKind;
+        BackendDAE.VarKind i_varKind;
         Integer i_index;
       equation
         (txt, i_tmpArr) = tempDecl(txt, "var", i_tmpArr);
@@ -7644,7 +7644,7 @@ algorithm
            i_subs,
            i_dims )
       local
-        DAELow.VarKind i_varKind;
+        BackendDAE.VarKind i_varKind;
         Integer i_index;
         Tpl.Text i_baseSub;
         Tpl.Text i_constSum;

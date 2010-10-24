@@ -37,6 +37,7 @@ package DAEQuery
   RCS: $Id$"
 
 public
+import BackendDAE;
 import DAELow;
 import SCode;
 
@@ -53,7 +54,7 @@ import DAEDump;
 protected constant String matlabStringDelim = "'";
 
 public function writeIncidenceMatrix
-  input DAELow.DAELow dlow;
+  input BackendDAE.DAELow dlow;
   input String fileNamePrefix;
   input String flatModelicaStr;
   output String fileName;
@@ -80,7 +81,7 @@ public function getEquations
 "function: getEquations
  @author adrpo
   This function returns the equations"
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   output String strEqs;
 algorithm
   strEqs:=
@@ -88,11 +89,11 @@ algorithm
     local
       String s,s1;
       list<String> ls1;
-      list<DAELow.Equation> eqnsl;
+      list<BackendDAE.Equation> eqnsl;
       list<String> ss;
-      DAELow.EquationArray eqns;
-      list<DAELow.WhenClause> wcLst;
-    case (DAELow.DAELOW(orderedEqs = eqns, eventInfo = DAELow.EVENT_INFO(whenClauseLst = wcLst)))
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.WhenClause> wcLst;
+    case (BackendDAE.DAELOW(orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
       equation
         eqnsl = DAELow.equationList(eqns);
         ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
@@ -106,8 +107,8 @@ end getEquations;
 public function equationStr
 "function: equationStr
   Helper function to getEqustions."
-  input DAELow.Equation inEquation;
-  input list<DAELow.WhenClause> wcLst;
+  input BackendDAE.Equation inEquation;
+  input list<BackendDAE.WhenClause> wcLst;
   output String outString;
 algorithm
   outString:=
@@ -115,46 +116,46 @@ algorithm
     local
       String s1,s2,s3,res,indx_str,is,var_str;
       DAE.Exp e1,e2,e,condition;
-      DAELow.Value indx,i;
+      BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
-    case (DAELow.EQUATION(exp = e1,scalar = e2), _)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2), _)
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         res = System.stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
-    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
+    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
         var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
         res = System.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
       then
         res;
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = System.stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
-        DAELow.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
+        BackendDAE.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
         s3 = Exp.printExpStr(condition);
         res = System.stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
-    case (DAELow.RESIDUAL_EQUATION(exp = e),_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),_)
       equation
         s1 = Exp.printExpStr(e);
         res = System.stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
-    case (DAELow.ALGORITHM(index = i),_)
+    case (BackendDAE.ALGORITHM(index = i),_)
       equation
         is = intString(i);
         res = System.stringAppendList({"Algorithm no: ",is,"\n"});
@@ -239,16 +240,16 @@ end getIncidenceRow;
 public function getVariables "function: getVariables
   This function returns the variables
 "
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   output String strVars;
 algorithm
   strVars:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Var> vars;
+      list<BackendDAE.Var> vars;
       String s;
-      DAELow.Variables vars1;
-    case (DAELow.DAELOW(orderedVars = vars1))
+      BackendDAE.Variables vars1;
+    case (BackendDAE.DAELOW(orderedVars = vars1))
       equation
         vars = varList(vars1);
         s = dumpVars(vars);
@@ -259,17 +260,17 @@ algorithm
 end getVariables;
 
 public function varList "function: varList
-  Takes Variables and returns a list of \'DAELow.Var\', useful for e.g. dumping.
+  Takes Variables and returns a list of \'BackendDAE.Var\', useful for e.g. dumping.
 "
-  input DAELow.Variables inVariables;
-  output list<DAELow.Var> outVarLst;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
 algorithm
   outVarLst:=
   matchcontinue (inVariables)
     local
-      list<DAELow.Var> varlst;
-      DAELow.VariableArray vararr;
-    case (DAELow.VARIABLES(varArr = vararr))
+      list<BackendDAE.Var> varlst;
+      BackendDAE.VariableArray vararr;
+    case (BackendDAE.VARIABLES(varArr = vararr))
       equation
         varlst = DAELow.vararrayList(vararr);
       then
@@ -280,25 +281,25 @@ end varList;
 
 public function vararrayList "function: vararrayList
 
-  Transforms a VariableArray to a DAELow.Var list
+  Transforms a VariableArray to a BackendDAE.Var list
 "
-  input DAELow.VariableArray inVariableArray;
-  output list<DAELow.Var> outVarLst;
+  input BackendDAE.VariableArray inVariableArray;
+  output list<BackendDAE.Var> outVarLst;
 algorithm
   outVarLst:=
   matchcontinue (inVariableArray)
     local
-      Option<DAELow.Var>[:] arr;
-      DAELow.Var elt;
+      Option<BackendDAE.Var>[:] arr;
+      BackendDAE.Var elt;
       Integer lastpos,n,size;
-      list<DAELow.Var> lst;
-    case (DAELow.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
-    case (DAELow.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
+      list<BackendDAE.Var> lst;
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
       equation
         SOME(elt) = arr[0 + 1];
       then
         {elt};
-    case (DAELow.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
       equation
         lastpos = n - 1;
         lst = vararrayList2(arr, 0, lastpos);
@@ -311,18 +312,18 @@ protected function vararrayList2 "function: vararrayList2
 
   Helper function to vararray_list
 "
-  input Option<DAELow.Var>[:] inVarOptionArray1;
+  input Option<BackendDAE.Var>[:] inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
-  output list<DAELow.Var> outVarLst;
+  output list<BackendDAE.Var> outVarLst;
 algorithm
   outVarLst:=
   matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
     local
-      DAELow.Var v;
-      Option<DAELow.Var>[:] arr;
+      BackendDAE.Var v;
+      Option<BackendDAE.Var>[:] arr;
       Integer pos,lastpos,pos_1;
-      list<DAELow.Var> res;
+      list<BackendDAE.Var> res;
     case (arr,pos,lastpos)
       equation
         (pos == lastpos) = true;
@@ -342,7 +343,7 @@ end vararrayList2;
 public function dumpVars "function: dumpVars
   Helper function to dump.
 "
-  input list<DAELow.Var> vars;
+  input list<BackendDAE.Var> vars;
   output String strVars;
 algorithm
   strVars := dumpVars2(vars, 1);
@@ -351,7 +352,7 @@ end dumpVars;
 protected function dumpVars2 "function: dumpVars2
   Helper function to dump_vars.
 "
-  input list<DAELow.Var> inVarLst;
+  input list<BackendDAE.Var> inVarLst;
   input Integer inInteger;
   output String strVars;
 algorithm
@@ -361,9 +362,9 @@ algorithm
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str,str1,str2;
       list<String> paths_lst,path_strs;
       Integer varno_1,indx,varno;
-      DAELow.Var v;
+      BackendDAE.Var v;
       DAE.ComponentRef cr,old_name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
       list<Absyn.Path> paths;
@@ -371,12 +372,12 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAELow.Var> xs;
-      DAELow.Type var_type;
+      list<BackendDAE.Var> xs;
+      BackendDAE.Type var_type;
       DAE.ElementSource source "the origin of the element";
 
     case ({},_) then "";
-    case (((v as DAELow.VAR(varName = cr,
+    case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
                             varType = var_type,
@@ -413,7 +414,7 @@ algorithm
       then
         str;
 
-      case (((v as DAELow.VAR(varName = cr,
+      case (((v as BackendDAE.VAR(varName = cr,
                               varKind = kind,
                               varDirection = dir,
                               varType = var_type,
@@ -459,18 +460,18 @@ public function incidenceMatrix
   author: PA
   Calculates the incidence matrix, i.e. which
   variables are present in each equation."
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.DAELow inDAELow;
   output list<String>[:] outIncidenceMatrix;
 algorithm
   outIncidenceMatrix:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Equation> eqnsl;
+      list<BackendDAE.Equation> eqnsl;
       list<list<String>> lstlst;
       list<String>[:] arr;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns))
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns))
       equation
         eqnsl = DAELow.equationList(eqns);
         lstlst = incidenceMatrix2(vars, eqnsl);
@@ -491,8 +492,8 @@ protected function incidenceMatrix2 "function: incidenceMatrix2
   Helper function to incidence_matrix
   Calculates the incidence matrix as a list of list of integers
 "
-  input DAELow.Variables inVariables;
-  input list<DAELow.Equation> inEquationLst;
+  input BackendDAE.Variables inVariables;
+  input list<BackendDAE.Equation> inEquationLst;
   output list<list<String>> outStringLstLst;
 algorithm
   outStringLstLst:=
@@ -500,9 +501,9 @@ algorithm
     local
       list<list<String>> lst;
       list<String> row;
-      DAELow.Variables vars;
-      DAELow.Equation e;
-      list<DAELow.Equation> eqns;
+      BackendDAE.Variables vars;
+      BackendDAE.Equation e;
+      list<BackendDAE.Equation> eqns;
     case (_,{}) then {};
     case (vars,(e :: eqns))
       equation
@@ -524,54 +525,54 @@ protected function incidenceRow "function: incidenceRow
   Helper function to incidence_matrix. Calculates the indidence row
   in the matrix for one equation.
 "
-  input DAELow.Variables inVariables;
-  input DAELow.Equation inEquation;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Equation inEquation;
   output list<String> outIntegerLst;
 algorithm
   outIntegerLst:=
   matchcontinue (inVariables,inEquation)
     local
       list<String> lst1,lst2,res,res_1;
-      DAELow.Variables vars;
+      BackendDAE.Variables vars;
       DAE.Exp e1,e2,e;
       list<list<String>> lst3;
       list<DAE.Exp> expl,inputs,outputs;
       DAE.ComponentRef cr;
-      DAELow.WhenEquation we;
-      DAELow.Value indx;
-    case (vars,DAELow.EQUATION(exp = e1,scalar = e2))
+      BackendDAE.WhenEquation we;
+      BackendDAE.Value indx;
+    case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
         lst1 = incidenceRowExp(e1, vars) "EQUATION" ;
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,DAELow.ARRAY_EQUATION(crefOrDerCref = expl)) /* ARRAY_EQUATION */
+    case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl)) /* ARRAY_EQUATION */
       equation
         lst3 = Util.listMap1(expl, incidenceRowExp, vars);
         res = Util.listFlatten(lst3);
       then
         res;
-    case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
+    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
         lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
+    case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
         lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,DAELow.RESIDUAL_EQUATION(exp = e)) /* RESIDUAL_EQUATION */
+    case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e)) /* RESIDUAL_EQUATION */
       equation
         res = incidenceRowExp(e, vars);
       then
         res;
-    case (vars,DAELow.WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
+    case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
       equation
         (cr,e2) = DAELow.getWhenEquationExpr(we);
         e1 = DAE.CREF(cr,DAE.ET_OTHER());
@@ -580,7 +581,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,DAELow.ALGORITHM(index = indx,in_ = inputs,out = outputs)) /* ALGORITHM For now assume that algorithm will be solvable for correct
+    case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs)) /* ALGORITHM For now assume that algorithm will be solvable for correct
 	  variables. I.e. find all variables in algorithm and add to lst.
 	  If algorithm later on needs to be inverted, i.e. solved for
 	  different variables than calculated, a non linear solver or
@@ -609,7 +610,7 @@ protected function incidenceRowStmts "function: incidenceRowStmts
   variables, returning variable indexes.
 "
   input list<Algorithm.Statement> inAlgorithmStatementLst;
-  input DAELow.Variables inVariables;
+  input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
@@ -620,7 +621,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e, e1;
       list<Algorithm.Statement> rest,stmts;
-      DAELow.Variables vars;
+      BackendDAE.Variables vars;
       list<DAE.Exp> expl;
       Algorithm.Else else_;
     case ({},_) then {};
@@ -685,7 +686,7 @@ protected function incidenceRowExp "function: incidenceRowExp
   variables, returning variable indexes.
 "
   input DAE.Exp inExp;
-  input DAELow.Variables inVariables;
+  input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
@@ -693,17 +694,17 @@ algorithm
     local
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAELow.Value> p,p_1;
+      list<BackendDAE.Value> p,p_1;
       list<String> pStr,s1,s2,res,s3,lst_1;
       String s;
       list<list<String>> lst;
       DAE.ComponentRef cr;
-      DAELow.Variables vars;
+      BackendDAE.Variables vars;
       DAE.Exp e1,e2,e,e3;
       list<DAE.Exp> expl;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.STATE()) :: _),p) =
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
         DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
 	                               x is inserted as negative value, since it is needed by debugging and index
 	                               reduction using dummy derivatives" ;
@@ -713,25 +714,25 @@ algorithm
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.VARIABLE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.DISCRETE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.DUMMY_DER()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.DUMMY_STATE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
@@ -863,7 +864,7 @@ algorithm
         pStr;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((DAELow.VAR(varKind = DAELow.STATE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
@@ -932,7 +933,7 @@ protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
   Traverses matrix expressions for building incidence matrix.
 "
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
-  input DAELow.Variables inVariables;
+  input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
@@ -943,7 +944,7 @@ algorithm
       list<tuple<DAE.Exp, Boolean>> expl;
       list<list<tuple<DAE.Exp, Boolean>>> es;
       list<String> pStr, res1_1, res2;
-      DAELow.Variables vars;
+      BackendDAE.Variables vars;
     case ({},_) then {};
     case ((expl :: es),vars)
       equation
