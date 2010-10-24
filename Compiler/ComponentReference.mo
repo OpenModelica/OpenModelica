@@ -52,6 +52,29 @@ protected import RTOpts;
 protected import Util;
 
 
+public function makeCrefIdent
+"@author: adrpo
+  This function creates a DAE.CREF_IDENT(ident, identType, subscriptLst)"
+  input DAE.Ident ident;
+  input DAE.ExpType identType "type of the identifier, without considering the subscripts";
+  input list<DAE.Subscript> subscriptLst;
+  output DAE.ComponentRef outCrefIdent;
+algorithm
+  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst);
+end makeCrefIdent;
+
+public function makeCrefQual
+"@author: adrpo
+  This function creates a DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef)"
+  input DAE.Ident ident;
+  input DAE.ExpType identType "type of the identifier, without considering the subscripts";
+  input list<DAE.Subscript> subscriptLst;
+  input DAE.ComponentRef componentRef;
+  output DAE.ComponentRef outCrefQual;
+algorithm
+  outCrefQual := DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef);
+end makeCrefQual;
+
 public function crefPrependIdent "prepends (e..g as a suffix) an identifier to a component reference, given the identifier, subscript and the type
 author: PA
 
