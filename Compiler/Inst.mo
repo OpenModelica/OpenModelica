@@ -3545,10 +3545,6 @@ algorithm
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
           instList(cache, env5, ih, mods, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, alwaysUnroll, graph) ;
 
-        // Check if we are assigning to any local connectors, and consider that
-        // to be an implicit connect.
-        csets2 = connectImplicitlyConnectedFlow(dae2, csets2, isTopCall(callscope));
-
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =
           instList(cache, env5, ih, mods, pre, csets2, ci_state3, InstSection.instInitialEquation, initeqs_1, impl, alwaysUnroll, graph);
@@ -14970,45 +14966,5 @@ algorithm
     case (_, _) then inConnectionSet;
   end matchcontinue;
 end addFlowVariable;
-
-protected function connectImplicitlyConnectedFlow
-  "Checks each equation in the dae, and if a local connector is assigned this is
-  considered an implicit connection which is added to the connection set."
-  input DAE.DAElist inDae;
-  input Connect.Sets inSets;
-  input Boolean isTopCall;
-  output Connect.Sets outSets;
-algorithm
-  outSets := matchcontinue(inDae, inSets, isTopCall)
-    local
-      list<DAE.Element> el;
-    case (DAE.DAE(elementLst = el), _, false)
-      equation
-        inSets = Util.listFold(el, connectImplicitlyConnectedFlow2, inSets); 
-      then
-        inSets;
-    case (_, _, _) then inSets;
-  end matchcontinue;
-end connectImplicitlyConnectedFlow;
-
-protected function connectImplicitlyConnectedFlow2
-  "Checks if the given element is an equation where the lhs is a component
-  reference, and if so uses ConnectUtil to see if the component reference is an
-  unconnected flow variable that should be implicitly connected."
-  input DAE.Element inElem;
-  input Connect.Sets inSets;
-  output Connect.Sets outSets;
-algorithm
-  outSets := matchcontinue(inElem, inSets)
-    case (DAE.EQUATION(exp = DAE.CREF(componentRef = cr)), _)
-      local
-        DAE.ComponentRef cr;
-      equation
-        inSets = ConnectUtil.connectUnconnectedFlowFromEq(cr, inSets);
-      then
-        inSets;
-    case (_, _) then inSets;
-  end matchcontinue;
-end connectImplicitlyConnectedFlow2;
 
 end Inst;

@@ -1466,30 +1466,6 @@ algorithm
   end matchcontinue;
 end removeSet;
 
-public function connectUnconnectedFlowFromEq
-  "This function tries to find an unconnected flow component, and removes it
-  from the connection sets if found. It is used to implicitly connect flow
-  variables when a flow variable is assigned locally in an equation."
-  input DAE.ComponentRef inComponentRef;
-  input Connect.Sets inSets;
-  output Connect.Sets outSets;
-algorithm
-  outSets := matchcontinue(inComponentRef, inSets)
-    local
-      DAE.ComponentRef cr;
-      list<Connect.Set> set_lst;
-      list<DAE.ComponentRef> c, d;
-      list<Connect.OuterConnect> oc;
-    case (_, Connect.SETS(setLst = set_lst, connection = c, 
-        deletedComponents = d, outerConnects = oc))
-      equation
-        set_lst = removeUnconnectedFlowVariable(inComponentRef, Connect.INSIDE, set_lst);
-      then
-        Connect.SETS(set_lst, c, d, oc);
-    case (_, _) then inSets;
-  end matchcontinue;
-end connectUnconnectedFlowFromEq;
-
 protected function removeUnconnectedFlowVariable
   "This function searches for a flow variable that is unconnected, i.e. that is
   alone in a connection set, and removed the set from the connection sets."
