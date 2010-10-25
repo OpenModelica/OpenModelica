@@ -654,7 +654,7 @@ algorithm
         algarr = listArray(algs);
         funcs = DAEUtil.daeFunctionTree(lst);
         einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        //DAELowUtil.checkDEALowWithErrorMsg(DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
+        DAELowUtil.checkDEALowWithErrorMsg(DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
       then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 
     case(lst, addDummyDerivativeIfNeeded, false) // do not simplify
@@ -691,7 +691,7 @@ algorithm
         algarr = listArray(algs);
         funcs = DAEUtil.daeFunctionTree(lst);
         einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        //DAELowUtil.checkDEALowWithErrorMsg(DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
+        DAELowUtil.checkDEALowWithErrorMsg(DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
       then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
   end matchcontinue;
 end lower;
@@ -6132,17 +6132,17 @@ algorithm
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.DEFINE(componentRef = cr1, exp = e1, source = source))
+    case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
 
-    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e1, source = source))
+    case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
         e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
   end matchcontinue;
@@ -15416,6 +15416,7 @@ public function traverseDEALowExps "function: traverseDEALowExps
   replaceable type Type_a subtypeof Any;  
   replaceable type Type_b subtypeof Any;  
   input DAELow inDAELow;
+  input Boolean traverseAlgorithms "true if traverse also algorithms";  
   input FuncExpType func;
   input Type_a inTypeA;
   output list<Type_b> outTypeBLst;
@@ -15426,7 +15427,7 @@ public function traverseDEALowExps "function: traverseDEALowExps
   end FuncExpType;
 algorithm
   outTypeBLst:=
-  matchcontinue (inDAELow,func,inTypeA)
+  matchcontinue (inDAELow,traverseAlgorithms,func,inTypeA)
     local
       list<Type_b> exps1,exps2,exps3,exps4,exps5,exps6,exps7,exps;
       list<DAE.Algorithm> alglst;
@@ -15435,7 +15436,7 @@ algorithm
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] algs;
     case (DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
-          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),func,inTypeA)
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),true,func,inTypeA)
       equation
         exps1 = traverseDEALowExpsVars(vars1,func,inTypeA);
         exps2 = traverseDEALowExpsVars(vars2,func,inTypeA);
@@ -15448,7 +15449,19 @@ algorithm
         exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6,exps7});
       then
         exps;
-    case (_,_,_)
+    case (DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),false,func,inTypeA)
+      equation
+        exps1 = traverseDEALowExpsVars(vars1,func,inTypeA);
+        exps2 = traverseDEALowExpsVars(vars2,func,inTypeA);
+        exps3 = traverseDEALowExpsEqns(eqns,func,inTypeA);
+        exps4 = traverseDEALowExpsEqns(reqns,func,inTypeA);
+        exps5 = traverseDEALowExpsEqns(ieqns,func,inTypeA);
+        exps6 = traverseDEALowExpsArrayEqns(ae,func,inTypeA);
+        exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6});
+      then
+        exps;        
+    case (_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- DAELow.traverseDEALowExps failed");
       then
@@ -17190,7 +17203,7 @@ algorithm
 end matchcontinue;
 end extendRecordEqns;
 
-protected function generateCrefsExpFromType "
+public function generateCrefsExpFromType "
 Author: Frenkel TUD 2010-05"
   input DAE.ExpVar inVar;
   input DAE.Exp inExp;
