@@ -55,7 +55,7 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqual(Util.tuple21(key1),Util.tuple21(key2)) and Exp.crefEqual(Util.tuple22(key1),Util.tuple22(key2));
+     res := ComponentReference.crefEqual(Util.tuple21(key1),Util.tuple21(key2)) and ComponentReference.crefEqual(Util.tuple22(key1),Util.tuple22(key2));
 end keyEqual;
 
 

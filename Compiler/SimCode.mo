@@ -669,7 +669,7 @@ algorithm
          { DAE.INDEX(DAE.ICONST(i)) } = ComponentReference.crefLastSubs(cr);
          true = (i == index);
          cr = ComponentReference.crefStripLastSubs(cr);
-         true = Exp.crefEqualNoStringCompare(inCref,cr);             
+         true = ComponentReference.crefEqualNoStringCompare(inCref,cr);             
       then isArrayExpansion(aRest, inCref, index+1);    
     case (_, _,_) then false;       
   end matchcontinue;
@@ -723,7 +723,7 @@ algorithm
          { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } = ComponentReference.crefLastSubs(cr);
          true = (r == rowIndex) and (c == colIndex);
          cr = ComponentReference.crefStripLastSubs(cr);
-         true = Exp.crefEqualNoStringCompare(inCref,cr);             
+         true = ComponentReference.crefEqualNoStringCompare(inCref,cr);             
       then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);    
     case (_,_,_,_) then false;       
   end matchcontinue;
@@ -1551,7 +1551,7 @@ algorithm
       then -1;
     case (cref, VARIABLE(name=name) :: restOutVars, currentIndex)
       equation
-        true = Exp.crefEqualNoStringCompare(cref,name);
+        true = ComponentReference.crefEqualNoStringCompare(cref,name);
       then currentIndex;
     case (cref, _ :: restOutVars, currentIndex)
       equation
@@ -2074,7 +2074,7 @@ algorithm
       equation
         BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
         //We can asume the same component refs are solved in any else-branch.
-        b1 = Exp.crefEqual(cr,cr2);
+        b1 = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
         true = boolOr(b1,b2);
       then false;
@@ -2923,7 +2923,7 @@ algorithm
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
-        true = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        true = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
       then
@@ -2941,7 +2941,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
-        false = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        false = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
@@ -3039,7 +3039,7 @@ algorithm
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
-        true = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        true = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
       then
@@ -3057,7 +3057,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
-        false = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        false = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
@@ -3873,7 +3873,7 @@ algorithm
            SOME(cref)))
       equation
         der_cr = DAELow.crefPrefixDer(cr);
-        true = Exp.crefEqualNoStringCompare(der_cr, cref);
+        true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
         cref_exp = DAE.CREF(der_cr, DAE.ET_REAL());
       then
         ((cref_exp, SOME(cref)));
@@ -4363,7 +4363,7 @@ algorithm
         solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
-        true = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
+        true = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg,NONE());
         equation_ = SES_ALGORITHM(algStatements);
       then equation_;
@@ -4376,7 +4376,7 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
 
         // The variables solved for and the output variables of the algorithm must be the same.
-        false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
+        false = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
@@ -4409,23 +4409,23 @@ algorithm
       DAE.ExpType ty;      
     case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2)
       equation
-        true = Exp.crefEqual(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         SES_ARRAY_CALL_ASSIGN(eltcr, e2);
     case (cr,eltcr,e1,(e2 as DAE.CREF(componentRef = cr2)))
       equation
-        true = Exp.crefEqual(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
       SES_ARRAY_CALL_ASSIGN(eltcr, e1);
     case (cr,eltcr,(e1 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),e2)
       equation
-        true = Exp.crefEqual(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ty = Exp.typeof(e2);
       then
         SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
     case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))))
       equation
-        true = Exp.crefEqual(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ty = Exp.typeof(e1);
       then
       SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
@@ -5313,7 +5313,7 @@ algorithm
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initialEqs)
       equation
         initCrefs = DAELow.equationsCrefs(initialEqs);
-        (_ :: _) = Util.listSelect1(initCrefs, name, Exp.crefEqual);
+        (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = Exp.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
       then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref);
@@ -6201,11 +6201,11 @@ algorithm
       DAE.Exp e2;
     case (v,(eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
       cr1=DAELow.varCref(v);
-      true = Exp.crefEqual(cr1,cr);
+      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then eqn;
     case(v,(eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_) equation
       cr1=DAELow.varCref(v);
-      true = Exp.crefEqual(cr1,cr);
+      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then eqn;
     case(v,_::eqnLst) equation
       eqn = findDiscreteEquation(v,eqnLst);
@@ -8247,7 +8247,7 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqual(key1,key2);
+     res := ComponentReference.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
 /* end of HashTable instance specific code */

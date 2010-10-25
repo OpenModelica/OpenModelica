@@ -2437,7 +2437,7 @@ algorithm
         sc = ComponentReference.crefStripLastSubs(cr);
         ty = Exp.crefLastType(cr);
         // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,Exp.crefEqualNoStringCompare,false));
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
         // extend cr
         (e1,_) = extendArrExp(DAE.CREF(sc,ty),NONE());
         // add
@@ -3496,12 +3496,12 @@ algorithm
 
     case (cr1,BackendDAE.WHEN_EQUATION(eq as BackendDAE.WHEN_EQ(left=cr2),_)::rest)
       equation
-        true = Exp.crefEqualNoStringCompare(cr1,cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
       then (eq, rest);
 
     case (cr1,(eq2 as BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(left=cr2),_))::rest)
       equation
-        false = Exp.crefEqualNoStringCompare(cr1,cr2);
+        false = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
         (eq,rest2) = getWhenEquationFromVariable(cr1,rest);
       then (eq, eq2::rest2);
 
@@ -6483,7 +6483,7 @@ algorithm
     case ({},_) then {};
     case ((BackendDAE.VAR(varName = cr1,flowPrefix = flow1) :: vs),(v as BackendDAE.VAR(varName = cr2,flowPrefix = flow2)))
       equation
-        true = Exp.crefEqualNoStringCompare(cr1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
       then
         (v :: vs);
     case ((v :: vs),(repl as BackendDAE.VAR(varName = cr2,flowPrefix = flowPrefix)))
@@ -6637,7 +6637,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
         ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqualNoStringCompare(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         indx_1 = indx + 1;
       then
         (v,indx_1);
@@ -6677,7 +6677,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqualNoStringCompare(cr_1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
         (vs,indxs);
@@ -6689,7 +6689,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
         ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqualNoStringCompare(cr_1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
         (vs,indxs);
@@ -6840,7 +6840,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
         ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-        true = Exp.crefEqualNoStringCompare(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         true;
     case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
@@ -6998,7 +6998,7 @@ algorithm
         fail();
     case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
       equation
-        true = Exp.crefEqualNoStringCompare(cr, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         v;
     case (cr,(v :: vs))
@@ -7084,7 +7084,7 @@ algorithm
     case (_,{}) then {};
     case (cr1,(BackendDAE.VAR(varName = cr2) :: vs))
       equation
-        true = Exp.crefEqualNoStringCompare(cr1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
       then
         vs;
     case (cr1,(v :: vs))
@@ -7846,7 +7846,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqualNoStringCompare);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
         (dummy_fixed as false) = varFixed(v);
@@ -7862,7 +7862,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqualNoStringCompare);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
        true = varFixed(v);
@@ -9084,7 +9084,7 @@ algorithm
       DAE.ComponentRef cr1,cr2;
     case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
       equation
-        res = Exp.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
+        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
       then
         res;
   end matchcontinue;
@@ -9115,7 +9115,7 @@ algorithm
     case(BackendDAE.SOLVED_EQUATION(componentRef = cr1,exp = exp1),
          BackendDAE.SOLVED_EQUATION(componentRef = cr2,exp = exp2))
       equation
-        res = boolAnd(Exp.crefEqualNoStringCompare(cr1,cr2),Exp.expEqual(exp1,exp2));
+        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1,cr2),Exp.expEqual(exp1,exp2));
       then res;
 
     case(BackendDAE.RESIDUAL_EQUATION(exp = exp1),
@@ -9422,7 +9422,7 @@ algorithm
     local DAE.ComponentRef cr2; DAE.Ident id1,id2;
     case(BackendDAE.VAR(varName=cr2 ),cr )
       equation
-        true = Exp.crefEqualNoStringCompare(ComponentReference.crefStripLastIdent(cr2),ComponentReference.crefStripLastIdent(cr));
+        true = ComponentReference.crefEqualNoStringCompare(ComponentReference.crefStripLastIdent(cr2),ComponentReference.crefStripLastIdent(cr));
       then true;
     case(_,_) then false;
   end matchcontinue;
@@ -9471,7 +9471,7 @@ algorithm
     // s = expr(s1,..,sn)  where s1 .. sn are states
     case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars)
       equation
-        true = Exp.crefEqualNoStringCompare(cr,cr2);
+        true = ComponentReferencecrefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
         crs = Exp.getCrefFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
@@ -9481,7 +9481,7 @@ algorithm
 
     case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
       equation
-        true = Exp.crefEqualNoStringCompare(cr,cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
         crs = Exp.getCrefFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
@@ -12212,7 +12212,7 @@ algorithm
       list<BackendDAE.Var> vs;
     case (cr1,(BackendDAE.VAR(varName = cr2,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: _))
       equation
-        true = Exp.crefEqualNoStringCompare(cr1, cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
       then
         indx;
     case (cr1,(_ :: vs))
@@ -12521,7 +12521,7 @@ algorithm
         (var_lst, var_lst1) = getAllElements1((var1, typ1, place1), rest);
         c1 = ComponentReference.crefStripLastSubs(varName1);
         c2 = ComponentReference.crefStripLastSubs(varName2);        
-        ins = Exp.crefEqualNoStringCompare(c1, c2); 
+        ins = ComponentReference.crefEqualNoStringCompare(c1, c2); 
         var_lst2 = listAppendTyp(ins, (var2, typ2, place2), var_lst);
         var_lst3 = listAppendTyp(boolNot(ins), (var2, typ2, place2), var_lst1);
       then
@@ -12667,7 +12667,7 @@ algorithm
       equation
         c1 = ComponentReference.crefStripLastSubs(varName1);
         c2 = ComponentReference.crefStripLastSubs(varName2);
-        true = Exp.crefEqualNoStringCompare(c1, c2); 
+        true = ComponentReference.crefEqualNoStringCompare(c1, c2); 
         subscriptLst = ComponentReference.crefLastSubs(varName1);
         subscriptLst1 = ComponentReference.crefLastSubs(varName2);
         out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
@@ -13665,7 +13665,7 @@ algorithm
     case ({},var_name) then false;
     case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
       equation
-        true = Exp.crefEqualNoStringCompare(cr, var_name);
+        true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
       then
         true;
     case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
@@ -15236,7 +15236,7 @@ algorithm
         // changed during solving process inside
         crlstlst = Util.listMap(nonconstexplst,Exp.extractCrefsFromExp);
         // add explst with variables which will not be changed during solving prozess
-        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,Exp.crefEqualNoStringCompare);
+        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,ComponentReference.crefEqualNoStringCompare);
         blst_1 = Util.listMap(blstlst,Util.boolOrList);
         (tnofixedexplst,tfixedexplst) = listSplitOnTrue(nonconstexplst,blst_1);
         true = listLength(tnofixedexplst) < 1;
@@ -16465,7 +16465,7 @@ algorithm
       
     // d(x)/d(x)
     case(DAE.CREF(componentRef=cref), x, functions, inputVars, paramVars, stateVars) equation
-      true = Exp.crefEqual(cref, x);
+      true = ComponentReference.crefEqual(cref, x);
     then DAE.RCONST(1.0);
       
     // d(time)/d(x)

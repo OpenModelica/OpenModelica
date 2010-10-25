@@ -298,202 +298,6 @@ algorithm
   end matchcontinue;
 end expStripLastIdent;
 
-
-public function crefSetLastSubs "
-"
-  input ComponentRef inComponentRef;
-  input list<Subscript> insubs;
-  output ComponentRef outComponentRef;
-algorithm 
-  outComponentRef := matchcontinue (inComponentRef,insubs)
-    local
-      Ident id;
-      list<Subscript> subs,s;
-      ComponentRef cr_1,cr;
-      Type t2;
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs),insubs) then DAE.CREF_IDENT(id,t2,insubs);
-    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr),insubs)
-      equation
-        cr_1 = crefSetLastSubs(cr,insubs);
-      then
-        DAE.CREF_QUAL(id,t2,s,cr_1);
-  end matchcontinue;
-end crefSetLastSubs;
-
-public function crefStripLastSubsStringified
-"function crefStripLastSubsStringified
-  author: PA
-  Same as crefStripLastSubs but works on
-  a stringified component ref instead."
-  input ComponentRef inComponentRef;
-  output ComponentRef outComponentRef;
-algorithm
-  outComponentRef := matchcontinue (inComponentRef)
-    local
-      list<Ident> lst,lst_1;
-      Ident id_1,id;
-      ComponentRef cr;
-      Type t2;
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = {}))
-      equation
-        //print("\n +++++++++++++++++++++++++++++ ");print(id);print("\n");
-        lst = Util.stringSplitAtChar(id, "[");
-        lst_1 = Util.listStripLast(lst);
-        id_1 = Util.stringDelimitList(lst_1, "[");
-      then
-        DAE.CREF_IDENT(id_1,t2,{});
-    case (cr) then cr;
-  end matchcontinue;
-end crefStripLastSubsStringified;
-
-public function crefContainedIn
-"function: crefContainedIn
-  author: PA
-  Returns true if second arg is a sub component ref of first arg.
-  For instance, b.c. is a sub_component of a.b.c."
-  input ComponentRef containerCref "the cref that might contain";
-  input ComponentRef containedCref "cref that might be contained";  
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (containerCref, containedCref)
-    local
-      ComponentRef full,partOf,cr2;
-      Boolean res;
-
-    // a qualified cref cannot be contained in an ident cref.
-    case (DAE.CREF_IDENT(ident = _), DAE.CREF_QUAL(componentRef = _)) then false;
-      
-    // see if they are equal
-    case (full, partOf)
-      equation
-        true = crefEqualNoStringCompare(full, partOf);
-      then
-        true;
-
-    // dive into 
-    case (full as DAE.CREF_QUAL(componentRef = cr2), partOf)
-      equation
-        false = crefEqualNoStringCompare(full, partOf);        
-        res = crefContainedIn(cr2,partOf);
-      then
-        res;
-    
-    // anything else is false
-    case (_,_) then false;
-  end matchcontinue;
-end crefContainedIn;
-
-public function crefIsIdent
-"returns true if ComponentRef is an ident,
- i.e a => true , a.b => false"
-  input ComponentRef cr;
-  output Boolean res;
-algorithm
-  res := matchcontinue(cr)
-    case(DAE.CREF_IDENT(_,_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
-end crefIsIdent;
-
-/*
-public function crefPrefixOf
-"function: crefPrefixOf
-  author: PA
-  Returns true if prefixCref is a prefix of fullCref
-  For example, a.b is a prefix of a.b.c"
-  input ComponentRef prefixCref;
-  input ComponentRef fullCref;
-  output Boolean outBoolean;
-algorithm
-  //System.startTimer();
-  outBoolean := crefPrefixOf_dispatch(prefixCref, fullCref);
-  //System.stopTimer();
-end crefPrefixOf;
-*/
-
-public function crefPrefixOf
-"function: crefPrefixOf
-  author: PA
-  Returns true if prefixCref is a prefix of fullCref
-  For example, a.b is a prefix of a.b.c.
-  adrpo 2010-10-07, 
-    added also that a.b.c is a prefix of a.b.c[1].*!"
-  input ComponentRef prefixCref;
-  input ComponentRef fullCref;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (prefixCref,fullCref)
-    local
-      ComponentRef cr1,cr2;
-      Boolean res;
-      Ident id1,id2;
-      list<Subscript> ss1,ss2;
-      Type t2,t22;
-    
-    // first is qualified, second is an unqualified ident, return false!
-    case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then false;
-    
-    // both are qualified, dive into
-    case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),
-          DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
-      equation
-        true = stringEqual(id1, id2);
-        true = subscriptEqual(ss1, ss2);
-        res = crefPrefixOf(cr1, cr2);
-      then
-        res;
-    
-    // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
-    //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEqual(id1, id2);
-      then
-        true;
-    
-    // first is an ID, second is qualified, see if one is prefix of the other
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
-          DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEqual(id1, id2);
-        res = subscriptEqual(ss1, ss2);
-      then
-        res;
-        
-    // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
-    //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEqual(id1, id2);
-      then
-        true;
-    
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
-          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
-      equation
-        true = stringEqual(id1, id2);
-        res = subscriptEqual(ss1, ss2);
-      then
-        res;    
-    
-    /* adrpo: 2010-10-07. already handled by the cases above!
-                          they might be equal, a.b.c is a prefix of a.b.c
-    case (cr1,cr2) 
-      equation
-        true = crefEqualNoStringCompare(cr1, cr2);
-      then
-        true;*/
-    
-    // they are not a prefix of one-another
-    case (cr1,cr2)
-      equation
-        // print("Exp.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
-      then false;
-  end matchcontinue;
-end crefPrefixOf;
-
 public function identEqual
 "function: identEqual
   author: PA
@@ -502,15 +306,7 @@ public function identEqual
   input Ident inIdent2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inIdent1,inIdent2)
-    local Ident id1,id2;
-    case (id1,id2)
-      equation
-        true = stringEqual(id1, id2);
-      then
-        true;
-    case (_,_) then false;
-  end matchcontinue;
+  outBoolean := stringEqual(id1, id2);
 end identEqual;
 
 public function isRange
@@ -696,24 +492,6 @@ algorithm
   nb := boolNot(b);
 end isNotConst;
 
-public function isRecord ""
-  input ComponentRef cr;
-  output Boolean b;
-algorithm
-  b := matchcontinue(cr)
-  local 
-    DAE.ComponentRef comp;
-    Boolean b;
-    case(DAE.CREF_IDENT(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
-    case(DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
-    case(DAE.CREF_QUAL(componentRef=comp))
-      equation
-         b = isRecord(comp);  
-      then b;
-    case(_) then false;
-  end matchcontinue;
-end isRecord;
-
 public function isRelation
 "function: isRelation
   Returns true if expression is a function expression."
@@ -824,187 +602,8 @@ algorithm
   end matchcontinue;
 end getRelations;
 
-public function joinCrefs
-"function: joinCrefs
-  Join two component references by concatenating them."
-  input ComponentRef inComponentRef1;
-  input ComponentRef inComponentRef2;
-  output ComponentRef outComponentRef;
-algorithm
-  outComponentRef:=
-  matchcontinue (inComponentRef1,inComponentRef2)
-    local
-      Ident id;
-      list<Subscript> sub;
-      ComponentRef cr2,cr_1,cr;
-      Type t2;
-    case (DAE.CREF_IDENT(ident = id, identType = t2, subscriptLst = sub),cr2) then DAE.CREF_QUAL(id,t2,sub,cr2);
-    case (DAE.CREF_QUAL(ident = id, identType = t2, subscriptLst = sub,componentRef = cr),cr2)
-      equation
-        cr_1 = joinCrefs(cr, cr2);
-      then
-        DAE.CREF_QUAL(id,t2,sub,cr_1);
-  end matchcontinue;
-end joinCrefs;
 
-public function crefEqual
-"function: crefEqual
-  Returns true if two component references are equal.
-  No string comparison of unparsed crefs is performed!"
-  input ComponentRef inComponentRef1;
-  input ComponentRef inComponentRef2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := crefEqualStringCompare(inComponentRef1,inComponentRef2);
-end crefEqual;
 
-public function crefEqualStringCompare
-"function: crefEqualStringCompare
-  Returns true if two component references are equal, 
-  comparing strings in no other solution is found"
-  input ComponentRef inComponentRef1;
-  input ComponentRef inComponentRef2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
-    local
-      Ident n1,n2,s1,s2;
-      list<Subscript> idx1,idx2;
-      ComponentRef cr1,cr2;
-      
-    // check for pointer equality first, if they point to the same thing, they are equal
-    case (inComponentRef1,inComponentRef2)
-      equation
-        true = System.refEqual(inComponentRef1,inComponentRef2);
-      then
-        true;
-      
-    // simple identifiers
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
-      equation
-        true = stringEqual(n1, n2);
-      then
-        true;
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx1 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
-      equation
-        true = stringEqual(n1, n2);
-        true = subscriptEqual(idx1, idx2);
-      then
-        true;
-        // BZ 2009-12
-        // For some reason in some examples we get crefs on different forms.
-        // the compare can be crefEqual(CREF_IDENT("mycref",_,{1,2,3}),CREF_IDENT("mycref[1,2,3]",_,{}))
-        // I do belive this has something to do with variable replacement and DAELow.
-        // TODO: investigate reason, until then keep as is.
-        // I do believe that this is the same bug as adrians qual-ident bug below.
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
-      equation
-        0 = System.stringFind(n1, n2); // n2 should be first in n1!
-        s1 = n2 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
-        true = stringEqual(s1,n1);
-      then
-        true;
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
-      equation
-        0 = System.stringFind(n2, n1); // n1 should be first in n2!
-        s1 = n1 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
-        true = stringEqual(s1,n2);
-      then
-        true;
-    // qualified crefs
-    case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
-      equation
-        true = stringEqual(n1, n2);
-        true = crefEqualStringCompare(cr1, cr2);
-        true = subscriptEqual(idx1, idx2);
-      then
-        true;
-    // this is a VERY expensive case! Do we NEED IT??!!
-    // There is a bug here somewhere or in MetaModelica Compiler (MMC).
-	  // Therefore as a last resort, print the strings and compare.
-	  // adrpo: this is really not needed BUT unfortunately IT IS as
-	  //        QUAL(x, IDENT(y)) == IDENT(x.y)
-	  //        somewhere in the compiler the lhs is replaced by the rhs
-	  //        and makes this case needed! THIS SHOULD BE FIXED!! TODO! FIXME!
-	  //        NOTE: THIS IS NOT A BUG IN MMC!
-	  /* adrpo: comment this and try to make it work faster with the two cases below!
-    case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT)
-      equation
-        s1 = printComponentRefStr(cr1);
-        s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
-        // debug_print("cr1", cr1);
-        // debug_print("cr2", cr2);
-        // System.enableTrace();
-      then
-        true;
-	  */
-	  // the following two cases replaces the one below
-	  // right cref is stringified!
-    case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT(ident = n2))
-      equation
-        0 = System.stringFind(n2, n1); // n1 should be first in n2!
-        s1 = printComponentRefStr(cr1);
-        s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
-      then
-        true;
-	  // left cref is stringified!
-    case (cr1 as DAE.CREF_IDENT(ident = n1),cr2 as DAE.CREF_QUAL(ident = n2))
-      equation
-        0 = System.stringFind(n1, n2); // n2 should be first in n1!
-        s1 = printComponentRefStr(cr1);
-        s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
-      then
-        true;
-    // the crefs are not equal!
-     case (_,_) then false;
-  end matchcontinue;
-end crefEqualStringCompare;
-
-public function crefEqualNoStringCompare
-"function: crefEqualNoStringCompare
-  Returns true if two component references are equal!
-  IMPORTANT! do not use this function if you have
-  stringified components, meaning this function will
-  return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
-  input ComponentRef inComponentRef1;
-  input ComponentRef inComponentRef2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
-    local
-      Ident n1,n2,s1,s2;
-      list<Subscript> idx1,idx2;
-      ComponentRef cr1,cr2;
-
-    // check for pointer equality first, if they point to the same thing, they are equal
-    case (inComponentRef1,inComponentRef2)
-      equation
-        true = System.refEqual(inComponentRef1,inComponentRef2);
-      then
-        true;
-
-    // simple identifiers
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
-      equation
-        true = stringEqual(n1, n2);
-        true = subscriptEqual(idx1, idx2);
-      then
-        true;
-    // qualified crefs
-    case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
-      equation
-        true = stringEqual(n1, n2);
-        true = crefEqualNoStringCompare(cr1, cr2);
-        true = subscriptEqual(idx1, idx2);
-      then
-        true;
-    // the crefs are not equal!
-    case (_,_) then false;
-  end matchcontinue;
-end crefEqualNoStringCompare;
 
 public function prependSubscriptExp
 "Prepends a subscript to a CREF expression
@@ -1023,18 +622,6 @@ algorithm
     then DAE.CREF(cr2,t);
   end matchcontinue;
 end prependSubscriptExp;
-
-public function crefEqualReturn
-"function: crefEqualReturn
-  author: PA
-  Checks if two crefs are equal and if
-  so returns the cref, otherwise fail."
-  input ComponentRef cr;
-  input ComponentRef cr2;
-  output ComponentRef cr;
-algorithm
-  true := crefEqual(cr, cr2);
-end crefEqualReturn;
 
 public function subscriptExp
 "function: subscriptExp
@@ -3503,7 +3090,7 @@ algorithm
     case (cr,((e as DAE.BINARY(exp1 = DAE.CREF(componentRef = cr2),
                            operator = DAE.POW(ty = _))) :: es))
       equation
-        true = crefEqual(cr, cr2);
+        true = ComponentReference.crefEqual(cr, cr2);
       then
         (e,es);
     case (cr,(e :: es))
@@ -5862,14 +5449,14 @@ algorithm
     // relation: cr1 == cr2, where cr1 and cr2 are the same 
     case(_,DAE.EQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) 
       equation
-        true = crefEqual(cr1,cr2);
+        true = ComponentReference.crefEqual(cr1,cr2);
       then 
         DAE.BCONST(true);
     
     // relation: cr1 <> cr2 . where cr1 and cr2 are the same 
     case(_,DAE.NEQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) 
       equation
-        true = crefEqual(cr1,cr2);
+        true = ComponentReference.crefEqual(cr1,cr2);
       then 
         DAE.BCONST(false);
     
@@ -8504,7 +8091,7 @@ algorithm
     case (DAE.CREF(componentRef = c1),DAE.CREF(componentRef = c2))
       local ComponentRef c1,c2;
       equation
-        res = crefEqual(c1, c2);
+        res = ComponentReference.crefEqual(c1, c2);
       then
         res;
     // binary ops
@@ -9928,7 +9515,7 @@ algorithm
       equation
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
-        true = crefEqual(cr1, cr2);
+        true = ComponentReference.crefEqual(cr1, cr2);
         false = expContains(rhs, crexp);
         res_1 = simplify1(rhs);
       then
@@ -9939,7 +9526,7 @@ algorithm
       equation
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
-        true = crefEqual(cr1, cr2);
+        true = ComponentReference.crefEqual(cr1, cr2);
         false = expContains(lhs, crexp);
         res_1 = simplify1(lhs);
       then
@@ -10009,7 +9596,7 @@ algorithm
       equation
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
-        true = crefEqual(cr1, cr2);
+        true = ComponentReference.crefEqual(cr1, cr2);
         false = expContains(rhs, crexp);
         res_1 = simplify1(rhs);
       then
@@ -10020,7 +9607,7 @@ algorithm
       equation
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
-        true = crefEqual(cr1, cr2);
+        true = ComponentReference.crefEqual(cr1, cr2);
         false = expContains(lhs, crexp);
         res_1 = simplify1(lhs);
       then
@@ -10331,7 +9918,7 @@ algorithm
         res;
     case ((c1 as DAE.CREF(componentRef = cr1)),(c2 as DAE.CREF(componentRef = cr2)))
       equation
-        res = crefEqual(cr1, cr2);
+        res = ComponentReference.crefEqual(cr1, cr2);
       then
         res;
     case ((c1 as DAE.CREF(componentRef = cr1)),c2 ) then false;
@@ -10377,7 +9964,7 @@ algorithm
     case(DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(cr1,_)}),
          DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(cr2,_)})) 
       equation
-        res = crefEqual(cr1,cr2);
+        res = ComponentReference.crefEqual(cr1,cr2);
       then res;
     // pre(v) does not contain variable v
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {cref}),cr) then false;
@@ -12232,7 +11819,7 @@ algorithm
   res := matchcontinue(e,cr)
   local ComponentRef cr2; DAE.Exp e1;
     case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),cr)equation
-        true = crefEqual(cr,cr2);
+        true = ComponentReference.crefEqual(cr,cr2);
         true = isConstOne(e1);
     then true;
     case(_,_) then false;
@@ -12771,7 +12358,7 @@ algorithm outExp := matchcontinue(inExp)
   case( (DAE.CREF(cr,ty), crefs) )
     local list<Boolean> blist;
     equation
-      crefs = Util.listUnionEltOnTrue(cr,crefs,crefEqual);
+      crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
     then
       ((DAE.CREF(cr,ty), crefs ));
   case(inExp) then inExp;

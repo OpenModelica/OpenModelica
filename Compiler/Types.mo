@@ -4294,7 +4294,7 @@ algorithm
         expTypes = Util.listMap(tys1, elabType);
         pathList = Util.listMap(l, Absyn.makeIdentPathFromString);
         crefList = Util.listMap(pathList, ComponentReference.pathToCref);
-        crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
+        crefList = Util.listMap1r(crefList, ComponentReference.joinCrefs, cref);
         elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
         e_1 = DAE.METARECORDCALL(path, elist, l, -1);
@@ -4855,8 +4855,7 @@ algorithm
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cref_ = ComponentReference.makeCrefIdent(id,ty2,{});
-        cr_1 = Exp.joinCrefs(cr, cref_);
+        cr_1 = ComponentReference.crefPrependIdent(cr, id,ty2,{});
         // print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
         res = flowVariables(vs, cr);
       then
@@ -4892,8 +4891,7 @@ algorithm
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cref_ = ComponentReference.makeCrefIdent(id,ty2,{});
-        cr_1 = Exp.joinCrefs(cr, cref_);
+        cr_1 = ComponentReference.crefPrependIdent(cr, id,ty2,{});
         res = streamVariables(vs, cr);
       then
         (cr_1 :: res);

@@ -2201,17 +2201,17 @@ algorithm
     case (cache,env ,cr)
       equation
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
-        cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
+        cr_lst = Util.listSelect1(crs, cr, ComponentReference.crefContainedIn);
         currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
         currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.ET_OTHER(),{});
  		    //	Select connect references that has cr as suffix and correct Prefix.
-        cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
+        cr_lst = Util.listSelect1R(cr_lst, currentPrefix, ComponentReference.crefPrefixOf);
 
         // Select connect references that are identifiers (inside connectors)
-        cr_lst2 = Util.listSelect(crs,Exp.crefIsIdent);
-        cr_lst2 = Util.listSelect1(cr_lst2,cr,Exp.crefEqual);
+        cr_lst2 = Util.listSelect(crs,ComponentReference.crefIsIdent);
+        cr_lst2 = Util.listSelect1(cr_lst2,cr,ComponentReference.crefEqual);
 
-        cr_totlst = Util.listUnionOnTrue(listAppend(cr_lst,cr_lst2),{},Exp.crefEqual);
+        cr_totlst = Util.listUnionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
         res = listLength(cr_totlst);
 
         /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
@@ -5179,7 +5179,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(cr,exp) equation
-      res = Util.boolOrList(Util.listMap1(Exp.getCrefFromExp(exp),Exp.crefEqual,cr));
+      res = Util.boolOrList(Util.listMap1(Exp.getCrefFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
     case(_,_) then false;
   end matchcontinue;
@@ -5455,7 +5455,7 @@ algorithm outBoolean := matchcontinue(c,v)
   case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE(),_,_)))
     local DAE.ComponentRef c2;
     equation
-      true = Exp.crefEqual(c,c2);
+      true = ComponentReference.crefEqual(c,c2);
     then
       true;
   case(_,_) then false;

@@ -1514,7 +1514,7 @@ algorithm outelems := matchcontinue(inCr, elems)
       DAE.DAE({});
   case(inCr,DAE.DAE((elem2 as DAE.VAR(componentRef = cr2))::elts))
     equation
-      true = Exp.crefPrefixOf(inCr,cr2);
+      true = ComponentReferencecrefPrefixOf(inCr,cr2);
       //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
       cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
       elem = DAEUtil.replaceCrefInVar(cr1,elem2);
@@ -4617,7 +4617,7 @@ algorithm
       equation
         first_pre = PrefixUtil.prefixFirst(pre);
         cr = PrefixUtil.prefixToCref(first_pre);
-        crs_1 = Util.listSelect1R(crs, cr, Exp.crefPrefixOf);
+        crs_1 = Util.listSelect1R(crs, cr, ComponentReference.crefPrefixOf);
       then
         Connect.SETS(set,crs_1,dc,oc);
   end matchcontinue;
@@ -14077,23 +14077,23 @@ algorithm
     case (_, {}) then NONE();
     case (cref, DAE.DEFINE(componentRef=cref2, exp=e)::_)
       equation
-        true=Exp.crefEqual(cref,cref2);
+        true=ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
     case (cref, DAE.EQUATION(exp=DAE.CREF(cref2,_),scalar=e)::_)
       equation
-        true=Exp.crefEqual(cref,cref2);
+        true=ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
     case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)
       equation
-        true=Exp.crefEqual(cref,cref2);
+        true=ComponentReference.crefEqual(cref,cref2);
         e=Exp.crefExp(cref3);
       then
         SOME(e);
     case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)
       equation
-        true=Exp.crefEqual(cref,cref2);
+        true=ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
     case (cref, _::equations)

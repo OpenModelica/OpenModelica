@@ -406,7 +406,7 @@ algorithm
     case(DAE.VAR(componentRef = cr)::rest, variableNames)
       equation
         // variable is in the list! jump over it
-        _::_ = Util.listSelect1(variableNames, cr, Exp.crefEqual);
+        _::_ = Util.listSelect1(variableNames, cr, ComponentReference.crefEqual);
         els = removeVariablesFromElements(rest, variableNames);
       then 
         els;
@@ -415,7 +415,7 @@ algorithm
     case((v as DAE.VAR(componentRef = cr))::rest, variableNames)
       equation
         // variable NOT in the list! jump over it
-        {} = Util.listSelect1(variableNames, cr, Exp.crefEqual);
+        {} = Util.listSelect1(variableNames, cr, ComponentReference.crefEqual);
         els = removeVariablesFromElements(rest, variableNames);
       then 
         v::els;
@@ -454,7 +454,7 @@ algorithm
 
     case(var,DAE.DAE((v as DAE.VAR(componentRef = cr))::elist))
       equation
-        true = Exp.crefEqualNoStringCompare(var,cr);
+        true = ComponentReference.crefEqualNoStringCompare(var,cr);
       then DAE.DAE(elist);
 
     case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
@@ -515,7 +515,7 @@ algorithm
 
     case(var,DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io)::elist))
       equation
-        true = Exp.crefEqualNoStringCompare(var,cr);
+        true = ComponentReference.crefEqualNoStringCompare(var,cr);
         io2 = removeInnerAttribute(io);
       then
         DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::elist);
@@ -618,7 +618,7 @@ algorithm binding := matchcontinue(currVar,inlst)
   case(_,{}) then NONE();
   case(cr1,(cr2,e)::inlst)
     equation
-      true = Exp.crefEqualNoStringCompare(cr1,cr2);
+      true = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
       then
         SOME(e);
   case(cr1,(_,_)::inlst) then getOuterBinding(cr1,inlst);
@@ -1574,7 +1574,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getFlowVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}), cr);
+        cr_1 = ComponentReference.crefAddPrefix(id,DAE.ET_OTHER(),{}, cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1632,7 +1632,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}), cr);
+        cr_1 = ComponentReference.crefAddPrefix(id,DAE.ET_OTHER(),{}, cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -2426,7 +2426,7 @@ algorithm (outrefs,matching) := matchcontinue(inrefs)
       (recRefs,b3) = compareCrefList(inrefs);
       i = listLength(recRefs);
       b1 = (0 == intMod(listLength(crefs),listLength(recRefs)));
-      crefs = Util.listListUnionOnTrue({recRefs,crefs},Exp.crefEqual);
+      crefs = Util.listListUnionOnTrue({recRefs,crefs},ComponentReference.crefEqual);
       b2 = intEq(listLength(crefs),i);
       b1 = boolAnd(b1,boolAnd(b2,b3));
     then
@@ -5257,7 +5257,7 @@ algorithm
   res := matchcontinue(var,cr)
   local DAE.ComponentRef cr2;
     case(DAE.VAR(componentRef=cr2),cr) equation
-      res = Exp.crefEqualNoStringCompare(cr2,cr);
+      res = ComponentReference.crefEqualNoStringCompare(cr2,cr);
     then res;
   end matchcontinue;
 end varHasName;

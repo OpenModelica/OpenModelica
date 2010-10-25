@@ -1139,14 +1139,14 @@ algorithm
 
     case (DAE.CREF(componentRef = cr),crx,_)
       equation
-        true = Exp.crefEqual(cr, crx) "D(x)/dx => 1" ;
+        true = ComponentReference.crefEqual(cr, crx) "D(x)/dx => 1" ;
         rval = intReal(1) "Since bug in MetaModelica Compiler (MMC) makes 1.0 into 0.0" ;
       then
         DAE.RCONST(rval);
 
     case ((e as DAE.CREF(componentRef = cr)),crx,_)
       equation
-        false = Exp.crefEqual(cr, crx) "D(c)/dx => 0" ;
+        false = ComponentReference.crefEqual(cr, crx) "D(c)/dx => 0" ;
       then
         DAE.RCONST(0.0);
 
@@ -1180,7 +1180,7 @@ algorithm
 
     case (DAE.BINARY(exp1 = (e1 as DAE.CREF(componentRef = cr)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
       equation
-        true = Exp.crefEqual(cr, tv) "x^a => ax^(a-1)" ;
+        true = ComponentReference.crefEqual(cr, tv) "x^a => ax^(a-1)" ;
         false = Exp.expContains(e2, DAE.CREF(tv,tp));
         const_one = differentiateExp(DAE.CREF(tv,tp), tv,differentiateIfExp);
       then
@@ -1215,7 +1215,7 @@ algorithm
           operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
       local DAE.ExpType ctp;
       equation
-        true = Exp.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
+        true = ComponentReference.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
         false = Exp.expContains(e2, DAE.CREF(tv,tp));
         const_one = differentiateExp(DAE.CREF(tv,tp), tv,differentiateIfExp);
       then
@@ -1402,7 +1402,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, differentiateIfExp)
       equation
         cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
-        true = Exp.crefEqual(cr, crx);
+        true = ComponentReference.crefEqual(cr, crx);
         rval = intReal(1);
       then
         DAE.RCONST(rval);
@@ -1441,7 +1441,7 @@ algorithm
           {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        true = Exp.crefEqual(cr, tv);
+        true = ComponentReference.crefEqual(cr, tv);
       then
         DAE.CALL(a,{exp,DAE.ICONST(2)},b,c,tp,inl);
 

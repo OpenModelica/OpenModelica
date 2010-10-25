@@ -629,7 +629,7 @@ algorithm
           SCode.EQ_WHEN(ee,eel,eex,NONE(),info), initial_, impl, graph);
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
-        lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,Exp.crefEqual);
+        lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
         //TODO: fix error reporting print(" listLength pre:" +& intString(i1) +& " post: " +& intString(listLength(lhsCrefs)) +& "\n");
         true = intEq(listLength(lhsCrefs),i1);
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);

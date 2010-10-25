@@ -1087,7 +1087,7 @@ protected function keyEqual
   input tuple<DAE.ComponentRef,DAE.Exp,Integer> key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Exp.expEqual(Util.tuple32(key1),Util.tuple32(key2));
+     res := ComponentReference.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Exp.expEqual(Util.tuple32(key1),Util.tuple32(key2));
 end keyEqual;
 
 protected function addTplLst

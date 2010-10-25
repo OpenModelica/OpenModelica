@@ -49,6 +49,7 @@ package Algorithm
 "
 
 public import Absyn;
+public import ComponentReference;
 public import DAE;
 public import SCode;
 
@@ -168,7 +169,7 @@ algorithm
     case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
-        true = Exp.isRecord(cr);
+        true = ComponentReference.isRecord(cr);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
@@ -658,7 +659,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
 output list<DAE.ComponentRef> crs;
 algorithm
-  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Exp.getCrefFromExp),Exp.crefEqual);
+  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Exp.getCrefFromExp),ComponentReference.crefEqual);
 end getCrefFromAlg;
 
 

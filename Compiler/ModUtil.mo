@@ -405,7 +405,7 @@ algorithm
                       direction = vd,
                       binding = e) :: rest))
       equation
-        true = Exp.crefEqual(cr, crv);
+        true = ComponentReference.crefEqual(cr, crv);
       then
         ();
     case (cr,(DAE.VAR(componentRef = crv,
@@ -413,7 +413,7 @@ algorithm
                       direction = vd,
                       binding = e) :: rest))
       equation
-        true = Exp.crefEqual(cr, crv);
+        true = ComponentReference.crefEqual(cr, crv);
       then
         fail();
     case (cr,(e :: rest))

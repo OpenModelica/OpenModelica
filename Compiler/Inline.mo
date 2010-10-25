@@ -1202,7 +1202,7 @@ algorithm
       equation
         subs = ComponentReference.crefSubs(key);
         key = ComponentReference.crefStripSubs(key);
-        true = Exp.crefEqual(cref,key);
+        true = ComponentReference.crefEqual(cref,key);
         e = Exp.applyExpSubscripts(exp,subs);
       then
         e;

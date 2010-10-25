@@ -105,7 +105,7 @@ algorithm
     case (_, {}) then false;
     case (_, c :: _)
       equation
-        true = Exp.crefPrefixOf(c, component);
+        true = ComponentReference.crefPrefixOf(c, component);
       then
         true;
     case (_, _ :: rest)
@@ -187,8 +187,8 @@ algorithm
     case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) 
       equation
         matches =
-        Exp.crefEqual(cr11,cr1) and Exp.crefEqual(cr22,cr2) or
-        Exp.crefEqual(cr11,cr2) and Exp.crefEqual(cr22,cr1);
+        ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
+        ComponentReference.crefEqual(cr11,cr2) and ComponentReference.crefEqual(cr22,cr1);
       then matches;
   end matchcontinue;
 end outerConnectionMatches;
@@ -284,14 +284,14 @@ algorithm
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr1,crefTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,crs,inCrs)
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr2,crefTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
     case(cr1,cr2,_,_,crs,inCrs) then (crs,inCrs,false);
@@ -350,7 +350,7 @@ algorithm
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr1,flowTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f2, inSets);
       then ((newCr,f2,src)::crs,inCrs,sets,true);
 
@@ -358,7 +358,7 @@ algorithm
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr2,flowTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f1, inSets);
       then ((newCr,f1,src)::crs,inCrs,sets,true);
 
@@ -414,14 +414,14 @@ algorithm
       equation
         (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr1,streamTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);        
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);        
       then ((newCr,NONE(),f2,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,f1,f2,crs,inCrs)
       equation
         (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr2,streamTuplePrefixOf);
         connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
       then ((newCr,NONE(),f1,src)::crs,inCrs,true);
 
     case(cr1,cr2,_,_,_,_,crs,inCrs) then (crs,inCrs,false);
@@ -773,7 +773,7 @@ protected function crefTuplePrefixOf
 algorithm
   selected := matchcontinue(tupleCrSource,compName)
     local DAE.ComponentRef cr;
-    case((cr,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end crefTuplePrefixOf;
 
@@ -797,7 +797,7 @@ protected function flowTuplePrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end flowTuplePrefixOf;
 
@@ -821,7 +821,7 @@ protected function streamTuplePrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end streamTuplePrefixOf;
 
@@ -1291,7 +1291,7 @@ algorithm
     // deal with non empty Connect.EQU
     case (Connect.EQU((cr1,_)::equRest1), Connect.EQU((cr2,_)::equRest2))
       equation
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
         true = setsEqual(Connect.EQU(equRest1),Connect.EQU(equRest2));
       then
         true;
@@ -1299,7 +1299,7 @@ algorithm
     case (Connect.FLOW((cr1,face1,_)::flowRest1), Connect.FLOW((cr2,face2,_)::flowRest2))
       equation
         true = faceEqual(face1, face2);
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
         true = setsEqual(Connect.FLOW(flowRest1),Connect.FLOW(flowRest2));
       then
         true;
@@ -1307,7 +1307,7 @@ algorithm
     case (Connect.STREAM((cr1,_,face1,_)::streamRest1), Connect.STREAM((cr2,_,face2,_)::streamRest2))
       equation
         true = faceEqual(face1, face2);
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
         true = setsEqual(Connect.STREAM(streamRest1),Connect.STREAM(streamRest2));
       then
         true;        
@@ -1828,7 +1828,7 @@ algorithm
     // found something, replace the cref in the list 
     case(cr1::cr1s, cr2)
       equation
-        true = Exp.crefEqual(cr1,cr2);
+        true = ComponentReference.crefEqual(cr1,cr2);
         cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
       then
         cr2::cr2s;

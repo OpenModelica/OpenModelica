@@ -387,7 +387,7 @@ algorithm
         canon2 = canonical(partition,ref2);
         //print("canon1: " +& Exp.printComponentRefStr(canon1));
         //print("\tcanon2: " +& Exp.printComponentRefStr(canon2) +& "\n");
-        true = Exp.crefEqual(canon1, canon2);
+        true = ComponentReference.crefEqual(canon1, canon2);
       then true;
     case(_,_,_) then false;
   end matchcontinue;
@@ -703,8 +703,8 @@ algorithm
     // try direct match
     case (SOME((crLeft, crRight))::rest, left, right)
       equation
-        b1 = Exp.crefPrefixOf(left, crLeft);
-        b2 = Exp.crefPrefixOf(right, crRight);
+        b1 = ComponentReference.crefPrefixOf(left, crLeft);
+        b2 = ComponentReference.crefPrefixOf(right, crRight);
         true = boolAnd(b1, b2);
         // print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
         // print("origin: " +& Exp.printComponentRefStr(crLeft) +& ", " +& Exp.printComponentRefStr(crRight) +& "\n");
@@ -713,8 +713,8 @@ algorithm
     // try inverse match
     case (SOME((crLeft, crRight))::rest, left, right)      
       equation
-        b1 = Exp.crefPrefixOf(right, crLeft);
-        b2 = Exp.crefPrefixOf(left, crRight);
+        b1 = ComponentReference.crefPrefixOf(right, crLeft);
+        b2 = ComponentReference.crefPrefixOf(left, crRight);
         true = boolAnd(b1, b2);
         // print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
         // print("origin: " +& Exp.printComponentRefStr(crRight) +& ", " +& Exp.printComponentRefStr(crLeft) +& "\n");        
@@ -752,7 +752,7 @@ algorithm
     // they are the same
     case(partition,ref1,ref2)
       equation
-        true = Exp.crefEqualNoStringCompare(ref1, ref2);
+        true = ComponentReference.crefEqualNoStringCompare(ref1, ref2);
       then (partition, false);
     
     // not the same, add it 
@@ -1167,7 +1167,7 @@ algorithm
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), roots)
       equation
-        result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
+        result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            Exp.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), roots);
@@ -1175,7 +1175,7 @@ algorithm
     case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots)
       equation
-        result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
+        result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         result = boolNot(result);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            Exp.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));

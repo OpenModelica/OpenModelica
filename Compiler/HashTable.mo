@@ -53,7 +53,7 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqual(key1,key2);
+     res := ComponentReference.crefEqual(key1,key2);
 end keyEqual;
 
 public function test "testfunction for hashtable "

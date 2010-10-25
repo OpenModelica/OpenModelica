@@ -381,15 +381,15 @@ algorithm outCr := matchcontinue(inCr,src,dst)
   local DAE.ComponentRef s,d,cr1,cr2;
   case(inCr,s::src,d::dst)
     equation
-      true = Exp.crefPrefixOf(inCr,s);
+      true = ComponentReference.crefPrefixOf(inCr,s);
       cr1 = extractCommonPart(inCr,d);
-      false = Exp.crefIsIdent(cr1); // an ident can not be the inner part of an innerouter.
+      false = ComponentReference.crefIsIdent(cr1); // an ident can not be the inner part of an innerouter.
       outCr = DAEUtil.nameInnerouterUniqueCref(cr1);
       then
         outCr;
   case(inCr,s::src,d::dst)
     equation
-      false = Exp.crefPrefixOf(inCr,s);
+      false = ComponentReference.crefPrefixOf(inCr,s);
       outCr = changeOuterReferences4(inCr,src,dst);
       then
         outCr;
@@ -521,7 +521,7 @@ algorithm
         // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
         // innerCr1 = T1, outerCr = g.h.a.b.c.d.T1
         (outerCr1,innerCr1) = stripCommonCrefPart(outerCr,innerCr);
-        res = Exp.crefContainedIn(outerCr1,innerCr1);
+        res = ComponentReference.crefContainedIn(outerCr1,innerCr1);
       then res;
   end matchcontinue;
 end isInnerOuterMatch;
@@ -568,7 +568,7 @@ algorithm
       equation
         c1 = ComponentReference.crefLastCref(prefixedCref);
         c2 = ComponentReference.crefLastCref(innerCref);
-        true = Exp.crefEqual(c1,c2);
+        true = ComponentReference.crefEqual(c1,c2);
         c3 = Exp.crefSetLastType(innerCref,Exp.crefLastType(prefixedCref));
       then
         c3;
@@ -1837,7 +1837,7 @@ algorithm
         // strip the outer prefix
         ic = ComponentReference.crefStripPrefix(ifull, ocp);
         // add the inner prefix
-        ic = Exp.joinCrefs(icp, ic);
+        ic = ComponentReference.joinCrefs(icp, ic);
       then
         ic;
     
@@ -1845,7 +1845,7 @@ algorithm
     case (ifull, ocp, icp)
       equation
         // test cref equality
-        true = Exp.crefEqualNoStringCompare(ifull, ocp);
+        true = ComponentReference.crefEqualNoStringCompare(ifull, ocp);
         // the inner cref is the inner prefix!
         ic = icp;  
       then
@@ -1874,7 +1874,7 @@ algorithm
     // handle the head that matches 
     case (fullCref, OUTER(crOuter, crInner)::rest)
       equation
-         true = Exp.crefPrefixOf(crOuter, fullCref);
+         true = ComponentReference.crefPrefixOf(crOuter, fullCref);
       then 
         (crOuter, crInner);
 
@@ -1986,7 +1986,7 @@ public function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqualNoStringCompare(key1,key2);
+     res := ComponentReference.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
 public function dumpInstHierarchyHashTable ""

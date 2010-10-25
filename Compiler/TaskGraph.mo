@@ -617,8 +617,8 @@ algorithm
 	 a string for the residual, that can be directly used in codegen." ;
         vars_1 = Util.listMap(vars, Exp.getCrefFromExp);
         vars2 = Util.listFlatten(vars_1);
-        vars1_1 = Util.listUnionOnTrue(vars1, vars2, Exp.crefEqual) "No duplicate elements" ;
-        vars = Util.listSetDifferenceOnTrue(vars1_1, vars2, Exp.crefEqual);
+        vars1_1 = Util.listUnionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
+        vars = Util.listSetDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
         addEdgesFromVars(vars, tid, 0);
       then
         ();
