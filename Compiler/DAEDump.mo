@@ -1246,9 +1246,9 @@ public function printInlineTypeStr
   output String str;
 algorithm
   str := matchcontinue(it)
-    case(DAE.NO_INLINE) then "No inline";
-    case(DAE.AFTER_INDEX_RED_INLINE) then "Inline after index reduction";
-    case(DAE.NORM_INLINE) then "Inline before index reduction";
+    case(DAE.NO_INLINE()) then "No inline";
+    case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
+    case(DAE.NORM_INLINE()) then "Inline before index reduction";
   end matchcontinue;
 end printInlineTypeStr;
 
@@ -1348,9 +1348,9 @@ protected function dumpInlineTypeStr
   output String str;
 algorithm
   str := matchcontinue(inlineType)
-    case(DAE.NO_INLINE) then "";
-    case(DAE.AFTER_INDEX_RED_INLINE) then " \"Inline after index reduction\"";
-    case(DAE.NORM_INLINE) then " \"Inline before index reduction\"";
+    case(DAE.NO_INLINE()) then "";
+    case(DAE.AFTER_INDEX_RED_INLINE()) then " \"Inline after index reduction\"";
+    case(DAE.NORM_INLINE()) then " \"Inline before index reduction\"";
   end matchcontinue;
 end dumpInlineTypeStr;
 

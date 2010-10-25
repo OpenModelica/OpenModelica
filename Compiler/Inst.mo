@@ -978,7 +978,6 @@ protected function addProgramToEnv
   output Env.Cache outCache;
   output Env.Env env_1;
   output InstanceHierarchy outIH;
-  list<Env.Frame> env_1;
 algorithm
   (outCache,env_1,outIH,_) := instClassDecls(inCache,env,inIH, p, path);
 end addProgramToEnv;
@@ -1175,7 +1174,6 @@ algorithm
       SCode.Restriction r;
       InstDims inst_dims;
       CallingScope callscope;
-      Env.Cache cache;
       Option<Absyn.ElementAttributes> oDA;
       String str;
       ConnectionGraph.ConnectionGraph graph;
@@ -9947,7 +9945,6 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
       list<DAE.Function> resfns;
       list<DAE.FunctionDefinition> derFuncs;

@@ -2838,24 +2838,6 @@ constant rgbColorMapList colorMapList = {
   {223,159,223},{255,0,127},{191,0,95},{255,127,191},{223,159,191}
     };
 
-constant list<String> fillPatternMapList = {
-  None,Solid,None,None,None,Horizontal,
-  Vertical,Forward,Backward,Cross,CrossDiag
-  };
-
-constant list<String> gradientMapList = {
-  None,VerticalCylinder,HorizontalCylinder,Sphere
-  };
-constant list<String> patternMapList = {
-  None,Solid,Dash,Dot,DashDot,DashDotDot
-  };
-constant list<Real> thicknessMapList = {
-  0.25,0.5,0.0,1.0
-  };
-constant list<list<String>> arrowMapList = {
-  {None,None}, {None,Filled}, {Filled,None}, {Filled,Filled}, {None,Half}
-    };
-
 constant String None = "None";
 constant String Solid = "Solid";
 constant String Horizontal = "Horizontal";
@@ -2875,6 +2857,24 @@ constant String DashDot = "DashDot";
 constant String DashDotDot = "DashDotDot";
 constant String Filled = "Filled";
 constant String  Half = "Half";
+
+constant list<String> fillPatternMapList = {
+  None,Solid,None,None,None,Horizontal,
+  Vertical,Forward,Backward,Cross,CrossDiag
+  };
+
+constant list<String> gradientMapList = {
+  None,VerticalCylinder,HorizontalCylinder,Sphere
+  };
+constant list<String> patternMapList = {
+  None,Solid,Dash,Dot,DashDot,DashDotDot
+  };
+constant list<Real> thicknessMapList = {
+  0.25,0.5,0.0,1.0
+  };
+constant list<list<String>> arrowMapList = {
+  {None,None}, {None,Filled}, {Filled,None}, {Filled,Filled}, {None,Half}
+    };
 
 protected function fixPaths
 "@author adrpo

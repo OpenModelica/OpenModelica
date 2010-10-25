@@ -255,7 +255,7 @@ public function add "Adds a unit to the UnitAbsyn.Store"
   output Integer index;
 algorithm
   (outSt,index) := matchcontinue(unit,st)
-    local Option<UnitAbsyn.Unit>[:] vector; Integer newIndx,numElts;
+    local array<Option<UnitAbsyn.Unit>> vector; Integer newIndx,numElts;
     case(unit,st as UnitAbsyn.STORE(storeVector=vector,numElts = numElts)) equation
       true = numElts == arrayLength(vector);
       st = expandStore(st);
@@ -287,7 +287,7 @@ Expansion factor: 1.4
   output UnitAbsyn.Store outSt;
 algorithm
   outSt := matchcontinue(st)
-  local Option<UnitAbsyn.Unit>[:] vector; Integer indx,incr;
+  local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
     case(UnitAbsyn.STORE(vector,indx)) equation
         incr = intMin(1,realInt(intReal(indx) *. 0.4));
         vector = arrayExpand(incr,vector,NONE());
@@ -303,7 +303,7 @@ public function update "Updates  unit at index in UnitAbsyn.Store"
   output UnitAbsyn.Store outSt;
 algorithm
   outSt := matchcontinue(unit,index,st)
-  local Option<UnitAbsyn.Unit>[:] vector; Integer indx;
+  local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
     case(unit,index,UnitAbsyn.STORE(vector,indx)) equation
       vector = arrayUpdate(vector,index,SOME(unit)) "destroys ";
     then UnitAbsyn.STORE(vector,indx);
@@ -320,7 +320,7 @@ public function find "finds a unit in the UnitAbsyn.Store given an index"
   output UnitAbsyn.Unit unit;
 algorithm
   unit := matchcontinue(index,st)
-  local Option<UnitAbsyn.Unit>[:] vector; Integer indx;
+  local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
     UnitAbsyn.Unit unit;
     case(index,UnitAbsyn.STORE(vector,indx)) equation
       SOME(unit) = vector[index];
@@ -356,7 +356,7 @@ end emptyInstStore;
 public function emptyStore "Returns an empty store with 10 empty array elements"
 output UnitAbsyn.Store st;
 protected
-Option<UnitAbsyn.Unit>[:] vector;
+  array<Option<UnitAbsyn.Unit>> vector;
 algorithm
    vector := arrayCreate(10,NONE());
    st := UnitAbsyn.STORE(vector,0);
@@ -368,12 +368,12 @@ copied from Util.mo in OpenModelica
   Increases the number of elements of a vector with n.
   Each of the new elements have the value v."
   input Integer n;
-  input Type_a[:] arr;
+  input array<Type_a> arr;
   input Type_a v;
-  output Type_a[:] newarr_1;
+  output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
   Integer len,newlen;
-  Type_a[:] newarr,newarr_1;
+  array<Type_a> newarr,newarr_1;
 algorithm
   len := arrayLength(arr);
   newlen := n + len;
@@ -384,16 +384,16 @@ end arrayExpand;
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
-  output Type_a[:] outTypeAArray;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2)
     local
       Integer srclen,dstlen;
-      Type_a[:] src,dst,dst_1;
+      array<Type_a> src,dst,dst_1;
     case (src,dst) /* src dst */
       equation
         srclen = arrayLength(src);
@@ -414,16 +414,16 @@ algorithm
 end arrayCopy;
 
 protected function arrayCopy2
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
   input Integer inInteger3;
-  output Type_a[:] outTypeAArray;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
     local
-      Type_a[:] src,dst,dst_1,dst_2;
+      array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
       Integer pos;
     case (src,dst,-1) then dst;  /* src dst current pos */
@@ -509,7 +509,7 @@ public function printStore "prints the store to stdout"
 input UnitAbsyn.Store st;
 algorithm
   _ := matchcontinue(st)
-  local Option<UnitAbsyn.Unit>[:] vector; Integer indx;
+  local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
     list<Option<UnitAbsyn.Unit>> lst;
     case(UnitAbsyn.STORE(vector,indx)) equation
       lst = arrayList(vector);
@@ -797,7 +797,7 @@ protected function createTypeParameterLocations2 "help function"
   output Integer outNextElt;
 algorithm
   (outStore,outHt,outNextElt) := matchcontinue(store,ht,i,nextElt)
-  local Integer numElts; Option<UnitAbsyn.Unit>[:] vect;
+  local Integer numElts; array<Option<UnitAbsyn.Unit>> vect;
     UnitAbsyn.Unit unit;
 
     case(store as UnitAbsyn.STORE(vect,numElts),ht,i,nextElt) equation

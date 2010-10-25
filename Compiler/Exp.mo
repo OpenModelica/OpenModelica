@@ -4549,7 +4549,7 @@ algorithm
     case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
     case (DAE.SIZE(_,NONE())) then DAE.ET_INT();
-    case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN});
+    case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
 
     //MetaModelica extension
     case (DAE.LIST(ty = tp)) then DAE.ET_LIST(tp); // was tp, but the type of a LIST is a LIST
@@ -11081,7 +11081,7 @@ algorithm oint := matchcontinue(insubs)
     equation
       recursive = subscriptDimensions(subs);
     then
-      DAE.DIM_UNKNOWN :: recursive;
+      DAE.DIM_UNKNOWN() :: recursive;
 
   case ((ss as DAE.INDEX(exp = e)) :: subs)
     equation
@@ -11710,7 +11710,7 @@ Converts a type into an array type with dimension n as first dim"
 algorithm
   outTp := matchcontinue(tp,n)
     local
-      Type elt_tp,tp;
+      Type elt_tp;
       list<DAE.Dimension> dims;
 
     case(DAE.ET_ARRAY(elt_tp,dims),n)
@@ -11915,7 +11915,7 @@ algorithm
       Boolean retVal;
     case({}) then true;
 
-    case (DAE.DIM_UNKNOWN :: iLst)
+    case (DAE.DIM_UNKNOWN() :: iLst)
       equation
         retVal = arrayContainZeroDimension(iLst);
       then
@@ -11941,7 +11941,7 @@ algorithm
     local
       input list<DAE.Dimension> rest_dims;
     case ({}) then false;
-    case (DAE.DIM_UNKNOWN :: rest_dims) then true;
+    case (DAE.DIM_UNKNOWN() :: rest_dims) then true;
     case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
   end matchcontinue;
 end arrayContainWholeDimension;
@@ -12888,7 +12888,7 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then DAE.INDEX(DAE.ICONST(i));
     case DAE.DIM_ENUM(size = i) then DAE.INDEX(DAE.ICONST(i));
-    case DAE.DIM_UNKNOWN then DAE.WHOLEDIM();
+    case DAE.DIM_UNKNOWN() then DAE.WHOLEDIM();
   end matchcontinue;
 end dimensionSubscript;
 
@@ -12899,8 +12899,8 @@ public function dimensionsEqual
   output Boolean res;
 algorithm
   res := matchcontinue(dim1, dim2)
-    case (DAE.DIM_UNKNOWN, _) then true;
-    case (_, DAE.DIM_UNKNOWN) then true;
+    case (DAE.DIM_UNKNOWN(), _) then true;
+    case (_, DAE.DIM_UNKNOWN()) then true;
     case (DAE.DIM_EXP(exp = _), _) then true;
     case (_, DAE.DIM_EXP(exp = _)) then true;
     case (_, _)
@@ -12937,8 +12937,8 @@ public function dimensionsAdd
   output DAE.Dimension res;
 algorithm
   res := matchcontinue(dim1, dim2)
-    case (DAE.DIM_UNKNOWN, _) then DAE.DIM_UNKNOWN;
-    case (_, DAE.DIM_UNKNOWN) then DAE.DIM_UNKNOWN;
+    case (DAE.DIM_UNKNOWN(), _) then DAE.DIM_UNKNOWN();
+    case (_, DAE.DIM_UNKNOWN()) then DAE.DIM_UNKNOWN();
     case (_, _)
       equation
         res = intDimension(dimensionSize(dim1) + dimensionSize(dim2));
@@ -12953,7 +12953,7 @@ public function dimensionKnown
   output Boolean known;
 algorithm
   known := matchcontinue(dim)
-    case DAE.DIM_UNKNOWN then false;
+    case DAE.DIM_UNKNOWN() then false;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = _)) then true;
     case DAE.DIM_EXP(exp = _) then false;
     case _ then true;

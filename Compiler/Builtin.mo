@@ -1944,6 +1944,9 @@ protected constant tuple<DAE.TType, Option<Type_a>> array9dimbool2array1dimint=(
 
 
 // MetaModelica extension. KS
+protected constant tuple<DAE.TType, Option<Type_a>> typeBoxedAny = (DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE());
+protected constant tuple<DAE.TType, Option<Type_a>> typeA = (DAE.T_POLYMORPHIC("Type_A"),NONE());
+
 protected constant tuple<DAE.TType, Option<Type_a>> listA2listA=(
           DAE.T_FUNCTION({("x",(DAE.T_LIST(typeA),NONE()))},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
 
@@ -1995,14 +1998,11 @@ protected constant tuple<DAE.TType, Option<Type_a>> void2int =(
 protected constant tuple<DAE.TType, Option<Type_a>> void2real =(
           DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
 
-protected constant tuple<DAE.TType, Option<Type_a>> typeBoxedAny = (DAE.T_BOXED((DAE.T_NOTYPE,NONE())),NONE());
-protected constant tuple<DAE.TType, Option<Type_a>> typeA = (DAE.T_POLYMORPHIC("Type_A"),NONE());
-
 protected constant tuple<DAE.TType, Option<Type_a>> boolBoxedBoxed2boxed =(
           DAE.T_FUNCTION({("x1",DAE.T_BOOL_DEFAULT),("x2",typeBoxedAny),("x3",typeBoxedAny)},typeBoxedAny,DAE.NO_INLINE()),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> AA2void =(
-          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},(DAE.T_NORETCALL,NONE()),DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> AA2bool =(
           DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());

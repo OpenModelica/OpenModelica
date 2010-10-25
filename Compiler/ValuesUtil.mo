@@ -892,7 +892,7 @@ algorithm
     local
       Integer dim;
       list<DAE.Exp> explist;
-      tuple<DAE.TType, Option<Absyn.Path>> vt;
+      DAE.Type vt;
       DAE.ExpType t;
       DAE.Exp e;
       Values.Value v;
@@ -976,7 +976,7 @@ algorithm
         expl=Util.listMap(vallist,valueExp);
         tpl = Util.listMap(expl,Exp.typeof);
         varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
-      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE);
+      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE());
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
       then DAE.ENUM_LITERAL(path, ix);

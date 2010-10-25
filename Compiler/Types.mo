@@ -1273,7 +1273,7 @@ algorithm
 
     case Values.OPTION(NONE())
       equation
-        tp = (DAE.T_METAOPTION((DAE.T_NOTYPE,NONE())),NONE());
+        tp = (DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE())),NONE());
       then tp;
     case Values.OPTION(SOME(v))
       equation
@@ -4502,7 +4502,7 @@ algorithm
       list<Type> tys1;
       Option<Absyn.Path> p2;
       DAE.Exp e,e_1;
-    case ({},_,_,_) then ({},(DAE.T_NOTYPE,NONE()));
+    case ({},_,_,_) then ({},(DAE.T_NOTYPE(),NONE()));
     case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),printFailtrace)
       equation
         (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
@@ -5162,7 +5162,7 @@ algorithm
     local
       DAE.Exp e;
       Type ty, superType;
-    case ({},{},_) then ({}, (DAE.T_NOTYPE,NONE()));
+    case ({},{},_) then ({}, (DAE.T_NOTYPE(),NONE()));
     case (e :: _, ty :: _,printFailtrace)
       equation
         superType = Util.listReduce(typeList, superType);
@@ -5654,7 +5654,7 @@ algorithm
       equation
         (restExp,restType) = makeDummyExpAndTypeLists(rest);
         cref_  = ComponentReference.makeCrefIdent("#DummyExp#",DAE.ET_OTHER,{});
-      then (DAE.CREF(cref_,DAE.ET_OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE,NONE())),NONE())::restType);
+      then (DAE.CREF(cref_,DAE.ET_OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
   end matchcontinue;
 end makeDummyExpAndTypeLists;
 

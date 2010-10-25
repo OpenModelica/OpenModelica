@@ -2390,7 +2390,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION);
+        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION());
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -2405,7 +2405,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION);
+        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION());
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -11985,7 +11985,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION);
+        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION());
       then
         str;
     case (_,_) then "get_diagram_annotation failed!";
@@ -12043,7 +12043,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, ICON_ANNOTATION);
+        str = getAnnotationInClass(cdef, ICON_ANNOTATION());
       then
         str;
     case (_,_) then "";
@@ -12871,8 +12871,8 @@ protected function isAnnotationType
   input AnnotationType annotationType;
 algorithm
   _ := matchcontinue(annotationStr, annotationType)
-    case ("Icon", ICON_ANNOTATION) then ();
-    case ("Diagram", DIAGRAM_ANNOTATION) then ();
+    case ("Icon", ICON_ANNOTATION()) then ();
+    case ("Diagram", DIAGRAM_ANNOTATION()) then ();
   end matchcontinue;
 end isAnnotationType;
 
@@ -14936,7 +14936,8 @@ algorithm
       list<Env.Frame> env_1,env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename;
-      list<String> names,lst;
+      list<Absyn.ComponentItem> lst;
+      list<String> names,strList;
       Boolean f;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
@@ -14952,9 +14953,9 @@ algorithm
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
         names = getComponentitemsName(lst);
-        lst = prefixTypename(typename, names);
+        strList = prefixTypename(typename, names);
       then
-        lst;
+        strList;
 
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),
@@ -14962,9 +14963,9 @@ algorithm
       equation
         typename = Absyn.pathString(p);
         names = getComponentitemsName(lst);
-        lst = prefixTypename(typename, names);
+        strList = prefixTypename(typename, names);
       then
-        lst;
+        strList;
 
     case (_,env) then {};
 

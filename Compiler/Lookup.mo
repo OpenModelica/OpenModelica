@@ -200,7 +200,7 @@ algorithm
         ClassInf.State ci_state;
         Boolean encflag;
       equation
-        env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE));
+        env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
@@ -1173,8 +1173,7 @@ algorithm
       list<Env.Item> items;
       Env.Frame f;
       Env.Cache cache;
-      Option<DAE.Const> cnstForRange; 
-      SplicedExpData splicedExpData;
+      Option<DAE.Const> cnstForRange;
       DAE.ComponentRef cr,cr1,cr2;
       Absyn.Path path,scope,ep,p,packp;
       Option<DAE.ComponentRef> filterCref;
@@ -1909,7 +1908,6 @@ algorithm
   (outCache,outEnv,outClass) :=
   matchcontinue (cache,inEnv,inClass)
     local
-      Env.Cache cache;
       list<SCode.Element> funcelts,elts;
       SCode.Element reselt;
       SCode.Class cl;
@@ -1946,18 +1944,17 @@ protected function buildRecordConstructorClass2
 algorithm
   (outCache,outEnv,funcelts,elts) := matchcontinue(cache,env,cl,mods)
     local
-      list<SCode.Element> elts,cdefelts,restElts,classExtendsElts,extendsElts,compElts;
+      list<SCode.Element> cdefelts,restElts,classExtendsElts,extendsElts,compElts;
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       Env.Env env1;
       String name;
       Absyn.Path fpath;
-      SCode.Class cl;
 
     /* a class with parts */
     case (cache,env,cl as SCode.CLASS(name = name),mods)
       equation
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true);
-        env = Env.openScope(env, false, SOME(name), SOME(Env.CLASS_SCOPE));
+        env = Env.openScope(env, false, SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
@@ -2364,7 +2361,7 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),_),
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),_),
           (DAE.INDEX(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
@@ -2383,7 +2380,7 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),_),
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
@@ -2402,13 +2399,13 @@ algorithm
 
         t_1 = checkSubscripts(t, ys);
       then
-       ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),p),
+       ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),p),
           (DAE.SLICE(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p));
 
     case ((DAE.T_ARRAY(arrayDim = dim as DAE.DIM_EXP(exp = _), arrayType = t), p),
           (DAE.SLICE(exp = _) :: ys))
@@ -2640,13 +2637,13 @@ algorithm
     // Special case when addressing array[0].
     case DAE.DIM_INTEGER(integer = 0)
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_INT, true, {DAE.ICONST(0)}));
+        DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, {DAE.ICONST(0)}));
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       equation
         expl = Util.listMap(Util.listIntRange(sz), Exp.makeIntegerExp);
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_INT, true, expl));
+        DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, expl));
     // Array with enumeration dimension.
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
       local

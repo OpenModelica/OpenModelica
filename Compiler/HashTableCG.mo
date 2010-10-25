@@ -449,7 +449,7 @@ algorithm
   matchcontinue (valueArray,pos,entry)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
         (pos < size) = true;
@@ -506,7 +506,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,pos,len;
+      Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
