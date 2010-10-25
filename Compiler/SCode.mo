@@ -1288,10 +1288,10 @@ public function variabilityString
   output String outString;
 algorithm
   outString := matchcontinue (inVariability)
-    case (VAR()) then "VAR()";
-    case (DISCRETE()) then "DISCRETE()";
-    case (PARAM()) then "PARAM()";
-    case (CONST()) then "CONST()";
+    case (VAR()) then "VAR";
+    case (DISCRETE()) then "DISCRETE";
+    case (PARAM()) then "PARAM";
+    case (CONST()) then "CONST";
   end matchcontinue;
 end variabilityString;
 

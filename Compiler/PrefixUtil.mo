@@ -323,7 +323,6 @@ public function prefixCref "function: prefixCref
   input DAE.ComponentRef cref;
   output Env.Cache outCache;
   output DAE.ComponentRef cref_1;
-  DAE.ComponentRef cref_1;
 algorithm
   (outCache,cref_1) := prefixToCref2(cache,env,inIH,pre, SOME(cref));
 end prefixCref;

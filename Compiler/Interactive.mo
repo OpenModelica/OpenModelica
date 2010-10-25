@@ -5021,7 +5021,7 @@ public function getClassEnv
   input Absyn.Path p_class;
   output Env.Env env_2;
   list<SCode.Class> p_1;
-  list<Env.Frame> env,env_1,env2,env_2;
+  list<Env.Frame> env,env_1,env2;
   SCode.Class cl;
   String id;
   Boolean encflag;
@@ -8529,7 +8529,7 @@ protected function getClassInformation
   input Absyn.Program p;
   output String res_1;
   Absyn.Path path;
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,res_1;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
   String dim_str;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
   Absyn.Restriction restr;
@@ -8669,7 +8669,7 @@ public function getClassRestriction
   output String res_1;
   Absyn.Path path;
   Absyn.Restriction restr;
-  String res,res_1;
+  String res;
 algorithm
   path := Absyn.crefToPath(cr);
   Absyn.CLASS(_,_,_,_,restr,_,_) := getPathedClassInProgram(path, p);
@@ -8889,15 +8889,15 @@ protected function isParameter
    and returns true if the component referenced is a parameter."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram3;
+  input Absyn.Program p;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  matchcontinue (inComponentRef1,inComponentRef2,p)
     local
       Absyn.Path path;
       String i;
-      Boolean p,f,e;
+      Boolean f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst;
@@ -8906,7 +8906,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(i,_,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
@@ -8915,7 +8915,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(i,_,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then

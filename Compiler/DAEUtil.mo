@@ -1116,7 +1116,7 @@ input DAE.InlineType a1,a2;
 output Boolean b;
 algorithm
   b := matchcontinue(a1,a2)
-    case(DAE.NO_INLINE,DAE.NO_INLINE) then true;
+    case(DAE.NO_INLINE(),DAE.NO_INLINE()) then true;
     case(DAE.NORM_INLINE,DAE.NORM_INLINE) then true;
     case(DAE.AFTER_INDEX_RED_INLINE,DAE.AFTER_INDEX_RED_INLINE) then true;
     case(_,_) then false;
@@ -2551,7 +2551,7 @@ algorithm
       local
         Absyn.Path fname;
         list<DAE.Exp> fargs;
-      then {DAE.CALL(fname,fargs,false,false,DAE.ET_OTHER(),DAE.NO_INLINE)};
+      then {DAE.CALL(fname,fargs,false,false,DAE.ET_OTHER(),DAE.NO_INLINE())};
 
     case _
       equation
@@ -3485,7 +3485,7 @@ algorithm
     case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source),func,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE,source),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE(),source),extraArg);
 
     case(DAE.RECORD_CONSTRUCTOR(path,tp,source),func,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
@@ -4262,7 +4262,7 @@ Any kind of inline will result in true.
 input DAE.InlineType it;
 output Boolean b;
 algorithm b := matchcontinue(it)
-  case(DAE.NO_INLINE) then false;
+  case(DAE.NO_INLINE()) then false;
   case(_) then true;
   end matchcontinue;
 end convertInlineTypeToBool;

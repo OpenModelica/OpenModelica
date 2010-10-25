@@ -189,7 +189,6 @@ algorithm
       list<Absyn.ClassPart> restParts,resParts,resultParts;
       Absyn.ClassPart firstPart,resultPart;
       Absyn.Path cPath;
-      Env.Env env;
     case({},_,_,_) then {};
     case(firstPart :: restParts ,p,cPath, env)
       equation
@@ -821,7 +820,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -844,7 +843,7 @@ algorithm
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
         rotation = getRotationAnn(rot);
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("iconTransformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
   end matchcontinue;
 
@@ -903,7 +902,7 @@ algorithm
         flipHorizontal = getFlipAnn(rax1,rax2,"flipHorizontal");
         flipVertical = getFlipAnn(ray1,ray2,"flipVertical");
 
-      then Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
+      then Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical},NONE())),NONE());
 
     case(x1,y1,x2,y2,SOME(rot),cPath,path,p, env)
 
@@ -928,7 +927,7 @@ algorithm
         rotation = getRotationAnn(rot);
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("transformation",{}),SOME(Absyn.CLASSMOD({x,y,scale,aspectRatio,flipHorizontal,flipVertical,rotation},NONE())),NONE());
 
   end matchcontinue;
 
@@ -968,7 +967,7 @@ algorithm
         aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
 
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE());
 
   end matchcontinue;
 
@@ -998,7 +997,7 @@ algorithm
       equation        
         value = (x1 +. x2) /. 2.0;
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE());
 
   end matchcontinue;
 
@@ -1028,7 +1027,7 @@ algorithm
       equation
         scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
       then
-        Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE());
+        Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE());
 
   end matchcontinue;
 
@@ -1049,7 +1048,7 @@ protected function getFlipAnn"function: getFlipAnn
 algorithm
 
   value := val1 >. val2;
-  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(value)))),NONE());
+  flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(value)))),NONE());
 
 end getFlipAnn;
 
@@ -1064,7 +1063,7 @@ protected function getRotationAnn"function: getRotationAnn
 
 algorithm
   rot := rot *. (-1.0);
-  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(rot)))),NONE());
+  rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("rotation",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(rot)))),NONE());
 
 end getRotationAnn;
 
@@ -1152,7 +1151,6 @@ algorithm
   (x1,y1,x2,y2) := matchcontinue (inClass,contextToGetCoordsFrom)
 
     local
-      Absyn.Exp x1,y2,x2,y2;
       Absyn.Class cdef;
       list<Absyn.ClassPart> parts1;
       list<Absyn.ElementArg> annlist;
@@ -1190,137 +1188,93 @@ protected function getCoordsFromParts"function: getCoordsFromParts
 
 	Helper function to getCoordsInClass.
 "
-
   input list<Absyn.ClassPart> inParts;
   input Context contextToGetCoordsFrom;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inParts,contextToGetCoordsFrom)
-
     local
-
-      Absyn.Exp x1,y2,x2,y2;
       list<Absyn.ClassPart> rest;
       list<Absyn.ElementItem> elts;
       list<Absyn.EquationItem> eqns;
       list<Absyn.AlgorithmItem> algs;
       Context context;
-
     case(Absyn.PUBLIC(contents = elts) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromElts(elts,context);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.PROTECTED(contents = elts) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromElts(elts,context);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.EQUATIONS(contents = eqns) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromEqns(eqns,context);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.INITIALEQUATIONS(contents = eqns) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromEqns(eqns,context);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.ALGORITHMS(contents = algs) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromAlgs(algs,context);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.INITIALALGORITHMS(contents = algs) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromAlgs(algs,context);
-
       then
         (x1,y1,x2,y2);
 
     case(_ :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromParts(rest,context);
-
       then
         (x1,y1,x2,y2);
-
   end matchcontinue;
-
 end getCoordsFromParts;
 
 protected function getCoordsFromElts"function: getCoordsFromElts
 
 	Helper function to getCoordsFromParts.
 "
-
   input list<Absyn.ElementItem> inElts;
   input Context contextToGetCoordsFrom;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inElts,contextToGetCoordsFrom)
-
     local
-
-      Absyn.Exp x1,y2,x2,y2;
       list<Absyn.ElementItem> rest;
       list<Absyn.ElementArg> annList;
       Context context;
 
     case(Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-
       then
         (x1,y1,x2,y2);
 
     case(_ :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromElts(rest,context);
-
       then
         (x1,y1,x2,y2);
-
   end matchcontinue;
-
 end getCoordsFromElts;
 
 protected function getCoordsFromEqns"function: getCoordsFromEqns
@@ -1334,145 +1288,101 @@ protected function getCoordsFromEqns"function: getCoordsFromEqns
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inEqns,contextToGetCoordsFrom)
-
     local
-
-      Absyn.Exp x1,y2,x2,y2;
       list<Absyn.EquationItem> rest;
       list<Absyn.ElementArg> annList;
       Context context;
 
     case(Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-
       then
         (x1,y1,x2,y2);
 
     case(_ :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromEqns(rest,context);
-
       then
         (x1,y1,x2,y2);
 
   end matchcontinue;
-
 end getCoordsFromEqns;
 
 protected function getCoordsFromAlgs"function: getCoordsFromAlgs
 
 	Helper function to getCoordsFromParts.
 "
-
   input list<Absyn.AlgorithmItem> inAlgs;
   input Context contextToGetCoordsFrom;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inAlgs,contextToGetCoordsFrom)
-
     local
-
-      Absyn.Exp x1,y2,x2,y2;
       list<Absyn.AlgorithmItem> rest;
       list<Absyn.ElementArg> annList;
       Context context;
 
     case(Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)) :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsInAnnList(annList,context);
-
       then
         (x1,y1,x2,y2);
 
     case(_ :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromAlgs(rest,context);
-
       then
         (x1,y1,x2,y2);
 
   end matchcontinue;
-
 end getCoordsFromAlgs;
 
 protected function getCoordsInAnnList"function: getCoordsInAnnList
 
 	Helper function to getCoordsFromEqns,elts,algs.
 "
-
   input list<Absyn.ElementArg> inAnns;
   input Context contextToGetCoordsFrom;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inAnns,contextToGetCoordsFrom)
-
     local
-
-      Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest,args;
       Context context;
 
     case({},_) then (Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0))/*If coordsys is not explicit defined, old implicit standard is [-100,-100;100,100]*/;
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromCoordSysArgs(args);
       then
         (x1,y1,x2,y2);
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Icon" :: context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromLayerArgs(args);
-
       then
         (x1,y1,x2,y2);
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Diagram" :: context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromLayerArgs(args);
-
       then
         (x1,y1,x2,y2);
 
     case(_ :: rest,context)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsInAnnList(rest,context);
-
       then
         (x1,y1,x2,y2);
-
   end matchcontinue;
-
 end getCoordsInAnnList;
 
 protected function getCoordsFromCoordSysArgs"function: getCoordsFromCoordSysArgs
@@ -1484,32 +1394,22 @@ protected function getCoordsFromCoordSysArgs"function: getCoordsFromCoordSysArgs
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inAnns)
-
     local
-
-      Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest;
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest)
-
     then
       (x1,y1,x2,y2);
 
     case(_ :: rest)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromCoordSysArgs(rest);
-
       then
         (x1,y1,x2,y2);
 
   end matchcontinue;
-
 end getCoordsFromCoordSysArgs;
 
 protected function getExtentModification
@@ -1615,7 +1515,7 @@ algorithm
         expLst = Util.listMap(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
 
-      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),NONE()) :: res,NONE())),com)};//res;
+      then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),NONE()) :: res,NONE())),com)};//res;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Line" :: c),res,p)
 
@@ -1750,7 +1650,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
 
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res		;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res		;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
 
@@ -1761,7 +1661,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = transformClassAnnList(rest,context,res,p);
 
-      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res;
+      then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE())}, ex)),com) :: res;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
 
@@ -1780,7 +1680,7 @@ algorithm
 
         res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com) :: res;
         coord = getCoordSysAnn(listAppend(res,rest),p);
-        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE()),Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE())},res);
+        res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE()),Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},NONE())),NONE())},res);
         res = transformClassAnnList(rest,context,res,p);
 
       then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com));
@@ -1907,7 +1807,7 @@ algorithm
     case ({},_)
 
     then
-      Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())},NONE())),NONE())/*Create default*/;
+      Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE())},NONE())),NONE())/*Create default*/;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
 
@@ -2319,7 +2219,7 @@ protected function cleanStyleAttrs2 "function: cleanStyleAttrs
 algorithm
   outArgs := matchcontinue (inArgs,resultList,inCon)
     local
-      list<Absyn.ElementArg> args,outList,rest,resultList;
+      list<Absyn.ElementArg> args,outList,rest;
       Absyn.ElementArg arg;
       Context context,c;
       Boolean fi;
@@ -2533,7 +2433,7 @@ algorithm
 
     case(lst)
       equation
-        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(1)))),NONE()) :: lst;
+        lst = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("fillPattern", {}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(1)))),NONE()) :: lst;
       then lst;
   end matchcontinue;
 end insertFillPatternInList;
@@ -2650,7 +2550,7 @@ algorithm
     case(oLst,tLst)
       equation
         false = isFillColorInList(listAppend(oLst,tLst));
-        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(3)))),NONE())::tLst;
+        tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("fillColor",{}), SOME(Absyn.CLASSMOD({},SOME(Absyn.INTEGER(3)))),NONE())::tLst;
       then (oLst,tLst);
 
     case(oLst,tLst)
@@ -2734,7 +2634,7 @@ algorithm
   (color1,color2,color3) := matchcontinue (inColor)
     local
       rgbColor rcol;
-      Integer	color,color1,color2,color3;
+      Integer	color;
     case(color)
       equation
         rcol = arrayGet(listArray(colorMapList),color+1);
