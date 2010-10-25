@@ -4855,7 +4855,7 @@ algorithm
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cr_1 = ComponentReference.crefPrependIdent(cr, id,ty2,{});
+        cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
         // print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
         res = flowVariables(vs, cr);
       then
@@ -4891,7 +4891,7 @@ algorithm
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-        cr_1 = ComponentReference.crefPrependIdent(cr, id,ty2,{});
+        cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
         res = streamVariables(vs, cr);
       then
         (cr_1 :: res);
