@@ -1031,7 +1031,7 @@ algorithm
         false = Exp.isArray(e);
         // stripLastIdent
         sc = ComponentReference.crefStripLastSubs(cr);
-        ty = Exp.crefLastType(cr);
+        ty = ComponentReference.crefLastType(cr);
         // check List
         failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
         // extend cr
@@ -1784,7 +1784,7 @@ algorithm outExp := matchcontinue(inExp)
         j = Exp.dimensionSize(jd);
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
@@ -1801,7 +1801,7 @@ algorithm outExp := matchcontinue(inExp)
         j = Exp.dimensionSize(DAE.DIM_INTEGER(1));
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
@@ -1814,7 +1814,7 @@ algorithm outExp := matchcontinue(inExp)
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
@@ -1828,7 +1828,7 @@ algorithm outExp := matchcontinue(inExp)
         // consider size 1      
         subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
@@ -2854,7 +2854,7 @@ algorithm
       BackendDAE.VariableArray varr;
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
         hval = hashComponentRef(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
@@ -2866,7 +2866,7 @@ algorithm
         (vs,indxs);
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
       equation
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
         hval = hashComponentRef(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
@@ -2911,7 +2911,7 @@ algorithm
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
         subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);
@@ -2926,7 +2926,7 @@ algorithm
         indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
         subscripts_lstlst2 = Util.listMap(indx_lstlst2, Exp.intSubscripts);
         subscripts = subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
-        scalar_crs = Util.listMap1r(subscripts, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);
@@ -2936,11 +2936,11 @@ algorithm
     case ({_,DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
       equation
         // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
-        true = Exp.crefHaveSubs(arr_cr);
+        true = ComponentReference.crefHaveSubs(arr_cr);
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
         subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);

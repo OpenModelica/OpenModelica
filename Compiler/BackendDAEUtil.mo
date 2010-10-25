@@ -48,8 +48,8 @@ package BackendDAEUtil
   in the BLT sorting."
 
 public import BackendDAE;
-public import DAE;
 public import ComponentReference;
+public import DAE;
 public import Exp;
 public import Util;
 
@@ -1060,7 +1060,7 @@ algorithm
     /* Special Case for Records */
     case ((e as DAE.CREF(componentRef = cr)),vars)
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
+        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Exp.expEqual);
