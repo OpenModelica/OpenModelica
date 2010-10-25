@@ -10286,20 +10286,20 @@ algorithm
     case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType = i)),rel,ext_arg)
       local Type tp,tp_1; DAE.InlineType  i;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       local Type tp;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -10329,7 +10329,7 @@ algorithm
         ((e,ext_arg_4));
     case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.TUPLE(expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -10342,7 +10342,7 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl_1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((expl_1,ext_arg_2)) = traverseExpList(expl_1, traverseExp, rel, ext_arg_1);
+        ((expl_1,ext_arg_2)) = traverseExpListInternal(expl_1, traverseExp, rel, ext_arg_1);
         ((e,ext_arg_2)) = rel((DAE.ASUB(e1_1,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -10498,18 +10498,18 @@ algorithm
     case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType = i)),rel,ext_arg)
       local Type tp,tp_1; DAE.InlineType  i;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl,traverseExpTopDown, rel, ext_arg);
       then
         ((DAE.CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       local Type tp;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl,traverseExpTopDown, rel, ext_arg);
       then
         ((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
     case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl,traverseExpTopDown, rel, ext_arg);
       then
         ((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
     case ((e as DAE.MATRIX(ty = tp,integer = scalar,scalar = expl)),rel,ext_arg)
@@ -10535,7 +10535,7 @@ algorithm
         ((DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3));
     case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListInternal(expl,traverseExpTopDown, rel, ext_arg);
       then
         ((DAE.TUPLE(expl_1),ext_arg_1));
     case ((e as DAE.CAST(ty = tp,exp = e1)),rel,ext_arg)
@@ -10546,7 +10546,7 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl_1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
-        ((expl_1,ext_arg_2)) = traverseExpList(expl_1,traverseExpTopDown, rel, ext_arg_1);
+        ((expl_1,ext_arg_2)) = traverseExpListInternal(expl_1,traverseExpTopDown, rel, ext_arg_1);
       then
         ((DAE.ASUB(e1_1,expl_1),ext_arg_1));
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
@@ -11762,10 +11762,25 @@ algorithm
   end matchcontinue;
 end isInverseCref;
 
-public function traverseExpList
+public function traverseExpList "
+Calls traverseExp for each element of list."
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> expl;
+  input funcType rel;
+  input Type_a ext_arg;
+  output tuple<list<DAE.Exp>, Type_a> outTpl;
+  partial function funcType
+    input tuple<DAE.Exp, Type_a> tpl1;
+    output tuple<DAE.Exp, Type_a> tpl2;
+  end funcType;    
+algorithm
+  outTpl := traverseExpListInternal(expl,traverseExp,rel,ext_arg);
+end traverseExpList;
+
+public function traverseExpListInternal
 "function traverseExpList
  author PA:
- Calls traverseExp for each element of list. (Earier used Util.foldListMap for this, which was a bug)"
+ Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> expl;
   input traversefuncType tfunc "use traverseExp ore traverseExpTopDown";
@@ -11792,10 +11807,10 @@ algorithm
     case({},_,_,ext_arg) then (({},ext_arg));
     case(e::expl,tfunc,rel,ext_arg) equation
       ((e1,ext_arg)) = tfunc(e, rel, ext_arg);
-      ((expl1,ext_arg)) = traverseExpList(expl,tfunc,rel,ext_arg);
+      ((expl1,ext_arg)) = traverseExpListInternal(expl,tfunc,rel,ext_arg);
     then ((e1::expl1,ext_arg)); 
   end matchcontinue;
-end traverseExpList;
+end traverseExpListInternal;
 
 public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing for NONE"
   input Option<DAE.Exp> inExp;
