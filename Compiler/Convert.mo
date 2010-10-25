@@ -40,7 +40,9 @@ package Convert
   RCS: $Id$"
 
 public import Absyn;
+public import ComponentReference;
 public import DAE;
+public import Exp;
 
 public function fromDAEEqsToAbsynAlg "function: fromDAEEqsToAbsynAlgElts"
   input DAE.DAElist ld;
@@ -98,71 +100,15 @@ public function fromExpExpToAbsynExp "function: fromExpExpToAbsynExp"
   input DAE.Exp exp1;
   output Absyn.Exp expOut;
 algorithm
-  expOut :=
-  matchcontinue (exp1)
-    case (DAE.ICONST(i)) local Integer i; equation then Absyn.INTEGER(i);
-    case (DAE.RCONST(r)) local Real r; equation then Absyn.REAL(r);
-    case (DAE.SCONST(s)) local String s; equation then Absyn.STRING(s);
-    case (DAE.BCONST(b)) local Boolean b; equation then Absyn.BOOL(b);
-    case (DAE.CREF(cr,_))
-      local
-        DAE.ComponentRef cr;
-        Absyn.ComponentRef c;
-      equation
-        c = fromExpCrefToAbsynCref(cr);
-      then Absyn.CREF(c);
-  end matchcontinue;
+  expOut := Exp.unelabExp(exp1);
 end fromExpExpToAbsynExp;
 
 public function fromExpCrefToAbsynCref
   input DAE.ComponentRef cIn;
   output Absyn.ComponentRef cOut;
 algorithm
-  cOut := matchcontinue (cIn)
-      local
-        DAE.Ident id;
-        list<DAE.Subscript> subScriptList;
-        list<Absyn.Subscript> subScriptList2;
-        DAE.ComponentRef cRef;
-        Absyn.ComponentRef elem,cRef2;
-    case (DAE.CREF_QUAL(id,_,subScriptList,cRef))
-      equation
-        cRef2 = fromExpCrefToAbsynCref(cRef);
-        subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
-        elem = Absyn.CREF_QUAL(id,subScriptList2,cRef2);
-      then elem;
-    case (DAE.CREF_IDENT(id,_,subScriptList))
-      equation
-        subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
-        elem = Absyn.CREF_IDENT(id,subScriptList2);
-      then elem;
-  end matchcontinue;
-  end fromExpCrefToAbsynCref;
-
-public function fromExpSubsToAbsynSubs
-  input list<DAE.Subscript> inList;
-  input list<Absyn.Subscript> accList;
-  output list<Absyn.Subscript> outList;
-algorithm
-  outList :=
-  matchcontinue (inList,accList)
-    local
-      list<Absyn.Subscript> localAccList;
-    case ({},localAccList) then localAccList;
-    case (DAE.INDEX(e) :: restList,localAccList)
-      local
-        DAE.Exp e;
-        Absyn.Exp e2;
-        Absyn.Subscript elem;
-        list<DAE.Subscript> restList;
-      equation
-        e2 = fromExpExpToAbsynExp(e);
-        elem = Absyn.SUBSCRIPT(e2);
-        localAccList = listAppend(localAccList,{elem});
-        localAccList = fromExpSubsToAbsynSubs(restList,localAccList);
-      then localAccList;
-  end matchcontinue;
-end fromExpSubsToAbsynSubs;
+  cOut := ComponentReference.unelabCref(cIn);
+end fromExpCrefToAbsynCref;
 
 end Convert;
 

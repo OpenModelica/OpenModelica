@@ -11423,16 +11423,8 @@ public function crefPrefixDer
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, inCref);
+  outCref := ComponentReference.crefAddPrefix(derivativeNamePrefix,{},DAE.ET_REAL(), inCref);
 end crefPrefixDer;
-
-public function makeDerCref
-  "Appends $DER to a cref and constructs a DAE.CREF_QUAL from the resulting cref."
-  input DAE.ComponentRef inCref;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, inCref);
-end makeDerCref;
 
 public function equationSource "Retrieve the source from a BackendDAE.DAELow equation"
   input BackendDAE.Equation eq;
@@ -12073,7 +12065,7 @@ algorithm
     case(cref, x, stateVars) equation
       ({v1}, _) = getVar(cref, BackendDAEUtil.listVar(stateVars));
       true = isStateVar(v1);
-      cref = makeDerCref(cref);
+      cref = crefPrefixDer(cref);
       id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$pL");
@@ -12222,7 +12214,7 @@ algorithm
       equation
       Builtin.isDer(fname);
       cref = Exp.expCref(e1);
-      cref = makeDerCref(cref);
+      cref = crefPrefixDer(cref);
       //str = derivativeNamePrefix +& Exp.printExpStr(e1);
       //cref = ComponentReference.makeCrefIdent(str, DAE.ET_REAL(),{});
       e1_ = differentiateWithRespectToX(Exp.crefExp(cref), x, functions, inputVars, paramVars, stateVars);

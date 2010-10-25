@@ -2877,7 +2877,7 @@ algorithm
       equation
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        cr = DAELow.makeDerCref(cr);
+        cr = DAELow.crefPrefixDer(cr);
         exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
@@ -3883,7 +3883,7 @@ algorithm
                     expLst = {DAE.CREF(componentRef = cr)}),
            NONE()))
       equation
-        cr = DAELow.makeDerCref(cr);
+        cr = DAELow.crefPrefixDer(cr);
       then
         ((DAE.CREF(cr,DAE.ET_REAL()), NONE()));
     case (_) then inExp;

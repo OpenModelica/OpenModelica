@@ -827,11 +827,7 @@ protected function crefToExp "function: crefToExp
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inComponentRef)
-    local DAE.ComponentRef cref;
-    case cref then DAE.CREF(cref,DAE.ET_OTHER());
-  end matchcontinue;
+  outExp:= Exp.makeCrefExp(inComponentRef,DAE.ET_OTHER());
 end crefToExp;
 
 
