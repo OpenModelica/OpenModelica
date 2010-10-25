@@ -337,7 +337,7 @@ algorithm
         0 = marks[eqn_1 + 1];
         marks_1 = arrayUpdate(marks, eqn_1 + 1, 1);
         inv_reachable = invReachableNodes(eqn, m, mt, a1, a2);
-        inv_reachable_1 = removeNegative(inv_reachable);
+        inv_reachable_1 = BackendDAEUtil.removeNegative(inv_reachable);
         inv_reachable_2 = Util.listMap(inv_reachable_1, Util.listCreate);
         ((marks_2,m,mt,a1,a2)) = Util.listFold(inv_reachable_2, markStateEquation2, (marks_1,m,mt,a1,a2));
         ((marks_3,m_1,mt_1,a1_1,a2_1)) = markStateEquation2(eqns, (marks_2,m,mt,a1,a2));
@@ -396,7 +396,7 @@ algorithm
       equation
         eqn_1 = e - 1;
         var_lst = m[eqn_1 + 1];
-        var_lst_1 = removeNegative(var_lst);
+        var_lst_1 = BackendDAEUtil.removeNegative(var_lst);
         lst = invReachableNodes2(var_lst_1, a1);
       then
         lst;
@@ -443,7 +443,6 @@ algorithm
   end matchcontinue;
 end invReachableNodes2;
 
->>>>>>> .r6594
 public function isStateVar
 "function: isStateVar
   Returns true for state variables, false otherwise."
