@@ -1457,18 +1457,18 @@ algorithm outdae := matchcontinue(zeroEqnDae,fullDae)
   case(_, DAE.DAE({})) equation print(" error in updateTypesInUnconnectedConnectors\n"); then fail();
   case(DAE.DAE((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
     equation
-      //print(Exp.printComponentRefStr(cr));
+      //print(ComponentReference.printComponentRefStr(cr));
       cr = extractConnectorPrefix(cr);
-      //print(" ===> " +& Exp.printComponentRefStr(cr) +& "\n");
+      //print(" ===> " +& ComponentReference.printComponentRefStr(cr) +& "\n");
       fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
       fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
     then
       fullDae;
   case(DAE.DAE((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
     equation
-      //print(Exp.printComponentRefStr(cr));
+      //print(ComponentReference.printComponentRefStr(cr));
       cr = extractConnectorPrefix(cr);
-      //print(" ===> " +& Exp.printComponentRefStr(cr) +& "\n");
+      //print(" ===> " +& ComponentReference.printComponentRefStr(cr) +& "\n");
       fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
       fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
     then
@@ -1476,14 +1476,14 @@ algorithm outdae := matchcontinue(zeroEqnDae,fullDae)
   case(DAE.DAE((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
     equation
       failure(cr = extractConnectorPrefix(cr));
-      //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
+      //print("Var is not a outside connector: " +& ComponentReference.printComponentRefStr(cr));
       fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
     then
       fullDae;
   case(DAE.DAE((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
     equation
       failure(cr = extractConnectorPrefix(cr));
-      //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
+      //print("Var is not a outside connector: " +& ComponentReference.printComponentRefStr(cr));
       fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
     then
       fullDae;
@@ -1507,13 +1507,13 @@ algorithm outelems := matchcontinue(inCr, elems)
   case(cr1,DAE.DAE({}))
     equation
       // print("error updateTypesInUnconnectedConnectors2\n");
-      // print(" no match for: " +& Exp.printComponentRefStr(cr1) +& "\n");
+      // print(" no match for: " +& ComponentReference.printComponentRefStr(cr1) +& "\n");
     then
       DAE.DAE({});
   case(inCr,DAE.DAE((elem2 as DAE.VAR(componentRef = cr2))::elts))
     equation
       true = ComponentReference.crefPrefixOf(inCr,cr2);
-      //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
+      //print(" Found: " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
       cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
       elem = DAEUtil.replaceCrefInVar(cr1,elem2);
       //print(" replaced to: " ); print(DAE.dump2str(DAE.DAE({elem}))); print("\n");
@@ -1555,7 +1555,7 @@ algorithm outCref := matchcontinue(cr1,cr2)
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
   case(cr1,cr2)
     equation
-      print(" ***** FAILURE with " +& Exp.printComponentRefStr(cr1) +& " _and_ " +& Exp.printComponentRefStr(cr2) +& "\n");
+      print(" ***** FAILURE with " +& ComponentReference.printComponentRefStr(cr1) +& " _and_ " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -3877,7 +3877,7 @@ algorithm
     case(inComps, SOME(cr), allComps, className)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
+        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
         Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
       then
         inComps;
@@ -3906,7 +3906,7 @@ algorithm
     case({},SOME(cr),_,_,_)
       local DAE.ComponentRef cr;
       equation
-        //print(" failure to find: " +& Exp.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
+        //print(" failure to find: " +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
       then {};
     case({},_,_,_,_) then fail();
     case(inComps,NONE(),_,_,_) then inComps;
@@ -4574,8 +4574,8 @@ algorithm
     case (Connect.SETS(setLst = setLst,connection = crs,deletedComponents=dc,outerConnects=oc),
           (SCode.EQUATION(eEquation = SCode.EQ_CONNECT(crefLeft = cr1,crefRight = cr2)) :: es))
       equation
-        cr1_1 = Exp.toExpCref(cr1);
-        cr2_1 = Exp.toExpCref(cr2);
+        cr1_1 = ComponentReference.toExpCref(cr1);
+        cr2_1 = ComponentReference.toExpCref(cr2);
         crs_1 = listAppend(crs, {cr1_1,cr2_1});
         sets_1 = addConnectionCrefs(Connect.SETS(setLst,crs_1,dc,oc), es);
       then
@@ -6993,7 +6993,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        fullName = Exp.printComponentRefStr(cref);
+        fullName = ComponentReference.printComponentRefStr(cref);
         (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));
         
         
@@ -7030,7 +7030,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // we should have here any kind of modification!
         false = Mod.modEqual(mod, DAE.NOMOD());
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        s1 = Exp.printComponentRefStr(cref);
+        s1 = ComponentReference.printComponentRefStr(cref);
         s2 = Mod.prettyPrintMod(mod, 0);
         s = s1 +&  " " +& s2;
         // add a warning!
@@ -7114,7 +7114,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        s1 = Exp.printComponentRefStr(crefOuter);
+        s1 = ComponentReference.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE
@@ -7146,7 +7146,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        s1 = Exp.printComponentRefStr(crefOuter);
+        s1 = ComponentReference.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);        
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
@@ -7175,7 +7175,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // add it to the instance hierarchy
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        fullName = Exp.printComponentRefStr(cref);
+        fullName = ComponentReference.printComponentRefStr(cref);
         (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));        
         
         // also all the components in the environment should be updated to be outer!
@@ -7230,7 +7230,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         true = RTOpts.debugFlag("failtrace");
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
         Debug.fprintln("failtrace", "- Inst.instVar failed while instatiating variable: " +&
-          Exp.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
+          ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
           " in scope: " +& Env.printEnvPathStr(env));
       then 
         fail();
@@ -8600,7 +8600,7 @@ algorithm
                    innerOuter=io) :: r),dir)
       equation
         s1 = Dump.directionSymbol(dir);
-        s2 = Exp.printComponentRefStr(cr);
+        s2 = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {s1,s2});
       then
         fail();
@@ -8619,7 +8619,7 @@ algorithm
                    absynCommentOption = comment) :: r),dir)
       equation
         s1 = Dump.directionSymbol(dir);
-        s2 = Exp.printComponentRefStr(cr);
+        s2 = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {s1,s2});
       then
         fail();
@@ -9103,7 +9103,7 @@ algorithm
     case (_, _, cref,_)
       equation
         Debug.fprintln("failtrace", "- Inst.elabComponentArraydimFromEnv failed: " 
-          +& Exp.printComponentRefStr(cref));
+          +& ComponentReference.printComponentRefStr(cref));
       then
         fail();
   end matchcontinue;
@@ -11184,7 +11184,7 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref));
-        crefstr = Exp.printComponentRefStr(cref);
+        crefstr = ComponentReference.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
@@ -11578,7 +11578,7 @@ algorithm
     /* Report an error */
     case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        s = Exp.printComponentRefStr(vn);
+        s = ComponentReference.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
         fail();
@@ -12448,7 +12448,7 @@ algorithm
         Debug.fprint("failtrace", "- Inst.instModEquation failed\n type: ");
         Debug.fprint("failtrace", Types.printTypeStr(ty1));
         Debug.fprint("failtrace", "\n  cref: ");
-        Debug.fprint("failtrace", Exp.printComponentRefStr(c));
+        Debug.fprint("failtrace", ComponentReference.printComponentRefStr(c));
         Debug.fprint("failtrace", "\n mod:");
         Debug.fprint("failtrace", Mod.printModStr(m));
         Debug.fprint("failtrace", "\n");
@@ -12474,7 +12474,7 @@ algorithm
     case (_,DAE.NOMOD(),_) then ();
     case (true,_,cref)
       equation
-        str = Exp.printComponentRefStr(cref);
+        str = ComponentReference.printComponentRefStr(cref);
         Error.addMessage(Error.MODIFY_PROTECTED, {str});
       then
         fail();

@@ -49,9 +49,9 @@ algorithm
     then ();
     case((key,value)::tail) equation
       print("    ");
-      print(Exp.printComponentRefStr(key));
+      print(ComponentReference.printComponentRefStr(key));
       print(" = ");
-      print(Exp.printComponentRefStr(value));
+      print(ComponentReference.printComponentRefStr(value));
       print("\n");
       printList(tail);
     then ();
@@ -67,7 +67,7 @@ protected function hashFunc "
   output Integer res;
   String crstr;
 algorithm
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := ComponentReference.printComponentRefStr(cr);
   res := System.hash(crstr);
 end hashFunc;
 
@@ -153,9 +153,9 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
         /*print("HashTableGC.add(");
-        print(Exp.printComponentRefStr(key));
+        print(ComponentReference.printComponentRefStr(key));
         print(",");
-        print(Exp.printComponentRefStr(value));
+        print(ComponentReference.printComponentRefStr(value));
         print(")\n");
         result = HASHTABLE(hashvec_1,varr_1,bsize,n_1);
         debugList = hashTableList(result);
@@ -170,9 +170,9 @@ algorithm
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
         /*print("HashTableGC.add(");
-        print(Exp.printComponentRefStr(key));
+        print(ComponentReference.printComponentRefStr(key));
         print(",");
-        print(Exp.printComponentRefStr(value));
+        print(ComponentReference.printComponentRefStr(value));
         print(") (already present)\n");*/
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
@@ -254,9 +254,9 @@ algorithm
         (k, v) = valueArrayNth(varr, indx);
         true = keyEqual(k, key);
         /*print("HashTableGC.get(");
-        print(Exp.printComponentRefStr(key));
+        print(ComponentReference.printComponentRefStr(key));
         print(") = ");
-        print(Exp.printComponentRefStr(v));
+        print(ComponentReference.printComponentRefStr(v));
         print("\n");*/
       then
         (v,indx);

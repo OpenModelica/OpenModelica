@@ -1392,7 +1392,7 @@ algorithm
       then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         res = System.stringAppendList({s1," := ",s2});
@@ -1411,7 +1411,7 @@ algorithm
       then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = System.stringAppendList({s1," := ",s2});
@@ -1421,7 +1421,7 @@ algorithm
       then ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
@@ -1442,7 +1442,7 @@ algorithm
       then ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
@@ -1580,7 +1580,7 @@ algorithm
       then ();
     case (DAE.CREF(componentRef = c,ty = t))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
     case (e as DAE.BINARY(e1,op,e2))
@@ -3328,7 +3328,7 @@ algorithm
                             flowPrefix = flowPrefix,
                             streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      intString(indx),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
                      dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
@@ -3397,7 +3397,7 @@ algorithm
                             flowPrefix = flowPrefix,
                             streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
@@ -3651,7 +3651,7 @@ algorithm
       then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         res = System.stringAppendList({s1," - ( ",s2," ) := 0"});
@@ -3674,7 +3674,7 @@ algorithm
       then ();
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         res = System.stringAppendList({s1," - (",s2,") := 0"});
@@ -3684,7 +3684,7 @@ algorithm
       then ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
@@ -3709,7 +3709,7 @@ algorithm
       then ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);

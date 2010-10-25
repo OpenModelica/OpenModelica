@@ -44,7 +44,7 @@ protected function hashFunc "
   output Integer res;
   String crstr;
 algorithm
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := ComponentReference.printComponentRefStr(cr);
   res := System.hash(crstr);
 end hashFunc;
 
@@ -101,7 +101,7 @@ algorithm
   local
   DAE.ComponentRef cr; Integer i;
     case((cr,i)) equation
-      str = "{" +& Exp.printComponentRefStr(cr) +& "," +& intString(i) +& "}";
+      str = "{" +& ComponentReference.printComponentRefStr(cr) +& "," +& intString(i) +& "}";
     then str;
   end matchcontinue;
 end dumpTuple;

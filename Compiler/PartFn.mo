@@ -1282,7 +1282,7 @@ algorithm
       DAE.Var res;
     case(DAE.VAR(componentRef = cref,ty = ty))
       equation
-        i = Exp.printComponentRefStr(cref);
+        i = ComponentReference.printComponentRefStr(cref);
         res = DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND(),NONE()); // TODO: FIXME: binding?
       then
         res;

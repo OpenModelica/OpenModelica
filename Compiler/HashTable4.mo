@@ -27,6 +27,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 
 /* HashTable instance specific code */
 
+public import ComponentReference;
 public import DAE;
 protected import Exp;
 protected import System;
@@ -74,7 +75,7 @@ algorithm
   local
   DAE.Exp cr; DAE.ComponentRef i;
     case((cr,i)) equation
-      str = "{" +& Exp.printExpStr(cr) +& "," +& Exp.printComponentRefStr(i) +& "}";
+      str = "{" +& Exp.printExpStr(cr) +& "," +& ComponentReference.printComponentRefStr(i) +& "}";
     then str;
   end matchcontinue;
 end dumpTuple;

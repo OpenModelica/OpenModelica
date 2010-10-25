@@ -526,14 +526,14 @@ algorithm
     case (cache,env,ih,cref,pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& Exp.printComponentRefStr(cref) +& 
+        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
         //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
-        // Debug.fprintln("innerouter", "INNER normally prefixed: " +& Exp.printComponentRefStr(newCref));
+        // Debug.fprintln("innerouter", "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -541,7 +541,7 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& Exp.printComponentRefStr(cref) +& 
+        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
         //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
@@ -554,7 +554,7 @@ algorithm
         
         newCref = prefixCref(innerPrefix, lastCref);
         
-        // Debug.fprintln("innerouter", "OUTER IDENT prefixed INNER : " +& Exp.printComponentRefStr(newCref));
+        // Debug.fprintln("innerouter", "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     
@@ -566,7 +566,7 @@ algorithm
         true = Absyn.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
-        // Debug.fprintln("innerouter", "OUTER QUAL prefixed INNER: " +& Exp.printComponentRefStr(newCref));
+        // Debug.fprintln("innerouter", "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     */

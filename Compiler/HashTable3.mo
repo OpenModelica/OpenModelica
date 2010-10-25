@@ -46,7 +46,7 @@ protected function hashFunc "
   output Integer res;
   String crstr;
 algorithm
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := ComponentReference.printComponentRefStr(cr);
   res := System.hash(crstr);
 end hashFunc;
 

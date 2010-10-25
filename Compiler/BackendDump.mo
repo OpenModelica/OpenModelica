@@ -38,6 +38,7 @@ package BackendDump
 "
 
 public import BackendDAE;
+public import ComponentReference;
 public import DAE;
 
 protected import Absyn;
@@ -66,12 +67,12 @@ algorithm
     case(c,variables)
       equation
         ((BackendDAE.VAR(varName=co):: _),_) = DAELow.getVar(c,variables);
-        sc = Exp.printComponentRefStr(co);
+        sc = ComponentReference.printComponentRefStr(co);
       then
         sc;
     case(c,variables)
       equation
-        sc = Exp.printComponentRefStr(c);
+        sc = ComponentReference.printComponentRefStr(c);
       then
         sc;
   end matchcontinue;
@@ -158,7 +159,7 @@ algorithm
     case((cr,_,prio))
       local DAE.ComponentRef cr; Real prio; String s1,s2;
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = realString(prio);
         str = stringAppendList({"(",s1,", ",s2,")"});
       then str;
@@ -234,7 +235,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = w))
       equation
         (cr,e2) = DAELow.getWhenEquationExpr(w);
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = stringAppendList({s1," =  ",s2,"\n"});
         print(res);
@@ -787,7 +788,7 @@ algorithm
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = stringAppendList({s1," := ",s2});
       then
@@ -795,7 +796,7 @@ algorithm
         
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn))))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
         s3 = whenEquationStr(weqn);
@@ -804,7 +805,7 @@ algorithm
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)))
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */});
@@ -917,7 +918,7 @@ algorithm
         dirstr = DAEDump.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         print(str);
         print(":");
         dumpKind(kind);
@@ -932,7 +933,7 @@ algorithm
         print(path_str);
         indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
-        print(Exp.printComponentRef2Str("", arrayDim));
+        print(ComponentReference.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
@@ -961,7 +962,7 @@ algorithm
         dirstr = DAEDump.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         paths = DAEUtil.getElementSourceTypes(source);
         path_strs = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
@@ -973,7 +974,7 @@ algorithm
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
-        print(Exp.printComponentRef2Str("", arrayDim));
+        print(ComponentReference.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
         print(" fixed:");print(Util.boolString(DAELow.varFixed(v)));
@@ -1216,7 +1217,7 @@ algorithm
       equation
         s1 = dumpMarkedVars(dae, vs);
         BackendDAE.VAR(varName = cr) = DAELow.getVarAt(vars, v);
-        s2 = Exp.printComponentRefStr(cr);
+        s2 = ComponentReference.printComponentRefStr(cr);
         s3 = intString(v);
         res = stringAppendList({s2,"(",s3,"), ",s1});
       then

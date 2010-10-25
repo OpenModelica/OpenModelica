@@ -996,7 +996,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("lookup");
         Debug.traceln("lookupVar: " +& 
-          Exp.printComponentRefStr(cref) +& 
+          ComponentReference.printComponentRefStr(cref) +& 
           " in env: " +& 
           Env.printEnvPathStr(env) +& "\n");
       then 
@@ -1021,7 +1021,7 @@ algorithm
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
+        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
       then fail(); 
   end matchcontinue;
 end lookupVar;
@@ -1045,7 +1045,7 @@ algorithm
     // fail if is not a constant
     case (env,attr,tp,cref)
       equation
-        s1=Exp.printComponentRefStr(cref);
+        s1=ComponentReference.printComponentRefStr(cref);
         s2 = Env.printEnvPathStr(env);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         Debug.fprintln("failtrace", "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
@@ -1201,7 +1201,7 @@ algorithm
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
         (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
-        //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
+        //print("found ");print(ComponentReference.printComponentRefStr(cr));print(" in cache\n");
       then
         (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
         
@@ -1262,7 +1262,7 @@ algorithm
     case (cache,env,cr,prevFrames,inState)
       equation
         //true = RTOpts.debugFlag("failtrace");
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& Exp.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
       then 
         fail(); 
   end matchcontinue;

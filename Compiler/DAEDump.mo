@@ -38,11 +38,12 @@ package DAEDump
 
   This module implements functions to print the DAE AST."
 
-public import SCode;
 public import DAE;
 public import Graphviz;
 public import IOStream;
+public import SCode;
 
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Print; 
 protected import Util;
@@ -238,7 +239,7 @@ algorithm
                                absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
 
         /* //include type of var
 
@@ -263,7 +264,7 @@ algorithm
     case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE(),variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         /* // include type in dump
         s1 = Exp.debugPrintComponentRefTypeStr(cr);
         s1 = Util.stringReplaceChar(s1,"\n","");
@@ -282,7 +283,7 @@ algorithm
     case DAE.DAE((DAE.DEFINE(componentRef = cr) :: xs))
       equation
         Print.printBuf("DEFINE(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(")\n");
         dump2(DAE.DAE(xs));
       then
@@ -290,7 +291,7 @@ algorithm
     case DAE.DAE((DAE.INITIALDEFINE(componentRef = cr) :: xs))
       equation
         Print.printBuf("INITIALDEFINE(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(")\n");
         dump2(DAE.DAE(xs));
       then
@@ -376,9 +377,9 @@ algorithm
     case(DAE.DAE((DAE.EQUEQUATION(cr1 = cr, cr2 = cr2) :: xs)))
       equation
         Print.printBuf("EQUEQUATION(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(" = ");
-        Exp.printComponentRef(cr2);
+        ComponentReference.printComponentRef(cr2);
         Print.printBuf(")\n");
         dump2(DAE.DAE(xs));
       then
@@ -479,7 +480,7 @@ algorithm
     case DAE.NOEXTARG() then "void";
     case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
         tystr = Types.getTypeName(ty);
         str = System.stringAppendList({dirstr," ",tystr," ",crstr});
@@ -494,7 +495,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         dimstr = Exp.printExpStr(dim);
         str = System.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
@@ -787,7 +788,7 @@ algorithm
         dumpDirection(dir);
         Print.printBuf(Types.unparseType(typ));
         Print.printBuf(" ");
-        Exp.printComponentRef(id);
+        ComponentReference.printComponentRef(id);
         dumpCommentOption(comment);
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(";\n");
@@ -809,7 +810,7 @@ algorithm
         dumpDirection(dir);
         Print.printBuf(Types.unparseType(typ));
         Print.printBuf(" ");
-        Exp.printComponentRef(id);
+        ComponentReference.printComponentRef(id);
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(" = ");
         Exp.printExp(e);
@@ -947,9 +948,9 @@ algorithm
       case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
       equation
         Print.printBuf("  ");
-        Exp.printComponentRef(cr1);
+        ComponentReference.printComponentRef(cr1);
         Print.printBuf(" = ");
-        Exp.printComponentRef(cr2);
+        ComponentReference.printComponentRef(cr2);
         Print.printBuf(";\n");
       then
         ();
@@ -977,7 +978,7 @@ algorithm
     case (DAE.DEFINE(componentRef = c,exp = e))
       equation
         Print.printBuf("  ");
-        Exp.printComponentRef(c);
+        ComponentReference.printComponentRef(c);
         Print.printBuf(" ::= ");
         Exp.printExp(e);
         Print.printBuf(";\n");
@@ -1026,7 +1027,7 @@ algorithm
     case (DAE.INITIALDEFINE(componentRef = c,exp = e))
       equation
         Print.printBuf("  ");
-        Exp.printComponentRef(c);
+        ComponentReference.printComponentRef(c);
         Print.printBuf(" ::= ");
         Exp.printExp(e);
         Print.printBuf(";\n");
@@ -1097,10 +1098,10 @@ algorithm
 
      case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
       equation
-        s1 = Exp.printComponentRefStr(cr1);
+        s1 = ComponentReference.printComponentRefStr(cr1);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
-        s4 = Exp.printComponentRefStr(cr2);
+        s4 = ComponentReference.printComponentRefStr(cr2);
         s5 = stringAppend(s3, s4);
         str = stringAppend(s5, ";\n");
       then
@@ -1120,7 +1121,7 @@ algorithm
 
     case (DAE.DEFINE(componentRef = c,exp = e))
       equation
-        s1 = Exp.printComponentRefStr(c);
+        s1 = ComponentReference.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(" ::= ", s2);
         s4 = Exp.printExpStr(e);
@@ -1440,7 +1441,7 @@ algorithm
     case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.CREF(c,_),exp = e),i)
       equation
         indent(i);
-        Exp.printComponentRef(c);
+        ComponentReference.printComponentRef(c);
         Print.printBuf(" := ");
         Exp.printExp(e);
         Print.printBuf(";\n");
@@ -1449,7 +1450,7 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
       equation
         indent(i);
-        Exp.printComponentRef(c);
+        ComponentReference.printComponentRef(c);
         Print.printBuf(" := ");
         Exp.printExp(e);
         Print.printBuf(";\n");
@@ -1667,7 +1668,7 @@ algorithm
     case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.CREF(c,_),exp = e),i)
       equation
         s1 = indentStr(i);
-        s2 = Exp.printComponentRefStr(c);
+        s2 = ComponentReference.printComponentRefStr(c);
         s3 = stringAppend(s1, s2);
         s4 = stringAppend(s3, " := ");
         s5 = Exp.printExpStr(e);
@@ -1701,7 +1702,7 @@ algorithm
     case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
       equation
         s1 = indentStr(i);
-        s2 = Exp.printComponentRefStr(c);
+        s2 = ComponentReference.printComponentRefStr(c);
         s3 = stringAppend(s1, s2);
         s4 = stringAppend(s3, " := ");
         s5 = Exp.printExpStr(e);
@@ -2072,7 +2073,7 @@ algorithm
              absynCommentOption = comment)
       equation
         Print.printBuf("VAR(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(", ");
         dumpKind(vk);
         comment_str = dumpCommentOptionStr(comment);
@@ -2091,7 +2092,7 @@ algorithm
              absynCommentOption = comment)
       equation
         Print.printBuf("VAR(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(", ");
         dumpKind(vk);
         Print.printBuf(", binding: ");
@@ -2107,7 +2108,7 @@ algorithm
     case DAE.DEFINE(componentRef = cr,exp = exp)
       equation
         Print.printBuf("DEFINE(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(", ");
         Exp.printExp(exp);
         Print.printBuf(")");
@@ -2116,7 +2117,7 @@ algorithm
     case DAE.INITIALDEFINE(componentRef = cr,exp = exp)
       equation
         Print.printBuf("INITIALDEFINE(");
-        Exp.printComponentRef(cr);
+        ComponentReference.printComponentRef(cr);
         Print.printBuf(", ");
         Exp.printExp(exp);
         Print.printBuf(")");
@@ -2135,9 +2136,9 @@ algorithm
      case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
       equation
         Print.printBuf("EQUATION(");
-        Exp.printComponentRef(cr1);
+        ComponentReference.printComponentRef(cr1);
         Print.printBuf(",");
-        Exp.printComponentRef(cr2);
+        ComponentReference.printComponentRef(cr2);
         Print.printBuf(")");
       then
         ();
@@ -2406,12 +2407,12 @@ algorithm
       DAE.Exp exp;
     case DAE.VAR(componentRef = cr,binding = NONE())
       equation
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
       then
         str;
     case DAE.VAR(componentRef = cr,binding = SOME(exp))
       equation
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         str_1 = stringAppend(str, " = ");
         str_2 = stringAppend(str_1, expstr);
@@ -2468,13 +2469,13 @@ algorithm
       list<DAE.Element> elts;
     case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE())
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
     case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = SOME(exp))
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
         expstr = printExpStrSpecial(exp);
         expstr_1 = stringAppend("= ", expstr);
@@ -2482,7 +2483,7 @@ algorithm
         Graphviz.LNODE("VAR",{crstr,vkstr,expstr_1},{},{});
     case DAE.DEFINE(componentRef = cr,exp = exp)
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         expstr_1 = stringAppend("= ", expstr);
       then
@@ -2502,7 +2503,7 @@ algorithm
     case DAE.ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{});
     case DAE.INITIALDEFINE(componentRef = cr,exp = exp)
       equation
-        crstr = Exp.printComponentRefStr(cr);
+        crstr = ComponentReference.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         expstr_1 = stringAppend("= ", expstr);
       then
@@ -2815,7 +2816,7 @@ algorithm
 
       case ((DAE.EQUEQUATION(cr1=cr1,cr2=cr2) :: xs), str)
       equation
-        str = IOStream.append(str, "  " +& Exp.printComponentRefStr(cr1) +&" = " +& Exp.printComponentRefStr(cr2) +& ";\n");
+        str = IOStream.append(str, "  " +& ComponentReference.printComponentRefStr(cr1) +&" = " +& ComponentReference.printComponentRefStr(cr2) +& ";\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
@@ -2840,7 +2841,7 @@ algorithm
 
     case ((DAE.DEFINE(componentRef = c,exp = e) :: xs), str)
       equation
-        s1 = Exp.printComponentRefStr(c);
+        s1 = ComponentReference.printComponentRefStr(c);
         s2 = Exp.printExpStr(e);
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
         str = dumpEquationsStream(xs, str);
@@ -2930,7 +2931,7 @@ algorithm
 
     case ((DAE.REINIT(componentRef = cr,exp = e) :: xs), str)
       equation
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         s1 = Exp.printExpStr(e);        
         str = IOStream.appendList(str, {"  reinit(",s,",",s1,");\n"});
         str = dumpEquationsStream(xs, str);
@@ -3030,7 +3031,7 @@ algorithm
 
     case ((DAE.INITIALDEFINE(componentRef = c,exp = e) :: xs), str)
       equation
-        s1 = Exp.printComponentRefStr(c);
+        s1 = ComponentReference.printComponentRefStr(c);
         s2 = Exp.printExpStr(e);
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
         str = dumpInitialEquationsStream(xs, str);
@@ -3149,7 +3150,7 @@ algorithm
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
         s3_subs = unparseDimensions(dims, printTypeDimension);
-        s4 = Exp.printComponentRefStr(id);
+        s4 = ComponentReference.printComponentRefStr(id);
         s7 = dumpVarProtectionStr(prot);
         comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
@@ -3174,7 +3175,7 @@ algorithm
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
         s3_subs = unparseDimensions(dims, printTypeDimension);
-        s4 = Exp.printComponentRefStr(id);
+        s4 = ComponentReference.printComponentRefStr(id);
         s5 = Exp.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);

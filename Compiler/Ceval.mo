@@ -279,14 +279,14 @@ algorithm
         Interactive.InteractiveSymbolTable st;
       equation
         (cache,v) = cevalCref(cache,env, cr, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
     case (cache,env,DAE.CREF(componentRef = cr),impl,st,_,msg)
       equation
         (cache,v) = cevalCref(cache,env, cr, impl, msg);
-        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,st);
         
@@ -1828,7 +1828,7 @@ algorithm
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
 
         false = Types.dimensionsKnown(tp);
-        cr_str = Exp.printComponentRefStr(cr);
+        cr_str = ComponentReference.printComponentRefStr(cr);
         dim_str = Exp.printExpStr(dim);
         size_str = System.stringAppendList({"size(",cr_str,", ",dim_str,")"});
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {size_str});
@@ -2215,11 +2215,11 @@ algorithm
         res = listLength(cr_totlst);
 
         /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
-        print("cardinality(");print(Exp.printComponentRefStr(cr));print(")=");print(intString(res));
-        print("\nicrefs =");print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),","));
-        print("\ncrefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,Exp.printComponentRefStr),","));
+        print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
+        print("\nicrefs =");print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),","));
+        print("\ncrefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,ComponentReference.printComponentRefStr),","));
         print("\n");
-       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");*/
+       	print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
        //	print("env:");print(Env.printEnvStr(env));
       then
         (cache,res);
@@ -4970,7 +4970,7 @@ algorithm
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
-        str = Exp.printComponentRefStr(c);
+        str = ComponentReference.printComponentRefStr(c);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str});
       then
         fail();
@@ -5009,7 +5009,7 @@ algorithm
 			local
 				String str, scope_str;
 			equation
-				str = Exp.printComponentRefStr(inCref);
+				str = ComponentReference.printComponentRefStr(inCref);
 				scope_str = Env.printEnvPathStr(inEnv);
 				Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
 				Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
@@ -5161,7 +5161,7 @@ algorithm
     case (cache,env,e1,inBinding,_,_)
       equation
         true = RTOpts.debugFlag("ceval");
-        s1 = Exp.printComponentRefStr(e1);
+        s1 = ComponentReference.printComponentRefStr(e1);
         s2 = Types.printBindingStr(inBinding);
         str = Env.printEnvPathStr(env);
         str = System.stringAppendList({"- Ceval.cevalCrefBinding: ", 

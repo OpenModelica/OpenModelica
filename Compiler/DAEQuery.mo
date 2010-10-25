@@ -38,6 +38,7 @@ package DAEQuery
 
 public
 import BackendDAE;
+import ComponentReference;
 import DAELow;
 import SCode;
 
@@ -135,14 +136,14 @@ algorithm
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = System.stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
       equation
-        s1 = Exp.printComponentRefStr(cr);
+        s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         BackendDAE.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
         s3 = Exp.printExpStr(condition);
@@ -391,7 +392,7 @@ algorithm
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);
-        str1 = Exp.printComponentRefStr(cr);
+        str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
@@ -428,7 +429,7 @@ algorithm
       equation
         varnostr = intString(varno);
         dirstr = DAEDump.dumpDirectionStr(dir);
-        str1 = Exp.printComponentRefStr(cr);
+        str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");

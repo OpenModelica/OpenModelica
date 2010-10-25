@@ -50,6 +50,7 @@ package DAELow
 
 public import Absyn;
 public import BackendDAE;
+public import BackendDAEUtil;
 public import ComponentReference;
 public import DAE;
 public import SCode;
@@ -77,7 +78,6 @@ protected import DAEDump;
 protected import Inline;
 protected import ValuesUtil;
 protected import VarTransform;
-protected import DAELowUtil;
 
 protected function hasNoStates
 "@author: adrpo
@@ -164,7 +164,7 @@ algorithm
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        DAELowUtil.checkDEALowWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
       then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 
     case(lst, functionTree, addDummyDerivativeIfNeeded, false) // do not simplify
@@ -200,7 +200,7 @@ algorithm
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));        
-        DAELowUtil.checkDEALowWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
       then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
   end matchcontinue;
 end lower;
@@ -580,7 +580,7 @@ algorithm
       then vars;
     case(vars,cr::newStates)
       equation
-        print("Internal error, variable ");print(Exp.printComponentRefStr(cr));print("not found in variables.\n");
+        print("Internal error, variable ");print(ComponentReference.printComponentRefStr(cr));print("not found in variables.\n");
         vars = updateStatesVars(vars,newStates);
       then vars;
   end matchcontinue;
@@ -1586,7 +1586,7 @@ algorithm
       equation
         failure((_,_) = getVar(cr, vars));
         print("mark_state_equation var ");
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         print(s);
         print("not found\n");
       then
@@ -2435,7 +2435,7 @@ algorithm
         false = Exp.isArray(e);
         // stripLastIdent
         sc = ComponentReference.crefStripLastSubs(cr);
-        ty = Exp.crefLastType(cr);
+        ty = ComponentReference.crefLastType(cr);
         // check List
         failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
         // extend cr
@@ -3048,7 +3048,7 @@ algorithm
       equation
         failure((_,_) = getVar(cr, vars));
         print("-remove_variable_named failed. variable ");
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         print(str);
         print(" not found.\n");
       then
@@ -4536,7 +4536,7 @@ algorithm
         inputs = statesAndVarsExp(e,vars);  
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crefs = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crefs = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crefs,Exp.makeCrefExp,tp);             
       then (inputs,expl);
 
@@ -4665,7 +4665,7 @@ algorithm
     /* Special Case for Records */
     case ((e as DAE.CREF(componentRef = cr)),vars)
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
+        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Exp.expEqual);
@@ -5214,7 +5214,7 @@ algorithm outExp := matchcontinue(inExp)
         j = Exp.dimensionSize(jd);
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
@@ -5231,7 +5231,7 @@ algorithm outExp := matchcontinue(inExp)
         j = Exp.dimensionSize(DAE.DIM_INTEGER(1));
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
@@ -5244,7 +5244,7 @@ algorithm outExp := matchcontinue(inExp)
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
@@ -5258,7 +5258,7 @@ algorithm outExp := matchcontinue(inExp)
         // consider size 1      
         subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
@@ -6319,7 +6319,7 @@ algorithm
         indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
         n_1 = vararrayLength(varr_1);
-        name_str = Exp.printComponentRefStr(cr);
+        name_str = ComponentReference.printComponentRefStr(cr);
         hvalold = hashString(name_str);
         indxold = intMod(hvalold, bsize);
         indexexold = oldhashvec[indxold + 1];
@@ -6502,7 +6502,7 @@ protected function hashComponentRef
   output Integer res;
   String crstr;
 algorithm
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := ComponentReference.printComponentRefStr(cr);
   res := hashString(crstr);
 end hashComponentRef;
 
@@ -6603,7 +6603,7 @@ algorithm
     /* failure
     case (cr,vars)
       equation
-        Debug.fprintln("daelow", "- DAELow.getVar failed on component reference: " +& Exp.printComponentRefStr(cr));
+        Debug.fprintln("daelow", "- DAELow.getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
     */
@@ -6671,7 +6671,7 @@ algorithm
       BackendDAE.VariableArray varr;
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
         hval = hashComponentRef(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
@@ -6683,7 +6683,7 @@ algorithm
         (vs,indxs);
     case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
       equation
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
         hval = hashComponentRef(cr_1);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
@@ -6728,7 +6728,7 @@ algorithm
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
         subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);
@@ -6743,7 +6743,7 @@ algorithm
         indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
         subscripts_lstlst2 = Util.listMap(indx_lstlst2, Exp.intSubscripts);
         subscripts = subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
-        scalar_crs = Util.listMap1r(subscripts, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);
@@ -6753,11 +6753,11 @@ algorithm
     case ({_,DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
       equation
         // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
-        true = Exp.crefHaveSubs(arr_cr);
+        true = ComponentReference.crefHaveSubs(arr_cr);
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
         subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, Exp.subscriptCref, arr_cr);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
         indxs_1 = Util.listFlatten(indxs);
@@ -6851,7 +6851,7 @@ algorithm
         indx = getVar3(cr, indexes);
         failure((_) = vararrayNth(varr, indx));
         print("could not found variable, cr:");
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         print(str);
         print("\n");
       then
@@ -6888,7 +6888,7 @@ algorithm
         indexes = oldhashvec[hashindx + 1];
         indx = getVarUsingName2(cr, indexes);
         ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-        name_str = Exp.printComponentRefStr(cr2);
+        name_str = ComponentReference.printComponentRefStr(cr2);
         true = stringEqual(name_str, cr);
         indx_1 = indx + 1;
       then
@@ -6993,7 +6993,7 @@ algorithm
       list<BackendDAE.CrefIndex> vs;
     case (cr,{})
       equation
-        //Debug.fprint("failtrace", "-DAELow.getVar3 failed on:" +& Exp.printComponentRefStr(cr) +& "\n");
+        //Debug.fprint("failtrace", "-DAELow.getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
       then
         fail();
     case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
@@ -7754,11 +7754,11 @@ algorithm
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        //  print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
-        //  print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
+        //  print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
+        //  print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
-        // print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
+        // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
@@ -13122,7 +13122,7 @@ protected function treeGet "function: treeGet
   output BackendDAE.Value v;
   String keystr;
 algorithm
-  keystr := Exp.printComponentRefStr(key);
+  keystr := ComponentReference.printComponentRefStr(key);
   v := treeGet2(bt, keystr);
 end treeGet;
 
@@ -13144,14 +13144,14 @@ algorithm
       Option<BackendDAE.BinTree> left,right;
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),keystr)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey);
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         0 = System.strcmp(rkeystr, keystr);
       then
         rval;
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),keystr)
       local BackendDAE.BinTree right;
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "Search to the right" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the right" ;
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         res = treeGet2(right, keystr);
@@ -13160,7 +13160,7 @@ algorithm
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left),rightSubTree = right),keystr)
       local BackendDAE.BinTree left;
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "Search to the left" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the left" ;
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         res = treeGet2(left, keystr);
@@ -13219,15 +13219,15 @@ algorithm
       then BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(nkey,value)),NONE(),NONE());
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),key,value)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,value)),left,right);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right subtree";
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeAdd(t, key, value);
@@ -13235,8 +13235,8 @@ algorithm
         BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(t_1));
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right node";
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         right_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
@@ -13244,8 +13244,8 @@ algorithm
         BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(right_1));
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left subtree";
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeAdd(t, key, value);
@@ -13253,8 +13253,8 @@ algorithm
         BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),SOME(t_1),right);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left node";
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         left_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
@@ -13290,8 +13290,8 @@ algorithm
     case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) then bt;
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),key)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when existing right node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when existing right node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
         (rightmost,right_1) = treeDeleteRightmostValue(right);
         optright_1 = treePruneEmptyNodes(right_1);
@@ -13299,23 +13299,23 @@ algorithm
         BackendDAE.TREENODE(SOME(rightmost),left,optright_1);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(BackendDAE.TREENODE(leftval,lleft,lright)),rightSubTree = NONE()),key)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         BackendDAE.TREENODE(leftval,lleft,lright);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         BackendDAE.TREENODE(NONE(),NONE(),NONE());
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key)
       local Option<BackendDAE.BinTree> right;
       equation
-        keystr = Exp.printComponentRefStr(key) "delete in right subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "delete in right subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeDelete(t, key);
@@ -13325,8 +13325,8 @@ algorithm
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key)
       local Option<BackendDAE.BinTree> right;
       equation
-        keystr = Exp.printComponentRefStr(key) "delete in left subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "delete in left subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeDelete(t, key);
@@ -15500,7 +15500,7 @@ algorithm
   case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
+      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       e2lst = Util.listMap1(varLst,generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
@@ -15523,7 +15523,7 @@ algorithm
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
+      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
@@ -16401,7 +16401,7 @@ algorithm
       ({v1}, _) = getVar(cref, listVar(stateVars));
       true = isStateVar(v1);
       cref = makeDerCref(cref);
-      id = Exp.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$pL");
       id = Util.stringReplaceChar(id, "]", "$pR");
@@ -16409,7 +16409,7 @@ algorithm
     
     // d(no state)/d(x)
     case(cref, x, _) equation
-      id = Exp.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& Exp.printComponentRefStr(x);
+      id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$pL");
       id = Util.stringReplaceChar(id, "]", "$pR");
@@ -16418,7 +16418,7 @@ algorithm
     case(cref, _, _) local
       String str; 
       equation
-        str = "DAELow.differentiateVarWithRespectToX failed: " +&  Exp.printComponentRefStr(cref);
+        str = "DAELow.differentiateVarWithRespectToX failed: " +&  ComponentReference.printComponentRefStr(cref);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -16642,7 +16642,7 @@ algorithm
     case(e, x, _, _, _, _)
       local String str;
       equation
-        str = "differentiateWithRespectToX failed: " +& Exp.printExpStr(e) +& " | " +& Exp.printComponentRefStr(x);
+        str = "differentiateWithRespectToX failed: " +& Exp.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(x);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -17014,7 +17014,7 @@ algorithm
     case (dState, {}, actInd, allVars) then ({}, actInd);
     case (dState,curr::rest, actInd, allVars) equation
       new = differentiateVarWithRespectToX(dState,curr,allVars);
-      str = (Exp.printComponentRefStr(new) ,actInd);
+      str = (ComponentReference.printComponentRefStr(new) ,actInd);
       actInd = actInd+1;      
       (erg, actInd) = determineIndices2(dState, rest, actInd, allVars);
     then (str::erg, actInd);
@@ -17065,18 +17065,18 @@ algorithm
       BackendDAE.BinTree bt;
       list<Integer> varInt;
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
-      true = stringEqual(currVar,Exp.printComponentRefStr(currCREF));
+      true = stringEqual(currVar,ComponentReference.printComponentRefStr(currCREF));
       changedVar = setVarIndex(curr,currInd);
       Debug.fcall("varIndex2",print, currVar +& " " +& intString(currInd)+&"\n");
       bt = treeAddList(bt,{currCREF});
     then (changedVar,bt);
     case (curr  as BackendDAE.VAR(varName=currCREF),{},bt) equation
       changedVar = setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",print, Exp.printComponentRefStr(currCREF) +& " -1\n");
+      Debug.fcall("varIndex2",print, ComponentReference.printComponentRefStr(currCREF) +& " -1\n");
     then (changedVar,bt);      
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       changedVar = setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",print, Exp.printComponentRefStr(currCREF) +& " -1\n");
+      Debug.fcall("varIndex2",print, ComponentReference.printComponentRefStr(currCREF) +& " -1\n");
       (changedVar,bt) = changeIndices2(changedVar,restTuple,bt);
     then (changedVar,bt);
     case (_,_,_) equation

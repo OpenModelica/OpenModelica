@@ -1787,7 +1787,7 @@ algorithm res := matchcontinue(inVals,subs,inCref,offset)
       res1 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);
       false = ValuesUtil.isArray(v);
       subs = listAppend(subs,{DAE.INDEX(DAE.ICONST(offset))});
-      inCref = Exp.subscriptCref(inCref,subs);
+      inCref = ComponentReference.subscriptCref(inCref,subs);
       res2 = createReplacementRulesRecord2(v,inCref);
       res = listAppend(res1,res2);
     then

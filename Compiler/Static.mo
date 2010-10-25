@@ -3968,7 +3968,7 @@ algorithm
       equation
         (_, DAE.ATTR(streamPrefix = false), _, _, _, _, _, _, _) =
           Lookup.lookupVar(inCache, inEnv, cr);
-        op_str = Exp.printComponentRefStr(cr);
+        op_str = ComponentReference.printComponentRefStr(cr);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
           {op_str, inOperator, pre_str});
@@ -10525,7 +10525,7 @@ algorithm
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
-        expCref = Exp.toExpCref(c);
+        expCref = ComponentReference.toExpCref(c);
         exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFunc));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE(),true);
@@ -10955,7 +10955,7 @@ algorithm
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix,info)
       equation
         true = Types.getFixedVarAttribute(tt);
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         pre_str = PrefixUtil.printPrefixStr2(inPrefix);
         s = pre_str +& s;
         str = DAEUtil.printBindingExpStr(inBinding);
@@ -11099,7 +11099,7 @@ algorithm
     // report error
     case (cache,_,cr,_,_,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_,pre,info)
       equation
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         str = Exp.printExpStr(exp);
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
@@ -11110,7 +11110,7 @@ algorithm
     // constants without value produce error. (as long as not for iterator)
     case (cache,env,cr,acc,SCode.CONST(),NONE()/*not foriter*/,io,tt,DAE.UNBOUND(),doVect,_,pre,info)
       equation
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         scope = Env.printEnvPathStr(env);
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
@@ -11146,7 +11146,7 @@ algorithm
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
       local Boolean genWarning;
       equation
-        s = Exp.printComponentRefStr(cr);
+        s = ComponentReference.printComponentRefStr(cr);
         genWarning = not (Util.isSome(forIteratorConstOpt) or OptManager.getOption("checkModel"));
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
@@ -11164,7 +11164,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        Debug.fprint("failtrace", "- Static.elabCref2 failed for: " +& pre_str +& Exp.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
+        Debug.fprint("failtrace", "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
@@ -11765,7 +11765,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         DAE.WHOLEDIM()::ss = ComponentReference.crefLastSubs(cr);
         cr_1 = ComponentReference.crefStripLastSubs(cr);
-        cr_1 = Exp.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
+        cr_1 = ComponentReference.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Exp.unliftArray(et);
         e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
@@ -11776,7 +11776,7 @@ algorithm
         indx_1 = indx + 1;
         {} = ComponentReference.crefLastSubs(cr);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
         e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
@@ -11786,7 +11786,7 @@ algorithm
       equation 
         (DAE.INDEX(e_1) :: ss) = ComponentReference.crefLastSubs(cr);
         cr_1 = ComponentReference.crefStripLastSubs(cr);
-        cr_1 = Exp.subscriptCref(cr_1,ss);
+        cr_1 = ComponentReference.subscriptCref(cr_1,ss);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t,crefIdType);
         expl = Util.listMap1(expl,Exp.prependSubscriptExp,DAE.INDEX(e_1));
       then
@@ -11794,7 +11794,7 @@ algorithm
     // failure
     case (cr,indx,ds,et,t,crefIdType)
       equation
-        Debug.fprintln("failtrace", "createCrefArray failed on:" +& Exp.printComponentRefStr(cr));
+        Debug.fprintln("failtrace", "createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -11835,7 +11835,7 @@ algorithm
       equation
         indx_1 = indx + 1;
         DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
-        cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
         DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
         scs = Util.listFill(sc, ds2);
@@ -11846,7 +11846,7 @@ algorithm
     case (cr,indx,ds,ds2,et,t,crefIdType)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.createCrefArray2d failed on: " +& Exp.printComponentRefStr(cr));
+        Debug.fprintln("failtrace", "- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -12591,7 +12591,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.canonCref failed, cr: ");
-        Debug.fprint("failtrace", Exp.printComponentRefStr(cr));
+        Debug.fprint("failtrace", ComponentReference.printComponentRefStr(cr));
         Debug.fprint("failtrace", "\n");
       then
         fail();

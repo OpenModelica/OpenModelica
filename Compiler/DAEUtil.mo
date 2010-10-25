@@ -542,8 +542,8 @@ This function strips the 'unique identifer' from the cref and compares.
   output Boolean equal;
   String s1,s2,s3;
 algorithm
-  s1 := Exp.printComponentRefStr(cr1);
-  s2 := Exp.printComponentRefStr(cr2);
+  s1 := ComponentReference.printComponentRefStr(cr1);
+  s2 := ComponentReference.printComponentRefStr(cr2);
   s1 := System.stringReplace(s1, DAE.UNIQUEIO, "");
   s2 := System.stringReplace(s2, DAE.UNIQUEIO, "");
   equal := stringEqual(s1,s2);
@@ -602,7 +602,7 @@ algorithm ocr := matchcontinue(cr,removalString)
   case(child,_)
     equation
       print(" failure unNameInnerouterUniqueCref: ");
-      print(Exp.printComponentRefStr(child) +& "\n");
+      print(ComponentReference.printComponentRefStr(child) +& "\n");
       then fail();
   end matchcontinue;
 end unNameInnerouterUniqueCref;
@@ -1673,7 +1673,7 @@ algorithm
         // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& Exp.typeOfString(rhs));
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str = Exp.printComponentRefStr(cr);
+        cr_str = ComponentReference.printComponentRefStr(cr);
       then
         (cache,Values.RECORD(cname,(value :: vals),(cr_str :: names),ix));
     /*
@@ -1681,7 +1681,7 @@ algorithm
       equation
         (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE(), Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str = Exp.printComponentRefStr(cr);
+        cr_str = ComponentReference.printComponentRefStr(cr);
       then
         (cache,Values.RECORD(cname,(value :: vals),(cr_str :: names),ix));
     */
@@ -1767,7 +1767,7 @@ algorithm
         DAE.ExpType ty;
         DAE.ComponentRef cref_;
       equation
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
@@ -1958,7 +1958,7 @@ protected function toModelicaFormCref "function: toModelicaFormCref
   String str,str_1;
   DAE.ExpType ty;
 algorithm
-  str := Exp.printComponentRefStr(cr);
+  str := ComponentReference.printComponentRefStr(cr);
   ty := Exp.crefType(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
   outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});

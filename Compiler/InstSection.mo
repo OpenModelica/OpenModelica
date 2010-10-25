@@ -650,7 +650,7 @@ algorithm
         
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,Exp.printComponentRefStr),", ") +& "\n");
+        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
@@ -981,7 +981,7 @@ algorithm outEqn := matchcontinue(inEq)
   case(DAE.DEFINE(cr,e,source)) then DAE.REINIT(cr,e,source);
   case(DAE.EQUEQUATION(cr,cr2,source))
     equation
-      t = Exp.crefLastType(cr2);
+      t = ComponentReference.crefLastType(cr2);
       then DAE.REINIT(cr,DAE.CREF(cr2,t),source);
   case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
 end matchcontinue;
@@ -1516,7 +1516,7 @@ algorithm
 
     case(constantValue,cr,source)
       equation
-        print(" failure to assign: "  +& Exp.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
+        print(" failure to assign: "  +& ComponentReference.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1540,7 +1540,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case((v  as Values.ARRAY(valueLst = arrVals))::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
       eqns2 = assignComplexConstantConstructToArray(arrVals,assigned,source,1);
       eqns = listAppend(eqns,eqns2);
     then 
@@ -1548,7 +1548,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case(v::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
       eqns2 = assignComplexConstantConstruct(v,assigned,source);
       eqns = listAppend(eqns,eqns2);
       then 
@@ -3313,9 +3313,9 @@ algorithm
     // condition = false, in which case we should not instantiate the connection.
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
-        c1_1 = Exp.toExpCref(c1);
+        c1_1 = ComponentReference.toExpCref(c1);
         (cache, c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_1);
-        c2_1 = Exp.toExpCref(c2);
+        c2_1 = ComponentReference.toExpCref(c2);
         (cache, c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_1);
         true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
       then
@@ -3350,7 +3350,7 @@ algorithm
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
         sets_1 = ConnectUtil.updateConnectionSetTypes(sets,c1_1);
         sets_2 = ConnectUtil.updateConnectionSetTypes(sets_1,c2_1);
-        // print("add connect(");print(Exp.printComponentRefStr(c1_2));print(", ");print(Exp.printComponentRefStr(c2_2));
+        // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         // print("\n");
         (cache,_,ih,sets_3,dae,graph) =
@@ -4176,8 +4176,8 @@ algorithm
     case (env,ih,c1,_,DAE.ATTR(direction = Absyn.INPUT()),c2,_,DAE.ATTR(direction = Absyn.INPUT()),io1,io2,info)
       equation
         InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_TWO_INPUTS, {c1_str,c2_str}, info);
       then
         fail();
@@ -4186,8 +4186,8 @@ algorithm
     case (env,ih,c1,_,DAE.ATTR(direction = Absyn.OUTPUT()),c2,_,DAE.ATTR(direction = Absyn.OUTPUT()),io1,io2,info)
       equation
         InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_TWO_OUTPUTS, {c1_str,c2_str}, info);
       then
         fail();
@@ -4207,24 +4207,24 @@ algorithm
       equation
         true = ModUtil.isPureOuter(io1);
         true = ModUtil.isPureOuter(io2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_OUTER_OUTER, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(flowPrefix = true),c2,_,DAE.ATTR(flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(flowPrefix = false),c2,_,DAE.ATTR(flowPrefix = true),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c2_str,c1_str}, info);
       then
         fail();
@@ -4238,16 +4238,16 @@ algorithm
 
     case (env,ih,c1,_,DAE.ATTR(streamPrefix = true, flowPrefix = false),c2,_,DAE.ATTR(streamPrefix = false, flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(streamPrefix = false, flowPrefix = false),c2,_,DAE.ATTR(streamPrefix = true, flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c2_str,c1_str}, info);
       then
         fail();
@@ -4260,8 +4260,8 @@ algorithm
         false = Types.equivtypes(t1, t2) "we do not check arrays here";
         (s1,s1_1) = Types.printConnectorTypeStr(t1);
         (s2,s2_2) = Types.printConnectorTypeStr(t2);
-        s3 = Exp.printComponentRefStr(c1);
-        s4 = Exp.printComponentRefStr(c2);
+        s3 = ComponentReference.printComponentRefStr(c1);
+        s4 = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES, {s3,s4,s3,s1_1,s4,s2_2}, info);
       then
         fail();
@@ -4276,8 +4276,8 @@ algorithm
         (t2,iLst2) = Types.flattenArrayType(t2);
         false = Util.isListEqualWithCompareFunc(iLst1,iLst2,intEq);
         false = (listLength(iLst1)+listLength(iLst2) ==0);
-        s1 = Exp.printComponentRefStr(c1);
-        s2 = Exp.printComponentRefStr(c2);
+        s1 = ComponentReference.printComponentRefStr(c1);
+        s2 = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT, {s1,s2}, info);
       then
         fail();
@@ -4286,8 +4286,8 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- InstSection.checkConnectTypes(" +&
-          Exp.printComponentRefStr(c1) +& " <-> " +&
-          Exp.printComponentRefStr(c2) +& " failed");
+          ComponentReference.printComponentRefStr(c1) +& " <-> " +&
+          ComponentReference.printComponentRefStr(c2) +& " failed");
       then
         fail();
 
@@ -4301,14 +4301,14 @@ algorithm
         s2 = Util.if_(flow2,"flow "," ");
         Debug.trace("- InstSection.checkConnectTypes(");
         Debug.trace(s0);
-        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(ComponentReference.printComponentRefStr(c1));
         Debug.trace(" : ");
         Debug.trace(s1);
         Debug.trace(Types.unparseType(t1));
 
-        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(ComponentReference.printComponentRefStr(c1));
         Debug.trace(" <-> ");
-        Debug.trace(Exp.printComponentRefStr(c2));
+        Debug.trace(ComponentReference.printComponentRefStr(c2));
         Debug.trace(" : ");
         Debug.trace(s2);
         Debug.trace(Types.unparseType(t2));
@@ -4380,8 +4380,8 @@ algorithm
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,false,io1,io2,graph,info)
       equation
         // print("Connecting components: " +& PrefixUtil.printPrefixStr(pre) +& "/" +&
-        //    Exp.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
-        //    Exp.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        //    ComponentReference.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
+        //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         true = InnerOuter.outerConnection(io1,io2);
         
         // The cref that is outer should not be prefixed
@@ -4402,8 +4402,8 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // print("CONNECT: " +& PrefixUtil.printPrefixStr(pre) +& "/" +&
-        //    Exp.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
-        //    Exp.printComponentRefStr(c2_1) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        //    ComponentReference.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
+        //    ComponentReference.printComponentRefStr(c2_1) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         
         sets = ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then 
@@ -4688,9 +4688,9 @@ algorithm
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        c1_str = Exp.printComponentRefStr(c1);
+        c1_str = ComponentReference.printComponentRefStr(c1);
         t1_str = Types.unparseType(t1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         t2_str = Types.unparseType(t2);
         c1_str = System.stringAppendList({c1_str," and ",c2_str});
         t1_str = System.stringAppendList({t1_str," and ",t2_str});
@@ -4761,15 +4761,15 @@ algorithm
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
         true = (dim1 == i);
-        c1 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c2 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
+        c1 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c2 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
       then (cache,env,ih,sets_1,dae,graph);
 
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
-        c11 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c21 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
+        c11 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c21 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
         (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i+1,graph,info);
         dae = DAEUtil.joinDaes(dae1,dae2);

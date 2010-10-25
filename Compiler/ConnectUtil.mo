@@ -495,8 +495,8 @@ algorithm
     case (s,_,_,_,_,0,source) then s;
     case (ss,r1,d1,r2,d2,i,source)
       equation
-        r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
+        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
+        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
         s1 = findFlowSet(ss, r1_1, d1, source);
         s2 = findFlowSet(ss, r2_1, d2, source);
@@ -600,8 +600,8 @@ algorithm
     case (s,_,_,_,_,0,source) then s;
     case (ss,r1,d1,r2,d2,i,source)
       equation
-        r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
+        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
+        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
         s1 = findStreamSet(ss, r1_1, d1, source);
         s2 = findStreamSet(ss, r2_1, d2, source);
@@ -660,8 +660,8 @@ algorithm
     case (s,_,_,{},_) then s;
     case (ss,r1,r2,dims::restDims,source)
       equation
-        r1_1 = Exp.replaceCrefSliceSub(r1,dims);
-        r2_1 = Exp.replaceCrefSliceSub(r2,dims);
+        r1_1 = ComponentReference.replaceCrefSliceSub(r1,dims);
+        r2_1 = ComponentReference.replaceCrefSliceSub(r2,dims);
         s1 = findEquSet(ss, r1_1, source);
         s2 = findEquSet(ss, r2_1, source);
         ss_1 = merge(ss, s1, s2);
@@ -761,7 +761,7 @@ protected function crefTupleNotPrefixOf
 algorithm
   selected := matchcontinue(tupleCrSource,compName)
     local DAE.ComponentRef cr;
-    case((cr,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end crefTupleNotPrefixOf;
 
@@ -785,7 +785,7 @@ protected function flowTupleNotPrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end flowTupleNotPrefixOf;
 
@@ -809,7 +809,7 @@ protected function streamTupleNotPrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_,_,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end streamTupleNotPrefixOf;
 
@@ -1561,7 +1561,7 @@ algorithm
         s1 = Util.listMap(sets, printSetStr);
         s1_1 = Util.stringDelimitList(s1, ", ");
         s2 = printSetCrsStr(crs);
-        s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr), ",");
+        s3 = Util.stringDelimitList(Util.listMap(dc,ComponentReference.printComponentRefStr), ",");
         s4 = printOuterConnectsStr(outerConn);
         res = System.stringAppendList({"Connect.SETS(\n\t",
           s1_1,", \n\t",
@@ -1586,8 +1586,8 @@ algorithm
     case(Connect.OUTERCONNECT(prefix,cr1,io1,_,cr2,io2,_,_)::outerConn) equation
       s0 = PrefixUtil.printPrefixStr(prefix);
       s1 = printOuterConnectsStr(outerConn);
-      s2 = Exp.printComponentRefStr(cr1);
-      s3 = Exp.printComponentRefStr(cr2);
+      s2 = ComponentReference.printComponentRefStr(cr1);
+      s3 = ComponentReference.printComponentRefStr(cr2);
       str = "(" +& s0 +& ", " +& s2 +& "("+& Dump.unparseInnerouterStr(io1) +&"), " +& s3 +&"("+& Dump.unparseInnerouterStr(io2) +& ") ) ," +& s1;
     then str;
   end matchcontinue;
@@ -1604,7 +1604,7 @@ algorithm
       list<Connect.EquSetElement> cs;
     case Connect.EQU(expComponentRefLst = cs)
       equation
-        strs = Util.listMap(Util.listMap(cs, Util.tuple21), Exp.printComponentRefStr);
+        strs = Util.listMap(Util.listMap(cs, Util.tuple21), ComponentReference.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
         res = System.stringAppendList({"\n\tnon-flow set: {",s1,"}"});
       then
@@ -1638,13 +1638,13 @@ algorithm
       DAE.ComponentRef c;
     case ((c,Connect.INSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
     case ((c,Connect.OUTSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");
       then
         res;
@@ -1663,13 +1663,13 @@ algorithm
       
     case ((c,optFlowCref,Connect.INSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
     case ((c,optFlowCref,Connect.OUTSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");
       then
         res;
@@ -1682,7 +1682,7 @@ protected function printSetCrsStr
   list<String> c_strs;
   String s;
 algorithm
-  c_strs := Util.listMap(crs, Exp.printComponentRefStr);
+  c_strs := Util.listMap(crs, ComponentReference.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
   res := System.stringAppendList({"connect crs: {",s,"}"});
 end printSetCrsStr;

@@ -487,7 +487,7 @@ algorithm
 				res;
 		case (_, _)
 			equation
-				res = Exp.crefHasScalarSubscripts(cref);
+				res = ComponentReference.crefHasScalarSubscripts(cref);
 			then
 				res;
 	end matchcontinue;
@@ -535,7 +535,7 @@ algorithm
     case (DAE.CREF(componentRef=crNew, ty=ty), subs)
       equation
         indexes = Util.listMap(subs, Exp.makeIndexSubscript);
-        crNew = Exp.subscriptCref(crNew, indexes);
+        crNew = ComponentReference.subscriptCref(crNew, indexes);
       then
         DAE.CREF(crNew, ty);
   end matchcontinue;
@@ -603,7 +603,7 @@ algorithm
     case (cref, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
-        errstr = "Template did not find the simulation variable for "+& Exp.printComponentRefStr(cref) +& ". "; 
+        errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
         SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
@@ -2386,7 +2386,7 @@ algorithm
     case (BackendDAE.VAR(varName=name), {})
       equation
         print("generateExternalObjectConstructorCall for var:");
-        print(Exp.printComponentRefStr(name));print(" failed\n");
+        print(ComponentReference.printComponentRefStr(name));print(" failed\n");
       then fail();
     // found class
     case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CALL(expLst=args)),
@@ -5314,7 +5314,7 @@ algorithm
       equation
         initCrefs = DAELow.equationsCrefs(initialEqs);
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
-        varNameStr = Exp.printComponentRefStr(name);
+        varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
       then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref);
     case (_, _)
@@ -5402,7 +5402,7 @@ algorithm
       DAE.ComponentRef arrayCrefInner;
     case (BackendDAE.VAR(varName=name))
       equation
-        true = Exp.crefIsFirstArrayElt(name);
+        true = ComponentReference.crefIsFirstArrayElt(name);
         arrayCrefInner = ComponentReference.crefStripLastSubs(name);
       then SOME(arrayCrefInner);
     case (_)
@@ -5991,7 +5991,7 @@ protected function buildDiscreteVarChangesAddEvent
 protected
 	String crStr,indxStr;
 algorithm
-	crStr := Exp.printComponentRefStr(cr);
+	crStr := ComponentReference.printComponentRefStr(cr);
 	indxStr := intString(indx);
 	str := System.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
@@ -6212,7 +6212,7 @@ algorithm
     then eqn;
     case(v,_) equation
       print("findDiscreteEquation failed, searching for ");
-      print(Exp.printComponentRefStr(DAELow.varCref(v)));
+      print(ComponentReference.printComponentRefStr(DAELow.varCref(v)));
       print("\n");
     then fail();
   end matchcontinue;
@@ -7119,7 +7119,7 @@ algorithm
       Absyn.ComponentRef crefa;
     case(DAE.CREF(componentRef = crefe))
       equation
-        crefa = Exp.unelabCref(crefe);
+        crefa = ComponentReference.unelabCref(crefe);
       then
         crefa;
     case(e)
@@ -8238,7 +8238,7 @@ protected function hashFunc "
   output Integer res;
   String crstr;
 algorithm
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := ComponentReference.printComponentRefStr(cr);
   res := System.hash(crstr);
 end hashFunc;
 

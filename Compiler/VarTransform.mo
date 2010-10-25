@@ -855,7 +855,7 @@ algorithm
   // optional exteded type debugging
   str := Exp.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& Exp.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  //str := Exp.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& Exp.printExpStr(Util.tuple22(tpl));
+  //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& Exp.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function replacementSources "Returns all sources of the replacement rules"
@@ -923,9 +923,9 @@ algorithm
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
       equation        
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
-        /*s1 = Exp.printComponentRefStr(src);
+        /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = Exp.printExpStr(dst);
-        s3 = Exp.printComponentRefStr(src_1);
+        s3 = ComponentReference.printComponentRefStr(src_1);
         s4 = Exp.printExpStr(dst_1);
         s = System.stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
@@ -1062,7 +1062,7 @@ algorithm
         // stripLastIdent
         sc = ComponentReference.crefStripLastSubs(c);
         ce = Exp.expStripLastSubs(e);
-        ty = Exp.crefLastType(c);
+        ty = ComponentReference.crefLastType(c);
         // calc indexes
         ind = Exp.sizeOf(ty);       
       then 
@@ -1074,7 +1074,7 @@ algorithm
         sc = ComponentReference.crefStripLastIdent(c);   
         ce = Exp.expStripLastIdent(e);     
         // is Record
-        DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = Exp.crefLastType(sc);
+        DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(sc);
         // add
         ind = listLength(varLst);      
       then 
@@ -1886,16 +1886,16 @@ algorithm
       Integer cmpval;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey);
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         rval;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
       local BinTree right;
       equation
-        keystr = Exp.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         res = treeGet(right, key);
@@ -1904,8 +1904,8 @@ algorithm
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
       local BinTree left;
       equation
-        keystr = Exp.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         res = treeGet(left, key);
@@ -1937,15 +1937,15 @@ algorithm
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE(),NONE());
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,value)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeAdd(t, key, value);
@@ -1953,8 +1953,8 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         right_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
@@ -1962,8 +1962,8 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeAdd(t, key, value);
@@ -1971,8 +1971,8 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
@@ -2006,16 +2006,16 @@ algorithm
       Integer cmpval;
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = right),key)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey);
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         rval;
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = SOME(right)),key)
       local BinTree2 right;
       equation
-        keystr = Exp.printComponentRefStr(key) "Search to the right" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Search to the right" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         res = treeGet2(right, key);
@@ -2024,8 +2024,8 @@ algorithm
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = SOME(left),right = right),key)
       local BinTree2 left;
       equation
-        keystr = Exp.printComponentRefStr(key) "Search to the left" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Search to the left" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         res = treeGet2(left, key);
@@ -2056,15 +2056,15 @@ algorithm
     case (TREENODE2(value = NONE(),left = NONE(),right = NONE()),key,value) then TREENODE2(SOME(TREEVALUE2(key,value)),NONE(),NONE());
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = right),key,value)
       equation
-        rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = Exp.printComponentRefStr(key);
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
         0 = System.strcmp(rkeystr, keystr);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,value)),left,right);
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as SOME(t))),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeAdd2(t, key, value);
@@ -2072,8 +2072,8 @@ algorithm
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(t_1));
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = left,right = (right as NONE())),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right node" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
         right_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
@@ -2081,8 +2081,8 @@ algorithm
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),left,SOME(right_1));
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as SOME(t)),right = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left subtree" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeAdd2(t, key, value);
@@ -2090,8 +2090,8 @@ algorithm
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(t_1),right);
     case (TREENODE2(value = SOME(TREEVALUE2(rkey,rval)),left = (left as NONE()),right = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left node" ;
-        rkeystr = Exp.printComponentRefStr(rkey);
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
         left_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);

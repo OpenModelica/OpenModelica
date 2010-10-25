@@ -358,8 +358,8 @@ algorithm
     // none of left or right hand side are outer
     case((oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source))::ocs,repl,sources,targets)
       equation
-        //s1 = Exp.printComponentRefStr(cr1);
-        //s2 = Exp.printComponentRefStr(cr2);
+        //s1 = ComponentReference.printComponentRefStr(cr1);
+        //s2 = ComponentReference.printComponentRefStr(cr2);
         recRes = changeOuterReferences3(ocs,repl,sources,targets);
       then
         oc::recRes;
@@ -423,7 +423,7 @@ algorithm
         // ncr1 = cr3;
         ncr1 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
-        //   Exp.printComponentRefStr(cr1) +& " to inner");
+        //   ComponentReference.printComponentRefStr(cr1) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
@@ -436,7 +436,7 @@ algorithm
         // ncr2 = cr3;        
         ncr2 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
-        //   Exp.printComponentRefStr(cr2) +& " to inner");
+        //   ComponentReference.printComponentRefStr(cr2) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
         recRes = changeInnerOuterInOuterConnect(ocs);
       then
@@ -569,7 +569,7 @@ algorithm
         c1 = ComponentReference.crefLastCref(prefixedCref);
         c2 = ComponentReference.crefLastCref(innerCref);
         true = ComponentReference.crefEqual(c1,c2);
-        c3 = Exp.crefSetLastType(innerCref,Exp.crefLastType(prefixedCref));
+        c3 = Exp.crefSetLastType(innerCref,ComponentReference.crefLastType(prefixedCref));
       then
         c3;
     
@@ -672,7 +672,7 @@ algorithm
       equation
         //true = RTOpts.debugFlag("failtrace");
         //Debug.traceln("- InnerOuter.removeInnerPrefixFromCref failed on prefix: " +& PrefixUtil.printPrefixStr(inPrefix) +&
-        // " cref: " +& Exp.printComponentRefStr(inCref));
+        // " cref: " +& ComponentReference.printComponentRefStr(inCref));
       then 
         inCref;
   end matchcontinue;
@@ -716,8 +716,8 @@ algorithm
         cr2Outer = cr2;
         
         // Debug.fprintln("innerouter", "Prefix: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& 
-        //  Exp.printComponentRefStr(cr1) +& " = " +& Exp.printComponentRefStr(cr2) +& " => " +&
-        //  Exp.printComponentRefStr(cr1Outer) +& " = " +& Exp.printComponentRefStr(cr2Outer));
+        //  ComponentReference.printComponentRefStr(cr1) +& " = " +& ComponentReference.printComponentRefStr(cr2) +& " => " +&
+        //  ComponentReference.printComponentRefStr(cr1Outer) +& " = " +& ComponentReference.printComponentRefStr(cr2Outer));
         
         (inner1,outer1) = lookupVarInnerOuterAttr(cache,env,ih,cr1Outer,cr2Outer);
         
@@ -850,9 +850,9 @@ algorithm
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
     case(cache,env,ih,pre,setLst,_,cr1,_,_,cr2,_,_,_)
       equation
-        //print("Failed lookup: " +& Exp.printComponentRefStr(cr1) +& "\n");
-        //print("Failed lookup: " +& Exp.printComponentRefStr(cr2) +& "\n");
-        // print("#FAILURE# in: addOuterConnectIfEmpty:__ " +& Exp.printComponentRefStr(cr1) +& " " +& Exp.printComponentRefStr(cr2) +& "\n");
+        //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr1) +& "\n");
+        //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
+        // print("#FAILURE# in: addOuterConnectIfEmpty:__ " +& ComponentReference.printComponentRefStr(cr1) +& " " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
       then fail();
 
   end matchcontinue;
@@ -1061,7 +1061,7 @@ algorithm
         // ?? adrpo: NOT USED! TODO! FIXME! str2 = Dump.unparseInnerouterStr(io);
         crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
-        // ?? adrpo: NOT USED! TODO! FIXME! str = Exp.printComponentRefStr(cr);
+        // ?? adrpo: NOT USED! TODO! FIXME! str = ComponentReference.printComponentRefStr(cr);
         failExceptForCheck();
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
@@ -1070,7 +1070,7 @@ algorithm
         crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr, isInnerOuterMatch);
         str2 = Dump.unparseInnerouterStr(io);        
-        str = Exp.printComponentRefStr(cr);
+        str = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
       then fail();
   end matchcontinue;
@@ -1224,7 +1224,7 @@ algorithm
         // isInner = Absyn.isInner(io);
         // instInner = Util.if_(isInner, instInner, emptyInstInner(inPrefix, name));
         // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : Looking up: " +&  
-        //  Exp.printComponentRefStr(cref) +& " FOUND with innerPrefix: " +&
+        //  ComponentReference.printComponentRefStr(cref) +& " FOUND with innerPrefix: " +&
         //  PrefixUtil.printPrefixStr(innerPrefix));
       then
         instInner;
@@ -1245,7 +1245,7 @@ algorithm
         // search in instance hierarchy we had a failure
         failure(instInner = get(cref, ht));
         
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : Couldn't find: " +& Exp.printComponentRefStr(cref) +& " going deeper");
+        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : Couldn't find: " +& ComponentReference.printComponentRefStr(cref) +& " going deeper");
         
         // call recursively to back one more step!
         instInner = lookupInnerInIH(inTIH, prefix, name);
@@ -1284,7 +1284,7 @@ algorithm
   // if we don't have the same modification on inner report error!
   case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation
-      s1 = Exp.printComponentRefStr(cr);
+      s1 = ComponentReference.printComponentRefStr(cr);
       s2 = Mod.prettyPrintMod(inMod, 0);
       s = s1 +&  " " +& s2;
       Error.addMessage(Error.OUTER_MODIFICATION, {s});
@@ -1679,7 +1679,7 @@ algorithm
         false = Absyn.isInner(inInnerOuter);
         // prefix the name!
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
-        // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& Exp.printComponentRefStr(cref) +& "\n");
+        // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
       then
         ih;*/
     
@@ -1756,8 +1756,8 @@ algorithm
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, inOuterComponentRef, inInnerComponentRef)
       equation
         // Debug.fprintln("innerouter", "InnerOuter.addOuterPrefix adding: outer cref: " +& 
-        //   Exp.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
-        //   Exp.printComponentRefStr(inInnerComponentRef) +& " to IH");
+        //   ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
+        //   ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
         outerPrefixes = Util.listUnionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes); 
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
@@ -1767,8 +1767,8 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +& 
-          Exp.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
-          Exp.printComponentRefStr(inInnerComponentRef) +& " to IH");        
+          ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
+          ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");        
       then
         fail();
   end matchcontinue;
@@ -1803,8 +1803,8 @@ algorithm
         innerCref = changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
         // Debug.fprintln("innerouter", "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +& 
-        //  Exp.printComponentRefStr(fullCref) +& " with cref: " +& 
-        //  Exp.printComponentRefStr(innerCref));        
+        //  ComponentReference.printComponentRefStr(fullCref) +& " with cref: " +& 
+        //  ComponentReference.printComponentRefStr(innerCref));        
       then 
         innerCref;
     
@@ -1813,7 +1813,7 @@ algorithm
       equation
         // true = RTOpts.debugFlag("failtrace");
         // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +& 
-        //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& Exp.printComponentRefStr(inOuterComponentRef));
+        //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
       then
         fail();        
   end matchcontinue;
@@ -1909,7 +1909,7 @@ algorithm
         strOuters = Util.if_(listLength(outers) == 0, 
                       "", 
                       " Referenced by 'outer' components: {" +&
-                      Util.stringDelimitList(Util.listMap(outers, Exp.printComponentRefStr), ", ") +& "}");
+                      Util.stringDelimitList(Util.listMap(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
         str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;   
       then 
         str;
@@ -1978,7 +1978,7 @@ public function hashFunc
   input Key k;
   output Integer res;
 algorithm
-  res := System.hash(Exp.printComponentRefStr(k));
+  res := System.hash(ComponentReference.printComponentRefStr(k));
 end hashFunc;
 
 public function keyEqual
@@ -2113,7 +2113,7 @@ algorithm
         indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
-        // print("Added NEW to IH: key:" +& Exp.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n"); 
+        // print("Added NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n"); 
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
@@ -2123,7 +2123,7 @@ algorithm
         //print("adding when present, indx =" );print(intString(indx));print("\n");
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
-        // print("Updated NEW to IH: key:" +& Exp.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");        
+        // print("Updated NEW to IH: key:" +& ComponentReference.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");        
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation

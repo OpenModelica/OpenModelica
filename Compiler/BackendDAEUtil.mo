@@ -29,12 +29,12 @@
  *
  */
 
-package DAELowUtil
-" file:	       DAELowUtil.mo
-  package:     DAELowUtil 
-  description: DAELowUtil comprised functions for DAELow data types.
+package BackendDAEUtil
+" file:	       BackendDAEUtil.mo
+  package:     BackendDAEUtil 
+  description: BackendDAEUtil comprised functions for BackendDAE data types.
 
-  RCS: $Id: DAELowUtil.mo 6426 2010-10-19 08:01:48Z adrpo $
+  RCS: $Id: BackendDAEUtil.mo 6426 2010-10-19 08:01:48Z adrpo $
 
   This module is a lowered form of a DAE including equations
   and simple equations in
@@ -56,17 +56,17 @@ public import Util;
 protected import DAELow;
 protected import Debug;
 
-public function checkDEALowWithErrorMsg"function: checkDEALowWithErrorMsg
+public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMsg
   author: Frenkel TUD
   run checkDEALow and prints all errors"
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.DAELow inBackendDAE;
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
 algorithm  
-  expCrefs := checkDEALow(inDAELow);
-  printcheckDEALowWithErrorMsg(expCrefs);
-end checkDEALowWithErrorMsg;
+  expCrefs := checkBackendDAE(inBackendDAE);
+  printcheckBackendDAEWithErrorMsg(expCrefs);
+end checkBackendDAEWithErrorMsg;
  
-public function printcheckDEALowWithErrorMsg"function: printcheckDEALowWithErrorMsg
+public function printcheckBackendDAEWithErrorMsg"function: printcheckBackendDAEWithErrorMsg
   author: Frenkel TUD
   helper for checkDEALowWithErrorMsg"
   input list<tuple<DAE.Exp,list<DAE.ComponentRef>>> inExpCrefs;  
@@ -84,26 +84,26 @@ algorithm
           print("Error in Exp ");
           print(Exp.printExpStr(e));print("\n Variables: ");
           strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
-          print(Util.stringDelimitList(strcrefs,", "));print("\nnot found in DAELow object.\n");
-          printcheckDEALowWithErrorMsg(res);
+          print(Util.stringDelimitList(strcrefs,", "));print("\nnot found in BackendDAE object.\n");
+          printcheckBackendDAEWithErrorMsg(res);
         then
           ();
   end matchcontinue;
-end printcheckDEALowWithErrorMsg;      
+end printcheckBackendDAEWithErrorMsg;      
       
-public function checkDEALow "function: checkDEALow
+public function checkBackendDAE "function: checkBackendDAE
   author: Frenkel TUD
 
-  This function checks the DAELow object if 
+  This function checks the BackendDAE object if 
   all component refercences used in the expressions are 
-  part of the DAELow object. Returns all component references
-  which not part of the DAELow object. 
+  part of the BackendDAE object. Returns all component references
+  which not part of the BackendDAE object. 
 "
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.DAELow inBackendDAE;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
 algorithm
   outExpCrefs :=
-  matchcontinue (inDAELow)
+  matchcontinue (inBackendDAE)
     local
       BackendDAE.Variables vars1,vars2,allvars;
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
@@ -114,18 +114,18 @@ algorithm
         varlst2 = DAELow.varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = DAELow.listVar(allvarslst);
-        expcrefs = DAELow.traverseDEALowExps(inDAELow,false,checkDEALowExp,allvars);
+        expcrefs = DAELow.traverseDEALowExps(inBackendDAE,false,checkBackendDAEExp,allvars);
       then
         expcrefs;
     case (_)
       equation
-        Debug.fprintln("failtrace", "- DAELowUtil.checkDEALow failed");
+        Debug.fprintln("failtrace", "- BackendDAE.checkBackendDAE failed");
       then
         fail();
   end matchcontinue;
-end checkDEALow;
+end checkBackendDAE;
 
-protected function checkDEALowExp
+protected function checkBackendDAEExp
   input DAE.Exp inExp;
   input BackendDAE.Variables inVars;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
@@ -139,14 +139,14 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
       equation
-        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckDEALowExp,((vars,{})));
+        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckBackendDAEExp,((vars,{})));
         lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
        then
         lstExpCrefs;
   end matchcontinue;      
-end checkDEALowExp;
+end checkBackendDAEExp;
 
-protected function traversecheckDEALowExp
+protected function traversecheckBackendDAEExp
 	input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> inTuple;
 	output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.ComponentRef>>> outTuple;
 algorithm
@@ -169,9 +169,9 @@ algorithm
         list<DAE.ComponentRef> crlst;
         list<DAE.ExpVar> varLst;
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
+        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
-        expcreflstlst = Util.listMap1(expl,checkDEALowExp,vars);
+        expcreflstlst = Util.listMap1(expl,checkBackendDAEExp,vars);
         expcreflst = Util.listFlatten(expcreflstlst);
         creflstlst = Util.listMap(expcreflst,Util.tuple22);
         crlst = Util.listFlatten(creflstlst);
@@ -201,6 +201,6 @@ algorithm
 		    ((e, (vars,cr::crefs)));
 		case (_) then inTuple;
 	end matchcontinue;
-end traversecheckDEALowExp;
+end traversecheckBackendDAEExp;
 
-end DAELowUtil;
+end BackendDAEUtil;

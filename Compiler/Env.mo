@@ -966,7 +966,7 @@ algorithm
       Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
-      print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),", "));
+      print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),", "));
       print("\n");
     then ();
   end matchcontinue;
