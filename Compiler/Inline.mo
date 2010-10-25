@@ -46,7 +46,6 @@ public import Absyn;
 public import BackendDAE;
 public import ComponentReference;
 public import DAE;
-public import DAELow;
 public import SCode;
 public import Util;
 public import Values;

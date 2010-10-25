@@ -115,7 +115,6 @@ protected import System;
 protected import Util;
 //protected import RTOpts;
 //protected import Debug;
-protected import DAEUtil;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
   input DAE.DAElist dae;

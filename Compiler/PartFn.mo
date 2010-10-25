@@ -44,7 +44,6 @@ public import DAE;
 public import Debug;
 public import Absyn;
 public import SCode;
-public import DAELow;
 public import BackendDAE;
 public import Values;
 
@@ -52,7 +51,6 @@ protected import DAEUtil;
 protected import Exp;
 protected import Types;
 protected import Util;
-protected import VarTransform;
 
 type Ident = String;
 

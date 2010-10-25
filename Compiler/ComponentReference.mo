@@ -52,6 +52,11 @@ protected import RTOpts;
 protected import Util;
 
 
+/***************************************************/
+/* Generate  */
+/***************************************************/
+
+
 public function makeCrefIdent
 "@author: adrpo
   This function creates a DAE.CREF_IDENT(ident, identType, subscriptLst)"
@@ -75,31 +80,10 @@ algorithm
   outCrefQual := DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef);
 end makeCrefQual;
 
-public function crefPrependIdent "prepends (e..g as a suffix) an identifier to a component reference, given the identifier, subscript and the type
-author: PA
 
-Example
-crefPrependIdent(a.b,c,{},Real) => a.b.c [Real]
-crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
-
-alternative names: crefAddSuffix, crefAddIdent
-"
-  input DAE.ComponentRef cr;
-  input String ident;  
-  input list<DAE.Subscript> subs;
-  input DAE.ExpType tp;
-  output DAE.ComponentRef newCr;
-algorithm
-  newCr := matchcontinue(cr,ident,subs,tp)
-  local DAE.ExpType tp1; String id1; list<DAE.Subscript> subs1;
-    case(DAE.CREF_IDENT(id1,tp1,subs1),ident,subs,tp) then DAE.CREF_QUAL(id1,tp1,subs1,DAE.CREF_IDENT(ident,tp,subs));
-    case(DAE.CREF_QUAL(id1,tp1,subs1,cr),ident,subs,tp)
-      equation
-        cr = crefPrependIdent(cr,ident,subs,tp);
-      then DAE.CREF_QUAL(id1,tp1,subs1,cr);
-  end matchcontinue;
-end crefPrependIdent;
-
+/***************************************************/
+/* Transform  */
+/***************************************************/
 
 public function crefToPath
 "function: crefToPath
@@ -145,6 +129,59 @@ algorithm
         DAE.CREF_QUAL(i,DAE.ET_OTHER(),{},c);
   end matchcontinue;
 end pathToCref;
+
+public function crefToStr
+"function: crefStr
+  This function converts a ComponentRef to a String.
+  It is a tail recursive implementation, because of that it
+  neads inPreString. Use inNameSeperator to define the 
+  Separator inbetween and between the namespace names and the name"
+  input String inPreString;
+  input DAE.ComponentRef inComponentRef "The ComponentReference";
+  input String inNameSeparator "The Separator between the Names";
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inPreString,inComponentRef,inNameSeparator)
+    local
+      DAE.Ident s,ns,s1,ss;
+      DAE.ComponentRef n;
+    case (inPreString,DAE.CREF_IDENT(ident = s),_)
+      equation
+        ss = stringAppend(inPreString, s);
+      then ss;
+    case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
+      equation
+        ns = System.stringAppendList({inPreString, s, inNameSeparator});
+        ss = crefToStr(ns,n,inNameSeparator);
+      then
+        ss;
+  end matchcontinue;
+end crefToStr;
+
+public function crefStr
+"function: crefStr
+  This function simply converts a ComponentRef to a String."
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString:= crefToStr("",inComponentRef,".");
+end crefStr;
+
+public function crefModelicaStr
+"function: crefModelicaStr
+  Same as crefStr, but uses _ instead of . "
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString:= crefToStr("",inComponentRef,"_");
+end crefModelicaStr;
+
+
+/***************************************************/
+/* Get Items  */
+/***************************************************/
+
 
 public function crefLastPath
   "Returns the last identifier of a cref as an Absyn.IDENT."
@@ -200,6 +237,72 @@ algorithm
   end matchcontinue;
 end crefLastCref;
 
+public function crefSubs "
+function: crefSubs
+  Return the all subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
+      then subs;
+    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+      equation
+        res = crefSubs(cr);
+        res = listAppend(subs,res);
+      then
+        res;
+  end matchcontinue;
+end crefSubs;
+
+public function crefLastSubs "
+function: crefLastSubs
+  Return the last subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastSubs(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastSubs;
+
+public function crefFirstCref
+"Returns the first part of a component reference, i.e the identifier"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+    local 
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.ExpType t2;
+    
+    case( DAE.CREF_QUAL(id,t2,subs,cr)) then DAE.CREF_IDENT(id,t2,{});
+    case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
+  end matchcontinue;
+end crefFirstCref;
+
+
+/***************************************************/
+/* Compare  */
+/***************************************************/
+
 public function crefLastIdentEqual
 "function: crefLastIdentEqual
   author: Frenkel TUD
@@ -245,52 +348,6 @@ algorithm
   equal := Exp.crefEqual(pcr1,pcr2);
 end crefFirstCrefLastCrefEqual;
 
-  
-public function crefSubs "
-function: crefSubs
-  Return the all subscripts of a ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output list<DAE.Subscript> outSubscriptLst;
-algorithm
-  outSubscriptLst:=
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id;
-      list<DAE.Subscript> subs,res;
-      DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
-      then subs;
-    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
-      equation
-        res = crefSubs(cr);
-        res = listAppend(subs,res);
-      then
-        res;
-  end matchcontinue;
-end crefSubs;
-
-public function crefLastSubs "
-function: crefLastSubs
-  Return the last subscripts of a ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output list<DAE.Subscript> outSubscriptLst;
-algorithm
-  outSubscriptLst:=
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id;
-      list<DAE.Subscript> subs,res;
-      DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastSubs(cr);
-      then
-        res;
-  end matchcontinue;
-end crefLastSubs;
-  
-  
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -299,52 +356,34 @@ algorithm
   greaterThan := System.strcmp(Exp.printComponentRefStr(cr1),Exp.printComponentRefStr(cr2)) > 0;
 end crefSortFunc;
 
-public function crefToStr
-"function: crefStr
-  This function converts a ComponentRef to a String.
-  It is a tail recursive implementation, because of that it
-  neads inPreString. Use inNameSeperator to define the 
-  Separator inbetween and between the namespace names and the name"
-  input String inPreString;
-  input DAE.ComponentRef inComponentRef "The ComponentReference";
-  input String inNameSeparator "The Separator between the Names";
-  output String outString;
+/***************************************************/
+/* Change  */
+/***************************************************/
+
+public function crefPrependIdent "prepends (e..g as a suffix) an identifier to a component reference, given the identifier, subscript and the type
+author: PA
+
+Example
+crefPrependIdent(a.b,c,{},Real) => a.b.c [Real]
+crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
+
+alternative names: crefAddSuffix, crefAddIdent
+"
+  input DAE.ComponentRef cr;
+  input String ident;  
+  input list<DAE.Subscript> subs;
+  input DAE.ExpType tp;
+  output DAE.ComponentRef newCr;
 algorithm
-  outString:=
-  matchcontinue (inPreString,inComponentRef,inNameSeparator)
-    local
-      DAE.Ident s,ns,s1,ss;
-      DAE.ComponentRef n;
-    case (inPreString,DAE.CREF_IDENT(ident = s),_)
+  newCr := matchcontinue(cr,ident,subs,tp)
+  local DAE.ExpType tp1; String id1; list<DAE.Subscript> subs1;
+    case(DAE.CREF_IDENT(id1,tp1,subs1),ident,subs,tp) then DAE.CREF_QUAL(id1,tp1,subs1,DAE.CREF_IDENT(ident,tp,subs));
+    case(DAE.CREF_QUAL(id1,tp1,subs1,cr),ident,subs,tp)
       equation
-        ss = stringAppend(inPreString, s);
-      then ss;
-    case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
-      equation
-        ns = System.stringAppendList({inPreString, s, inNameSeparator});
-        ss = crefToStr(ns,n,inNameSeparator);
-      then
-        ss;
+        cr = crefPrependIdent(cr,ident,subs,tp);
+      then DAE.CREF_QUAL(id1,tp1,subs1,cr);
   end matchcontinue;
-end crefToStr;
-
-public function crefStr
-"function: crefStr
-  This function simply converts a ComponentRef to a String."
-  input DAE.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString:= crefToStr("",inComponentRef,".");
-end crefStr;
-
-public function crefModelicaStr
-"function: crefModelicaStr
-  Same as crefStr, but uses _ instead of . "
-  input DAE.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString:= crefToStr("",inComponentRef,"_");
-end crefModelicaStr;
+end crefPrependIdent;
 
 public function stripCrefIdentSliceSubs "
 Author BZ
@@ -461,23 +500,6 @@ algorithm
         DAE.CREF_QUAL(id,t2,subs,cr1);
   end matchcontinue;
 end crefStripLastIdent;
-
-public function crefFirstCref
-"Returns the first part of a component reference, i.e the identifier"
-  input DAE.ComponentRef inCr;
-  output DAE.ComponentRef outCr;
-algorithm
-  outCr := matchcontinue(inCr)
-    local 
-      DAE.Ident id;
-      list<DAE.Subscript> subs;
-      DAE.ComponentRef cr;
-      DAE.ExpType t2;
-    
-    case( DAE.CREF_QUAL(id,t2,subs,cr)) then DAE.CREF_IDENT(id,t2,{});
-    case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
-  end matchcontinue;
-end crefFirstCref;
 
 public function crefStripLastSubs
 "function: crefStripLastSubs

@@ -114,7 +114,7 @@ algorithm
         varlst2 = DAELow.varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = DAELow.listVar(allvarslst);
-        expcrefs = DAELow.traverseDEALowExps(inDAELow,checkDEALowExp,allvars);
+        expcrefs = DAELow.traverseDEALowExps(inDAELow,false,checkDEALowExp,allvars);
       then
         expcrefs;
     case (_)
@@ -139,7 +139,7 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
       equation
-        ((_,(_,crefs))) = Exp.traverseExp(exp,traversecheckDEALowExp,((vars,{})));
+        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckDEALowExp,((vars,{})));
         lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
        then
         lstExpCrefs;
@@ -156,15 +156,45 @@ algorithm
 			BackendDAE.Variables vars;
 			DAE.ComponentRef cr;
 			list<DAE.ComponentRef> crefs;
-		case ((e as (DAE.CREF(DAE.CREF_IDENT("time",_,_), _)),(vars,crefs)))
+			list<DAE.Exp> expl;
+		// special case for time, it is never part of the equation system	
+		case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
+		  then ((e, (vars,crefs)));
+    /* Special Case for Records */
+    case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
+      local 
+        list<list<tuple<DAE.Exp,list<DAE.ComponentRef>>>> expcreflstlst;
+        list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcreflst;
+        list<list<DAE.ComponentRef>> creflstlst;
+        list<DAE.ComponentRef> crlst;
+        list<DAE.ExpVar> varLst;
+      equation
+        DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
+        expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
+        expcreflstlst = Util.listMap1(expl,checkDEALowExp,vars);
+        expcreflst = Util.listFlatten(expcreflstlst);
+        creflstlst = Util.listMap(expcreflst,Util.tuple22);
+        crlst = Util.listFlatten(creflstlst);
+      then
+        ((e, (vars,listAppend(crlst,crefs))));  
+		case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
+		  local 
+		    DAE.Ident ident;
+		    BackendDAE.Var  var;
+		  equation
+		    // add ident to vars
+		    cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});
+		    var = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
+		          DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+		    vars = DAELow.addVar(var,vars);
 		  then
 		    ((e, (vars,crefs)));
-		case ((e as (DAE.CREF(cr, _)),(vars,crefs)))
+		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
 		  equation
 		     (_,_) = DAELow.getVar(cr, vars);
 		  then
 		    ((e, (vars,crefs)));
-		case ((e as (DAE.CREF(cr, _)),(vars,crefs)))
+		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
 		  equation
 		     failure((_,_) = DAELow.getVar(cr, vars));
 		  then

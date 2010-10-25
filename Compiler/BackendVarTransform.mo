@@ -41,7 +41,6 @@ package BackendVarTransform
 
 public import BackendDAE;
 public import DAE;
-public import DAELow;
 public import VarTransform;
 
 protected import Absyn;
