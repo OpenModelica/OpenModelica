@@ -1443,12 +1443,8 @@ protected function getCoordsFromLayerArgs
   output Absyn.Exp x2;
   output Absyn.Exp y2;
 algorithm
-
   (x1,y1,x2,y2) := matchcontinue(inAnns)
-
     local
-
-      Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest,args;
 
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest)
@@ -1458,17 +1454,12 @@ algorithm
         (x1,y1,x2,y2);
 
     case(_ :: rest)
-
       equation
-
         (x1,y1,x2,y2) = getCoordsFromLayerArgs(rest);
-
       then
         (x1,y1,x2,y2);
 
-
   end matchcontinue;
-
 end getCoordsFromLayerArgs;
 
 protected function transformConnectAnnList "function: transformConnectAnnList

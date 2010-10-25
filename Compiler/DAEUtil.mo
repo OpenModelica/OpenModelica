@@ -3854,7 +3854,7 @@ algorithm
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
     Algorithm.Else el,el_1;
-  case(DAE.NOELSE(),_,extraArg) then (DAE.NOELSE,extraArg);
+  case(DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
   case(DAE.ELSEIF(e,st,el),func,extraArg)
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);

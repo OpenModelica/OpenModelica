@@ -1608,7 +1608,7 @@ algorithm
         // put both modifiers in one big modifier
         strPrefix = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
         submods = {DAE.NAMEMOD("", inMod1), DAE.NAMEMOD("", inMod2)}; 
-        m = DAE.MOD(false, Absyn.NON_EACH, submods,NONE());
+        m = DAE.MOD(false, Absyn.NON_EACH(), submods,NONE());
         s = s +& "\n\tby using modifiers: " +&  strPrefix +& printSubsStr(submods, true) +& 
         " that do not agree.";
         

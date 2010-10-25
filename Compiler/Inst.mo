@@ -10505,7 +10505,6 @@ algorithm
   res := matchcontinue(inSubModList)
     local
       list<SCode.SubMod> cdr;
-      Boolean res;
     case({}) then DAE.NO_INLINE();
 
     case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)

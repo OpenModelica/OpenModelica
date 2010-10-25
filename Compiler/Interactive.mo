@@ -8989,15 +8989,15 @@ protected function isConstant
    and returns true if the component referenced is a constant."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram3;
+  input Absyn.Program p;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  matchcontinue (inComponentRef1,inComponentRef2,p)
     local
       Absyn.Path path;
       String i;
-      Boolean p,f,e;
+      Boolean f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst;
@@ -9006,7 +9006,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.PARTS(parts,_)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
@@ -9015,7 +9015,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
@@ -15127,7 +15127,7 @@ algorithm
   matchcontinue (eltInfo,dims,typeAd,suffix)
     local
       list<String> res,rest;
-      String str_1,str,suffix;
+      String str_1,str;
       String dim,s1;
     case ({},{},_,_) then {};
     case ((str :: rest),dim::dims,typeAd,suffix)

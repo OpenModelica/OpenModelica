@@ -1464,13 +1464,13 @@ algorithm
       then
         res;
     
-    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
     
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
@@ -1866,12 +1866,12 @@ algorithm
     case (t,{}) then t;
     case (t,DAE.WHOLEDIM::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE()),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
       then
         t;
     case (t,DAE.SLICE(e)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE()),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
       then
         t;
 
@@ -1882,7 +1882,7 @@ algorithm
         t;
      case (t,DAE.INDEX(_)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE()),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t),NONE()),lst);
       then
         t;
   end matchcontinue;
@@ -3171,7 +3171,7 @@ algorithm
       list<Integer> dimlist_1,dimlist;
       Integer dim;
       DAE.Dimension d;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty),_))
       equation
         (ty_1,dimlist_1) = flattenArrayType(ty);
       then
@@ -3811,7 +3811,7 @@ algorithm
   (outExp,outTypeLst):=
   matchcontinue (exps,expType,expectedType,printFailtrace)
     local
-      DAE.Exp e,e_1,e_2;
+      DAE.Exp e,e_1;
       list<DAE.Exp> e_2, rest;
       Type tp,t1,t2;
       list<Type> res;
@@ -3990,7 +3990,7 @@ algorithm
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
           printFailtrace)
       equation
@@ -4000,11 +4000,11 @@ algorithm
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN,ty2),p2));
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty2),p2));
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
+        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
         local
           DAE.ExpType ety1;
       equation
@@ -4055,7 +4055,7 @@ algorithm
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim11,printFailtrace);
@@ -4075,26 +4075,26 @@ algorithm
         (e_1,t_2);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
         (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
-        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
+        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2));
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p2));
 
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
-      (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
+      (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
-        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
+        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2));
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p2));
 
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
+        (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,dim1);
@@ -4774,7 +4774,7 @@ public function constIsVariable
   input Const c;
   output Boolean b;
 algorithm
-  b := constEqual(c, DAE.C_VAR);
+  b := constEqual(c, DAE.C_VAR());
 end constIsVariable;
 
 public function constIsParameter
@@ -4782,7 +4782,7 @@ public function constIsParameter
   input Const c;
   output Boolean b;
 algorithm
-  b := constEqual(c, DAE.C_PARAM);
+  b := constEqual(c, DAE.C_PARAM());
 end constIsParameter;
 
 public function constIsConst
@@ -4790,7 +4790,7 @@ public function constIsConst
   input Const c;
   output Boolean b;
 algorithm
-  b := constEqual(c, DAE.C_CONST);
+  b := constEqual(c, DAE.C_CONST());
 end constIsConst;
 
 public function printPropStr "function: printPropStr

@@ -4681,9 +4681,9 @@ algorithm
     case (DAE.POW_SCALAR_ARRAY(ty = _), _) then DAE.POW_SCALAR_ARRAY(inType);
     case (DAE.POW_ARR(ty = _), _) then DAE.POW_ARR(inType);
     case (DAE.POW_ARR2(ty = _), _) then DAE.POW_ARR2(inType);
-    case (DAE.AND, _) then DAE.AND;
-    case (DAE.OR, _) then DAE.OR;
-    case (DAE.NOT,_ ) then DAE.NOT;
+    case (DAE.AND(), _) then DAE.AND();
+    case (DAE.OR(), _) then DAE.OR();
+    case (DAE.NOT(),_ ) then DAE.NOT();
     case (DAE.LESS(ty = _), _) then inOp;
     case (DAE.LESSEQ(ty = _), _) then inOp;
     case (DAE.GREATER(ty = _), _) then inOp;

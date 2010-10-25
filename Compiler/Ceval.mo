@@ -1015,7 +1015,7 @@ algorithm
          cevalType = Types.typeOfValue(v);
          cevalExpType = Types.elabType(cevalType);
        then
-         (DAE.CALL(p, el, t, b, cevalExpType, i), DAE.PROP(cevalType, DAE.C_PARAM));
+         (DAE.CALL(p, el, t, b, cevalExpType, i), DAE.PROP(cevalType, DAE.C_PARAM()));
   end matchcontinue;
 end cevalWholedimRetCall;
 
