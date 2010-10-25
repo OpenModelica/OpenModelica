@@ -80,6 +80,8 @@ protected import VarTransform;
 protected import BackendDAEUtil;
 protected import BackendDAETransform;
 
+public constant String derivativeNamePrefix="$DER";
+
 public function generateStatePartition "function:generateStatePartition
 
   This function traverses the equations to find out which blocks needs to
