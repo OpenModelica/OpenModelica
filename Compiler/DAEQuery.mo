@@ -43,6 +43,7 @@ import DAELow;
 import SCode;
 
 protected
+import BackendDAEUtil;
 import System;
 import Util;
 import Exp;
@@ -96,7 +97,7 @@ algorithm
       list<BackendDAE.WhenClause> wcLst;
     case (BackendDAE.DAELOW(orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
       equation
-        eqnsl = DAELow.equationList(eqns);
+        eqnsl = BackendDAEUtil.equationList(eqns);
         ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
         s1 = Util.stringDelimitList(ls1, ",");
         s = "EqStr = {" +& s1 +& "};";
@@ -273,7 +274,7 @@ algorithm
       BackendDAE.VariableArray vararr;
     case (BackendDAE.VARIABLES(varArr = vararr))
       equation
-        varlst = DAELow.vararrayList(vararr);
+        varlst = BackendDAEUtil.vararrayList(vararr);
       then
         varlst;
   end matchcontinue;
@@ -474,7 +475,7 @@ algorithm
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns))
       equation
-        eqnsl = DAELow.equationList(eqns);
+        eqnsl = BackendDAEUtil.equationList(eqns);
         lstlst = incidenceMatrix2(vars, eqnsl);
         arr = listArray(lstlst);
       then

@@ -44,6 +44,7 @@ package Main
 protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
+protected import BackendDAETransform;
 protected import BackendDump;
 protected import Parser;
 protected import Dump;
@@ -780,7 +781,7 @@ algorithm
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
-        dlow = DAELow.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
+        dlow = BackendDAETransform.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);

@@ -51,6 +51,7 @@ public import DAELow;
 public import SCode;
 
 protected import Absyn;
+protected import BackendDAEUtil;
 protected import DAE;
 protected import DAEUtil;
 protected import Exp;
@@ -85,8 +86,8 @@ algorithm
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.registerStartStop(starttask, endtask);
-        vars = DAELow.vararrayList(vararr);
-        knvars = DAELow.vararrayList(knvararr);
+        vars = BackendDAEUtil.vararrayList(vararr);
+        knvars = BackendDAEUtil.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
         cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.ET_REAL(),{});
@@ -120,8 +121,8 @@ algorithm
       BackendDAE.VariableArray vararr,kvararr;
     case (BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
       equation
-        vars = DAELow.vararrayList(vararr);
-        kvars = DAELow.vararrayList(kvararr);
+        vars = BackendDAEUtil.vararrayList(vararr);
+        kvars = BackendDAEUtil.vararrayList(kvararr);
         buildInits2(vars);
         buildInits2(kvars);
       then
@@ -335,10 +336,10 @@ algorithm
     case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving for non-states" ;
-        BackendDAE.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        varlst = DAELow.varList(vars);
+        varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
         isNonState(kind);
@@ -356,10 +357,10 @@ algorithm
       local Integer v;
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
-        BackendDAE.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        varlst = DAELow.varList(vars);
+        varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,comment,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx) "	print \"solving for state\\n\" &" ;
         origname_str = ComponentReference.printComponentRefStr(cr);
@@ -393,10 +394,10 @@ algorithm
       local Integer v;
       equation
         e_1 = e - 1 "state nonlinear" ;
-        BackendDAE.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        varlst = DAELow.varList(vars);
+        varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,_,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx);
         name = ComponentReference.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
@@ -413,10 +414,10 @@ algorithm
     case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
-        BackendDAE.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        varlst = DAELow.varList(vars);
+        varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
@@ -738,7 +739,7 @@ algorithm
     case ((dae as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
       equation
         e_1 = e - 1;
-        BackendDAE.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);

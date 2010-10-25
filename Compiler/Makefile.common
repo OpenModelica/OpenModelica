@@ -33,6 +33,7 @@ AbsynDep.mo \
 Algorithm.mo \
 BackendDAE.mo \
 BackendDump.mo \
+BackendDAETransform.mo \
 Builtin.mo \
 Ceval.mo \
 CevalScript.mo \

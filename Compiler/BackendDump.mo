@@ -38,6 +38,7 @@ package BackendDump
 "
 
 public import BackendDAE;
+public import BackendDAEUtil;
 public import ComponentReference;
 public import DAE;
 
@@ -203,7 +204,7 @@ algorithm
     case (eqno,BackendDAE.DAELOW(orderedEqs = eqns))
       equation
         eqno_1 = eqno - 1;
-        eq = DAELow.equationNth(eqns, eqno_1);
+        eq = BackendDAEUtil.equationNth(eqns, eqno_1);
         printEquation(eq);
       then
         ();
@@ -514,7 +515,7 @@ algorithm
     case (BackendDAE.DAELOW(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
       equation
         print("Variables (");
-        vars = DAELow.varList(vars1);
+        vars = BackendDAEUtil.varList(vars1);
         varlen = listLength(vars);
         varlen_str = intString(varlen);
         print(varlen_str);
@@ -523,7 +524,7 @@ algorithm
         dumpVars(vars);
         print("\n");
         print("Known BackendDAE.Variables (constants) (");
-        knvars = DAELow.varList(vars2);
+        knvars = BackendDAEUtil.varList(vars2);
         varlen = listLength(knvars);
         varlen_str = intString(varlen);
         print(varlen_str);
@@ -531,7 +532,7 @@ algorithm
         print("=============================\n");
         dumpVars(knvars);
         print("External Objects (");
-        extvars = DAELow.varList(vars3);
+        extvars = BackendDAEUtil.varList(vars3);
         varlen = listLength(extvars);
         varlen_str = intString(varlen);
         print(varlen_str);
@@ -547,7 +548,7 @@ algorithm
         print("=============================\n");
         dumpExtObjCls(extObjCls);
         print("\nEquations (");
-        eqnsl = DAELow.equationList(eqns);
+        eqnsl = BackendDAEUtil.equationList(eqns);
         eqnlen = listLength(eqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
@@ -555,7 +556,7 @@ algorithm
         print("=========\n");
         dumpEqns(eqnsl);
         print("Simple Equations (");
-        reqnsl = DAELow.equationList(reqns);
+        reqnsl = BackendDAEUtil.equationList(reqns);
         eqnlen = listLength(reqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
@@ -563,7 +564,7 @@ algorithm
         print("=========\n");
         dumpEqns(reqnsl);
         print("Initial Equations (");
-        ieqnsl = DAELow.equationList(ieqns);
+        ieqnsl = BackendDAEUtil.equationList(ieqns);
         eqnlen = listLength(ieqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
@@ -1189,7 +1190,7 @@ algorithm
       equation
         s1 = dumpMarkedEqns(dae, es);
         e_1 = e - 1;
-        eqn = DAELow.equationNth(eqns, e_1);
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
         s2 = equationStr(eqn);
         res = stringAppendList({s2,";\n",s1});
       then

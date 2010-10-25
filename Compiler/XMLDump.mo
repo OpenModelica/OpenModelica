@@ -89,6 +89,7 @@ public import SCode;
 public import RTOpts;
 
 protected import Algorithm;
+protected import BackendDAEUtil;
 protected import DAEUtil;
 protected import Dump;
 protected import Exp;
@@ -1065,9 +1066,9 @@ algorithm
                  _,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
-        vars    = DAELow.varList(vars_orderedVars);
-        knvars  = DAELow.varList(vars_knownVars);
-        extvars = DAELow.varList(vars_externalObject);
+        vars    = BackendDAEUtil.varList(vars_orderedVars);
+        knvars  = BackendDAEUtil.varList(vars_knownVars);
+        extvars = BackendDAEUtil.varList(vars_externalObject);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
@@ -1082,11 +1083,11 @@ algorithm
 
         dumpStrCloseTag(VARIABLES);
 
-        eqnsl  = DAELow.equationList(eqns);
+        eqnsl  = BackendDAEUtil.equationList(eqns);
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
-        reqnsl = DAELow.equationList(reqns);
+        reqnsl = BackendDAEUtil.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
-        ieqnsl = DAELow.equationList(ieqns);
+        ieqnsl = BackendDAEUtil.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
         ae_lst = arrayList(ae);
