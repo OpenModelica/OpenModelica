@@ -135,7 +135,7 @@ algorithm
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        BackendDAEUtil.checkDEALowWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
       then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 
     case(lst, functionTree, addDummyDerivativeIfNeeded, false) // do not simplify
@@ -171,7 +171,7 @@ algorithm
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));        
-        BackendDAEUtil.checkDEALowWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
       then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
   end matchcontinue;
 end lower;
@@ -1674,7 +1674,7 @@ algorithm
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);  
         subslst = DAELow.dimensionsToRange(ad);
         subslst1 = DAELow.rangesToSubscripts(subslst);
-        crefs = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        crefs = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crefs,Exp.makeCrefExp,tp);             
       then (inputs,expl);
 
@@ -2508,7 +2508,7 @@ algorithm
       then vars;
     case(vars,cr::newStates)
       equation
-        print("Internal error, variable ");print(Exp.printComponentRefStr(cr));print("not found in variables.\n");
+        print("Internal error, variable ");print(ComponentReference.printComponentRefStr(cr));print("not found in variables.\n");
         vars = updateStatesVars(vars,newStates);
       then vars;
   end matchcontinue;
@@ -3001,7 +3001,7 @@ algorithm
   case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
+      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e1);
       e2lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
@@ -3024,7 +3024,7 @@ algorithm
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
+      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       compmultilistlst = Util.listMap2(exptpllst,DAELow.generateextendedRecordEqn,source,funcs);
