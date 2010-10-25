@@ -1574,7 +1574,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getFlowVariables2(xs, id);
-        cr_1 = ComponentReference.crefAddPrefix(id,DAE.ET_OTHER(),{}, cr);
+        cr_1 = ComponentReference.crefAddPrefix(id,{},DAE.ET_OTHER(), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1632,7 +1632,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = ComponentReference.crefAddPrefix(id,DAE.ET_OTHER(),{}, cr);
+        cr_1 = ComponentReference.crefAddPrefix(id,{},DAE.ET_OTHER(), cr);
       then
         (cr_1 :: res);
   end matchcontinue;

@@ -9471,7 +9471,7 @@ algorithm
     // s = expr(s1,..,sn)  where s1 .. sn are states
     case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars)
       equation
-        true = ComponentReferencecrefEqualNoStringCompare(cr,cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
         crs = Exp.getCrefFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
@@ -15557,8 +15557,8 @@ algorithm outCrefExp := matchcontinue(inVar,inExp)
     DAE.Exp e;
   case (DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF(componentRef=cr))
   equation
-    cr1 = Exp.extendCref(cr,tp,name,{});
-    e = DAE.CREF(cr1, tp);
+    cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
+    e = Exp.makeCrefExp(cr1, tp);
   then
     e;
  end matchcontinue;

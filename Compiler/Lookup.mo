@@ -591,7 +591,7 @@ algorithm
       equation
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = ComponentReference.crefPrependIdent(cref,ident,DAE.ET_OTHER(),{});
+        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.ET_OTHER());
         (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
         (cache,true);
@@ -650,7 +650,7 @@ algorithm
       equation 
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = ComponentReference.crefPrependIdent(cref,ident,DAE.ET_OTHER(),{});
+        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.ET_OTHER());
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
         unique = boolNot(more);

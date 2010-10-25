@@ -573,7 +573,7 @@ algorithm
       DAE.ExpType tp;      
     case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
       equation
-        cr1 = Exp.extendCref(cr,tp,name,{});
+        cr1 = ComponentReference.crefPrependIdent(cr,tp,name,{},tp);
         outExp = Exp.makeCrefExp(cr1,tp);
       then
         outExp;

@@ -40,11 +40,12 @@ package PartFn
   entry point: createPartEvalFunctions, partEvalDAELow, partEvalDAE
   "
 
+public import Absyn;
+public import BackendDAE;
+public import ComponentReference;
 public import DAE;
 public import Debug;
-public import Absyn;
 public import SCode;
-public import BackendDAE;
 public import Values;
 
 protected import DAEUtil;
@@ -1379,7 +1380,7 @@ algorithm
     case(e as DAE.VAR(componentRef = cref,direction=DAE.INPUT()),s)
       equation
         s_1 = stringAppend(s,"_");
-        cref_1 = Exp.prependStringCref(s_1,cref);
+        cref_1 = ComponentReference.prependStringCref(s_1,cref);
         res = DAEUtil.replaceCrefInVar(cref_1,e);
       then
         res;

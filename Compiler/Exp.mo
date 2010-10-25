@@ -306,7 +306,7 @@ public function identEqual
   input Ident inIdent2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := stringEqual(id1, id2);
+  outBoolean := stringEqual(inIdent1, inIdent2);
 end identEqual;
 
 public function isRange
@@ -602,9 +602,6 @@ algorithm
   end matchcontinue;
 end getRelations;
 
-
-
-
 public function prependSubscriptExp
 "Prepends a subscript to a CREF expression
  For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
@@ -681,63 +678,6 @@ algorithm
   end matchcontinue;
 end subscriptEqual;
 
-public function prependStringCref
-"function: prependStringCref
-  Prepend a string to a component reference.
-  For qualified named, this means prepending a
-  string to the first identifier."
-  input String inString;
-  input ComponentRef inComponentRef;
-  output ComponentRef outComponentRef;
-algorithm
-  outComponentRef:=
-  matchcontinue (inString,inComponentRef)
-    local
-      Ident i_1,p,i;
-      list<Subscript> s;
-      ComponentRef c;
-      Type t2;
-    case (p,DAE.CREF_QUAL(ident = i, identType = t2, subscriptLst = s,componentRef = c))
-      equation
-        i_1 = stringAppend(p, i);
-      then
-        DAE.CREF_QUAL(i_1,t2,s,c);
-    case (p,DAE.CREF_IDENT(ident = i, identType = t2, subscriptLst = s))
-      equation
-        i_1 = stringAppend(p, i);
-      then
-        DAE.CREF_IDENT(i_1,t2,s);
-  end matchcontinue;
-end prependStringCref;
-
-public function extendCref
-"function: extendCref
-  The extendCref function extends a ComponentRef by appending
-  an identifier and a (possibly empty) list of subscripts.  Adding
-  the identifier A to the component reference x.y[10] would
-  produce the component reference x.y[10].A, for instance."
-  input ComponentRef inComponentRef;
-  input Type inType;
-  input Ident inIdent;
-  input list<Subscript> inSubscriptLst;
-  output ComponentRef outComponentRef;
-algorithm
-  outComponentRef:=
-  matchcontinue (inComponentRef,inType,inIdent,inSubscriptLst)
-    local
-      Ident i1,i;
-      list<Subscript> s1,s;
-      ComponentRef c_1,c;
-      Type t1,t2;
-    case (DAE.CREF_IDENT(ident = i1,identType=t2, subscriptLst = s1),t1,i,s) then DAE.CREF_QUAL(i1,t2,s1,DAE.CREF_IDENT(i,t1,s));
-    case (DAE.CREF_QUAL(ident = i1,identType=t2, subscriptLst = s1,componentRef = c),t1,i,s)
-      equation
-        c_1 = extendCref(c, t1,i, s);
-      then
-        DAE.CREF_QUAL(i1,t2,s1,c_1);
-  end matchcontinue;
-end extendCref;
-
 public function applyExpSubscripts "
 author: PA
 Takes an arbitrary expression and applies subscripts to it. This is done by creating asub
@@ -765,8 +705,6 @@ algorithm
   end matchcontinue;
 end applyExpSubscripts ;
   
-
-
 public function makeAsub "creates an ASUB given an expression and an index"
   input DAE.Exp e;
   input Integer indx;
@@ -1037,7 +975,7 @@ algorithm
         
         /* subscripting/simplify of asubs, optimized so subexpression only simplified once */
     case(DAE.ASUB(exp=e, sub = sub::{})) equation      
-      DAE.Exp = simplifyAsub0(simplify1(e),expInt(sub));
+      exp = simplifyAsub0(simplify1(e),expInt(sub));
     then exp;
                 
     // other subscripting/asub simplifications where e is not simplified first.
@@ -1199,7 +1137,7 @@ algorithm
 end simplifyCast;    
 
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions"
-  input DAE.Exp DAE.Exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
+  input DAE.Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
@@ -1235,7 +1173,7 @@ algorithm
 end simplifyBuiltinCalls;
 
 protected function simplifyBuiltinConstantCalls "simplifies some builtin calls if constant arguments"
-  input DAE.Exp DAE.Exp "assumes already simplified call arguments";
+  input DAE.Exp exp "assumes already simplified call arguments";
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
@@ -1547,7 +1485,7 @@ algorithm
         Ident idn;
         list<DAE.Exp> expl_1;
       equation
-        DAE.Exp = simplifyCref2(DAE.CREF(DAE.CREF_IDENT(idn,t2,{}),t),ssl);
+        exp = simplifyCref2(DAE.CREF(DAE.CREF_IDENT(idn,t2,{}),t),ssl);
       then
         exp;
   end matchcontinue;
@@ -1581,7 +1519,7 @@ algorithm
         crefs = Util.listMap1r(Util.listMap(subs,Util.listCreate),subscriptCref,cr);
         expl = Util.listMap1(crefs,makeCrefExp,t);
         dim = listLength(expl);
-        DAE.Exp = simplifyCref2(DAE.ARRAY(DAE.ET_ARRAY(t,{DAE.DIM_INTEGER(dim)}),true,expl),ssl);
+        exp = simplifyCref2(DAE.ARRAY(DAE.ET_ARRAY(t,{DAE.DIM_INTEGER(dim)}),true,expl),ssl);
       then
         exp;
  	case(crefExp as DAE.ARRAY(tp,sc,expl), ssl )
@@ -1968,7 +1906,7 @@ algorithm
     case (DAE.ARRAY(ty = tp1,scalar = sc1,array = expl1),DAE.ARRAY(ty = tp2,scalar = sc2,array = expl2)) /* v1  v2 */
       equation
         expl = Util.listThreadMap(expl1, expl2, expMul);
-        DAE.Exp = simplify1(Util.listReduce(expl, expAdd));
+        exp = simplify1(Util.listReduce(expl, expAdd));
       then
         exp;
     // M * v1, use first dimension of M as the dimension of the result, in case the array has dimension 1, i.e. is a scalar.
@@ -2023,7 +1961,7 @@ algorithm
       equation
         row_1 = Util.listMap(row, Util.tuple21);
         expl = Util.listThreadMap(row_1, v1, expMul);
-        DAE.Exp = simplify1(Util.listReduce(expl, expAdd));
+        exp = simplify1(Util.listReduce(expl, expAdd));
         res = simplifyScalarProductMatrixVector(rows, v1);
       then
         (exp :: res);
@@ -2046,7 +1984,7 @@ algorithm
     case ((DAE.ARRAY(array=row) :: rows),v1)
       equation
         expl = Util.listThreadMap(row, v1, expMul);
-        DAE.Exp = simplify1(Util.listReduce(expl, expAdd));
+        exp = simplify1(Util.listReduce(expl, expAdd));
         res = simplifyScalarProductMatrixVector1(rows, v1);
       then
         (exp :: res);
@@ -2075,7 +2013,7 @@ algorithm
         heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
         row_1 = Util.listMap(heads, Util.tuple21);
         expl = Util.listThreadMap(v1, row_1, expMul);
-        DAE.Exp = simplify1(Util.listReduce(expl, expAdd));
+        exp = simplify1(Util.listReduce(expl, expAdd));
       then
         (exp :: {});
     case (v1,(rows))
@@ -2087,7 +2025,7 @@ algorithm
         tails = Util.listMap((rows),Util.listRest);
         row_1 = Util.listMap(heads, Util.tuple21);
         expl = Util.listThreadMap(v1, row_1, expMul);
-        DAE.Exp = simplify1(Util.listReduce(expl, expAdd));
+        exp = simplify1(Util.listReduce(expl, expAdd));
         res = simplifyScalarProductVectorMatrix(v1, tails);
       then
         (exp :: res);
@@ -3215,7 +3153,7 @@ algorithm
     
     // subscript of an array
     case(DAE.ARRAY(t,b,exps),sub) equation
-        DAE.Exp = listNth(exps, sub - 1);
+        exp = listNth(exps, sub - 1);
     then exp;
     
     // subscript of a matrix
@@ -3273,7 +3211,7 @@ algorithm
         t2 = typeof(e_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.UMINUS_ARR(t2),DAE.UMINUS(t2));
-        DAE.Exp = simplify1(DAE.UNARY(op2,e_1));
+        exp = simplify1(DAE.UNARY(op2,e_1));
       then
         exp;
     case (DAE.UNARY(operator = DAE.UPLUS_ARR(ty = t),exp = e),sub)
@@ -3293,7 +3231,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.SUB_ARR(t2),DAE.SUB(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
@@ -3303,7 +3241,7 @@ algorithm
         t2 = typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.MUL_SCALAR_ARRAY(t2),DAE.MUL(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
@@ -3313,7 +3251,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.MUL_ARRAY_SCALAR(t2),DAE.MUL(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.ADD_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
@@ -3323,7 +3261,7 @@ algorithm
         t2 = typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.ADD_SCALAR_ARRAY(t2),DAE.ADD(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
@@ -3333,7 +3271,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.ADD_ARRAY_SCALAR(t2),DAE.ADD(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.SUB_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
@@ -3343,7 +3281,7 @@ algorithm
         t2 = typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.SUB_SCALAR_ARRAY(t2),DAE.SUB(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
@@ -3353,7 +3291,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.SUB_ARRAY_SCALAR(t2),DAE.SUB(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
 
@@ -3382,7 +3320,7 @@ algorithm
         t2 = typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.DIV_SCALAR_ARRAY(t2),DAE.DIV(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
@@ -3392,7 +3330,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.DIV_ARRAY_SCALAR(t2),DAE.DIV(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.POW_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
@@ -3402,7 +3340,7 @@ algorithm
         t2 = typeof(e2_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.POW_SCALAR_ARRAY(t2),DAE.POW(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
@@ -3412,7 +3350,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.POW_ARRAY_SCALAR(t2),DAE.POW(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = t),exp2 = e2),sub)
@@ -3422,7 +3360,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.ADD_ARR(t2),DAE.ADD(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = t),exp2 = e2),sub)
@@ -3432,7 +3370,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.MUL_ARR(t2),DAE.MUL(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARR(ty = t),exp2 = e2),sub)
@@ -3442,7 +3380,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.DIV_ARR(t2),DAE.DIV(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW_ARR2(ty = t),exp2 = e2),sub)
@@ -3452,7 +3390,7 @@ algorithm
         t2 = typeof(e1_1);
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.POW_ARR2(t2),DAE.POW(t2));
-        DAE.Exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
 
@@ -3460,7 +3398,7 @@ algorithm
       equation
         indx = expInt(sub);
         i_1 = indx - 1;
-        DAE.Exp = listNth(exps, i_1);
+        exp = listNth(exps, i_1);
       then
         exp;
     case (DAE.MATRIX(ty = t,integer = n,scalar = exps),sub)
@@ -3552,7 +3490,7 @@ algorithm
         e1s = factors(factor);
         e2s = factors(expr);
         factors_1 = Util.listSetDifferenceOnTrue(e2s, e1s, expEqual);
-        DAE.Exp = makeProductLst(factors_1);
+        exp = makeProductLst(factors_1);
       then
         exp;
     case (factor,expr)
@@ -10234,10 +10172,8 @@ public function makeCrefExp
   input ComponentRef cref;
   input Type tp;
   output DAE.Exp e;
-algorithm e:= matchcontinue(cref,tp)
-  local Type tp2;
-  case(cref,tp) then DAE.CREF(cref,tp);
-  end matchcontinue;
+algorithm 
+  e:= DAE.CREF(cref,tp);
 end makeCrefExp;
 
 public function makeIndexSubscript
@@ -11172,7 +11108,7 @@ algorithm
   outBoolean := matchcontinue(cr1, cr2)
     // first is qualified, second is an unqualified ident, return false!
     case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then true;
-    case (cr1, cr2) then (not crefPrefixOf(cr1,cr2));
+    case (cr1, cr2) then (not ComponentReference.crefPrefixOf(cr1,cr2));
   end matchcontinue;
 end crefNotPrefixOf;
 

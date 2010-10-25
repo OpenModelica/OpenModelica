@@ -344,7 +344,7 @@ protected
 algorithm
   pcr1 := crefFirstCref(cr1);
   pcr2 := crefLastCref(cr2);
-  equal := Exp.crefEqual(pcr1,pcr2);
+  equal := crefEqual(pcr1,pcr2);
 end crefFirstCrefLastCrefEqual;
 
 public function crefSortFunc "A sorting function (greatherThan) for crefs"
@@ -688,6 +688,11 @@ end isRecord;
 public function crefPrependIdent "prepends (e..g as a suffix) an identifier to a component reference, given the identifier, subscript and the type
 author: PA
 
+  The crefPrependIdent function extends a ComponentRef by appending
+  an identifier and a (possibly empty) list of subscripts.  Adding
+  the identifier A to the component reference x.y[10] would
+  produce the component reference x.y[10].A, for instance.
+
 Example
 crefPrependIdent(a.b,c,{},Real) => a.b.c [Real]
 crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
@@ -721,6 +726,35 @@ author: Frenkel TUD
 algorithm
   newCr := DAE.CREF_QUAL(ident,tp,subs,cr);
 end crefAddPrefix;
+
+public function prependStringCref
+"function: prependStringCref
+  Prepend a string to a component reference.
+  For qualified named, this means prepending a
+  string to the first identifier."
+  input String inString;
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef:=
+  matchcontinue (inString,inComponentRef)
+    local
+      DAE.Ident i_1,p,i;
+      list<DAE.Subscript> s;
+      DAE.ComponentRef c;
+      DAE.ExpType t2;
+    case (p,DAE.CREF_QUAL(ident = i, identType = t2, subscriptLst = s,componentRef = c))
+      equation
+        i_1 = stringAppend(p, i);
+      then
+        DAE.CREF_QUAL(i_1,t2,s,c);
+    case (p,DAE.CREF_IDENT(ident = i, identType = t2, subscriptLst = s))
+      equation
+        i_1 = stringAppend(p, i);
+      then
+        DAE.CREF_IDENT(i_1,t2,s);
+  end matchcontinue;
+end prependStringCref;
 
 public function joinCrefs
 "function: joinCrefs

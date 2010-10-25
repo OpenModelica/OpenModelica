@@ -27,6 +27,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 /* HashTable instance specific code */
 
 public import DAE;
+public import ComponentReference;
 protected import Exp;
 protected import System;
 protected import Util;

@@ -1514,7 +1514,7 @@ algorithm outelems := matchcontinue(inCr, elems)
       DAE.DAE({});
   case(inCr,DAE.DAE((elem2 as DAE.VAR(componentRef = cr2))::elts))
     equation
-      true = ComponentReferencecrefPrefixOf(inCr,cr2);
+      true = ComponentReference.crefPrefixOf(inCr,cr2);
       //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
       cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
       elem = DAEUtil.replaceCrefInVar(cr1,elem2);

@@ -1703,7 +1703,7 @@ algorithm
     case(_,{},_) then {};
     case(inRef,v::vals,c::comps)
       equation
-        cref = Exp.extendCref(inRef,DAE.ET_OTHER,c,{});
+        cref = ComponentReference.crefPrependIdent(inRef,c,{},DAE.ET_OTHER);
         res1 = createReplacementRulesRecord2(v,cref);
         res2 = createReplacementRulesRecord(inRef,vals,comps);
         res = listAppend(res1,res2);
