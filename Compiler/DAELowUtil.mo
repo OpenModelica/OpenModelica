@@ -174,7 +174,8 @@ algorithm
         creflstlst = Util.listMap(expcreflst,Util.tuple22);
         crlst = Util.listFlatten(creflstlst);
       then
-        ((e, (vars,listAppend(crlst,crefs))));  
+        ((e, (vars,listAppend(crlst,crefs))));
+    /* case for Reductions  */     
 		case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
 		  local 
 		    DAE.Ident ident;
@@ -187,6 +188,10 @@ algorithm
 		    vars = DAELow.addVar(var,vars);
 		  then
 		    ((e, (vars,crefs)));
+		/* case for functionpointers */    
+		case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
+		  then
+		    ((e, (vars,crefs)));		    
 		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
 		  equation
 		     (_,_) = DAELow.getVar(cr, vars);
