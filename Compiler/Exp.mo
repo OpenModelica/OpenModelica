@@ -151,7 +151,7 @@ algorithm
   	matchcontinue(val1, val2, op)
   		local
   		  Real rv1,rv2,rv3;
-  		  case (val1,val2, MULOP)
+  		  case (val1,val2, MULOP())
   		    equation
   		      rv1 = intReal(val1);
   		      rv2 = intReal(val2);
@@ -159,7 +159,7 @@ algorithm
   		      outv = realToIntIfPossible(rv3);
   		  then
   		    	outv;
-  		  case (val1,val2, DIVOP)
+  		  case (val1,val2, DIVOP())
   		    local
   		      Integer ires;
   		    equation
@@ -167,7 +167,7 @@ algorithm
   		  then
   		    	DAE.ICONST(ires);
 
-  		  case (val1,val2, SUBOP)
+  		  case (val1,val2, SUBOP())
   		    equation
   		      rv1 = intReal(val1);
   		      rv2 = intReal(val2);
@@ -175,7 +175,7 @@ algorithm
   		      outv = realToIntIfPossible(rv3);
   		  then
   		    	outv;
-  		  case (val1,val2, ADDOP)
+  		  case (val1,val2, ADDOP())
   		    equation
   		      rv1 = intReal(val1);
   		      rv2 = intReal(val2);
@@ -183,7 +183,7 @@ algorithm
   		      outv = realToIntIfPossible(rv3);
   		  then
   		    	outv;
-  		  case (val1,val2, POWOP)
+  		  case (val1,val2, POWOP())
   		    equation
   		      rv1 = intReal(val1);
   		      rv2 = intReal(val2);
@@ -1476,7 +1476,7 @@ protected function simplifyCref
   input Type inType;
   output DAE.Exp exp;
 algorithm
-  DAE.Exp := matchcontinue(inCREF, inType)
+  exp := matchcontinue(inCREF, inType)
     local
       Type t,t2;
       list<Subscript> ssl;
@@ -4858,7 +4858,7 @@ algorithm
     case (DAE.ADD(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
       local DAE.Exp val;
       equation
-        val = safeIntOp(e1,e2,ADDOP);
+        val = safeIntOp(e1,e2,ADDOP());
       then
         val;
     case (DAE.ADD(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
@@ -12832,7 +12832,7 @@ public function dimensionSizeExp
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
-  DAE.Exp := matchcontinue(dim)
+  exp := matchcontinue(dim)
     local
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);

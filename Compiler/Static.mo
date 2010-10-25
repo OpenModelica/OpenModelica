@@ -5413,7 +5413,7 @@ algorithm
         (cache, s1_1, st);
     case (_,_,_,_,_,_,_)
       equation
-        print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
+        // print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
       then
         fail();
   end matchcontinue;

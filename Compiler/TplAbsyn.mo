@@ -351,17 +351,17 @@ end MMExp;
 
 public type MMMatchCase = tuple<list<MatchingExp>, TypedIdents, list<MMExp>>;
 
-constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
-
-
-/* internal types */
-protected
-
 constant Ident imlicitTxt = "txt";
 constant Ident inPrefix = "in_";
 constant Ident outPrefix = "out_";
 //constant Ident imlicitInTxt = "intxt"; //not used ... there can be the same names for in/ou values 
 //constant Ident imlicitOutTxt = "outtxt";
+
+constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
+
+
+/* internal types */
+protected
 
 constant MatchingExp imlicitTxtMExp = BIND_MATCH(imlicitTxt);
 

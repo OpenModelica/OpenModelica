@@ -102,7 +102,7 @@ public function checkDEALow "function: checkDEALow
   input BackendDAE.DAELow inDAELow;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
 algorithm
-  outBool:=
+  outExpCrefs :=
   matchcontinue (inDAELow)
     local
       BackendDAE.Variables vars1,vars2,allvars;
