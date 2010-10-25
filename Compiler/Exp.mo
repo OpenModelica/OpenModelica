@@ -1761,8 +1761,8 @@ algorithm
         list<Exp> expl;
         Absyn.Path fn;
       equation
-        expl = Util.listMap(expl,simplify1);
         true = Util.listFold(Util.listMap(expl,isConst),boolAnd,true);
+        expl = Util.listMap(expl,simplify1);
         e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inline));
       then 
         e2;
@@ -1780,64 +1780,11 @@ algorithm
       then 
         e2;
     
-    // cast from real to real
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp=e ))
-      local Exp e; Real v;
-      equation
-        DAE.RCONST(v) = simplify1(e);
-      then 
-        DAE.RCONST(v);
-    
-    // cast from integer to real
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
-      local Integer v;
-      equation
-        DAE.ICONST(v) = simplify1(e);
-        rv = intReal(v);
-      then
-        DAE.RCONST(rv);
-    
-    // cast of array
-    case (DAE.CAST(ty = tp,exp = e))
-      equation
-        DAE.ARRAY(t,b,exps) = simplify1(e);
-        tp_1 = unliftArray(tp);
-        exps_1 = Util.listMap1(exps, addCast, tp_1);
-    		exps_1 = Util.listMap(exps_1,simplify1);
-        res = DAE.ARRAY(tp,b,exps_1);
-      then
-        res;
-    
-    // simplify cast in an if expression
-    case(DAE.CAST(tp,DAE.IFEXP(cond,e1,e2))) 
-      equation
-        e1_1 = simplify1(DAE.CAST(tp,e1));
-        e2_1 = simplify1(DAE.CAST(tp,e2));
-      then 
-        DAE.IFEXP(cond,e1_1,e2_1);
-    
-    // simplify cast of matrix expressions
-    case (DAE.CAST(ty = tp,exp = e))
-      local list<list<tuple<Exp, Boolean>>> exps,exps_1;
-      equation
-        DAE.MATRIX(t,n,exps) = simplify1(e);
-        tp1 = unliftArray(tp);
-        tp2 = unliftArray(tp1);
-        exps_1 = matrixExpMap1(exps, addCast, tp2);
-        res = simplify1(DAE.MATRIX(tp,n,exps_1));
-      then
-        res;
-    
-    // if expression already has a specified cast type.
-    case (DAE.CAST(ty = tp,exp = e))
-      local ComponentRef cr; Exp e1; Type t1,t2;
-      equation
-        t1 = arrayEltType(tp);
-        e1 = simplify1(e);
-        t2 = arrayEltType(typeof(e1));
-        equality(t1 = t2);
-      then
-        e1;
+    /* simplify different casts. Optimized to only run simplify1 once on subexpression e*/
+    case(DAE.CAST(ty = tp,exp=e)) equation
+      e = simplifyCast(simplify1(e),tp);
+    then e;            
+        
     
     // simplify identity 
     case DAE.CALL( (path as Absyn.IDENT(name = "identity")), {DAE.ICONST(n)}, b,b2, t,b3)
@@ -1888,68 +1835,13 @@ algorithm
         exps_1 = Util.listMap(exps_1,simplify1);
       then
         DAE.PARTEVALFUNCTION(path,exps_1,t);
-
-    // array indexing
-    case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp ae1;
-      equation
-        i_1 = expInt(sub);
-        DAE.ARRAY(t,b,exps) = simplify1(e);
-        i_1 = i_1 - 1;
-        exp = listNth(exps, i_1);
-      then
-        exp;
-    
-    // matrix indexing 
-    case DAE.ASUB(exp = e,sub = sub::{})
-      local list<list<tuple<Exp, Boolean>>> exps; Exp ae1;
-      equation
-        i_1 = expInt(sub);
-        DAE.MATRIX(t,n,exps) = simplify1(e);
-        t1 = unliftArray(t);
-        i_1 = i_1 - 1;
-        (expl) = listNth(exps, i_1);
-        (expl_1,bls) = Util.splitTuple2List(expl);
-        b = Util.boolAndList(bls);
-      then
-        DAE.ARRAY(t1,b,expl_1);
-    
-    // if expression indexing
-    case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp t,ae1;
-      equation
-        _ = expInt(sub);
-        DAE.IFEXP(c,t,f) = simplify1(e);
-        t_1 = simplify1(DAE.ASUB(t,{sub}));
-        f_1 = simplify1(DAE.ASUB(f,{sub}));
-      then
-        DAE.IFEXP(c,t_1,f_1);
-    
-    // ident cref indexing
-    case DAE.ASUB(exp = e,sub = sub::{})
-      local Exp ae1;Type t2;
-      equation
-        _ = expInt(sub);
-        DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t) = simplify1(e);
-        t = unliftArray(t);
-        s_1 = subscriptsAppend(s, sub);
-      then
-        DAE.CREF(DAE.CREF_IDENT(idn,t2,s_1),t);
-    
-    // qualified cref indexing
-    case DAE.ASUB(exp = e,sub = sub::{})
-      local
-        ComponentRef c;
-        Exp ae1;
-        Type t2;
-      equation
-        _ = expInt(sub);
-        DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t) = simplify1(e);
-        DAE.CREF(c_1,t) = simplify1(DAE.ASUB(DAE.CREF(c,t),{sub}));
-      then
-        DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c_1),t);
-    
-    // indexing
+        
+        /* subscripting/simplify of asubs, optimized so subexpression only simplified once */
+    case(DAE.ASUB(exp=e, sub = sub::{})) equation      
+      exp = simplifyAsub0(simplify1(e),expInt(sub));
+    then exp;
+                
+    // other subscripting/asub simplifications where e is not simplified first.
     case DAE.ASUB(exp = e,sub = sub::{})
       local
         Exp ae1;
@@ -2021,16 +1913,14 @@ algorithm
         e1_1 = simplify1(e1);
         true = isConst(e1_1);
         b = boolExp(e1_1);
-        e2_1 = simplify1(e2);
-        e3_1 = simplify1(e3);
-        res = Util.if_(b,e2_1,e3_1);
+        res = Util.if_(b,e2,e3);
+        res = simplify1(res);
       then
         res;
     
     // if true and false branches are equal
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
-        e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
         e3_1 = simplify1(e3);
         remove_if = expEqual(e2_1, e3_1);
@@ -2055,6 +1945,59 @@ algorithm
         e;
   end matchcontinue;
 end simplify1;
+
+protected function simplifyCast "help function to simplify1"
+  input DAE.Exp exp;
+  input Type tp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(exp,tp)
+  local Real v; 
+    Integer i,n;
+    Boolean b;
+    list<Exp> exps,exps_1;
+    Type t,tp_1,tp1,tp2,t1,t2;
+    Exp res,e1,e2,cond,e1_1,e2_1,e;
+    list<list<tuple<Exp, Boolean>>> mexps,mexps_1;
+    
+    /* Real -> Real */
+    case(DAE.RCONST(v),DAE.ET_REAL()) then DAE.RCONST(v);
+    /* Int -> Real */
+    case(DAE.ICONST(i),DAE.ET_REAL()) equation
+      v = intReal(i);
+    then DAE.RCONST(v);
+      
+    /* cast of array*/
+    case(DAE.ARRAY(t,b,exps),tp) equation
+      tp_1 = unliftArray(tp);
+      exps_1 = Util.listMap1(exps, addCast, tp_1);
+      exps_1 = Util.listMap(exps_1,simplify1);
+      res = DAE.ARRAY(tp,b,exps_1);
+    then res;
+    
+    // simplify cast in an if expression
+    case(DAE.IFEXP(cond,e1,e2),tp) equation
+        e1_1 = simplify1(DAE.CAST(tp,e1));
+        e2_1 = simplify1(DAE.CAST(tp,e2));
+    then DAE.IFEXP(cond,e1_1,e2_1);
+    
+    // simplify cast of matrix expressions
+    case(DAE.MATRIX(t,n,mexps),tp) equation
+      tp1 = unliftArray(tp);
+      tp2 = unliftArray(tp1);
+      mexps_1 = matrixExpMap1(mexps, addCast, tp2);
+      res = simplify1(DAE.MATRIX(tp,n,mexps_1));
+    then res;
+    
+    // expression already has a specified cast type.
+    case(e,tp) equation
+      t1 = arrayEltType(tp);
+      t2 = arrayEltType(typeof(e));
+      equality(t1 = t2);
+    then e;
+      
+  end matchcontinue;
+end simplifyCast;    
 
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions"
   input Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
@@ -2501,60 +2444,23 @@ algorithm
         e_1 = simplifyMatrixProduct(e1, e2);
       then
         e_1;
-
-    case (e1,DAE.ADD_ARR(ty = _),e2)
+    case(e1,DAE.ADD_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        a1 = simplifyVectorBinary(e1, DAE.ADD(tp), e2);
-        res = simplify1(a1);
-      then
-        res;
-
-    case (e1,DAE.ADD_ARR(ty = _),e2)
-      equation
-        e1 = simplify1(e1);
-        e2 = simplify1(e2);
-        true = isZero(e1);
-      then
-        e2;
-
-    case (e1,DAE.ADD_ARR(ty = _),e2)
-      equation
-        e1 = simplify1(e1);
-        e2 = simplify1(e2);
-        true = isZero(e2);
-      then
-        e1;
-
+        a1 = simplifyVectorBinary0(e1,DAE.ADD(tp),e2);
+    then a1;
+    
     case (e1,DAE.SUB_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        a1 = simplifyVectorBinary(e1, DAE.SUB(tp), e2);
-        res = simplify1(a1);
+        a1 = simplifyVectorBinary0(e1, DAE.SUB(tp), e2);
       then
-        res;
-
-    case (e1,DAE.SUB_ARR(ty = tp),e2)
-      equation
-        e1 = simplify1(e1);
-        e2 = simplify1(e2);
-        true = isZero(e1);
-        res = DAE.UNARY(DAE.UMINUS_ARR(tp),e2);
-      then
-        res;
-
-    case (e1,DAE.SUB_ARR(ty = _),e2)
-      equation
-        e1 = simplify1(e1);
-        e2 = simplify1(e2);
-        true = isZero(e2);
-      then
-        e1;
-
+        a1;
+    
     case (e1,DAE.MUL_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -3038,6 +2944,28 @@ algorithm
     then DAE.MATRIX(tp,dims,mexpl);
   end matchcontinue;
 end simplifyVectorScalar;
+
+protected function simplifyVectorBinary0 "help function to simplify1, prevents simplify1 to be called multiple times
+ in subsequent cases"
+ input Exp e1;
+ input Operator op;
+ input Exp e2;
+ output Exp res;
+algorithm
+  res := matchcontinue(e1,op,e2)
+  local Exp a1;
+    case(e1,op,e2) equation
+     a1 = simplifyVectorBinary(e1,op,e2);
+     a1 = simplify1(a1);
+   then a1;
+    case(e1,op,e2) equation
+      true = isZero(e1);
+    then e2;
+    case(e1,op,e2) equation
+      true = isZero(e2);
+    then e1;          
+  end matchcontinue;
+end simplifyVectorBinary0;
 
 protected function simplifyVectorBinary
 "function: simlify_binary_array
@@ -4065,6 +3993,61 @@ algorithm
     case (e) then (e,1.0);
   end matchcontinue;
 end simplifyBinaryMulCoeff2;
+
+protected function simplifyAsub0 "simplifies asub when expression already has been simplified with simplify1
+Earlier these cases were directly in simplify1, but now they are here so simplify1 only is called once for 
+the subexpression"
+  input Exp e;
+  input Integer sub;
+  output Exp res;
+algorithm
+  res := matchcontinue(e,sub)
+  local 
+    Type t,t1,t2;
+    Boolean b;
+    list<Exp> exps,expl_1;
+    list<Boolean> bls;
+    list<list<tuple<Exp, Boolean>>> mexps;
+    list<tuple<Exp, Boolean>> mexpl;
+    Exp e1,e2,cond,exp; 
+    DAE.ComponentRef c,c_1;
+    list<Subscript> s,s_1;
+    Integer n;
+    String idn;
+    
+    // subscript of an array
+    case(DAE.ARRAY(t,b,exps),sub) equation
+        exp = listNth(exps, sub - 1);
+    then exp;
+    
+    // subscript of a matrix
+    case(DAE.MATRIX(t,n,mexps),sub) equation
+       t1 = unliftArray(t);
+        (mexpl) = listNth(mexps, sub - 1);
+        (expl_1,bls) = Util.splitTuple2List(mexpl);
+        b = Util.boolAndList(bls);
+    then DAE.ARRAY(t1,b,expl_1);
+    
+    // subscript of an if-expression
+    case(DAE.IFEXP(cond,e1,e2),sub) equation
+        e1 = simplify1(DAE.ASUB(e1,{DAE.ICONST(sub)}));
+        e2 = simplify1(DAE.ASUB(e2,{DAE.ICONST(sub)}));
+    then DAE.IFEXP(cond,e1,e2);
+    
+    // simple name subscript
+    case(DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t),sub) equation
+      t = unliftArray(t);
+      s_1 = subscriptsAppend(s, DAE.ICONST(sub));
+    then DAE.CREF(DAE.CREF_IDENT(idn,t2,s_1),t); 
+    
+    //  qualified name subscript
+    case(DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t),sub) equation
+      DAE.CREF(c_1,t) = simplify1(DAE.ASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
+    then DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c_1),t);
+    
+      
+  end matchcontinue;
+end simplifyAsub0;
 
 protected function simplifyAsub
 "function: simplifyAsub
