@@ -8931,15 +8931,15 @@ protected function isProtected
    and returns true if the component referenced is in a protected section."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram3;
+  input Absyn.Program p;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  matchcontinue (inComponentRef1,inComponentRef2,p)
     local
       Absyn.Path path;
       String i;
-      Boolean p,f,e;
+      Boolean f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> publst,protlst;
@@ -8948,7 +8948,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.PARTS(parts,_)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         _ = getComponentsContainsName(cr, publst);
       then
@@ -8956,7 +8956,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.PARTS(parts,_)) = getPathedClassInProgram(path, p);
         protlst = getProtectedList(parts);
         _ = getComponentsContainsName(cr, protlst);
       then
@@ -8965,7 +8965,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
         _ = getComponentsContainsName(cr, publst);
       then
@@ -8973,7 +8973,7 @@ algorithm
     case (cr,classname,p)
       equation
         path = Absyn.crefToPath(classname);
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(_,_,_,parts),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_,_,_,parts)) = getPathedClassInProgram(path, p);
         protlst = getProtectedList(parts);
         _ = getComponentsContainsName(cr, protlst);
       then
@@ -14754,7 +14754,8 @@ algorithm
       Absyn.Path envpath,p_1,p;
       String tpname,typename,finalPrefix,repl,inout_str,flowPrefixstr,streamPrefixstr,variability_str,dir_str,str,access;
       String typeAdStr;
-      list<String> names,lst,lst_1,dims;
+      list<Absyn.ComponentItem> lst;
+      list<String> names,lst_1,dims,strLst;
       Boolean r_1,f;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
@@ -14772,7 +14773,7 @@ algorithm
         typename = Absyn.pathString(p_1);
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
-        lst = prefixTypename(typename, names);
+        strLst = prefixTypename(typename, names);
         finalPrefix = Util.boolString(f);
         r_1 = keywordReplaceable(r);
         repl = Util.boolString(r_1);
@@ -14784,7 +14785,7 @@ algorithm
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
         str = Util.stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
-        lst_1 = suffixInfos(lst,dims,typeAdStr,str);
+        lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
       then
         lst_1;
 
@@ -14795,7 +14796,7 @@ algorithm
         typename = Absyn.pathString(p);
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
-        lst = prefixTypename(typename, names);
+        strLst = prefixTypename(typename, names);
         finalPrefix = Util.boolString(f);
         r_1 = keywordReplaceable(r);
         repl = Util.boolString(r_1);
@@ -14806,7 +14807,7 @@ algorithm
         dir_str = attrDirectionStr(attr);
         str = Util.stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
-        lst_1 = suffixInfos(lst,dims,typeAdStr,str);
+        lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
       then
         lst_1;
 

@@ -3340,16 +3340,15 @@ protected function listPos "helper function to listPosition"
 algorithm
   outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
     local
-      Type_a x,y,i;
+      Type_a x,y;
       list<Type_a> ys;
-      Integer i_1,n;
+      Integer i,i_1,n;
     case (x,(y :: ys),i)
       equation
         equality(x = y);
       then
         i;
     case (x,(y :: ys),i)
-      local Integer i;
       equation
         failure(equality(x = y));
         i_1 = i + 1;

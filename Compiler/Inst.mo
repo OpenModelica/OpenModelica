@@ -10005,7 +10005,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefix,DAE.NO_INLINE,source)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefix,DAE.NO_INLINE(),source)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -10446,7 +10446,7 @@ algorithm
         (c,cl,env) = Lookup.lookupClass(c,env,p,true);
       then
         isInlineFunc2(cl);
-    case(_,_,_) then DAE.NO_INLINE;
+    case(_,_,_) then DAE.NO_INLINE();
   end matchcontinue;
 end isInlineFunc;
 
@@ -10465,7 +10465,7 @@ algorithm
 
     case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)))
       then isInlineFunc3(anns);
-    case(_) then DAE.NO_INLINE;
+    case(_) then DAE.NO_INLINE();
   end matchcontinue;
 end isInlineFunc2;
 
@@ -10480,7 +10480,7 @@ algorithm
       list<SCode.Annotation> cdr;
       list<SCode.SubMod> smlst;
       DAE.InlineType res;
-    case({}) then DAE.NO_INLINE;
+    case({}) then DAE.NO_INLINE();
     case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
       equation
         res = isInlineFunc4(smlst);
@@ -10506,7 +10506,7 @@ algorithm
     local
       list<SCode.SubMod> cdr;
       Boolean res;
-    case({}) then DAE.NO_INLINE;
+    case({}) then DAE.NO_INLINE();
 
     case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
     then DAE.NORM_INLINE;

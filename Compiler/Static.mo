@@ -7928,7 +7928,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then
-        (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
       local
@@ -7937,7 +7937,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
-      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       local
@@ -7948,7 +7948,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr);
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
-      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
       local
@@ -7959,7 +7959,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr);
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
-      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
      case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       local 
@@ -8073,7 +8073,7 @@ algorithm
         absynPath = Absyn.crefToPath(absynCr);
         daeCr = pathToComponentRef(absynPath);
         daeExpList = absynExpListToDaeExpList(absynRest);
-      then DAE.CREF(daeCr,DAE.ET_OTHER) :: daeExpList;
+      then DAE.CREF(daeCr,DAE.ET_OTHER()) :: daeExpList;
     case (_ :: absynRest)
       then absynExpListToDaeExpList(absynRest);
   end matchcontinue;
@@ -13562,7 +13562,7 @@ algorithm
     case (cache,Absyn.EQUAL(),env,t1,t2)
       equation
         enum_op = makeEnumOperator(DAE.EQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER()), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.EQUAL(DAE.ET_INT()),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
@@ -13580,7 +13580,7 @@ algorithm
     case (cache,Absyn.NEQUAL(),env,t1,t2)
       equation
         enum_op = makeEnumOperator(DAE.NEQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER()), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.NEQUAL(DAE.ET_INT()),
             {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),

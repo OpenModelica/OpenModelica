@@ -2260,7 +2260,7 @@ algorithm str := matchcontinue(m,depth)
       //print(" ok\n");
     then
       "redeclare...";
-  case(DAE.NOMOD,_) then "";
+  case(DAE.NOMOD(),_) then "";
   case(_,_) equation print(" failed prettyPrintMod\n"); then fail();
 end matchcontinue;
 end prettyPrintMod;
