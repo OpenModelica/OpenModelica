@@ -10508,13 +10508,13 @@ algorithm
     case({}) then DAE.NO_INLINE();
 
     case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.NORM_INLINE;
+    then DAE.NORM_INLINE();
 
     case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.AFTER_INDEX_RED_INLINE;
+    then DAE.AFTER_INDEX_RED_INLINE();
 
     case(SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-    then DAE.AFTER_INDEX_RED_INLINE;
+    then DAE.AFTER_INDEX_RED_INLINE();
 
     case(_ :: cdr) then isInlineFunc4(cdr);
   end matchcontinue;

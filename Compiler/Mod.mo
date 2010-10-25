@@ -239,7 +239,6 @@ algorithm
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
       Absyn.InnerOuter io;
-      list<SCode.Element> elts;
       SCode.Ident cn,cn2,compname;
       Option<SCode.Comment> cmt;
       SCode.Restriction restr;
@@ -336,7 +335,7 @@ algorithm
         // Don't ceval variables.
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
-        msg = Util.if_(Types.constIsConst(c), Ceval.MSG, Ceval.NO_MSG);
+        msg = Util.if_(Types.constIsConst(c), Ceval.MSG(), Ceval.NO_MSG());
         (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE(), msg);
       then
         (cache,SOME(v));

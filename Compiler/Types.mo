@@ -354,19 +354,19 @@ output Type oType;
 algorithm
   oType := matchcontinue(inexp)
   local Type ty,ty2;
-    case(DAE.ET_INT)
+    case(DAE.ET_INT())
       equation
         ty = DAE.T_INTEGER_DEFAULT;
         then ty;
-    case(DAE.ET_REAL)
+    case(DAE.ET_REAL())
       equation
         ty = DAE.T_REAL_DEFAULT;
         then ty;
-    case(DAE.ET_BOOL)
+    case(DAE.ET_BOOL())
       equation
         ty = DAE.T_BOOL_DEFAULT;
         then ty;
-    case(DAE.ET_STRING)
+    case(DAE.ET_STRING())
       equation
         ty = DAE.T_STRING_DEFAULT;
         then ty;
@@ -4237,28 +4237,28 @@ algorithm
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE()),t2);
 
     case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_bcon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_bcon"),{e},false,true,t,DAE.NO_INLINE()),t2);
 
     case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE()),t2);
 
     case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE()),t2);
 
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
       local Absyn.Path path1,path2;
@@ -4305,32 +4305,32 @@ algorithm
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,DAE.NO_INLINE),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT(),DAE.NO_INLINE()),t2);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,DAE.NO_INLINE),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),t2);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,DAE.NO_INLINE),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),t2);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,DAE.NO_INLINE),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),t2);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,t2) = matchType(e,t1,t2,printFailtrace);
         t = elabType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE),t2);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE()),t2);
 
       /* See printFailure()
     case (exp,t1,t2,printFailtrace)
@@ -5595,7 +5595,7 @@ algorithm
         (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,DAE.NO_INLINE);
+        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,DAE.NO_INLINE());
         ty2 = (tty2,SOME(path));
       then ty2;
       /* Maybe add this case when standard Modelica gets function references?
