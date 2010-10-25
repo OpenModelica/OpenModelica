@@ -163,7 +163,7 @@ algorithm
   		    local
   		      Integer ires;
   		    equation
-  		      ires = val1 / val2;
+  		      ires = intDiv(val1,val2);
   		  then
   		    	DAE.ICONST(ires);
 
@@ -4884,7 +4884,7 @@ algorithm
     case (DAE.SUB(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
      	local DAE.Exp val;
       equation
-	   		val = safeIntOp(e1,e2,SUBOP);
+	   		val = safeIntOp(e1,e2,SUBOP());
       then
         val;
     case (DAE.SUB(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
@@ -4910,7 +4910,7 @@ algorithm
     case (DAE.MUL(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
       local DAE.Exp val;
       equation
-        val = safeIntOp(e1,e2,MULOP);
+        val = safeIntOp(e1,e2,MULOP());
       then
         val;
     case (DAE.MUL(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
@@ -4937,7 +4937,7 @@ algorithm
      	local
      	  DAE.Exp val;
       equation
-	   		val = safeIntOp(e1,e2,DIVOP);
+	   		val = safeIntOp(e1,e2,DIVOP());
       then
         val;
     case (DAE.DIV(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
@@ -4964,7 +4964,7 @@ algorithm
     case (DAE.POW(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
       local DAE.Exp val;
       equation
-				val = safeIntOp(e1,e2,POWOP);
+				val = safeIntOp(e1,e2,POWOP());
       then
 				val;
     case (DAE.POW(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
