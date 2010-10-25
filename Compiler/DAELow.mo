@@ -443,6 +443,7 @@ algorithm
   end matchcontinue;
 end invReachableNodes2;
 
+>>>>>>> .r6594
 public function isStateVar
 "function: isStateVar
   Returns true for state variables, false otherwise."
@@ -3944,7 +3945,7 @@ algorithm
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
-        reqns = eqnsForVarWithStates(mt, stateno);
+        reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
@@ -4256,7 +4257,7 @@ algorithm
         eqn = BackendDAEUtil.equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn,wc);
         m_1 = Util.arrayReplaceAtWithFill(row, e_1 + 1, m, {});
-        changedvars1 = varsInEqn(m_1, e);
+        changedvars1 = BackendDAEUtil.varsInEqn(m_1, e);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
         (m_2,(changedvars1 :: changedvars2));
@@ -5525,7 +5526,7 @@ protected
   Real prio1,prio2,prio3;
 algorithm
   (_,vindx::_) := getVar(varCref(v),vars); // Variable index not stored in var itself => lookup required
-  vEqns := eqnsForVarWithStates(mt,vindx);
+  vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
   vCr := varCref(v);
   prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
   prio2 := varStateSelectHeuristicPrio2(vCr,vars);
@@ -6174,7 +6175,7 @@ algorithm
       BackendDAE.Value i;
     case (m,mt,i,ass1,ass2)
       equation
-        vars = varsInEqn(m, i);
+        vars = BackendDAEUtil.varsInEqn(m, i);
         (ass1_1,ass2_1) = assignFirstUnassigned(i, vars, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -6280,132 +6281,6 @@ algorithm
         res;
   end matchcontinue;
 end statesAsAlgebraicVars2;
-
-public function varsInEqn
-"function: varsInEqn
-  author: PA
-  This function returns all variable indices as a list for
-  a given equation, given as an equation index. (1...n)
-  Negative indexes are removed.
-  See also: eqnsForVar and eqnsForVarWithStates
-  inputs:  (IncidenceMatrix, int /* equation */)
-  outputs:  int list /* variables */"
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input Integer inInteger;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst:=
-  matchcontinue (inIncidenceMatrix,inInteger)
-    local
-      BackendDAE.Value n_1,n,indx;
-      list<BackendDAE.Value> res,res_1;
-      array<list<BackendDAE.Value>> m;
-      String s;
-    case (m,n)
-      equation
-        n_1 = n - 1;
-        res = m[n_1 + 1];
-        res_1 = removeNegative(res);
-      then
-        res_1;
-    case (_,indx)
-      equation
-        print("vars_in_eqn failed, indx=");
-        s = intString(indx);
-        print(s);
-        print("\n");
-      then
-        fail();
-  end matchcontinue;
-end varsInEqn;
-
-protected function removeNegative
-"function: removeNegative
-  author: PA
-  Removes all negative integers."
-  input list<Integer> lst;
-  output list<Integer> lst_1;
-algorithm
-  lst_1 := Util.listSelect(lst, Util.intPositive);
-end removeNegative;
-
-protected function eqnsForVar
-"function: eqnsForVar
-  author: PA
-  This function returns all equations as a list of
-  equation indices given a variable as a variable index.
-  See also: eqnsForVarWithStates and varsInEqn
-  inputs:  (IncidenceMatrixT, int /* variable */)
-  outputs:  int list /* equations */"
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  input Integer inInteger;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst:=
-  matchcontinue (inIncidenceMatrixT,inInteger)
-    local
-      BackendDAE.Value n_1,n,indx;
-      list<BackendDAE.Value> res,res_1;
-      array<list<BackendDAE.Value>> mt;
-      String s;
-    case (mt,n)
-      equation
-        n_1 = n - 1;
-        res = mt[n_1 + 1];
-        res_1 = removeNegative(res);
-      then
-        res_1;
-    case (_,indx)
-      equation
-        print("eqnsForVar failed, indx=");
-        s = intString(indx);
-        print(s);
-        print("\n");
-      then
-        fail();
-  end matchcontinue;
-end eqnsForVar;
-
-protected function eqnsForVarWithStates
-"function: eqnsForVarWithStates
-  author: PA
-  This function returns all equations as a list of equation indices
-  given a variable as a variable index, including the equations containing
-  the state variable but not its derivative. This must be used to update
-  equations when a state is changed to algebraic variable in index reduction
-  using dummy derivatives.
-  These equation indices are represented with negative index, thus all
-  indices are mapped trough int_abs (absolute value).
-  inputs:  (IncidenceMatrixT, int /* variable */)
-  outputs:  int list /* equations */"
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  input Integer inInteger;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst:=
-  matchcontinue (inIncidenceMatrixT,inInteger)
-    local
-      BackendDAE.Value n_1,n,indx;
-      list<BackendDAE.Value> res,res_1;
-      array<list<BackendDAE.Value>> mt;
-      String s;
-    case (mt,n)
-      equation
-        n_1 = n - 1;
-        res = mt[n_1 + 1];
-        res_1 = Util.listMap(res, int_abs);
-      then
-        res_1;
-    case (_,indx)
-      equation
-        print("eqnsForVarWithStates failed, indx=");
-        s = intString(indx);
-        print(s);
-        print("\n");
-      then
-        fail();
-  end matchcontinue;
-end eqnsForVarWithStates;
 
 protected function assignFirstUnassigned
 "function: assignFirstUnassigned
@@ -6528,7 +6403,7 @@ algorithm
       BackendDAE.Value i;
     case (m,mt,i,ass1,ass2)
       equation
-        vars = varsInEqn(m, i);
+        vars = BackendDAEUtil.varsInEqn(m, i);
         vars_1 = Util.listFilter(vars, isNotVMarked);
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, vars_1, ass1, ass2);
       then
@@ -6795,7 +6670,7 @@ algorithm
         var = a2[eqn_1 + 1];
         var_1 = var - 1;
         reachable = mt[var_1 + 1] "Got the variable that is solved in the equation" ;
-        reachable_1 = removeNegative(reachable) "in which other equations is this variable present ?" ;
+        reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
         pos = Util.listPosition(eqn, reachable_1) ".. except this one" ;
         reachable_2 = listDelete(reachable_1, pos);
       then
@@ -7575,7 +7450,7 @@ algorithm
     // residual equations
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = BackendDAEUtil.varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: ascending index" ;
         SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
@@ -7591,7 +7466,7 @@ algorithm
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
         new_exp = Exp.applyExpSubscripts(new_exp,subs); 
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = BackendDAEUtil.varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
@@ -10868,7 +10743,7 @@ algorithm
         false = Util.listContains(v,exclude);
         eqn = m[v];
         // remove negative
-        eqn_1 = removeNegative(eqn);
+        eqn_1 = BackendDAEUtil.removeNegative(eqn);
         // select entries
         eqn_2 = Util.listSelect1(eqn_1,comp,Util.listContains);
         // remove multiple entries

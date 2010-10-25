@@ -1618,7 +1618,7 @@ algorithm
       equation
         cname = Absyn.pathString(class_);
           
-        (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
 
         (helpVarInfo, dlow2) = generateHelpVarInfo(dlow, comps);
         n_h = listLength(helpVarInfo);
