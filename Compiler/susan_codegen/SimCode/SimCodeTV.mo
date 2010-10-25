@@ -346,11 +346,6 @@ package SimCode
     output Boolean isScalar;
   end crefIsScalar;
 
-  function crefSubs
-    input DAE.ComponentRef cref;
-    output list<DAE.Subscript> subs;
-  end crefSubs;
-  
   function buildCrefExpFromAsub
     input DAE.Exp cref;
     input list<DAE.Exp> subs;
@@ -1063,6 +1058,11 @@ package ComponentReference
 		input DAE.ComponentRef inComponentRef;
 		output DAE.ComponentRef outComponentRef;
 	end crefStripLastSubs;
+
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
 
 end ComponentReference;
 

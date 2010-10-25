@@ -23993,7 +23993,7 @@ algorithm
         i_arrName = contextArrayCref(emptyTxt, i_cr, i_context);
         i_arrayType = expTypeArray(emptyTxt, i_ty);
         (i_tmp, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_arrayType), i_varDecls);
-        ret_4 = SimCode.crefSubs(i_cr);
+        ret_4 = ComponentReference.crefSubs(i_cr);
         (i_spec1, i_preExp, i_varDecls) = daeExpCrefRhsIndexSpec(emptyTxt, ret_4, i_context, i_preExp, i_varDecls);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("index_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_arrayType);
@@ -24028,10 +24028,10 @@ algorithm
         ret_1 = ComponentReference.crefStripLastSubs(i_cr);
         i_arrName = contextCref(emptyTxt, ret_1, i_context);
         i_arrayType = expTypeArray(emptyTxt, i_ty);
-        ret_4 = SimCode.crefSubs(i_cr);
+        ret_4 = ComponentReference.crefSubs(i_cr);
         ret_5 = listLength(ret_4);
         i_dimsLenStr = Tpl.writeStr(emptyTxt, intString(ret_5));
-        ret_7 = SimCode.crefSubs(i_cr);
+        ret_7 = ComponentReference.crefSubs(i_cr);
         i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_dimsValuesStr, i_varDecls, i_preExp) = lm_554(i_dimsValuesStr, ret_7, i_varDecls, i_preExp, i_context);
         i_dimsValuesStr = Tpl.popIter(i_dimsValuesStr);

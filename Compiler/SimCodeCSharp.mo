@@ -7352,7 +7352,7 @@ algorithm
       equation
         ret_1 = ComponentReference.crefStripLastSubs(i_cr);
         i_arrName = contextCref(emptyTxt, ret_1, i_context, i_simCode);
-        ret_3 = SimCode.crefSubs(i_cr);
+        ret_3 = ComponentReference.crefSubs(i_cr);
         (i_spec, i_preExp) = daeExpCrefRhsIndexSpec(emptyTxt, ret_3, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_arrName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".Array1Spec("));
@@ -7375,7 +7375,7 @@ algorithm
         i_arrName = contextCref(emptyTxt, ret_1, i_context, i_simCode);
         txt = Tpl.writeText(txt, i_arrName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
-        ret_2 = SimCode.crefSubs(i_cr);
+        ret_2 = ComponentReference.crefSubs(i_cr);
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (txt, i_preExp) = lm_169(txt, ret_2, i_simCode, i_preExp, i_context);
         txt = Tpl.popIter(txt);

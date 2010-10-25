@@ -1134,14 +1134,14 @@ public function crefHaveSubs "Function: crefHaveSubs
   output Boolean ob;
 algorithm ob := matchcontinue(icr)
   local DAE.ComponentRef cr; Boolean b; DAE.Ident str; Integer idx;
-  case(DAE.CREF_QUAL(_,_,_ :: _, _)) then true;
-  case(DAE.CREF_IDENT(_,_,_ :: _)) then true;
-  case(DAE.CREF_IDENT(str,_,{})) // for stringified crefs!
+  case(DAE.CREF_QUAL(subscriptLst = _ :: _)) then true;
+  case(DAE.CREF_IDENT(subscriptLst = _ :: _)) then true;
+  case(DAE.CREF_IDENT(ident = str,subscriptLst ={})) // for stringified crefs!
     equation
       idx = System.stringFind(str, "["); // (-1 on failure)
       idx > 0 = true; // index should be more than 0!
     then true;
-  case(DAE.CREF_QUAL(_,_,{}, cr))
+  case(DAE.CREF_QUAL(subscriptLst = {},componentRef = cr))
     equation
       b = crefHaveSubs(cr);
     then b;

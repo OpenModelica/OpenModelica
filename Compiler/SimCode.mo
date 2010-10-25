@@ -454,7 +454,7 @@ public function crefSubIsScalar
   output Boolean isScalar;
   list<DAE.Subscript> subs;
 algorithm
-  subs := crefSubs(cref);
+  subs := ComponentReference.crefSubs(cref);
   isScalar := subsToScalar(subs);
 end crefSubIsScalar;
 
@@ -462,11 +462,8 @@ public function crefNoSub
 "Used by templates to determine if a component reference has no subscripts."
   input DAE.ComponentRef cref;
   output Boolean noSub;
-  list<DAE.Subscript> subs;
-  Integer len;
 algorithm
-	subs := crefSubs(cref);
-	noSub := Util.isListEmpty(subs);
+	noSub := boolNot(ComponentReference.crefHaveSubs(cref));
 end crefNoSub;
 
 public function crefIsScalar
@@ -494,30 +491,6 @@ algorithm
 				res;
 	end matchcontinue;
 end crefIsScalar;
-
-//TODO: this function should be removed as it is a re-implementation of Exp.crefSubs()
-//what problem would it cause if the ComponentReference.crefLastSubs() would be used instead ??
-//or otherwise, is it correct to use crefSubs() instead of crefLastSubs()      
-function crefSubs
-"Used by templates to get the subscript list from a component reference."
-  input DAE.ComponentRef cref;
-  output list<DAE.Subscript> subs;
-algorithm
-  subs :=
-  matchcontinue (cref)
-    local
-      list<DAE.Subscript> subs1;
-      list<DAE.Subscript> subs2;
-      DAE.ComponentRef cref1;
-    case (DAE.CREF_IDENT(subscriptLst=subs1))
-      then subs1;
-    case (DAE.CREF_QUAL(subscriptLst=subs1, componentRef=cref1))
-      equation
-        subs2 = crefSubs(cref1);
-        subs = listAppend(subs1, subs2);
-      then subs;
-  end matchcontinue;
-end crefSubs;
 
 public function buildCrefExpFromAsub
 "Used by templates to convert an ASUB expression to a component reference
@@ -8104,7 +8077,11 @@ protected function crefIsDerivative
   output Boolean isDer;
 algorithm
   isDer := matchcontinue(cr)
-    case (DAE.CREF_QUAL(ident = "$DER")) then true;
+    local DAE.Ident ident; Boolean b;
+    case (DAE.CREF_QUAL(ident = ident))
+      equation
+        b = stringEqual(ident,DAELow.derivativeNamePrefix);
+      then b;
     case (_) then false;
   end matchcontinue;
 end crefIsDerivative;
