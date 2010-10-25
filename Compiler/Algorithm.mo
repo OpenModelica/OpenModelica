@@ -89,6 +89,16 @@ algorithm
   end matchcontinue;
 end isReinitStatement;
 
+public function isNotAssertStatement "returns true if statement is NOT an assert"
+  input Statement stmt;
+  output Boolean res;
+algorithm
+  res := matchcontinue(stmt)
+    case(DAE.STMT_ASSERT(cond = _)) then false;
+    case(_) then true;  
+  end matchcontinue;
+end isNotAssertStatement;
+
 public function splitReinits ""
   input list<Algorithm> inAlgs;
   output list<Algorithm> reinits;

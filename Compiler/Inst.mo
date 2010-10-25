@@ -1051,7 +1051,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
 
         daeElts = DAEUtil.daeElements(dae); 
-        comment = extractClassDefComment(cdef);
+        comment = extractClassDefComment(cache, env, cdef);
         dae = DAE.DAE({DAE.COMP(n,daeElts,source,comment)});
       then
         (cache,ih,dae);
@@ -14866,23 +14866,86 @@ algorithm
 end isFunctionInput;
 
 protected function extractClassDefComment
+  "This function extracts the comment section from a class definition."
+  input Env.Cache cache;
+  input Env.Env env;
   input SCode.ClassDef classDef;
   output Option<SCode.Comment> comment;
 algorithm
-  comment := matchcontinue(classDef)
+  comment := matchcontinue(cache, env, classDef)
     local 
       Option<SCode.Comment> c;
       list<SCode.Annotation> al;
-    case SCode.PARTS(annotationLst = al, comment = c) 
+    case (_, _, SCode.PARTS(annotationLst = al, comment = c))
       then SOME(SCode.CLASS_COMMENT(al, c));
-    case SCode.CLASS_EXTENDS(annotationLst = al, comment = c) 
+    case (_, _, SCode.CLASS_EXTENDS(annotationLst = al, comment = c))
       then SOME(SCode.CLASS_COMMENT(al, c));
-    case SCode.DERIVED(comment = c) then c;
-    case SCode.ENUMERATION(comment = c) then c;
-    case SCode.OVERLOAD(comment = c) then c;
-    case SCode.PDER(comment = c) then c;
+    case (_, _, SCode.DERIVED(typeSpec = Absyn.TPATH(path = p), comment = c))
+      local 
+        Absyn.Path p;
+        SCode.ClassDef cd;
+        Option<SCode.Comment> cmt;
+      equation
+        (_, SCode.CLASS(classDef = cd), _) = Lookup.lookupClass(cache, env, p, true); 
+        cmt = extractClassDefComment(cache, env, cd);
+        cmt = mergeClassComments(c, cmt);
+      then
+        cmt;
+    case (_, _, SCode.DERIVED(comment = c)) then c;
+    case (_, _, SCode.ENUMERATION(comment = c)) then c;
+    case (_, _, SCode.OVERLOAD(comment = c)) then c;
+    case (_, _, SCode.PDER(comment = c)) then c;
   end matchcontinue;
 end extractClassDefComment;
+
+protected function mergeClassComments
+  "This function merges two comments together. The rule is that the string
+  comment is taken from the first comment, and the annotations from both
+  comments are merged."
+  input Option<SCode.Comment> comment1;
+  input Option<SCode.Comment> comment2;
+  output Option<SCode.Comment> outComment;
+algorithm
+  outComment := matchcontinue(comment1, comment2)
+    local
+      Option<SCode.Annotation> oa1, oa2;
+      list<SCode.Annotation> al1, al2;
+    case (NONE(), _) then comment2;
+    case (_, NONE()) then comment1;
+    case (SOME(SCode.COMMENT(annotation_ = oa1, comment = cmt)),
+          SOME(SCode.COMMENT(annotation_ = oa2)))
+      local Option<String> cmt;
+      equation
+        al1 = Util.genericOption(oa1);
+        al2 = Util.genericOption(oa2);
+        al1 = listAppend(al1, al2);
+      then
+        SOME(SCode.CLASS_COMMENT(al1, SOME(SCode.COMMENT(NONE(), cmt))));
+    case (SOME(SCode.COMMENT(annotation_ = oa1, comment = cmt)),
+          SOME(SCode.CLASS_COMMENT(annotations = al2)))
+      local Option<String> cmt;
+      equation
+        al1 = Util.genericOption(oa1);
+        al1 = listAppend(al1, al2);
+      then
+        SOME(SCode.CLASS_COMMENT(al1, SOME(SCode.COMMENT(NONE(), cmt))));
+    case (SOME(SCode.CLASS_COMMENT(annotations = al1, comment = cmt)),
+          SOME(SCode.COMMENT(annotation_ = oa2)))
+      local Option<SCode.Comment> cmt;
+      equation
+        al2 = Util.genericOption(oa2);
+        al1 = listAppend(al1, al2);
+      then
+        SOME(SCode.CLASS_COMMENT(al1, cmt));
+    case (SOME(SCode.CLASS_COMMENT(annotations = al1, comment = cmt)),
+          SOME(SCode.CLASS_COMMENT(annotations = al2)))
+      local Option<SCode.Comment> cmt;
+      equation
+        al1 = listAppend(al1, al2);
+      then
+        SOME(SCode.CLASS_COMMENT(al1, cmt));
+  end matchcontinue;
+end mergeClassComments;
 
 protected function toConst
 "Translates SCode.Variability to DAE.Const"

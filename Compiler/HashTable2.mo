@@ -94,6 +94,26 @@ algorithm
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
 
+
+public function emptyHashTableSized "
+  author: PA
+
+  Returns an empty HashTable.
+  Using the bucketsize size and arraysize size/10.
+"
+  input Integer size;
+  output HashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+  Integer arrsize;
+algorithm
+  arr := fill({}, size);
+  arrsize := size/10;
+  emptyarr := fill(NONE(), arrsize);
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,arrsize,emptyarr),size,0);
+end emptyHashTableSized;
+
 public function add "
   author: PA
 

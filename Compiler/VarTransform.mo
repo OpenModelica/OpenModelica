@@ -114,7 +114,7 @@ protected import Exp;
 protected import System;
 protected import Util;
 //protected import RTOpts;
-//protected import Debug;
+protected import Debug;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
   input DAE.DAElist dae;
@@ -522,8 +522,8 @@ algorithm
       equation
         (e1) = replaceExp(e1, repl,NONE());
         (e2) = replaceExp(e2, repl,NONE());
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = Exp.simplify1(e1);
+        e2 = Exp.simplify1(e2);
       then
         (e1,e2);
   end matchcontinue;
@@ -573,6 +573,26 @@ algorithm
         REPLACEMENTS(ht,invHt);
   end matchcontinue;
 end emptyReplacements;
+
+public function emptyReplacementsSized "function: emptyReplacements
+
+  Returns an empty set of replacement rules, giving a size of hashtables to allocate
+"
+  input Integer size;
+  output VariableReplacements outVariableReplacements;
+algorithm
+  outVariableReplacements:=
+  matchcontinue (size)
+      local HashTable2.HashTable ht;
+        HashTable3.HashTable invHt;
+    case (size)
+      equation
+        ht = HashTable2.emptyHashTableSized(size);
+        invHt = HashTable3.emptyHashTableSized(size);
+      then
+        REPLACEMENTS(ht,invHt);
+  end matchcontinue;
+end emptyReplacementsSized;
 
 public function replaceEquationsStmts "function: replaceEquationsStmts
 
@@ -891,13 +911,17 @@ algorithm
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
       String s1,s2,s3,s4,s;
-    case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
-      equation
-        olddst = HashTable2.get(src, ht) "if rule a->b exists, fail" ;
-      then
-        fail();
+      Real t1,t2;
+    // PA: Commented out this, since it will only slow things down without adding any functionality.
+    // Once match is available as a complement to matchcontinue, this case could be useful again.
+    //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
+     // equation
+     //   olddst = HashTable2.get(src, ht) "if rule a->b exists, fail" ;
+     // then
+     //   fail();
+     
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
-      equation
+      equation        
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
         /*s1 = Exp.printComponentRefStr(src);
         s2 = Exp.printExpStr(dst);
@@ -1196,7 +1220,8 @@ algorithm
     case (invHt,src,dst)
       equation
         srcs = HashTable3.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        invHt_1 = HashTable3.add((dst, (src :: srcs)),invHt);
+        srcs = Util.listUnion({},src::srcs);
+        invHt_1 = HashTable3.add((dst, srcs),invHt);
       then
         invHt_1;
   end matchcontinue;
@@ -1254,11 +1279,12 @@ algorithm
       VariableReplacements repl_1,repl_2;
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
+      
     case (repl,src,dst)
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
-        dst_3 = Exp.simplify(dst_2) "to remove e.g. --a";
+        dst_3 = Exp.simplify1(dst_2) "to remove e.g. --a";
       then
         (repl_2,src_2,dst_3);
   end matchcontinue;
@@ -1283,12 +1309,15 @@ algorithm
       HashTable2.HashTable ht;
       HashTable3.HashTable invHt;
       DAE.Exp dst_1;
+      Integer size;
+      Real t1,t2,t3,t4;
+      String s;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
       equation
         lst = HashTable3.get(src, invHt);
-        singleRepl = addReplacementNoTransitive(emptyReplacements(),src,dst);
+        singleRepl = addReplacementNoTransitive(emptyReplacementsSized(10),src,dst);
         repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
         (repl_1,src,dst);
