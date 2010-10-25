@@ -2641,7 +2641,7 @@ algorithm
       equation
         conditions = getConditionList(wc, CurrentIndex);
         conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
-        conditionVars = Exp.getCrefFromExp(cond);
+        conditionVars = Exp.extractCrefsFromExp(cond);
       then
         SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);    
   end matchcontinue;

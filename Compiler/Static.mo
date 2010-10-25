@@ -10677,7 +10677,7 @@ algorithm
       equation
         (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exp1 = makeASUBArrayAdressing2(essl,pre);
-        ty2 = Exp.crefType(cr);
+        ty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
         exp1 = DAE.ASUB(DAE.CREF(cref_,ty2),exp1);
       then
@@ -10694,7 +10694,7 @@ algorithm
       local
         DAE.ExpType tty2;
       equation
-        tty2 = Exp.crefType(cr);
+        tty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,tty2,essl);
         exp1 = DAE.CREF(cref_,ty);
       then

@@ -1063,7 +1063,7 @@ algorithm
     case ({},bt) then bt;
      case (BackendDAE.ALGORITHM(out=explst)::es,bt)
       equation
-        crefs = Util.listFlatten(Util.listMap(explst,getCrefFromExp));
+        crefs = Util.listFlatten(Util.listMap(explst,Exp.extractCrefsFromExp));
         bt_1 = treeAddList(bt,crefs);
         bt_2 = getOutputsFromAlgorithms(es,bt_1);  
       then bt_2;
@@ -4117,8 +4117,8 @@ algorithm
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = getCrefFromExp(e1);
-        crs3 = getCrefFromExp(e2);
+        crs2 = Exp.extractCrefsFromExp(e1);
+        crs3 = Exp.extractCrefsFromExp(e2);
         crs = Util.listFlatten({crs1,crs2,crs3});
       then
         crs;
@@ -4126,7 +4126,7 @@ algorithm
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = getCrefFromExp(e1);
+        crs2 = Exp.extractCrefsFromExp(e1);
         crs = listAppend(crs1, crs2);
       then
         crs;
@@ -4134,7 +4134,7 @@ algorithm
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = getCrefFromExp(e1);
+        crs2 = Exp.extractCrefsFromExp(e1);
         crs = listAppend(crs1, crs2);
       then
         (cr :: crs);
@@ -4143,7 +4143,7 @@ algorithm
       local list<list<DAE.ComponentRef>> crs2;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl, getCrefFromExp);
+        crs2 = Util.listMap(expl, Exp.extractCrefsFromExp);
         crs2_1 = Util.listFlatten(crs2);
         crs = listAppend(crs1, crs2_1);
       then
@@ -4153,8 +4153,8 @@ algorithm
       local list<list<DAE.ComponentRef>> crs2,crs3;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl1, getCrefFromExp);
-        crs3 = Util.listMap(expl2, getCrefFromExp);
+        crs2 = Util.listMap(expl1, Exp.extractCrefsFromExp);
+        crs3 = Util.listMap(expl2, Exp.extractCrefsFromExp);
         crs2_1 = Util.listFlatten(crs2);
         crs3_1 = Util.listFlatten(crs3);
         crs = Util.listFlatten({crs1,crs2_1,crs3_1});
@@ -4165,7 +4165,7 @@ algorithm
            BackendDAE.WHEN_EQ(index = indx,left = cr,right = e,elsewhenPart=SOME(weq)),source = source) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = getCrefFromExp(e);
+        crs2 = Exp.extractCrefsFromExp(e);
         crs3 = equationsCrefs({BackendDAE.WHEN_EQUATION(weq,source)});
         crs = listAppend(crs1, listAppend(crs2, crs3));
       then
@@ -5656,7 +5656,7 @@ algorithm
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
-        crs = getCrefFromExp(e2);
+        crs = Exp.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
         blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
         res = Util.boolAndList(blst);
@@ -5666,7 +5666,7 @@ algorithm
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
-        crs = getCrefFromExp(e2);
+        crs = Exp.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
         blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
         res = Util.boolAndList(blst);
@@ -7300,12 +7300,12 @@ algorithm
 
     case (e,_)
       equation
-        {} = getCrefFromExp(e) "Special case for expressions with no variables" ;
+        {} = Exp.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
       then
         true;
     case (e,vars)
       equation
-        crefs = getCrefFromExp(e);
+        crefs = Exp.extractCrefsFromExp(e);
         b_lst = Util.listMap1(crefs, existsVar, vars);
         res = Util.boolOrList(b_lst);
         res_1 = boolNot(res);
@@ -7412,7 +7412,7 @@ algorithm
       DAE.Exp e;
     case (BackendDAE.DAELOW(orderedVars = vars),e)
       equation
-        crefs = getCrefFromExp(e);
+        crefs = Exp.extractCrefsFromExp(e);
         res = containAnyVar(crefs, vars);
       then
         res;

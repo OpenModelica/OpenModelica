@@ -5179,7 +5179,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(cr,exp) equation
-      res = Util.boolOrList(Util.listMap1(Exp.getCrefFromExp(exp),ComponentReference.crefEqual,cr));
+      res = Util.boolOrList(Util.listMap1(Exp.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
     case(_,_) then false;
   end matchcontinue;

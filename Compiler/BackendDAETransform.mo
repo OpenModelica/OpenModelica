@@ -1663,7 +1663,7 @@ algorithm
     case (vars,DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);
-        crefs = Util.listFlatten(Util.listMap(expl,Exp.getCrefFromExp));
+        crefs = Util.listFlatten(Util.listMap(expl,Exp.extractCrefsFromExp));
         outputs =  Util.listMap1(crefs,Exp.makeCrefExp,DAE.ET_OTHER());
       then
         (inputs,outputs);

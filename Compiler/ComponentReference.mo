@@ -449,6 +449,55 @@ algorithm
   end matchcontinue;
 end printComponentRef2Str;
 
+public function debugPrintComponentRefTypeStr "Function: debugPrintComponentRefTypeStr
+This function is equal to debugPrintComponentRefTypeStr with the extra feature that it
+prints the base type of each ComponentRef.
+NOTE Only used for debugging."
+  input DAE.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := matchcontinue (inComponentRef)
+    local
+      DAE.Ident s,str,str2,strrest,str_1,str_2;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+    
+    case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
+      equation
+        str_1 = Exp.printListStr(subs, Exp.debugPrintSubscriptStr, ",");
+        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
+        // this printing way will be useful when adressin the  'crefEqual' bug.
+        // str = ComponentReference.printComponentRef2Str(s, subs);
+        str2 = Exp.typeString(ty);
+        str = System.stringAppendList({str," [",str2,"]"});
+      then
+        str;
+    
+    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
+      equation
+        true = RTOpts.modelicaOutput();
+        str = printComponentRef2Str(s, subs);
+        str2 = Exp.typeString(ty);
+        strrest = debugPrintComponentRefTypeStr(cr);        
+        str = System.stringAppendList({str," [",str2,"] ", "__", strrest});
+      then
+        str;
+    
+    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
+      equation
+        false = RTOpts.modelicaOutput();
+        str = printComponentRef2Str(s, subs);
+        str2 = Exp.typeString(ty);
+        strrest = debugPrintComponentRefTypeStr(cr);
+        str = System.stringAppendList({str," [",str2,"] ", ".", strrest});
+      then
+        str;
+    
+    case DAE.WILD() then "_";
+  end matchcontinue;
+end debugPrintComponentRefTypeStr;
+
 /***************************************************/
 /* Get Items  */
 /***************************************************/
@@ -507,6 +556,31 @@ algorithm
         res;
   end matchcontinue;
 end crefLastCref;
+
+public function crefType "Function: crefType 
+Function for extracting the type out of the first cref of a componentReference. 
+"
+  input DAE.ComponentRef inRef;
+  output DAE.ExpType res;
+algorithm
+  res :=
+  matchcontinue (inRef)
+    local
+      DAE.ExpType t2;
+      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
+      case(inRef)
+        local String s;
+        equation
+					true = RTOpts.debugFlag("failtrace");
+          Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
+          s = printComponentRefStr(inRef);
+          Debug.fprint("failtrace", s);
+          Debug.fprint("failtrace", "\n");
+        then
+          fail();
+  end matchcontinue;
+end crefType;
 
 public function crefLastType "returns the 'last' type of a cref.
 
@@ -589,6 +663,50 @@ algorithm
     case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
   end matchcontinue;
 end crefFirstCref;
+
+public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
+Author: PA
+Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
+For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
+one dimension is lifted.
+See also, crefType.
+"
+  input DAE.ComponentRef cr;
+  output DAE.ExpType res;
+algorithm 
+ res := Exp.unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
+end crefTypeConsiderSubs;
+
+public function crefNameType "Function: crefType
+Function for extracting the name and type out of the first cref of a componentReference.
+"
+  input DAE.ComponentRef inRef;
+  output DAE.Ident id;
+  output DAE.ExpType res;
+algorithm
+  (id,res) :=
+  matchcontinue (inRef)
+    local
+      DAE.ExpType t2;
+      DAE.Ident name;
+      case(inRef as DAE.CREF_IDENT(name,t2,_))
+        then
+          (name,t2);
+      case(inRef as DAE.CREF_QUAL(name,t2,_,_))
+        then
+          (name,t2);
+      case(inRef)
+        local String s;
+        equation
+					true = RTOpts.debugFlag("failtrace");
+          Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
+          s = printComponentRefStr(inRef);
+          Debug.fprint("failtrace", s);
+          Debug.fprint("failtrace", "\n");
+        then
+          fail();
+  end matchcontinue;
+end crefNameType;
 
 /***************************************************/
 /* Compare  */
@@ -1233,7 +1351,11 @@ end prependStringCref;
 
 public function joinCrefs
 "function: joinCrefs
-  Join two component references by concatenating them."
+  Join two component references by concatenating them.
+  
+  alternative names: crefAppend
+
+  "
   input DAE.ComponentRef inComponentRef1 " first part of the new componentref";
   input DAE.ComponentRef inComponentRef2 " last part of the new componentref";
   output DAE.ComponentRef outComponentRef;
@@ -1304,6 +1426,29 @@ algorithm
         DAE.CREF_QUAL(id,t2,s,cr_1);
   end matchcontinue;
 end crefSetLastSubs;
+
+public function crefSetLastType "
+sets the 'last' type of a cref.
+"
+  input DAE.ComponentRef inRef;
+  input DAE.ExpType newType;
+  output DAE.ComponentRef outRef;
+algorithm outRef := matchcontinue (inRef,newType)
+    local
+      DAE.ExpType ty;
+      DAE.ComponentRef child;
+      list<DAE.Subscript> subs;
+      DAE.Ident id;
+      case(DAE.CREF_IDENT(id,_,subs),newType)
+        then
+          DAE.CREF_IDENT(id,newType,subs);
+      case(DAE.CREF_QUAL(id,ty,subs,child),newType)
+        equation
+          child = crefSetLastType(child,newType);
+        then
+          DAE.CREF_QUAL(id,ty,subs,child);
+  end matchcontinue;
+end crefSetLastType;
 
 public function replaceCrefSliceSub "
 Go trough ComponentRef searching for a slice eighter in
@@ -1588,6 +1733,29 @@ algorithm
     case (cr) then cr;
   end matchcontinue;
 end crefStripLastSubsStringified;
+
+public function stringifyComponentRef
+"function: stringifyComponentRef
+  Translates a ComponentRef into a DAE.CREF_IDENT by putting
+  the string representation of the ComponentRef into it.
+  See also stringigyCrefs.
+
+  NOTE: This function should not be used in OMC, since the OMC backend no longer
+    uses stringified components. It is still used by MathCore though."
+  input DAE.ComponentRef cr;
+  output DAE.ComponentRef outComponentRef;
+protected
+  list<DAE.Subscript> subs;
+  DAE.ComponentRef cr_1;
+  DAE.Ident crs;
+  DAE.ExpType ty;
+algorithm
+  subs := crefLastSubs(cr);
+  cr_1 := crefStripLastSubs(cr);
+  crs := printComponentRefStr(cr_1);
+  ty := crefLastType(cr) "The type of the stringified cr is taken from the last identifier";
+  outComponentRef := makeCrefIdent(crs,ty,subs);
+end stringifyComponentRef;
 
 /***************************************************/
 /* Print  */

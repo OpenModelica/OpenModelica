@@ -1771,7 +1771,7 @@ algorithm
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
-        ty = Exp.crefType(cr);
+        ty = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(str_1,ty,{});
       then
         (DAE.VAR(cref_,a,b,prot,t,d_1,e,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
@@ -1959,7 +1959,7 @@ protected function toModelicaFormCref "function: toModelicaFormCref
   DAE.ExpType ty;
 algorithm
   str := ComponentReference.printComponentRefStr(cr);
-  ty := Exp.crefType(cr);
+  ty := ComponentReference.crefLastType(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
   outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});
 end toModelicaFormCref;
@@ -2995,22 +2995,22 @@ algorithm
     // equation from connect
     case(DAE.EQUEQUATION(cr1, cr2, _))
       equation
-        ty1 = Exp.crefType(cr1);
-        ty2 = Exp.crefType(cr2);
+        ty1 = ComponentReference.crefLastType(cr1);
+        ty2 = ComponentReference.crefLastType(cr2);
         oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),DAE.CREF(cr2,ty2));
       then
         oExp;
     // equation from define
     case(DAE.DEFINE(cr1, e2, _))
       equation
-        ty1 = Exp.crefType(cr1);
+        ty1 = ComponentReference.crefLastType(cr1);
         oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
       then
         oExp;
     // equation from initial define
     case(DAE.INITIALDEFINE(cr1, e2, _))
       equation
-        ty1 = Exp.crefType(cr1);
+        ty1 = ComponentReference.crefLastType(cr1);
         oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
       then
         oExp;
@@ -3018,14 +3018,14 @@ algorithm
     case(DAE.ARRAY_EQUATION(_, e1, e2, _))
       equation
         ty = Exp.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+        oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
       then
         oExp;
 		// initial array equation
 		case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
       equation
         ty = Exp.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+        oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
       then
         oExp;
     // failure

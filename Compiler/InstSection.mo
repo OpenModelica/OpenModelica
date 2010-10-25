@@ -1486,7 +1486,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         tp = ValuesUtil.valueExpType(v);
-        cr2 = Exp.crefAppend(cr,ComponentReference.makeCrefIdent(n,tp,{}));
+        cr2 = ComponentReference.crefPrependIdent(cr,n,{},tp);
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
         eqns = listAppend(eqns,eqnsArray);
@@ -1494,7 +1494,7 @@ algorithm
         eqns;
     case(Values.RECORD(p, v::vals, n::names, index),cr,source)
       equation
-        cr2 = Exp.crefAppend(cr,ComponentReference.makeCrefIdent(n,DAE.ET_INT,{}));
+        cr2 = ComponentReference.crefPrependIdent(cr,n,{},DAE.ET_INT());
         eqns2 = assignComplexConstantConstruct(v,cr2,source);
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqns = listAppend(eqns,eqns2);
@@ -1503,16 +1503,16 @@ algorithm
           
         // REAL
     case(Values.REAL(r),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL),DAE.RCONST(r),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()),DAE.RCONST(r),source)};
       
     case(Values.INTEGER(i),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT),DAE.ICONST(i),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT()),DAE.ICONST(i),source)};
         
     case(Values.STRING(s),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING),DAE.SCONST(s),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING()),DAE.SCONST(s),source)};
         
     case(Values.BOOL(b),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL),DAE.BCONST(b),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL()),DAE.BCONST(b),source)};
 
     case(constantValue,cr,source)
       equation
@@ -1686,7 +1686,7 @@ algorithm
 				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({1}, lhs, rhs, source)});
 
 		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.NON_INITIAL())
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
@@ -1697,7 +1697,7 @@ algorithm
 				DAE.DAE({DAE.ARRAY_EQUATION({1}, lhs, rhs, source)});
 				
 		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), _, _)
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
@@ -1943,7 +1943,7 @@ algorithm
         exp_subs = Util.listMap(cref_subs, Exp.subscriptExp);
         true = isSubsLoopDependent(exp_subs, inForIterators);
         cr = ComponentReference.crefStripSubs(cr);
-        cr_type = Exp.crefType(cr);
+        cr_type = ComponentReference.crefLastType(cr);
       then
         (DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), inForIterators);
     case (_, _) then (inExpr, inForIterators);

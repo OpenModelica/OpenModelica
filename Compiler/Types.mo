@@ -4856,7 +4856,7 @@ algorithm
       equation
         ty2 = elabType(ty);
         cr_1 = ComponentReference.crefPrependIdent(cr, id,{},ty2);
-        // print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
+        // print("\n created: " +& ComponentReference.debugPrintComponentRefTypeStr(cr_1) +& "\n");
         res = flowVariables(vs, cr);
       then
         (cr_1 :: res);

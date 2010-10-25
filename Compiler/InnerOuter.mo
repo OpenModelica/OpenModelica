@@ -569,7 +569,7 @@ algorithm
         c1 = ComponentReference.crefLastCref(prefixedCref);
         c2 = ComponentReference.crefLastCref(innerCref);
         true = ComponentReference.crefEqual(c1,c2);
-        c3 = Exp.crefSetLastType(innerCref,ComponentReference.crefLastType(prefixedCref));
+        c3 = ComponentReference.crefSetLastType(innerCref,ComponentReference.crefLastType(prefixedCref));
       then
         c3;
     

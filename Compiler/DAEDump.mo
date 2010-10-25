@@ -243,7 +243,7 @@ algorithm
 
         /* //include type of var
 
-        s1 = Exp.debugPrintComponentRefTypeStr(cr);
+        s1 = ComponentReference.debugPrintComponentRefTypeStr(cr);
         s1 = Util.stringReplaceChar(s1,"\n","");
         Print.printBuf("((" +& s1);
         Print.printBuf("))");
@@ -266,7 +266,7 @@ algorithm
         Print.printBuf("VAR(");
         ComponentReference.printComponentRef(cr);
         /* // include type in dump
-        s1 = Exp.debugPrintComponentRefTypeStr(cr);
+        s1 = ComponentReference.debugPrintComponentRefTypeStr(cr);
         s1 = Util.stringReplaceChar(s1,"\n","");
         Print.printBuf("((" +& s1);
         Print.printBuf("))");

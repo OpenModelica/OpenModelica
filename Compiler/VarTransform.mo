@@ -853,7 +853,7 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  str := Exp.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& Exp.debugPrintComponentRefExp(Util.tuple22(tpl));
+  str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& Exp.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
   //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& Exp.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
@@ -885,7 +885,7 @@ algorithm
     case (REPLACEMENTS(ht,_))
       equation
         targets = HashTable2.hashTableValueList(ht);
-        targets2 = Util.listFlatten(Util.listMap(targets,Exp.getCrefFromExp));
+        targets2 = Util.listFlatten(Util.listMap(targets,Exp.extractCrefsFromExp));
       then 
         targets2;
   end matchcontinue;
@@ -1183,7 +1183,7 @@ algorithm
       DAE.Exp dst;
       list<DAE.ComponentRef> dests;
     case (invHt,src,dst) equation
-      dests = Exp.getCrefFromExp(dst);
+      dests = Exp.extractCrefsFromExp(dst);
       invHt_1 = Util.listFold_2(dests,addReplacementInv2,invHt,src);
       then
         invHt_1;

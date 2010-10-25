@@ -8279,28 +8279,6 @@ algorithm
   end matchcontinue;
 end replaceExpMatrix2;
 
-public function stringifyComponentRef
-"function: stringifyComponentRef
-  Translates a ComponentRef into a DAE.CREF_IDENT by putting
-  the string representation of the ComponentRef into it.
-  See also stringigyCrefs.
-
-  NOTE: This function should not be used in OMC, since the OMC backend no longer
-    uses stringified components. It is still used by MathCore though."
-  input ComponentRef cr;
-  output ComponentRef outComponentRef;
-  list<Subscript> subs;
-  ComponentRef cr_1;
-  Ident crs;
-  Type ty;
-algorithm
-  subs := ComponentReference.crefLastSubs(cr);
-  cr_1 := ComponentReference.crefStripLastSubs(cr);
-  crs := ComponentReference.printComponentRefStr(cr_1);
-  ty := ComponentReference.crefLastType(cr) "The type of the stringified cr is taken from the last identifier";
-  outComponentRef := ComponentReference.makeCrefIdent(crs,ty,subs);
-end stringifyComponentRef;
-
 public function stringifyCrefs
 "function: stringifyCrefs
   This function takes an expression and transforms all component
@@ -8313,185 +8291,38 @@ public function stringifyCrefs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp)
-    local
-      DAE.Exp e,e1_1,e2_1,e1,e2,e_1,e3_1,e3;
-      ComponentRef cr_1,cr;
-      Type t;
-      Operator op;
-      list<DAE.Exp> expl_1,expl;
-      Absyn.Path p;
-      Boolean b;
-      Integer i;
-      Ident id;
-    case ((e as DAE.ICONST(integer = _))) then e;
-    case ((e as DAE.RCONST(real = _))) then e;
-    case ((e as DAE.SCONST(string = _))) then e;
-    case ((e as DAE.BCONST(bool = _))) then e;
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR))) then e;
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)))) then e;
-    case (DAE.CREF(componentRef = cr,ty = t))
-      equation
-        cr_1 = stringifyComponentRef(cr);
+  outExp := matchcontinue(inExp)
+  case(inExp)
+    local DAE.Exp e;
+    equation
+      ((e,_)) = traverseExp(inExp, traversingstringifyCrefFinder, {});
       then
-        DAE.CREF(cr_1,t);
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-      then
-        DAE.BINARY(e1_1,op,e2_1);
-    case (DAE.UNARY(operator = op,exp = e))
-      equation
-        e_1 = stringifyCrefs(e);
-      then
-        DAE.UNARY(op,e_1);
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-      then
-        DAE.LBINARY(e1_1,op,e2_1);
-    case (DAE.LUNARY(operator = op,exp = e))
-      equation
-        e_1 = stringifyCrefs(e);
-      then
-        DAE.LUNARY(op,e_1);
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-      then
-        DAE.RELATION(e1_1,op,e2_1);
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-        e3_1 = stringifyCrefs(e3);
-      then
-        DAE.IFEXP(e1_1,e2_1,e3_1);
-    case (DAE.CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType=i))
-      local Boolean t;DAE.InlineType i; Type tp;
-      equation
-        expl_1 = Util.listMap(expl, stringifyCrefs);
-      then
-        DAE.CALL(p,expl_1,t,b,tp,i);
-    case (DAE.PARTEVALFUNCTION(path = p, expList = expl, ty = tp))
-      local Type tp;
-      equation
-        expl_1 = Util.listMap(expl, stringifyCrefs);
-      then
-        DAE.PARTEVALFUNCTION(p,expl_1,tp);
-    case (DAE.ARRAY(ty = t,scalar = b,array = expl))
-      equation
-        expl_1 = Util.listMap(expl, stringifyCrefs);
-      then
-        DAE.ARRAY(t,b,expl_1);
-    case ((e as DAE.MATRIX(ty = t,integer = b,scalar = expl)))
-      local
-        list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
-        Integer b;
-      equation
-        expl_1 = stringifyCrefsMatrix(expl);
-      then
-        DAE.MATRIX(t,b,expl_1);
-    case (DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-        e3_1 = stringifyCrefs(e3);
-      then
-        DAE.RANGE(t,e1_1,SOME(e2_1),e3_1);
-    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e3))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e3_1 = stringifyCrefs(e3);
-      then
-        DAE.RANGE(t,e1_1,NONE(),e3_1);
-    case (DAE.TUPLE(PR = expl))
-      equation
-        expl_1 = Util.listMap(expl, stringifyCrefs);
-      then
-        DAE.TUPLE(expl_1);
-    case (DAE.CAST(ty = t,exp = e1))
-      equation
-        e1_1 = stringifyCrefs(e1);
-      then
-        DAE.CAST(t,e1_1);
-    case (DAE.ASUB(exp = e1,sub = expl_1))
-      equation
-        e1_1 = stringifyCrefs(e1);
-      then
-        DAE.ASUB(e1_1,expl_1);
-    case (DAE.SIZE(exp = e1,sz = SOME(e2)))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-      then
-        DAE.SIZE(e1_1,SOME(e2_1));
-    case (DAE.SIZE(exp = e1,sz = NONE()))
-      equation
-        e1_1 = stringifyCrefs(e1);
-      then
-        DAE.SIZE(e1_1,NONE());
-    case ((e as DAE.CODE(code = _))) then e;
-    case (DAE.REDUCTION(path = p,expr = e1,ident = id,range = e2))
-      equation
-        e1_1 = stringifyCrefs(e1);
-        e2_1 = stringifyCrefs(e2);
-      then
-        DAE.REDUCTION(p,e1_1,id,e2_1);
-    case DAE.END() then DAE.END();
-    case (e) then e;
+        e;
   end matchcontinue;
 end stringifyCrefs;
 
-protected function stringifyCrefsMatrix
-"function: stringifyCrefsMatrix
-  author: PA
-  Helper function to stringifyCrefs.
-  Handles matrix expresion list."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
-algorithm
-  outTplExpBooleanLstLst:=
-  matchcontinue (inTplExpBooleanLstLst)
-    local
-      list<tuple<DAE.Exp, Boolean>> e_1,e;
-      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
-    case ({}) then {};
-    case ((e :: es))
-      equation
-        e_1 = stringifyCrefsMatrix2(e);
-        es_1 = stringifyCrefsMatrix(es);
-      then
-        (e_1 :: es_1);
-  end matchcontinue;
-end stringifyCrefsMatrix;
-
-protected function stringifyCrefsMatrix2
-"function: stringifyCrefsMatrix2
-  author: PA
-  Helper function to stringifyCrefsMatrix"
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-algorithm
-  outTplExpBooleanLst:=
-  matchcontinue (inTplExpBooleanLst)
-    local
-      DAE.Exp e_1,e;
-      list<tuple<DAE.Exp, Boolean>> es_1,es;
-      Boolean b;
-    case ({}) then {};
-    case (((e,b) :: es))
-      equation
-        e_1 = stringifyCrefs(e);
-        es_1 = stringifyCrefsMatrix2(es);
-      then
-        ((e_1,b) :: es_1);
-  end matchcontinue;
-end stringifyCrefsMatrix2;
+public function traversingstringifyCrefFinder "
+helper for stringifyCrefs
+"
+  input tuple<DAE.Exp, list<Integer> > inExp;
+  output tuple<DAE.Exp, list<Integer> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    list<Integer> ilst "just a dummy to use traverseExp";
+    ComponentRef cr,crs;
+    Type ty;
+    DAE.Exp e;
+  case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()), ilst)) then ((e, ilst));
+  case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)), ilst)) then ((e, ilst));    
+  case( (DAE.CREF(cr,ty), ilst) )
+    local list<Boolean> blist;
+    equation
+      crs = ComponentReference.stringifyComponentRef(cr);
+    then
+      ((DAE.CREF(crs,ty), ilst ));
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingstringifyCrefFinder;
 
 public function dumpExpGraphviz
 "function: dumpExpGraphviz
@@ -8771,7 +8602,7 @@ algorithm
     case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        s = /*ComponentReference.printComponentRefStr*/debugPrintComponentRefTypeStr(c);
+        s = /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
         tpStr= typeString(ty);
         res_str = System.stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
@@ -9278,14 +9109,14 @@ algorithm
       // More than two factors
       _::_::_ = factors(e2);
       //.. and more than two crefs
-      _::_::_ = getCrefFromExp(e2);
+      _::_::_ = extractCrefsFromExp(e2);
     then true;
       
       // Swapped args
     case(e2,e1) equation
       true = isZero(e1);
       _::_::_ = factors(e2);
-      _::_::_ = getCrefFromExp(e2);
+      _::_::_ = extractCrefsFromExp(e2);
     then true;
     
     case(_,_) then false;      
@@ -9522,161 +9353,6 @@ algorithm
   end matchcontinue;
 end expContains;
 
-public function getCrefFromExp
-"function: getCrefFromExp
-  Return a list of all component
-  references occuring in the expression."
-  input DAE.Exp inExp;
-  output list<ComponentRef> outComponentRefLst;
-algorithm
-  outComponentRefLst := matchcontinue (inExp)
-    local
-      ComponentRef cr;
-      list<ComponentRef> l1,l2,res,res1,l3,res2;
-      DAE.Exp e1,e2,e3,e;
-      Operator op;
-      list<DAE.Exp> farg,expl,expl_2;
-      list<tuple<DAE.Exp, Boolean>> expl_1;
-    
-    case (DAE.ICONST(integer = _)) then {};
-    case (DAE.RCONST(real = _)) then {};
-    case (DAE.SCONST(string = _)) then {};
-    case (DAE.BCONST(bool = _)) then {};
-    case (DAE.CREF(componentRef = cr)) then {cr};
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res = listAppend(l1, l2);
-      then
-        res;
-    case (DAE.UNARY(operator = op,exp = e1))
-      equation
-        res = getCrefFromExp(e1);
-      then
-        res;
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res = listAppend(l1, l2);
-      then
-        res;
-    case (DAE.LUNARY(operator = op,exp = e1))
-      equation
-        res = getCrefFromExp(e1);
-      then
-        res;
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res = listAppend(l1, l2);
-      then
-        res;
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3);
-        res = listAppend(res1, l3);
-      then
-        res;
-    case (DAE.CALL(expLst = farg))
-      local list<list<ComponentRef>> res;
-      equation
-        res = Util.listMap(farg, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then
-        res2;
-    case(DAE.PARTEVALFUNCTION(expList = farg))
-      local list<list<ComponentRef>> res;
-      equation
-        res = Util.listMap(farg, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then
-        res2;
-    case (DAE.ARRAY(array = expl))
-      local list<list<ComponentRef>> res1;
-      equation
-        res1 = Util.listMap(expl, getCrefFromExp);
-        res = Util.listFlatten(res1);
-      then
-        res;
-    case (DAE.MATRIX(scalar = expl))
-      local
-        list<list<ComponentRef>> res1;
-        list<list<tuple<DAE.Exp, Boolean>>> expl;
-      equation
-        expl_1 = Util.listFlatten(expl);
-        expl_2 = Util.listMap(expl_1, Util.tuple21);
-        res1 = Util.listMap(expl_2, getCrefFromExp);
-        res = Util.listFlatten(res1);
-      then
-        res;
-    case (DAE.RANGE(exp = e1,expOption = SOME(e3),range = e2))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3);
-        res = listAppend(res1, l3);
-      then
-        res;
-    case (DAE.RANGE(exp = e1,expOption = NONE(),range = e2))
-      equation
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
-        res = listAppend(l1, l2);
-      then
-        res;
-    case (DAE.TUPLE(PR = expl))
-      local list<list<ComponentRef>> res;
-      equation
-        res = Util.listMap(expl, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then
-        res2;
-    case (DAE.CAST(exp = e))
-      equation
-        res = getCrefFromExp(e);
-      then
-        res;
-    case (DAE.ASUB(exp = e))
-      equation
-        res = getCrefFromExp(e);
-      then
-        res;
-
-    /* MetaModelica list */
-    case (DAE.CONS(_,e1,e2))
-      local list<list<ComponentRef>> res;
-      equation
-        expl = {e1,e2};
-        res = Util.listMap(expl, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then res2;
-
-    case  (DAE.LIST(_,expl))
-      local list<list<ComponentRef>> res;
-      equation
-        res = Util.listMap(expl, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then res2;
-
-/*    case  (METADAE.TUPLE(expl))
-      local list<list<ComponentRef>> res;
-      equation
-        res = Util.listMap(expl, getCrefFromExp);
-        res2 = Util.listFlatten(res);
-      then res2; */
-        /* --------------------- */
-
-    case (_) then {};
-  end matchcontinue;
-end getCrefFromExp;
-
 public function nthArrayExp
 "function: nthArrayExp
   author: PA
@@ -9736,7 +9412,7 @@ public function makeCrefExpNoType "similar to makeCrefExp but picks type from co
 input ComponentRef cref;
 output DAE.Exp e;
 algorithm
-  e := makeCrefExp(cref,crefTypeConsiderSubs(cref));
+  e := makeCrefExp(cref,ComponentReference.crefTypeConsiderSubs(cref));
 end makeCrefExpNoType;
 
 public function makeCrefExp
@@ -9783,7 +9459,6 @@ algorithm
     case ((DAE.CREF(componentRef = cr),_)) then cr;
   end matchcontinue;
 end expCrefTuple;
-
 
 public function traverseExp
 "function traverseExp
@@ -10173,7 +9848,6 @@ algorithm
     case (e,rel,ext_arg) then ((e,ext_arg));
   end matchcontinue;
 end traverseExpTopDown1;
-
 
 protected function traverseExpMatrix
 "function: traverseExpMatrix
@@ -10676,7 +10350,6 @@ algorithm
   end matchcontinue;
 end isMatrix;
 
-
 public function isUnary " function: isArray
 returns true if expression is an array.
 "
@@ -10697,7 +10370,10 @@ algorithm
 end isUnary;
 
 public function isCref "
-Author: BZ 2008-06, checks wheter an DAE.Exp is cref or not."
+Author: BZ 2008-06, checks wheter an DAE.Exp is cref or not.
+
+alternative name: isExpCref
+"
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm outB:= matchcontinue(inExp)
@@ -10705,29 +10381,6 @@ algorithm outB:= matchcontinue(inExp)
     case(_) then false;
   end matchcontinue;
 end isCref;
-
-public function crefAppend "
-Author BZ
-function for appending two cref
-append (a.b, r.q.t) ==> a.b.r.q.t"
-  input ComponentRef cr1,cr2;
-  output ComponentRef cr3;
-algorithm
-  cr3 := matchcontinue(cr1,cr2)
-    local
-      String name;
-      Type ty;
-      list<Subscript> subs;
-      ComponentRef child,merge;
-
-    case(DAE.CREF_IDENT(name,ty,subs), cr2) then DAE.CREF_QUAL(name,ty,subs,cr2);
-    case(DAE.CREF_QUAL(name,ty,subs,child), cr2)
-      equation
-        merge = crefAppend(child,cr2);
-      then
-        DAE.CREF_QUAL(name,ty,subs,merge);
-  end matchcontinue;
-end crefAppend;
 
 public function isCrefArray "Function isCrefArray
 Checks wheter a cref is an array or not.
@@ -10815,7 +10468,6 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end expIsPositive;
-
 
 public function expIsPositiveOrZero "Returns true if an expression is positive or equal to zero,
 Returns true in the following cases:
@@ -11298,18 +10950,6 @@ algorithm
   end matchcontinue;
 end isExpCrefOrIfExp;
 
-
-public function isExpCref
-"Returns true if expression is a componentRef"
-  input DAE.Exp e;
-  output Boolean res;
-algorithm
-  res := matchcontinue(e)
-    case(DAE.CREF(_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
-end isExpCref;
-
 public function expCrefInclIfExpFactors
 "function: expCrefInclIfExpFactors
   Returns the componentref if DAE.Exp is a CREF, or the factors of CREF if expression is an if expression.
@@ -11325,7 +10965,7 @@ algorithm
       list<ComponentRef> crefs;
     case (DAE.CREF(componentRef = cr)) then {cr};
     case(DAE.IFEXP(c,tb,fb)) equation
-      f = Util.listSelect(listAppend(factors(tb),factors(fb)),isExpCref);
+      f = Util.listSelect(listAppend(factors(tb),factors(fb)),isCref);
       crefs = Util.listMap(f,expCref);
     then crefs;
   end matchcontinue;
@@ -11397,132 +11037,6 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end subscriptConstants;
-
-
-
-
-
-protected function elaborateCrefQualType "Function: elaborateCrefQualType
-helper function for stringifyComponentRef. When having a complex type, we
-are only interested in the dimensions of the comlpex var but the new type
-we want is located in the IDENT.
-
-Currently, we do not extract type information from quals,
-Codegen has no support for that yet.
-DAE.CREF_QUAL(a,DAE.ARRAY(REAL,5),{},DAE.CREF_IDENT(B,DAE.ARRAY(REAL,5),{})).b[:]) would translate do
-DAE.CREF_IDENT($a$pb,DAE.ARRAY(REAL,5,5),{}) which is not the same thing.
-
-This function also gives a failtrace-> warning when we have an Exp.DAE.ET_OTHER() type in a qual."
-  input ComponentRef inRef;
-  output Type otype;
-algorithm otype := matchcontinue(inRef)
-  local Type ty; ComponentRef cr;
-  case(DAE.CREF_IDENT(_, ty,_)) then ty;
-  case(DAE.CREF_QUAL(_,DAE.ET_COMPLEX(varLst=_),_,cr)) then elaborateCrefQualType(cr);
-  case(DAE.CREF_QUAL(_,DAE.ET_ENUMERATION(path = _),_,cr)) then elaborateCrefQualType(cr);
-  case(DAE.CREF_QUAL(id,DAE.ET_OTHER(),_,cr))
-    local String id,s;
-    equation
-      Debug.fprint("failtrace", "- **WARNING** Exp.elaborateCrefQualType caught an Exp.DAE.ET_OTHER() type: ");
-      s = ComponentReference.printComponentRefStr(DAE.CREF_QUAL(id,DAE.ET_OTHER(),{},cr));
-      Debug.fprint("failtrace", s);
-      Debug.fprint("failtrace", "\n");
-    then elaborateCrefQualType(cr);
-  case(DAE.CREF_QUAL(_,ty,_,cr)) then ty;
-end matchcontinue;
-end elaborateCrefQualType;
-
-public function crefSetLastType "
-sets the 'last' type of a cref.
-"
-  input ComponentRef inRef;
-  input Type newType;
-  output ComponentRef outRef;
-algorithm outRef := matchcontinue (inRef,newType)
-    local
-      Type ty;
-      ComponentRef child;
-      list<Subscript> subs;
-      String id;
-      case(DAE.CREF_IDENT(id,_,subs),newType)
-        then
-          DAE.CREF_IDENT(id,newType,subs);
-      case(DAE.CREF_QUAL(id,ty,subs,child),newType)
-        equation
-          child = crefSetLastType(child,newType);
-        then
-          DAE.CREF_QUAL(id,ty,subs,child);
-  end matchcontinue;
-end crefSetLastType;
-
-public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
-Author: PA
-Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
-For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
-one dimension is lifted.
-See also, crefType.
-"
-  input ComponentRef cr;
-  output Type res;
-algorithm 
- res := unliftArrayTypeWithSubs(ComponentReference.crefLastSubs(cr),ComponentReference.crefLastType(cr));
-end crefTypeConsiderSubs;
-
-public function crefType "Function: crefType 
-Function for extracting the type out of a componentReference. 
-"
-  input ComponentRef inRef;
-  output Type res;
-algorithm
-  res :=
-  matchcontinue (inRef)
-    local
-      Type t2;
-      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
-      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
-      case(cr)
-        local ComponentRef cr;String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "-Exp.crefType failed on Cref:");
-          s = ComponentReference.printComponentRefStr(cr);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
-  end matchcontinue;
-end crefType;
-
-public function crefNameType "Function: crefType
-Function for extracting the name and type out of a componentReference.
-"
-  input ComponentRef inRef;
-  output String id;
-  output Type res;
-algorithm
-  (id,res) :=
-  matchcontinue (inRef)
-    local
-      Type t2;
-      String name;
-      case(inRef as DAE.CREF_IDENT(name,t2,_))
-        then
-          (name,t2);
-      case(inRef as DAE.CREF_QUAL(name,t2,_,_))
-        then
-          (name,t2);
-      case(cr)
-        local ComponentRef cr;String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "-Exp.crefType failed on Cref:");
-          s = ComponentReference.printComponentRefStr(cr);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
-  end matchcontinue;
-end crefNameType;
 
 public function expSub
 "function: expMul
@@ -11718,30 +11232,6 @@ algorithm
   end matchcontinue;
 end unelabOperator;
 
-protected function replaceExpCrefRecursive
-"function: replaceExpCrefRecursive
- function for adding $p in front of every cref child"
-  input ComponentRef inCref;
-  output String ostr;
-algorithm ostr := matchcontinue(inCref)
-  local String name,s1,s2,s3; ComponentRef cr,cr2;
-  case(cr as DAE.CREF_IDENT(ident = name))
-    equation
-      s1 = ComponentReference.printComponentRefStr(cr);
-    then
-      s1;
-  case(DAE.CREF_QUAL(name,_,subs,cr))
-    local list<Subscript> subs;
-    equation
-      s1 = replaceExpCrefRecursive(cr);
-      cr2 = ComponentReference.makeCrefIdent(name,DAE.ET_REAL(),subs);
-      s2 = ComponentReference.printComponentRefStr(cr2);
-      s3 = System.stringAppendList({s2,"$p",s1});
-    then
-      s3;
-end matchcontinue;
-end replaceExpCrefRecursive;
-
 public function debugPrintComponentRefExp "
 This function takes an DAE.Exp and tries to print ComponentReferences.
 Uses debugPrint.ComponentRefTypeStr, which gives type information to stdout.
@@ -11755,7 +11245,7 @@ algorithm str := matchcontinue(inExp)
     String s1,s2,s3;
     list<DAE.Exp> expl;
     list<String> s1s;
-  case(DAE.CREF(cr,_)) then debugPrintComponentRefTypeStr(cr);
+  case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation
       s1 = "{" +& System.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
@@ -11764,55 +11254,6 @@ algorithm str := matchcontinue(inExp)
   case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
 end matchcontinue;
 end debugPrintComponentRefExp;
-
-public function debugPrintComponentRefTypeStr "Function: print_component_ref
-This function is equal to debugPrintComponentRefTypeStr with the extra feature that it
-prints the base type of each ComponentRef.
-NOTE Only used for debugging."
-  input ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inComponentRef)
-    local
-      Ident s,str,str2,strrest,str_1,str_2;
-      list<Subscript> subs;
-      ComponentRef cr;
-      Type ty;
-    
-    case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
-      equation
-        str_1 = printListStr(subs, debugPrintSubscriptStr, ",");
-        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
-        // this printing way will be useful when adressin the  'crefEqual' bug.
-        // str = ComponentReference.printComponentRef2Str(s, subs);
-        str2 = typeString(ty);
-        str = System.stringAppendList({str," [",str2,"]"});
-      then
-        str;
-    
-    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
-      equation
-        true = RTOpts.modelicaOutput();
-        str = ComponentReference.printComponentRef2Str(s, subs);
-        str2 = typeString(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);        
-        str = System.stringAppendList({str," [",str2,"] ", "__", strrest});
-      then
-        str;
-    
-    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
-      equation
-        false = RTOpts.modelicaOutput();
-        str = ComponentReference.printComponentRef2Str(s, subs);
-        str2 = typeString(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);
-        str = System.stringAppendList({str," [",str2,"] ", ".", strrest});
-      then
-        str;
-    
-    case DAE.WILD() then "_";
-  end matchcontinue;
-end debugPrintComponentRefTypeStr;
 
 public function isArrayType
 "Returns true if inType is an ET_ARRAY"

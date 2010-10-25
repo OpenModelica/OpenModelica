@@ -606,21 +606,21 @@ algorithm
   matchcontinue (inInteger1,inExpExpLst2,inExpExpLst3)
     local
       Integer tid;
-      list<DAE.ComponentRef> vars1,vars2,vars1_1,vars;
+      list<DAE.ComponentRef> vars1,vars2,vars1_1,varslst;
       list<list<DAE.ComponentRef>> vars_1;
       DAE.Exp res,e;
-      list<DAE.Exp> residuals;
+      list<DAE.Exp> residuals,vars;
       String es;
     case (tid,_,{}) then ();  /* task id vars residuals */
     case (tid,vars,(res :: residuals))
       equation
-        vars1 = Exp.getCrefFromExp(res) "Collect all variables and construct
+        vars1 = Exp.extractCrefsFromExp(res) "Collect all variables and construct
 	 a string for the residual, that can be directly used in codegen." ;
-        vars_1 = Util.listMap(vars, Exp.getCrefFromExp);
+        vars_1 = Util.listMap(vars, Exp.extractCrefsFromExp);
         vars2 = Util.listFlatten(vars_1);
         vars1_1 = Util.listUnionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
-        vars = Util.listSetDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
-        addEdgesFromVars(vars, tid, 0);
+        varslst = Util.listSetDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
+        addEdgesFromVars(varslst, tid, 0);
       then
         ();
     case (_,_,(e :: _))
@@ -743,8 +743,8 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
-        cr1 = Exp.getCrefFromExp(e1);
-        cr2 = Exp.getCrefFromExp(e2);
+        cr1 = Exp.extractCrefsFromExp(e1);
+        cr2 = Exp.extractCrefsFromExp(e2);
         crs = listAppend(cr1, cr2);
         crs_1 = Util.listDeleteMember(crs, cr);
         crs_2 = Util.listMap(crs_1, ComponentReference.crefStr);
