@@ -573,7 +573,7 @@ algorithm
       DAE.ExpType tp;      
     case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
       equation
-        cr1 = ComponentReference.crefPrependIdent(cr,tp,name,{},tp);
+        cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
         outExp = Exp.makeCrefExp(cr1,tp);
       then
         outExp;
@@ -6317,14 +6317,14 @@ algorithm
       equation
         ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
-        _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
+        _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
     case (DAE.MATRIX(scalar = column))
       equation
         ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs);
-        _ = Util.listReduce(crefs_1, Exp.crefEqualReturn);
+        _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn);
       then
         cr;
   end matchcontinue;
@@ -6352,7 +6352,7 @@ algorithm
       equation
         ((crefs as (cr :: _))) = Util.listMap(col, Exp.expCrefTuple); //Get all CRefs from the list of tuples.
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
-        _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
+        _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
 		case (_)

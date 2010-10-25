@@ -12525,7 +12525,7 @@ algorithm
       DAE.ExpType ty2;
     case (cache,env,DAE.CREF_IDENT(ident = n,identType = ty2, subscriptLst = ss),prefixCr,impl) /* impl */
       equation
-        cr = Exp.joinCrefs(prefixCr,ComponentReference.makeCrefIdent(n,ty2,{}));
+        cr = ComponentReference.crefPrependIdent(prefixCr,n,{},ty2);
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
