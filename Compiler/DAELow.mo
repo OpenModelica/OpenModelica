@@ -9474,7 +9474,7 @@ public function crefPrefixDer
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := ComponentReference.crefAddPrefix(derivativeNamePrefix,{},DAE.ET_REAL(), inCref);
+  outCref := ComponentReference.makeCrefQual(derivativeNamePrefix,DAE.ET_REAL(),{}, inCref);
 end crefPrefixDer;
 
 public function equationSource "Retrieve the source from a BackendDAE.DAELow equation"

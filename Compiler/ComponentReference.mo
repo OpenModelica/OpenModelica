@@ -1311,24 +1311,12 @@ algorithm
   end matchcontinue;
 end crefPrependIdent;
 
-public function crefAddPrefix "prepends an identifier to a component reference, given the identifier, subscript and the type
-author: Frenkel TUD
-"
-  input String ident;  
-  input list<DAE.Subscript> subs;
-  input DAE.ExpType tp;
-  input DAE.ComponentRef cr;
-  output DAE.ComponentRef newCr;
-algorithm
-  newCr := DAE.CREF_QUAL(ident,tp,subs,cr);
-end crefAddPrefix;
-
 public function crefPrefixDer
   "Appends $DER to a cref, so a => $DER.a"
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := crefAddPrefix(DAE.derivativeNamePrefix,{},DAE.ET_REAL(), inCref);
+  outCref := makeCrefQual(DAE.derivativeNamePrefix,DAE.ET_REAL(),{},inCref);
 end crefPrefixDer;
 
 public function prependStringCref

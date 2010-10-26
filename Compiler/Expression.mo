@@ -2784,7 +2784,7 @@ algorithm
       Type tp,ety;
       Absyn.CodeNode a;
       Ident id;
-      ComponentRef cr;
+      ComponentRef cr,cr1;
       list<Subscript> subs;
 
     case (expr,source,target) /* expr source expr target expr */
@@ -2923,18 +2923,12 @@ algorithm
         c = c1 + c2;
       then
         (DAE.REDUCTION(p,e_1,id,r_1),c);
-    // qualified componentreferences, replace subscripts
-    case(DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),source,target) equation
-      (subs,c1) = replaceExpSubs(subs,source,target);
-      (DAE.CREF(cr,_),c2) = replaceCrefExpSubs(DAE.CREF(cr,ety),source,target);
-       // (DAE.CREF(cr,_),c2) = replaceExp(DAE.CREF(cr,ety),source,target);
-      c = c1+c2;
-    then (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c1);
 
-    // simple componentreference, replace subscripts
-    case(DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),source,target) equation
-      (subs,c1) = replaceExpSubs(subs,source,target);
-    then (DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),c1);
+    // componentreference, replace subscripts
+    case(DAE.CREF(componentRef = cr, ty = ety),source,target)
+      equation
+        (cr1,c) = replaceCrefExpSubs(cr,source,target);
+      then (DAE.CREF(cr1,ety),c);
 
     case(DAE.CREF(cr as DAE.CREF_IDENT(id,t2,ssl),ety),_,_)
       local
@@ -2961,36 +2955,38 @@ protected function replaceCrefExpSubs
 help function to replaceExpression. replaces expressions in subscript list
 from all Crefs.
 "
-  input DAE.Exp inExp1;
+  input ComponentRef inCref;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
-  output DAE.Exp outExp;
+  output ComponentRef outCref;
   output Integer outInteger;
 algorithm
-  (outExp,outInteger) := matchcontinue (inExp1,inExp2,inExp3)
+  (outCref,outInteger) := matchcontinue (inCref,inExp2,inExp3)
     local
       DAE.Exp source,target;
       Integer c1,c2,c;
       Operator op;
-      Type tp,ety;
+      Type tp;
       Ident id;
-      ComponentRef cr;
+      ComponentRef cr,cr1;
       list<Subscript> subs;
     
-    case(DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),source,target) 
+    case(DAE.CREF_QUAL(id,tp,subs,cr),source,target) 
       equation
         (subs,c1) = replaceExpSubs(subs,source,target);
-        (DAE.CREF(cr,_),c2) = replaceCrefExpSubs(DAE.CREF(cr,ety),source,target);
+        (cr,c2) = replaceCrefExpSubs(cr,source,target);
+        cr1 = ComponentReference.makeCrefQual(id, tp, subs, cr);
         c = c1+c2;
       then 
-        (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c);
+        (cr1,c);
 
     // simple componentreference, replace subscripts
-    case(DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),source,target) 
+    case(DAE.CREF_IDENT(id,tp,subs),source,target) 
       equation
         (subs,c1) = replaceExpSubs(subs,source,target);
+        cr1 = ComponentReference.makeCrefIdent(id, tp, subs);
       then 
-        (DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),c1);
+        (cr1,c1);
   end matchcontinue;
 end replaceCrefExpSubs;
 

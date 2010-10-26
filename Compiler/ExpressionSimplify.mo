@@ -49,20 +49,20 @@ public type Operator = DAE.Operator;
 public type Type = DAE.ExpType;
 public type Subscript = DAE.Subscript;
 
+protected import Builtin;
 protected import ComponentReference;
+protected import DAEUtil;
+protected import Debug;
+protected import Env;
 protected import Expression;
 protected import ExpressionDump;
+protected import Prefix;
 protected import RTOpts;
-protected import Util;
-protected import Debug;
 protected import Static;
-protected import Env;
 protected import System;
-protected import Builtin;
-protected import DAEUtil;
+protected import Util;
 protected import Values;
 protected import ValuesUtil;
-protected import Prefix;
 
 public uniontype IntOp
   record MULOP end MULOP;
@@ -2217,12 +2217,14 @@ algorithm
     case(DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t),sub) equation
       t = Expression.unliftArray(t);
       s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
-    then DAE.CREF(DAE.CREF_IDENT(idn,t2,s_1),t); 
+      c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
+    then DAE.CREF(c_1,t); 
     
     //  qualified name subscript
     case(DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t),sub) equation
       DAE.CREF(c_1,t) = simplify1(DAE.ASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
-    then DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c_1),t);
+      c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
+    then DAE.CREF(c_1,t);
     
       
   end matchcontinue;
