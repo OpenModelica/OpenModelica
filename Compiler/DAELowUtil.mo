@@ -53,6 +53,9 @@ public import Util;
 public import DAELow;
 
 protected import Debug;
+protected import Error;
+protected import RTOpts;
+protected import System;
 
 public function checkDAELowWithErrorMsg"function: checkDAELowWithErrorMsg
   author: Frenkel TUD
@@ -76,13 +79,21 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> res;
       list<String> strcrefs;
+      String crefstring, expstr,scopestr;
       case ({}) then ();
       case (((e,crefs))::res)
+         equation
+           false = RTOpts.debugFlag("checkDAELow");
+        then
+          ();                   
+      case (((e,crefs))::res)
         equation
-          print("Error in Exp ");
-          print(Exp.printExpStr(e));print("\n Variables: ");
+          true = RTOpts.debugFlag("checkDAELow");
           strcrefs = Util.listMap(crefs,Exp.crefStr);
-          print(Util.stringDelimitList(strcrefs,", "));print("\nnot found in DAELow object.\n");
+          crefstring = Util.stringDelimitList(strcrefs,", ");
+          expstr = Exp.printExpStr(e);
+          scopestr = System.stringAppendList({crefstring," from Expression: ",expstr});
+          Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"DAELow object"});
           printcheckDAELowWithErrorMsg(res);
         then
           ();
