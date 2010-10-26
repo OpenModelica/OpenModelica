@@ -2514,13 +2514,21 @@ algorithm
       list<DAE.Exp> expl;
       Integer x,dims;
     case({},_) then true;
-    case(((exp as DAE.ICONST(integer = x)) :: expl ),dims)
+    // Constant index
+    case (exp :: expl, dims)
       equation
+        x = Exp.expInt(exp);
         true = (x<=dims);
         true = checkSubscriptsRange2(expl,dims);
       then
         true;
-    case(_,_) then fail();
+    // Variable index, can't check at compile time.
+    case (exp :: expl, dims)
+      equation
+        failure(x = Exp.expInt(exp));
+        true = checkSubscriptsRange2(expl, dims);
+      then
+        true;
    end matchcontinue;
 end checkSubscriptsRange2;
 
