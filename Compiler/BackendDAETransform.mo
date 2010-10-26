@@ -43,7 +43,7 @@ public import DAE;
 public import DAELow;
 public import SCode;
 public import Values;
-
+public import BackendVariable;
 
 protected import Algorithm;
 protected import BackendDump;
@@ -452,7 +452,7 @@ algorithm
         = lower2(xs, functionTree, states, vars, knvars, extVars, whenclauses);
         count = listLength(whenclauses_1);
         (eqns2,vars2,count_1,whenclauses_2) = lowerWhenEqn(e, count, whenclauses_1);
-        vars = mergeVars(vars1, vars2);
+        vars = BackendVariable.mergeVariables(vars1, vars2);
         opteqlst = Util.listMap(eqns2,Util.makeOption);
         opteqlst = Util.listMap1(opteqlst,Inline.inlineEqOpt,(SOME(functionTree),{DAE.NORM_INLINE()}));
         eqns2 = Util.listMap(opteqlst,Util.getOption);
@@ -485,9 +485,9 @@ algorithm
       equation
         (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,iaeqns1,algs1,whenclauses_1,extObjCls1,states) = lower2(daeElts, functionTree, states, vars, knvars, extVars, whenclauses);
         (vars2,knvars2,extVars2,eqns2,reqns2,ieqns2,aeqns2,iaeqns2,algs2,whenclauses_2,extObjCls2,states) = lower2(xs, functionTree, states, vars1, knvars1, extVars1, whenclauses_1);
-        vars = vars2; // vars = mergeVars(vars1, vars2);
-        knvars = knvars2; // knvars = mergeVars(knvars1, knvars2);
-        extVars = extVars2; // extVars = mergeVars(extVars1,extVars2);
+        vars = vars2; // vars = BackendVariable.mergeVariables(vars1, vars2);
+        knvars = knvars2; // knvars = BackendVariable.mergeVariables(knvars1, knvars2);
+        extVars = extVars2; // extVars = BackendVariable.mergeVariables(extVars1,extVars2);
         eqns = listAppend(eqns1, eqns2);
         ieqns = listAppend(ieqns1, ieqns2);
         reqns = listAppend(reqns1, reqns2);
@@ -2023,6 +2023,8 @@ algorithm
   end matchcontinue;
 end extractAlgebraicAndDifferentialEqn;
 
+
+/* NEED to be rewriten by using traversingExp */
 protected function isAlgebraic "function: isAlgebraic
   author: PA
 
@@ -3074,35 +3076,6 @@ algorithm
     case(inAlg,funcs) then inAlg;        
   end matchcontinue;
 end extendAlgorithm;
-
-protected function mergeVars
-"function: mergeVars
-  author: PA
-  Takes two sets of BackendDAE.Variables and merges them. The variables of the
-  first argument takes precedence over the second set, i.e. if a
-  variable name exists in both sets, the variable definition from
-  the first set is used."
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  output BackendDAE.Variables outVariables;
-algorithm
-  outVariables := matchcontinue (inVariables1,inVariables2)
-    local
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Variables vars1_1,vars1,vars2;
-    case (vars1,vars2)
-      equation
-        varlst = BackendDAEUtil.varList(vars2);
-        vars1_1 = Util.listFold(varlst, DAELow.addVar, vars1);
-      then
-        vars1_1;
-    case (_,_)
-      equation
-        print("-merge_vars failed\n");
-      then
-        fail();
-  end matchcontinue;
-end mergeVars;
 
 protected function checkAssertCondition "Succeds if condition of assert is not constant false"
   input DAE.Exp cond;

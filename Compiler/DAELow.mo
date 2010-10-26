@@ -61,6 +61,7 @@ public import HashTable2;
 protected import Algorithm;
 protected import BackendDump;
 protected import BackendVarTransform;
+protected import BackendVariable;
 protected import Ceval;
 protected import ClassInf;
 protected import DAEEXT;
@@ -244,7 +245,7 @@ algorithm
     case ((dae as BackendDAE.DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr,m,mt,a1,a2)
       equation
         v_lst = BackendDAEUtil.varList(v);
-        statevar_lst = Util.listSelect(v_lst, isStateVar);
+        statevar_lst = Util.listSelect(v_lst, BackendVariable.isStateVar);
         ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
       then
         arr_1;
@@ -444,78 +445,7 @@ algorithm
   end matchcontinue;
 end invReachableNodes2;
 
-public function isStateVar
-"function: isStateVar
-  Returns true for state variables, false otherwise."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    local DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isStateVar;
 
-public function isNonStateVar
-"function: isStateVar
-  Returns true for state variables, false otherwise."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    local DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE())) then false;
-    case (_) then true;
-  end matchcontinue;
-end isNonStateVar;
-
-
-public function isDummyStateVar
-"function isDummyStateVar
-  Returns true for dummy state variables, false otherwise."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isDummyStateVar;
-
-public function isNonState
-"function: isNonState
-  this equation checks if the the varkind is state of variable
-  used both in build_equation and generate_compute_state"
-  input BackendDAE.VarKind inVarKind;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVarKind)
-    case (BackendDAE.VARIABLE()) then true;
-    case (BackendDAE.PARAM()) then true;
-    case (BackendDAE.DUMMY_DER()) then true;
-    case (BackendDAE.DUMMY_STATE()) then true;
-    case (BackendDAE.DISCRETE()) then true;
-    case (BackendDAE.STATE_DER()) then true;
-    case (_) then false;
-  end matchcontinue;
-end isNonState;
-
-public function isDiscrete
-"function: isDiscrete
-  This equation checks if the the varkind is discrete,
-  used both in build_equation and generate_compute_state"
-  input BackendDAE.VarKind inVarKind;
-algorithm
-  _:=
-  matchcontinue (inVarKind)
-    case (BackendDAE.DISCRETE()) then ();
-  end matchcontinue;
-end isDiscrete;
 
 public function varCref
 "function: varCref
@@ -5589,7 +5519,7 @@ algorithm
       equation
         varLst = BackendDAEUtil.varList(vars);
         sameCompVarLst = Util.listSelect1(varLst,cr,varInSameComponent);
-        _::_ = Util.listSelect(sameCompVarLst,isDummyStateVar);
+        _::_ = Util.listSelect(sameCompVarLst,BackendVariable.isDummyStateVar);
       then -1.0;
     case(cr,vars) then 0.0;
   end matchcontinue;
@@ -5661,7 +5591,7 @@ algorithm
         _::_::_ = Exp.terms(e2);
         crs = Exp.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
-        blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+        blst = Util.listMap(Util.listFlatten(crVars),BackendVariable.isStateVar);
         res = Util.boolAndList(blst);
       then res;
 
@@ -5671,7 +5601,7 @@ algorithm
         _::_::_ = Exp.terms(e2);
         crs = Exp.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
-        blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+        blst = Util.listMap(Util.listFlatten(crVars),BackendVariable.isStateVar);
         res = Util.boolAndList(blst);
       then res;
 
@@ -7785,25 +7715,25 @@ algorithm
     case ((var :: vs))
       equation
         (s1,s2,s3,s4) = calculateParamSizes(vs);
-        true = isBoolParam(var);
+        true = BackendVariable.isBoolParam(var);
       then
         (s1,s2,s3,s4 + 1);  
     case ((var :: vs))
       equation
         (s1,s2,s3,s4) = calculateParamSizes(vs);
-        true = isIntParam(var);
+        true = BackendVariable.isIntParam(var);
       then
         (s1,s2,s3 + 1,s4);
     case ((var :: vs))
       equation
         (s1,s2,s3,s4) = calculateParamSizes(vs);
-        true = isStringParam(var);
+        true = BackendVariable.isStringParam(var);
       then
         (s1,s2 + 1,s3,s4);
     case ((var :: vs))
       equation
         (s1,s2,s3,s4) = calculateParamSizes(vs);
-        true = isParam(var);
+        true = BackendVariable.isParam(var);
       then
         (s1 + 1,s2,s3,s4);
     case ((_ :: vs))
@@ -9907,107 +9837,6 @@ algorithm
   end matchcontinue;
 end traverseDAELowExpsArrayEqn;
 
-public function isParam
-"function: isParam
-  Return true if variable is a parameter."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case BackendDAE.VAR(varKind = BackendDAE.PARAM()) then true;
-    case (_) then false;
-  end matchcontinue;
-end isParam;
-
-public function isIntParam
-"function: isIntParam
-  Return true if variable is a parameter and integer."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.INT())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isIntParam;
-
-public function isBoolParam
-"function: isBoolParam
-  Return true if variable is a parameter and boolean."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.BOOL())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isBoolParam;
-
-public function isStringParam
-"function: isStringParam
-  Return true if variable is a parameter."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.STRING())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isStringParam;
-
-public function isExtObj
-"function: isExtObj
-  Return true if variable is an external object."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_))) then true;
-    case (_) then false;
-  end matchcontinue;
-end isExtObj;
-
-public function isRealParam
-"function: isParam
-  Return true if variable is a parameter of real-type"
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.REAL())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isRealParam;
-
-public function isNonRealParam
-"function: isNonRealParam
-  Return true if variable is NOT a parameter of real-type"
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := not isRealParam(inVar);
-end isNonRealParam;
-
-public function isOutput
-"function: isOutput
-  Return true if variable is declared as output. Note that the output
-  attribute sticks with a variable even if it is originating from a sub
-  component, which is not the case for Dymola."
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (BackendDAE.VAR(varDirection = DAE.OUTPUT())) then true;
-    case (_) then false;
-  end matchcontinue;
-end isOutput;
-
 public function getWhenEquationExpr
 "function: getWhenEquationExpr
   Get the left and right hand parts from an equation appearing in a when clause"
@@ -11948,7 +11777,7 @@ algorithm
     // d(state)/d(x)
     case(cref, x, stateVars) equation
       ({v1}, _) = getVar(cref, BackendDAEUtil.listVar(stateVars));
-      true = isStateVar(v1);
+      true = BackendVariable.isStateVar(v1);
       cref = crefPrefixDer(cref);
       id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& ComponentReference.printComponentRefStr(x);
       id = Util.stringReplaceChar(id, ".", "$P");

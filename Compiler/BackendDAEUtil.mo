@@ -54,6 +54,7 @@ public import Exp;
 public import Util;
 
 protected import Absyn;
+protected import BackendVariable;
 protected import Ceval;
 protected import DAELow;
 protected import Debug;
@@ -1707,7 +1708,7 @@ algorithm
     case ((dae as BackendDAE.DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr,m,mt,a1,a2)
       equation
         v_lst = varList(v);
-        statevar_lst = Util.listSelect(v_lst, DAELow.isStateVar);
+        statevar_lst = Util.listSelect(v_lst, BackendVariable.isStateVar);
         ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
       then
         arr_1;

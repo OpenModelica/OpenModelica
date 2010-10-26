@@ -73,6 +73,7 @@ public import Inline;
 
 protected import BackendDump;
 protected import BackendDAETransform;
+protected import BackendVariable;
 protected import DAEUtil;
 protected import SCodeUtil;
 protected import ClassInf;
@@ -1762,16 +1763,16 @@ algorithm
       	varlst = BackendDAEUtil.varList(v);
       	varlst1 = BackendDAEUtil.varList(kv);
       	//varlst2 = listAppend(varlst,varlst1);
-        states = Util.listSelect(varlst,DAELow.isStateVar);
-	      states = Util.sort(states, varIndexComparerDAELow);
+        states = Util.listSelect(varlst,BackendVariable.isStateVar);
+	      states = Util.sort(states, BackendVariable.varIndexComparer);
 				inputvars = Util.listSelect(varlst1,BackendDAEUtil.isInput);
-	      inputvars = Util.sort(inputvars, varIndexComparerDAELow);
-        paramvars = Util.listSelect(varlst1, DAELow.isParam);
-	      paramvars = Util.sort(paramvars,  varIndexComparerDAELow);
+	      inputvars = Util.sort(inputvars, BackendVariable.varIndexComparer);
+        paramvars = Util.listSelect(varlst1, BackendVariable.isParam);
+	      paramvars = Util.sort(paramvars,  BackendVariable.varIndexComparer);
         inputvars2 = Util.listSelect(varlst1,DAELow.isVarOnTopLevelAndInput);
-	      inputvars2 = Util.sort(inputvars2, varIndexComparerDAELow);
+	      inputvars2 = Util.sort(inputvars2, BackendVariable.varIndexComparer);
         outputvars = Util.listSelect(varlst,DAELow.isVarOnTopLevelAndOutput);
-	      outputvars = Util.sort(outputvars, varIndexComparerDAELow);
+	      outputvars = Util.sort(outputvars, BackendVariable.varIndexComparer);
 
         comref_states = Util.listMap(states,DAELow.varCref);
         comref_inputvars = Util.listMap(inputvars2,DAELow.varCref);
@@ -1842,21 +1843,6 @@ algorithm
         fail();
   end matchcontinue;
 end createLinearModelMatrixes;
-
-protected function varIndexComparerDAELow
-  input BackendDAE.Var lhs;
-  input BackendDAE.Var rhs;
-  output Boolean res;
-algorithm
-  res :=
-  matchcontinue (lhs, rhs)
-      local
-      Integer lhsIndex;
-      Integer rhsIndex;
-    case (BackendDAE.VAR(index=lhsIndex), BackendDAE.VAR(index=rhsIndex))
-      then rhsIndex < lhsIndex;
-  end matchcontinue;
-end varIndexComparerDAELow;
 
 protected function extractDelayedExpressions
   input BackendDAE.DAELow dlow;
@@ -2839,7 +2825,7 @@ algorithm
       equation
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        isNonState(kind);
+        true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         exp_ = solve(e1, e2, varexp);
       then
@@ -2860,9 +2846,9 @@ algorithm
           BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2, helpVarInfo)
       equation
-        ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = kind)) =
+        ((eqn as BackendDAE.EQUATION(e1,e2,_)),v as BackendDAE.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
-        isNonState(kind);
+        true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         failure(_ = solve(e1, e2, varexp));
         index = tick();
@@ -2991,9 +2977,9 @@ algorithm
           BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2, helpVarInfo)
       equation
-        ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = kind)) =
+        ((eqn as BackendDAE.EQUATION(e1,e2,_)),v as BackendDAE.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
-        isNonState(kind);
+        true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         failure(_ = solve(e1, e2, varexp));
         index = tick();
@@ -4965,31 +4951,31 @@ algorithm
         derivSimvar = derVarFromStateVar(simvar);
         /* figure out in which lists to put it */
         stateVars = addSimvarIfTrue(
-          DAELow.isStateVar(dlowVar), simvar, stateVars);
+          BackendVariable.isStateVar(dlowVar), simvar, stateVars);
         derivativeVars = addSimvarIfTrue(
-          DAELow.isStateVar(dlowVar), derivSimvar, derivativeVars);
+          BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
         algVars = addSimvarIfTrue(
-          isVarAlg(dlowVar), simvar, algVars);
+          BackendVariable.isVarAlg(dlowVar), simvar, algVars);
         intAlgVars = addSimvarIfTrue(
-          isVarIntAlg(dlowVar), simvar, intAlgVars);
+          BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
         boolAlgVars = addSimvarIfTrue(
-          isVarBoolAlg(dlowVar), simvar, boolAlgVars);            
+          BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);            
         inputVars = addSimvarIfTrue(
           DAELow.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
         outputVars = addSimvarIfTrue(
           DAELow.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
         paramVars = addSimvarIfTrue(
-          isVarParam(dlowVar), simvar, paramVars);
+          BackendVariable.isVarParam(dlowVar), simvar, paramVars);
         intParamVars = addSimvarIfTrue(
-          isVarIntParam(dlowVar), simvar, intParamVars);
+          BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
         boolParamVars = addSimvarIfTrue(
-          isVarBoolParam(dlowVar), simvar, boolParamVars);            
+          BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);            
         stringAlgVars = addSimvarIfTrue(
-          isVarStringAlg(dlowVar), simvar, stringAlgVars);
+          BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
         stringParamVars = addSimvarIfTrue(
-          isVarStringParam(dlowVar), simvar, stringParamVars);
+          BackendVariable.isVarStringParam(dlowVar), simvar, stringParamVars);
         extObjVars = addSimvarIfTrue(
-          DAELow.isExtObj(dlowVar), simvar, extObjVars);
+          BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
                 paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars);
@@ -7021,20 +7007,6 @@ algorithm
   res := boolNot(flagSet);
 end useZerocrossing;
 
-protected function isNonState
-"Fails if the given variable kind is state."
-  input BackendDAE.VarKind inVarKind;
-algorithm
-  _ :=
-  matchcontinue (inVarKind)
-    case (BackendDAE.VARIABLE()) then ();
-    case (BackendDAE.DUMMY_DER()) then ();
-    case (BackendDAE.DUMMY_STATE()) then ();
-    case (BackendDAE.DISCRETE()) then ();
-    case (BackendDAE.STATE_DER()) then ();
-  end matchcontinue;
-end isNonState;
-
 protected function hasDiscreteVar
 "Returns true if var list contains a discrete time variable."
   input list<BackendDAE.Var> inDAELowVarLst;
@@ -7105,216 +7077,6 @@ algorithm
         fail();
   end matchcontinue;
 end getCrefFromExp;
-
-protected function isVarDiscrete
-  input BackendDAE.Type tp;
-  input BackendDAE.VarKind kind;
-  output Boolean res;
-algorithm
-  res :=
-  matchcontinue (tp, kind)
-    case (BackendDAE.REAL(), BackendDAE.DISCRETE()) then true;
-    case (_, BackendDAE.DISCRETE()) then true;
-    case (BackendDAE.INT(), _) then true;
-    case (BackendDAE.BOOL(), _) then true;
-    case (BackendDAE.ENUMERATION(_), _) then true;
-    case (_,_) then false;
-  end matchcontinue;
-end isVarDiscrete;
-
-/* TODO: Is this correct? */
-protected function isVarAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* bool variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.BOOL()))
-      then false;      
-    /* int variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.INT()))
-      then false;
-    /* string variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.STRING()))
-      then false;
-    /* non-string variable */
-    case (BackendDAE.VAR(varKind = kind))
-      equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarAlg;
-
-/* TODO: Is this correct? */
-protected function isVarStringAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* string variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.STRING()))
-      equation
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarStringAlg;
-
-protected function isVarIntAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* int variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.INT()))
-      equation
-        
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarIntAlg;
-
-protected function isVarBoolAlg
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.VarKind kind;
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* int variable */
-    case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.BOOL()))
-      equation
-        
-        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
-                    BackendDAE.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarBoolAlg;
-
-/* TODO: Is this correct? */
-protected function isVarParam
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* bool variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
-      then false;      
-    /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
-      then false;
-    /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
-      then false;
-    /* non-string variable */
-    case (var)
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarParam;
-
-/* TODO: Is this correct? */
-protected function isVarStringParam
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarStringParam;
-
-protected function isVarIntParam
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarIntParam;
-
-protected function isVarBoolParam
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.Type typeVar;
-      list<BackendDAE.VarKind> kind_lst;
-    /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarBoolParam;
 
 protected function indexSubscriptToExp
   input DAE.Subscript subscript;
@@ -7403,7 +7165,7 @@ algorithm
       initVal = getInitialValue(dlowVar);
       isFixed = DAELow.varFixed(dlowVar);
       type_ = DAELow.makeExpType(tp);
-      isDiscrete = isVarDiscrete(tp, kind);
+      isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
       arrayCref = getArrayCref(dlowVar);
     then
       SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete,

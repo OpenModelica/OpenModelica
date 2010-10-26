@@ -53,6 +53,7 @@ public import SCode;
 
 protected import Absyn;
 protected import BackendDAEUtil;
+protected import BackendVariable;
 protected import DAE;
 protected import DAEUtil;
 protected import Exp;
@@ -300,17 +301,6 @@ algorithm
   end matchcontinue;
 end buildBlocks;
 
-protected function isNonState
-  input BackendDAE.VarKind inVarKind;
-algorithm
-  _:=
-  matchcontinue (inVarKind)
-    case (BackendDAE.VARIABLE()) then ();
-    case (BackendDAE.DUMMY_DER()) then ();
-    case (BackendDAE.DUMMY_STATE()) then ();
-  end matchcontinue;
-end isNonState;
-
 protected function buildEquation "Build task graph for a single equation."
   input BackendDAE.DAELow inDAELow1;
   input array<Integer> inIntegerArray2;
@@ -343,7 +333,7 @@ algorithm
         varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
-        isNonState(kind);
+        true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
@@ -420,7 +410,7 @@ algorithm
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
-        isNonState(kind);
+        true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         failure(expr = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
