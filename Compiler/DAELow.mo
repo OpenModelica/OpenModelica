@@ -53,6 +53,7 @@ public import BackendDAE;
 public import ComponentReference;
 public import DAE;
 public import ExpressionSolve;
+public import ExpressionSimplify;
 public import SCode;
 public import Values;
 public import Builtin;
@@ -6904,7 +6905,7 @@ algorithm
         are on lhs*/
         rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
         new_exp = Exp.makeSum(listAppend(rhs_lst,rhs_lst2));
-        res = Exp.simplify(new_exp);
+        res = ExpressionSimplify.simplify(new_exp);
       then
         res;
     case (_,_)
@@ -7499,7 +7500,7 @@ algorithm
         v = getVarAt(vars, vindx);
         cr = varCref(v);
         e_1 = Derive.differentiateExp(e, cr, differentiateIfExp);
-        e_2 = Exp.simplify(e_1);
+        e_2 = ExpressionSimplify.simplify(e_1);
         SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs, differentiateIfExp);
       then
         SOME(((eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));
@@ -7567,7 +7568,7 @@ algorithm
         tp = Exp.typeof(e2);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
-        e = Exp.simplify(DAE.BINARY(e1,op,e2));
+        e = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
@@ -7576,7 +7577,7 @@ algorithm
         tp = Exp.typeof(exp);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
-        e = Exp.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
+        e = ExpressionSimplify.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     case ((e as BackendDAE.RESIDUAL_EQUATION(exp = _,source = source)))
@@ -10984,7 +10985,7 @@ algorithm
   equation 
     (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
     (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
-    e2_2 = Exp.simplify(e2_1);
+    e2_2 = ExpressionSimplify.simplify(e2_1);
     ds = Util.listMap(ad, Exp.dimensionSize);
   then
     (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
@@ -10995,7 +10996,7 @@ algorithm
     false = DAEUtil.expTypeComplex(tp);
     (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
     (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
-    e2_2 = Exp.simplify(e2_1);
+    e2_2 = ExpressionSimplify.simplify(e2_1);
     eqn = generateEQUATION((e1_1,e2_2),source);
   then
     (({eqn},{}));    
@@ -11900,7 +11901,7 @@ algorithm
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
       e = DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.ADD(et), DAE.BINARY(e1, DAE.MUL(et), e2_));
-      e = Exp.simplify(e);
+      e = ExpressionSimplify.simplify(e);
     then e;
       
     // a / b
@@ -11908,7 +11909,7 @@ algorithm
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       e2_ = differentiateWithRespectToX(e2, x, functions, inputVars, paramVars, stateVars);
       e = DAE.BINARY(DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.SUB(et), DAE.BINARY(e1, DAE.MUL(et), e2_)), DAE.DIV(et), DAE.BINARY(e2, DAE.MUL(et), e2));
-      e = Exp.simplify(e);
+      e = ExpressionSimplify.simplify(e);
     then e;
     
     // a(x)^b

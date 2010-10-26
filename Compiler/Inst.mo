@@ -86,6 +86,7 @@ public import ConnectionGraph;
 public import ComponentReference;
 public import DAE;
 public import Env;
+public import ExpressionSimplify;
 public import InnerOuter;
 public import Mod;
 public import Prefix;
@@ -12542,7 +12543,7 @@ algorithm
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp, true);
-        e_1 = Exp.simplify(e_1);
+        e_1 = ExpressionSimplify.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
     case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_)

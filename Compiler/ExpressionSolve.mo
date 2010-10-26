@@ -43,6 +43,7 @@ package ExpressionSolve
 public import Absyn;
 public import ComponentReference;
 public import Exp;
+public import ExpressionSimplify;
 public import DAE;
 
 protected import Util;
@@ -81,7 +82,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Exp.expContains(rhs, crexp);
-        res_1 = Exp.simplify1(rhs);
+        res_1 = ExpressionSimplify.simplify1(rhs);
       then
         res_1;
 
@@ -92,7 +93,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Exp.expContains(lhs, crexp);
-        res_1 = Exp.simplify1(lhs);
+        res_1 = ExpressionSimplify.simplify1(lhs);
       then
         res_1;    
 
@@ -100,7 +101,7 @@ algorithm
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
         res = solve2(lhs, rhs, cr);
-        res_1 = Exp.simplify1(res);
+        res_1 = ExpressionSimplify.simplify1(res);
       then
         res_1;
     
@@ -108,7 +109,7 @@ algorithm
       equation
         rhs = solve(lhs,e2,cr);
         res = solve(lhs,e3,cr);
-        res_1 = Exp.simplify1(DAE.IFEXP(e1,rhs,res));
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
       then
         res_1;
     
@@ -116,7 +117,7 @@ algorithm
       equation
         lhs = solve(rhs,e2,cr);
         res = solve(rhs,e3,cr);
-        res_1 = Exp.simplify1(DAE.IFEXP(e1,rhs,res));
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
       then
         res_1;
         
@@ -162,7 +163,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Exp.expContains(rhs, crexp);
-        res_1 = Exp.simplify1(rhs);
+        res_1 = ExpressionSimplify.simplify1(rhs);
       then
         res_1;
 
@@ -173,7 +174,7 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
         false = Exp.expContains(lhs, crexp);
-        res_1 = Exp.simplify1(lhs);
+        res_1 = ExpressionSimplify.simplify1(lhs);
       then
         res_1;    
 
@@ -184,7 +185,7 @@ algorithm
         lhs = DAE.BINARY(lhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
         rhs = DAE.BINARY(rhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
         res = solve2(lhs, rhs, cr);
-        res_1 = Exp.simplify1(res);
+        res_1 = ExpressionSimplify.simplify1(res);
       then
         res_1;
 
@@ -192,7 +193,7 @@ algorithm
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
         res = solve2(lhs, rhs, cr);
-        res_1 = Exp.simplify1(res);
+        res_1 = ExpressionSimplify.simplify1(res);
       then
         res_1;
     
@@ -200,7 +201,7 @@ algorithm
       equation
         rhs = solveLin(lhs,e2,cr);
         res = solveLin(lhs,e3,cr);
-        res_1 = Exp.simplify1(DAE.IFEXP(e1,rhs,res));
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
       then
         res_1;
     
@@ -208,7 +209,7 @@ algorithm
       equation
         lhs = solveLin(rhs,e2,cr);
         res = solveLin(rhs,e3,cr);
-        res_1 = Exp.simplify1(DAE.IFEXP(e1,rhs,res));
+        res_1 = ExpressionSimplify.simplify1(DAE.IFEXP(e1,rhs,res));
       then
         res_1;
         
@@ -242,13 +243,13 @@ algorithm
         false = hasOnlyFactors(e1,e2);
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = Exp.simplify(lhsder);
+        lhsder_1 = ExpressionSimplify.simplify(lhsder);
         false = Exp.isZero(lhsder_1);
         false = Exp.expContains(lhsder_1, crexp);
         (lhszero,_) = Exp.replaceExp(lhs, crexp, DAE.RCONST(0.0));
-        lhszero_1 = Exp.simplify(lhszero);
+        lhszero_1 = ExpressionSimplify.simplify(lhszero);
         rhs = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(lhszero_1,DAE.DIV(DAE.ET_REAL()),lhsder_1));
-        rhs_1 = Exp.simplify(rhs);
+        rhs_1 = ExpressionSimplify.simplify(rhs);
       then
         rhs_1;
 
@@ -265,7 +266,7 @@ algorithm
       equation
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = Exp.simplify(lhsder);
+        lhsder_1 = ExpressionSimplify.simplify(lhsder);
         true = Exp.expContains(lhsder_1, crexp);
         /*print("solve2 failed: Not linear: ");
         print(printExpStr(e1));
@@ -284,7 +285,7 @@ algorithm
       equation
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = Exp.simplify(lhsder);
+        lhsder_1 = ExpressionSimplify.simplify(lhsder);
         /*print("solve2 failed: ");
         print(printExpStr(e1));
         print(" = ");

@@ -49,6 +49,7 @@ package Mod
 public import Absyn;
 public import DAE;
 public import Env;
+public import ExpressionSimplify;
 public import Prefix;
 public import SCode;
 public import RTOpts;
@@ -943,7 +944,7 @@ algorithm
       equation
         e_2 = DAE.ICONST(n);
         //print("FULLExpression: " +& Exp.printExpStr(e) +& "\n");        
-        e_1 = Exp.simplify(DAE.ASUB(e,{e_2}));
+        e_1 = ExpressionSimplify.simplify(DAE.ASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
                               SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE())));
@@ -1527,7 +1528,7 @@ algorithm
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
-        exp = Exp.simplify(DAE.ASUB(e,{exp2}));
+        exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
         e = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
       then
@@ -1538,7 +1539,7 @@ algorithm
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
-        exp = Exp.simplify(DAE.ASUB(e,{exp2}));
+        exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
         e = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
       then
         e;

@@ -68,6 +68,7 @@ public import ConnectionGraph;
 public import Convert;
 public import DAE;
 public import Env;
+public import ExpressionSimplify;
 public import Interactive;
 public import MetaUtil;
 public import RTOpts;
@@ -309,7 +310,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
-        exp_1 = Exp.simplify(exp_1);
+        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
@@ -321,7 +322,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
-        exp_1 = Exp.simplify(exp_1);
+        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
@@ -334,7 +335,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
-        exp_1 = Exp.simplify(exp_1);
+        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
@@ -345,7 +346,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
-        exp_1 = Exp.simplify(exp_1);
+        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
@@ -358,7 +359,7 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2), c);
-        exp_1 = Exp.simplify(exp_1);
+        exp_1 = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
       then
@@ -429,7 +430,7 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info);
         c = Types.propAllConst(prop);
-        e = Exp.simplify(e);
+        e = ExpressionSimplify.simplify(e);
         Debug.fprintln("sei", "elab_exp CALL done");
       then
         (cache,e,prop,st_1);
@@ -459,7 +460,7 @@ algorithm
       equation
         (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect,pre,info);
         c = Types.propAllConst(prop);
-        e = Exp.simplify(e);
+        e = ExpressionSimplify.simplify(e);
       then
         (cache,e,prop,st_1);
     case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,st,doVect,pre,info)
@@ -471,7 +472,7 @@ algorithm
         (cache,t) = elabRangeType(cache,env, start_2,NONE(), stop_2, const, rt, impl,pre);
         exp_2 = DAE.RANGE(rt, start_2,NONE(), stop_2);
         prop_1 = DAE.PROP(t, const);
-        exp_2 = Exp.simplify(exp_2);
+        exp_2 = ExpressionSimplify.simplify(exp_2);
       then
         (cache,exp_2,prop_1,st_2);
 
@@ -486,7 +487,7 @@ algorithm
         (cache,t) = elabRangeType(cache,env, start_2, SOME(step_2), stop_2, const, rt, impl,pre);
         exp_2 = DAE.RANGE(rt, start_2, SOME(step_2), stop_2);
         prop_1 = DAE.PROP(t, const);
-        exp_2 = Exp.simplify(exp_2);
+        exp_2 = ExpressionSimplify.simplify(exp_2);
       then
         (cache,exp_2,prop_1,st_3);
 
@@ -524,7 +525,7 @@ algorithm
         (cache,mexp,DAE.PROP(t,c),dim1,dim2)
         = elabMatrixSemi(cache,env, es, impl, st, havereal, nmax,doVect,pre,info);
         mexp = Util.if_(havereal,DAE.CAST(DAE.ET_ARRAY(DAE.ET_REAL(),{dim1,dim2}),mexp),mexp);
-        mexp=Exp.simplify(mexp); // to propagate cast down to scalar elts
+        mexp=ExpressionSimplify.simplify(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1) "All elts promoted to matrix, therefore unlifting" ;
@@ -3271,7 +3272,7 @@ public function elabBuiltinFill2
   function: elabBuiltinFill2
   Helper function to: elabBuiltinFill
   
-  Public since it is used by Exp.simplifyBuiltinCalls.
+  Public since it is used by ExpressionSimplify.simplifyBuiltinCalls.
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4688,7 +4689,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        arrexp_1 = Exp.simplify(Exp.makeAsub(arrexp_1, 1));
+        arrexp_1 = ExpressionSimplify.simplify(Exp.makeAsub(arrexp_1, 1));
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
         call = makeBuiltinCall(inFnName, {arrexp_1}, tp);
@@ -5366,7 +5367,7 @@ protected function elabBuiltinSimplify "function: elabBuiltinSimplify
   This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
   Real or simplify(x+yx-x,\"Integer\") if the variable should be Integer
-  This function is only for testing Exp.simplify
+  This function is only for testing ExpressionSimplify.simplify
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6272,7 +6273,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinCross;
 
-public function elabBuiltinCross2 "help function to elabBuiltinCross. Public since it used by Exp.simplify1"
+public function elabBuiltinCross2 "help function to elabBuiltinCross. Public since it used by ExpressionSimplify.simplify1"
   input list<DAE.Exp> v1;
   input list<DAE.Exp> v2;
   output list<DAE.Exp> res;
@@ -9419,7 +9420,7 @@ algorithm
       equation
         res = vectorizeCallScalar3(es, ss, dim_indx);
         asub_exp = DAE.ICONST(dim_indx);
-        asub_exp = Exp.simplify(DAE.ASUB(e,{asub_exp}));
+        asub_exp = ExpressionSimplify.simplify(DAE.ASUB(e,{asub_exp}));
       then
         (asub_exp :: res);
   end matchcontinue;

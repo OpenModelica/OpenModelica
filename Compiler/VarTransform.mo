@@ -42,6 +42,7 @@ package VarTransform
 public import ClassInf;
 public import ComponentReference;
 public import DAE;
+public import ExpressionSimplify;
 public import HashTable2;
 public import HashTable3;
 public import SCode;
@@ -114,7 +115,6 @@ protected import BaseHashTable;
 protected import Exp;
 protected import System;
 protected import Util;
-//protected import RTOpts;
 protected import Debug;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
@@ -523,8 +523,8 @@ algorithm
       equation
         (e1) = replaceExp(e1, repl,NONE());
         (e2) = replaceExp(e2, repl,NONE());
-        e1 = Exp.simplify1(e1);
-        e2 = Exp.simplify1(e2);
+        e1 = ExpressionSimplify.simplify1(e1);
+        e2 = ExpressionSimplify.simplify1(e2);
       then
         (e1,e2);
   end matchcontinue;
@@ -1285,7 +1285,7 @@ algorithm
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
-        dst_3 = Exp.simplify1(dst_2) "to remove e.g. --a";
+        dst_3 = ExpressionSimplify.simplify1(dst_2) "to remove e.g. --a";
       then
         (repl_2,src_2,dst_3);
   end matchcontinue;

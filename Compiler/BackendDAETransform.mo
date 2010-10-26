@@ -41,6 +41,7 @@ public import BackendDAE;
 public import ComponentReference;
 public import DAE;
 public import DAELow;
+public import ExpressionSimplify;
 public import SCode;
 public import Values;
 public import BackendVariable;
@@ -937,36 +938,36 @@ algorithm
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source))
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
 
     case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source))
       equation
-        e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(DAE.CREF(cr2, DAE.ET_OTHER()));
+        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        e2 = ExpressionSimplify.simplify(DAE.CREF(cr2, DAE.ET_OTHER()));
       then
         BackendDAE.EQUATION(e1,e2,source);
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
 
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
   end matchcontinue;
@@ -992,8 +993,8 @@ algorithm
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         (e1_2,_) = DAELow.extendArrExp(e1_1,SOME(funcs));
         (e2_2,_) = DAELow.extendArrExp(e2_1,SOME(funcs));
-        e1_3 = Exp.simplify(e1_2);
-        e2_3 = Exp.simplify(e2_2);
+        e1_3 = ExpressionSimplify.simplify(e1_2);
+        e2_3 = ExpressionSimplify.simplify(e2_2);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
 
@@ -1003,8 +1004,8 @@ algorithm
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         (e1_2,_) = DAELow.extendArrExp(e1_1,SOME(funcs));
         (e2_2,_) = DAELow.extendArrExp(e2_1,SOME(funcs));
-        e1_3 = Exp.simplify(e1_2);
-        e2_3 = Exp.simplify(e2_2);
+        e1_3 = ExpressionSimplify.simplify(e1_2);
+        e2_3 = ExpressionSimplify.simplify(e2_2);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
   end matchcontinue;
@@ -1032,8 +1033,8 @@ algorithm
     // normal first try to inline function calls and extend the equations
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
         // inline 
@@ -1045,8 +1046,8 @@ algorithm
         (complexEqs,arreqns);
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
         // create as many equations as the dimension of the record
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
@@ -1056,8 +1057,8 @@ algorithm
     // initial first try to inline function calls and extend the equations
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
         // inline 
@@ -1069,8 +1070,8 @@ algorithm
         (complexEqs,arreqns);
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1 = ExpressionSimplify.simplify(e1);
+        e2 = ExpressionSimplify.simplify(e2);
         // create as many equations as the dimension of the record
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
@@ -1204,7 +1205,7 @@ algorithm
       local DAE.ComponentRef cref_;
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
-        e_2 = Exp.simplify(e); // Exp.stringifyCrefs(Exp.simplify(e));
+        e_2 = ExpressionSimplify.simplify(e); // Exp.stringifyCrefs(ExpressionSimplify.simplify(e));
         cref_ = ComponentReference.makeCrefIdent("_", DAE.ET_OTHER(), {});
       then
         ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cref_,e_2,NONE()),source) :: eqnl),reinit);
@@ -2469,7 +2470,7 @@ algorithm
       list<DAE.ComponentRef> newStates;
     case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs))) equation
       e1 = Derive.differentiateExpTime(e1,(vars,funcs));
-      e1 = Exp.simplify(e1);
+      e1 = ExpressionSimplify.simplify(e1);
       bt = BackendDAEUtil.statesExp(e1,BackendDAE.emptyBintree);
       (newStates,_) = BackendDAEUtil.bintreeToList(bt);
       vars = updateStatesVars(vars,newStates);

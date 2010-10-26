@@ -51,6 +51,7 @@ public import BackendDAE;
 public import ComponentReference;
 public import DAE;
 public import Exp;
+public import ExpressionSimplify;
 public import Util;
 
 protected import Absyn;
@@ -1503,7 +1504,7 @@ algorithm
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
         // might be counted twice, such as cref[3+4] and cref[2+5], even though
         // they reference the same element.
-        subExprsSimplified = Util.listMap(subExprs, Exp.simplify);
+        subExprsSimplified = Util.listMap(subExprs, ExpressionSimplify.simplify);
         subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
       then DAE.CREF(cref_, varType);
@@ -1520,7 +1521,7 @@ algorithm
       local
         DAE.Exp e;
       equation
-        e = Exp.simplify(e);
+        e = ExpressionSimplify.simplify(e);
       then DAE.INDEX(e);
     case (_) then sub;
   end matchcontinue;

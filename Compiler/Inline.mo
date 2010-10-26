@@ -46,6 +46,7 @@ public import Absyn;
 public import BackendDAE;
 public import ComponentReference;
 public import DAE;
+public import ExpressionSimplify;
 public import SCode;
 public import Util;
 public import Values;
@@ -953,7 +954,7 @@ algorithm
     case(e,fns)
       equation
         ((e_1,fns)) = Exp.traverseExp(e,inlineCall,fns);
-        e_2 = Exp.simplify(e_1);
+        e_2 = ExpressionSimplify.simplify(e_1);
       then
         e_2;
     case(e,_) then e;

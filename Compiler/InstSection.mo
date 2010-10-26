@@ -46,6 +46,7 @@ public import Connect;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
+public import ExpressionSimplify;
 public import InnerOuter;
 public import Prefix;
 public import RTOpts;
@@ -1619,8 +1620,8 @@ algorithm
 				b2 = Exp.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
 				ds = Types.getDimensionSizes(tp);
-				lhs = Exp.simplify(lhs);
-				rhs = Exp.simplify(rhs);
+				lhs = ExpressionSimplify.simplify(lhs);
+				rhs = ExpressionSimplify.simplify(rhs);
 			then
 				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
@@ -1631,8 +1632,8 @@ algorithm
 				b2 = Exp.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
 				ds = Types.getDimensionSizes(tp);
-				lhs = Exp.simplify(lhs);
-				rhs = Exp.simplify(rhs);
+				lhs = ExpressionSimplify.simplify(lhs);
+				rhs = ExpressionSimplify.simplify(rhs);
 			then
 				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 				
@@ -5263,7 +5264,7 @@ protected function makeAsubIndex
   input DAE.Exp expr;
   output DAE.Exp asub;
 algorithm
-  asub := Exp.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
+  asub := ExpressionSimplify.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
   asub := Debug.bcallret1(Exp.isCrefScalar(asub), Exp.unliftExp, asub, asub);
 end makeAsubIndex;
 
@@ -5288,7 +5289,7 @@ algorithm
       equation
         enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
-        e = Exp.simplify(DAE.ASUB(expr, {e}));
+        e = ExpressionSimplify.simplify(DAE.ASUB(expr, {e}));
         e = Debug.bcallret1(Exp.isCref(e), Exp.unliftExp, e, e);
         index = enumIndex + 1;
         expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);

@@ -59,6 +59,7 @@ public import AbsynDep;
 public import ComponentReference;
 public import DAE;
 public import Env;
+public import ExpressionSimplify;
 public import Interactive;
 public import Values;
 
@@ -3986,7 +3987,7 @@ algorithm
     case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg)
       equation
         differentiated_exp = Derive.differentiateExpCont(exp1, cr);
-        differentiated_exp_1 = Exp.simplify(differentiated_exp);
+        differentiated_exp_1 = ExpressionSimplify.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
          now it doesn't so the expression is returned as string Exp.unelabExp(differentiated_exp') => absyn_exp
@@ -4027,7 +4028,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{exp1},impl,st,msg)
       equation
-        exp1_1 = Exp.simplify(exp1);
+        exp1_1 = ExpressionSimplify.simplify(exp1);
         ret_val = Exp.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Exp.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);

@@ -41,6 +41,7 @@ package ValuesUtil
 
 public import DAE;
 public import Values;
+public import ExpressionSimplify;
 
 public type Value = Values.Value;
 public type IntRealOp = Values.IntRealOp;
@@ -332,7 +333,7 @@ algorithm
       //MUL
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP)
       equation
-        e = Exp.safeIntOp(iv1,iv2,Exp.MULOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.MULOP);
         outv = expValue(e);
       then
         outv;
@@ -356,7 +357,7 @@ algorithm
         //DIV
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.DIVOP)
       equation
-        e = Exp.safeIntOp(iv1,iv2,Exp.DIVOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.DIVOP);
         outv = expValue(e);
       then
         outv;
@@ -388,7 +389,7 @@ algorithm
         Values.REAL(rv3);
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP)
       equation
-        e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP);
         outv = expValue(e);
       then
         outv;
@@ -401,7 +402,7 @@ algorithm
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP)
       equation
         iv2 = realInt(rv2);
-        e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP);
         outv = expValue(e);
       then
         outv;
@@ -419,7 +420,7 @@ algorithm
         //ADD
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.ADDOP)
       equation
-        e = Exp.safeIntOp(iv1,iv2,Exp.ADDOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.ADDOP);
         outv = expValue(e);
       then
         outv;
@@ -443,7 +444,7 @@ algorithm
         //SUB
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.SUBOP)
       equation
-        e = Exp.safeIntOp(iv1,iv2,Exp.SUBOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.SUBOP);
         outv = expValue(e);
       then
         outv;

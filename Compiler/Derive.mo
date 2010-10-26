@@ -45,21 +45,22 @@ package Derive
 
 public import Absyn;
 public import BackendDAE;
+public import Builtin;
 public import ComponentReference;
 public import DAE;
-public import RTOpts;
 public import DAEUtil;
 public import DAELow;
+public import ExpressionSimplify;
+public import RTOpts;
 public import Types;
-public import Builtin;
 
-protected import Exp;
 protected import BackendDAETransform;
-protected import Util;
-protected import Error;
 protected import Debug;
+protected import Error;
+protected import Exp;
 protected import Inline;
 protected import System;
+protected import Util;
 
 public function differentiateEquationTime "function: differentiateEquationTime
   Differentiates an equation with respect to the time variable."
@@ -102,8 +103,8 @@ algorithm
       equation
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        e1_2 = Exp.simplify(e1_1);
-        e2_2 = Exp.simplify(e2_1);
+        e1_2 = ExpressionSimplify.simplify(e1_1);
+        e2_2 = ExpressionSimplify.simplify(e2_1);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
 
@@ -114,8 +115,8 @@ algorithm
         true = intEq(index,-1);
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        // e1_2 = Exp.simplify(e1_1);
-        // e2_2 = Exp.simplify(e2_1);
+        // e1_2 = ExpressionSimplify.simplify(e1_1);
+        // e2_2 = ExpressionSimplify.simplify(e2_1);
        then
         // because der(Record) is not jet implemented -> fail()
         //(BackendDAE.COMPLEX_EQUATION(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
@@ -128,8 +129,8 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        e1_2 = Exp.simplify(e1_1);
-        e2_2 = Exp.simplify(e2_1);
+        e1_2 = ExpressionSimplify.simplify(e1_1);
+        e2_2 = ExpressionSimplify.simplify(e2_1);
         ((_,(crefOrDerCref1,derCref1,_))) = Exp.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         ((_,(crefOrDerCref2,derCref2,_))) = Exp.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
@@ -148,7 +149,7 @@ algorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
         e1_2 = Inline.inlineExp(e1_1,(SOME(inFunctions),{DAE.NORM_INLINE()}));
-        e2 = Exp.simplify(e1_2);
+        e2 = ExpressionSimplify.simplify(e1_2);
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
         // inputs

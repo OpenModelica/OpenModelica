@@ -58,6 +58,7 @@ public import BackendDAEUtil;
 public import ComponentReference;
 public import Exp;
 public import ExpressionSolve;
+public import ExpressionSimplify;
 public import Values;
 public import Types;
 public import DAELow;
@@ -3084,14 +3085,14 @@ algorithm
       equation
         tp = Exp.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-        res_exp = Exp.simplify(res_exp);
+        res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, inEntrylst)
       equation
-        res_exp = Exp.simplify(e);
+        res_exp = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
@@ -3105,7 +3106,7 @@ algorithm
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = DAELow.getArrayEquationSub(aindx,ad,inEntrylst);
         res_exp = Exp.applyExpSubscripts(res_exp,subs);        
-        res_exp = Exp.simplify(res_exp);
+        res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, entrylst1);
       then 
@@ -3119,7 +3120,7 @@ algorithm
         tp = Exp.typeof(e2);
         e1 = DAE.CREF(left,tp);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-        res_exp = Exp.simplify(res_exp);
+        res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
@@ -4090,7 +4091,7 @@ algorithm
     case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e)), v)
       equation
 //        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
-//        rhs_exp_1 = Exp.simplify(rhs_exp);
+//        rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
 //      then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
       then ((row - 1, col - 1, SES_RESIDUAL(e)));
   end matchcontinue;
@@ -4119,7 +4120,7 @@ algorithm
      case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
         rhs_exp = DAELow.getEqnsysRhsExp(e, v);
-        rhs_exp_1 = Exp.simplify(rhs_exp);
+        rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
       then (rhs_exp_1,inEntrylst);
     case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
@@ -4127,7 +4128,7 @@ algorithm
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
-        rhs_exp_2 = Exp.simplify(rhs_exp_1);
+        rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,inEntrylst);
     case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
       equation
@@ -4140,7 +4141,7 @@ algorithm
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp1, v);
         tp1 = Exp.typeof(rhs_exp);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
-        rhs_exp_2 = Exp.simplify(rhs_exp_1);
+        rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,entrylst1);     
     case (dlowEq,_,_,_)
       equation
@@ -6246,10 +6247,10 @@ algorithm
     case(v,e1,e2)
       equation
         tp = Exp.typeof(e1);
-        res = Exp.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
+        res = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
         (f,rhs) = Exp.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
-        (vTerm as DAE.CREF(_,_)) = Exp.simplify(f);
-        rhs = Exp.simplify(rhs);
+        (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
+        rhs = ExpressionSimplify.simplify(rhs);
       then (vTerm,rhs);
 
     // not succeded to solve, return unsolved equation., catched later.
