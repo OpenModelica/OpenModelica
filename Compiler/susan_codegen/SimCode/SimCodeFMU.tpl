@@ -69,7 +69,7 @@ template fmuModelDescriptionFile(SimCode simCode, String guid)
 match simCode
 case SIMCODE(__) then
   <<
-  <?xml version="1.0" encoding="UTF8"?>
+  <?xml version="1.0" encoding="UTF-8"?>
   <%fmiModelDescription(simCode,guid)%>
   
   >>
@@ -290,7 +290,7 @@ template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match initialValue
-  case SOME(exp) then 'start="<%SimCodeC.initVal(exp)%> fixed="<%isFixed%>"'
+  case SOME(exp) then 'start="<%SimCodeC.initVal(exp)%>" fixed="<%isFixed%>"'
 end ScalarVariableTypeCommonAttribute;
 
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
@@ -310,14 +310,121 @@ template fmumodel_identifierFile(SimCode simCode, String guid)
 match simCode
 case SIMCODE(__) then
   <<
+  
+  // define class name and unique id
   #define MODEL_IDENTIFIER <%fileNamePrefix%>
   #define MODEL_GUID "<%guid%>"
+  
+  // include fmu header files, typedefs and macros
   #include "fmiModelFunctions.h"
+  
   // implementation of the Model Exchange functions
   #include "fmu_model_interface.c"
   
+  <%ModelDefineData(modelInfo)%>
+  <%setStartValues(simCode)%>
+  <%initializeFunction(simCode)%>
+  <%eventUpdateFunction(simCode)%>
+  
   >>
 end fmumodel_identifierFile;
+
+template ModelDefineData(ModelInfo modelInfo)
+ "Generates global data in simulation file."
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
+let numberOfReals = intAdd(varInfo.numStateVars,intAdd(varInfo.numAlgVars,varInfo.numParams))
+let numberOfIntegers = intAdd(varInfo.numIntAlgVars,varInfo.numIntParams)
+let numberOfStrings = intAdd(varInfo.numStringAlgVars,varInfo.numStringParamVars)
+let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
+  <<
+  // define model size
+  #define NUMBER_OF_STATES <%varInfo.numStateVars%>
+  #define NUMBER_OF_EVENT_INDICATORS <%varInfo.numZeroCrossings%>
+  #define NUMBER_OF_REALS <%numberOfReals%>
+  #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
+  #define NUMBER_OF_STRINGS <%numberOfStrings%>
+  #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
+  
+  // define variable data for model
+  <%vars.stateVars |> var => DefineStateVariables(var) ;separator="\n"%>
+  <%vars.inputVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.outputVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  
+  // define initial state vector as vector of value references
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
+  
+  >>
+end ModelDefineData;
+
+template DefineStateVariables(SimVar simVar)
+ "Generates code for defining variables in c file for FMU target.  "
+::=
+match simVar
+  case SIMVAR(__) then
+  <<
+  #define <%crefStr(name)%>_
+  #define der_<%crefStr(name)%>_
+  >>
+end DefineStateVariables;
+
+template DefineVariables(SimVar simVar)
+ "Generates code for defining variables in c file for FMU target. "
+::=
+match simVar
+  case SIMVAR(__) then
+  <<
+  #define <%crefStr(name)%>_ 
+  >>
+end DefineVariables;
+
+template setStartValues(SimCode simCode)
+ "Generates code in c file for function setStartValues() which will set start values for all variables." 
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  // Set values for all variables that define a start value
+  void setStartValues(ModelInstance *comp) {
+  }
+  
+  >>
+end setStartValues;
+
+template initializeFunction(SimCode simCode)
+ "Generates initialize function for c file."
+::= 
+match simCode
+case SIMCODE(__) then
+  <<
+  // Used to set the first time event, if any.
+  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) { 
+  }
+  
+  >>
+end initializeFunction;
+
+template eventUpdateFunction(SimCode simCode)
+ "Generates eventupdate function for c file."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  // Used to set the next time event, if any.
+  void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo) {
+  }
+  
+  >>
+end eventUpdateFunction;
 
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
