@@ -54,19 +54,19 @@ public import DAELow;
 
 protected import Debug;
 
-public function checkDEALowWithErrorMsg"function: checkDEALowWithErrorMsg
+public function checkDAELowWithErrorMsg"function: checkDAELowWithErrorMsg
   author: Frenkel TUD
-  run checkDEALow and prints all errors"
+  run checkDAELow and prints all errors"
   input DAELow.DAELow inDAELow;
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
 algorithm  
-  expCrefs := checkDEALow(inDAELow);
-  printcheckDEALowWithErrorMsg(expCrefs);
-end checkDEALowWithErrorMsg;
+  expCrefs := checkDAELow(inDAELow);
+  printcheckDAELowWithErrorMsg(expCrefs);
+end checkDAELowWithErrorMsg;
  
-public function printcheckDEALowWithErrorMsg"function: printcheckDEALowWithErrorMsg
+public function printcheckDAELowWithErrorMsg"function: printcheckDAELowWithErrorMsg
   author: Frenkel TUD
-  helper for checkDEALowWithErrorMsg"
+  helper for checkDAELowWithErrorMsg"
   input list<tuple<DAE.Exp,list<DAE.ComponentRef>>> inExpCrefs;  
 algorithm   
   _:=
@@ -83,13 +83,13 @@ algorithm
           print(Exp.printExpStr(e));print("\n Variables: ");
           strcrefs = Util.listMap(crefs,Exp.crefStr);
           print(Util.stringDelimitList(strcrefs,", "));print("\nnot found in DAELow object.\n");
-          printcheckDEALowWithErrorMsg(res);
+          printcheckDAELowWithErrorMsg(res);
         then
           ();
   end matchcontinue;
-end printcheckDEALowWithErrorMsg;      
+end printcheckDAELowWithErrorMsg;      
       
-public function checkDEALow "function: checkDEALow
+public function checkDAELow "function: checkDAELow
   author: Frenkel TUD
 
   This function checks the DAELow object if 
@@ -112,18 +112,18 @@ algorithm
         varlst2 = DAELow.varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = DAELow.listVar(allvarslst);
-        expcrefs = DAELow.traverseDEALowExps(inDAELow,false,checkDEALowExp,allvars);
+        expcrefs = DAELow.traverseDAELowExps(inDAELow,false,checkDAELowExp,allvars);
       then
         expcrefs;
     case (_)
       equation
-        Debug.fprintln("failtrace", "- DAELowUtil.checkDEALow failed");
+        Debug.fprintln("failtrace", "- DAELowUtil.checkDAELow failed");
       then
         fail();
   end matchcontinue;
-end checkDEALow;
+end checkDAELow;
 
-protected function checkDEALowExp
+protected function checkDAELowExp
   input DAE.Exp inExp;
   input DAELow.Variables inVars;
   output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
@@ -137,14 +137,14 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
       equation
-        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckDEALowExp,((vars,{})));
+        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckDAELowExp,((vars,{})));
         lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
        then
         lstExpCrefs;
   end matchcontinue;      
-end checkDEALowExp;
+end checkDAELowExp;
 
-protected function traversecheckDEALowExp
+protected function traversecheckDAELowExp
 	input tuple<DAE.Exp, tuple<DAELow.Variables,list<DAE.ComponentRef>>> inTuple;
 	output tuple<DAE.Exp, tuple<DAELow.Variables,list<DAE.ComponentRef>>> outTuple;
 algorithm
@@ -158,6 +158,8 @@ algorithm
 		// special case for time, it is never part of the equation system	
 		case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
 		  then ((e, (vars,crefs)));
+    case ((e as DAE.CREF(componentRef = DAE.WILD()), (vars,crefs)))
+      then ((e, (vars,crefs)));
     /* Special Case for Records */
     case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
       local 
@@ -169,7 +171,7 @@ algorithm
       equation
         DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
         expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
-        expcreflstlst = Util.listMap1(expl,checkDEALowExp,vars);
+        expcreflstlst = Util.listMap1(expl,checkDAELowExp,vars);
         expcreflst = Util.listFlatten(expcreflstlst);
         creflstlst = Util.listMap(expcreflst,Util.tuple22);
         crlst = Util.listFlatten(creflstlst);
@@ -204,6 +206,6 @@ algorithm
 		    ((e, (vars,cr::crefs)));
 		case (_) then inTuple;
 	end matchcontinue;
-end traversecheckDEALowExp;
+end traversecheckDAELowExp;
 
 end DAELowUtil;
