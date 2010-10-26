@@ -119,7 +119,7 @@ algorithm
         varlst2 = varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = listVar(allvarslst);
-        expcrefs = DAELow.traverseDEALowExps(inBackendDAE,false,checkBackendDAEExp,allvars);
+        expcrefs = DAELow.traverseDAELowExps(inBackendDAE,false,checkBackendDAEExp,allvars);
       then
         expcrefs;
     case (_)

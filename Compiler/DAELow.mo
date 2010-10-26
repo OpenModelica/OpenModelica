@@ -9544,7 +9544,7 @@ algorithm
   end matchcontinue;
 end getAllExpsEqn;
 
-public function traverseDEALowExps "function: traverseDEALowExps
+public function traverseDAELowExps "function: traverseDAELowExps
   author: Frenkel TUD
 
   This function goes through the BackendDAE.DAELow structure and finds all the
@@ -9576,12 +9576,12 @@ algorithm
     case (BackendDAE.DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs),true,func,inTypeA)
       equation
-        exps1 = traverseDEALowExpsVars(vars1,func,inTypeA);
-        exps2 = traverseDEALowExpsVars(vars2,func,inTypeA);
-        exps3 = traverseDEALowExpsEqns(eqns,func,inTypeA);
-        exps4 = traverseDEALowExpsEqns(reqns,func,inTypeA);
-        exps5 = traverseDEALowExpsEqns(ieqns,func,inTypeA);
-        exps6 = traverseDEALowExpsArrayEqns(ae,func,inTypeA);
+        exps1 = traverseDAELowExpsVars(vars1,func,inTypeA);
+        exps2 = traverseDAELowExpsVars(vars2,func,inTypeA);
+        exps3 = traverseDAELowExpsEqns(eqns,func,inTypeA);
+        exps4 = traverseDAELowExpsEqns(reqns,func,inTypeA);
+        exps5 = traverseDAELowExpsEqns(ieqns,func,inTypeA);
+        exps6 = traverseDAELowExpsArrayEqns(ae,func,inTypeA);
         alglst = arrayList(algs);
         exps7 = Util.listMapFlat2(alglst, Algorithm.traverseExps,func,inTypeA);
         exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6,exps7});
@@ -9590,27 +9590,27 @@ algorithm
     case (BackendDAE.DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs),false,func,inTypeA)
       equation
-        exps1 = traverseDEALowExpsVars(vars1,func,inTypeA);
-        exps2 = traverseDEALowExpsVars(vars2,func,inTypeA);
-        exps3 = traverseDEALowExpsEqns(eqns,func,inTypeA);
-        exps4 = traverseDEALowExpsEqns(reqns,func,inTypeA);
-        exps5 = traverseDEALowExpsEqns(ieqns,func,inTypeA);
-        exps6 = traverseDEALowExpsArrayEqns(ae,func,inTypeA);
+        exps1 = traverseDAELowExpsVars(vars1,func,inTypeA);
+        exps2 = traverseDAELowExpsVars(vars2,func,inTypeA);
+        exps3 = traverseDAELowExpsEqns(eqns,func,inTypeA);
+        exps4 = traverseDAELowExpsEqns(reqns,func,inTypeA);
+        exps5 = traverseDAELowExpsEqns(ieqns,func,inTypeA);
+        exps6 = traverseDAELowExpsArrayEqns(ae,func,inTypeA);
         exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6});
       then
         exps;        
     case (_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExps failed");
+        Debug.fprintln("failtrace", "- DAELow.traverseDAELowExps failed");
       then
         fail();         
   end matchcontinue;
-end traverseDEALowExps;
+end traverseDAELowExps;
 
-protected function traverseDEALowExpsVars "function: traverseDEALowExpsVars
+protected function traverseDAELowExpsVars "function: traverseDAELowExpsVars
   author: Frenkel TUD
 
-  Helper for traverseDEALowExps
+  Helper for traverseDAELowExps
 "
   input BackendDAE.Variables inVariables;
   input FuncExpType func;
@@ -9638,20 +9638,20 @@ algorithm
     case (BackendDAE.VARIABLES(crefIdxLstArr = crefindex,strIdxLstArr = oldcrefindex,varArr = vararray,bucketSize = bsize,numberOfVars = nvars),func,inTypeA)
       equation
         vars = BackendDAEUtil.vararrayList(vararray) "We can ignore crefs, they don\'t contain real expressions" ;
-        talst = Util.listMapFlat2(vars, traverseDEALowExpsVar,func,inTypeA);
+        talst = Util.listMapFlat2(vars, traverseDAELowExpsVar,func,inTypeA);
       then
         talst;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExpsVars failed");
+        Debug.fprintln("failtrace", "- DAELow.traverseDAELowExpsVars failed");
       then
         fail();        
   end matchcontinue;
-end traverseDEALowExpsVars;
+end traverseDAELowExpsVars;
 
-protected function traverseDEALowExpsVar "function: traverseDEALowExpsVar
+protected function traverseDAELowExpsVar "function: traverseDAELowExpsVar
   author: Frenkel TUD
-  Helper traverseDEALowExpsVar. Get all exps from a  Var.
+  Helper traverseDAELowExpsVar. Get all exps from a  Var.
   DAE.ET_OTHER is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
   input BackendDAE.Var inVar;
@@ -9684,7 +9684,7 @@ algorithm
       equation
         e1 = Util.optionToList(bndexp);
         talst = Util.listMapFlat1(e1,func,inTypeA);
-        talst1 = Util.listMapFlat2(instdims, traverseDEALowExpsSubscript,func,inTypeA);
+        talst1 = Util.listMapFlat2(instdims, traverseDAELowExpsSubscript,func,inTypeA);
         talst2 = listAppend(talst,talst1);
         talst3 = func(DAE.CREF(cref,DAE.ET_OTHER()),inTypeA);
         talst4 = listAppend(talst2,talst3);
@@ -9692,15 +9692,15 @@ algorithm
         talst4;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExpsVar failed");
+        Debug.fprintln("failtrace", "- DAELow.traverseDAELowExpsVar failed");
       then
         fail();          
   end matchcontinue;
-end traverseDEALowExpsVar;
+end traverseDAELowExpsVar;
 
-protected function traverseDEALowExpsSubscript "function: traverseDEALowExpsSubscript
+protected function traverseDAELowExpsSubscript "function: traverseDAELowExpsSubscript
   author: Frenkel TUD
-  helper for traverseDEALowExpsSubscript"
+  helper for traverseDAELowExpsSubscript"
   input DAE.Subscript inSubscript;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -9730,12 +9730,12 @@ algorithm
         talst = func(e,inTypeA);  
       then talst;
   end matchcontinue;
-end traverseDEALowExpsSubscript;
+end traverseDAELowExpsSubscript;
 
-protected function traverseDEALowExpsEqns "function: traverseDEALowExpsEqns
+protected function traverseDAELowExpsEqns "function: traverseDAELowExpsEqns
   author: Frenkel TUD
 
-  Helper for traverseDEALowExpsEqns
+  Helper for traverseDAELowExpsEqns
 "
   input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
@@ -9760,15 +9760,15 @@ algorithm
     case ((eqnarray as BackendDAE.EQUATION_ARRAY(numberOfElement = _)),func,inTypeA)
       equation
         eqns = BackendDAEUtil.equationList(eqnarray);
-        talst = Util.listMapFlat2(eqns, traverseDEALowExpsEqn,func,inTypeA);
+        talst = Util.listMapFlat2(eqns, traverseDAELowExpsEqn,func,inTypeA);
       then
         talst;
   end matchcontinue;
-end traverseDEALowExpsEqns;
+end traverseDAELowExpsEqns;
 
-protected function traverseDEALowExpsEqn "function: traverseDEALowExpsEqn
+protected function traverseDAELowExpsEqn "function: traverseDAELowExpsEqn
   author: PA
-  Helper for traverseDEALowExpsEqn."
+  Helper for traverseDAELowExpsEqn."
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -9827,7 +9827,7 @@ algorithm
         talst = func(DAE.CREF(cr,tp),inTypeA);
         talst1 = func(e,inTypeA); 
         talst2 = listAppend(talst,talst1);  
-        talst3 = traverseDEALowExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,inTypeA);
+        talst3 = traverseDAELowExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,inTypeA);
         talst4 = listAppend(talst2,talst3);  
       then
         talst4;
@@ -9838,13 +9838,20 @@ algorithm
         talst = Util.listMapFlat1(expl,func,inTypeA);
       then
         talst;
+    case (BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2),func,inTypeA)
+      equation
+        talst = func(e1, inTypeA);
+        talst1 = func(e2, inTypeA);
+        talst2 = listAppend(talst, talst1);
+      then
+        talst2;
   end matchcontinue;
-end traverseDEALowExpsEqn;
+end traverseDAELowExpsEqn;
 
-protected function traverseDEALowExpsArrayEqns "function: traverseDEALowExpsArrayEqns
+protected function traverseDAELowExpsArrayEqns "function: traverseDAELowExpsArrayEqns
   author: Frenkel TUD
 
-  helper for traverseDEALowExps
+  helper for traverseDAELowExps
 "
   input array<BackendDAE.MultiDimEquation> arr;
   input FuncExpType func;
@@ -9862,13 +9869,13 @@ protected function traverseDEALowExpsArrayEqns "function: traverseDEALowExpsArra
   list<BackendDAE.MultiDimEquation> lst;
 algorithm
   lst := arrayList(arr);
-  outTypeBLst := Util.listMapFlat2(lst, traverseDEALowExpsArrayEqn,func,inTypeA);
-end traverseDEALowExpsArrayEqns;
+  outTypeBLst := Util.listMapFlat2(lst, traverseDAELowExpsArrayEqn,func,inTypeA);
+end traverseDAELowExpsArrayEqns;
 
-protected function traverseDEALowExpsArrayEqn "function: traverseDEALowExpsArrayEqn
+protected function traverseDAELowExpsArrayEqn "function: traverseDAELowExpsArrayEqn
   author: Frenkel TUD
 
-  Helper function to traverseDEALowExpsArrayEqns
+  Helper function to traverseDAELowExpsArrayEqns
 "
   input BackendDAE.MultiDimEquation inMultiDimEquation;
   input FuncExpType func;  
@@ -9897,7 +9904,7 @@ algorithm
       then
         talst2;
   end matchcontinue;
-end traverseDEALowExpsArrayEqn;
+end traverseDAELowExpsArrayEqn;
 
 public function isParam
 "function: isParam
@@ -10973,7 +10980,7 @@ end collectDelayExpressions;
 public function findDelaySubExpressions
 "Return all subexpressions of inExp that are calls to delay()"
   input DAE.Exp inExp;
-  input list<Integer> inDummy "this is a dummy for traverseDEALowExps";
+  input list<Integer> inDummy "this is a dummy for traverseDAELowExps";
   output list<DAE.Exp> outExps;
 algorithm
   ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});

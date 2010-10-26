@@ -1867,7 +1867,7 @@ algorithm
       list<DAE.Exp> exps;
     case (dlow)
       equation
-        exps = DAELow.traverseDEALowExps(dlow,true,DAELow.findDelaySubExpressions,{});
+        exps = DAELow.traverseDAELowExps(dlow,true,DAELow.findDelaySubExpressions,{});
         delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
