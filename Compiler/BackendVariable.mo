@@ -1199,37 +1199,37 @@ algorithm
       BackendDAE.Variables vars,knvars;
     case (cr,vars,_)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, knvars);
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, knvars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, knvars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, knvars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, knvars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, knvars);
       then
         ();
   end matchcontinue;
@@ -1266,8 +1266,8 @@ algorithm
         (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
         v1 = BackendDAEUtil.emptyVars();
         v2 = BackendDAEUtil.emptyVars();
-        vars = BackendVariable.addVars(lst1_1, v1);
-        knvars = BackendVariable.addVars(lst2_1, v2);
+        vars = addVars(lst1_1, v1);
+        knvars = addVars(lst2_1, v2);
       then
         (vars,knvars);
   end matchcontinue;
@@ -1297,13 +1297,13 @@ algorithm
     case ({},knvars,_) then ({},knvars);
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        _ = treeGet(mvars, cr) "alg var moved to known vars" ;
+        _ = DAELow.treeGet(mvars, cr) "alg var moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         (vs_1,(v :: knvars_1));
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        failure(_ = treeGet(mvars, cr)) "alg var not moved to known vars" ;
+        failure(_ = DAELow.treeGet(mvars, cr)) "alg var not moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         ((v :: vs_1),knvars_1);

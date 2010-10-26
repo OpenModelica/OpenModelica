@@ -267,7 +267,7 @@ algorithm
       BackendDAE.EventInfo ev;
     case (BackendDAE.DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = re,initialEqs = ia,arrayEqs = ae,algorithms = al,eventInfo = ev))
       equation
-        v_lst = BackendDAEUtil.varList(v);
+        v_lst = varList(v);
         bt = statesDaelow2(v_lst, BackendDAE.emptyBintree);
       then
         bt;
@@ -295,7 +295,7 @@ algorithm
       equation
         BackendDAE.STATE() = BackendVariable.varKind(v);
         cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
+        bt = DAELow.treeAdd(bt, cr, 0);
         bt = statesDaelow2(vs, bt);
       then
         bt;
@@ -304,7 +304,7 @@ algorithm
       equation
         BackendDAE.DUMMY_STATE() = BackendVariable.varKind(v);
         cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
+        bt = DAELow.treeAdd(bt, cr, 0);
         bt = statesDaelow2(vs, bt);
       then
         bt;
@@ -874,7 +874,7 @@ algorithm
   end matchcontinue;
 end bintreeToListOpt;
 
-
+/* NOT USED
 protected function statesEqns "function: statesEqns
   author: PA
   Takes a list of equations and an (empty) BackendDAE.BinTree and
@@ -924,6 +924,8 @@ algorithm
         fail();
   end matchcontinue;
 end statesEqns;
+*/
+
 
 public function statesAndVarsExp
 "function: statesAndVarsExp

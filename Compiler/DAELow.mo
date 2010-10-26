@@ -1510,7 +1510,7 @@ algorithm
         /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
         could potentially be removed after a index reduction has been done. However, removing equations here
         also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
-        s = statesDaelow(dae);
+        s = BackendDAEUtil.statesDaelow(dae);
         e_lst = BackendDAEUtil.equationList(e);
         re_lst = BackendDAEUtil.equationList(re);
         ie_lst = BackendDAEUtil.equationList(ie);
@@ -8886,7 +8886,7 @@ algorithm
       se = generadeDivExpErrorMsg(e,e2,vars);
       /* check if expression contains variables */
       crlst = Expression.extractCrefsFromExp(e2);
-      boollst = Util.listMap1r(crlst,BackendVariables.isVarKnown,varlst);
+      boollst = Util.listMap1r(crlst,BackendVariable.isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
     then (se,bres);
 end matchcontinue;

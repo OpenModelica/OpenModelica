@@ -2688,7 +2688,7 @@ algorithm
     case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs))) equation
       e1 = Derive.differentiateExpTime(e1,(vars,funcs));
       e1 = ExpressionSimplify.simplify(e1);
-      bt = BackendDAEUtil.statesExp(e1,BackendDAE.emptyBintree);
+      bt = statesExp(e1,BackendDAE.emptyBintree);
       (newStates,_) = BackendDAEUtil.bintreeToList(bt);
       vars = updateStatesVars(vars,newStates);
     then ((e1,(vars,funcs)));
