@@ -51,6 +51,7 @@ public type Type = DAE.ExpType;
 public type Subscript = DAE.Subscript;
 
 protected import Exp;
+protected import ExpressionDump;
 protected import RTOpts;
 protected import Util;
 protected import Debug;
@@ -103,7 +104,7 @@ algorithm
   t1 := clock();
   outE := simplify1(e);
   t2 := clock();
-  print(Util.if_(t2 -. t1 >. 0.01,"simplify1 took "+&realString(t2 -. t1)+&" seconds for exp: "+&Exp.printExpStr(e)+& " \nsimplified to :"+&Exp.printExpStr(outE)+&"\n",""));
+  print(Util.if_(t2 -. t1 >. 0.01,"simplify1 took "+&realString(t2 -. t1)+&" seconds for exp: "+&ExpressionDump.printExpStr(e)+& " \nsimplified to :"+&ExpressionDump.printExpStr(outE)+&"\n",""));
 end simplify1time;
 
 public function simplify1

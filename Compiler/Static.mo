@@ -96,6 +96,7 @@ protected import Dump;
 protected import Error;
 protected import ErrorExt;
 protected import Exp;
+protected import ExpressionDump;
 protected import Inst;
 protected import InstSection;
 protected import InnerOuter;
@@ -1821,13 +1822,13 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabRangeType failed: ");
         sp = PrefixUtil.printPrefixStr(pre);
-        s1 = Exp.printExpStr(start);
-        s2opt = Util.applyOption(step, Exp.printExpStr);
+        s1 = ExpressionDump.printExpStr(start);
+        s2opt = Util.applyOption(step, ExpressionDump.printExpStr);
         s2 = Util.flattenOption(s2opt, "none");
-        s3 = Exp.printExpStr(stop);
+        s3 = ExpressionDump.printExpStr(stop);
         s4 = Types.unparseConst(const);
         s5 = Util.if_(impl, "impl", "expl");
-        s6 = Exp.typeString(expty);
+        s6 = ExpressionDump.typeString(expty);
         str = System.stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
         Debug.fprintln("failtrace", str);
       then
@@ -2261,7 +2262,7 @@ algorithm
     case ((e :: es),(t :: ts),to_type,pre)
       equation
         print("elab_array_real2 failed\n");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         s2 = Types.unparseType(t);
         sp = PrefixUtil.printPrefixStr(pre);
         print("exp = ");
@@ -2739,7 +2740,7 @@ algorithm
     case (e,(n,tp)) /* fallback, use \"builtin\" operator promote */
       local DAE.ExpType etp,tp1;
       equation
-        es = Exp.printExpStr(e);
+        es = ExpressionDump.printExpStr(e);
         etp = Types.elabType(tp);
         tp1 = promoteExpType(etp,n);
         e = makeBuiltinCall("promote", {e, DAE.ICONST(n)}, tp1);
@@ -2837,7 +2838,7 @@ algorithm
         (cache,els_1,DAE.PROP(t2,_),_,_) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
         failure(equality(t1 = t2));
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = Exp.printListStr(el, Dump.printExpStr, ", ");
+        el_str = ExpressionDump.printListStr(el, Dump.printExpStr, ", ");
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
         Error.addSourceMessage(Error.TYPE_MISMATCH_MATRIX_EXP, {pre_str,el_str,t1_str,t2_str}, info);
@@ -2848,10 +2849,10 @@ algorithm
         (cache,el_1,DAE.PROP(t1,_),dim1,_) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
         (cache,els_1,props2,_,dim2) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
         false = Exp.dimensionsEqual(dim1,dim2);
-        dim1_str = Exp.dimensionString(dim1);
-        dim2_str = Exp.dimensionString(dim2);
+        dim1_str = ExpressionDump.dimensionString(dim1);
+        dim2_str = ExpressionDump.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = Exp.printListStr(el, Dump.printExpStr, ", ");
+        el_str = ExpressionDump.printListStr(el, Dump.printExpStr, ", ");
         el_str1 = System.stringAppendList({"[",el_str,"]"});
         Error.addSourceMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str},info);
       then
@@ -3814,14 +3815,14 @@ algorithm
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         (tp,_) = Types.flattenArrayType(tp);
         false = Types.basicType(tp);
-        s = Exp.printExpStr(exp);
+        s = ExpressionDump.printExpStr(exp);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.OPERAND_BUILTIN_TYPE, {"pre",pre_str,s}, info);
       then
         fail();
     case (cache,env,expl,_,_,pre,info)
       equation
-        el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
+        el_str = ExpressionDump.printListStr(expl, Dump.printExpStr, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
         s = System.stringAppendList({"pre(",el_str,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
@@ -3979,7 +3980,7 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         false = Exp.isCref(inOperand);
-        op_str = Exp.printExpStr(inOperand);
+        op_str = ExpressionDump.printExpStr(inOperand);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
           {op_str, inOperator, pre_str});
@@ -4985,7 +4986,7 @@ algorithm
         // that has an equation involving ONLY params/consts. 
         false = Types.isParameterOrConstant(c2);
         sp = PrefixUtil.printPrefixStr3(pre);        
-        errorString = "delay(" +& Exp.printExpStr(s1_1) +& ", " +& Exp.printExpStr(s2_1) +& 
+        errorString = "delay(" +& ExpressionDump.printExpStr(s1_1) +& ", " +& ExpressionDump.printExpStr(s2_1) +& 
            ") where argument #2 has to be parameter or constant expression but is a variable";
         Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
         call = makeBuiltinCall("delay", {s1_1, s2_1, s2_1}, DAE.ET_REAL);
@@ -5017,8 +5018,8 @@ algorithm
         (s3_1,_) = Types.matchType(s3_1,ty3,DAE.T_REAL_DEFAULT,true);
         false = Types.isParameterOrConstant(c3);
         sp = PrefixUtil.printPrefixStr3(pre);
-        errorString = "delay(" +& Exp.printExpStr(s1_1) +& ", " +& Exp.printExpStr(s2_1) +& 
-        ", " +& Exp.printExpStr(s3_1) +& ") where argument #3 has to be parameter or constant expression but is a variable";
+        errorString = "delay(" +& ExpressionDump.printExpStr(s1_1) +& ", " +& ExpressionDump.printExpStr(s2_1) +& 
+        ", " +& ExpressionDump.printExpStr(s3_1) +& ") where argument #3 has to be parameter or constant expression but is a variable";
         Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
         call = makeBuiltinCall("delay", {s1_1, s2_1, s3_1}, DAE.ET_REAL);
       then
@@ -8700,7 +8701,7 @@ algorithm
 
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},pre,info);
-        //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,Exp.printExpStr), ", ") +& "\n");
+        //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
         vect_dims = slotsVectorizable(newslots);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(outtype, const);
@@ -8710,7 +8711,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2,ClassInf.RECORD(fn));
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE()), vect_dims, newslots2, prop);
-        //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
+        //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&ExpressionDump.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
@@ -8780,7 +8781,7 @@ algorithm
         (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn);
         (cache,args_1,constlist,restype,functype,vect_dims,slots) =
           elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl,pre,info);
-        argStr = Exp.printExpListStr(args_1);
+        argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ") of type " +& Types.unparseType(functype);
         types_str = Types.unparseType(tp1) ;
@@ -10146,8 +10147,8 @@ algorithm
       equation
         farg_str = Types.printFargStr(farg);
         filled = Util.if_(filled, "filled", "not filled");
-        str = Dump.getOptionStr(exp, Exp.printExpStr);
-        str_lst = Util.listMap(ds, Exp.dimensionString);
+        str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
+        str_lst = Util.listMap(ds, ExpressionDump.dimensionString);
         s = Util.stringDelimitList(str_lst, ", ");
         s1 = System.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
@@ -10822,7 +10823,7 @@ algorithm
       equation
         // enabled with +d=failtrace
         true = RTOpts.debugFlag("failtrace");
-        str = Exp.printExpStr(exp1);
+        str = ExpressionDump.printExpStr(exp1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Debug.traceln("- Static.makeASUBArrayAdressing2 failed for INDEX(" +& str +& ") in component " +& pre_str);
         // adrpo: don't do any further as we anyway fail!
@@ -11141,7 +11142,7 @@ algorithm
     case (cache,_,cr,_,_,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_,pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
-        str = Exp.printExpStr(exp);
+        str = ExpressionDump.printExpStr(exp);
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
         Error.addSourceMessage(Error.CONSTANT_OR_PARAM_WITH_NONCONST_BINDING, {s,str}, info);
@@ -11537,9 +11538,9 @@ algorithm
     case( ( (sub1 as DAE.INDEX(exp = exp1 as DAE.ICONST(_))) :: subs1),id,ety)
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
-        //print("1. flattened rest into "+&Exp.dumpExpStr(exp2,0)+&"\n");
+        //print("1. flattened rest into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
         exp2 = applySubscript(exp1, exp2 ,id,Exp.unliftArray(ety));
-        //print("1. applied this subscript into "+&Exp.dumpExpStr(exp2,0)+&"\n");
+        //print("1. applied this subscript into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
       then
         exp2;
     // special case for zero dimension...
@@ -11598,7 +11599,7 @@ algorithm
     case(exp1) then exp1;
     case(exp1)
       equation
-        print("- Static.removeDoubleEmptyArrays failure for: " +& Exp.printExpStr(exp1) +& "\n");
+        print("- Static.removeDoubleEmptyArrays failure for: " +& ExpressionDump.printExpStr(exp1) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -12201,7 +12202,7 @@ algorithm
         (cache,sub_1,prop as DAE.PROP(ty,const),_) = elabExp(cache,env, sub, impl,NONE(),true,pre,info);
         (cache, sub_1, prop as DAE.PROP(ty, _)) = Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
         sub_2 = elabSubscriptType(ty, sub, sub_1, pre, env);
-        // print("Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " subs: " +& Exp.printSubscriptStr(sub_2) +& "\n");
+        // print("Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " subs: " +& ExpressionDump.printSubscriptStr(sub_2) +& "\n");
       then
         (cache,sub_2,const);
     // failtrace
@@ -12455,7 +12456,7 @@ algorithm
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre)
       equation
         failure(equality(t1 = DAE.T_BOOL_DEFAULT));
-        e_str = Exp.printExpStr(e1);
+        e_str = ExpressionDump.printExpStr(e1);
         t_str = Types.unparseType(t1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         t_str = t_str +& " (in component: "+&pre_str+&")";
@@ -12466,9 +12467,9 @@ algorithm
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre)
       equation
         false = Types.semiEquivTypes(t2, t3);
-        e1_str = Exp.printExpStr(e2);
+        e1_str = ExpressionDump.printExpStr(e2);
         t1_str = Types.unparseType(t2);
-        e2_str = Exp.printExpStr(e3);
+        e2_str = ExpressionDump.printExpStr(e3);
         t2_str = Types.unparseType(t3);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str});
@@ -12819,7 +12820,7 @@ algorithm
         s = Dump.printExpStr(exp);
         exps = Util.listMap(args, Util.tuple21);
         tps = Util.listMap(args, Util.tuple22);
-        exps_str = Util.listMap(exps, Exp.printExpStr);
+        exps_str = Util.listMap(exps, ExpressionDump.printExpStr);
         estr = Util.stringDelimitList(exps_str, ", ");
         tps_str = Util.listMap(tps, Types.unparseType);
         tpsstr = Util.stringDelimitList(tps_str, ", ");
@@ -13861,8 +13862,8 @@ algorithm
         b2 = Types.isReal(t1);
         true = boolOr(b1,b2);
         verifyOp(op);
-        opString = Exp.relopSymbol(op);
-        stmtString = Exp.printExpStr(e1) +& opString +& Exp.printExpStr(e2);
+        opString = ExpressionDump.relopSymbol(op);
+        stmtString = ExpressionDump.printExpStr(e1) +& opString +& ExpressionDump.printExpStr(e2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
       then

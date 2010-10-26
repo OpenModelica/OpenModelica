@@ -17,6 +17,7 @@ public import Absyn;
 protected import BaseHashTable;
 protected import DAEUtil;
 protected import Exp;
+protected import ExpressionDump;
 protected import Interactive;
 protected import Lookup;
 protected import OptManager;
@@ -461,31 +462,31 @@ algorithm
     Integer i,i1,i2;
     DAE.Exp e;
     case(UnitAbsyn.ADD(ut1,ut2,e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.SUB(ut1,ut2,e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.MUL(ut1,ut2,e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.DIV(ut1,ut2,e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.EQN(ut1,ut2,e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.LOC(i,e)) equation
-    s1 = Exp.printExpStr(e);
+    s1 = ExpressionDump.printExpStr(e);
     then s1;
 
     case(UnitAbsyn.POW(ut1,MMath.RATIONAL(i1,i2),e)) equation
-      s1 = Exp.printExpStr(e);
+      s1 = ExpressionDump.printExpStr(e);
     then s1;
 
   end matchcontinue;
@@ -1042,7 +1043,7 @@ algorithm
     case(env,e as DAE.ARRAY(_,_,expl),divOrMul,ht,store)
       local list<UnitAbsyn.UnitTerm> uts; list<DAE.Exp> expl; UnitAbsyn.UnitTerm ut;
       equation
-        print("vector ="+&Exp.printExpStr(e)+&"\n");
+        print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
       ut::uts = buildArrayElementTerms(uts,expl);
       terms = listAppend(terms,uts);
@@ -1051,7 +1052,7 @@ algorithm
     case(env,e as DAE.MATRIX(_,_,mexpl),divOrMul,ht,store)
       local  list<list<tuple<DAE.Exp, Boolean>>> mexpl; list<UnitAbsyn.UnitTerm> uts;
       equation
-        print("Matrix ="+&Exp.printExpStr(e)+&"\n");
+        print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
         expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));
         (uts,terms,store) = buildTermExpList(env,expl,ht,store);
         ut::uts = buildArrayElementTerms(uts,expl);
@@ -1059,7 +1060,7 @@ algorithm
       then (ut,terms,store);
 
     case(env,e as DAE.CALL(path=_),divOrMul,ht,store) equation
-      print("buildTermDAE.CALL failed exp: "+&Exp.printExpStr(e)+&"\n");
+      print("buildTermDAE.CALL failed exp: "+&ExpressionDump.printExpStr(e)+&"\n");
     then fail();
   end matchcontinue;
 end buildTermExp;
@@ -1185,7 +1186,7 @@ algorithm
       extraTerms = listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);
     case(_,e::_,_,_) equation
-      print("buildTermExpList failed for exp"+&Exp.printExpStr(e)+&"\n");
+      print("buildTermExpList failed for exp"+&ExpressionDump.printExpStr(e)+&"\n");
     then fail();
   end matchcontinue;
 end buildTermExpList;

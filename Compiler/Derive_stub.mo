@@ -46,6 +46,7 @@ package Derive
 public import Absyn;
 
 protected import Exp;
+protected import ExpressionDump;
 protected import Util;
 protected import Error;
 protected import Debug;
@@ -335,7 +336,7 @@ algorithm
 
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv,differentiateIfExp)
       equation
-        e_str = Exp.printExpStr(e) "The derivative of logic expressions are non-existent" ;
+        e_str = ExpressionDump.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
@@ -419,7 +420,7 @@ algorithm
     case (e,cr,differentiateIfExp)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
         str = System.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
         //print(str);

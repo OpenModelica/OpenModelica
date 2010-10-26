@@ -49,6 +49,7 @@ public import System;
 protected import Debug;
 protected import Dump;
 protected import Exp;
+protected import ExpressionDump;
 protected import Print;
 protected import RTOpts;
 protected import Util;
@@ -433,7 +434,7 @@ algorithm
     case (s,l)
       equation
         true = RTOpts.modelicaOutput();
-        str = Exp.printListStr(l, Exp.printSubscriptStr, ",");
+        str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
         str = System.stringAppendList({s, "_L", str, "_R"});
       then
         str;
@@ -442,7 +443,7 @@ algorithm
     case (s,l)
       equation
         false = RTOpts.modelicaOutput();
-        str = Exp.printListStr(l, Exp.printSubscriptStr, ",");
+        str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
         str = System.stringAppendList({s, "[", str, "]"});
       then
         str;
@@ -465,11 +466,11 @@ algorithm
     
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
-        str_1 = Exp.printListStr(subs, Exp.debugPrintSubscriptStr, ",");
+        str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ",");
         str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
         // this printing way will be useful when adressin the  'crefEqual' bug.
         // str = ComponentReference.printComponentRef2Str(s, subs);
-        str2 = Exp.typeString(ty);
+        str2 = ExpressionDump.typeString(ty);
         str = System.stringAppendList({str," [",str2,"]"});
       then
         str;
@@ -478,7 +479,7 @@ algorithm
       equation
         true = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
-        str2 = Exp.typeString(ty);
+        str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);        
         str = System.stringAppendList({str," [",str2,"] ", "__", strrest});
       then
@@ -488,7 +489,7 @@ algorithm
       equation
         false = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
-        str2 = Exp.typeString(ty);
+        str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
         str = System.stringAppendList({str," [",str2,"] ", ".", strrest});
       then
@@ -741,14 +742,14 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
-        s1 = n2 +& "[" +& Exp.printListStr(idx2, Exp.printSubscriptStr, ",") +& "]";
+        s1 = n2 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
         true = stringEqual(s1,n1);
       then
         true;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       equation
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
-        s1 = n1 +& "[" +& Exp.printListStr(idx2, Exp.printSubscriptStr, ",") +& "]";
+        s1 = n1 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
         true = stringEqual(s1,n2);
       then
         true;
@@ -1825,7 +1826,7 @@ algorithm
         true = RTOpts.modelicaOutput();
         Print.printBuf(s);
         Print.printBuf("_L");
-        Exp.printList(l, Exp.printSubscript, ",");
+        ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
         Print.printBuf("_R");
       then
         ();
@@ -1834,7 +1835,7 @@ algorithm
         false = RTOpts.modelicaOutput();
         Print.printBuf(s);
         Print.printBuf("[");
-        Exp.printList(l, Exp.printSubscript, ",");
+        ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
         Print.printBuf("]");
       then
         ();

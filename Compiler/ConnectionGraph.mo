@@ -60,6 +60,7 @@ public import DAE;
 public import DAEUtil;
 public import HashTableCG;
 public import Connect;
+protected import ExpressionDump;
 
 public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";
 public type Edges = list<Edge> "A list of edges";
@@ -1170,7 +1171,7 @@ algorithm
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
-           Exp.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), roots);
     // deal with NOT Connections.isRoot
     case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
@@ -1179,12 +1180,12 @@ algorithm
         result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         result = boolNot(result);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
-           Exp.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
+           ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then (DAE.BCONST(result), roots);
     // no replacement needed
     case (exp, roots)
       equation
-        // Debug.fprintln("cgraph", Exp.printExpStr(exp) +& " not found in roots!");
+        // Debug.fprintln("cgraph", ExpressionDump.printExpStr(exp) +& " not found in roots!");
       then (exp, roots);
   end matchcontinue;
 end evalIsRootHelper;

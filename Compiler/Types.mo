@@ -79,6 +79,7 @@ protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Print;
 protected import Util;
 protected import RTOpts;
@@ -1033,7 +1034,7 @@ public function printDimensionsStr "Prints dimensions to a string"
   input list<DAE.Dimension> dims;
   output String res;
 algorithm
-  res:=Util.stringDelimitList(Util.listMap(dims,Exp.dimensionString),", ");
+  res:=Util.stringDelimitList(Util.listMap(dims,ExpressionDump.dimensionString),", ");
 end printDimensionsStr;
 
 public function valuesToMods
@@ -2011,7 +2012,7 @@ algorithm
   str := matchcontinue(eq)
   local DAE.Exp e; Absyn.Exp e2;
     case(DAE.TYPED(e,_,_,_)) equation
-      str =Exp.printExpStr(e);
+      str =ExpressionDump.printExpStr(e);
     then str;
     case(DAE.UNTYPED(e2)) equation
       str = Dump.printExpStr(e2);
@@ -2320,7 +2321,7 @@ algorithm
     
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation
-        s1 = Exp.dimensionString(dim);
+        s1 = ExpressionDump.dimensionString(dim);
         s2 = printTypeStr(t);
         str = System.stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
@@ -2496,7 +2497,7 @@ algorithm
       DAE.Exp e;
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.EQBOUND(exp=e))
       equation
-        bindStr = Exp.printExpStr(e);
+        bindStr = ExpressionDump.printExpStr(e);
         res = System.stringAppendList({n,"=",bindStr});
       then
         res;
@@ -2606,7 +2607,7 @@ algorithm
     case DAE.UNBOUND() then "UNBOUND";
     case DAE.EQBOUND(exp = exp,evaluatedExp = NONE(),constant_ = f,source = source)
       equation
-        str = Exp.printExpStr(exp);
+        str = ExpressionDump.printExpStr(exp);
         str2 = unparseConst(f);
         str3 = DAEUtil.printBindingSourceStr(source);
         res = System.stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
@@ -2614,7 +2615,7 @@ algorithm
         res;
     case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
       equation
-        str = Exp.printExpStr(exp);
+        str = ExpressionDump.printExpStr(exp);
         str2 = unparseConst(f);
         v_str = ValuesUtil.valString(v);
         str3 = DAEUtil.printBindingSourceStr(source);
@@ -3793,7 +3794,7 @@ algorithm
       equation
         // activate on +d=types flag
         true = RTOpts.debugFlag("types");
-        Debug.traceln("- Types.matchProp failed on exp: " +& Exp.printExpStr(e));
+        Debug.traceln("- Types.matchProp failed on exp: " +& ExpressionDump.printExpStr(e));
         Debug.traceln(printPropStr(inProperties2) +& " != ");
         Debug.traceln(printPropStr(inProperties3));
       then fail();
@@ -4337,7 +4338,7 @@ algorithm
     case (exp,t1,t2,printFailtrace)
       equation
         Debug.fprint("tcvt", "- type conversion failed: ");
-        str = Exp.printExpStr(exp);
+        str = ExpressionDump.printExpStr(exp);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", "  ");
         str = unparseType(t1);
@@ -5213,7 +5214,7 @@ algorithm
       local String str;
       equation
         true = RTOpts.debugFlag("failtrace");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         Debug.fprintln("failtrace", "- Types.listMatchSuperType2 failed: " +& str);
       then fail();
   end matchcontinue;
@@ -5321,11 +5322,11 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
-        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
+        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
-        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
+        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);
-        // print("match type: " +& Exp.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
+        // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,true)
@@ -5384,7 +5385,7 @@ algorithm
     case (flag, source, e, e_type, expected_type)
       equation
         true = RTOpts.debugFlag(flag);
-        Debug.traceln("- Types." +& source +& " failed on:" +& Exp.printExpStr(e));
+        Debug.traceln("- Types." +& source +& " failed on:" +& ExpressionDump.printExpStr(e));
         Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
       then ();
     case (flag, source, e, e_type, expected_type)

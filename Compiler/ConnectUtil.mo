@@ -53,7 +53,6 @@ public import Env;
 public import InnerOuter;
 public import Prefix;
 public import ClassInf;
-public import ConnectionGraph;
 
 protected import Exp;
 protected import DAEUtil;
@@ -61,12 +60,10 @@ protected import Static;
 protected import Lookup;
 protected import Print;
 protected import Util;
-protected import Types;
 protected import Debug;
 protected import Error;
 protected import Dump;
 protected import PrefixUtil;
-protected import RTOpts;
 protected import System;
 
 public
@@ -954,7 +951,7 @@ algorithm
     case {(c,f,_)}
       equation
         exp = signFlow(c, f);
-         //print("Generating flow expression: " +& Exp.printExpStr(exp) +& "\n");
+         //print("Generating flow expression: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then
         exp;
     case (((c,f,_) :: cs))

@@ -47,10 +47,10 @@ import BackendDAEUtil;
 import System;
 import Util;
 import Exp;
+import ExpressionDump;
 import Absyn;
 import DAE;
 import Algorithm;
-import RTOpts;
 import DAEDump;
 
 protected constant String matlabStringDelim = "'";
@@ -123,37 +123,37 @@ algorithm
       DAE.ComponentRef cr;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2), _)
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         res = System.stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
-        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
+        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),", ");
         res = System.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         res = System.stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         BackendDAE.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
-        s3 = Exp.printExpStr(condition);
+        s3 = ExpressionDump.printExpStr(condition);
         res = System.stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),_)
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         res = System.stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
@@ -399,7 +399,7 @@ algorithm
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
@@ -436,7 +436,7 @@ algorithm
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
@@ -774,7 +774,7 @@ algorithm
         DAE.Exp ee1,ee2;
         DAE.Operator op1;
       equation
-        opStr = Exp.relopSymbol(op1);
+        opStr = ExpressionDump.relopSymbol(op1);
         s = printExpStr(ee2);
         s1 = incidenceRowExp(e1, vars);
         ss1 = getIncidenceRow(s1);
@@ -813,7 +813,7 @@ algorithm
         DAE.Operator op1;
       equation
         opStr = printExpStr(e1);
-        //opStr = Exp.relopSymbol(op1);
+        //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
         sb = System.stringAppendList({"'true',","'=='"});
         s1 = incidenceRowExp(e1, vars);
@@ -964,7 +964,7 @@ protected function printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Exp.printExp2Str(e, "'", NONE(),NONE());
+  s := ExpressionDump.printExp2Str(e, "'", NONE(),NONE());
 end printExpStr;
 
 end DAEQuery;

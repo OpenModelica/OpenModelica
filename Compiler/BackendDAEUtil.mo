@@ -60,6 +60,7 @@ protected import Ceval;
 protected import DAELow;
 protected import Debug;
 protected import Error;
+protected import ExpressionDump;
 protected import HashTable2;
 protected import Values;
 protected import ValuesUtil;
@@ -100,7 +101,7 @@ algorithm
           true = RTOpts.debugFlag("checkBackendDAE");
           strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
           crefstring = Util.stringDelimitList(strcrefs,", ");
-          expstr = Exp.printExpStr(e);
+          expstr = ExpressionDump.printExpStr(e);
           scopestr = System.stringAppendList({crefstring," from Expression: ",expstr});
           Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"BackendDAE object"});
           printcheckBackendDAEWithErrorMsg(res);
@@ -1202,7 +1203,7 @@ algorithm
     case (e,vars)
       equation
         // adrpo: TODO! FIXME! this function fails for some of the expressions: cr.cr.cr[{1,2,3}] for example.
-        // Debug.fprintln("daelow", "- DAELow.statesAndVarsExp failed to extract states or vars from expression: " +& Exp.dumpExpStr(e,0));
+        // Debug.fprintln("daelow", "- DAELow.statesAndVarsExp failed to extract states or vars from expression: " +& ExpressionDump.dumpExpStr(e,0));
       then {};
   end matchcontinue;
 end statesAndVarsExp;

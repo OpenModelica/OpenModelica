@@ -113,9 +113,9 @@ protected import Absyn;
 protected import Algorithm;
 protected import BaseHashTable;
 protected import Exp;
+protected import ExpressionDump;
 protected import System;
 protected import Util;
-protected import Debug;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
   input DAE.DAElist dae;
@@ -854,9 +854,9 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& Exp.debugPrintComponentRefExp(Util.tuple22(tpl));
+  str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& Exp.printExpStr(Util.tuple22(tpl));
+  //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function replacementSources "Returns all sources of the replacement rules"
@@ -925,9 +925,9 @@ algorithm
       equation        
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
         /*s1 = ComponentReference.printComponentRefStr(src);
-        s2 = Exp.printExpStr(dst);
+        s2 = ExpressionDump.printExpStr(dst);
         s3 = ComponentReference.printComponentRefStr(src_1);
-        s4 = Exp.printExpStr(dst_1);
+        s4 = ExpressionDump.printExpStr(dst_1);
         s = System.stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
@@ -1692,7 +1692,7 @@ algorithm
         DAE.REDUCTION(p,e1_1,id,r_1);
     case (e,repl,cond)
       equation
-        //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& Exp.printExpStr(e));
+        //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& ExpressionDump.printExpStr(e));
       then e;
   end matchcontinue;
 end replaceExp;

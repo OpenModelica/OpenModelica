@@ -76,6 +76,7 @@ protected import BackendDump;
 protected import BackendDAETransform;
 protected import BackendVariable;
 protected import DAEUtil;
+protected import ExpressionDump;
 protected import SCodeUtil;
 protected import ClassInf;
 protected import SimCodeC;
@@ -7430,7 +7431,7 @@ algorithm
 
     case (e,_)
       equation
-        Debug.fprintln("failtrace", "- SimCode.getMatchingExps failed: " +& Exp.printExpStr(e));
+        Debug.fprintln("failtrace", "- SimCode.getMatchingExps failed: " +& ExpressionDump.printExpStr(e));
       then fail();
 
   end matchcontinue;
@@ -7865,16 +7866,16 @@ algorithm
       DAE.Exp uexp, duexp;
     case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = SOME(duexp) )) )
       equation
-        unitStr = Exp.printExpStr(uexp);
+        unitStr = ExpressionDump.printExpStr(uexp);
         unitStr = System.stringReplace(unitStr,"\"","");
         unitStr = System.stringReplace(unitStr,"\\","\\\\");
-        displayUnitStr = Exp.printExpStr(duexp);
+        displayUnitStr = ExpressionDump.printExpStr(duexp);
         displayUnitStr = System.stringReplace(displayUnitStr,"\"","");        
         displayUnitStr = System.stringReplace(displayUnitStr,"\\","\\\\");
       then (unitStr, displayUnitStr);
     case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE())) )
       equation
-        unitStr = Exp.printExpStr(uexp);
+        unitStr = ExpressionDump.printExpStr(uexp);
         unitStr = System.stringReplace(unitStr,"\"","");
         unitStr = System.stringReplace(unitStr,"\\","\\\\");
       then (unitStr, unitStr);        

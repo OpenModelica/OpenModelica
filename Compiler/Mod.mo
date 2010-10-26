@@ -65,6 +65,7 @@ protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Inst;
 protected import PrefixUtil;
 protected import Print;
@@ -381,7 +382,7 @@ algorithm
                         eqModOption = SOME(DAE.TYPED(e,_,p,SOME(absynExp))))))
       local DAE.Exp e;
       equation
-        //es = Exp.printExpStr(e);
+        //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = absynExp; //Exp.unelabExp(e);
       then
@@ -391,7 +392,7 @@ algorithm
                         eqModOption = SOME(DAE.TYPED(e,_,p,NONE())))))
       local DAE.Exp e;
       equation
-        //es = Exp.printExpStr(e);
+        //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = Exp.unelabExp(e);
       then
@@ -857,7 +858,7 @@ algorithm
         fail();
     case(xs,m) equation
       print("Mod.makeIdxmods failed for mod:");print(printModStr(m));print("\n");
-      print("subs =");print(Util.stringDelimitList(Util.listMap(xs,Exp.printSubscriptStr),","));
+      print("subs =");print(Util.stringDelimitList(Util.listMap(xs,ExpressionDump.printSubscriptStr),","));
       print("\n");
     then fail();
 
@@ -929,7 +930,7 @@ algorithm
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
                               SOME(DAE.TYPED(e_1,SOME(indexVal),DAE.PROP(t_1,const),NONE())));
         //print("IDXValue: " +& ValuesUtil.printValStr(indexVal) +& "\n");
-        //print("Idx: " +& Exp.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
+        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
         mods1 = makeIdxmods(DAE.INDEX(x) :: restSubscripts,unfoldedMod);
         n_1 = n + 1;
         mods2 = expandSlice(xs, restSubscripts, n_1, m);
@@ -943,13 +944,13 @@ algorithm
                         eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_)))))
       equation
         e_2 = DAE.ICONST(n);
-        //print("FULLExpression: " +& Exp.printExpStr(e) +& "\n");        
+        //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");        
         e_1 = ExpressionSimplify.simplify(DAE.ASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
                               SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE())));
-        //print("IDXExpression: " +& Exp.printExpStr(e_1) +& "\n");
-        //print("Idx: " +& Exp.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");        
+        //print("IDXExpression: " +& ExpressionDump.printExpStr(e_1) +& "\n");
+        //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");        
         mods1 = makeIdxmods((DAE.INDEX(x) :: restSubscripts),unfoldedMod);
         n_1 = n + 1;
         mods2 = expandSlice(xs, restSubscripts, n_1, m);
@@ -1554,7 +1555,7 @@ algorithm
                  * example), and therefore relying on this behaviour, so just print a
                  * warning here. */
         failure(t_1 = Types.unliftArray(t));
-        exp_str = Exp.printExpStr(exp);
+        exp_str = ExpressionDump.printExpStr(exp);
                 Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
             then 
               fail();
@@ -2446,7 +2447,7 @@ algorithm
     case NONE() then "";
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       equation
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
         e_val_str = ValuesUtil.valString(e_val);
         res = System.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
@@ -2454,7 +2455,7 @@ algorithm
         res;
     case SOME(DAE.TYPED(e,NONE(),prop,_))
       equation
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
         res = System.stringAppendList({" = (typed)",str,str2});
       then

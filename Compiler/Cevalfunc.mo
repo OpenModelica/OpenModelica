@@ -29,6 +29,7 @@ protected import Ceval;
 protected import Util;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Debug;
 protected import Lookup;
 protected import Static;
@@ -525,9 +526,9 @@ algorithm
   outExp := matchcontinue(inExp,ht2)
     case(inExp,ht2)
       equation
-         //print(" replace exp: " +& Exp.printExpStr(inExp) +& "\n");
+         //print(" replace exp: " +& ExpressionDump.printExpStr(inExp) +& "\n");
          ((outExp,_)) = Exp.traverseExp(inExp,qualReplacer,ht2);
-         //print(" replaced exp: " +& Exp.printExpStr(outExp) +& "\n");
+         //print(" replaced exp: " +& ExpressionDump.printExpStr(outExp) +& "\n");
         then
           outExp;
     case(inExp,_) then inExp;
@@ -746,7 +747,7 @@ algorithm
     case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
         (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true,NONE(),true,Prefix.NOPRE(),Absyn.dummyInfo);
-        estr = Exp.printExpStr(e1);
+        estr = ExpressionDump.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
         fail();
@@ -846,7 +847,7 @@ algorithm
     case (value,exp,algitemlst,algrest,env, ht2)  
       equation 
         (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE(),false,Prefix.NOPRE(),Absyn.dummyInfo); 
-        estr = Exp.printExpStr(daeExp);
+        estr = ExpressionDump.printExpStr(daeExp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr});

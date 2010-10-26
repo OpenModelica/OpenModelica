@@ -133,6 +133,7 @@ protected import Dump;
 protected import Error;
 protected import ErrorExt;
 protected import Exp;
+protected import ExpressionDump;
 protected import HashTable;
 protected import HashTable5;
 protected import InstSection;
@@ -423,7 +424,7 @@ algorithm oelems := matchcontinue(cache,env,elems)
     case(_,_,{}) then {};
   case(cache,env,(elem as DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source))::elems)
     equation
-      //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,Exp.printExpStr),", ") +& "\n");
+      //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,ExpressionDump.printExpStr),", ") +& "\n");
       (cache,valList) = Ceval.cevalList(cache,env, conds, true,NONE(), Ceval.NO_MSG());
       //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
 
@@ -2556,7 +2557,7 @@ algorithm
       local String s;
       equation
         equality(c=DAE.C_VAR);
-        s = Exp.printExpStr(bind);
+        s = ExpressionDump.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
       then fail();
       
@@ -2572,7 +2573,7 @@ algorithm
       true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +&
-                                  " binding: " +& Exp.printExpStr(bind) +&
+                                  " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
@@ -2580,7 +2581,7 @@ algorithm
       true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
-                                  " binding: " +& Exp.printExpStr(bind) +&
+                                  " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
@@ -7725,7 +7726,7 @@ algorithm eOpt := matchcontinue(tp,mod,const,pre,name,source)
       SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
       failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
       v_str = n;
-      b_str = Exp.printExpStr(e);
+      b_str = ExpressionDump.printExpStr(e);
       et_str = Types.unparseType(tp);
       bt_str = Types.unparseType(bt);
       Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
@@ -7775,7 +7776,7 @@ algorithm
       sn = PrefixUtil.printPrefixStr2(pre)+&n;
       sc = DAEUtil.constStr(c);
       sc1 = DAEUtil.constStr(c1);
-      se = Exp.printExpStr(e);
+      se = ExpressionDump.printExpStr(e);
       Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1}, DAEUtil.getElementSourceFileInfo(source));
     then
       fail();
@@ -9025,7 +9026,7 @@ algorithm
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
-        str2 = "[" +& Util.stringDelimitList(Util.listMap(idxs, Exp.printSubscriptStr), ", ") +& "]";
+        str2 = "[" +& Util.stringDelimitList(Util.listMap(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
         str3 = Mod.prettyPrintMod(mod, 1);
         str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
         str2 = str1 +& str2;
@@ -9247,7 +9248,7 @@ algorithm
         t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref);
-        //Debug.traceln("TYPED: " +& Exp.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
+        //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
@@ -9271,7 +9272,7 @@ algorithm
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         dim_str = printDimStr(dim1);
         Error.addSourceMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str}, info);
@@ -9300,7 +9301,7 @@ protected function printDimStr
 
   list<String> dim_strings;
 algorithm
-  dim_strings := Util.listMap(inDimensionLst, Exp.dimensionString);
+  dim_strings := Util.listMap(inDimensionLst, ExpressionDump.dimensionString);
   outString := Util.stringDelimitList(dim_strings, ",");
 end printDimStr;
 
@@ -9406,7 +9407,7 @@ algorithm
         failure(equality(cnst = DAE.C_VAR()));
         (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st,NONE(), Ceval.NO_MSG());
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& Exp.printExpStr(e) +& ":" +& intString(i));
+        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
       then
         (cache,DAE.DIM_INTEGER(i) :: l);
 
@@ -9449,7 +9450,7 @@ algorithm
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
       equation
         (cache,e,DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER, {e_str,t_str}, info);
       then
@@ -9595,7 +9596,7 @@ algorithm
       equation
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         tpStr = Types.unparseType(t);
-        expStr = Exp.printExpStr(exp);
+        expStr = ExpressionDump.printExpStr(exp);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& Absyn.printComponentRefStr(componentRef);
         Error.addMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr});
       then fail();
@@ -11201,7 +11202,7 @@ algorithm
 
     case (cache,_,exp,prop)
       equation 
-        Debug.fprintln("failtrace", "#-- Inst.instExtGetFargsSingle failed for expression: " +& Exp.printExpStr(exp));
+        Debug.fprintln("failtrace", "#-- Inst.instExtGetFargsSingle failed for expression: " +& ExpressionDump.printExpStr(exp));
       then
         fail();
   end matchcontinue;
@@ -12560,7 +12561,7 @@ algorithm
         failure((_,_) = Types.matchType(e, e_tp, tp, false));
         e_tp_str = Types.unparseType(e_tp);
         tp_str = Types.unparseType(tp);
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
         Error.addMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str});
@@ -13674,7 +13675,7 @@ algorithm
         (cache, e, DAE.PROP(type_ = t), _) = 
           Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         false = Types.isBoolean(t);
-        exp_str = Exp.printExpStr(e);
+        exp_str = ExpressionDump.printExpStr(e);
         type_str = Types.unparseType(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {exp_str, type_str}, info);
       then
@@ -13685,7 +13686,7 @@ algorithm
           Static.elabExp(cache, env, cond, false,NONE(), false, pre, info);
         true = Types.isBoolean(t);
         false = Types.isParameterOrConstant(c);
-        exp_str = Exp.printExpStr(e);
+        exp_str = ExpressionDump.printExpStr(e);
         Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY, {exp_str}, info);
       then
         fail();

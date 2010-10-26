@@ -59,6 +59,7 @@ type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Debug;
 protected import Exp;
+protected import ExpressionDump;
 protected import Print;
 protected import Util;
 protected import System;
@@ -81,7 +82,7 @@ algorithm
     case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
       equation
         s = stringAppend(str, "[" +& Util.stringDelimitList(
-          Util.listMap(ss, Exp.subscriptString), ", ") +& "]");
+          Util.listMap(ss, ExpressionDump.subscriptString), ", ") +& "]");
       then
         s;
     case Prefix.PREFIX(Prefix.PRE(str,{},rest,_),cp)
@@ -97,7 +98,7 @@ algorithm
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
         s_2 = stringAppend(s_1, "[" +& Util.stringDelimitList(
-          Util.listMap(ss, Exp.subscriptString), ", ") +& "]");
+          Util.listMap(ss, ExpressionDump.subscriptString), ", ") +& "]");
       then
         s_2;
   end matchcontinue;
@@ -745,7 +746,7 @@ algorithm
       local Prefix.Prefix p; Integer i; DAE.Exp e;
       equation
         e = listNth(es, i-1);
-        Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& Exp.printExp2Str(e) +& "\n");
+        Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& ExpressionDump.printExp2Str(e) +& "\n");
       then
         (cache,e);    */
 
@@ -866,7 +867,7 @@ algorithm
       equation
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n");
       then

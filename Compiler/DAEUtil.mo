@@ -221,6 +221,7 @@ protected import Ceval;
 protected import Debug;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import ModUtil;
 protected import RTOpts;
 protected import System;
@@ -959,12 +960,12 @@ algorithm
     case (NONE()) then "";
     case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r))))
       equation
-        s = Exp.printExpStr(r);
+        s = ExpressionDump.printExpStr(r);
       then
         s;
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))))
       equation
-        s = Exp.printExpStr(r);
+        s = ExpressionDump.printExpStr(r);
       then
         s;
     case (_) then "";
@@ -1445,7 +1446,7 @@ algorithm
       list<DAE.Element> lst;
     case (((v as DAE.VAR(componentRef = cr,binding = SOME(e))) :: (lst as (_ :: _))))
       equation
-        expstr = Exp.printExpStr(e);
+        expstr = ExpressionDump.printExpStr(e);
         s3 = stringAppend(expstr, ",");
         s4 = getBindingsStr(lst);
         str = stringAppend(s3, s4);
@@ -1460,7 +1461,7 @@ algorithm
         str;
     case ({(v as DAE.VAR(componentRef = cr,binding = SOME(e)))})
       equation
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
       then
         str;
     case ({(v as DAE.VAR(componentRef = cr,binding = NONE()))}) then "";
@@ -1671,7 +1672,7 @@ algorithm
     case (cache,env,cname,{},_) then (cache,Values.RECORD(cname,{},{},-1));  /* impl */
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs)) :: rest, impl)
       equation
-        // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& Exp.typeOfString(rhs));
+        // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
@@ -5147,7 +5148,7 @@ algorithm
     case(DAE.UNBOUND()) then "";
     case(DAE.EQBOUND(exp=e)) 
       equation
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
       then 
         str;
     case(DAE.VALBOUND(valBound=v)) 

@@ -51,6 +51,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import IOStream;
 protected import SCode;
 protected import Util;
@@ -102,24 +103,24 @@ algorithm
       Exp.Type ty;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
+        s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
     case (DAE.CALL(path = fcn,expLst = args), _,_)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap3(args, Exp.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
+          Util.listMap3(args, ExpressionDump.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
         s = stringAppend(fs, "(");
         s_1 = stringAppend(s, argstr);
         s_2 = stringAppend(s_1, ")");
@@ -227,8 +228,8 @@ algorithm
       BackendDAE.WhenEquation w;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," = ",s2,"\n"});
         print(res);
       then
@@ -237,7 +238,7 @@ algorithm
       equation
         (cr,e2) = DAELow.getWhenEquationExpr(w);
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," =  ",s2,"\n"});
         print(res);
       then
@@ -374,10 +375,10 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("EQUATION: ");
-        str = Exp.printExpStr(e1);
+        str = ExpressionDump.printExpStr(e1);
         print(str);
         print("\n");
-        str = Exp.dumpExpStr(e1,0);
+        str = ExpressionDump.dumpExpStr(e1,0);
         str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
@@ -387,10 +388,10 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("COMPLEX_EQUATION: ");
-        str = Exp.printExpStr(e1);
+        str = ExpressionDump.printExpStr(e1);
         print(str);
         print("\n");
-        str = Exp.dumpExpStr(e1,0);
+        str = ExpressionDump.dumpExpStr(e1,0);
         str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
@@ -400,10 +401,10 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("SOLVED_EQUATION: ");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         print(str);
         print("\n");
-        str = Exp.dumpExpStr(e,0);
+        str = ExpressionDump.dumpExpStr(e,0);
         str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
@@ -413,10 +414,10 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("RESIDUAL_EQUATION: ");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         print(str);
         print("\n");
-        str = Exp.dumpExpStr(e,0);
+        str = ExpressionDump.dumpExpStr(e,0);
         str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
@@ -426,7 +427,7 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("ARRAY_EQUATION: ");
-        strList = Util.listMap(expList,Exp.printExpStr);
+        strList = Util.listMap(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
@@ -436,11 +437,11 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("ALGORITHM: ");
-        strList = Util.listMap(expList,Exp.printExpStr);
+        strList = Util.listMap(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
-        strList = Util.listMap(expList2,Exp.printExpStr);
+        strList = Util.listMap(expList2,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
@@ -450,10 +451,10 @@ algorithm
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("WHEN_EQUATION: ");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         print(str);
         print("\n");
-        str = Exp.dumpExpStr(e,0);
+        str = ExpressionDump.dumpExpStr(e,0);
         str = Util.if_(printExpTree,str,"");
         print(str);
         print("\n");
@@ -484,7 +485,7 @@ algorithm
         eq_s = Util.stringDelimitList(eq_s_list, ",");
         wc_s_list = Util.listMap(wc, intString);
         wc_s = Util.stringDelimitList(wc_s_list, ",");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
       then
         str2;
@@ -649,7 +650,7 @@ algorithm
     case ({}) then {};
     case (((row,col,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: eqns))
       equation
-        estr = Exp.printExpStr(e);
+        estr = ExpressionDump.printExpStr(e);
         rowstr = intString(row);
         colstr = intString(col);
         str = stringAppendList({"{",rowstr,",",colstr,"}:",estr});
@@ -674,8 +675,8 @@ algorithm
     case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),inInteger)
       equation
         is = intString(inInteger);
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s = stringAppendList({is," : ",s1," = ",s2,"\n"});
         print(s);
         dumpArrayEqns(es,inInteger + 1);
@@ -737,14 +738,14 @@ algorithm
     case (BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn)))
       equation
         s1 = whenEquationStr(weqn);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         is = intString(i);
         res = stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */, s1});
       then
         res;
     case (BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = NONE()))
       equation
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         is = intString(i);
         res = stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
       then
@@ -768,29 +769,29 @@ algorithm
       BackendDAE.WhenEquation weqn;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(lhs = e1,rhs = e2))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
-        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
+        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),", ");
         res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," := ",s2});
       then
         res;
@@ -798,7 +799,7 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn))))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         is = intString(i);
         s3 = whenEquationStr(weqn);
         res = stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */, s3});
@@ -807,22 +808,22 @@ algorithm
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)))
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s2 = ExpressionDump.printExpStr(e2);
         is = intString(i);
         res = stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */});
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         res = stringAppendList({s1,"= 0"});
       then
         res;
     case (BackendDAE.ALGORITHM(index = i, in_ = inps, out = outs))
       equation
         is = intString(i);
-        intsStr = Util.stringDelimitList(Util.listMap(inps, Exp.printExpStr), ", ");
-        outsStr = Util.stringDelimitList(Util.listMap(outs, Exp.printExpStr), ", ");        
+        intsStr = Util.stringDelimitList(Util.listMap(inps, ExpressionDump.printExpStr), ", ");
+        outsStr = Util.stringDelimitList(Util.listMap(outs, ExpressionDump.printExpStr), ", ");        
         res = stringAppendList({"Algorithm no: ", is, " for inputs: (", 
                                       intsStr, ") => outputs: (", 
                                       outsStr, ")" /*,"\n"*/});
@@ -928,7 +929,7 @@ algorithm
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = DAEDump.dumpCommentOptionStr(comment);
         print("= ");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);

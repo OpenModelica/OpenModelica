@@ -22,7 +22,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 public import BaseHashTable;
 public import DAE;
 public import ComponentReference;
-protected import Exp;
+protected import ExpressionDump;
 protected import System;
 
 public type Key = tuple<DAE.ComponentRef,DAE.ComponentRef>;
@@ -95,7 +95,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,keyEqual,printKey,Exp.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,keyEqual,printKey,ExpressionDump.printExpStr));
 end emptyHashTable;
 
 public function emptyHashTableSized
@@ -106,7 +106,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,keyEqual,printKey,Exp.printExpStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,keyEqual,printKey,ExpressionDump.printExpStr));
 end emptyHashTableSized;
 
 end HashTable6;

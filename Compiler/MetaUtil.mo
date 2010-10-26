@@ -47,12 +47,10 @@ public import SCode;
 public import SCodeUtil;
 
 protected import Error;
-protected import Exp;
 protected import Lookup;
 protected import RTOpts;
 protected import Types;
 protected import Util;
-protected import System;
 
 public function isList "function: isList
 	author: KS

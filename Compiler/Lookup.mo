@@ -50,6 +50,7 @@ public import ClassInf;
 public import ComponentReference;
 public import DAE;
 public import Env;
+public import ExpressionDump;
 public import RTOpts;
 public import SCode;
 public import Util;
@@ -68,7 +69,6 @@ protected import Mod;
 protected import Prefix;
 protected import Static;
 protected import UnitAbsyn;
-protected import DAEUtil;
 // protected import ModUtil;
 
 public uniontype SearchStrategy
@@ -2422,7 +2422,7 @@ algorithm
         Debug.fprint("failtrace", "- Lookup.checkSubscripts failed (tp: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", " subs:");
-        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(s,Exp.printSubscriptStr),","));
+        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(s,ExpressionDump.printSubscriptStr),","));
         Debug.fprint("failtrace", ")\n");
       then
         fail();
@@ -2453,7 +2453,7 @@ algorithm
       equation
         str2 = intString(dims);
         exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
-        str1 = Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr)," and position " );
+        str1 = Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
         fail();
@@ -2544,7 +2544,7 @@ algorithm
         ty2_2 = Types.elabType(ty);
         cref_ = ComponentReference.makeCrefIdent(id,ty2_2, ss);
         splicedExp = DAE.CREF(cref_,tty);
-        //print("splicedExp ="+&Exp.dumpExpStr(splicedExp,0)+&"\n");
+        //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
 

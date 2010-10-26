@@ -62,13 +62,14 @@ public type Else = DAE.Else;
 
 protected import DAEUtil;
 protected import Debug;
-protected import RTOpts;
 protected import Error;
+protected import ExpressionDump;
 protected import Exp;
 protected import Print;
+protected import RTOpts;
+protected import System;
 protected import Types;
 protected import Util;
-protected import System;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -159,8 +160,8 @@ algorithm
     case (lhs,lprop,rhs,rprop,_,initial_,source)
       equation
         DAE.C_CONST() = Types.propAnyConst(lprop);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -177,16 +178,16 @@ algorithm
     case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     /* assignment to a constant, report error */
     case (lhs,_,rhs,_,SCode.RO(),_,source)
       equation
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -210,8 +211,8 @@ algorithm
         lt = Types.getPropType(lprop);
         rt = Types.getPropType(rprop);
         false = Types.equivtypes(lt, rt);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -224,9 +225,9 @@ algorithm
       equation
         Print.printErrorBuf("- Algorithm.makeAssignment failed\n");
         Print.printErrorBuf("    ");
-        Print.printErrorBuf(Exp.printExpStr(lhs));
+        Print.printErrorBuf(ExpressionDump.printExpStr(lhs));
         Print.printErrorBuf(" := ");
-        Print.printErrorBuf(Exp.printExpStr(rhs));
+        Print.printErrorBuf(ExpressionDump.printExpStr(rhs));
         Print.printErrorBuf("\n");
       then
         fail();
@@ -342,10 +343,10 @@ algorithm
       equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -353,10 +354,10 @@ algorithm
       equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -384,10 +385,10 @@ algorithm
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
         true = RTOpts.debugFlag("failtrace");
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCode.printInitialStr(initial_);
@@ -466,7 +467,7 @@ algorithm
         DAE.STMT_IF(e,tb,else_,source);
     case (e,DAE.PROP(type_ = t),_,_,_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -499,7 +500,7 @@ algorithm
         DAE.ELSEIF(e,b,else_);
     case (((e,DAE.PROP(type_ = t),_) :: _),_)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
       then
@@ -534,7 +535,7 @@ algorithm
         DAE.STMT_FOR(et,array,i,e,stmts,source);
     case (_,e,DAE.PROP(type_ = t),_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -561,7 +562,7 @@ algorithm
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
     case (e,DAE.PROP(type_ = t),_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -591,7 +592,7 @@ algorithm
     case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = t),_,_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then

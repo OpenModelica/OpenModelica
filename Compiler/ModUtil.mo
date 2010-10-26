@@ -48,7 +48,6 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import ComponentReference;
-protected import Exp;
 protected import RTOpts;
 protected import Util;
 protected import Algorithm;

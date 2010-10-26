@@ -41,6 +41,7 @@ public import BackendDAE;
 public import ComponentReference;
 public import DAE;
 public import DAELow;
+public import Exp;
 public import ExpressionSimplify;
 public import SCode;
 public import Values;
@@ -48,14 +49,12 @@ public import BackendVariable;
 
 protected import Algorithm;
 protected import BackendDump;
-protected import BackendVarTransform;
 protected import ClassInf;
 protected import DAEUtil;
 protected import Debug;
 protected import Derive;
-protected import Env;
 protected import Error;
-protected import Exp;
+protected import ExpressionDump;
 protected import OptManager;
 protected import RTOpts;
 protected import Util;
@@ -1154,7 +1153,7 @@ algorithm
     case (DAE.WHEN_EQUATION(condition = cond),_,_)
       local String scond;
       equation
-        scond = Exp.printExpStr(cond);
+        scond = ExpressionDump.printExpStr(cond);
         print("- DAELow.lowerWhenEqn: Error in lowerWhenEqn. \n when ");
         print(scond);
         print(" ... \n");
@@ -3095,7 +3094,7 @@ algorithm
       local String messageStr;
       equation
         true = Exp.isConstFalse(cond);
-        messageStr = Exp.printExpStr(message);
+        messageStr = ExpressionDump.printExpStr(message);
         Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
       then fail();
   end matchcontinue;

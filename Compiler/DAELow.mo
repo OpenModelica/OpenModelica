@@ -72,6 +72,7 @@ protected import Derive;
 protected import Env;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import OptManager;
 protected import RTOpts;
 protected import System;
@@ -7564,7 +7565,7 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
-         //Exp.dumpExpWithTitle("equationToResidualForm 1\n",e2);
+         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
         tp = Exp.typeof(e2);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
@@ -7573,7 +7574,7 @@ algorithm
         BackendDAE.RESIDUAL_EQUATION(e,source);
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
       equation
-         //Exp.dumpExpWithTitle("equationToResidualForm 2\n",exp);
+         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
         tp = Exp.typeof(exp);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
@@ -10708,11 +10709,11 @@ algorithm
         (tnofixedexplst,tfixedexplst) = listSplitOnTrue(nonconstexplst,blst_1);
         true = listLength(tnofixedexplst) < 1;
 /*        print("\ntfixedexplst DivExpLst:\n");
-        s = Util.listMap(tfixedexplst, Exp.printExpStr);
+        s = Util.listMap(tfixedexplst, ExpressionDump.printExpStr);
         Util.listMap0(s,print);
         print("\n===============================\n");
         print("\ntnofixedexplst DivExpLst:\n");
-        s = Util.listMap(tnofixedexplst, Exp.printExpStr);
+        s = Util.listMap(tnofixedexplst, ExpressionDump.printExpStr);
         Util.listMap0(s,print);
         print("\n===============================\n");
 */        eqns_1 = equationSetnth(eqns,e_1,BackendDAE.EQUATION(expr,varexp,source));
@@ -10932,8 +10933,8 @@ input BackendDAE.Variables inVars;
 output String outString;
 protected String se,se2,s,s1;
 algorithm
-  se := Exp.printExp2Str(inExp,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
-  se2 := Exp.printExp2Str(inDivisor,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  se := ExpressionDump.printExp2Str(inExp,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  se2 := ExpressionDump.printExp2Str(inDivisor,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
   s := stringAppend(se," because ");
   s1 := stringAppend(s,se2);
   outString := stringAppend(s1," == 0");
@@ -11928,7 +11929,7 @@ algorithm
       Builtin.isDer(fname);
       cref = Exp.expCref(e1);
       cref = crefPrefixDer(cref);
-      //str = derivativeNamePrefix +& Exp.printExpStr(e1);
+      //str = derivativeNamePrefix +& ExpressionDump.printExpStr(e1);
       //cref = ComponentReference.makeCrefIdent(str, DAE.ET_REAL(),{});
       e1_ = differentiateWithRespectToX(Exp.crefExp(cref), x, functions, inputVars, paramVars, stateVars);
     then e1_;
@@ -12020,7 +12021,7 @@ algorithm
     case(e, x, _, _, _, _)
       local String str;
       equation
-        str = "differentiateWithRespectToX failed: " +& Exp.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(x);
+        str = "differentiateWithRespectToX failed: " +& ExpressionDump.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(x);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();

@@ -57,6 +57,7 @@ protected import BackendVariable;
 protected import DAE;
 protected import DAEUtil;
 protected import Exp;
+protected import ExpressionDump;
 protected import TaskGraphExt;
 protected import Util;
 protected import Values;
@@ -150,7 +151,7 @@ algorithm
     case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        v = Exp.printExpStr(e);
+        v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);
         buildInits2(rest);
@@ -166,7 +167,7 @@ algorithm
     case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        v = Exp.printExpStr(e);
+        v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
         TaskGraphExt.addInitState(indx, v, origname_str);
         buildInits2(rest);
@@ -182,7 +183,7 @@ algorithm
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        v = Exp.printExpStr(e);
+        v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);
         buildInits2(rest);
@@ -198,7 +199,7 @@ algorithm
     case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        v = Exp.printExpStr(e);
+        v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);
         buildInits2(rest);
@@ -445,7 +446,7 @@ algorithm
         tid = TaskGraphExt.newTask(taskname);
         TaskGraphExt.setTaskType(tid, 3);
         buildNonlinearEquations2(tid, vars, residuals) "See TaskType in TaskGraph.hpp" ;
-        varnames = Util.listMap(vars, Exp.printExpStr);
+        varnames = Util.listMap(vars, ExpressionDump.printExpStr);
         storeMultipleResults(varnames, tid);
       then
         ();
@@ -617,7 +618,7 @@ algorithm
     case (_,_,(e :: _))
       equation
         print("build_nonlinear_equations2 failed\n");
-        es = Exp.printExpStr(e);
+        es = ExpressionDump.printExpStr(e);
         print("first residual :");
         print(es);
         print("\n");
@@ -886,7 +887,7 @@ algorithm
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
-        ops = Exp.binopSymbol1(op);
+        ops = ExpressionDump.binopSymbol1(op);
         ts = System.stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
@@ -898,7 +899,7 @@ algorithm
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
-        ops = Exp.binopSymbol1(op);
+        ops = ExpressionDump.binopSymbol1(op);
         ts = System.stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
@@ -909,7 +910,7 @@ algorithm
     case (DAE.UNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
-        ops = Exp.unaryopSymbol(op);
+        ops = ExpressionDump.unaryopSymbol(op);
         ts = System.stringAppendList({ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
@@ -919,7 +920,7 @@ algorithm
     case (DAE.LUNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
-        ops = Exp.lunaryopSymbol(op);
+        ops = ExpressionDump.lunaryopSymbol(op);
         ts = System.stringAppendList({ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
@@ -930,7 +931,7 @@ algorithm
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
-        ops = Exp.relopSymbol(relop);
+        ops = ExpressionDump.relopSymbol(relop);
         ts = System.stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
@@ -1015,7 +1016,7 @@ algorithm
     case (e)
       equation
         print("-TaskGraph.buildExpression failed\n Exp = ");
-        es = Exp.printExpStr(e);
+        es = ExpressionDump.printExpStr(e);
         print(es);
         print("\n");
       then

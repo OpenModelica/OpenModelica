@@ -58,6 +58,7 @@ protected import BackendDAETransform;
 protected import Debug;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Inline;
 protected import System;
 protected import Util;
@@ -504,7 +505,7 @@ algorithm
         DAE.UNARY(op,e_1);
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(timevars,functions))
       equation
-        e_str = Exp.printExpStr(e) "The derivative of logic expressions are non-existent" ;
+        e_str = ExpressionDump.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
@@ -540,7 +541,7 @@ algorithm
         e2;        
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
@@ -643,7 +644,7 @@ algorithm
         DAE.REDUCTION(a,e1_1,b,e2_1);
     case (e,(timevars,functions))
       equation
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         print("-differentiate_exp_time on ");
         print(str);
         print(" failed\n");
@@ -1420,7 +1421,7 @@ algorithm
 
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv,differentiateIfExp)
       equation
-        e_str = Exp.printExpStr(e) "The derivative of logic expressions are non-existent" ;
+        e_str = ExpressionDump.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
@@ -1505,7 +1506,7 @@ algorithm
     case (e,cr,differentiateIfExp)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
         str = System.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
         //print(str);

@@ -40,7 +40,6 @@ package Patternm
   matchcontinue expression."
 
 public import Absyn;
-public import ComponentReference;
 public import DFA;
 public import Env;
 public import SCode;

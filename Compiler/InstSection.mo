@@ -55,12 +55,12 @@ public import SCode;
 protected import Algorithm;
 protected import Ceval;
 protected import ConnectUtil;
-protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Inst;
 protected import Interactive;
 protected import Lookup;
@@ -1272,9 +1272,9 @@ algorithm
         dae;
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),source,initial_,impl)
       equation
-        e1_str = Exp.printExpStr(e1);
+        e1_str = ExpressionDump.printExpStr(e1);
         t1_str = Types.unparseType(t1);
-        e2_str = Exp.printExpStr(e2);
+        e2_str = ExpressionDump.printExpStr(e2);
         t2_str = Types.unparseType(t2);
         s1 = System.stringAppendList({e1_str,"=",e2_str});
         s2 = System.stringAppendList({t1_str,"=",t2_str});
@@ -1704,8 +1704,8 @@ algorithm
 			equation
         // It's ok with array equation of unknown size if checkModel is used.
 			  false = OptManager.getOption("checkModel");
-				lhs_str = Exp.printExpStr(lhs);
-				rhs_str = Exp.printExpStr(rhs);
+				lhs_str = ExpressionDump.printExpStr(lhs);
+				rhs_str = ExpressionDump.printExpStr(rhs);
 				eq_str = System.stringAppendList({lhs_str, "=", rhs_str});
 				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
 			then 
@@ -2165,7 +2165,7 @@ algorithm
     case(lhs,rhs,tp,source,initial_)
       equation
         false = Types.isRecord(tp);
-        s = Exp.printExpStr(lhs) +& " = " +& Exp.printExpStr(rhs);
+        s = ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs);
         Error.addMessage(Error.ILLEGAL_EQUATION_TYPE,{s});
       then fail();
   end matchcontinue;
@@ -2638,8 +2638,8 @@ algorithm
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
         false = Types.subtype(lt, rt);
-        lhs_str = Exp.printExpStr(e_1);
-        rhs_str = Exp.printExpStr(e_2);
+        lhs_str = ExpressionDump.printExpStr(e_1);
+        rhs_str = ExpressionDump.printExpStr(e_2);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);

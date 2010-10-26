@@ -78,6 +78,7 @@ protected import Dump;
 protected import DynLoad;
 protected import Error;
 protected import Exp;
+protected import ExpressionDump;
 protected import Inst;
 protected import Lookup;
 protected import ModUtil;
@@ -153,7 +154,7 @@ algorithm
     case (cache,env,inExp,_,st,_,_)
       equation
         print("Ceval.ceval: " +& 
-           Exp.printExpStr(inExp) +& 
+           ExpressionDump.printExpStr(inExp) +& 
            " in env: " +& Env.printEnvPathStr(env) +& "\n");
       then
         fail();
@@ -324,7 +325,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Ceval.ceval DAE.CALL failed: ");
-        str = Exp.printExpStr(e);
+        str = ExpressionDump.printExpStr(e);
         Debug.fprintln("failtrace", str);
       then
         fail();
@@ -598,8 +599,8 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         true = ValuesUtil.isZero(res1);
-        lh_str = Exp.printExpStr(lh);
-        rh_str = Exp.printExpStr(rh);
+        lh_str = ExpressionDump.printExpStr(lh);
+        rh_str = ExpressionDump.printExpStr(rh);
         Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
       then
         fail();
@@ -924,7 +925,7 @@ algorithm
     case (cache,env,e,_,_,_,_) // MSG())
       equation
         true = RTOpts.debugFlag("ceval");
-        Debug.traceln("- Ceval.ceval failed: " +& Exp.printExpStr(e));
+        Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
         // Debug.traceln("  Env:" +& Env.printEnvStr(env));
       then
@@ -1830,7 +1831,7 @@ algorithm
 
         false = Types.dimensionsKnown(tp);
         cr_str = ComponentReference.printComponentRefStr(cr);
-        dim_str = Exp.printExpStr(dim);
+        dim_str = ExpressionDump.printExpStr(dim);
         size_str = System.stringAppendList({"size(",cr_str,", ",dim_str,")"});
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {size_str});
       then
@@ -1846,7 +1847,7 @@ algorithm
       local DAE.Exp dim;
       equation
         (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
-        expstr = Exp.printExpStr(exp);
+        expstr = ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
         fail();
@@ -1935,7 +1936,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
-        expstr = Exp.printExpStr(exp);
+        expstr = ExpressionDump.printExpStr(exp);
         Print.printErrorBuf(expstr);
         Print.printErrorBuf("\n");
       then
@@ -2534,7 +2535,7 @@ algorithm
       true = n >= 2;
     then ();
     case(_,{x,y,nx}) equation
-      s = "linspace("+&Exp.printExpStr(x)+&", "+&Exp.printExpStr(y)+&", "+&Exp.printExpStr(nx)+&")";
+      s = "linspace("+&ExpressionDump.printExpStr(x)+&", "+&ExpressionDump.printExpStr(y)+&", "+&ExpressionDump.printExpStr(nx)+&")";
       Error.addMessage(Error.LINSPACE_ILLEGAL_SIZE_ARG,{s});
     then fail();
   end matchcontinue;
@@ -3649,8 +3650,8 @@ algorithm
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (rv2 ==. 0.0) = true;
-        exp1_str = Exp.printExpStr(exp1);
-        exp2_str = Exp.printExpStr(exp2);
+        exp1_str = ExpressionDump.printExpStr(exp1);
+        exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str});
       then
         fail();
@@ -3664,8 +3665,8 @@ algorithm
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (ri2 == 0) = true;
-        lh_str = Exp.printExpStr(exp1);
-        rh_str = Exp.printExpStr(exp2);
+        lh_str = ExpressionDump.printExpStr(exp1);
+        rh_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
       then
         fail();
@@ -3752,8 +3753,8 @@ algorithm
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (rv2 ==. 0.0) = true;
-        lhs_str = Exp.printExpStr(exp1);
-        rhs_str = Exp.printExpStr(exp2);
+        lhs_str = ExpressionDump.printExpStr(exp1);
+        rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str});
       then
         fail();
@@ -3767,8 +3768,8 @@ algorithm
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (ri2 == 0) = true;
-        lhs_str = Exp.printExpStr(exp1);
-        rhs_str = Exp.printExpStr(exp2);
+        lhs_str = ExpressionDump.printExpStr(exp1);
+        rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str});
       then
         fail();
@@ -3992,7 +3993,7 @@ algorithm
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
          now it doesn't so the expression is returned as string Exp.unelabExp(differentiated_exp') => absyn_exp
         */
-        ret_val = Exp.printExpStr(differentiated_exp_1);
+        ret_val = ExpressionDump.printExpStr(differentiated_exp_1);
       then
         (cache,Values.STRING(ret_val),st);
     case (_,_,_,_,st,msg) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
@@ -4029,7 +4030,7 @@ algorithm
     case (cache,env,{exp1},impl,st,msg)
       equation
         exp1_1 = ExpressionSimplify.simplify(exp1);
-        ret_val = Exp.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Exp.unelab_exp(simplifyd_exp\') => absyn_exp" ;
+        ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Exp.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
     case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
@@ -4104,8 +4105,8 @@ algorithm
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (rv2 ==. 0.0) = true;
-        exp1_str = Exp.printExpStr(exp1);
-        exp2_str = Exp.printExpStr(exp2);
+        exp1_str = ExpressionDump.printExpStr(exp1);
+        exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str});
       then
         fail();
@@ -4119,8 +4120,8 @@ algorithm
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
         (ri2 == 0) = true;
-        exp1_str = Exp.printExpStr(exp1);
-        exp2_str = Exp.printExpStr(exp2);
+        exp1_str = ExpressionDump.printExpStr(exp1);
+        exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str});
       then
         fail();
@@ -4577,7 +4578,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalRelation failed on: " +&
             ValuesUtil.printValStr(v1) +&
-            Exp.binopSymbol(op) +&
+            ExpressionDump.binopSymbol(op) +&
             ValuesUtil.printValStr(v2));
       then
         fail();
@@ -5153,7 +5154,7 @@ algorithm
       equation
 				true = RTOpts.debugFlag("ceval");
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
-        expstr = Exp.printExpStr(exp);
+        expstr = ExpressionDump.printExpStr(exp);
         Debug.fprint("ceval", expstr);
         Debug.fprintln("ceval", "))");
       then
@@ -5260,7 +5261,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalSubscriptValue failed on:" +&
           "\n env: " +& Env.printEnvPathStr(env) +&
-          "\n subs: " +& Util.stringDelimitList(Util.listMap(subs, Exp.printSubscriptStr), ", ") +&
+          "\n subs: " +& Util.stringDelimitList(Util.listMap(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&
           "\n dim sizes: " +& Util.stringDelimitList(Util.listMap(dims, intString), ", ") +&
           "\n env: " +& Env.printEnvStr(env)  

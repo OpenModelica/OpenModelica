@@ -82,8 +82,8 @@ package Env
   uniform lookup mechanism "
 
 public import Absyn;
-public import ComponentReference;
 public import ClassInf;
+public import ComponentReference;
 public import DAE;
 public import SCode;
 
@@ -180,6 +180,7 @@ protected import DAEDump;
 protected import DAEUtil;
 protected import Dump;
 protected import Exp;
+protected import ExpressionDump;
 protected import Print;
 protected import Util;
 protected import System;
@@ -1563,7 +1564,7 @@ algorithm
     local DAE.Subscript s;
     case(subs)
       equation
-        str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,Exp.printSubscriptStr),", ") +& "\n";
+        str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
         print(str);
       then
         str;
