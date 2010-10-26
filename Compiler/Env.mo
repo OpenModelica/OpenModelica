@@ -83,10 +83,8 @@ package Env
 
 public import Absyn;
 public import ClassInf;
-public import ComponentReference;
 public import DAE;
 public import SCode;
-
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
@@ -176,19 +174,20 @@ uniontype Item
 
 end Item;
 
+protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
+protected import Debug;
 protected import Dump;
-protected import Exp;
+protected import Error;
+protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import Util;
 protected import System;
 protected import Types;
-protected import Debug;
 protected import OptManager;
 protected import RTOpts;
-protected import Error;
 
 public constant Env emptyEnv={} "- Values" ;
 

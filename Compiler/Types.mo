@@ -47,7 +47,6 @@ package Types
   modules are constants that could be moved to their own modules."
 
 public import ClassInf;
-public import ComponentReference;
 public import Absyn;
 public import DAE;
 public import Values;
@@ -75,10 +74,12 @@ public
  // the index of the type memory in the global table 
  constant Integer memoryIndex = 1;
 
+
+protected import ComponentReference;
 protected import Dump;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import Util;
@@ -758,7 +759,7 @@ algorithm
       Type tp;
     case ((DAE.T_ARRAY(arrayDim = d, arrayType = tp), _))
       equation
-        true = Exp.dimensionKnown(d);
+        true = Expression.dimensionKnown(d);
         true = dimensionsKnown(tp);
       then
         true;
@@ -962,7 +963,7 @@ algorithm
       Type tp;
     case ((DAE.T_ARRAY(arrayDim = d,arrayType = tp),_))
       equation
-        i = Exp.dimensionSize(d);
+        i = Expression.dimensionSize(d);
         res = getDimensionSizes(tp);
       then
         (i :: res);
@@ -1495,7 +1496,7 @@ algorithm
     case ((DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_))
       local DAE.Dimension dim1, dim2;
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         true = subtype(t1, t2);
       then
         true;
@@ -3179,7 +3180,7 @@ algorithm
         (ty_1,dimlist_1);
     case ((DAE.T_ARRAY(arrayDim = d,arrayType = ty),_))
       equation
-        dim = Exp.dimensionSize(d); 
+        dim = Expression.dimensionSize(d); 
         (ty_1,dimlist) = flattenArrayType(ty);
         dimlist_1 = listAppend(dimlist, {dim});
       then
@@ -3981,7 +3982,7 @@ algorithm
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),
           printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         elist_1 = typeConvertArray(elist, ty1, ty2,dim1,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
@@ -3995,7 +3996,7 @@ algorithm
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
           printFailtrace)
       equation
-        true = Exp.dimensionKnown(dim2);
+        true = Expression.dimensionKnown(dim2);
         elist_1 = typeConvertArray(elist, ty1, ty2,dim2,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
@@ -4009,7 +4010,7 @@ algorithm
         local
           DAE.ExpType ety1;
       equation
-        true = Exp.dimensionKnown(dim1);
+        true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
         ety1 = elabType(ty2);
         at = elabType(ty0);
@@ -4024,7 +4025,7 @@ algorithm
     case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (step_1,_) = typeConvert(step, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
@@ -4036,7 +4037,7 @@ algorithm
     case (DAE.RANGE(ty = t,exp = begin,expOption = NONE(),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
         (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
         at = elabType(ty0);
@@ -4047,8 +4048,8 @@ algorithm
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        true = Exp.dimensionsKnownAndEqual(dim11, dim22);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim2,printFailtrace);
         at = elabType(ty0);
       then
@@ -4058,7 +4059,7 @@ algorithm
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim11, dim22);
+        true = Expression.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim11,printFailtrace);
         at = elabType(ty0);
       then
@@ -4068,7 +4069,7 @@ algorithm
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,dim1);
         t_2 = (DAE.T_ARRAY(dim2,t_1),p2);
@@ -4297,7 +4298,7 @@ algorithm
         pathList = Util.listMap(l, Absyn.makeIdentPathFromString);
         crefList = Util.listMap(pathList, ComponentReference.pathToCref);
         crefList = Util.listMap1r(crefList, ComponentReference.joinCrefs, cref);
-        elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
+        elist = Util.listThreadMap(crefList, expTypes, Expression.makeCrefExp);
         (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
         e_1 = DAE.METARECORDCALL(path, elist, l, -1);
       then (e_1,t2);
@@ -4364,7 +4365,7 @@ algorithm
   local DAE.ExpType ty,ty1;
     case(DAE.CAST(ty,e),dim)
       equation
-        ty1 = Exp.liftArrayR(ty,dim);
+        ty1 = Expression.liftArrayR(ty,dim);
 
       then DAE.CAST(ty1,e);
 

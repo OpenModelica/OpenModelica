@@ -60,7 +60,6 @@ public import DAE;
 public import DAEUtil;
 public import HashTableCG;
 public import Connect;
-protected import ExpressionDump;
 
 public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";
 public type Edges = list<Edge> "A list of edges";
@@ -327,15 +326,16 @@ end addConnection;
 // ************************************* //
 
 protected import BaseHashTable;
-protected import Exp;
+protected import ComponentReference;
 protected import Debug;
 protected import DAEDump;
+protected import Expression;
+protected import ExpressionDump;
 protected import Util;
 protected import System;
 protected import IOStream;
 protected import RTOpts;
 protected import Settings;
-protected import ComponentReference;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.
@@ -1024,7 +1024,7 @@ algorithm
   outOrderedConnections := matchcontinue(inConnections, inUserSelectedBreaking)
     local 
       String sc1,sc2;
-      Exp.ComponentRef c1, c2;
+      Expression.ComponentRef c1, c2;
       DaeEdge e;
       list<DAE.Element> els;
       DaeEdges rest, ordered;

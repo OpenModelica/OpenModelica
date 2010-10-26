@@ -46,19 +46,19 @@ package Derive
 public import Absyn;
 public import BackendDAE;
 public import Builtin;
-public import ComponentReference;
 public import DAE;
 public import DAEUtil;
 public import DAELow;
-public import ExpressionSimplify;
 public import RTOpts;
 public import Types;
 
 protected import BackendDAETransform;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Inline;
 protected import System;
@@ -133,11 +133,11 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
         e1_2 = ExpressionSimplify.simplify(e1_1);
         e2_2 = ExpressionSimplify.simplify(e2_1);
-        ((_,(crefOrDerCref1,derCref1,_))) = Exp.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
-        ((_,(crefOrDerCref2,derCref2,_))) = Exp.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
+        ((_,(crefOrDerCref1,derCref1,_))) = Expression.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
+        ((_,(crefOrDerCref2,derCref2,_))) = Expression.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
         crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
-        crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Exp.expEqual);
+        crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Expression.expEqual);
         // only add algorithm if it is not already derived 
         (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
        then
@@ -196,7 +196,7 @@ algorithm outCrefOrDerCref := matchcontinue(inCrefOrDerCref,inDerCref)
   case (inCrefOrDerCref,e::rest)
     equation
       crefOrDerCref = removeCrefFromDerCref(inCrefOrDerCref,rest);
-      crefOrDerCref1 = Util.listDeleteMemberOnTrue(crefOrDerCref,e,Exp.expEqual);
+      crefOrDerCref1 = Util.listDeleteMemberOnTrue(crefOrDerCref,e,Expression.expEqual);
     then
       crefOrDerCref1;
 end matchcontinue;
@@ -204,7 +204,7 @@ end removeCrefFromDerCref;
 
 protected function traversingcrefOrDerCrefFinder "
 Author: Frenkel TUD
-Returns a list containing, unique, all componentRef or der(componentRef) in an exp.
+Returns a list containing, unique, all componentRef or der(componentRef) in an Expression.
 "
   input tuple<DAE.Exp, tuple<list<DAE.Exp>,list<DAE.Exp>,BackendDAE.Variables> > inExp;
   output tuple<DAE.Exp, tuple<list<DAE.Exp>,list<DAE.Exp>,BackendDAE.Variables> > outExp;
@@ -458,7 +458,7 @@ algorithm
     case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),(timevars,functions)) /* ax^(a-1) */
       equation
         d_e1 = differentiateExpTime(e1, (timevars,functions)) "e^x => xder(e)e^x-1" ;
-        //false = Exp.expContains(e2, DAE.CREF(tv,tp));
+        //false = Expression.expContains(e2, DAE.CREF(tv,tp));
         //const_one = differentiateExp(DAE.CREF(tv,tp), tv);
         exp = DAE.BINARY(
           DAE.BINARY(d_e1,DAE.MUL(tp),e2),DAE.MUL(tp),
@@ -469,7 +469,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=_))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
       equation
          // generate zeros
-         expl_1 = Util.listFill(DAE.RCONST(0.0), Exp.sizeOf(tp));  
+         expl_1 = Util.listFill(DAE.RCONST(0.0), Expression.sizeOf(tp));  
       then DAE.ARRAY(tp,true,expl_1);
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* list_member(cr,timevars) => false */ then DAE.RCONST(0.0);
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),(timevars,functions))
@@ -990,7 +990,7 @@ algorithm
         // diverentiate exp
         de = differentiateExpTime(e,inVarsandFuncs);
         // is diverentiated exp zero
-        true = Exp.isZero(de);
+        true = Expression.isZero(de);
         // remove input from list
         ba = listArray(inblst);
         ba = arrayUpdate(ba,i,false);
@@ -1185,7 +1185,7 @@ algorithm
     case (DAE.BINARY(exp1 = (e1 as DAE.CREF(componentRef = cr)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
       equation
         true = ComponentReference.crefEqual(cr, tv) "x^a => ax^(a-1)" ;
-        false = Exp.expContains(e2, DAE.CREF(tv,tp));
+        false = Expression.expContains(e2, DAE.CREF(tv,tp));
         const_one = differentiateExp(DAE.CREF(tv,tp), tv,differentiateIfExp);
       then
         DAE.BINARY(e2,DAE.MUL(tp),
@@ -1194,7 +1194,7 @@ algorithm
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
       equation
         d_e1 = differentiateExp(e1, tv,differentiateIfExp) "e^x => xder(e)e^x-1" ;
-        false = Exp.expContains(e2, DAE.CREF(tv,tp));
+        false = Expression.expContains(e2, DAE.CREF(tv,tp));
         const_one = differentiateExp(DAE.CREF(tv,tp), tv,differentiateIfExp);
         exp = DAE.BINARY(
           DAE.BINARY(d_e1,DAE.MUL(tp),DAE.BINARY(e2,DAE.SUB(tp),DAE.RCONST(1.0))),DAE.MUL(tp),
@@ -1204,8 +1204,8 @@ algorithm
 
       case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* a^x => a^x * log(A) */
       equation
-        false = Exp.expContains(e1, DAE.CREF(tv,tp));
-        true  = Exp.expContains(e2,DAE.CREF(tv,tp));
+        false = Expression.expContains(e1, DAE.CREF(tv,tp));
+        true  = Expression.expContains(e2,DAE.CREF(tv,tp));
         d_e2 = differentiateExp(e2, tv,differentiateIfExp);
         exp = DAE.BINARY(d_e2,DAE.MUL(tp),
 	        DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE()))
@@ -1220,7 +1220,7 @@ algorithm
       local DAE.ExpType ctp;
       equation
         true = ComponentReference.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
-        false = Exp.expContains(e2, DAE.CREF(tv,tp));
+        false = Expression.expContains(e2, DAE.CREF(tv,tp));
         const_one = differentiateExp(DAE.CREF(tv,tp), tv,differentiateIfExp);
       then
         DAE.BINARY(
@@ -1259,7 +1259,7 @@ algorithm
     // abs(x)
     case (DAE.CALL(path=fname, expLst={exp},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp) equation
       Builtin.isAbs(fname);
-      true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+      true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
       exp_1 = differentiateExp(exp, tv,differentiateIfExp);
     then DAE.IFEXP(DAE.RELATION(exp_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), exp_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp_1));
 
@@ -1268,7 +1268,7 @@ algorithm
      local  DAE.ExpType tp;
       equation
         Builtin.isTanh(fname);
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(exp_1,DAE.DIV(DAE.ET_REAL()),
@@ -1279,7 +1279,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isCosh(fname);
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.ET_REAL()),
@@ -1290,7 +1290,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isSinh(fname);
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.ET_REAL()),
@@ -1301,7 +1301,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isSin(fname);
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(DAE.CALL(Absyn.IDENT("cos"),{exp},b,c,tp,inl),DAE.MUL(DAE.ET_REAL()),
@@ -1311,7 +1311,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isCos(fname);
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(
@@ -1322,7 +1322,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
         Builtin.isACos(fname);
-        true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
@@ -1333,7 +1333,7 @@ algorithm
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
         Builtin.isASin(fname);
-        true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
@@ -1344,7 +1344,7 @@ algorithm
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
         Builtin.isATan(fname);
-        true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
@@ -1353,7 +1353,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isExp(fname) "exp(x) => x\'  exp(x)" ;
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(DAE.CALL(fname,(exp :: {}),b,c,tp,inl),DAE.MUL(DAE.ET_REAL()),exp_1);
@@ -1361,7 +1361,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c),tv,differentiateIfExp)
       equation
         Builtin.isLog(fname) "log(x) => x\'  1/x" ;
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.ET_REAL()),
@@ -1371,7 +1371,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.ET_REAL()),
@@ -1383,7 +1383,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(
@@ -1395,7 +1395,7 @@ algorithm
       local DAE.ExpType tp;
       equation
         Builtin.isTan(fname) "tan x => 1/((cos x)^2)" ;
-        true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         DAE.BINARY(
@@ -1415,7 +1415,7 @@ algorithm
 		case (DAE.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
 		  local list<Boolean> bLst; DAE.ExpType tp;
       equation
-        bLst = Util.listMap1(expl,Exp.expContains, DAE.CREF(tv,DAE.ET_REAL()));
+        bLst = Util.listMap1(expl,Expression.expContains, DAE.CREF(tv,DAE.ET_REAL()));
         false = Util.listReduce(bLst,boolOr);
       then
         DAE.RCONST(0.0);
@@ -1491,7 +1491,7 @@ algorithm
 
     case (e,cr,differentiateIfExp)
       equation
-        false = Exp.expContains(e, DAE.CREF(cr,DAE.ET_REAL())) "If the expression does not contain the variable,
+        false = Expression.expContains(e, DAE.CREF(cr,DAE.ET_REAL())) "If the expression does not contain the variable,
 	 the derivative is zero. For efficiency reasons this rule
 	 is last. Otherwise expressions is allways traversed twice
 	 when differentiating." ;

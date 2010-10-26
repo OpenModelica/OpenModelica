@@ -79,7 +79,6 @@ package XMLDump
   RCS: $Id$"
 
 public import Absyn;
-public import ComponentReference;
 public import BackendDAE;
 public import DAE;
 public import DAEEXT;
@@ -91,9 +90,10 @@ public import RTOpts;
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Dump;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import ModUtil;
 protected import Print;
@@ -1531,7 +1531,7 @@ end dumpExp;
 
 public function dumpExp2
 "function: dumpExp2
-  Helper function to dumpExp. It can also
+  Helper function to dumpExpression. It can also
   be used if it's not necessary to print the headers
   (MathML and MATH tags)."
   input DAE.Exp inExp;

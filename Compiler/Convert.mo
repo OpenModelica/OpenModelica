@@ -40,9 +40,11 @@ package Convert
   RCS: $Id$"
 
 public import Absyn;
-public import ComponentReference;
 public import DAE;
-public import Exp;
+
+protected import ComponentReference;
+protected import Expression;
+
 
 public function fromDAEEqsToAbsynAlg "function: fromDAEEqsToAbsynAlgElts"
   input DAE.DAElist ld;
@@ -100,7 +102,7 @@ public function fromExpExpToAbsynExp "function: fromExpExpToAbsynExp"
   input DAE.Exp exp1;
   output Absyn.Exp expOut;
 algorithm
-  expOut := Exp.unelabExp(exp1);
+  expOut := Expression.unelabExp(exp1);
 end fromExpExpToAbsynExp;
 
 public function fromExpCrefToAbsynCref

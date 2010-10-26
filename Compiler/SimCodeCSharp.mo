@@ -12,7 +12,7 @@ public import DAE;
 public import ClassInf;
 public import Util;
 public import ComponentReference;
-public import Exp;
+public import Expression;
 public import RTOpts;
 public import Settings;
 

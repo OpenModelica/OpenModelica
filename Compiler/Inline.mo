@@ -44,9 +44,7 @@ package Inline
 
 public import Absyn;
 public import BackendDAE;
-public import ComponentReference;
 public import DAE;
-public import ExpressionSimplify;
 public import SCode;
 public import Util;
 public import Values;
@@ -56,9 +54,11 @@ type Ident = String;
   
 public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
+protected import ComponentReference;
 protected import Debug;
 protected import DAEUtil;
-protected import Exp;
+protected import Expression;
+protected import ExpressionSimplify;
 
 public function inlineCalls
 "function: inlineCalls
@@ -953,7 +953,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
     case(e,fns)
       equation
-        ((e_1,fns)) = Exp.traverseExp(e,inlineCall,fns);
+        ((e_1,fns)) = Expression.traverseExp(e,inlineCall,fns);
         e_2 = ExpressionSimplify.simplify(e_1);
       then
         e_2;
@@ -989,9 +989,9 @@ algorithm
         argmap = Util.listThreadTuple(crefs,args);
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
-        ((newExp,argmap)) = Exp.traverseExp(newExp,replaceArgs,argmap);
+        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
         // for inlinecals in functions
-        ((newExp1,fns1)) = Exp.traverseExp(newExp,inlineCall,fns);
+        ((newExp1,fns1)) = Expression.traverseExp(newExp,inlineCall,fns);
       then
         ((newExp1,fns));
     case((newExp,fns)) then ((newExp,fns));
@@ -1204,7 +1204,7 @@ algorithm
         subs = ComponentReference.crefSubs(key);
         key = ComponentReference.crefStripSubs(key);
         true = ComponentReference.crefEqual(cref,key);
-        e = Exp.applyExpSubscripts(exp,subs);
+        e = Expression.applyExpSubscripts(exp,subs);
       then
         e;
     case(_ :: cdr,key)

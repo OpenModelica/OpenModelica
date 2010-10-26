@@ -35,17 +35,17 @@ package ExpressionSolve
   package:     ExpressionSolve
   description: ExpressionSolve
 
-  RCS: $Id: Exp.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
+  RCS: $Id: Expression.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
 
   This file contains the module `ExpressionSolve\', which contains functions
   to solve a DAE.Exp for a DAE.Exp"
 
 public import Absyn;
-public import ComponentReference;
-public import Exp;
-public import ExpressionSimplify;
 public import DAE;
 
+protected import ComponentReference;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import Util;
 protected import Derive;
 protected import Debug;
@@ -68,7 +68,7 @@ algorithm
     case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
       local DAE.Exp debuge1,debuge2,debuge3;
       equation
-        print("(Exp.mo debugging)  To solve: rhs: " +&
+        print("(Expression.mo debugging)  To solve: rhs: " +&
           printExpStr(debuge1) +& " lhs: " +&
           printExpStr(debuge2) +& " with respect to: " +&
           printExpStr(debuge3) +& "\n");
@@ -81,7 +81,7 @@ algorithm
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
-        false = Exp.expContains(rhs, crexp);
+        false = Expression.expContains(rhs, crexp);
         res_1 = ExpressionSimplify.simplify1(rhs);
       then
         res_1;
@@ -92,7 +92,7 @@ algorithm
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
-        false = Exp.expContains(lhs, crexp);
+        false = Expression.expContains(lhs, crexp);
         res_1 = ExpressionSimplify.simplify1(lhs);
       then
         res_1;    
@@ -149,7 +149,7 @@ algorithm
     case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
       local DAE.Exp debuge1,debuge2,debuge3;
       equation
-        print("(Exp.mo debugging)  To solve: rhs: " +&
+        print("(Expression.mo debugging)  To solve: rhs: " +&
           printExpStr(debuge1) +& " lhs: " +&
           printExpStr(debuge2) +& " with respect to: " +&
           printExpStr(debuge3) +& "\n");
@@ -162,7 +162,7 @@ algorithm
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
-        false = Exp.expContains(rhs, crexp);
+        false = Expression.expContains(rhs, crexp);
         res_1 = ExpressionSimplify.simplify1(rhs);
       then
         res_1;
@@ -173,7 +173,7 @@ algorithm
         cr1 = crOrDerCr(crexp);
         cr2 = crOrDerCr(crexp2);
         true = ComponentReference.crefEqual(cr1, cr2);
-        false = Exp.expContains(lhs, crexp);
+        false = Expression.expContains(lhs, crexp);
         res_1 = ExpressionSimplify.simplify1(lhs);
       then
         res_1;    
@@ -215,7 +215,7 @@ algorithm
         
     case (e1,e2,e3)
       equation
-        Debug.fprint("failtrace", "-Exp.solve failed\n");
+        Debug.fprint("failtrace", "-Expression.solve failed\n");
         //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
         //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
       then
@@ -244,9 +244,9 @@ algorithm
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = ExpressionSimplify.simplify(lhsder);
-        false = Exp.isZero(lhsder_1);
-        false = Exp.expContains(lhsder_1, crexp);
-        (lhszero,_) = Exp.replaceExp(lhs, crexp, DAE.RCONST(0.0));
+        false = Expression.isZero(lhsder_1);
+        false = Expression.expContains(lhsder_1, crexp);
+        (lhszero,_) = Expression.replaceExp(lhs, crexp, DAE.RCONST(0.0));
         lhszero_1 = ExpressionSimplify.simplify(lhszero);
         rhs = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(lhszero_1,DAE.DIV(DAE.ET_REAL()),lhsder_1));
         rhs_1 = ExpressionSimplify.simplify(rhs);
@@ -256,9 +256,9 @@ algorithm
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)))
       local DAE.Exp invCr; list<DAE.Exp> factors;
       equation
-        ({invCr},factors) = Util.listSplitOnTrue1(listAppend(Exp.factors(e1),Exp.factors(e2)),isInverseCref,cr);
-        rhs_1 = Exp.makeProductLst(Exp.inverseFactors(factors));
-        false = Exp.expContains(rhs_1, crexp);
+        ({invCr},factors) = Util.listSplitOnTrue1(listAppend(Expression.factors(e1),Expression.factors(e2)),isInverseCref,cr);
+        rhs_1 = Expression.makeProductLst(Expression.inverseFactors(factors));
+        false = Expression.expContains(rhs_1, crexp);
       then
         rhs_1;
 
@@ -267,7 +267,7 @@ algorithm
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = ExpressionSimplify.simplify(lhsder);
-        true = Exp.expContains(lhsder_1, crexp);
+        true = Expression.expContains(lhsder_1, crexp);
         /*print("solve2 failed: Not linear: ");
         print(printExpStr(e1));
         print(" = ");
@@ -309,18 +309,18 @@ factors, e.g. a*b*c = 0. In this case we can not solve the equation"
 algorithm
   res := matchcontinue(e1,e2)
     case(e1,e2) equation
-      true = Exp.isZero(e1);
+      true = Expression.isZero(e1);
       // More than two factors
-      _::_::_ = Exp.factors(e2);
+      _::_::_ = Expression.factors(e2);
       //.. and more than two crefs
-      _::_::_ = Exp.extractCrefsFromExp(e2);
+      _::_::_ = Expression.extractCrefsFromExp(e2);
     then true;
       
       // Swapped args
     case(e2,e1) equation
-      true = Exp.isZero(e1);
-      _::_::_ = Exp.factors(e2);
-      _::_::_ = Exp.extractCrefsFromExp(e2);
+      true = Expression.isZero(e1);
+      _::_::_ = Expression.factors(e2);
+      _::_::_ = Expression.extractCrefsFromExp(e2);
     then true;
     
     case(_,_) then false;      
@@ -345,7 +345,7 @@ algorithm
   res := matchcontinue(e,cr)
   local DAE.ComponentRef cr2; DAE.Exp e1;
     case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),cr)equation
-        true = Exp.isConstOne(e1);
+        true = Expression.isConstOne(e1);
         true = ComponentReference.crefEqual(cr,cr2);
     then true;
     case(_,_) then false;

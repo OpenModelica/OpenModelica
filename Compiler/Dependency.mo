@@ -41,13 +41,13 @@ package Dependency
 
 public import Absyn;
 public import AbsynDep;
-public import ComponentReference;
 public import SCode;
 public import Env;
 public import Interactive;
 
 protected import BaseHashTable;
 protected import HashTable2;
+protected import ComponentReference;
 protected import Inst;
 protected import Util;
 protected import DAE;

@@ -35,16 +35,14 @@ package ExpressionDump
   package:     ExpressionDump
   description: ExpressionDump
 
-  RCS: $Id: Exp.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
+  RCS: $Id: Expression.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
 
   This file contains the module `ExpressionDump\', which contains functions
-  to dump and print DAE.Exp."
+  to dump and print DAE.Expression."
 
 public import Absyn;
 public import ClassInf;
-public import ComponentReference;
 public import DAE;
-public import Exp;
 public import Graphviz;
 
 public type ComponentRef = DAE.ComponentRef;
@@ -54,6 +52,8 @@ public type Type = DAE.ExpType;
 public type Subscript = DAE.Subscript;
 public type Var = DAE.ExpVar;
 
+protected import ComponentReference;
+protected import Expression;
 protected import RTOpts;
 protected import Util;
 protected import Print;
@@ -123,7 +123,7 @@ algorithm
       equation
         s = "DAE.ET_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci);
       then s;
-    case(_) then "#Exp.typeString failed#";
+    case(_) then "#Expression.typeString failed#";
   end matchcontinue;
 end typeString;
 
@@ -1267,7 +1267,7 @@ algorithm
         new_level1 = level + 1;
         new_level2 = level + 1;
         sym = debugBinopSymbol(op);
-        tp = Exp.typeof(exp);
+        tp = Expression.typeof(exp);
         str = typeString(tp);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
@@ -1282,7 +1282,7 @@ algorithm
         new_level1 = level + 1;
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        str = "expType:"+&typeString(Exp.typeof(e))+&" optype:"+&typeString(Exp.typeofOp(op))+&"\n";
+        str = "expType:"+&typeString(Expression.typeof(e))+&" optype:"+&typeString(Expression.typeofOp(op))+&"\n";
         res_str = System.stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
@@ -1508,12 +1508,12 @@ algorithm
   s := matchcontinue(e1,e2)
     case(e1,e2)
       equation
-        true = Exp.expEqual(e1,e2);
+        true = Expression.expEqual(e1,e2);
       then
         "";
     case(e1,e2)
       equation
-        false = Exp.expEqual(e1,e2);
+        false = Expression.expEqual(e1,e2);
         s = printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
       then
         s;
@@ -1552,7 +1552,7 @@ public function typeOfString
   Type ty;
   String str;
 algorithm
-    ty := Exp.typeof(inExp);
+    ty := Expression.typeof(inExp);
     str := typeString(ty);
 end typeOfString;
 
@@ -1683,7 +1683,7 @@ end printExp;
 
 protected function printExp2
 "function: printExp2
-  Helper function to printExp."
+  Helper function to printExpression."
   input DAE.Exp inExp;
   input Integer inInteger;
 algorithm
@@ -2194,10 +2194,10 @@ protected function dumpSimplifiedExp
 algorithm
   _ := matchcontinue(inExp,outExp)
     case(inExp,outExp) equation
-      true = Exp.expEqual(inExp,outExp);
+      true = Expression.expEqual(inExp,outExp);
       then ();
     case(inExp,outExp) equation
-      false= Exp.expEqual(inExp,outExp);
+      false= Expression.expEqual(inExp,outExp);
       print(printExpStr(inExp));print( " simplified to "); print(printExpStr(outExp));print("\n");
       then ();
   end matchcontinue;

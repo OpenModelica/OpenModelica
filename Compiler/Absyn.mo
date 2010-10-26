@@ -1451,7 +1451,7 @@ end traverseExpAlgItemTupleList;
 public function traverseExp
 " Traverses all subexpressions of an Exp expression.
   Takes a function and an extra argument passed through the traversal.
-  NOTE:This function was copied from Exp.traverseExp."
+  NOTE:This function was copied from Expression.traverseExpression."
   input Exp inExp;
   input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
   input Type_a inTypeA;

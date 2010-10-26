@@ -44,7 +44,6 @@ package InstExtends
 // public imports
 public import Absyn;
 public import ClassInf;
-public import ComponentReference;
 public import DAE;
 public import Env;
 public import HashTableStringToPath;
@@ -55,6 +54,7 @@ public import Prefix;
 // protected imports
 protected import BaseHashTable;
 protected import Builtin;
+protected import ComponentReference;
 protected import Debug;
 protected import Dump;
 protected import Error;

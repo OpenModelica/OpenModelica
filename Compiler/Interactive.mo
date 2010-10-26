@@ -48,7 +48,6 @@ package Interactive
 
 public import Absyn;
 public import AbsynDep;
-public import ComponentReference;
 public import OptManager;
 public import SCode;
 public import SCodeUtil;
@@ -58,8 +57,10 @@ public import Settings;
 public import ConnectionGraph;
 public import Values;
 
+protected import ComponentReference;
 protected import DAEUtil;
 protected import ErrorExt;
+protected import Expression;
 protected import ExpressionDump;
 protected import InnerOuter;
 protected import MetaUtil;
@@ -217,7 +218,6 @@ protected import Prefix;
 protected import Mod;
 protected import Lookup;
 protected import ClassInf;
-protected import Exp;
 protected import Inst;
 protected import Static;
 protected import ModUtil;
@@ -17392,7 +17392,7 @@ public function traverseExp
 "function traverseExp
   Traverses all subexpressions of an Absyn.Exp expression.
   Takes a function and an extra argument passed through the traversal.
-  NOTE: This function was copied from Exp.traverseExp."
+  NOTE: This function was copied from Expression.traverseExpression."
   input Absyn.Exp inExp;
   input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
   input Type_a inTypeA;

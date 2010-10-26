@@ -41,13 +41,13 @@ package DAEDump
 public import DAE;
 public import Graphviz;
 public import IOStream;
-public import ComponentReference;
 public import SCode;
 
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Print; 
 protected import Util;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Absyn;
 protected import Dump;

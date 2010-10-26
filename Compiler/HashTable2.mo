@@ -21,7 +21,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 public import DAE;
-public import ComponentReference;
+protected import ComponentReference;
 protected import ExpressionDump;
 protected import System;
 

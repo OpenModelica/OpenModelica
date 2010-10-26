@@ -2762,7 +2762,7 @@ algorithm
 end listFold_3;
 
 public function listlistFoldMap "function: listlistFoldMap
-  For example see Interactive.traverseExp."
+  For example see Interactive.traverseExpression."
   input list<list<Type_a>> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;
@@ -2795,7 +2795,7 @@ end listlistFoldMap;
 
 public function listFoldMap "function: listFoldMap
   author: PA
-  For example see Exp.traverseExp."
+  For example see Expression.traverseExpression."
   input list<Type_a> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;

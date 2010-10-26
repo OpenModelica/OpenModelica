@@ -38,16 +38,16 @@ package DAEQuery
 
 public
 import BackendDAE;
-import ComponentReference;
 import DAELow;
 import SCode;
 
 protected
 import BackendDAEUtil;
 import BackendVariable;
+import ComponentReference;
 import System;
 import Util;
-import Exp;
+import Expression;
 import ExpressionDump;
 import Absyn;
 import DAE;

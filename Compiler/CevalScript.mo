@@ -75,7 +75,7 @@ protected import DAEDump;
 protected import Debug;
 protected import Dump;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Inst;
 protected import InnerOuter;
@@ -784,7 +784,7 @@ algorithm
       local list<DAE.Exp> vars;
       equation
         (cache,(size_value as Values.INTEGER(size)),SOME(st)) = Ceval.ceval(cache,env, size_expression, true, SOME(st),NONE(), msg);
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -848,7 +848,7 @@ algorithm
         list<DAE.Exp> vars;
         String uniqueStr;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot2" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
@@ -879,7 +879,7 @@ algorithm
       local 
         list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
@@ -898,7 +898,7 @@ algorithm
       local 
         list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG()));
@@ -939,7 +939,7 @@ algorithm
         Boolean legend, grid, logX, logY, points;
       equation
 
-//        vars = Util.listMap(vars,Exp.CodeVarToCref);
+//        vars = Util.listMap(vars,Expression.CodeVarToCref);
 //        vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
@@ -984,7 +984,7 @@ algorithm
         Boolean legend, grid, logX, logY, points;
       equation
 
-//        vars = Util.listMap(vars,Exp.CodeVarToCref);
+//        vars = Util.listMap(vars,Expression.CodeVarToCref);
 //        vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
@@ -1078,7 +1078,7 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
@@ -1109,7 +1109,7 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
        equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
@@ -1137,7 +1137,7 @@ algorithm
         Boolean legend, logX, logY, points;
         Boolean grid;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
@@ -1164,7 +1164,7 @@ algorithm
         Boolean legend, logX, logY, points;
         Boolean grid;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
@@ -1189,7 +1189,7 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         cref = ComponentReference.makeCrefIdent("currentSimulationResult",DAE.ET_OTHER(),{});
@@ -1243,7 +1243,7 @@ algorithm
         //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
         //Kolla på senddata:emulateStreamData
 
-        //vars = Util.listMap(vars,Exp.CodeVarToCref);
+        //vars = Util.listMap(vars,Expression.CodeVarToCref);
         //vars = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         //vars_2 = Util.listUnionElt("time", vars_1);
         //vars = Util.listCreate("visualize");
@@ -1280,7 +1280,7 @@ algorithm
         Boolean legend, grid, logX, logY, points;
        equation
 
-        // vars = Util.listMap(vars,Exp.CodeVarToCref);
+        // vars = Util.listMap(vars,Expression.CodeVarToCref);
         //vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         //vars_2 = Util.listUnionElt("time", vars_1);
         filename = Absyn.pathString(className);
@@ -1309,7 +1309,7 @@ algorithm
         Boolean grid;
       equation
         print("hittaderättigen\n");
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
 //        listMap(vars_2, print);
@@ -1339,7 +1339,7 @@ algorithm
         Boolean legend, logX, logY, points;
         Boolean grid;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st), NONE(), msg);
@@ -1363,7 +1363,7 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = Ceval.ceval(cache, env, buildCurrentSimulationResultExp(), true, SOME(st), NONE(), Ceval.NO_MSG()));
@@ -1409,7 +1409,7 @@ algorithm
         Real val;
       equation
 
-        {varName} = Util.listMap({varName},Exp.CodeVarToCref);
+        {varName} = Util.listMap({varName},Expression.CodeVarToCref);
         vars_1 = Util.listMap({varName}, ExpressionDump.printExpStr);
         // Util.listMap0(vars_1,print);
 
@@ -1445,7 +1445,7 @@ algorithm
         Real val;
       equation
 
-        {varName} = Util.listMap({varName},Exp.CodeVarToCref);
+        {varName} = Util.listMap({varName},Expression.CodeVarToCref);
         vars_1 = Util.listMap({varName}, ExpressionDump.printExpStr);
         // Util.listMap0(vars_1,print);
 
@@ -1478,7 +1478,7 @@ algorithm
         Real val;
         String varNameStr;
       equation
-        varName = Exp.CodeVarToCref(varName);
+        varName = Expression.CodeVarToCref(varName);
         varNameStr = ExpressionDump.printExpStr(varName);
         (cache,Values.REAL(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
         (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);
@@ -1500,7 +1500,7 @@ algorithm
         Real val;
         String varNameStr;
       equation
-        varName = Exp.CodeVarToCref(varName);
+        varName = Expression.CodeVarToCref(varName);
         varNameStr = ExpressionDump.printExpStr(varName);
         (cache,Values.INTEGER(timeStampI),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
         timeStamp = intReal(timeStampI);
@@ -1525,7 +1525,7 @@ algorithm
         list<Values.Value> vals;
         list<Real> timeStamps;
       equation
-        varName = Exp.CodeVarToCref(varName);
+        varName = Expression.CodeVarToCref(varName);
         varNameStr = ExpressionDump.printExpStr(varName);
         (cache,Values.ARRAY(valueLst = vals),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st),NONE(), msg);
          timeStamps = Util.listMap(vals,ValuesUtil.valueReal);
@@ -1561,7 +1561,7 @@ algorithm
         list<DAE.Exp> vars;
         String uniqueStr;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
@@ -1590,7 +1590,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error with less than two elements (=variables) in the array.
            This means we cannot plot var2 as a function of var1 as var2 is missing" ;
         length = listLength(vars_1);
@@ -1606,7 +1606,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -1622,7 +1622,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env,
           buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -1659,7 +1659,7 @@ algorithm
         String interpolation, title, xLabel, yLabel, uniqueStr;
         Boolean legend, grid, logX, logY, points;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
@@ -1696,7 +1696,7 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
@@ -1715,7 +1715,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env,
           buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -1731,7 +1731,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error with less than two elements (=variables) in the array.
            This means we cannot plot var2 as a function of var1 as var2 is missing" ;
         length = listLength(vars_1);
@@ -1747,7 +1747,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -1763,7 +1763,7 @@ algorithm
         loadedFiles = lf)),msg)
       local list<DAE.Exp> vars;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env, buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
@@ -1810,7 +1810,7 @@ algorithm
         list<DAE.Exp> vars;
         list<String> strings;
       equation
-        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Expression.CodeVarToCref);
         strings = Util.listMap(vars, ExpressionDump.printExpStr);
         // print("setVariableFilter\n");
         // print(System.stringAppendList(vars_1));

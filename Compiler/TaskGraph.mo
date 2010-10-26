@@ -46,18 +46,17 @@ package TaskGraph
   is implemented using Boost Graph Library in C++"
 
 public import BackendDAE;
-public import ComponentReference;
-public import DAELow;
-public import ExpressionSolve;
 public import SCode;
 
 protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import DAE;
 protected import DAEUtil;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSolve;
 protected import TaskGraphExt;
 protected import Util;
 protected import Values;
@@ -337,12 +336,12 @@ algorithm
         true = BackendVariable.isNonStateVar(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = ExpressionSolve.solve(e1, e2, varexp);
-        buildAssignment(cr, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
-	Exp.print_exp_str e2 => e2s &
+        buildAssignment(cr, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
+	Expression.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
-	print \" solved for \" & Exp.print_exp_str varexp => s &
+	print \" solved for \" & Expression.print_exp_str varexp => s &
 	print s & print \" giving \" &
-	Exp.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
+	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
     case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
@@ -364,12 +363,12 @@ algorithm
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         expr = ExpressionSolve.solve(e1, e2, varexp);
-        buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
-	Exp.print_exp_str e2 => e2s &
+        buildAssignment(cr_1, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
+	Expression.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
-	print \"solved for \" & Exp.print_exp_str varexp => s &
+	print \"solved for \" & Expression.print_exp_str varexp => s &
 	print s & print \"giving \" &
-	Exp.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
+	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
     case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	int_sub(e,1) => e\' &
@@ -606,9 +605,9 @@ algorithm
     case (tid,_,{}) then ();  /* task id vars residuals */
     case (tid,vars,(res :: residuals))
       equation
-        vars1 = Exp.extractCrefsFromExp(res) "Collect all variables and construct
+        vars1 = Expression.extractCrefsFromExp(res) "Collect all variables and construct
 	 a string for the residual, that can be directly used in codegen." ;
-        vars_1 = Util.listMap(vars, Exp.extractCrefsFromExp);
+        vars_1 = Util.listMap(vars, Expression.extractCrefsFromExp);
         vars2 = Util.listFlatten(vars_1);
         vars1_1 = Util.listUnionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
         varslst = Util.listSetDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
@@ -735,8 +734,8 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = BackendVariable.vararrayNth(vararr, v_1);
-        cr1 = Exp.extractCrefsFromExp(e1);
-        cr2 = Exp.extractCrefsFromExp(e2);
+        cr1 = Expression.extractCrefsFromExp(e1);
+        cr2 = Expression.extractCrefsFromExp(e2);
         crs = listAppend(cr1, cr2);
         crs_1 = Util.listDeleteMember(crs, cr);
         crs_2 = Util.listMap(crs_1, ComponentReference.crefStr);

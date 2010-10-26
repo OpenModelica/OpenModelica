@@ -55,10 +55,6 @@ package SimCode
 public import Algorithm;
 public import BackendDAE;
 public import BackendDAEUtil;
-public import ComponentReference;
-public import Exp;
-public import ExpressionSolve;
-public import ExpressionSimplify;
 public import Values;
 public import Types;
 public import DAELow;
@@ -75,8 +71,12 @@ public import Inline;
 protected import BackendDump;
 protected import BackendDAETransform;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import DAEUtil;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSolve;
+protected import ExpressionSimplify;
 protected import SCodeUtil;
 protected import ClassInf;
 protected import SimCodeC;
@@ -223,7 +223,7 @@ uniontype SimVar
     Integer index;
     Option<DAE.Exp> initialValue;
     Boolean isFixed;
-    Exp.Type type_;
+    DAE.ExpType type_;
     Boolean isDiscrete;
     // arrayCref is the name of the array if this variable is the first in that
     // array
@@ -302,14 +302,14 @@ end SimExtArg;
 uniontype Variable
   record VARIABLE
     DAE.ComponentRef name;
-    Exp.Type ty;
+    DAE.ExpType ty;
     Option<DAE.Exp> value; // Default value
     list<DAE.Exp> instDims;
   end VARIABLE;
 
   record FUNCTION_PTR
     String name;
-    Exp.Type ty;
+    DAE.ExpType ty;
     list<Variable> args;
   end FUNCTION_PTR;
 end Variable;
@@ -513,7 +513,7 @@ algorithm
     case (cref, {}) then cref;
     case (DAE.CREF(componentRef=crNew, ty=ty), subs)
       equation
-        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
+        indexes = Util.listMap(subs, Expression.makeIndexSubscript);
         crNew = ComponentReference.subscriptCref(crNew, indexes);
       then
         DAE.CREF(crNew, ty);
@@ -553,7 +553,7 @@ algorithm
     case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
       equation
         cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
-        outExp = Exp.makeCrefExp(cr1,tp);
+        outExp = Expression.makeCrefExp(cr1,tp);
       then
         outExp;
   end matchcontinue;  
@@ -1357,14 +1357,14 @@ algorithm
   outVar := matchcontinue (inFuncArg)
     local
       Types.Type tty;
-      Exp.Type expType;
+      DAE.ExpType expType;
       String name;
       DAE.ComponentRef cref_;
     case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _)))
       local
         list<Types.FuncArg> args;
         DAE.Type res_ty;
-        Exp.Type res_exp_ty;
+        DAE.ExpType res_exp_ty;
         list<Variable> var_args;
       equation
         //expType = Types.elabType(tty);
@@ -1388,10 +1388,10 @@ algorithm
   outVar := matchcontinue(inElement)
     local
       String name;
-      Exp.Type expType;
+      DAE.ExpType expType;
       DAE.Type daeType;
-      Exp.ComponentRef id;
-      list<Exp.Subscript> inst_dims;
+      Expression.ComponentRef id;
+      list<Expression.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       Variable var;
@@ -2006,7 +2006,7 @@ protected function buildDiscreteVarChangesVar "help function to buildDiscreteVar
 algorithm
   outString := matchcontinue(var,daelow,mT)
     local list<String> strLst;
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
       Integer varIndx;
       list<Integer> eqns;
     case(var as BackendDAE.VAR(varName=cr,index=varIndx), daelow,mT) equation
@@ -2021,7 +2021,7 @@ end buildDiscreteVarChangesVar;
 
 protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations
 given as indices which is a when_equation"
-  input Exp.ComponentRef cr;
+  input Expression.ComponentRef cr;
   input BackendDAE.DAELow daelow;
   input list<Integer> eqns;
   output Boolean res;
@@ -2030,7 +2030,7 @@ algorithm
   local
     BackendDAE.EquationArray eqs;
     Integer e;
-    Exp.ComponentRef cr2;
+    Expression.ComponentRef cr2;
     DAE.Exp exp;
     Boolean b1,b2;
     case(cr,daelow,{}) then true;
@@ -2039,7 +2039,7 @@ algorithm
         BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr2,exp,_)) = BackendDAEUtil.equationNth(eqs,intAbs(e)-1);
         //We can asume the same component refs are solved in any else-branch.
         b1 = ComponentReference.crefEqualNoStringCompare(cr,cr2);
-        b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
+        b2 = Expression.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
         true = boolOr(b1,b2);
       then false;
     case(cr,daelow,_::eqns) 
@@ -2465,7 +2465,7 @@ algorithm
   include :=
   matchcontinue(var, dlow, mT)
     local
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
       Integer varIndx;
       list<Integer> eqns;
     case(var as BackendDAE.VAR(varName=cr, index=varIndx), dlow, mT)
@@ -2603,7 +2603,7 @@ algorithm
       equation
         conditions = getConditionList(wc, CurrentIndex);
         conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
-        conditionVars = Exp.extractCrefsFromExp(cond);
+        conditionVars = Expression.extractCrefsFromExp(cond);
       then
         SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);    
   end matchcontinue;
@@ -2772,7 +2772,7 @@ algorithm
     local
       list<Integer> restEqNums;
       list<BackendDAE.Equation> eqnsList;
-      Exp.ComponentRef cr,origname, cr_1;
+      Expression.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -2927,7 +2927,7 @@ algorithm
     local
       list<Integer> restEqNums;
       list<BackendDAE.Equation> eqnsList;
-      Exp.ComponentRef cr,origname, cr_1;
+      Expression.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -3047,11 +3047,11 @@ algorithm
       then fail();
     case (condition, (hindex, e, _) :: restHelpVarInfo)
       equation
-        true = Exp.expEqual(condition, e);
+        true = Expression.expEqual(condition, e);
       then ((condition, hindex));
     case (condition, (hindex, e, _) :: restHelpVarInfo)
       equation
-        false = Exp.expEqual(condition, e);
+        false = Expression.expEqual(condition, e);
         conditionAndHindex = addHindexForCondition(condition, restHelpVarInfo);
       then conditionAndHindex;
   end matchcontinue;
@@ -3084,7 +3084,7 @@ algorithm
     case ({}, _, inEntrylst) then ({},inEntrylst);
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
       equation
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
@@ -3102,11 +3102,11 @@ algorithm
     case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), aeqns, inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = DAELow.getArrayEquationSub(aindx,ad,inEntrylst);
-        res_exp = Exp.applyExpSubscripts(res_exp,subs);        
+        res_exp = Expression.applyExpSubscripts(res_exp,subs);        
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, entrylst1);
@@ -3118,7 +3118,7 @@ algorithm
         // This following does not work. It does not take index or elseWhen into account.
         // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
         /*
-        tp = Exp.typeof(e2);
+        tp = Expression.typeof(e2);
         e1 = DAE.CREF(left,tp);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp = ExpressionSimplify.simplify(res_exp);
@@ -3801,7 +3801,7 @@ protected function replaceDerOpInExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  ((outExp, _)) := Exp.traverseExp(inExp, replaceDerOpInExpTraverser, NONE());
+  ((outExp, _)) := Expression.traverseExp(inExp, replaceDerOpInExpTraverser, NONE());
 end replaceDerOpInExp;
 
 protected function replaceDerOpInExpCond
@@ -3811,17 +3811,17 @@ protected function replaceDerOpInExpCond
   input DAE.ComponentRef cref;
   output DAE.Exp outExp;
 algorithm
-  ((outExp, _)) := Exp.traverseExp(inExp, replaceDerOpInExpTraverser, SOME(cref));
+  ((outExp, _)) := Expression.traverseExp(inExp, replaceDerOpInExpTraverser, SOME(cref));
 end replaceDerOpInExpCond;
 
 protected function replaceDerOpInExpTraverser
-  "Used with Exp.traverseExp to traverse an expression an replace calls to
+  "Used with Expression.traverseExp to traverse an expression an replace calls to
   der(cref) with a component reference $DER.cref. If an optional component
   reference is supplied, then only that component reference is replaced.
   Otherwise all calls to der are replaced.
   
   This is done since some parts of the compiler can't handle der-calls, such as
-  Derive.differentiateExp. Ideally these parts should be fixed so that they can
+  Derive.differentiateExpression. Ideally these parts should be fixed so that they can
   handle der-calls, but until that happens we just replace the der-calls with
   crefs."
   input tuple<DAE.Exp, Option<DAE.ComponentRef>> inExp;
@@ -4125,7 +4125,7 @@ algorithm
       then (rhs_exp_1,inEntrylst);
     case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
@@ -4134,13 +4134,13 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = DAELow.getArrayEquationSub(index,ad,inEntrylst);
-        new_exp1 = Exp.applyExpSubscripts(new_exp,subs);
+        new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp1, v);
-        tp1 = Exp.typeof(rhs_exp);
+        tp1 = Expression.typeof(rhs_exp);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,entrylst1);     
@@ -4306,14 +4306,14 @@ algorithm
       Integer indx,cg_id_1,cg_id;
       list<Integer> ds;
       DAE.Exp e1,e2;
-      Exp.ComponentRef cr,origname,cr_1;
+      Expression.ComponentRef cr,origname,cr_1;
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray eqns,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       Algorithm.Algorithm alg,alg1;
       BackendDAE.EventInfo ev;
-      list<Exp.ComponentRef> solvedVars,algOutVars;
+      list<Expression.ComponentRef> solvedVars,algOutVars;
       list<DAE.Exp> algOutExpVars;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       String message,algStr;
@@ -4325,7 +4325,7 @@ algorithm
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
         solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
-        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+        algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg,NONE());
@@ -4337,7 +4337,7 @@ algorithm
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
         solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
-        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+        algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
 
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
@@ -4384,13 +4384,13 @@ algorithm
     case (cr,eltcr,(e1 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),e2)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ty = Exp.typeof(e2);
+        ty = Expression.typeof(e2);
       then
         SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
     case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))))
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
       then
       SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
     case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2))
@@ -4601,7 +4601,7 @@ algorithm
          calc. will override those entries!  */
       equation
         startv = DAEUtil.getStartAttr(attr);
-        false = Exp.isConst(startv);
+        false = Expression.isConst(startv);
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source);
         initialEquations = createInitialAssignmentsFromStart(restVars);
       then
@@ -4632,7 +4632,7 @@ algorithm
     case ({}) then {};
     case (BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source) :: restVars)
       equation
-        false = Exp.isConst(e);
+        false = Expression.isConst(e);
         initialEquation = BackendDAE.SOLVED_EQUATION(cr, e, source);
         initialEquations = createInitialParamAssignments(restVars);
       then
@@ -4879,7 +4879,7 @@ algorithm
   matchcontinue (varList)
     local
       BackendDAE.Var var;
-      Exp.ComponentRef cr, origname;
+      Expression.ComponentRef cr, origname;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Integer indx;
@@ -4997,7 +4997,7 @@ algorithm
       Integer index;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
-      Exp.Type type_;
+      DAE.ExpType type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE()))
@@ -5177,7 +5177,7 @@ algorithm
       Integer index;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
-      Exp.Type type_;
+      DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       Integer index_;
@@ -5269,7 +5269,7 @@ algorithm
       Integer index;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
-      Exp.Type type_;
+      DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       list<DAE.ComponentRef> initCrefs;
@@ -5502,7 +5502,7 @@ algorithm
 	    list<HelpVarInfo> helpvars,helpvars1,helpvars2;
       String newIdent;
       String nextIndStr;
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean scalar;
       list<Integer> helpVarIndices1,helpVarIndices;
       DAE.ElementSource source;
@@ -5618,7 +5618,7 @@ algorithm
     local
       list<BackendDAE.Equation> eqns;
       BackendDAE.Var v;
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.Exp startv;
       Option<DAE.VariableAttributes> attr;
@@ -5819,7 +5819,7 @@ algorithm
     local
       Boolean isElseWhen;
       Integer nextHelpInd, ind;
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
       DAE.Exp exp;
       String res1,res2,res;
       Option<BackendDAE.WhenEquation> elsePart;
@@ -5902,7 +5902,7 @@ protected function buildDiscreteVarChangesVar2
  For an equation e  (not a when equation) containing a discrete variable v, if e contains a
  ZeroCrossing(i) generate 'if change(v) needToIterate=1;)'"
   input Integer eqn;
-  input Exp.ComponentRef cr;
+  input Expression.ComponentRef cr;
   input BackendDAE.DAELow daelow;
   output String outString;
 algorithm
@@ -5950,7 +5950,7 @@ protected function buildDiscreteVarChangesAddEvent
 "help function to buildDiscreteVarChangesVar2
  Generates 'if (change(v)) needToIterate=1 for and index i and variable v"
   input Integer indx;
-  input Exp.ComponentRef cr;
+  input Expression.ComponentRef cr;
   output String str;
 protected
 	String crStr,indxStr;
@@ -5987,19 +5987,19 @@ algorithm
       list<DAE.Exp> l1,l2,l3,res;
       DAE.Exp e1,e2;
       list<BackendDAE.Equation> es;
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
     case ({}) then {};
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es))
       equation
-        l1 = Exp.getRelations(e1);
-        l2 = Exp.getRelations(e2);
+        l1 = Expression.getRelations(e1);
+        l2 = Expression.getRelations(e2);
         l3 = mixedCollectRelations2(es);
         res = Util.listFlatten({l1,l2,l3});
       then
         res;
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
       equation
-        l1 = Exp.getRelations(e1);
+        l1 = Expression.getRelations(e1);
         l2 = mixedCollectRelations2(es);
         res = listAppend(l1, l2);
       then
@@ -6161,7 +6161,7 @@ on the form v = expr for solving variable v"
   output BackendDAE.Equation eqn;
 algorithm
   eqn := matchcontinue(v,eqnLst)
-    local Exp.ComponentRef cr1,cr;
+    local Expression.ComponentRef cr1,cr;
       DAE.Exp e2;
     case (v,(eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
       cr1=BackendVariable.varCref(v);
@@ -6212,7 +6212,7 @@ end isMixedSystem;
 
 protected function solveTrivialArrayEquation
 "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
-	input Exp.ComponentRef v;
+	input Expression.ComponentRef v;
 	input DAE.Exp e1;
 	input DAE.Exp e2;
 	output DAE.Exp outE1;
@@ -6222,14 +6222,14 @@ algorithm
     local
       DAE.Exp e12,e22,vTerm,res,rhs,f;
       list<DAE.Exp> terms,exps,exps_1,expl_1;
-      Exp.Type tp;
+      DAE.ExpType tp;
       Boolean b;
       list<Boolean> bls; 
       DAE.ComponentRef c;     
     case (v,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))),e2)
       equation
-        (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
-        bls = Util.listMap1(exps_1, Exp.expEqual,f);
+        (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
+        bls = Util.listMap1(exps_1, Expression.expEqual,f);
         true = Util.boolAndList(bls);
         c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.CREF(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
@@ -6237,8 +6237,8 @@ algorithm
         (e12,e22);
    case (v,e2,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))))
       equation
-        (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
-        bls = Util.listMap1(exps_1, Exp.expEqual,f);
+        (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
+        bls = Util.listMap1(exps_1, Expression.expEqual,f);
         true = Util.boolAndList(bls);
         c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),DAE.CREF(c,tp));
@@ -6247,9 +6247,9 @@ algorithm
     // Solve simple linear equations.
     case(v,e1,e2)
       equation
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         res = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
-        (f,rhs) = Exp.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
+        (f,rhs) = Expression.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
         (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
         rhs = ExpressionSimplify.simplify(rhs);
       then (vTerm,rhs);
@@ -6266,20 +6266,20 @@ protected function getVectorizedCrefFromExp
    {v{1},v{2},...v{n}}  for some n.
   TODO: implement for 2D as well."
   input DAE.Exp inExp;
-  output Exp.ComponentRef outComponentRef;
+  output Expression.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
   matchcontinue (inExp)
     local
-      list<Exp.ComponentRef> crefs,crefs_1;
-      Exp.ComponentRef cr;
+      list<Expression.ComponentRef> crefs,crefs_1;
+      Expression.ComponentRef cr;
       list<String> strs;
       String s;
       list<DAE.Exp> expl;
       list<list<tuple<DAE.Exp, Boolean>>> column;
     case (DAE.ARRAY(array = expl))
       equation
-        ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
+        ((crefs as (cr :: _))) = Util.listMap(expl, Expression.expCref); //Get all CRefs from exp1.
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
@@ -6301,20 +6301,20 @@ protected function getVectorizedCrefFromExpMatrix
   Returns the component ref v if list of expressions is on form
    {v{1},v{2},...v{n}}  for some n."
   input list<tuple<DAE.Exp, Boolean>> column; //One column in a matrix.
-  output Exp.ComponentRef outComponentRef; //The expanded column
+  output Expression.ComponentRef outComponentRef; //The expanded column
 algorithm
   outComponentRef:=
   matchcontinue (column)
     local
       list<tuple<DAE.Exp, Boolean>> col;
-      list<Exp.ComponentRef> crefs,crefs_1;
-      Exp.ComponentRef cr;
+      list<Expression.ComponentRef> crefs,crefs_1;
+      Expression.ComponentRef cr;
       list<String> strs;
       String s;
       list<DAE.Exp> expl;
     case (col)
       equation
-        ((crefs as (cr :: _))) = Util.listMap(col, Exp.expCrefTuple); //Get all CRefs from the list of tuples.
+        ((crefs as (cr :: _))) = Util.listMap(col, Expression.expCrefTuple); //Get all CRefs from the list of tuples.
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
@@ -6423,7 +6423,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
   nonlinear equation system. They should be replaced by xloc{index}, i.e.
   an unique index in a xloc vector.
 "
-  input list<Exp.ComponentRef> crefs;
+  input list<Expression.ComponentRef> crefs;
   output VarTransform.VariableReplacements repl_1;
   VarTransform.VariableReplacements repl,repl_1;
 algorithm
@@ -6437,7 +6437,7 @@ protected function makeResidualReplacements2 "function makeResidualReplacements2
   Helper function to make_residual_replacements
 "
   input VarTransform.VariableReplacements inVariableReplacements;
-  input list<Exp.ComponentRef> inExpComponentRefLst;
+  input list<Expression.ComponentRef> inExpComponentRefLst;
   input Integer inInteger;
   output VarTransform.VariableReplacements outVariableReplacements;
 algorithm
@@ -6448,7 +6448,7 @@ algorithm
       String pstr,str;
       Integer pos_1,pos;
       DAE.ComponentRef cr,cref_;
-      list<Exp.ComponentRef> crs;
+      list<Expression.ComponentRef> crs;
     case (repl,{},_) then repl;
     case (repl,(cr :: crs),pos)
       equation
@@ -6487,12 +6487,12 @@ protected function transformXToXd "function transformXToXd
 algorithm
   outVar := matchcontinue (inVar)
     local
-      Exp.ComponentRef cr;
+      Expression.ComponentRef cr;
       DAE.VarDirection dir;
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
-      list<Exp.Subscript> dim;
+      list<Expression.Subscript> dim;
       Integer index;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
@@ -7065,7 +7065,7 @@ algorithm
   c :=
   matchcontinue(e)
     local
-      Exp.ComponentRef crefe;
+      Expression.ComponentRef crefe;
       Absyn.ComponentRef crefa;
     case(DAE.CREF(componentRef = crefe))
       equation
@@ -7118,7 +7118,7 @@ algorithm
     local
       String name;
       Types.Type typesType;
-      Exp.Type expType;
+      DAE.ExpType expType;
       DAE.ComponentRef cref_;
     case (DAE.TYPES_VAR(name=name, type_=typesType))
       equation
@@ -7135,10 +7135,10 @@ algorithm
   simVar :=
   matchcontinue (dlowVar)
     local
-      Exp.ComponentRef cr, origname;
+      Expression.ComponentRef cr, origname;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
-      list<Exp.Subscript> inst_dims;
+      list<Expression.Subscript> inst_dims;
       Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Flow flowPrefix;
@@ -7148,7 +7148,7 @@ algorithm
       String orignameStr, commentStr, name, unit, displayUnit;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
-      Exp.Type type_;
+      DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
     case ((dlowVar as BackendDAE.VAR(varName = cr,
@@ -7256,7 +7256,7 @@ protected function getMatchingExps
     {CALL(foo, {CALL(bar)}), CALL(bar,{})}
 Implementation note: DAE.Exp contains VALUEBLOCKS,
   which can't be processed in Exp due to circular dependencies with DAE.
-  In the future, this function should be moved to Exp."
+  In the future, this function should be moved to Expression."
   input DAE.Exp inExp;
   input MatchFn inFn;
   output list<DAE.Exp> outExpLst;
@@ -7603,7 +7603,7 @@ algorithm
         DAE.ComponentRef cref; Absyn.Path p;
       equation
         cref = ComponentReference.pathToCref(p);
-        e = Exp.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
+        e = Expression.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
         expLst = getMatchingExpsList(expLst,matchFnRefs);
       then
         e :: expLst;
@@ -7647,7 +7647,7 @@ algorithm
         {} = ComponentReference.crefLastSubs(cref);
         // Build a DAE.CREF from the record path.
         cref = ComponentReference.pathToCref(record_path);
-        record_cref = Exp.crefExp(cref);
+        record_cref = Expression.crefExp(cref);
         rest_expr = getImplicitRecordConstructors(rest_expr);
       then record_cref :: rest_expr;
     case (_ :: rest_expr)
@@ -7899,63 +7899,63 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = BackendDAE.STRING(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     /* String - Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     /* Parameters without value binding. Investigate if it has start value */
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
       then
         SOME(e);
     case (_) then NONE();

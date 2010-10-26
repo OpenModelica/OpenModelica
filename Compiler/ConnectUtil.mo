@@ -46,7 +46,6 @@ package ConnectUtil
   in DAEUtil.mo."
 
 public import Absyn;
-public import ComponentReference;
 public import Connect;
 public import DAE;
 public import Env;
@@ -54,8 +53,9 @@ public import InnerOuter;
 public import Prefix;
 public import ClassInf;
 
-protected import Exp;
+protected import ComponentReference;
 protected import DAEUtil;
+protected import Expression;
 protected import Static;
 protected import Lookup;
 protected import Print;
@@ -629,7 +629,7 @@ algorithm
     case (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
       equation
         expSubs = generateSubscriptList(dimensions);
-        subSubs = Util.listListMap(expSubs,Exp.makeIndexSubscript);
+        subSubs = Util.listListMap(expSubs,Expression.makeIndexSubscript);
         outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs,source);
       then
        outSets;
@@ -707,7 +707,7 @@ algorithm
         list<Integer> indices;
       equation
         indices = Util.listIntRange(i);
-        res = Util.listMap(Util.listMap(indices, Exp.makeIntegerExp), Util.listCreate);
+        res = Util.listMap(Util.listMap(indices, Expression.makeIntegerExp), Util.listCreate);
       then
         res;
     case DAE.DIM_ENUM(enumTypeName = name, literals = l)

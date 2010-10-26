@@ -21,7 +21,7 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 public import DAE;
-public import ComponentReference;
+protected import ComponentReference;
 protected import ExpressionDump;
 protected import System;
 
@@ -75,7 +75,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,Exp.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
 end emptyHashTable;
 
 public function emptyHashTableSized
@@ -86,7 +86,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,Exp.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
 end emptyHashTableSized;
 
 end HashTable4;

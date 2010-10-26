@@ -39,7 +39,7 @@ package BackendVarTransform
   This file is a stub!"
 
 public import VarTransform;
-protected import Exp;
+protected import Expression;
 protected import Util;
 
 end BackendVarTransform;

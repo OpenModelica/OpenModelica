@@ -63,12 +63,10 @@ package Static
   The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 public import Absyn;
-public import ComponentReference;
 public import ConnectionGraph;
 public import Convert;
 public import DAE;
 public import Env;
-public import ExpressionSimplify;
 public import Interactive;
 public import MetaUtil;
 public import RTOpts;
@@ -88,15 +86,18 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+
 protected import Ceval;
 protected import ClassInf;
+protected import ComponentReference;
 protected import Connect;
 protected import Debug;
 protected import Dump;
 protected import Error;
 protected import ErrorExt;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Inst;
 protected import InstSection;
 protected import InnerOuter;
@@ -1005,8 +1006,8 @@ algorithm
     case ({}) then {};
     case ((e :: es))
       equation
-        tp = Exp.typeof(e);
-        scalar = Exp.typeBuiltin(tp);
+        tp = Expression.typeof(e);
+        scalar = Expression.typeBuiltin(tp);
         s = Util.boolString(scalar);
         es_1 = elabMatrixToMatrixExp3(es);
       then
@@ -1167,7 +1168,7 @@ protected function reductionFnSum
 
   DAE.ExpType ty;
 algorithm
-  ty := Exp.typeof(lhs);
+  ty := Expression.typeof(lhs);
   result := DAE.BINARY(lhs, DAE.ADD(ty), rhs);
 end reductionFnSum;
 
@@ -1178,7 +1179,7 @@ protected function reductionFnProduct
 
   DAE.ExpType ty;
 algorithm
-  ty := Exp.typeof(lhs);
+  ty := Expression.typeof(lhs);
   result := DAE.BINARY(lhs, DAE.MUL(ty), rhs);
 end reductionFnProduct;
 
@@ -1336,20 +1337,20 @@ algorithm
     case(e, Values.INTEGER(i)::valLst, id)
       equation
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Exp.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),DAE.ICONST(i));
+        (e1,_) = Expression.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),DAE.ICONST(i));
         expl = elabCallReduction2(e, valLst, id);
       then e1::expl;
     case(e, Values.REAL(r) :: valLst, id)
       equation
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Exp.replaceExp(e, DAE.CREF(cref_, DAE.ET_OTHER()), DAE.RCONST(r));
+        (e1,_) = Expression.replaceExp(e, DAE.CREF(cref_, DAE.ET_OTHER()), DAE.RCONST(r));
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl;
     case(e, (v as Values.ENUM_LITERAL(index = _)) :: valLst, id)
       equation
         e1 = ValuesUtil.valueExp(v);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Exp.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),e1);
+        (e1,_) = Expression.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),e1);
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl; 
   end matchcontinue;
@@ -2469,7 +2470,7 @@ algorithm
         array = Types.isArray(Types.unliftArray(Types.unliftArray(t1_1)));
         scalar = boolNot(array);
         at = Types.elabType(t1_1);
-        at = Exp.liftArrayLeft(at, DAE.DIM_INTEGER(1));
+        at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(1));
       then
         (cache,DAE.ARRAY(at,scalar,{el_2}),prop,t1_dim1_1,t1_dim2_1);
     case (cache,env,(el :: els),impl,st,havereal,nmax,doVect,pre,info)
@@ -2480,11 +2481,11 @@ algorithm
         (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax_2);
          (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
         (cache,el_1 as DAE.ARRAY(at,a,els_1),prop2,dim1,dim2) = elabMatrixComma(cache,env, els, impl, st, havereal, nmax,doVect,pre,info);
-        dim2_1 = Exp.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
+        dim2_1 = Expression.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
         props = Types.matchWithPromote(prop1_1, prop2, havereal);
-        el_1 = Exp.arrayAppend(el_2, el_1);
+        el_1 = Expression.arrayAppend(el_2, el_1);
         //dim = listLength((el :: els));
-        //at = Exp.liftArrayLeft(at, DAE.DIM_INTEGER(dim));
+        //at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(dim));
       then
         (cache, el_1, props, dim1, dim2_1);
     case (_,_,_,_,_,_,_,_,_,_)
@@ -2553,7 +2554,7 @@ algorithm
     case (expl)
       local DAE.ExpType tp;
       equation
-        tp = Exp.typeof(Util.listFirst(expl));
+        tp = Expression.typeof(Util.listFirst(expl));
         res = makeBuiltinCall("cat", DAE.ICONST(2) :: expl, tp);
       then res;
   end matchcontinue;
@@ -2579,8 +2580,8 @@ algorithm
     case (DAE.ARRAY(ty = a1,scalar = at1,array = expl1),DAE.ARRAY(ty = a2,scalar = at2,array = expl2))
       equation
         e :: expl = elabMatrixCatTwo3(expl1, expl2);
-        ty = Exp.typeof(e);
-        ty = Exp.liftArrayLeft(ty, DAE.DIM_INTEGER(1));
+        ty = Expression.typeof(e);
+        ty = Expression.liftArrayLeft(ty, DAE.DIM_INTEGER(1));
       then
         DAE.ARRAY(ty,at1,e :: expl);
   end matchcontinue;
@@ -2608,7 +2609,7 @@ algorithm
       equation 
         expl = listAppend(expl1, expl2);
         es_1 = elabMatrixCatTwo3(es1, es2);
-        ty = Exp.concatArrayType(a1, a2);
+        ty = Expression.concatArrayType(a1, a2);
       then
         (DAE.ARRAY(ty,at1,expl) :: es_1);
   end matchcontinue;
@@ -2646,7 +2647,7 @@ algorithm
     case (expl) local
       DAE.ExpType tp;
       equation
-        tp = Exp.typeof(Util.listFirst(expl));
+        tp = Expression.typeof(Util.listFirst(expl));
         e = makeBuiltinCall("cat", DAE.ICONST(1) :: expl, tp);
       then
         e;
@@ -2687,7 +2688,7 @@ algorithm
         //e_tp = Types.elabType(tp);
         tp_1 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(1));
         //e_tp_1 = Types.elabType(tp_1);
-        //array = Exp.typeBuiltin(e_tp);
+        //array = Expression.typeBuiltin(e_tp);
         e_1 = promoteExp2(e, (n,tp));
         (e_2,prop_1) = promoteExp(e_1, DAE.PROP(tp_1,c), n_1);
       then
@@ -2719,7 +2720,7 @@ algorithm
       equation
         n_1 = n - 1;
         tp_1 = Types.unliftArray(tp);
-        a = Exp.liftArrayLeft(a, DAE.DIM_INTEGER(1));
+        a = Expression.liftArrayLeft(a, DAE.DIM_INTEGER(1));
         expl_1 = Util.listMap1(expl, promoteExp2, (n_1,tp_1));
       then
         DAE.ARRAY(a,at,expl_1);
@@ -2727,13 +2728,13 @@ algorithm
       local DAE.ExpType at;
       equation
         false = Types.isArray(tp);
-        at = Exp.typeof(e);
+        at = Expression.typeof(e);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
     case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = 1),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */
       local DAE.ExpType at;
       equation
-        at = Exp.typeof(e);
+        at = Expression.typeof(e);
         false = Types.isArray(tp2);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
@@ -2760,7 +2761,7 @@ algorithm
     case(inType,n)
       local DAE.ExpType tp1,tp2;
       equation
-      tp1=Exp.liftArrayRight(inType, DAE.DIM_INTEGER(1));
+      tp1=Expression.liftArrayRight(inType, DAE.DIM_INTEGER(1));
       tp2 = promoteExpType(tp1,n-1);
     then tp2;
   end matchcontinue;
@@ -2821,8 +2822,8 @@ algorithm
         el_2 = elabMatrixCatTwoExp(el_1);
         (cache,els_1,props2,dim1_1,dim2_1) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
         els_2 = elabMatrixCatOne({el_2,els_1});
-        true = Exp.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
-        dim1_2 = Exp.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
+        true = Expression.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
+        dim1_2 = Expression.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
         (props) = Types.matchWithPromote(props1, props2, havereal);
       then
         (cache,els_2,props,dim1_2,dim2);
@@ -2848,7 +2849,7 @@ algorithm
       equation
         (cache,el_1,DAE.PROP(t1,_),dim1,_) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre,info);
         (cache,els_1,props2,_,dim2) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre,info);
-        false = Exp.dimensionsEqual(dim1,dim2);
+        false = Expression.dimensionsEqual(dim1,dim2);
         dim1_str = ExpressionDump.dimensionString(dim1);
         dim2_str = ExpressionDump.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
@@ -3080,12 +3081,12 @@ algorithm
     case (cache, env, {arraycr, dim}, _, impl, pre, info) 
       equation
         (cache,dimp,_,_) = elabExp(cache, env, dim, impl,NONE(), true, pre, info);
-        dim_int = Exp.expInt(dimp);
+        dim_int = Expression.expInt(dimp);
         (cache, arraycrefe, _, _) = elabExp(cache, env, arraycr, impl,NONE(), false, pre, info);
-        ety = Exp.typeof(arraycrefe);
-        dims = Exp.arrayTypeDimensions(ety);
+        ety = Expression.typeof(arraycrefe);
+        dims = Expression.arrayTypeDimensions(ety);
         d = listNth(dims, dim_int - 1);
-        exp = Exp.dimensionSizeExp(d);
+        exp = Expression.dimensionSizeExp(d);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST);
       then
         (cache, exp, prop); 
@@ -3105,9 +3106,9 @@ algorithm
       local list<DAE.Exp> dim_expl;
       equation
         (cache, arraycrefe, _, _) = elabExp(cache, env, arraycr, impl,NONE(), false, pre, info);
-        ety = Exp.typeof(arraycrefe);
-        dims = Exp.arrayTypeDimensions(ety);
-        dim_expl = Util.listMap(dims, Exp.dimensionSizeExp);
+        ety = Expression.typeof(arraycrefe);
+        dims = Expression.arrayTypeDimensions(ety);
+        dim_expl = Util.listMap(dims, Expression.dimensionSizeExp);
         dim_int = listLength(dim_expl);
         exp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_INTEGER(dim_int)}), true, dim_expl);
         prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int), DAE.T_INTEGER_DEFAULT),NONE()), DAE.C_CONST);
@@ -3392,7 +3393,7 @@ algorithm
       equation
         (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
           = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
-        dim1 = Exp.dimensionSize(d1);
+        dim1 = Expression.dimensionSize(d1);
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE())),NONE());
         prop = DAE.PROP(newtp,c);
@@ -3406,8 +3407,8 @@ algorithm
       equation
         (cache,DAE.MATRIX(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
           = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
-        dim1 = Exp.dimensionSize(d1);
-        dim2 = Exp.dimensionSize(d2);
+        dim1 = Expression.dimensionSize(d1);
+        dim2 = Expression.dimensionSize(d2);
         dimMax = intMax(dim1, dim2);
         exp_2 = elabBuiltinTranspose3(expl, 1, dimMax);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE())),NONE());
@@ -3468,8 +3469,8 @@ algorithm
       equation
         (indx <= dim1) = true;
         indx_1 = indx - 1;
-        (e :: es) = Util.listMap1(elst, Exp.nthArrayExp, indx_1);
-        tp = Exp.typeof(e);
+        (e :: es) = Util.listMap1(elst, Expression.nthArrayExp, indx_1);
+        tp = Expression.typeof(e);
         indx_1 = indx + 1;
         rest = elabBuiltinTranspose2(elst, indx_1, dim1);
       then
@@ -3504,7 +3505,7 @@ algorithm
         lindx = indx - 1;
         (e :: es) = Util.listMap1(elst, list_nth, lindx);
         e_1 = Util.tuple21(e);
-        tp = Exp.typeof(e_1);
+        tp = Expression.typeof(e_1);
         indx_1 = indx + 1;
         rest = elabBuiltinTranspose3(elst, indx_1, dim1);
         res = listAppend({(e :: es)}, rest);
@@ -3623,11 +3624,11 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
     case(DAE.CALL(_,{DAE.ARRAY(ty,sc,expl)},_,_,_,_)) equation
-      e = Exp.makeSum(expl);
+      e = Expression.makeSum(expl);
     then e;
     case(DAE.CALL(_,{DAE.MATRIX(ty,dim,mexpl)},_,_,_,_)) equation
       expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
-      e = Exp.makeSum(expl);
+      e = Expression.makeSum(expl);
     then e;
 
     case (e) then e;
@@ -3714,11 +3715,11 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
     case(DAE.CALL(_,{DAE.ARRAY(ty,sc,expl)},_,_,_,_)) equation
-      e = Exp.makeProductLst(expl);
+      e = Expression.makeProductLst(expl);
     then e;
     case(DAE.CALL(_,{DAE.MATRIX(ty,dim,mexpl)},_,_,_,_)) equation
       expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
-      e = Exp.makeProductLst(expl);
+      e = Expression.makeProductLst(expl);
     then e;
 
     case (e) then e;
@@ -3896,7 +3897,7 @@ algorithm
       equation
         (cache, exp_1, DAE.PROP(tp, c), _) =
           elabExp(cache, env, exp, impl, NONE(), true, pre, info);
-        exp_2 :: _ = Exp.flattenArrayExpToList(exp_1);
+        exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
         (tp, _) = Types.flattenArrayType(tp);
         validateBuiltinStreamOperator(cache, env, exp_2, tp, "inStream", pre);
         t = Types.elabType(tp);
@@ -3936,7 +3937,7 @@ algorithm
       equation
         (cache, exp_1, DAE.PROP(tp, c), _) =
           elabExp(cache, env, exp, impl, NONE(), true, pre, info);
-        exp_2 :: _ = Exp.flattenArrayExpToList(exp_1);
+        exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
         (tp, _) = Types.flattenArrayType(tp);
         validateBuiltinStreamOperator(cache, env, exp_2, tp, "actualStream", pre);
         t = Types.elabType(tp);
@@ -3979,7 +3980,7 @@ algorithm
     // Operand is not even a component reference, error!
     case (_, _, _, _, _, _)
       equation
-        false = Exp.isCref(inOperand);
+        false = Expression.isCref(inOperand);
         op_str = ExpressionDump.printExpStr(inOperand);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
@@ -4690,7 +4691,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        arrexp_1 = ExpressionSimplify.simplify(Exp.makeAsub(arrexp_1, 1));
+        arrexp_1 = ExpressionSimplify.simplify(Expression.makeAsub(arrexp_1, 1));
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
         call = makeBuiltinCall(inFnName, {arrexp_1}, tp);
@@ -5226,7 +5227,7 @@ algorithm
         (cache, DAE.ARRAY(ty = tp, array = expl),
          DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE()),c),
          _) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE())),NONE());
         tp = Types.elabType(ty);
         res = elabBuiltinDiagonal2(expl,tp);
@@ -5240,7 +5241,7 @@ algorithm
         (cache,s1_1,
           DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE()),c),
          _) = elabExp(cache,env, s1, impl,NONE(),true, pre,info);
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE())),NONE());
         tp = Types.elabType(ty);
         res = makeBuiltinCall("diagonal", {s1_1}, tp);
@@ -5261,7 +5262,7 @@ protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
   For instance diagonal({a,b}) => {a,0;0,b}
 "
   input list<DAE.Exp> expl;
-  input Exp.Type inType;
+  input Expression.Type inType;
   output DAE.Exp res;
   Integer dim;
 algorithm
@@ -5273,7 +5274,7 @@ protected function elabBuiltinDiagonal3
   input list<DAE.Exp> inExpExpLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-  input Exp.Type inType;
+  input Expression.Type inType;
   output DAE.Exp outExp;
 algorithm
   outExp:=
@@ -5289,10 +5290,10 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> rows;
     case ({e},indx,dim,ty)
       equation
-        tp = Exp.typeof(e);
-        sc = Exp.typeBuiltin(tp);
+        tp = Expression.typeof(e);
+        sc = Expression.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
-        expl = Util.listFill(Exp.makeConstZero(tp), dim);
+        expl = Util.listFill(Expression.makeConstZero(tp), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
@@ -5301,10 +5302,10 @@ algorithm
       equation
         indx_1 = indx + 1;
         DAE.MATRIX(tp,mdim,rows) = elabBuiltinDiagonal3(es, indx_1, dim, ty);
-        tp = Exp.typeof(e);
-        sc = Exp.typeBuiltin(tp);
+        tp = Expression.typeof(e);
+        sc = Expression.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
-        expl = Util.listFill(Exp.makeConstZero(tp), dim);
+        expl = Util.listFill(Expression.makeConstZero(tp), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
@@ -5631,7 +5632,7 @@ algorithm
         (_,_,DAE.PROP(ety,c),_) = elabExp(cache, env, exp, impl,NONE(),false,pre,info);
         failure(equality(c=DAE.C_VAR));
         dims = Types.getRealOrIntegerDimensions(ety);
-        (e,ty) = Exp.makeZeroExpression(dims);
+        (e,ty) = Expression.makeZeroExpression(dims);
       then
         (cache,e,DAE.PROP(ty,DAE.C_CONST));
 
@@ -6176,7 +6177,7 @@ algorithm
     case (cache,env,{v1},_,impl,pre,info) equation
       (cache,e1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
       {3} = Types.getDimensionSizes(tp1);
-      etp = Exp.typeof(e1);
+      etp = Expression.typeof(e1);
       eltTp = Types.arrayElementType(tp1);
       tp1 = Types.liftArrayListDims(eltTp, {DAE.DIM_INTEGER(3), DAE.DIM_INTEGER(3)});
       etp = DAE.ET_ARRAY(etp, {DAE.DIM_INTEGER(3), DAE.DIM_INTEGER(3)});
@@ -6196,14 +6197,14 @@ algorithm
 
      // skew(x)
     case({x1,x2,x3},s) equation
-        zero = Exp.makeConstZero(Exp.typeof(x1));
+        zero = Expression.makeConstZero(Expression.typeof(x1));
         a11 = zero;
-        a12 = Exp.negate(x3);
+        a12 = Expression.negate(x3);
         a13 = x2;
         a21 = x3;
         a22 = zero;
-        a23 = Exp.negate(x1);
-        a31 = Exp.negate(x2);
+        a23 = Expression.negate(x1);
+        a31 = Expression.negate(x2);
         a32 = x1;
         a33 = zero;
 
@@ -6266,7 +6267,7 @@ algorithm
       // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
        //{3} = Types.getDimensionSizes(tp1);
        //{3} = Types.getDimensionSizes(tp2);
-       etp = Exp.typeof(e1);
+       etp = Expression.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
        call = makeBuiltinCall("cross", {e1, e2}, etp);
      then 
@@ -6284,9 +6285,9 @@ algorithm
 
      // {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
     case({x1,x2,x3},{y1,y2,y3}) equation
-        r1 = Exp.makeDiff(Exp.makeProductLst({x2,y3}),Exp.makeProductLst({x3,y2}));
-        r2 = Exp.makeDiff(Exp.makeProductLst({x3,y1}),Exp.makeProductLst({x1,y3}));
-        r3 = Exp.makeDiff(Exp.makeProductLst({x1,y2}),Exp.makeProductLst({x2,y1}));
+        r1 = Expression.makeDiff(Expression.makeProductLst({x2,y3}),Expression.makeProductLst({x3,y2}));
+        r2 = Expression.makeDiff(Expression.makeProductLst({x3,y1}),Expression.makeProductLst({x1,y3}));
+        r3 = Expression.makeDiff(Expression.makeProductLst({x1,y2}),Expression.makeProductLst({x2,y1}));
     then {r1,r2,r3};
   end matchcontinue;
 end elabBuiltinCross2;
@@ -8034,7 +8035,7 @@ end elabCallInteractive;
 
 
 protected function elabVariablenames "function: elabVariablenames
-  This function elaborates variablenames to DAE.Exp. A variablename can
+  This function elaborates variablenames to DAE.Expression. A variablename can
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive
   functions that uses variablenames as componentreferences.
 "
@@ -9202,7 +9203,7 @@ algorithm
     /* Scalar expression, i.e function call */
     case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation 
-        int_dim = Exp.dimensionSize(dim);
+        int_dim = Expression.dimensionSize(dim);
         exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
         vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, int_dim, slots);
         tp = Types.liftArray(tp, dim);
@@ -9213,7 +9214,7 @@ algorithm
     /* array expression of function calls */
     case (DAE.ARRAY(scalar = scalar,array = expl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation
-        int_dim = Exp.dimensionSize(dim);
+        int_dim = Expression.dimensionSize(dim);
         exp_type = Types.elabType(Types.liftArray(tp, dim));
         vect_exp = vectorizeCallArray(inExp, int_dim, slots);
         tp = Types.liftArrayRight(tp, dim);
@@ -9252,8 +9253,8 @@ algorithm
     case (DAE.ARRAY(ty = tp,scalar = scalar,array = expl),cur_dim,slots) /* cur_dim */
       equation
         arr_expl = vectorizeCallArray2(expl, tp, cur_dim, slots);
-        scalar_1 = Exp.typeBuiltin(tp);
-        tp = Exp.liftArrayRight(tp, DAE.DIM_INTEGER(cur_dim));
+        scalar_1 = Expression.typeBuiltin(tp);
+        tp = Expression.liftArrayRight(tp, DAE.DIM_INTEGER(cur_dim));
         res_exp = DAE.ARRAY(tp,scalar_1,arr_expl);
       then
         res_exp;
@@ -9344,8 +9345,8 @@ algorithm
     case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin)),e_type,dim,slots) /* cur_dim */
       equation
         expl = vectorizeCallScalar2(args, slots, 1, dim, callexp);
-        e_type = Exp.unliftArray(e_type);
-        scalar = Exp.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
+        e_type = Expression.unliftArray(e_type);
+        scalar = Expression.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
         arr_type = DAE.ET_ARRAY(e_type, {DAE.DIM_INTEGER(dim)});
         new_exp = DAE.ARRAY(arr_type,scalar,expl);
       then
@@ -11252,8 +11253,8 @@ algorithm
     case (_, _, (DAE.T_ARRAY(arrayDim = d1, arrayType = (DAE.T_ARRAY(arrayDim = d2), _)), _),
         SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
-        b1 = (Exp.dimensionSize(d1) < RTOpts.vectorizationLimit());
-        b2 = (Exp.dimensionSize(d2) < RTOpts.vectorizationLimit());
+        b1 = (Expression.dimensionSize(d1) < RTOpts.vectorizationLimit());
+        b2 = (Expression.dimensionSize(d2) < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
         e = tryToConvertArrayToMatrix(e);
@@ -11264,7 +11265,7 @@ algorithm
         SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
         false = Types.isArray(t);
-        true = (Exp.dimensionSize(d1) < RTOpts.vectorizationLimit()) or not applyLimits;
+        true = (Expression.dimensionSize(d1) < RTOpts.vectorizationLimit()) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
@@ -11276,8 +11277,8 @@ algorithm
       local
         Integer ds, ds2;
       equation 
-        ds = Exp.dimensionSize(d1);
-        ds2 = Exp.dimensionSize(d2);
+        ds = Expression.dimensionSize(d1);
+        ds2 = Expression.dimensionSize(d2);
         b1 = (ds < RTOpts.vectorizationLimit());
         b2 = (ds2 < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
@@ -11292,7 +11293,7 @@ algorithm
         Integer ds;
       equation 
         false = Types.isArray(t);
-        ds = Exp.dimensionSize(d1);
+        ds = Expression.dimensionSize(d1);
         true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
@@ -11304,7 +11305,7 @@ end crefVectorize;
 protected function tryToConvertArrayToMatrix
 "function trytoConvertToMatrix
   A function that tries to convert an Exp to an Matrix,
-  if it fails it just returns the input exp."
+  if it fails it just returns the input Expression."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -11428,7 +11429,7 @@ algorithm
 
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
-        ety = Exp.arrayEltType(ety);
+        ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
     then exp2;      
   end matchcontinue;
@@ -11465,7 +11466,7 @@ algorithm
         expl1 = Util.listMap1(expl1,mergeQualWithRest2,exp2);
         exp1 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp1);
-        ety = Exp.arrayEltType(ety);
+        ety = Expression.arrayEltType(ety);
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp1;
   end matchcontinue;
@@ -11539,7 +11540,7 @@ algorithm
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         //print("1. flattened rest into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
-        exp2 = applySubscript(exp1, exp2 ,id,Exp.unliftArray(ety));
+        exp2 = applySubscript(exp1, exp2 ,id,Expression.unliftArray(ety));
         //print("1. applied this subscript into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
       then
         exp2;
@@ -11565,7 +11566,7 @@ algorithm
         expl2 = Util.listMap3(expl1,applySubscript,exp2,id,ety);
         exp3 = DAE.ARRAY(DAE.ET_INT(),false,expl2);
         (iLst, scalar) = extractDimensionOfChild(exp3);
-        ety = Exp.arrayEltType(ety);
+        ety = Expression.arrayEltType(ety);
         exp3 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl2);
         exp3 = removeDoubleEmptyArrays(exp3);
       then
@@ -11627,7 +11628,7 @@ algorithm
 
     case(exp2,exp1 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
       equation
-        true = Exp.arrayContainZeroDimension(arrDim);
+        true = Expression.arrayContainZeroDimension(arrDim);
       then exp1;
 
         /* add dimensions */       
@@ -11643,15 +11644,15 @@ algorithm
 
     case(exp1,DAE.ARRAY(_,_,{}),id ,ety)
       equation
-        true = Exp.isValidSubscript(exp1);
-        crty = Exp.unliftArray(ety) "only subscripting one dimension, unlifting once ";
+        true = Expression.isValidSubscript(exp1);
+        crty = Expression.unliftArray(ety) "only subscripting one dimension, unlifting once ";
         cref_ = ComponentReference.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
         exp1 = DAE.CREF(cref_,crty);
       then exp1;
 
     case(exp1, exp2, id ,ety)
       equation
-        true = Exp.isValidSubscript(exp1);
+        true = Expression.isValidSubscript(exp1);
         exp1 = applySubscript2(exp1, exp2,ety);
       then exp1;
   end matchcontinue;
@@ -11679,7 +11680,7 @@ algorithm
 
     case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
       equation
-        crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
+        crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = DAE.CREF(cref_,crty);
       then exp2;
@@ -11689,7 +11690,7 @@ algorithm
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
-        ety = Exp.arrayEltType(ety);
+        ety = Expression.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
@@ -11717,7 +11718,7 @@ algorithm
 
     case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety )
       equation
-        crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
+        crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
         exp2 = DAE.CREF(cref_,crty);
       then exp2;
@@ -11727,7 +11728,7 @@ algorithm
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp2);
-        ety = Exp.unliftArray(ety);
+        ety = Expression.unliftArray(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
@@ -11808,7 +11809,7 @@ algorithm
         DAE.WHOLEDIM()::ss = ComponentReference.crefLastSubs(cr);
         cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = ComponentReference.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
-        elt_tp = Exp.unliftArray(et);
+        elt_tp = Expression.unliftArray(et);
         e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
@@ -11819,7 +11820,7 @@ algorithm
         {} = ComponentReference.crefLastSubs(cr);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
-        elt_tp = Exp.unliftArray(et);
+        elt_tp = Expression.unliftArray(et);
         e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
@@ -11830,7 +11831,7 @@ algorithm
         cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = ComponentReference.subscriptCref(cr_1,ss);
         DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t,crefIdType);
-        expl = Util.listMap1(expl,Exp.prependSubscriptExp,DAE.INDEX(e_1));
+        expl = Util.listMap1(expl,Expression.prependSubscriptExp,DAE.INDEX(e_1));
       then
         DAE.ARRAY(et,true,expl);
     // failure
@@ -11878,7 +11879,7 @@ algorithm
         indx_1 = indx + 1;
         DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
-        elt_tp = Exp.unliftArray(et);
+        elt_tp = Expression.unliftArray(et);
         DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
@@ -11970,7 +11971,7 @@ algorithm
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
         (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
-        //indexes = Exp.subscriptsInt(ss_1);
+        //indexes = Expression.subscriptsInt(ss_1);
         //crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
         crefPrefix = PrefixUtil.prefixAdd(id, {}, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
         (cache,cr,const2) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
@@ -12112,7 +12113,7 @@ algorithm
     case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info) /* If param, call ceval. */
       equation
         true = Env.inForIterLoopScope(env);
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
         (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
         const = Types.constAnd(const1, const2);        
@@ -12122,7 +12123,7 @@ algorithm
     // If the subscript contains a param or const then it should be evaluated to the value
     case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info) /* If param or const, call ceval. */
       equation
-        int_dim = Exp.dimensionSize(dim);
+        int_dim = Expression.dimensionSize(dim);
         (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
         (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
         const = Types.constAnd(const1, const2);
@@ -12136,7 +12137,7 @@ algorithm
     case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info)
       equation
         true = OptManager.getOption("checkModel");
-        //true = Exp.dimensionKnown(dim);
+        //true = Expression.dimensionKnown(dim);
         (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
         (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
         const = Types.constAnd(const1, const2);
@@ -12147,7 +12148,7 @@ algorithm
     // if not constant, keep as is.
     case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info)
       equation
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
         (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
         const = Types.constAnd(const1, const2);
@@ -12710,7 +12711,7 @@ algorithm
     case (DAE.WHOLEDIM(),DAE.WHOLEDIM()) then ();
     case (DAE.INDEX(exp = s1),DAE.INDEX(exp = s2))
       equation
-        true = Exp.expEqual(s1, s2);
+        true = Expression.expEqual(s1, s2);
       then
         ();
   end matchcontinue;
@@ -12805,7 +12806,7 @@ algorithm
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype,pre);
         ty = Types.elabType(rtype_1);
-        op = Exp.setOpType(op, ty);
+        op = Expression.setOpType(op, ty);
       then
         (op,args_1,rtype_1);
     
@@ -12942,7 +12943,7 @@ algorithm
         2 = nDims(typ1);
         n = Types.getDimensionNth(typ1, 1);
         m = Types.getDimensionNth(typ1, 2);
-        true = Exp.dimensionsKnownAndEqual(n, m);
+        true = Expression.dimensionsKnownAndEqual(n, m);
       then
         typ1;
     
@@ -13124,7 +13125,7 @@ algorithm
     // The dimensions are both known and equal.
     case (_, _)
       equation
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
       then
         true;
     // If checkModel is used we might get unknown dimensions. So use
@@ -13132,7 +13133,7 @@ algorithm
     case (_, _)
       equation
         true = OptManager.getOption("checkModel");
-        true = Exp.dimensionsEqual(dim1, dim2);
+        true = Expression.dimensionsEqual(dim1, dim2);
       then
         true;
     case (_, _) then false;
@@ -13661,18 +13662,18 @@ algorithm
     case (_, (DAE.T_ENUMERATION(path = _), _), (DAE.T_ENUMERATION(path = _), _))
       equation
         op_ty = Types.elabType(inType1);
-        inOp = Exp.setOpType(inOp, op_ty);
+        inOp = Expression.setOpType(inOp, op_ty);
       then ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
     case (_, (DAE.T_ENUMERATION(path = _), _), _)
       equation
         op_ty = Types.elabType(inType1);
-        inOp = Exp.setOpType(inOp, op_ty);
+        inOp = Expression.setOpType(inOp, op_ty);
       then
         ((inOp, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
     case (_, _, (DAE.T_ENUMERATION(path = _), _))
       equation
         op_ty = Types.elabType(inType1);
-        inOp = Exp.setOpType(inOp, op_ty);
+        inOp = Expression.setOpType(inOp, op_ty);
       then
         ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
     case (_, _, _)
@@ -13874,7 +13875,7 @@ end warnUnsafeRelations;
 
 protected function verifyOp "
 Helper function for warnUnsafeRelations
-We only want to check DAE.EQUAL and EXP.NEQUAL since they are the only illegal real operations.
+We only want to check DAE.EQUAL and Expression.NEQUAL since they are the only illegal real operations.
 "
 input DAE.Operator op;
 algorithm _ := matchcontinue(op)

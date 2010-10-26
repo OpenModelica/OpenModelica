@@ -45,7 +45,6 @@ public import Absyn;
 public import ClassInf;
 public import SCode;
 public import Values;
-//protected import Exp;
 
 public type Ident = String;
 
@@ -923,7 +922,7 @@ end Mod;
 
 /* -- End Types.mo -- */
 
-/* -- Start Exp.mo -- */
+/* -- Start Expression.mo -- */
 public
 uniontype ExpType "- Basic types
     These types are not used as expression types (see the `Types\'
@@ -1362,7 +1361,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   end INDEX;
 
 end Subscript;
-/* -- End Exp.mo -- */
+/* -- End Expression.mo -- */
 
 end DAE;
 

@@ -37,7 +37,6 @@ package InnerOuter
   RCS: $Id: InnerOuter.mo 4847 2010-01-21 22:45:09Z adrpo $"
 
 import Absyn;
-import ComponentReference;
 import DAE;
 import Env;
 import Prefix;
@@ -46,11 +45,12 @@ import UnitAbsyn;
 import Connect;
 import ConnectionGraph;
 
+protected import ComponentReference;
 protected import System;
-protected import Exp;
 protected import Util;
 protected import Debug;
 protected import DAEUtil;
+protected import Expression;
 protected import VarTransform;
 protected import OptManager;
 protected import Dump;
@@ -647,12 +647,12 @@ protected function removeInnerPrefixFromCref
 "@author: adrpo
  This function will strip the given prefix from the component references."
  input Prefix.Prefix inPrefix;
- input Exp.ComponentRef inCref;
- output Exp.ComponentRef outCref;
+ input Expression.ComponentRef inCref;
+ output Expression.ComponentRef outCref;
 algorithm
   outCref := matchcontinue(inPrefix, inCref)
     local
-      Exp.ComponentRef crefPrefix, crOuter;
+      Expression.ComponentRef crefPrefix, crOuter;
     
     // no prefix to strip, return the cref!
     case (Prefix.NOPRE(), inCref) then inCref;

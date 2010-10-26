@@ -41,7 +41,6 @@ package ValuesUtil
 
 public import DAE;
 public import Values;
-public import ExpressionSimplify;
 
 public type Value = Values.Value;
 public type IntRealOp = Values.IntRealOp;
@@ -50,7 +49,8 @@ protected import Absyn;
 protected import Debug;
 protected import Dump;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import Print;
 protected import System;
 protected import Util;
@@ -120,7 +120,7 @@ algorithm
       then DAE.ET_ENUMERATION(path,{},{});
     case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(Util.listFirst(valLst));
-      dims = Util.listMap(int_dims, Exp.intDimension);
+      dims = Util.listMap(int_dims, Expression.intDimension);
     then DAE.ET_ARRAY(eltTp,dims);
     
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
@@ -926,7 +926,7 @@ algorithm
     case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
     case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
       equation
-        dims = Util.listMap(int_dims, Exp.intDimension); 
+        dims = Util.listMap(int_dims, Expression.intDimension); 
       then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), dims),false,{});
 
     /* Matrix */
@@ -936,7 +936,7 @@ algorithm
         explist = Util.listMap((v :: xs), valueExp);      
         DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,i));
-        t = Exp.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
+        t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then DAE.MATRIX(t,dim,mexpl2::mexpl);
 
     /* Matrix last row*/
@@ -948,8 +948,8 @@ algorithm
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(1));
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
         mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
       then DAE.MATRIX(t,dim,{mexpl2});
 
@@ -960,7 +960,7 @@ algorithm
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
         b = Types.isArray(vt);
         b = boolNot(b);
       then
@@ -975,8 +975,8 @@ algorithm
     case(Values.RECORD(path,vallist,namelst,-1))
       equation
         expl=Util.listMap(vallist,valueExp);
-        tpl = Util.listMap(expl,Exp.typeof);
-        varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
+        tpl = Util.listMap(expl,Expression.typeof);
+        varlst = Util.listThreadMap(namelst,tpl,Expression.makeVar);
       then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE());
 
     case(Values.ENUM_LITERAL(name = path, index = ix))

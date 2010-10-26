@@ -38,22 +38,22 @@ package BackendDAETransform
 
 public import Absyn;
 public import BackendDAE;
-public import ComponentReference;
 public import DAE;
 public import DAELow;
-public import Exp;
-public import ExpressionSimplify;
 public import SCode;
 public import Values;
 public import BackendVariable;
 
 protected import Algorithm;
 protected import BackendDump;
+protected import ComponentReference;
 protected import ClassInf;
 protected import DAEUtil;
 protected import Debug;
 protected import Derive;
 protected import Error;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import OptManager;
 protected import RTOpts;
@@ -1034,8 +1034,8 @@ algorithm
       equation
         e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
+        ty = Expression.typeof(e1);
+        i = Expression.sizeOf(ty);
         // inline 
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
@@ -1048,8 +1048,8 @@ algorithm
         e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
+        ty = Expression.typeof(e1);
+        i = Expression.sizeOf(ty);
         complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source), i);
       then
         (complexEqs,{});
@@ -1058,8 +1058,8 @@ algorithm
       equation
         e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
+        ty = Expression.typeof(e1);
+        i = Expression.sizeOf(ty);
         // inline 
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
@@ -1072,8 +1072,8 @@ algorithm
         e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
+        ty = Expression.typeof(e1);
+        i = Expression.sizeOf(ty);
         complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source), i);
       then
         (complexEqs,{});
@@ -1204,7 +1204,7 @@ algorithm
       local DAE.ComponentRef cref_;
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
-        e_2 = ExpressionSimplify.simplify(e); // Exp.stringifyCrefs(ExpressionSimplify.simplify(e));
+        e_2 = ExpressionSimplify.simplify(e); // Expression.stringifyCrefs(ExpressionSimplify.simplify(e));
         cref_ = ComponentReference.makeCrefIdent("_", DAE.ET_OTHER(), {});
       then
         ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cref_,e_2,NONE()),source) :: eqnl),reinit);
@@ -1348,7 +1348,7 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.ARRAY(array=a1)),right=DAE.ARRAY(array=a2),source=source)) :: algs),aindx)
       equation
-        an = Util.listMap(a1,Exp.negate);
+        an = Util.listMap(a1,Expression.negate);
         ealst = Util.listThreadTuple(an,a2);
         eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         aindx = aindx + 1;
@@ -1358,7 +1358,7 @@ algorithm
         (res,aindx);              
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1),right=DAE.UNARY(exp=DAE.ARRAY(array=a2)),source=source)) :: algs),aindx)
       equation
-        an = Util.listMap(a2,Exp.negate);
+        an = Util.listMap(a2,Expression.negate);
         ealst = Util.listThreadTuple(a1,an);
         eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         aindx = aindx + 1;
@@ -1385,7 +1385,7 @@ algorithm
         ebl2 = Util.listFlatten(al2);
         a1 = Util.listMap(ebl1,Util.tuple21);
         a2 = Util.listMap(ebl2,Util.tuple21);        
-        an = Util.listMap(a1,Exp.negate);
+        an = Util.listMap(a1,Expression.negate);
         ealst = Util.listThreadTuple(an,a2);
         eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         aindx = aindx + 1;
@@ -1399,7 +1399,7 @@ algorithm
         ebl2 = Util.listFlatten(al2);
         a1 = Util.listMap(ebl1,Util.tuple21);
         a2 = Util.listMap(ebl2,Util.tuple21);        
-        an = Util.listMap(a2,Exp.negate);
+        an = Util.listMap(a2,Expression.negate);
         ealst = Util.listThreadTuple(a1,an);
         eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         aindx = aindx + 1;
@@ -1601,8 +1601,8 @@ algorithm
       equation
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
         ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
-        inputs = Util.listUnionOnTrue(inputs1, inputs2, Exp.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
+        inputs = Util.listUnionOnTrue(inputs1, inputs2, Expression.expEqual);
+        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
       then
         ((inputs,outputs));
   end matchcontinue;
@@ -1663,8 +1663,8 @@ algorithm
     case (vars,DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);
-        crefs = Util.listFlatten(Util.listMap(expl,Exp.extractCrefsFromExp));
-        outputs =  Util.listMap1(crefs,Exp.makeCrefExp,DAE.ET_OTHER());
+        crefs = Util.listFlatten(Util.listMap(expl,Expression.extractCrefsFromExp));
+        outputs =  Util.listMap1(crefs,Expression.makeCrefExp,DAE.ET_OTHER());
       then
         (inputs,outputs);
 
@@ -1675,7 +1675,7 @@ algorithm
         subslst = DAELow.dimensionsToRange(ad);
         subslst1 = DAELow.rangesToSubscripts(subslst);
         crefs = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crefs,Exp.makeCrefExp,tp);             
+        expl = Util.listMap1(crefs,Expression.makeCrefExp,tp);             
       then (inputs,expl);
 
     case(vars,DAE.STMT_IF(exp = e, statementLst = stmts, else_ = elsebranch))
@@ -1683,8 +1683,8 @@ algorithm
         ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Exp.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Expression.expEqual);
+        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
 
     case(vars,DAE.STMT_ASSERT(cond = e1,msg=e2))
@@ -1692,7 +1692,7 @@ algorithm
       equation
         inputs1 = BackendDAEUtil.statesAndVarsExp(e1,vars);
         inputs2 = BackendDAEUtil.statesAndVarsExp(e1,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Exp.expEqual);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
      then (inputs,{});
 
     case(vars, DAE.STMT_FOR(ident = iteratorName, exp = e, statementLst = stmts))
@@ -1767,8 +1767,8 @@ algorithm
         (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
         ((inputs2, outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Exp.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Expression.expEqual);
+        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
 
     case(vars,DAE.ELSE(stmts))
@@ -1807,7 +1807,7 @@ protected function transformDelayExpressions
   output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
-  ((outExp, outInteger)) := Exp.traverseExp(inExp, transformDelayExpression, inInteger);
+  ((outExp, outInteger)) := Expression.traverseExp(inExp, transformDelayExpression, inInteger);
 end transformDelayExpressions;
 
 protected function transformDelayExpression
@@ -2196,20 +2196,20 @@ algorithm
       DAE.ElementSource source "the element source";
 
     case(BackendDAE.EQUATION(e1,e2,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (BackendDAE.EQUATION(e1,e2,source),vars);
     case(BackendDAE.COMPLEX_EQUATION(i,e1,e2,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (BackendDAE.COMPLEX_EQUATION(i,e1,e2,source),vars);
     case  (BackendDAE.ARRAY_EQUATION(i,expl,source),vars)
     then (BackendDAE.ARRAY_EQUATION(i,expl,source),vars);
     case (BackendDAE.SOLVED_EQUATION(cr,e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (BackendDAE.SOLVED_EQUATION(cr,e1,source),vars);
     case(BackendDAE.RESIDUAL_EQUATION(e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (BackendDAE.RESIDUAL_EQUATION(e1,source),vars);
     case (eqn as BackendDAE.ALGORITHM(index = _),vars) then (eqn,vars);
     case (BackendDAE.WHEN_EQUATION(wheneq,source),vars) equation
@@ -2234,12 +2234,12 @@ algorithm
   (outWheneq, outVars) := matchcontinue(wheneq,vars)
     local DAE.ComponentRef cr; DAE.Exp e1; Integer indx; BackendDAE.WhenEquation elsewheneq;
     case(BackendDAE.WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
       (elsewheneq,vars) = expandDerOperatorWhenEqn(elsewheneq,vars);
     then (BackendDAE.WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars);
 
     case(BackendDAE.WHEN_EQ(indx,cr,e1,NONE()),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (BackendDAE.WHEN_EQ(indx,cr,e1,NONE()),vars);
   end matchcontinue;
 end expandDerOperatorWhenEqn;
@@ -2317,58 +2317,58 @@ algorithm
       DAE.ElementSource source;
 
     case(DAE.STMT_ASSIGN(tp,e2,e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (DAE.STMT_ASSIGN(tp,e2,e1,source),vars);
 
     case(DAE.STMT_TUPLE_ASSIGN(tp,expl,e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
       (expl,vars) = expandDerExps(expl,vars);
     then (DAE.STMT_TUPLE_ASSIGN(tp,expl,e1,source),vars);
 
     case(DAE.STMT_ASSIGN_ARR(tp,cr,e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_ASSIGN_ARR(tp,cr,e1,source),vars);
 
     case(DAE.STMT_IF(e1,stmts,elseB,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
     then (DAE.STMT_IF(e1,stmts,elseB,source),vars);
 
     case(DAE.STMT_FOR(tp,b,id,e1,stmts,source),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_FOR(tp,b,id,e1,stmts,source),vars);
 
     case(DAE.STMT_WHILE(e1,stmts,source),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_WHILE(e1,stmts,source),vars);
 
     case(DAE.STMT_WHEN(e1,stmts,SOME(stmt),hv,source),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (stmt,vars) = expandDerOperatorStmt(stmt,vars);
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_WHEN(e1,stmts,SOME(stmt),hv,source),vars);
 
     case(DAE.STMT_WHEN(e1,stmts,NONE(),hv,source),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_WHEN(e1,stmts,NONE(),hv,source),vars);
 
     case(DAE.STMT_ASSERT(e1,e2,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (DAE.STMT_ASSERT(e1,e2,source),vars);
 
     case(DAE.STMT_TERMINATE(e1,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
     then (DAE.STMT_TERMINATE(e1,source),vars);
 
     case(DAE.STMT_REINIT(e1,e2,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e1,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (DAE.STMT_REINIT(e1,e2,source),vars);
 
     case(stmt,vars)      then (stmt,vars);
@@ -2391,7 +2391,7 @@ algorithm
     case(DAE.NOELSE(),vars) then (DAE.NOELSE(),vars);
 
     case(DAE.ELSEIF(e1,stmts,elseB),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
     then (DAE.ELSEIF(e1,stmts,elseB),vars);
@@ -2432,8 +2432,8 @@ algorithm
       DAE.ElementSource source "the element source";
 
     case(BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars) equation
-      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars);
   end matchcontinue;
 end expandDerOperatorArrEqn;
@@ -2591,7 +2591,7 @@ algorithm
       DAE.Exp e1,e2;
     case (BackendDAE.ZERO_CROSSING(relation_ = e1),BackendDAE.ZERO_CROSSING(relation_ = e2))
       equation
-        res = Exp.expEqual(e1, e2);
+        res = Expression.expEqual(e1, e2);
       then
         res;
   end matchcontinue;
@@ -2751,7 +2751,7 @@ protected function findZeroCrossings3
   input BackendDAE.Variables knvars;
   output list<DAE.Exp> zeroCrossings;
 algorithm
-  ((_,(zeroCrossings,_))) := Exp.traverseExp(e, collectZeroCrossings, ({},(vars,knvars)));
+  ((_,(zeroCrossings,_))) := Expression.traverseExp(e, collectZeroCrossings, ({},(vars,knvars)));
 end findZeroCrossings3;
 
 public function zeroCrossingsEquations
@@ -2808,7 +2808,7 @@ algorithm
       then ((e,(zeroCrossings,(vars,knvars))));
     case ((e1 as DAE.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,(vars,knvars))))
       equation
-        ((_,(zeroCrossings_1,(vars,knvars)))) = Exp.traverseExp(e, collectZeroCrossings, (zeroCrossings,(vars,knvars)));
+        ((_,(zeroCrossings_1,(vars,knvars)))) = Expression.traverseExp(e, collectZeroCrossings, (zeroCrossings,(vars,knvars)));
         ((e_1,(zeroCrossings_2,(vars,knvars)))) = collectZeroCrossings((DAE.ARRAY(tp,scalar,el),(zeroCrossings,(vars,knvars))));
         zeroCrossings_3 = listAppend(zeroCrossings_1, zeroCrossings_2);
       then
@@ -3088,12 +3088,12 @@ algorithm
         true = OptManager.getOption("checkModel");
       then ();
     case(cond,message) equation
-      false = Exp.isConstFalse(cond);
+      false = Expression.isConstFalse(cond);
       then ();
     case(cond,message)
       local String messageStr;
       equation
-        true = Exp.isConstFalse(cond);
+        true = Expression.isConstFalse(cond);
         messageStr = ExpressionDump.printExpStr(message);
         Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
       then fail();

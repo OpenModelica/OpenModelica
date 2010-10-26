@@ -45,7 +45,6 @@ package PrefixUtil
 
 
 public import Absyn;
-public import ComponentReference;
 public import DAE;
 public import Env;
 public import Lookup;
@@ -57,8 +56,9 @@ public import ClassInf;
 
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
+protected import ComponentReference;
 protected import Debug;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import Util;
@@ -547,7 +547,7 @@ algorithm
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
         n = ComponentReference.crefLastIdent(cref);
-        lastCref = Exp.crefIdent(cref);
+        lastCref = Expression.crefIdent(cref);
         // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
         InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) = 
            InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
@@ -742,7 +742,7 @@ algorithm
       then
         (cache,DAE.ARRAY(t,a,{}));
 
-    /*case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p as Prefix.PREFIX(Prefix.PRE(_,{i},_),_))
+    /*case (cache,env,Expression.ARRAY(ty = t,scalar = a,array = es),p as Prefix.PREFIX(Prefix.PRE(_,{i},_),_))
       local Prefix.Prefix p; Integer i; DAE.Exp e;
       equation
         e = listNth(es, i-1);
@@ -910,7 +910,7 @@ end prefixExpList;
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
 protected function prefixDecls "function: prefixDecls
-  Add the supplied prefix to the DAE elements located in Exp.mo.
+  Add the supplied prefix to the DAE elements located in Expression.mo.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;

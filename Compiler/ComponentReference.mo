@@ -35,23 +35,23 @@ package ComponentReference
   package:     ComponentReference
   description: All stuff for ComponentRef datatypes
 
-  RCS: $Id: Exp.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
+  RCS: $Id: Expression.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
 
   This file contains the module `ComponentReference\', which contains functions
   for ComponentRef.
 "
 
 public import Absyn;
-public import ClassInf;
 public import DAE;
-public import System;
 
+protected import ClassInf;
 protected import Debug;
 protected import Dump;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import RTOpts;
+protected import System;
 protected import Util;
 
 
@@ -189,14 +189,14 @@ algorithm
     case ((DAE.SLICE(exp = e) :: xs))
       equation
         xs_1 = unelabSubscripts(xs);
-        e_1 = Exp.unelabExp(e);
+        e_1 = Expression.unelabExp(e);
       then
         (Absyn.SUBSCRIPT(e_1) :: xs_1);
     // indexes
     case ((DAE.INDEX(exp = e) :: xs))
       equation
         xs_1 = unelabSubscripts(xs);
-        e_1 = Exp.unelabExp(e);
+        e_1 = Expression.unelabExp(e);
       then
         (Absyn.SUBSCRIPT(e_1) :: xs_1);
   end matchcontinue;
@@ -277,8 +277,8 @@ algorithm
     case ((e :: xs))
       equation
         s = Dump.printSubscriptsStr({e});
-        str = System.stringAppendList({"#Error converting subscript: ",s," to Exp.\n"});
-        //print("#Error converting subscript: " +& s +& " to Exp.\n");
+        str = System.stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
+        //print("#Error converting subscript: " +& s +& " to Expression.\n");
         //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);
       then
@@ -621,7 +621,7 @@ algorithm
           DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
       equation
         true = stringEqual(id1, id2);
-        true = Exp.subscriptEqual(ss1, ss2);
+        true = Expression.subscriptEqual(ss1, ss2);
         res = crefPrefixOf(cr1, cr2);
       then
         res;
@@ -640,7 +640,7 @@ algorithm
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
         true = stringEqual(id1, id2);
-        res = Exp.subscriptEqual(ss1, ss2);
+        res = Expression.subscriptEqual(ss1, ss2);
       then
         res;
         
@@ -657,7 +657,7 @@ algorithm
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
       equation
         true = stringEqual(id1, id2);
-        res = Exp.subscriptEqual(ss1, ss2);
+        res = Expression.subscriptEqual(ss1, ss2);
       then
         res;    
     
@@ -672,7 +672,7 @@ algorithm
     // they are not a prefix of one-another
     case (cr1,cr2)
       equation
-        // print("Exp.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
+        // print("Expression.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
       then false;
   end matchcontinue;
 end crefPrefixOf;
@@ -730,7 +730,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx1 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
         true = stringEqual(n1, n2);
-        true = Exp.subscriptEqual(idx1, idx2);
+        true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
         // BZ 2009-12
@@ -758,7 +758,7 @@ algorithm
       equation
         true = stringEqual(n1, n2);
         true = crefEqualStringCompare(cr1, cr2);
-        true = Exp.subscriptEqual(idx1, idx2);
+        true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
     // this is a VERY expensive case! Do we NEED IT??!!
@@ -832,7 +832,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation
         true = stringEqual(n1, n2);
-        true = Exp.subscriptEqual(idx1, idx2);
+        true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
     // qualified crefs
@@ -840,7 +840,7 @@ algorithm
       equation
         true = stringEqual(n1, n2);
         true = crefEqualNoStringCompare(cr1, cr2);
-        true = Exp.subscriptEqual(idx1, idx2);
+        true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
     // the crefs are not equal!
@@ -911,8 +911,8 @@ algorithm
     case (cr)
       equation
         ((subs as (_ :: _))) = crefLastSubs(cr);
-        exps = Util.listMap(subs, Exp.subscriptExp);
-        bools = Util.listMap(exps, Exp.isOne);
+        exps = Util.listMap(subs, Expression.subscriptExp);
+        bools = Util.listMap(exps, Expression.isOne);
         true = Util.boolAndList(bools);
       then
         true;
@@ -963,9 +963,9 @@ algorithm
       /* constant Subscripts that match type => true */ 
     case(cr) equation
       (subs as (_::_))= crefLastSubs(cr);
-      true = Exp.subscriptConstants(subs);
+      true = Expression.subscriptConstants(subs);
       tp = crefLastType(cr);
-      dims = Exp.arrayDimension(tp);
+      dims = Expression.arrayDimension(tp);
       // Since all subscripts are constants, sufficient to compare length of dimensions
       // Dimensions may be removed when a component is instantiated if it has
       // constant subscripts though, so it may have more subscripts than
@@ -1057,7 +1057,7 @@ algorithm ob := matchcontinue(inExp,ad)
   case(DAE.ARRAY(array=expl), d :: _)
     equation
       x1 = listLength(expl);
-      x2 = Exp.dimensionSize(d);
+      x2 = Expression.dimensionSize(d);
       true = intEq(x1, x2);
     then
       true;
@@ -1235,14 +1235,14 @@ end crefFirstCref;
 public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
 Author: PA
 Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
-For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
+For exampel. If the last cref type is Real[3,3] and the last subscript list is {Expression.INDEX(1)}, the type becomes Real[3], i.e
 one dimension is lifted.
 See also, crefType.
 "
   input DAE.ComponentRef cr;
   output DAE.ExpType res;
 algorithm 
- res := Exp.unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
+ res := Expression.unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
 end crefTypeConsiderSubs;
 
 public function crefNameType "Function: crefType
@@ -1476,26 +1476,26 @@ algorithm outCr := matchcontinue(inCr,newSub)
   //  then
   //    fail();
 
-  // Case where we try to find a Exp.DAE.SLICE()
+  // Case where we try to find a Expression.DAE.SLICE()
   case(DAE.CREF_IDENT(name,identType,subs),newSub)
     equation
       subs = replaceSliceSub(subs, newSub);
     then
       DAE.CREF_IDENT(name,identType,subs);
 
-  // case where there is not existant Exp.DAE.SLICE() as subscript
+  // case where there is not existant Expression.DAE.SLICE() as subscript
   case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
     equation
-      true = (listLength(Exp.arrayTypeDimensions(t2)) >= (listLength(subs)+1));
+      true = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+1));
       child = subscriptCref(child,newSub);
     then
       child;
 
   case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
     equation
-      false = (listLength(Exp.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
+      false = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
       child = subscriptCref(child,newSub);
-      Debug.fprintln("failtrace", "WARNING - Exp.replaceCref_SliceSub setting subscript last, not containing dimension");
+      Debug.fprintln("failtrace", "WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension");
     then
       child;
 
@@ -1506,10 +1506,10 @@ algorithm outCr := matchcontinue(inCr,newSub)
     then
       DAE.CREF_QUAL(name,identType,subs,child);
 
-  // case where there is not existant Exp.DAE.SLICE() as subscript in CREF_QUAL
+  // case where there is not existant Expression.DAE.SLICE() as subscript in CREF_QUAL
   case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
     equation
-      true = (listLength(Exp.arrayTypeDimensions(identType)) >= (listLength(subs)+1));
+      true = (listLength(Expression.arrayTypeDimensions(identType)) >= (listLength(subs)+1));
       subs = listAppend(subs,newSub);
     then
       DAE.CREF_QUAL(name,identType,subs,child);
@@ -1523,7 +1523,7 @@ algorithm outCr := matchcontinue(inCr,newSub)
 
   case(_,_)
     equation
-      Debug.fprint("failtrace", "- Exp.replaceCref_SliceSub failed\n ");
+      Debug.fprint("failtrace", "- Expression.replaceCref_SliceSub failed\n ");
     then
       fail();
 end matchcontinue;
@@ -1642,13 +1642,13 @@ algorithm
 	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
 	    equation
 	      true = stringEqual(id1, id2);
-	      true = Exp.subscriptEqual(subs1,subs2);
+	      true = Expression.subscriptEqual(subs1,subs2);
 	    then cr1;
 	  
 	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
 	    equation
 	      true = stringEqual(id1, id2);
-	      true = Exp.subscriptEqual(subs1,subs2);
+	      true = Expression.subscriptEqual(subs1,subs2);
 	    then crefStripPrefix(cr1,cr2);
   end matchcontinue;
 end crefStripPrefix;

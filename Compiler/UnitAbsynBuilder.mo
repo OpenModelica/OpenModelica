@@ -6,7 +6,6 @@ This module contains functions fro building UnitAbsyn terms that are used for bu
 for unit checker module
 
 "
-public import ComponentReference;
 public import UnitAbsyn;
 public import DAE;
 public import MMath;
@@ -15,8 +14,9 @@ public import HashTable;
 public import Absyn;
 
 protected import BaseHashTable;
+protected import ComponentReference;
 protected import DAEUtil;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Interactive;
 protected import Lookup;
@@ -1000,7 +1000,7 @@ algorithm
     then (ut,terms,store);
 
     case(env,e as DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
-      divOrMul = Exp.operatorDivOrMul(op);
+      divOrMul = Expression.operatorDivOrMul(op);
       (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
       terms = listAppend(terms1,terms2);
@@ -1009,14 +1009,14 @@ algorithm
 
       /* failed to build term for e2, use e1*/
     case(env,DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
-      divOrMul = Exp.operatorDivOrMul(op);
+      divOrMul = Expression.operatorDivOrMul(op);
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
       failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));
     then (ut,terms,store);
 
       /* failed to build term for e1, use e2*/
     case(env,DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
-      divOrMul = Exp.operatorDivOrMul(op);
+      divOrMul = Expression.operatorDivOrMul(op);
       failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));
       (ut,terms,store) = buildTermExp(env,e2,divOrMul,ht,store);
     then (ut,terms,store);
@@ -1065,7 +1065,7 @@ algorithm
   end matchcontinue;
 end buildTermExp;
 
-protected function buildArrayElementTerms "help function to buildTermExp. For each two terms from an array expression, it create
+protected function buildArrayElementTerms "help function to buildTermExpression. For each two terms from an array expression, it create
 and EQN to make the constraint that they must have the same unit"
   input list<UnitAbsyn.UnitTerm> uts;
   input list<DAE.Exp> expl;
@@ -1077,7 +1077,7 @@ algorithm
     case(uts as {_},_) then uts;
     case(ut1::ut2::uts,e1::e2::expl) equation
       uts = buildArrayElementTerms(uts,expl);
-      ty = Exp.typeof(e1);
+      ty = Expression.typeof(e1);
       uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,DAE.ARRAY(ty,true,{e1,e2}))});
     then uts;
   end matchcontinue;

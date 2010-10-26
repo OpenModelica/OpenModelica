@@ -59,7 +59,7 @@ Dump.mo \
 DumpGraphviz.mo \
 Env.mo \
 Error.mo \
-Exp.mo \
+Expression.mo \
 ExpressionDump.mo \
 ExpressionSolve.mo \
 ExpressionSimplify.mo \

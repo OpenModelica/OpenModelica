@@ -48,24 +48,25 @@ package BackendDAEUtil
   in the BLT sorting."
 
 public import BackendDAE;
-public import ComponentReference;
 public import DAE;
-public import Exp;
-public import ExpressionSimplify;
-public import Util;
 
 protected import Absyn;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import Ceval;
 protected import DAELow;
 protected import Debug;
 protected import Error;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import HashTable2;
 protected import Values;
 protected import ValuesUtil;
 protected import RTOpts;
 protected import System;
+protected import Util;
+
 
 public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMsg
   author: Frenkel TUD
@@ -158,7 +159,7 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
       equation
-        ((_,(_,crefs))) = Exp.traverseExpTopDown(exp,traversecheckBackendDAEExp,((vars,{})));
+        ((_,(_,crefs))) = Expression.traverseExpTopDown(exp,traversecheckBackendDAEExp,((vars,{})));
         lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
        then
         lstExpCrefs;
@@ -372,7 +373,7 @@ algorithm
         bt;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt)
       equation
-        //cr_1 = Exp.stringifyComponentRef(cr) "value irrelevant, give zero" ;
+        //cr_1 = Expression.stringifyComponentRef(cr) "value irrelevant, give zero" ;
         bt = DAELow.treeAdd(bt, cr, 0);
       then
         bt;
@@ -419,7 +420,7 @@ end statesExp;
 protected function statesExpMatrix
 "function: statesExpMatrix
   author: PA
-  Helper function to statesExp. Deals with matrix exp list."
+  Helper function to statesExpression. Deals with matrix exp list."
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
   input BackendDAE.BinTree inBinTree;
   output BackendDAE.BinTree outBinTree;
@@ -1082,7 +1083,7 @@ algorithm
         DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
         res;  
     /* Special Case for unextended arrays */
@@ -1101,7 +1102,7 @@ algorithm
       equation
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
       then
         res;
     case (DAE.UNARY(exp = e),vars)
@@ -1113,7 +1114,7 @@ algorithm
       equation
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
       then
         res;
     case (DAE.LUNARY(exp = e),vars)
@@ -1133,7 +1134,7 @@ algorithm
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
         s3 = statesAndVarsExp(e3, vars);
-        res = Util.listListUnionOnTrue({s1,s2,s3}, Exp.expEqual);
+        res = Util.listListUnionOnTrue({s1,s2,s3}, Expression.expEqual);
       then
         res;
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),vars)
@@ -1149,19 +1150,19 @@ algorithm
     case (DAE.CALL(expLst = expl),vars)
       equation
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
         res;
     case (DAE.PARTEVALFUNCTION(expList = expl),vars)
       equation
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
         res;
     case (DAE.ARRAY(array = expl),vars)
       equation
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
         res;
     case (DAE.MATRIX(scalar = mexp),vars)
@@ -1172,7 +1173,7 @@ algorithm
     case (DAE.TUPLE(PR = expl),vars)
       equation
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
         res;
     case (DAE.CAST(exp = e),vars)
@@ -1189,7 +1190,7 @@ algorithm
       equation
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
       then
         res;
     // ignore constants!
@@ -1228,7 +1229,7 @@ algorithm
         expl_1 = Util.listMap(expl, Util.tuple21);
         lst = Util.listMap1(expl_1, statesAndVarsExp, vars);
         ms_1 = statesAndVarsMatrixExp(ms, vars);
-        res = Util.listListUnionOnTrue((ms_1 :: lst), Exp.expEqual);
+        res = Util.listListUnionOnTrue((ms_1 :: lst), Expression.expEqual);
       then
         res;
   end matchcontinue;
@@ -1252,7 +1253,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), _)
       equation
         subscripts = ComponentReference.crefSubs(cr);
-        subscript_exprs = Util.listMap(subscripts, Exp.subscriptExp);
+        subscript_exprs = Util.listMap(subscripts, Expression.subscriptExp);
         true = isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
     case (DAE.ASUB(sub = subscript_exprs), _)
@@ -1278,7 +1279,7 @@ algorithm
     case ({}, _) then false;
     case (subscript :: rest, _)
       equation
-        true = Exp.expContains(subscript, iteratorExp);
+        true = Expression.expContains(subscript, iteratorExp);
       then true;
     case (subscript :: rest, _)
       equation
@@ -1351,7 +1352,7 @@ algorithm
       equation
         (arrayElements, _) = BackendVariable.getVar(cref, vars);
         varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
-        varExprs = Util.listMap(varCrefs, Exp.crefExp);
+        varExprs = Util.listMap(varCrefs, Expression.crefExp);
       then varExprs;
 
     case (DAE.ASUB(exp = DAE.CREF(componentRef = cref)), _, _, _)
@@ -1360,13 +1361,13 @@ algorithm
         // of the array.
         (arrayElements, _) = BackendVariable.getVar(cref, vars);
         varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
-        varExprs = Util.listMap(varCrefs, Exp.crefExp);
+        varExprs = Util.listMap(varCrefs, Expression.crefExp);
       then varExprs;
       
     case (DAE.ASUB(exp = e), _, _, _)
       local DAE.Exp e;
       equation
-        varExprs = Exp.flattenArrayExpToList(e);
+        varExprs = Expression.flattenArrayExpToList(e);
       then
         varExprs;
   end matchcontinue;
@@ -1467,7 +1468,7 @@ algorithm
     case ({}, {}, _) then {};
     case (clone :: restClones, index :: restIndices, _)
       equation
-        (newElement, _) = Exp.replaceExp(clone, iteratorExp, index);
+        (newElement, _) = Expression.replaceExp(clone, iteratorExp, index);
         newElement2 = simplifySubscripts(newElement);
         elements = generateArrayElements(restClones, restIndices, iteratorExp);
       then (newElement2 :: elements);
@@ -1500,13 +1501,13 @@ algorithm
     // An ASUB => convert to CREF if only constant subscripts.
     case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
       equation
-        {} = Util.listSelect(subExprs, Exp.isNotConst);
+        {} = Util.listSelect(subExprs, Expression.isNotConst);
         // If a subscript is not a single constant value it needs to be
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
         // might be counted twice, such as cref[3+4] and cref[2+5], even though
         // they reference the same element.
         subExprsSimplified = Util.listMap(subExprs, ExpressionSimplify.simplify);
-        subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
+        subscripts = Util.listMap(subExprsSimplified, Expression.makeIndexSubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
       then DAE.CREF(cref_, varType);
     case (_) then asub;

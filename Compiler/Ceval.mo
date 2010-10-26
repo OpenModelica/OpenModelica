@@ -56,13 +56,10 @@ package Ceval
 
 public import Absyn;
 public import AbsynDep;
-public import ComponentReference;
 public import DAE;
 public import Env;
-public import ExpressionSimplify;
 public import Interactive;
 public import Values;
-
 
 public
 uniontype Msg
@@ -72,12 +69,14 @@ end Msg;
 
 protected import CevalScript;
 protected import ClassInf;
+protected import ComponentReference;
 protected import Debug;
 protected import Derive;
 protected import Dump;
 protected import DynLoad;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Inst;
 protected import Lookup;
@@ -213,14 +212,14 @@ algorithm
 
     case (cache,env,DAE.ARRAY(array = es, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,st,_,msg)
       equation
-        dims = Util.listMap(arrayDims, Exp.dimensionSize);
+        dims = Util.listMap(arrayDims, Expression.dimensionSize);
         (cache,es_1) = cevalList(cache,env, es, impl, st, msg);
       then
         (cache,Values.ARRAY(es_1,dims),st);
 
     case (cache,env,DAE.MATRIX(scalar = expll, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,st,_,msg)
       equation
-        dims = Util.listMap(arrayDims, Exp.dimensionSize);
+        dims = Util.listMap(arrayDims, Expression.dimensionSize);
         (cache,elts) = cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,Values.ARRAY(elts,dims),st);
@@ -1012,7 +1011,7 @@ algorithm
          DAE.Type cevalType;
          DAE.ExpType cevalExpType;
        equation
-         true = Exp.arrayContainWholeDimension(dims);
+         true = Expression.arrayContainWholeDimension(dims);
          (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), NONE(), MSG());
          cevalType = Types.typeOfValue(v);
          cevalExpType = Types.elabType(cevalType);
@@ -1271,7 +1270,7 @@ algorithm
       Types.Type tp;
       Absyn.Path funcpath2;
       String s;
-      list<Exp.Var> varLst;
+      list<Expression.Var> varLst;
       list<String> varNames;
       String complexName, lastIdent;
       Absyn.Path p2;
@@ -1336,7 +1335,7 @@ algorithm
          local Absyn.Path complexName;
       equation
         true = ModUtil.pathEqual(funcpath,complexName);
-        varNames = Util.listMap(varLst,Exp.varName);
+        varNames = Util.listMap(varLst,Expression.varName);
       then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
 /*     This match-rule is commented out due to a new constant evaluation algorithm in
@@ -1881,10 +1880,10 @@ algorithm
         DAE.ExpType tp;
         DAE.Exp dim;
       equation
-        tp = Exp.typeof(e) "Special case for array expressions with nonconstant
+        tp = Expression.typeof(e) "Special case for array expressions with nonconstant
                             values For now: only arrays of scalar elements:
                             TODO generalize to arbitrary dimensions" ;
-        true = Exp.typeBuiltin(tp);
+        true = Expression.typeBuiltin(tp);
         (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st,NONE(), msg);
         len = listLength((e :: es));
       then
@@ -1896,10 +1895,10 @@ algorithm
         DAE.ExpType tp;
         DAE.Exp dim;
       equation
-        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values
+        tp = Expression.typeof(e) "Special case for array expressions with nonconstant values
                             For now: only arrays of scalar elements:
                             TODO generalize to arbitrary dimensions" ;
-        false = Exp.typeBuiltin(tp);
+        false = Expression.typeBuiltin(tp);
         (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st,NONE(), msg);
         len = listLength((e :: es));
       then
@@ -3991,7 +3990,7 @@ algorithm
         differentiated_exp_1 = ExpressionSimplify.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
-         now it doesn't so the expression is returned as string Exp.unelabExp(differentiated_exp') => absyn_exp
+         now it doesn't so the expression is returned as string Expression.unelabExp(differentiated_exp') => absyn_exp
         */
         ret_val = ExpressionDump.printExpStr(differentiated_exp_1);
       then
@@ -4030,7 +4029,7 @@ algorithm
     case (cache,env,{exp1},impl,st,msg)
       equation
         exp1_1 = ExpressionSimplify.simplify(exp1);
-        ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Exp.unelab_exp(simplifyd_exp\') => absyn_exp" ;
+        ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
     case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
@@ -4527,7 +4526,7 @@ algorithm
 			local
         list<DAE.Dimension> dims;
 			equation
-        sizelst = Util.listMap(dims, Exp.dimensionSize);
+        sizelst = Util.listMap(dims, Expression.dimensionSize);
 				v = ValuesUtil.intlistToValue(sizelst);
 			then
 				(cache, v, st);
@@ -5181,7 +5180,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(cr,exp) equation
-      res = Util.boolOrList(Util.listMap1(Exp.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
+      res = Util.boolOrList(Util.listMap1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
     case(_,_) then false;
   end matchcontinue;
@@ -5528,7 +5527,7 @@ algorithm
     case (new_cache, new_env, _, _, _, _, value :: {}, _, new_st, _, _)
       equation
         // range is constant!
-        exp_type = Exp.typeof(exp);
+        exp_type = Expression.typeof(exp);
         iter_type = Types.expTypetoTypesType(exp_type);
         new_env = Env.extendFrameForIterator(env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
@@ -5539,7 +5538,7 @@ algorithm
         // range is constant!
         (new_cache, value2, new_st) = cevalReduction(new_cache, new_env, opName, op, exp, 
           iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
-        exp_type = Exp.typeof(exp);
+        exp_type = Expression.typeof(exp);
         iter_type = Types.expTypetoTypesType(exp_type);
         new_env = Env.extendFrameForIterator(new_env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (new_cache, value, new_st) = ceval(new_cache, new_env, exp,

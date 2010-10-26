@@ -46,7 +46,7 @@ protected import ComponentReference;
 protected import DAELow;
 protected import DAEUtil;
 protected import Debug;
-protected import Exp;
+protected import Expression;
 protected import HashTable2;
 protected import SCode;
 protected import System;
@@ -1332,7 +1332,7 @@ algorithm
       equation
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
+        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
         scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);
@@ -1343,10 +1343,10 @@ algorithm
       equation
         indx_lst1 = Util.listIntRange(i1);
         indx_lstlst1 = Util.listMap(indx_lst1, Util.listCreate);
-        subscripts_lstlst1 = Util.listMap(indx_lstlst1, Exp.intSubscripts);
+        subscripts_lstlst1 = Util.listMap(indx_lstlst1, Expression.intSubscripts);
         indx_lst2 = Util.listIntRange(i2);
         indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
-        subscripts_lstlst2 = Util.listMap(indx_lstlst2, Exp.intSubscripts);
+        subscripts_lstlst2 = Util.listMap(indx_lstlst2, Expression.intSubscripts);
         subscripts = BackendDAEUtil.subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
         scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
@@ -1361,7 +1361,7 @@ algorithm
         true = ComponentReference.crefHaveSubs(arr_cr);
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
+        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
         scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
         (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
         vs_1 = Util.listFlatten(vs);

@@ -83,16 +83,15 @@ public import Absyn;
 public import ClassInf;
 public import Connect;
 public import ConnectionGraph;
-public import ComponentReference;
 public import DAE;
 public import Env;
-public import ExpressionSimplify;
 public import InnerOuter;
 public import Mod;
 public import Prefix;
 public import RTOpts;
 public import SCode;
 public import UnitAbsyn;
+
 
 public 
 constant Boolean alwaysUnroll = true;
@@ -127,13 +126,15 @@ protected import BaseHashTable;
 protected import Builtin;
 protected import Ceval;
 protected import ConnectUtil;
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
 protected import ErrorExt;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import HashTable;
 protected import HashTable5;
 protected import InstSection;
@@ -1871,7 +1872,7 @@ algorithm
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
-          "\n\tsingle cref: " +& Exp.printComponentRefOptStr(instSingleCref) +&
+          "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
           "\n\tdims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
@@ -1902,7 +1903,7 @@ algorithm
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
-          "\n\tsingle cref: " +& Exp.printComponentRefOptStr(instSingleCref) +&
+          "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
           "\n\tdims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
@@ -8458,8 +8459,8 @@ algorithm
         DAE.Dimension d;
         DAE.Subscript sub;
 			equation
-        (d :: _) = Exp.arrayDimension(tp);
-        sub = Exp.dimensionSubscript(d);
+        (d :: _) = Expression.arrayDimension(tp);
+        sub = Expression.dimensionSubscript(d);
 			then sub;
     /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
           DAE.MOD(eqModOption = _))*/
@@ -8892,7 +8893,7 @@ algorithm
 
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
-        false = Exp.dimensionKnown(inDimension);
+        false = Expression.dimensionKnown(inDimension);
         s = DAE.INDEX(DAE.ICONST(i));
         mod = Mod.lookupIdxModification(mod, i);
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
@@ -8903,7 +8904,7 @@ algorithm
     /*
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
-        false = Exp.dimensionKnown(inDimension);
+        false = Expression.dimensionKnown(inDimension);
         s = DAE.INDEX(DAE.ICONST(i));
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStr(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
@@ -9100,7 +9101,7 @@ algorithm
         (cache,_,SOME((SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_)),_)
           = Lookup.lookupIdent(cache,env, id);
         (cache, subs, _) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE, info);
-        dims = Exp.subscriptDimensions(subs);
+        dims = Expression.subscriptDimensions(subs);
       then
         (cache,dims);
     case (_, _, cref,_)
@@ -9135,7 +9136,7 @@ algorithm
     case (cache,DAE.TYPED(modifierAsExp = e,properties = DAE.PROP(type_ = t)),env)
       equation
         lst = Types.getDimensionSizes(t);
-        lst_1 = Util.listMap(lst, Exp.intDimension);
+        lst_1 = Util.listMap(lst, Expression.intDimension);
       then
         (cache,lst_1);
   end matchcontinue;
@@ -14083,7 +14084,7 @@ algorithm
     case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)
       equation
         true=ComponentReference.crefEqual(cref,cref2);
-        e=Exp.crefExp(cref3);
+        e=Expression.crefExp(cref3);
       then
         SOME(e);
     case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)

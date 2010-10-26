@@ -47,21 +47,21 @@ package Lookup
 
 public import Absyn;
 public import ClassInf;
-public import ComponentReference;
 public import DAE;
 public import Env;
-public import ExpressionDump;
 public import RTOpts;
 public import SCode;
 public import Util;
 public import Types;
 
 protected import Builtin;
+protected import ComponentReference;
 protected import Connect;
 protected import ConnectionGraph;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionDump;
 protected import Inst;
 protected import InstExtends;
 protected import InnerOuter;
@@ -1014,7 +1014,7 @@ algorithm
       equation
         (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
         checkPackageVariableConstant(classEnv,attr,ty,cref);
-        // optional exp.exp to return
+        // optional Expression.exp to return
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
 
@@ -2336,7 +2336,7 @@ algorithm
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
       local Integer dim_int;
       equation
-        sz = Exp.dimensionSize(dim);
+        sz = Expression.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
         dim_int = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
         true = (dim_int <= sz);
@@ -2346,7 +2346,7 @@ algorithm
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
-        sz = Exp.dimensionSize(dim);
+        sz = Expression.dimensionSize(dim);
         (ind > 0) = true;
         (ind <= sz) = true;
         t_1 = checkSubscripts(t, ys);
@@ -2357,7 +2357,7 @@ algorithm
           (DAE.INDEX(exp = e) :: ys)) 
       local DAE.Exp e;
       equation
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
@@ -2376,7 +2376,7 @@ algorithm
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
       equation
-        true = Exp.dimensionKnown(dim);
+        true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
@@ -2393,8 +2393,8 @@ algorithm
           (DAE.SLICE(exp = e) :: ys))
       local DAE.Exp e;
       equation
-        5 = Exp.dimensionSize(dim);
-        false = Exp.isArray(e);
+        5 = Expression.dimensionSize(dim);
+        false = Expression.isArray(e);
         // we check so that e is not an array, if so the range check is useless in the function above.
 
         t_1 = checkSubscripts(t, ys);
@@ -2477,7 +2477,7 @@ algorithm
     // Constant index
     case (exp :: expl, dims)
       equation
-        x = Exp.expInt(exp);
+        x = Expression.expInt(exp);
         true = (x<=dims);
         true = checkSubscriptsRange2(expl,dims);
       then
@@ -2485,7 +2485,7 @@ algorithm
     // Variable index, can't check at compile time.
     case (exp :: expl, dims)
       equation
-        failure(x = Exp.expInt(exp));
+        failure(x = Expression.expInt(exp));
         true = checkSubscriptsRange2(expl, dims);
       then
         true;
@@ -2578,7 +2578,7 @@ algorithm
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
 
-    // Qualified componentname without spliced exp.
+    // Qualified componentname without spliced Expression.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(_,_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
@@ -2649,7 +2649,7 @@ algorithm
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       equation
-        expl = Util.listMap(Util.listIntRange(sz), Exp.makeIntegerExp);
+        expl = Util.listMap(Util.listIntRange(sz), Expression.makeIntegerExp);
       then
         DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, expl));
     // Array with enumeration dimension.
@@ -2817,7 +2817,7 @@ algorithm
         String str;
       equation
         dimensions = Types.getDimensionSizes(t);
-        dim2 = Util.listMap(dimensions, Exp.intDimension); 
+        dim2 = Util.listMap(dimensions, Expression.intDimension); 
         dim2 = listReverse(dim2);
         t = ((Util.listFoldR(dim2,Types.liftArray, tOrg)));
       then

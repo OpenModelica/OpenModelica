@@ -40,9 +40,7 @@ package VarTransform
   along with some functions for performing replacements of variables in equations"
 
 public import ClassInf;
-public import ComponentReference;
 public import DAE;
-public import ExpressionSimplify;
 public import HashTable2;
 public import HashTable3;
 public import SCode;
@@ -112,8 +110,10 @@ type Value2 = list<DAE.ComponentRef>;
 protected import Absyn;
 protected import Algorithm;
 protected import BaseHashTable;
-protected import Exp;
+protected import ComponentReference;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import System;
 protected import Util;
 
@@ -886,7 +886,7 @@ algorithm
     case (REPLACEMENTS(ht,_))
       equation
         targets = BaseHashTable.hashTableValueList(ht);
-        targets2 = Util.listFlatten(Util.listMap(targets,Exp.extractCrefsFromExp));
+        targets2 = Util.listFlatten(Util.listMap(targets,Expression.extractCrefsFromExp));
       then 
         targets2;
   end matchcontinue;
@@ -1051,7 +1051,7 @@ algorithm
       DAE.ComponentRef c,sc;
       DAE.Exp e,ce;      
       Integer ind,indx;      
-      Exp.Type ty;
+      Expression.Type ty;
       list<DAE.ExpVar> varLst;
       list<DAE.Exp> expl,expl1;
       list<DAE.Subscript> subs;
@@ -1059,13 +1059,13 @@ algorithm
     case ((c,e))
       equation
         // is Array
-        (_::_) = Exp.expLastSubs(e);
+        (_::_) = Expression.expLastSubs(e);
         // stripLastIdent
         sc = ComponentReference.crefStripLastSubs(c);
-        ce = Exp.expStripLastSubs(e);
+        ce = Expression.expStripLastSubs(e);
         ty = ComponentReference.crefLastType(c);
         // calc indexes
-        ind = Exp.sizeOf(ty);       
+        ind = Expression.sizeOf(ty);       
       then 
         (sc,ce,ind);      
     case ((c,e))
@@ -1073,7 +1073,7 @@ algorithm
         // is Record
         // stripLastIdent
         sc = ComponentReference.crefStripLastIdent(c);   
-        ce = Exp.expStripLastIdent(e);     
+        ce = Expression.expStripLastIdent(e);     
         // is Record
         DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(sc);
         // add
@@ -1088,7 +1088,7 @@ protected function keyEqual
   input tuple<DAE.ComponentRef,DAE.Exp,Integer> key2;
   output Boolean res;
 algorithm
-     res := ComponentReference.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Exp.expEqual(Util.tuple32(key1),Util.tuple32(key2));
+     res := ComponentReference.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Expression.expEqual(Util.tuple32(key1),Util.tuple32(key2));
 end keyEqual;
 
 protected function addTplLst
@@ -1184,7 +1184,7 @@ algorithm
       DAE.Exp dst;
       list<DAE.ComponentRef> dests;
     case (invHt,src,dst) equation
-      dests = Exp.extractCrefsFromExp(dst);
+      dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = Util.listFold_2(dests,addReplacementInv2,invHt,src);
       then
         invHt_1;
@@ -1515,7 +1515,7 @@ algorithm
     case(e,repl,func,maxIter,i,true) then e;
     case(e,repl,func,maxIter,i,false) equation
       e1 = replaceExp(e,repl,func);
-      res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,Exp.expEqual(e,e1));
+      res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,Expression.expEqual(e,e1));
     then res;
   end matchcontinue;
 end replaceExpRepeated2;
@@ -1699,7 +1699,7 @@ end replaceExp;
 
 protected function replaceExpCond "function replaceExpCond(cond,e) => true &
 
-  Helper function to replace_exp. Evaluates a condition function if
+  Helper function to replace_Expression. Evaluates a condition function if
   SOME otherwise returns true.
 "
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;

@@ -39,7 +39,6 @@ package DAEUtil
   This module exports some helper functions to the DAE AST."
 
 public import Absyn;
-public import ComponentReference;
 public import ClassInf;
 public import DAE;
 public import Env;
@@ -50,7 +49,6 @@ public import HashTable;
 
 public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAE.DAElist emptyDae = DAE.DAE({});
-
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -120,7 +118,7 @@ algorithm
   dims := matchcontinue(tp)
     local list<DAE.Dimension> array_dims;
     case(DAE.ET_ARRAY(arrayDimensions=array_dims)) equation
-      dims = Util.listMap(array_dims, Exp.dimensionSize);
+      dims = Util.listMap(array_dims, Expression.dimensionSize);
     then dims;
   end matchcontinue;
 end expTypeArrayDimensions;
@@ -218,9 +216,10 @@ end getBoundStartEquation;
 protected import Algorithm;
 protected import BaseHashTable;
 protected import Ceval;
+protected import ComponentReference;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import ModUtil;
 protected import RTOpts;
@@ -2183,7 +2182,7 @@ protected function crefToExp "function: crefToExp
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
 algorithm
-  outExp:= Exp.makeCrefExp(inComponentRef,DAE.ET_OTHER());
+  outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
 end crefToExp;
 
 public function verifyWhenEquation "
@@ -2907,7 +2906,7 @@ algorithm
         tbsexp = Util.listMap(tbsFirst,makeEquationToResidualExp);
         fbexp = makeEquationToResidualExp(fb);
 
-        ifexp = Exp.makeNestedIf(conds,tbsexp,fbexp);
+        ifexp = Expression.makeNestedIf(conds,tbsexp,fbexp);
         eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,source);
       then
         (eq :: rest_res);
@@ -2965,28 +2964,28 @@ algorithm
     // normal equation
     case(DAE.EQUATION(e1,e2,_))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then
         oExp;
     // initial equation
     case(DAE.INITIALEQUATION(e1,e2,_))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then
         oExp;
     // complex equation
     case(DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then
         oExp;
     // complex initial equation
     case(DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then
         oExp;
@@ -3015,14 +3014,14 @@ algorithm
     // equation from array TODO! check if this works!
     case(DAE.ARRAY_EQUATION(_, e1, e2, _))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
       then
         oExp;
 		// initial array equation
 		case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
       equation
-        ty = Exp.typeof(e1);
+        ty = Expression.typeof(e1);
         oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
       then
         oExp;
@@ -3098,7 +3097,7 @@ algorithm
 
         tbsFirst = Util.listMap(tbs,Util.listFirst);
 
-        ifexp = Exp.makeNestedIf(conds,tbsFirst,fb);
+        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
       then
         (ifexp :: rest_res);
   end matchcontinue;
@@ -3133,7 +3132,7 @@ algorithm
 
         tbsFirst = Util.listMap(tbs,Util.listFirst);
 
-        ifexp = Exp.makeNestedIf(conds,tbsFirst,fb);
+        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
         eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
       then
         (eq :: rest_res);
@@ -3151,7 +3150,7 @@ end renameTimeToDollarTime;
 
 protected function renameTimeToDollarTimeVisitor "
 Author: BZ, 2009-01
-The visitor function for traverseDAE.calls Exp.traverseExp on the expression."
+The visitor function for traverseDAE.calls Expression.traverseExp on the expression."
   input DAE.Exp exp;
   input Integer arg;
   output DAE.Exp oexp;
@@ -3163,7 +3162,7 @@ algorithm
       DAE.ComponentRef cr,cr2;
     case(exp,oarg)
       equation
-        ((oexp,oarg)) = Exp.traverseExp(exp,renameTimeToDollarTimeFromCref,oarg);
+        ((oexp,oarg)) = Expression.traverseExp(exp,renameTimeToDollarTimeFromCref,oarg);
       then
         (oexp,oarg);
   end matchcontinue;
@@ -3171,7 +3170,7 @@ end renameTimeToDollarTimeVisitor;
 
 protected function renameTimeToDollarTimeFromCref "
 Author: BZ, 2008-12
-Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm
@@ -3204,7 +3203,7 @@ end renameUniqueOuterVars;
 protected function renameUniqueVisitor "
 Author: BZ, 2008-12
 The visitor function for traverseDAE.
-calls Exp.traverseExp on the expression."
+calls Expression.traverseExp on the expression."
   input DAE.Exp exp;
   input Integer arg;
   output DAE.Exp oexp;
@@ -3215,7 +3214,7 @@ algorithm (oexp,oarg) := matchcontinue(exp,arg)
     DAE.ComponentRef cr,cr2;
   case(exp,oarg)
     equation
-      ((oexp,oarg)) = Exp.traverseExp(exp,removeUniqieIdentifierFromCref,oarg);
+      ((oexp,oarg)) = Expression.traverseExp(exp,removeUniqieIdentifierFromCref,oarg);
     then
       (oexp,oarg);
   end matchcontinue;
@@ -3223,7 +3222,7 @@ end renameUniqueVisitor;
 
 protected function removeUniqieIdentifierFromCref "
 Author: BZ, 2008-12
-Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
@@ -3250,7 +3249,7 @@ end nameUniqueOuterVars;
 protected function nameUniqueVisitor "
 Author: BZ, 2008-12
 The visitor function for traverseDAE.
-calls Exp.traverseExp on the expression.
+calls Expression.traverseExp on the expression.
 "
 input DAE.Exp exp;
 input Integer arg;
@@ -3262,7 +3261,7 @@ algorithm (oexp,oarg) := matchcontinue(exp,arg)
     DAE.ComponentRef cr,cr2;
   case(exp,oarg)
     equation
-      ((oexp,oarg)) = Exp.traverseExp(exp,addUniqueIdentifierToCref,oarg);
+      ((oexp,oarg)) = Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
     then
       (oexp,oarg);
   end matchcontinue;
@@ -3270,7 +3269,7 @@ end nameUniqueVisitor;
 
 protected function addUniqueIdentifierToCref "
 Author: BZ, 2008-12
-Function for Exp.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref.
+Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref.
 "
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
@@ -4966,7 +4965,7 @@ algorithm
         exps = getAllExps(ld);
         exps2 = Algorithm.getAllExpsStmts(body);
         exps = listAppend(exps,exps2);
-        res = Exp.getMatchingExpsList(resE::exps,matchValueblock);
+        res = Expression.getMatchingExpsList(resE::exps,matchValueblock);
       then e::res;
   end matchcontinue;
 end matchValueblock;
@@ -5008,7 +5007,7 @@ algorithm
     case elements
       equation
         exps = getAllExpsFunctions(elements);
-        exps = Exp.getMatchingExpsList(exps, matchValueblock);
+        exps = Expression.getMatchingExpsList(exps, matchValueblock);
         els1 = getDAEDeclsFromValueblocks(exps);
         els2 = getFunctionsElements(elements);
         els = listAppend(els1, els2);

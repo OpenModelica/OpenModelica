@@ -12,7 +12,7 @@ public import DAE;
 public import ClassInf;
 public import Util;
 public import ComponentReference;
-public import Exp;
+public import Expression;
 public import RTOpts;
 public import Settings;
 
@@ -29484,7 +29484,7 @@ protected
   Tpl.Text i_expPart;
 algorithm
   (i_expPart, out_i_preExp, out_i_varDecls) := daeExp(emptyTxt, i_e, i_context, i_preExp, i_varDecls);
-  ret_1 := Exp.typeof(i_e);
+  ret_1 := Expression.typeof(i_e);
   (out_txt, i_expPart, out_i_preExp, out_i_varDecls) := daeExpMetaHelperConstantNameType(txt, i_expPart, ret_1, out_i_preExp, out_i_varDecls);
 end daeExpMetaHelperConstant;
 

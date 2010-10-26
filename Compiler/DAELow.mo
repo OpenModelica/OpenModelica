@@ -50,10 +50,7 @@ package DAELow
 
 public import Absyn;
 public import BackendDAE;
-public import ComponentReference;
 public import DAE;
-public import ExpressionSolve;
-public import ExpressionSimplify;
 public import SCode;
 public import Values;
 public import Builtin;
@@ -65,14 +62,17 @@ protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Ceval;
 protected import ClassInf;
+protected import ComponentReference;
 protected import DAEEXT;
 protected import DAEUtil;
 protected import Debug;
 protected import Derive;
 protected import Env;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSolve;
+protected import ExpressionSimplify;
 protected import OptManager;
 protected import RTOpts;
 protected import System;
@@ -277,7 +277,7 @@ algorithm
         // is Array
         (_::_) = ComponentReference.crefLastSubs(cr);
         // check if e is not array
-        false = Exp.isArray(e);
+        false = Expression.isArray(e);
         // stripLastIdent
         sc = ComponentReference.crefStripLastSubs(cr);
         ty = ComponentReference.crefLastType(cr);
@@ -312,7 +312,7 @@ algorithm
     case ({},bt) then bt;
      case (BackendDAE.ALGORITHM(out=explst)::es,bt)
       equation
-        crefs = Util.listFlatten(Util.listMap(explst,Exp.extractCrefsFromExp));
+        crefs = Util.listFlatten(Util.listMap(explst,Expression.extractCrefsFromExp));
         bt_1 = treeAddList(bt,crefs);
         bt_2 = getOutputsFromAlgorithms(es,bt_1);  
       then bt_2;
@@ -414,14 +414,14 @@ algorithm
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e1,e2,src);
     case (BackendDAE.EQUATION(DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),e,src),false)
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e1,e2,src);        
       // a-b = 0 swap
@@ -429,14 +429,14 @@ algorithm
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e2,e1,src);
     case (BackendDAE.EQUATION(DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),e,src),true)
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e2,e1,src);        
         // 0 = a-b
@@ -444,14 +444,14 @@ algorithm
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e1,e2,src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),src),false)
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e1,e2,src);
         // 0 = a-b  swap
@@ -459,59 +459,59 @@ algorithm
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e2,e1,src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),src),false)
       equation
         true = RTOpts.eliminationLevel() > 0;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then
         (e2,e1,src);
         // a + b = 0
      case (BackendDAE.EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),e,src),false) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e2),src);
      case (BackendDAE.EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),e,src),false) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e2),src);
         // a + b = 0 swap
      case (BackendDAE.EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),e,src),true) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
-       true = Exp.isZero(e);
+       true = Expression.isZero(e);
      then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
      case (BackendDAE.EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),e,src),true) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
-       true = Exp.isZero(e);
+       true = Expression.isZero(e);
      then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
       // 0 = a+b
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),src),false) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e2),src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),src),false) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e2),src);
       // 0 = a+b swap
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),src),true) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),src),true) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
-      true = Exp.isZero(e);
+      true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
      // a = -b
     case (BackendDAE.EQUATION(e1 as DAE.CREF(_,_),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)),src),swap)
@@ -540,52 +540,52 @@ algorithm
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e1,e2,src);
     case (BackendDAE.EQUATION(DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),e,src),false)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e1,e2,src);
       // -b - a = 0 => a = -b swap
     case (BackendDAE.EQUATION(DAE.BINARY(DAE.UNARY(DAE.UMINUS(t),e2 as DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),e,src),true)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
     case (BackendDAE.EQUATION(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(t),e2 as DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),e,src),true)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
         // 0 = -b - a => a = -b
     case (BackendDAE.EQUATION(e,DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),src),false)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e1,e2,src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),src),false)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e1,e2,src);
         // 0 = -b - a => a = -b swap
     case (BackendDAE.EQUATION(e,DAE.BINARY(DAE.UNARY(DAE.UMINUS(t),e2 as DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),src),true)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
     case (BackendDAE.EQUATION(e,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(t),e2 as DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),src),true)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
-        true = Exp.isZero(e);
+        true = Expression.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
         // -a = -b
     case (BackendDAE.EQUATION(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(_,_)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(_,_)),src),swap)
@@ -601,17 +601,17 @@ algorithm
         // a = constant
     case (BackendDAE.EQUATION(e1 as DAE.CREF(_,_),e,src),swap) equation
       true = RTOpts.eliminationLevel() > 1;
-      true = Exp.isConst(e);
+      true = Expression.isConst(e);
       then (e1,e,src);
 
         // -a = constant
     case (BackendDAE.EQUATION(DAE.UNARY(DAE.UMINUS(t),e1 as DAE.CREF(_,_)),e,src),swap) equation
       true = RTOpts.eliminationLevel() > 1;
-      true = Exp.isConst(e);
+      true = Expression.isConst(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e),src);
     case (BackendDAE.EQUATION(DAE.UNARY(DAE.UMINUS_ARR(t),e1 as DAE.CREF(_,_)),e,src),swap) equation
       true = RTOpts.eliminationLevel() > 1;
-      true = Exp.isConst(e);
+      true = Expression.isConst(e);
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e),src);
   end matchcontinue;
 end simpleEquation;
@@ -716,22 +716,22 @@ algorithm
       DAE.Exp e;
     case (BackendDAE.EQUATION(exp = e))
       equation
-        t = Exp.typeof(e);
+        t = Expression.typeof(e);
       then
         t;
     case (BackendDAE.COMPLEX_EQUATION(lhs = e))
       equation
-        t = Exp.typeof(e);
+        t = Expression.typeof(e);
       then
         t;
     case (BackendDAE.SOLVED_EQUATION(exp = e))
       equation
-        t = Exp.typeof(e);
+        t = Expression.typeof(e);
       then
         t;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(right = e)))
       equation
-        t = Exp.typeof(e);
+        t = Expression.typeof(e);
       then
         t;
   end matchcontinue;
@@ -995,7 +995,7 @@ algorithm
     local DAE.Exp e;
     case(inExp,infuncs)
       equation
-        ((e,outfuncs)) = Exp.traverseExp(inExp, traversingextendArrExp, infuncs);
+        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingextendArrExp, infuncs);
       then
         (e,outfuncs);
     case(inExp,infuncs) then (inExp,infuncs);        
@@ -1029,15 +1029,15 @@ algorithm outExp := matchcontinue(inExp)
   // CASE for Matrix    
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
     equation
-        i = Exp.dimensionSize(id);
-        j = Exp.dimensionSize(jd);
+        i = Expression.dimensionSize(id);
+        j = Expression.dimensionSize(jd);
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
-        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);
   
@@ -1046,15 +1046,15 @@ algorithm outExp := matchcontinue(inExp)
     equation
         true = OptManager.getOption("checkModel");
         // consider size 1
-        i = Exp.dimensionSize(DAE.DIM_INTEGER(1));
-        j = Exp.dimensionSize(DAE.DIM_INTEGER(1));
+        i = Expression.dimensionSize(DAE.DIM_INTEGER(1));
+        j = Expression.dimensionSize(DAE.DIM_INTEGER(1));
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         scalar = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,scalar);
-        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);
   
@@ -1064,9 +1064,9 @@ algorithm outExp := matchcontinue(inExp)
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);
 
@@ -1078,9 +1078,9 @@ algorithm outExp := matchcontinue(inExp)
         subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
-        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);
   // CASE for Records
@@ -1088,7 +1088,7 @@ algorithm outExp := matchcontinue(inExp)
     equation
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
-        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then 
       (restpl);
   case(inExp) then inExp;
@@ -1108,7 +1108,7 @@ algorithm
       list<DAE.Exp> rest;
       list<list<tuple<DAE.Exp, Boolean>>> res;
       list<tuple<DAE.Exp, Boolean>> col;
-      Exp.Type tp;
+      Expression.Type tp;
       Boolean builtin;      
   case({},r,n,incol)
     equation
@@ -1123,8 +1123,8 @@ algorithm
       (col::res);
   case(e::rest,r,n,incol)
     equation
-      tp = Exp.typeof(e);
-      builtin = Exp.typeBuiltin(tp);
+      tp = Expression.typeof(e);
+      builtin = Expression.typeBuiltin(tp);
       res = makeMatrix(rest,r-1,n,(e,builtin)::incol);
     then      
       res;
@@ -1159,7 +1159,7 @@ algorithm
     local DAE.Exp e;
     case(inExp,infuncs)
       equation
-        ((e,outfuncs)) = Exp.traverseExp(inExp, traversingcollateArrExp, infuncs);
+        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingcollateArrExp, infuncs);
       then
         (e,outfuncs);
     case(inExp,infuncs) then (inExp,infuncs);        
@@ -1180,30 +1180,30 @@ algorithm outExp := matchcontinue(inExp)
     Boolean b;
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
       equation
-        e1_1 = Exp.expStripLastSubs(e1);
+        e1_1 = Expression.expStripLastSubs(e1);
         (e1_2,_) = extendArrExp(e1_1,funcs);
-        true = Exp.expEqual(e,e1_2);
+        true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
       equation
-        e1_1 = Exp.expStripLastSubs(e1);
+        e1_1 = Expression.expStripLastSubs(e1);
         (e1_2,_) = extendArrExp(e1_1,funcs);
-        true = Exp.expEqual(e,e1_2);
+        true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));        
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_),funcs))
       equation
-        e1_1 = Exp.expStripLastSubs(e1);
+        e1_1 = Expression.expStripLastSubs(e1);
         (e1_2,_) = extendArrExp(e1_1,funcs);
-        true = Exp.expEqual(e,e1_2);
+        true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));  
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_),funcs))
       equation
-        e1_1 = Exp.expStripLastSubs(e1);
+        e1_1 = Expression.expStripLastSubs(e1);
         (e1_2,_) = extendArrExp(e1_1,funcs);
-        true = Exp.expEqual(e,e1_2);
+        true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));               
   case(inExp) then inExp;
@@ -2725,8 +2725,8 @@ algorithm
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Exp.extractCrefsFromExp(e1);
-        crs3 = Exp.extractCrefsFromExp(e2);
+        crs2 = Expression.extractCrefsFromExp(e1);
+        crs3 = Expression.extractCrefsFromExp(e2);
         crs = Util.listFlatten({crs1,crs2,crs3});
       then
         crs;
@@ -2734,7 +2734,7 @@ algorithm
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Exp.extractCrefsFromExp(e1);
+        crs2 = Expression.extractCrefsFromExp(e1);
         crs = listAppend(crs1, crs2);
       then
         crs;
@@ -2742,7 +2742,7 @@ algorithm
     case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Exp.extractCrefsFromExp(e1);
+        crs2 = Expression.extractCrefsFromExp(e1);
         crs = listAppend(crs1, crs2);
       then
         (cr :: crs);
@@ -2751,7 +2751,7 @@ algorithm
       local list<list<DAE.ComponentRef>> crs2;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl, Exp.extractCrefsFromExp);
+        crs2 = Util.listMap(expl, Expression.extractCrefsFromExp);
         crs2_1 = Util.listFlatten(crs2);
         crs = listAppend(crs1, crs2_1);
       then
@@ -2761,8 +2761,8 @@ algorithm
       local list<list<DAE.ComponentRef>> crs2,crs3;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl1, Exp.extractCrefsFromExp);
-        crs3 = Util.listMap(expl2, Exp.extractCrefsFromExp);
+        crs2 = Util.listMap(expl1, Expression.extractCrefsFromExp);
+        crs3 = Util.listMap(expl2, Expression.extractCrefsFromExp);
         crs2_1 = Util.listFlatten(crs2);
         crs3_1 = Util.listFlatten(crs3);
         crs = Util.listFlatten({crs1,crs2_1,crs3_1});
@@ -2773,7 +2773,7 @@ algorithm
            BackendDAE.WHEN_EQ(index = indx,left = cr,right = e,elsewhenPart=SOME(weq)),source = source) :: es))
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Exp.extractCrefsFromExp(e);
+        crs2 = Expression.extractCrefsFromExp(e);
         crs3 = equationsCrefs({BackendDAE.WHEN_EQUATION(weq,source)});
         crs = listAppend(crs1, listAppend(crs2, crs3));
       then
@@ -3151,32 +3151,32 @@ algorithm
     case (st,dummyder,BackendDAE.EQUATION(exp = e1,scalar = e2,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
-        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e1_1,_) = Expression.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e2_1,_) = Expression.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source),inAlgs,ae);
     case (st,dummyder,BackendDAE.ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        (expl1,_) = Exp.replaceListExp(expl, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (expl1,_) = Expression.replaceListExp(expl, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         i = ds+1;
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
-        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));    
+        (e1_1,_) = Expression.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e2_1,_) = Expression.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));    
         ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
       then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1);  /* array equation */
     case (st,dummyder,BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        (in_1,_) = Exp.replaceListExp(in_, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
-        (out1,_) = Exp.replaceListExp(out, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));  
+        (in_1,_) = Expression.replaceListExp(in_, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
+        (out1,_) = Expression.replaceListExp(out, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));  
         algs = replaceDummyDerAlgs(indx,inAlgs,dercall, DAE.CREF(dummyder,DAE.ET_REAL()));     
       then (BackendDAE.ALGORITHM(indx,in_1,out1,source),algs,ae);  /* Algorithms */
     case (st,dummyder,BackendDAE.WHEN_EQUATION(whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e1_1,_) = Expression.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e1_1,NONE()),source);
       then
         (res,inAlgs,ae);
@@ -3185,7 +3185,7 @@ algorithm
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e1_1,_) = Expression.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         (BackendDAE.WHEN_EQUATION(elsepartRes,source),algs,ae1) = replaceDummyDer2(st,dummyder, BackendDAE.WHEN_EQUATION(elsepart,source),inAlgs,ae);
         res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
       then
@@ -3193,8 +3193,8 @@ algorithm
     case (st,dummyder,BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
-        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e1_1,_) = Expression.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e2_1,_) = Expression.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
       then
         (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae);
      case (_,_,_,_,_)
@@ -3251,28 +3251,28 @@ algorithm
   case ({},_,_) then {};
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
-        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_ASSIGN(t,e1,e_1,source)::st);
   case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
-        (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        (elst1,_) = Expression.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1,source)::st);
   case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
-        (DAE.CREF(componentRef = cr1),_) = Exp.replaceExp(DAE.CREF(cr,DAE.ET_REAL()),inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        (DAE.CREF(componentRef = cr1),_) = Expression.replaceExp(DAE.CREF(cr,DAE.ET_REAL()),inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_ASSIGN_ARR(t,cr1,e1,source)::st);
   case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_,source=source)::rest,inExp2,inExp3)
     equation
-       (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+       (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
        else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
@@ -3283,14 +3283,14 @@ algorithm
       Boolean b;
       DAE.Ident id;
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_FOR(t,b,id,e1,stlst1,source)::st);
   case (DAE.STMT_WHILE(exp=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
@@ -3298,7 +3298,7 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
     local list<Integer> helpVarIndices;
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         {s1} = replaceDummyDerAlgs1({s},inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
@@ -3307,34 +3307,34 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
     local list<Integer> helpVarIndices;
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices,source)::st);
   case (DAE.STMT_ASSERT(cond=e1,msg=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
-        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_ASSERT(e1,e_1,source)::st);
   case (DAE.STMT_TERMINATE(msg=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_TERMINATE(e1,source)::st);
   case (DAE.STMT_REINIT(var=e1,value=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
-        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_REINIT(e1,e_1,source)::st);
   case (DAE.STMT_NORETCALL(exp=e,source=source)::rest,inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_NORETCALL(e1,source)::st);
@@ -3385,7 +3385,7 @@ algorithm
       (DAE.STMT_LABEL(labelName,source)::st);
   case (DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=elst,source=source)::rest,inExp2,inExp3)
     equation
-        (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
+        (elst1,_) = Expression.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st);
@@ -3412,7 +3412,7 @@ algorithm
   case (DAE.NOELSE(),_,_) then DAE.NOELSE();
   case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inExp2,inExp3)
     equation
-        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
     then
@@ -3500,8 +3500,8 @@ algorithm
 
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs,ae)
       equation
-        ((e1_1,vars_1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
-        ((e2_1,vars_2)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
+        ((e1_1,vars_1)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
+        ((e2_1,vars_2)) = Expression.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source),vars_2,inAlgs,ae);
 
@@ -3510,22 +3510,22 @@ algorithm
         (expl1,vars_1) = replaceDummyDerOthersExpLst(expl,vars);
         i = ds+1;
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
-        ((e1_1,vars_2)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars_1);
-        ((e2_1,vars_3)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_2);       
+        ((e1_1,vars_2)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars_1);
+        ((e2_1,vars_3)) = Expression.traverseExp(e2,replaceDummyDerOthersExp,vars_2);       
         ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
       then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),vars_3,inAlgs,ae1);  /* array equation */
 
     case (BackendDAE.WHEN_EQUATION(whenEquation =
             BackendDAE.WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE()),source = source),vars,inAlgs,ae)
       equation
-        ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
+        ((e2_1,vars_1)) = Expression.traverseExp(e2,replaceDummyDerOthersExp,vars);
       then
         (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e2_1,NONE()),source),vars_1,inAlgs,ae);
 
     case (BackendDAE.WHEN_EQUATION(whenEquation =
             BackendDAE.WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs,ae)
       equation
-        ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
+        ((e2_1,vars_1)) = Expression.traverseExp(e2,replaceDummyDerOthersExp,vars);
         (BackendDAE.WHEN_EQUATION(elsePartRes,source), vars_2,al,ae1) = replaceDummyDerOthers(BackendDAE.WHEN_EQUATION(elsePart,source),vars_1,inAlgs,ae);
       then
         (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2,al,ae1);
@@ -3539,8 +3539,8 @@ algorithm
 
    case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),vars,inAlgs,ae)      
       equation
-        ((e1_1,vars_1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
-        ((e2_1,vars_2)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
+        ((e1_1,vars_1)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
+        ((e2_1,vars_2)) = Expression.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
       then
         (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),vars_2,inAlgs,ae);
 
@@ -3600,28 +3600,28 @@ algorithm
   case ({},inVariables) then ({},inVariables);
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inVariables)
     equation
-        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
-        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
+        ((e_1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_ASSIGN(t,e_1,e1_1,source)::st,vars2);
   case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e,source=source)::rest,inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (elst1,vars1) = replaceDummyDerOthersExpLst(elst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1,source)::st,vars2);
   case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e,source=source)::rest,inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
-        ((DAE.CREF(componentRef = cr1),vars1)) = Exp.traverseExp(DAE.CREF(cr,DAE.ET_REAL()),replaceDummyDerOthersExp,vars);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((DAE.CREF(componentRef = cr1),vars1)) = Expression.traverseExp(DAE.CREF(cr,DAE.ET_REAL()),replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_ASSIGN_ARR(t,cr1,e1,source)::st,vars2);
   case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_,source=source)::rest,inVariables)
     equation
-       ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+       ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
        (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
        (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
@@ -3632,14 +3632,14 @@ algorithm
       Boolean b;
       DAE.Ident id;
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_FOR(t,b,id,e1,stlst1,source)::st,vars2);
   case (DAE.STMT_WHILE(exp=e,statementLst=stlst,source=source)::rest,inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
@@ -3647,7 +3647,7 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices,source=source)::rest,inVariables)
     local list<Integer> helpVarIndices;
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         ({s1},vars2) = replaceDummyDerOthersAlgs1({s},vars1);
         (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
@@ -3656,34 +3656,34 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::rest,inVariables)
     local list<Integer> helpVarIndices;
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices,source)::st,vars2);
   case (DAE.STMT_ASSERT(cond=e1,msg=e,source=source)::rest,inVariables)
     equation
-        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
-        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
+        ((e_1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_ASSERT(e_1,e1_1,source)::st,vars2);
   case (DAE.STMT_TERMINATE(msg=e,source=source)::rest,inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
       (DAE.STMT_TERMINATE(e1,source)::st,vars1);
   case (DAE.STMT_REINIT(var=e1,value=e,source=source)::rest,inVariables)
     equation
-        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
-        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
+        ((e_1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Expression.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_REINIT(e_1,e1_1,source)::st,vars2);
   case (DAE.STMT_NORETCALL(exp=e,source=source)::rest,inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
       (DAE.STMT_NORETCALL(e1,source)::st,vars1);
@@ -3762,7 +3762,7 @@ algorithm
   case (DAE.NOELSE(),inVariables) then (DAE.NOELSE(),inVariables);
   case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inVariables)
     equation
-        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
     then
@@ -3797,7 +3797,7 @@ algorithm
     case ({},vars) then ({},vars); 
     case (e::rest,vars)
       equation
-        ((e1,vars1)) = Exp.traverseExp(e,replaceDummyDerOthersExp,vars);
+        ((e1,vars1)) = Expression.traverseExp(e,replaceDummyDerOthersExp,vars);
         (elst,vars2) = replaceDummyDerOthersExpLst(rest,vars1);
       then
        (e1::elst,vars2); 
@@ -3894,7 +3894,7 @@ algorithm
     case (BackendDAE.EQUATION(exp = e11,scalar = e12),
           BackendDAE.EQUATION(exp = e21, scalar = e22))
       equation
-        res = boolAnd(Exp.expEqual(e11,e21),Exp.expEqual(e12,e22));
+        res = boolAnd(Expression.expEqual(e11,e21),Expression.expEqual(e12,e22));
       then res;
 
     case(BackendDAE.ARRAY_EQUATION(index = i1),
@@ -3906,13 +3906,13 @@ algorithm
     case(BackendDAE.SOLVED_EQUATION(componentRef = cr1,exp = exp1),
          BackendDAE.SOLVED_EQUATION(componentRef = cr2,exp = exp2))
       equation
-        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1,cr2),Exp.expEqual(exp1,exp2));
+        res = boolAnd(ComponentReference.crefEqualNoStringCompare(cr1,cr2),Expression.expEqual(exp1,exp2));
       then res;
 
     case(BackendDAE.RESIDUAL_EQUATION(exp = exp1),
          BackendDAE.RESIDUAL_EQUATION(exp = exp2))
       equation
-        res = Exp.expEqual(exp1,exp2);
+        res = Expression.expEqual(exp1,exp2);
       then res;
 
     case(BackendDAE.ALGORITHM(index = i1),
@@ -4263,8 +4263,8 @@ algorithm
     case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
-        _::_::_ = Exp.terms(e2);
-        crs = Exp.extractCrefsFromExp(e2);
+        _::_::_ = Expression.terms(e2);
+        crs = Expression.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
         blst = Util.listMap(Util.listFlatten(crVars),BackendVariable.isStateVar);
         res = Util.boolAndList(blst);
@@ -4273,8 +4273,8 @@ algorithm
     case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
-        _::_::_ = Exp.terms(e2);
-        crs = Exp.extractCrefsFromExp(e2);
+        _::_::_ = Expression.terms(e2);
+        crs = Expression.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
         blst = Util.listMap(Util.listFlatten(crVars),BackendVariable.isStateVar);
         res = Util.boolAndList(blst);
@@ -5561,12 +5561,12 @@ algorithm
       BackendDAE.Variables vars;
     case (exp,vars)
       equation
-        term_lst = Exp.allTerms(exp);
+        term_lst = Expression.allTerms(exp);
         rhs_lst = Util.listSelect1(term_lst, vars, freeFromAnyVar);
         /* A term can contain if-expressions that has branches that are on rhs and other branches that
         are on lhs*/
         rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
-        new_exp = Exp.makeSum(listAppend(rhs_lst,rhs_lst2));
+        new_exp = Expression.makeSum(listAppend(rhs_lst,rhs_lst2));
         res = ExpressionSimplify.simplify(new_exp);
       then
         res;
@@ -5719,10 +5719,10 @@ algorithm
     // check rhs for for EQUATION nodes.
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest),(dae as BackendDAE.DAELOW(orderedVars = vars)))
       equation
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = getEqnsysRhsExp(new_exp, vars);
-        true = Exp.isConst(rhs_exp);
+        true = Expression.isConst(rhs_exp);
         res = rhsConstant2(rest, dae);
       then
         res;
@@ -5731,10 +5731,10 @@ algorithm
       equation
         indx_1 = indx - 1;
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = arreqn[indx + 1];
-        tp = Exp.typeof(e1);
+        tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         rhs_exp = getEqnsysRhsExp(new_exp, vars);
-        true = Exp.isConst(rhs_exp);
+        true = Expression.isConst(rhs_exp);
         res = rhsConstant2(rest, dae);
       then
         res;
@@ -5742,7 +5742,7 @@ algorithm
     case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest),(dae as BackendDAE.DAELOW(orderedVars = vars))) /* check rhs for for RESIDUAL_EQUATION nodes. */
       equation
         rhs_exp = getEqnsysRhsExp(e, vars);
-        true = Exp.isConst(rhs_exp);
+        true = Expression.isConst(rhs_exp);
         res = rhsConstant2(rest, dae);
       then
         res;
@@ -5769,12 +5769,12 @@ algorithm
 
     case (e,_)
       equation
-        {} = Exp.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
+        {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
       then
         true;
     case (e,vars)
       equation
-        crefs = Exp.extractCrefsFromExp(e);
+        crefs = Expression.extractCrefsFromExp(e);
         b_lst = Util.listMap1(crefs, BackendVariable.existsVar, vars);
         res = Util.boolOrList(b_lst);
         res_1 = boolNot(res);
@@ -5811,20 +5811,20 @@ algorithm
     case ({}) then true;
     case (((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2)) :: eqns)) /* TODO: Algorithms and ArrayEquations */
       equation
-        true = Exp.isConst(e1);
-        true = Exp.isConst(e2);
+        true = Expression.isConst(e1);
+        true = Expression.isConst(e2);
         true = jacobianConstant(eqns);
       then
         true;
     case (((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: eqns))
       equation
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
         true = jacobianConstant(eqns);
       then
         true;
     case (((_,_,BackendDAE.SOLVED_EQUATION(exp = e)) :: eqns))
       equation
-        true = Exp.isConst(e);
+        true = Expression.isConst(e);
         true = jacobianConstant(eqns);
       then
         true;
@@ -5881,7 +5881,7 @@ algorithm
       DAE.Exp e;
     case (BackendDAE.DAELOW(orderedVars = vars),e)
       equation
-        crefs = Exp.extractCrefsFromExp(e);
+        crefs = Expression.extractCrefsFromExp(e);
         res = containAnyVar(crefs, vars);
       then
         res;
@@ -6036,7 +6036,7 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value eqn_indx,indx;
       list<DAE.Exp> in_,out,expl;
-      Exp.Type t;
+      Expression.Type t;
       list<DAE.Subscript> subs;   
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;   
     // residual equations
@@ -6053,11 +6053,11 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
-        t = Exp.typeof(e1);
+        t = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
-        new_exp = Exp.applyExpSubscripts(new_exp,subs); 
+        new_exp = Expression.applyExpSubscripts(new_exp,subs); 
         var_indxs = BackendDAEUtil.varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
@@ -6227,7 +6227,7 @@ algorithm
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
          //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
-        tp = Exp.typeof(e2);
+        tp = Expression.typeof(e2);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
         e = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
@@ -6236,7 +6236,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
       equation
          //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
-        tp = Exp.typeof(exp);
+        tp = Expression.typeof(exp);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
         e = ExpressionSimplify.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
@@ -6622,7 +6622,7 @@ algorithm
           bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _)
       equation
-        ((e2, _)) = Exp.traverseExp(e, replaceCrefsWithValues, vars);
+        ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
         (_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.MSG());
       then
         BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
@@ -6642,7 +6642,7 @@ algorithm
     case ((DAE.CREF(cr, _), vars))
       equation
          ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
-         ((e, _)) = Exp.traverseExp(e, replaceCrefsWithValues, vars);
+         ((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
       then
         ((e, vars));
     case (_) then inTuple;
@@ -8113,17 +8113,17 @@ algorithm
     case BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl) then expl;
     case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
       then
         {DAE.CREF(cr,tp),e};
     case BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE()))
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
       then
         {DAE.CREF(cr,tp),e};
     case BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr,e,SOME(elsePart)),source = source)
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
         expl = getAllExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source));
         exps = listAppend({DAE.CREF(cr,tp),e},expl);
       then
@@ -8400,7 +8400,7 @@ algorithm
         talst;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),func,inTypeA)
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
         talst = func(DAE.CREF(cr,tp),inTypeA);
         talst1 = func(e,inTypeA); 
         talst2 = listAppend(talst,talst1);
@@ -8408,7 +8408,7 @@ algorithm
         talst2;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE())),func,inTypeA)
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
         talst = func(DAE.CREF(cr,tp),inTypeA);
         talst1 = func(e,inTypeA); 
         talst2 = listAppend(talst,talst1);
@@ -8416,7 +8416,7 @@ algorithm
         talst2;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr,e,SOME(elsePart)),source = source),func,inTypeA)
       equation
-        tp = Exp.typeof(e);
+        tp = Expression.typeof(e);
         talst = func(DAE.CREF(cr,tp),inTypeA);
         talst1 = func(e,inTypeA); 
         talst2 = listAppend(talst,talst1);  
@@ -9051,8 +9051,8 @@ algorithm
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
-//        (eqn_1,replace) =  Exp.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
-//        (scalar_1,replace1) =  Exp.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+//        (eqn_1,replace) =  Expression.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+//        (scalar_1,replace1) =  Expression.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
 //        true = replace + replace1 > 0;
         // Add Residual eqn
         eqns_1 = equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),DAE.CREF(crt,DAE.ET_REAL()),source));
@@ -9356,14 +9356,14 @@ algorithm
         BackendDAE.VAR(varName=cr) = BackendVariable.vararrayNth(varr, v_1);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = ExpressionSolve.solve(e1, e2, varexp);
-        divexplst = Exp.extractDivExpFromExp(expr);
-        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Exp.isConst);
+        divexplst = Expression.extractDivExpFromExp(expr);
+        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
         // check constexplst if equal 0
-        blst = Util.listMap(constexplst, Exp.isZero);
+        blst = Util.listMap(constexplst, Expression.isZero);
         false = Util.boolOrList(blst);
         // check nonconstexplst if tearing variables or variables which will be
         // changed during solving process inside
-        crlstlst = Util.listMap(nonconstexplst,Exp.extractCrefsFromExp);
+        crlstlst = Util.listMap(nonconstexplst,Expression.extractCrefsFromExp);
         // add explst with variables which will not be changed during solving prozess
         blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,ComponentReference.crefEqualNoStringCompare);
         blst_1 = Util.listMap(blstlst,Util.boolOrList);
@@ -9432,7 +9432,7 @@ protected function transformDelayExpressions
   output DAE.Exp outExp;
   output Integer outInteger;
 algorithm
-  ((outExp, outInteger)) := Exp.traverseExp(inExp, transformDelayExpression, inInteger);
+  ((outExp, outInteger)) := Expression.traverseExp(inExp, transformDelayExpression, inInteger);
 end transformDelayExpressions;
 
 public function processDelayExpressions
@@ -9455,7 +9455,7 @@ end processDelayExpressions;
 
 protected function collectDelayExpressions
 "Put expression into a list if it is a call to delay().
-Useable as a function parameter for Exp.traverseExp."
+Useable as a function parameter for Expression.traverseExpression."
   input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
   output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
 algorithm
@@ -9475,11 +9475,11 @@ public function findDelaySubExpressions
   input list<Integer> inDummy "this is a dummy for traverseDAELowExps";
   output list<DAE.Exp> outExps;
 algorithm
-  ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});
+  ((_, outExps)) := Expression.traverseExp(inExp, collectDelayExpressions, {});
 end findDelaySubExpressions;
 
 public function addDivExpErrorMsgtoExp "
-Author: Frenkel TUD 2010-02, Adds the error msg to Exp.Div.
+Author: Frenkel TUD 2010-02, Adds the error msg to Expression.Div.
 "
   input DAE.Exp inExp;
   input tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace> inDlowMode;
@@ -9496,7 +9496,7 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Var> varlst;
     equation
-      ((exp,(_,_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (vars,varlst,dzer,{}));
+      ((exp,(_,_,_,divlst))) = Expression.traverseExp(inExp, traversingDivExpFinder, (vars,varlst,dzer,{}));
       then
         (exp,divlst);
   end matchcontinue;
@@ -9515,7 +9515,7 @@ outExp := matchcontinue(inExp)
     list<DAE.Exp> divLst;
     tuple<BackendDAE.Variables,BackendDAE.DivZeroExpReplace,list<DAE.Exp>> dlowmode;
     DAE.Exp e,e1,e2;
-    Exp.Type ty;
+    Expression.Type ty;
     String se;
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
     equation
@@ -9578,7 +9578,7 @@ algorithm
       /* generade modelica strings */
       se = generadeDivExpErrorMsg(e,e2,vars);
       /* check if expression contains variables */
-      crlst = Exp.extractCrefsFromExp(e2);
+      crlst = Expression.extractCrefsFromExp(e2);
       boollst = Util.listMap1r(crlst,isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
     then (se,bres);
@@ -9615,7 +9615,7 @@ algorithm outCrefExp := matchcontinue(inVar,inExp)
   case (DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF(componentRef=cr))
   equation
     cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
-    e = Exp.makeCrefExp(cr1, tp);
+    e = Expression.makeCrefExp(cr1, tp);
   then
     e;
  end matchcontinue;
@@ -9639,7 +9639,7 @@ algorithm
     list<BackendDAE.Equation> eqnlst;
     list<tuple<DAE.Exp,DAE.Exp>> exptplst;
     list<list<DAE.Subscript>> subslst,subslst1;
-    Exp.Type tp;
+    Expression.Type tp;
     list<DAE.Dimension> ad;
     list<Integer> ds;
   // array types to array equations  
@@ -9648,13 +9648,13 @@ algorithm
     (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
     (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
     e2_2 = ExpressionSimplify.simplify(e2_1);
-    ds = Util.listMap(ad, Exp.dimensionSize);
+    ds = Util.listMap(ad, Expression.dimensionSize);
   then
     (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
   // other types  
   case ((e1 as DAE.CREF(componentRef=cr1),e2),source,inFuncs)
   equation 
-    tp = Exp.typeof(e1);
+    tp = Expression.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
     (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
     (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
@@ -9665,7 +9665,7 @@ algorithm
   // complex type
   case ((e1,e2),source,inFuncs)
   equation 
-    tp = Exp.typeof(e1);
+    tp = Expression.typeof(e1);
     true = DAEUtil.expTypeComplex(tp);
   then
     (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{}));    
@@ -9713,7 +9713,7 @@ algorithm
         rangelist = dimensionsToRange(dims);
       then {}::rangelist;
     case(d::dims) equation
-      i = Exp.dimensionSize(d);
+      i = Expression.dimensionSize(d);
       range = Util.listIntRange(i);
       subs = rangesToSubscript(range);
       rangelist = dimensionsToRange(dims);
@@ -10576,7 +10576,7 @@ algorithm
     
     // a(x)^b
     case(e as DAE.BINARY(exp1=e1, operator=DAE.POW(ty=et), exp2=e2), x, functions, inputVars, paramVars, stateVars) equation
-      true = Exp.isConst(e2);
+      true = Expression.isConst(e2);
       e1_ = differentiateWithRespectToX(e1, x, functions, inputVars, paramVars, stateVars);
       e = DAE.BINARY(e1_, DAE.MUL(et), DAE.BINARY(e2, DAE.MUL(et), DAE.BINARY(e1, DAE.POW(et), DAE.BINARY(e2, DAE.SUB(et), DAE.RCONST(1.0)))));
     then e;
@@ -10588,11 +10588,11 @@ algorithm
         DAE.ComponentRef cref; 
       equation
       Builtin.isDer(fname);
-      cref = Exp.expCref(e1);
+      cref = Expression.expCref(e1);
       cref = crefPrefixDer(cref);
       //str = derivativeNamePrefix +& ExpressionDump.printExpStr(e1);
       //cref = ComponentReference.makeCrefIdent(str, DAE.ET_REAL(),{});
-      e1_ = differentiateWithRespectToX(Exp.crefExp(cref), x, functions, inputVars, paramVars, stateVars);
+      e1_ = differentiateWithRespectToX(Expression.crefExp(cref), x, functions, inputVars, paramVars, stateVars);
     then e1_;
     
     // -exp

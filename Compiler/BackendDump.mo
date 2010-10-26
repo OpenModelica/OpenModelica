@@ -38,21 +38,21 @@ package BackendDump
 "
 
 public import BackendDAE;
-public import BackendDAEUtil;
-public import ComponentReference;
 public import DAE;
 
 protected import Absyn;
 protected import Algorithm;
+protected import BackendDAEUtil;
 protected import BackendVarTransform;
 protected import BackendVariable;
+protected import ComponentReference;
 protected import DAEEXT;
 protected import DAEDump;
 protected import DAELow;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import IOStream;
 protected import SCode;
@@ -98,11 +98,11 @@ public function printCallFunction2StrDIVISION
 algorithm
   outString := matchcontinue (inExp,stringDelimiter,opcreffunc)
     local
-      Exp.Ident s,s_1,s_2,fs,argstr;
+      Expression.Ident s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
       list<DAE.Exp> args;
       DAE.Exp e,e1,e2;
-      Exp.Type ty;
+      Expression.Type ty;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
         s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));

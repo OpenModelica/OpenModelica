@@ -5274,7 +5274,7 @@ template daeExpMetaHelperConstant(Exp e, Context context, Text &preExp /*BUFP*/,
  "Generates a constant meta modelica value."
 ::=
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  daeExpMetaHelperConstantNameType(expPart, Exp.typeof(e),
+  daeExpMetaHelperConstantNameType(expPart, Expression.typeof(e),
                                    &preExp /*BUFC*/, &varDecls /*BUFC*/)
 end daeExpMetaHelperConstant;
 

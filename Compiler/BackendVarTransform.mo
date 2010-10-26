@@ -41,11 +41,11 @@ package BackendVarTransform
 
 public import BackendDAE;
 public import DAE;
-public import ExpressionSimplify;
 public import VarTransform;
 
 protected import Absyn;
-protected import Exp;
+protected import Expression;
+protected import ExpressionSimplify;
 protected import Util;
 
 public function replaceEquations

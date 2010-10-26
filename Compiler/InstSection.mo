@@ -41,12 +41,10 @@ package InstSection
 
 public import Absyn;
 public import ClassInf;
-public import ComponentReference;
 public import Connect;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
-public import ExpressionSimplify;
 public import InnerOuter;
 public import Prefix;
 public import RTOpts;
@@ -54,13 +52,15 @@ public import SCode;
 
 protected import Algorithm;
 protected import Ceval;
+protected import ComponentReference;
 protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Inst;
 protected import Interactive;
 protected import Lookup;
@@ -1019,7 +1019,7 @@ algorithm
       b3 = Types.isPropTupleArray(prop);
       b4 = Types.isPropTupleArray(prop2);
       true = boolOr(b3,b4);
-      true = Exp.containFunctioncall(elabedE2);
+      true = Expression.containFunctioncall(elabedE2);
       (e1,prop) = expandTupleEquationWithWild(e1,prop2,prop);
       (cache,elabedE1_2,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),false,pre,info);
       (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl);
@@ -1413,7 +1413,7 @@ algorithm
       local DAE.AvlTree dav; 
       equation
         elabedType = Types.elabType(tt);
-        true = Exp.equalTypes(elabedType,ty);        
+        true = Expression.equalTypes(elabedType,ty);        
         // adrpo: 2010-02-18, bug: https://openmodelica.org:8443/cb/issue/1175?navigation=true
         // DO NOT USE Ceval.MSG() here to generate messages 
         // as it will print error messages such as:
@@ -1616,8 +1616,8 @@ algorithm
 		/* Initial array equations with function calls => initial array equations */
 		case (lhs, rhs, tp, source, SCode.INITIAL())
 			equation
-				b1 = Exp.containVectorFunctioncall(lhs);
-				b2 = Exp.containVectorFunctioncall(rhs);
+				b1 = Expression.containVectorFunctioncall(lhs);
+				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
 				ds = Types.getDimensionSizes(tp);
 				lhs = ExpressionSimplify.simplify(lhs);
@@ -1628,8 +1628,8 @@ algorithm
 		/* Arrays with function calls => array equations */
 		case (lhs, rhs, tp, source, SCode.NON_INITIAL())
 			equation
-				b1 = Exp.containVectorFunctioncall(lhs);
-				b2 = Exp.containVectorFunctioncall(rhs);
+				b1 = Expression.containVectorFunctioncall(lhs);
+				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
 				ds = Types.getDimensionSizes(tp);
 				lhs = ExpressionSimplify.simplify(lhs);
@@ -1647,8 +1647,8 @@ algorithm
         failure(equality(dim = DAE.DIM_UNKNOWN())); // adrpo: make sure the dimensions are known!
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
-        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
-        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
@@ -1667,8 +1667,8 @@ algorithm
 			  true = OptManager.getOption("checkModel");
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
-        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
-        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
@@ -1941,7 +1941,7 @@ algorithm
         list<DAE.Exp> exp_subs;
       equation
         cref_subs = ComponentReference.crefSubs(cr);
-        exp_subs = Util.listMap(cref_subs, Exp.subscriptExp);
+        exp_subs = Util.listMap(cref_subs, Expression.subscriptExp);
         true = isSubsLoopDependent(exp_subs, inForIterators);
         cr = ComponentReference.crefStripSubs(cr);
         cr_type = ComponentReference.crefLastType(cr);
@@ -1995,7 +1995,7 @@ algorithm
     case ({}, _) then false;
     case (subscript :: rest, _)
       equation
-        true = Exp.expContains(subscript, iteratorExp);
+        true = Expression.expContains(subscript, iteratorExp);
       then true;
     case (subscript :: rest, _)
       equation
@@ -4431,7 +4431,7 @@ algorithm
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        dim_int = Exp.dimensionSize(dim1);
+        dim_int = Expression.dimensionSize(dim1);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4546,8 +4546,8 @@ algorithm
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);
 
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        dim_int = Exp.dimensionSize(dim1);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+        dim_int = Expression.dimensionSize(dim1);
 
         (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim_int,1,graph,info);
       then
@@ -4565,7 +4565,7 @@ algorithm
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         DAE.ET_ARRAY(_,dims) = Types.elabType(inType6);
         DAE.ET_ARRAY(_,dims2) = Types.elabType(inType9);
-        true = Util.isListEqualWithCompareFunc(dims, dims2, Exp.dimensionsKnownAndEqual);
+        true = Util.isListEqualWithCompareFunc(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4611,7 +4611,7 @@ algorithm
 
         // Add an edge to connection graph. The edge contains the 
         // dae to be added in the case where the edge is broken.
-        zeroVector = Exp.makeRealArrayOfZeros(dim1);
+        zeroVector = Expression.makeRealArrayOfZeros(dim1);
         breakDAEElements = 
           {DAE.ARRAY_EQUATION({dim1}, zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
@@ -4673,7 +4673,7 @@ algorithm
       equation
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
-        dim_int = Exp.dimensionSize(dim1);
+        dim_int = Expression.dimensionSize(dim1);
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
@@ -5265,7 +5265,7 @@ protected function makeAsubIndex
   output DAE.Exp asub;
 algorithm
   asub := ExpressionSimplify.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
-  asub := Debug.bcallret1(Exp.isCrefScalar(asub), Exp.unliftExp, asub, asub);
+  asub := Debug.bcallret1(Expression.isCrefScalar(asub), Expression.unliftExp, asub, asub);
 end makeAsubIndex;
 
 protected function makeEnumLiteralIndices
@@ -5290,7 +5290,7 @@ algorithm
         enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
         e = ExpressionSimplify.simplify(DAE.ASUB(expr, {e}));
-        e = Debug.bcallret1(Exp.isCref(e), Exp.unliftExp, e, e);
+        e = Debug.bcallret1(Expression.isCref(e), Expression.unliftExp, e, e);
         index = enumIndex + 1;
         expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);
       then

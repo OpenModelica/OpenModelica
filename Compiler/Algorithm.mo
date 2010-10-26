@@ -49,7 +49,6 @@ package Algorithm
 "
 
 public import Absyn;
-public import ComponentReference;
 public import DAE;
 public import SCode;
 
@@ -60,11 +59,12 @@ public type Algorithm = DAE.Algorithm;
 public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
+protected import Expression;
 protected import ExpressionDump;
-protected import Exp;
 protected import Print;
 protected import RTOpts;
 protected import System;
@@ -660,7 +660,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
 output list<DAE.ComponentRef> crs;
 algorithm
-  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Exp.extractCrefsFromExp),ComponentReference.crefEqual);
+  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Expression.extractCrefsFromExp),ComponentReference.crefEqual);
 end getCrefFromAlg;
 
 
@@ -828,7 +828,7 @@ protected function crefToExp "function: crefToExp
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
 algorithm
-  outExp:= Exp.makeCrefExp(inComponentRef,DAE.ET_OTHER());
+  outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
 end crefToExp;
 
 

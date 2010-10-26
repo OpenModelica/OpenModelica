@@ -49,7 +49,6 @@ package Mod
 public import Absyn;
 public import DAE;
 public import Env;
-public import ExpressionSimplify;
 public import Prefix;
 public import SCode;
 public import RTOpts;
@@ -64,8 +63,9 @@ protected import ClassInf;
 protected import Dump;
 protected import Debug;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Inst;
 protected import PrefixUtil;
 protected import Print;
@@ -384,7 +384,7 @@ algorithm
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
-        e_1 = absynExp; //Exp.unelabExp(e);
+        e_1 = absynExp; //Expression.unelabExp(e);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
 
@@ -394,7 +394,7 @@ algorithm
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
-        e_1 = Exp.unelabExp(e);
+        e_1 = Expression.unelabExp(e);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
 
@@ -1982,32 +1982,32 @@ algorithm
     // typed mods
     case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2))) 
       equation
-        equal = Exp.expEqual(exp1,exp2);
+        equal = Expression.expEqual(exp1,exp2);
       then equal;
     
     // typed vs. untyped mods
     case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
       equation
-        //aexp1 = Exp.unelabExp(exp1);
+        //aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
       equation
-        aexp1 = Exp.unelabExp(exp1);
+        aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped vs. typed 
     case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
       equation
-        //aexp2 = Exp.unelabExp(exp2);
+        //aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
       equation
-        aexp2 = Exp.unelabExp(exp2);
+        aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
@@ -2134,32 +2134,32 @@ algorithm
     // typed equmods
     case(SOME(DAE.TYPED(exp1,_,_,_)),SOME(DAE.TYPED(exp2,_,_,_))) 
       equation
-        equal = Exp.expEqual(exp1,exp2);
+        equal = Expression.expEqual(exp1,exp2);
       then equal;
 
     // typed vs. untyped equmods
     case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
       equation
-        //aexp1 = Exp.unelabExp(exp1);
+        //aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
       equation
-        aexp1 = Exp.unelabExp(exp1);
+        aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped vs. typed equmods
     case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
       equation
-        //aexp2 = Exp.unelabExp(exp2);
+        //aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
       equation
-        aexp2 = Exp.unelabExp(exp2);
+        aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 

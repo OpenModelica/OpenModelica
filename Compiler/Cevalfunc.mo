@@ -28,7 +28,7 @@ protected import BaseHashTable;
 protected import Ceval;
 protected import Util;
 protected import Error;
-protected import Exp;
+protected import Expression;
 protected import ExpressionDump;
 protected import Debug;
 protected import Lookup;
@@ -527,7 +527,7 @@ algorithm
     case(inExp,ht2)
       equation
          //print(" replace exp: " +& ExpressionDump.printExpStr(inExp) +& "\n");
-         ((outExp,_)) = Exp.traverseExp(inExp,qualReplacer,ht2);
+         ((outExp,_)) = Expression.traverseExp(inExp,qualReplacer,ht2);
          //print(" replaced exp: " +& ExpressionDump.printExpStr(outExp) +& "\n");
         then
           outExp;
@@ -536,7 +536,7 @@ algorithm
 end replaceComplex;
 
 protected function qualReplacer "
-The Exp.traverseExp traverse function, "
+The Expression.traverseExp traverse function, "
   input tuple<DAE.Exp, HashTable2.HashTable> inTpl;
   output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
 algorithm
@@ -1658,7 +1658,7 @@ end addDims;
 
 protected function createReplacementRules "
 Author BZ
-Create a list replacement rules, mapping a variable (component reference) to its value (represented as Exp.Exp)
+Create a list replacement rules, mapping a variable (component reference) to its value (represented as Expression.Exp)
 "
   input list<Values.Value> vals;
   input list<SCode.Element> elems;

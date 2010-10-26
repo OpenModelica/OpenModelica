@@ -1066,24 +1066,19 @@ package ComponentReference
 
 end ComponentReference;
 
-package Exp
+package Expression
 
 	function crefHasScalarSubscripts
 		input DAE.ComponentRef cr;
 		output Boolean hasScalarSubs;
 	end crefHasScalarSubscripts;
 
-  function getEnumIndexfromCref
-    input DAE.ComponentRef inComponentRef;
-    output Integer outEnumIndex;
-  end getEnumIndexfromCref;
-
   function typeof
     input DAE.Exp inExp;
     output DAE.ExpType outType;
   end typeof;
 
-end Exp;
+end Expression;
 
 package RTOpts
   function acceptMetaModelicaGrammar
