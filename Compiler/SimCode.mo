@@ -57,6 +57,7 @@ public import BackendDAE;
 public import BackendDAEUtil;
 public import ComponentReference;
 public import Exp;
+public import ExpressionSolve;
 public import Values;
 public import Types;
 public import DAELow;
@@ -2981,7 +2982,7 @@ algorithm
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
-        exp_ = Exp.solveLin(e1, e2, varexp);
+        exp_ = ExpressionSolve.solveLin(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
 /*
@@ -8057,7 +8058,7 @@ algorithm
     case (_, _, DAE.CREF(componentRef = cr))
       equation
         false = crefIsDerivative(cr);
-        solved_exp = Exp.solve(lhs, rhs, exp);
+        solved_exp = ExpressionSolve.solve(lhs, rhs, exp);
       then
         solved_exp;    
     case (_, _, DAE.CREF(componentRef = cr))
@@ -8065,7 +8066,7 @@ algorithm
         true = crefIsDerivative(cr);
         e1 = replaceDerOpInExpCond(lhs, cr);
         e2 = replaceDerOpInExpCond(rhs, cr);
-        solved_exp = Exp.solve(e1, e2, exp);
+        solved_exp = ExpressionSolve.solve(e1, e2, exp);
       then
         solved_exp;
   end matchcontinue;

@@ -52,6 +52,7 @@ public import Absyn;
 public import BackendDAE;
 public import ComponentReference;
 public import DAE;
+public import ExpressionSolve;
 public import SCode;
 public import Values;
 public import Builtin;
@@ -10863,7 +10864,7 @@ algorithm
         v_1 = v - 1;
         BackendDAE.VAR(varName=cr) = vararrayNth(varr, v_1);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
-        expr = Exp.solve(e1, e2, varexp);
+        expr = ExpressionSolve.solve(e1, e2, varexp);
         divexplst = Exp.extractDivExpFromExp(expr);
         (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Exp.isConst);
         // check constexplst if equal 0

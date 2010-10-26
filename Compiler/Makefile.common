@@ -59,6 +59,7 @@ DumpGraphviz.mo \
 Env.mo \
 Error.mo \
 Exp.mo \
+ExpressionSolve.mo \
 ExpandableConnectors.mo \
 SCode.mo \
 SCodeUtil.mo \

@@ -73,8 +73,6 @@ protected import RTOpts;
 protected import Util;
 protected import Print;
 protected import ModUtil;
-protected import Derive;
-//protected import Error;
 protected import Debug;
 protected import Static;
 protected import Env;
@@ -85,8 +83,6 @@ protected import Algorithm;
 protected import Values;
 protected import ValuesUtil;
 protected import Prefix;
-
-protected constant DAE.Exp rconstone=DAE.RCONST(1.0);
 
 
 public uniontype IntOp
@@ -1811,7 +1807,7 @@ algorithm
   end matchcontinue;
 end noFactors;
 
-protected function inverseFactors
+public function inverseFactors
 "function inverseFactors
   Takes a list of expressions and returns
   each expression in the list inversed.
@@ -4375,7 +4371,7 @@ algorithm
   end matchcontinue;
 end isConstTrue;
 
-protected function isConstOne
+public function isConstOne
 "function: isConstOne
   Return true if expression is 1"
   input DAE.Exp inExp;
@@ -4979,21 +4975,6 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end isIntegerOrReal;
-
-protected function isInverseCref " Returns true if expression is 1/cr for a ComponentRef cr"
-input DAE.Exp e;
-input ComponentRef cr;
-output Boolean res;
-algorithm
-  res := matchcontinue(e,cr)
-  local ComponentRef cr2; DAE.Exp e1;
-    case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),cr)equation
-        true = ComponentReference.crefEqual(cr,cr2);
-        true = isConstOne(e1);
-    then true;
-    case(_,_) then false;
-  end matchcontinue;
-end isInverseCref;
 
 public function expEqual
 "function: expEqual
@@ -11235,297 +11216,6 @@ algorithm outop := matchcontinue(inop)
   case( DAE.SUB(ty=ty1)) equation ty2 = unliftArray(ty1); then DAE.SUB(ty2);
 end matchcontinue;
 end removeOperatorDimension;
-
-/***************************************************/
-/* solve a DAE.Exp */
-/***************************************************/
-
-public function solve
-"function: solve
-  Solves an equation consisting of a right hand side (rhs) and a
-  left hand side (lhs), with respect to the expression given as
-  third argument, usually a variable."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp1,inExp2,inExp3)
-    local
-      DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
-      ComponentRef cr1,cr2;
-    /*
-    case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
-      local DAE.Exp debuge1,debuge2,debuge3;
-      equation
-        print("(Exp.mo debugging)  To solve: rhs: " +&
-          printExpStr(debuge1) +& " lhs: " +&
-          printExpStr(debuge2) +& " with respect to: " +&
-          printExpStr(debuge3) +& "\n");
-      then
-        fail();*/
-    
-    // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
-    case (crexp,rhs,crexp2)
-      equation
-        cr1 = crOrDerCr(crexp);
-        cr2 = crOrDerCr(crexp2);
-        true = ComponentReference.crefEqual(cr1, cr2);
-        false = expContains(rhs, crexp);
-        res_1 = simplify1(rhs);
-      then
-        res_1;
-
-    // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
-    case (lhs,crexp ,crexp2)
-      equation
-        cr1 = crOrDerCr(crexp);
-        cr2 = crOrDerCr(crexp2);
-        true = ComponentReference.crefEqual(cr1, cr2);
-        false = expContains(lhs, crexp);
-        res_1 = simplify1(lhs);
-      then
-        res_1;    
-
-    // solving linear equation system using newton iteration ( converges directly )
-    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
-      equation
-        res = solve2(lhs, rhs, cr);
-        res_1 = simplify1(res);
-      then
-        res_1;
-    
-    case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
-      equation
-        rhs = solve(lhs,e2,cr);
-        res = solve(lhs,e3,cr);
-        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
-      then
-        res_1;
-    
-    case (DAE.IFEXP(e1,e2,e3),rhs,(cr as DAE.CREF(componentRef = _)))
-      equation
-        lhs = solve(rhs,e2,cr);
-        res = solve(rhs,e3,cr);
-        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
-      then
-        res_1;
-        
-    case (e1,e2,e3)
-      equation
-        Debug.fprint("failtrace", "-Exp.solve failed\n");
-        //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
-        //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
-      then
-        fail();
-  end matchcontinue;
-end solve;
-
-public function solveLin
-"function: solve
-  Solves an equation consisting of a right hand side (rhs) and a
-  left hand side (lhs), with respect to the expression given as
-  third argument, usually a variable."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp1,inExp2,inExp3)
-    local
-      DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
-      ComponentRef cr1,cr2;
-    /*
-    case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
-      local DAE.Exp debuge1,debuge2,debuge3;
-      equation
-        print("(Exp.mo debugging)  To solve: rhs: " +&
-          printExpStr(debuge1) +& " lhs: " +&
-          printExpStr(debuge2) +& " with respect to: " +&
-          printExpStr(debuge3) +& "\n");
-      then
-        fail();*/
-    
-    // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
-    case (crexp,rhs,crexp2)
-      equation
-        cr1 = crOrDerCr(crexp);
-        cr2 = crOrDerCr(crexp2);
-        true = ComponentReference.crefEqual(cr1, cr2);
-        false = expContains(rhs, crexp);
-        res_1 = simplify1(rhs);
-      then
-        res_1;
-
-    // special case when already solved, lhs = cr1, otherwise division by zero  when dividing with derivative
-    case (lhs,crexp ,crexp2)
-      equation
-        cr1 = crOrDerCr(crexp);
-        cr2 = crOrDerCr(crexp2);
-        true = ComponentReference.crefEqual(cr1, cr2);
-        false = expContains(lhs, crexp);
-        res_1 = simplify1(lhs);
-      then
-        res_1;    
-
-    // solving linear equation system using newton iteration ( converges directly )
-    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
-      equation
-        true = hasOnlyFactors(lhs,rhs);
-        lhs = DAE.BINARY(lhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
-        rhs = DAE.BINARY(rhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
-        res = solve2(lhs, rhs, cr);
-        res_1 = simplify1(res);
-      then
-        res_1;
-
-    // solving linear equation system using newton iteration ( converges directly )
-    case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
-      equation
-        res = solve2(lhs, rhs, cr);
-        res_1 = simplify1(res);
-      then
-        res_1;
-    
-    case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
-      equation
-        rhs = solveLin(lhs,e2,cr);
-        res = solveLin(lhs,e3,cr);
-        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
-      then
-        res_1;
-    
-    case (DAE.IFEXP(e1,e2,e3),rhs,(cr as DAE.CREF(componentRef = _)))
-      equation
-        lhs = solveLin(rhs,e2,cr);
-        res = solveLin(rhs,e3,cr);
-        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
-      then
-        res_1;
-        
-    case (e1,e2,e3)
-      equation
-        Debug.fprint("failtrace", "-Exp.solve failed\n");
-        //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
-        //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
-      then
-        fail();
-  end matchcontinue;
-end solveLin;
-
-protected function solve2
-"function: solve2
-  This function solves an equation e1 = e2 with
-  respect to the variable given as an expression e3"
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp1,inExp2,inExp3)
-    local
-      DAE.Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
-      ComponentRef cr;
-    
-    // e1 e2 e3 
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = hasOnlyFactors(e1,e2);
-        lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = simplify(lhsder);
-        false = isZero(lhsder_1);
-        false = expContains(lhsder_1, crexp);
-        (lhszero,_) = replaceExp(lhs, crexp, DAE.RCONST(0.0));
-        lhszero_1 = simplify(lhszero);
-        rhs = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(lhszero_1,DAE.DIV(DAE.ET_REAL()),lhsder_1));
-        rhs_1 = simplify(rhs);
-      then
-        rhs_1;
-
-    case(e1,e2,(crexp as DAE.CREF(componentRef = cr)))
-      local DAE.Exp invCr; list<DAE.Exp> factors;
-      equation
-        ({invCr},factors) = Util.listSplitOnTrue1(listAppend(factors(e1),factors(e2)),isInverseCref,cr);
-        rhs_1 = makeProductLst(inverseFactors(factors));
-        false = expContains(rhs_1, crexp);
-      then
-        rhs_1;
-
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = simplify(lhsder);
-        true = expContains(lhsder_1, crexp);
-        /*print("solve2 failed: Not linear: ");
-        print(printExpStr(e1));
-        print(" = ");
-        print(printExpStr(e2));
-        print("\nsolving for: ");
-        print(printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(printExpStr(lhsder));
-        print("\n");*/
-      then
-        fail();
-    
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
-        lhsder_1 = simplify(lhsder);
-        /*print("solve2 failed: ");
-        print(printExpStr(e1));
-        print(" = ");
-        print(printExpStr(e2));
-        print("\nsolving for: ");
-        print(printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(printExpStr(lhsder_1));
-        print("\n");*/
-      then
-        fail();
-  end matchcontinue;
-end solve2;
-
-protected function hasOnlyFactors "help function to solve2, returns true if equation e1 == e2, has either e1 == 0 or e2 == 0 and the expression only contains
-factors, e.g. a*b*c = 0. In this case we can not solve the equation"
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output Boolean res;
-algorithm
-  res := matchcontinue(e1,e2)
-    case(e1,e2) equation
-      true = isZero(e1);
-      // More than two factors
-      _::_::_ = factors(e2);
-      //.. and more than two crefs
-      _::_::_ = extractCrefsFromExp(e2);
-    then true;
-      
-      // Swapped args
-    case(e2,e1) equation
-      true = isZero(e1);
-      _::_::_ = factors(e2);
-      _::_::_ = extractCrefsFromExp(e2);
-    then true;
-    
-    case(_,_) then false;      
-  end matchcontinue;
-end hasOnlyFactors;
-
-protected function crOrDerCr "returns the component reference of CREF or der(CREF)"
-  input DAE.Exp exp;
-  output ComponentRef cr;
-algorithm
-  cr := matchcontinue(exp)
-    case(DAE.CREF(cr,_)) then cr;
-    case(DAE.CALL(path=Absyn.IDENT("der"),expLst = {DAE.CREF(cr,_)})) then cr;
-  end matchcontinue;
-end crOrDerCr;
 
 end Exp;
 

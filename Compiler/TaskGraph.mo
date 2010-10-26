@@ -48,6 +48,7 @@ package TaskGraph
 public import BackendDAE;
 public import ComponentReference;
 public import DAELow;
+public import ExpressionSolve;
 public import SCode;
 
 protected import Absyn;
@@ -344,7 +345,7 @@ algorithm
         origname_str = ComponentReference.printComponentRefStr(cr);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
-        expr = Exp.solve(e1, e2, varexp);
+        expr = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
@@ -371,7 +372,7 @@ algorithm
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
-        expr = Exp.solve(e1, e2, varexp);
+        expr = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
@@ -386,7 +387,7 @@ algorithm
 	int_sub(v,1) => v\' &
 	DAELow.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
 	let varexp = DAE.CREF(cr,DAE.ET_REAL) &
-	not Exp.solve(e1,e2,varexp) => _ &
+	not ExpressionSolve.solve(e1,e2,varexp) => _ &
 	print \"nonlinear equation not implemented yet\\n\"
 	--------------------------------
 	build_equation(BackendDAE.DAELOW(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
@@ -407,7 +408,7 @@ algorithm
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
-        failure(_ = Exp.solve(e1, e2, varexp));
+        failure(_ = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
@@ -421,7 +422,7 @@ algorithm
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
-        failure(expr = Exp.solve(e1, e2, varexp));
+        failure(expr = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
