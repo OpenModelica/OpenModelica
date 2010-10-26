@@ -291,7 +291,6 @@ algorithm
   matchcontinue (key,keyIndices,keyEqual)
     local
       Key key2;
-      Value res;
       list<tuple<Key,Integer>> xs;
     case (key,((key2,index) :: _),keyEqual)
       equation

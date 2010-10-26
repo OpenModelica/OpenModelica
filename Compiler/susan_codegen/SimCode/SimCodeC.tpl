@@ -2518,6 +2518,7 @@ template crefToMStr(ComponentRef cr)
 end crefToMStr;
 
 
+
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -3423,7 +3424,7 @@ case var as FUNCTION_PTR(__) then
       <%args |> arg hasindex i1 => 
         <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
     } <%rettype%>;
-    <%rettype%>(*_<%name%>)(<%typelist%>);
+    <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
     >>
   end match
 end functionArg;

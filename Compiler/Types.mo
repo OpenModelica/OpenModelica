@@ -5428,9 +5428,14 @@ protected function fixPolymorphicRestype2 "TODO: This needs to be more generic s
 algorithm
   resType := matchcontinue (ty, bindings)
     local
-      String id;
-      Type t1,t2;
-      list<Type> tys;
+      String id,id1,id2;
+      Type t1,t2,ty,ty1,ty2;
+      list<Type> tys,tys1,tys2,rest;
+      list<String> names1;
+      list<DAE.FuncArg> args1,args2;
+      DAE.InlineType inline1,inline2;
+      Option<Absyn.Path> op1;
+
     case ((DAE.T_POLYMORPHIC(id),_),bindings)
       equation
         {t1} = polymorphicBindingsLookup(id, bindings);
@@ -5457,6 +5462,16 @@ algorithm
       equation
         tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
       then ((DAE.T_TUPLE(tys),NONE()));
+    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1),bindings)
+      equation
+        names1 = Util.listMap(args1, Util.tuple21);
+        tys1 = Util.listMap(args1, Util.tuple22);
+        tys1 = Util.listMap1(tys1, fixPolymorphicRestype2, bindings);
+        ty1 = fixPolymorphicRestype2(ty1,bindings);
+        args1 = Util.listThreadTuple(names1,tys1);
+        ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
+      then ty1;
+ 
     // Add Uniontype, Function reference(?)
     case (ty, bindings)
       then ty;

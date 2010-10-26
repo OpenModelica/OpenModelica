@@ -17555,6 +17555,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")("));
         txt = Tpl.writeText(txt, i_typelist);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then (txt, i_varInit);
   end matchcontinue;
 end fun_422;
