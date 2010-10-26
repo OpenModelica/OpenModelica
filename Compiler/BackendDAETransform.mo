@@ -773,37 +773,37 @@ algorithm
 
     case (DAE.VARIABLE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
     case (DAE.DISCRETE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
     case (DAE.VARIABLE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
     case (DAE.DISCRETE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
     case (DAE.VARIABLE(),_,cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.VARIABLE(),states);
 
     case (DAE.DISCRETE(),_,cr,dir,flowPrefix,_,states,_)
       equation
-        failure(DAELow.topLevelInput(cr, dir, flowPrefix));
+        failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
   end matchcontinue;
@@ -828,7 +828,7 @@ algorithm
     case (DAE.CONST(),_,_,_) then BackendDAE.CONST();
     case (DAE.VARIABLE(),cr,dir,flowPrefix)
       equation
-        DAELow.topLevelInput(cr, dir, flowPrefix);
+        BackendVariable.topLevelInput(cr, dir, flowPrefix);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!

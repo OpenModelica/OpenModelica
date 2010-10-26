@@ -54,6 +54,9 @@ public type StartValue = Option<Exp>;
 
 public constant String UNIQUEIO = "$unique$outer$";
 
+public constant String derivativeNamePrefix="$DER";
+
+
 
 public uniontype VarKind
   record VARIABLE end VARIABLE;

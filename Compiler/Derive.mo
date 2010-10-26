@@ -341,7 +341,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
         ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = BackendVariable.getVar(cr, timevars);
-        cr = DAELow.crefPrefixDer(cr);
+        cr = ComponentReference.crefPrefixDer(cr);
       then
         DAE.CREF(cr, tp);
         //DAE.CREF(ComponentReference.makeCrefIdent(cr_str_1,ty,{}),DAE.ET_REAL());

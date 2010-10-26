@@ -213,7 +213,7 @@ algorithm
       (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
-      false = isTopLevelInputOrOutput(cr1,vars,knvars);
+      false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);      
@@ -229,7 +229,7 @@ algorithm
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(BackendDAE.EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
-      false = isTopLevelInputOrOutput(cr1,vars,knvars);
+      false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
@@ -616,93 +616,6 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
-protected function isTopLevelInputOrOutput
-"function isTopLevelInputOrOutput
-  author: LP
-
-  This function checks if the provided cr is from a var that is on top model
-  and is an input or an output, and returns true for such variables.
-  It also returns true for input/output connector variables, i.e. variables
-  instantiated from a  connector class, that are instantiated on the top level.
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1.
-  Note: The function needs the known variables to search for input variables
-  on the top level.
-  inputs:  (cref: DAE.ComponentRef,
-              vars: Variables, /* BackendDAE.Variables */
-              knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
-  outputs: bool"
-  input DAE.ComponentRef inComponentRef1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.Variables inVariables3;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inComponentRef1,inVariables2,inVariables3)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        true;
-    case (cr,vars,knvars)
-      equation
-        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
-      then
-        true;
-    case (_,_,_) then false;
-  end matchcontinue;
-end isTopLevelInputOrOutput;
-
-public function isVarOnTopLevelAndOutput
-"function isVarOnTopLevelAndOutput
-  this function checks if the provided cr is from a var that is on top model
-  and has the DAE.VarDirection = OUTPUT
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1"
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,flowPrefix = flowPrefix))
-      equation
-        topLevelOutput(cr, dir, flowPrefix);
-      then
-        true;
-    case (_) then false;
-  end matchcontinue;
-end isVarOnTopLevelAndOutput;
-
-public function isVarOnTopLevelAndInput
-"function isVarOnTopLevelAndInput
-  this function checks if the provided cr is from a var that is on top model
-  and has the DAE.VarDirection = INPUT
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1"
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarDirection dir;
-      DAE.Flow flowPrefix;
-    case (BackendDAE.VAR(varName = cr,varDirection = dir,flowPrefix = flowPrefix))
-      equation
-        topLevelInput(cr, dir, flowPrefix);
-      then
-        true;
-    case (_) then false;
-  end matchcontinue;
-end isVarOnTopLevelAndInput;
-
 protected function typeofEquation
 "function: typeofEquation
   Returns the DAE.ExpType of an equation"
@@ -902,7 +815,7 @@ algorithm
       equation
         (vs,_) = BackendVariable.getVar(cr, vars);
         crefs = Util.listMap(vs, BackendVariable.varCref);
-        vars_1 = Util.listFold(crefs, deleteVar, vars);
+        vars_1 = Util.listFold(crefs, BackendVariable.deleteVar, vars);
         var = Util.listFirst(vs) "NOTE: returns first var even if array variable" ;
       then
         (vars_1,var);
@@ -1209,70 +1122,6 @@ algorithm outExp := matchcontinue(inExp)
   case(inExp) then inExp;
 end matchcontinue;
 end traversingcollateArrExp;  
-
-public function topLevelInput
-"function: topLevelInput
-  author: PA
-  Succeds if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level."
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
-algorithm
-  _ := matchcontinue (inComponentRef,inVarDirection,inFlow)
-    local
-      DAE.ComponentRef cr;
-      String name;
-    case ((cr as DAE.CREF_IDENT(ident = name)),DAE.INPUT(),_)
-      equation
-        {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.NON_FLOW()) /* Connector input variables at top level for crefs that are stringified */
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.INPUT(),DAE.FLOW())
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    /* For crefs that are not yet stringified, e.g. lower_known_var */
-    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.NON_FLOW()) then ();
-  end matchcontinue;
-end topLevelInput;
-
-protected function topLevelOutput
-  input DAE.ComponentRef inComponentRef;
-  input DAE.VarDirection inVarDirection;
-  input DAE.Flow inFlow;
-algorithm
-  _ := matchcontinue(inComponentRef, inVarDirection, inFlow)
-  local 
-    DAE.ComponentRef cr;
-    String name;
-    case ((cr as DAE.CREF_IDENT(ident = name)),DAE.OUTPUT(),_)
-      equation
-        {_} = Util.stringSplitAtChar(name, ".") "top level ident, no dots" ;
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.NON_FLOW()) /* Connector input variables at top level for crefs that are stringified */
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    case (DAE.CREF_IDENT(ident = name),DAE.OUTPUT(),DAE.FLOW())
-      equation
-        {_,_} = Util.stringSplitAtChar(name, ".");
-      then
-        ();
-    /* For crefs that are not yet stringified, e.g. lower_known_var */
-    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.OUTPUT(),DAE.FLOW()) then ();
-    case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.OUTPUT(),DAE.NON_FLOW()) then ();
-  end matchcontinue;
-end topLevelOutput;  
 
 public function incidenceMatrix
 "function: incidenceMatrix
@@ -1712,179 +1561,6 @@ algorithm
         res;
   end matchcontinue;
 end incidenceRowMatrixExp;
-
-protected function replaceVar
-"function: replaceVar
-  author: PA
-  Takes a list<BackendDAE.Var> and a BackendDAE.Var and replaces the
-  var with the same ComponentRef in BackendDAE.Var list with Var"
-  input list<BackendDAE.Var> inVarLst;
-  input BackendDAE.Var inVar;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst := matchcontinue (inVarLst,inVar)
-    local
-      DAE.ComponentRef cr1,cr2;
-      DAE.Flow flow1,flow2,flowPrefix;
-      list<BackendDAE.Var> vs,vs_1;
-      BackendDAE.Var v,repl;
-
-    case ({},_) then {};
-    case ((BackendDAE.VAR(varName = cr1,flowPrefix = flow1) :: vs),(v as BackendDAE.VAR(varName = cr2,flowPrefix = flow2)))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-      then
-        (v :: vs);
-    case ((v :: vs),(repl as BackendDAE.VAR(varName = cr2,flowPrefix = flowPrefix)))
-      equation
-        vs_1 = replaceVar(vs, repl);
-      then
-        (v :: vs_1);
-  end matchcontinue;
-end replaceVar;
-
-protected function hashChars
-"function: hashChars
-  author: PA
-  Calculates a hash value for a list of chars"
-  input list<String> inStringLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inStringLst)
-    local
-      BackendDAE.Value c2,c1;
-      String c;
-      list<String> cs;
-    case ({}) then 0;
-    case ((c :: cs))
-      equation
-        c2 = stringCharInt(c);
-        c1 = hashChars(cs);
-      then
-        c1 + c2;
-  end matchcontinue;
-end hashChars;
-
-public function getVarUsingName
-"function: getVarUsingName
-  author: lucian
-  Return a variable and its index in the vector.
-  The index is enumerated from 1..n"
-  input String inString;
-  input BackendDAE.Variables inVariables;
-  output BackendDAE.Var outVar;
-  output Integer outInteger;
-algorithm
-  (outVar,outInteger) := matchcontinue (inString,inVariables)
-    local
-      BackendDAE.Value hval,hashindx,indx,indx_1,bsize,n;
-      list<BackendDAE.StringIndex> indexes;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr2,name;
-      DAE.Flow flowPrefix;
-      String name_str,cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        hval = System.hash(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = oldhashvec[hashindx + 1];
-        indx = getVarUsingName2(cr, indexes);
-        ((v as BackendDAE.VAR(varName = cr2))) = BackendVariable.vararrayNth(varr, indx);
-        name_str = ComponentReference.printComponentRefStr(cr2);
-        true = stringEqual(name_str, cr);
-        indx_1 = indx + 1;
-      then
-        (v,indx_1);
-  end matchcontinue;
-end getVarUsingName;
-
-protected function getVarUsingName2
-"function: BackendVariable.getVarUsingName2
-  author: PA
-  Helper function to BackendVariable.getVarUsingName"
-  input String inString;
-  input list<BackendDAE.StringIndex> inStringIndexLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inString,inStringIndexLst)
-    local
-      String cr,cr2;
-      BackendDAE.Value v,res;
-      list<BackendDAE.StringIndex> vs;
-    case (cr,(BackendDAE.STRINGINDEX(str = cr2,index = v) :: _))
-      equation
-        true = stringEqual(cr, cr2);
-      then
-        v;
-    case (cr,(v :: vs))
-      local BackendDAE.StringIndex v;
-      equation
-        res = getVarUsingName2(cr, vs);
-      then
-        res;
-  end matchcontinue;
-end getVarUsingName2;
-
-protected function deleteVar
-"function: deleteVar
-  author: PA
-  Deletes a variable from Variables. This is an expensive operation
-  since we need to create a new binary tree with new indexes as well
-  as a new compacted vector of variables."
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output BackendDAE.Variables outVariables;
-algorithm
-  outVariables := matchcontinue (inComponentRef,inVariables)
-    local
-      list<BackendDAE.Var> varlst,varlst_1;
-      BackendDAE.Variables newvars,newvars_1;
-      DAE.ComponentRef cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-      BackendDAE.Value bsize,n;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        varlst = BackendDAEUtil.vararrayList(varr);
-        varlst_1 = deleteVar2(cr, varlst);
-        newvars = BackendDAEUtil.emptyVars();
-        newvars_1 = BackendVariable.addVars(varlst_1, newvars);
-      then
-        newvars_1;
-  end matchcontinue;
-end deleteVar;
-
-protected function deleteVar2
-"function: deleteVar2
-  author: PA
-  Helper function to deleteVar.
-  Deletes the var named DAE.ComponentRef from the BackendDAE.Variables list."
-  input DAE.ComponentRef inComponentRef;
-  input list<BackendDAE.Var> inVarLst;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst := matchcontinue (inComponentRef,inVarLst)
-    local
-      DAE.ComponentRef cr1,cr2;
-      list<BackendDAE.Var> vs,vs_1;
-      BackendDAE.Var v;
-    case (_,{}) then {};
-    case (cr1,(BackendDAE.VAR(varName = cr2) :: vs))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-      then
-        vs;
-    case (cr1,(v :: vs))
-      equation
-        vs_1 = deleteVar2(cr1, vs);
-      then
-        (v :: vs_1);
-  end matchcontinue;
-end deleteVar2;
 
 public function transposeMatrix
 "function: transposeMatrix
@@ -10008,7 +9684,6 @@ algorithm
   end matchcontinue;
 end MarkArray; 
 
-
 protected function getVarIndex
   // function : getVarIndex
   // author : wbraun
@@ -10035,7 +9710,7 @@ algorithm
   end matchcontinue;
 end getVarIndex;  
 
-public function checkIndex "function: checkIndex
+protected function checkIndex "function: checkIndex
   author: wbraun
 
   check if the index is greater 0

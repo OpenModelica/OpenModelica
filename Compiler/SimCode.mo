@@ -600,7 +600,7 @@ public function derComponentRef
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef derCref;
 algorithm
-  derCref := DAELow.crefPrefixDer(inCref);
+  derCref := ComponentReference.crefPrefixDer(inCref);
 end derComponentRef;
 
 public function hackArrayReverseToCref
@@ -1771,9 +1771,9 @@ algorithm
 	      inputvars = Util.sort(inputvars, BackendVariable.varIndexComparer);
         paramvars = Util.listSelect(varlst1, BackendVariable.isParam);
 	      paramvars = Util.sort(paramvars,  BackendVariable.varIndexComparer);
-        inputvars2 = Util.listSelect(varlst1,DAELow.isVarOnTopLevelAndInput);
+        inputvars2 = Util.listSelect(varlst1,BackendVariable.isVarOnTopLevelAndInput);
 	      inputvars2 = Util.sort(inputvars2, BackendVariable.varIndexComparer);
-        outputvars = Util.listSelect(varlst,DAELow.isVarOnTopLevelAndOutput);
+        outputvars = Util.listSelect(varlst,BackendVariable.isVarOnTopLevelAndOutput);
 	      outputvars = Util.sort(outputvars, BackendVariable.varIndexComparer);
 
         comref_states = Util.listMap(states,BackendVariable.varCref);
@@ -2839,7 +2839,7 @@ algorithm
       equation
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        cr = DAELow.crefPrefixDer(cr);
+        cr = ComponentReference.crefPrefixDer(cr);
         exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
@@ -2865,7 +2865,7 @@ algorithm
       equation
         ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE())) =
           getEquationAndSolvedVar(e, eqns, vars, ass2);
-        cr_1 = DAELow.crefPrefixDer(cr);
+        cr_1 = ComponentReference.crefPrefixDer(cr);
         varexp = DAE.CREF(cr_1, DAE.ET_REAL());
         failure(_ = solve(e1, e2, varexp));
         index = tick();
@@ -3836,7 +3836,7 @@ algorithm
                     expLst = {DAE.CREF(componentRef = cr)}),
            SOME(cref)))
       equation
-        der_cr = DAELow.crefPrefixDer(cr);
+        der_cr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
         cref_exp = DAE.CREF(der_cr, DAE.ET_REAL());
       then
@@ -3845,7 +3845,7 @@ algorithm
                     expLst = {DAE.CREF(componentRef = cr)}),
            NONE()))
       equation
-        cr = DAELow.crefPrefixDer(cr);
+        cr = ComponentReference.crefPrefixDer(cr);
       then
         ((DAE.CREF(cr,DAE.ET_REAL()), NONE()));
     case (_) then inExp;
@@ -4963,9 +4963,9 @@ algorithm
         boolAlgVars = addSimvarIfTrue(
           BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);            
         inputVars = addSimvarIfTrue(
-          DAELow.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
+          BackendVariable.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
         outputVars = addSimvarIfTrue(
-          DAELow.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
+          BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
         paramVars = addSimvarIfTrue(
           BackendVariable.isVarParam(dlowVar), simvar, paramVars);
         intParamVars = addSimvarIfTrue(
@@ -5002,14 +5002,14 @@ algorithm
       DAE.ComponentRef arrayCref;
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE()))
       equation
-        name = DAELow.crefPrefixDer(name);
+        name = ComponentReference.crefPrefixDer(name);
       then
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, NONE());      
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref)))
       equation
-        name = DAELow.crefPrefixDer(name);
-        arrayCref = DAELow.crefPrefixDer(arrayCref);
+        name = ComponentReference.crefPrefixDer(name);
+        arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, SOME(arrayCref));
@@ -6513,7 +6513,7 @@ algorithm
                      flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix))
       equation
-        cr = DAELow.crefPrefixDer(cr);
+        cr = ComponentReference.crefPrefixDer(cr);
       then
         BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
 

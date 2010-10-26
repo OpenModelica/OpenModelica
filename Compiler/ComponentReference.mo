@@ -1323,6 +1323,14 @@ algorithm
   newCr := DAE.CREF_QUAL(ident,tp,subs,cr);
 end crefAddPrefix;
 
+public function crefPrefixDer
+  "Appends $DER to a cref, so a => $DER.a"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := crefAddPrefix(DAE.derivativeNamePrefix,{},DAE.ET_REAL(), inCref);
+end crefPrefixDer;
+
 public function prependStringCref
 "function: prependStringCref
   Prepend a string to a component reference.
