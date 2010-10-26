@@ -4179,6 +4179,7 @@ algorithm
         e_1 = DAE.META_TUPLE(elist);
         tys2 = Util.listFill(ty2, listLength(tys1));
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
+        tys_1 = Util.listMap(tys_1, boxIfUnboxedType);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
 
@@ -5138,14 +5139,28 @@ public function unboxedType
   output Type out;
 algorithm
   out := matchcontinue (ty)
+    local
+      list<Type> tys;
     case ((DAE.T_BOXED(ty),_)) then unboxedType(ty);
+    case ((DAE.T_METAOPTION(ty),_))
+      equation
+        ty = unboxedType(ty);
+        ty = boxIfUnboxedType(ty);
+      then ((DAE.T_METAOPTION(ty),NONE()));
+    case ((DAE.T_LIST(ty),_))
+      equation
+        ty = unboxedType(ty);
+      then ((DAE.T_LIST(ty),NONE()));
+    case ((DAE.T_METATUPLE(tys),_))
+      equation
+        tys = Util.listMap(tys, unboxedType);
+      then ((DAE.T_METATUPLE(tys),NONE()));
+    case ((DAE.T_META_ARRAY(ty),_))
+      equation
+        ty = unboxedType(ty);
+        ty = boxIfUnboxedType(ty);
+      then ((DAE.T_META_ARRAY(ty),NONE()));
     case ty then ty;
-    case ((DAE.T_METAOPTION(_),_)) then ty;
-    case ((DAE.T_LIST(_),_)) then ty;
-    case ((DAE.T_METATUPLE(_),_)) then ty;
-    case ((DAE.T_UNIONTYPE(_),_)) then ty;
-    case ((DAE.T_POLYMORPHIC(_),_)) then ty;
-    case ((DAE.T_META_ARRAY(_),_)) then ty;
   end matchcontinue;
 end unboxedType;
 
@@ -5441,7 +5456,6 @@ algorithm
     case ((DAE.T_TUPLE(tys),_),bindings)
       equation
         tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
-        tys = Util.listMap(tys, unboxedType);
       then ((DAE.T_TUPLE(tys),NONE()));
     // Add Uniontype, Function reference(?)
     case (ty, bindings)

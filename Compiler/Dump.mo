@@ -5162,7 +5162,6 @@ algorithm
         Print.printBuf("\nend Absyn.PROGRAM;");
       then ();
   end matchcontinue;
-  print(Print.getString());
 end getAstAsCorbaString;
 
 protected function printPathAsCorbaString
