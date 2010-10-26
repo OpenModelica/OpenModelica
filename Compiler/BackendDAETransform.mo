@@ -105,7 +105,7 @@ algorithm
     case(lst, functionTree, addDummyDerivativeIfNeeded, true) // simplify by default
       equation
         (DAE.DAE(elems),functionTree) = processDelayExpressions(lst,functionTree);
-        s = BackendDAEUtil.states(elems, BackendDAE.emptyBintree);
+        s = states(elems, BackendDAE.emptyBintree);
         vars = BackendDAEUtil.emptyVars();
         knvars = BackendDAEUtil.emptyVars();
         extVars = BackendDAEUtil.emptyVars();
@@ -141,7 +141,7 @@ algorithm
     case(lst, functionTree, addDummyDerivativeIfNeeded, false) // do not simplify
       equation
         (DAE.DAE(elems),functionTree)  = processDelayExpressions(lst,functionTree);
-        s = BackendDAEUtil.states(elems, BackendDAE.emptyBintree);
+        s = states(elems, BackendDAE.emptyBintree);
         vars = BackendDAEUtil.emptyVars();
         knvars = BackendDAEUtil.emptyVars();
         extVars = BackendDAEUtil.emptyVars();
@@ -1781,6 +1781,224 @@ end lowerElseAlgorithmInputsOutputs;
 /*
  *     other helping functions
  */
+
+
+protected function states
+"function: states
+  Returns a BackendDAE.BinTree of all states in the DAE.
+  This function is used by the lower function."
+  input list<DAE.Element> inElems;
+  input BackendDAE.BinTree inBinTree;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree:=
+  matchcontinue (inElems,inBinTree)
+    local
+      BackendDAE.BinTree bt;
+      DAE.Exp e1,e2;
+      list<DAE.Element> xs;
+      DAE.DAElist dae;
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
+
+    case ({},bt) then bt;
+
+    case (DAE.EQUATION(exp = e1,scalar = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.INITIALEQUATION(exp1 = e1, exp2 = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.DEFINE(componentRef = _, exp = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.INITIALDEFINE(componentRef = _, exp = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.ARRAY_EQUATION(exp = e1,array = e2) :: xs,bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs, bt)
+      equation
+        bt = states(xs, bt);
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+
+    case (DAE.COMP(dAElist = daeElts) :: xs,bt)
+      equation
+        bt = states(daeElts, bt);
+        bt = states(xs, bt);
+      then
+        bt;
+
+    case (_ :: xs,bt)
+      equation
+        bt = states(xs, bt);
+      then
+        bt;
+  end matchcontinue;
+end states;
+
+protected function statesExp
+"function: statesExp
+  Helper function to states."
+  input DAE.Exp inExp;
+  input BackendDAE.BinTree inBinTree;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree := matchcontinue (inExp,inBinTree)
+    local
+      BackendDAE.BinTree bt;
+      DAE.Exp e1,e2,e,e3;
+      DAE.ComponentRef cr_1,cr;
+      list<DAE.Exp> expl;
+      list<list<tuple<DAE.Exp, Boolean>>> m;
+
+    case (DAE.BINARY(exp1 = e1,exp2 = e2),bt)
+      equation
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+    case (DAE.UNARY(exp = e),bt)
+      equation
+        bt = statesExp(e, bt);
+      then
+        bt;
+    case (DAE.LBINARY(exp1 = e1,exp2 = e2),bt)
+      equation
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+    case (DAE.LUNARY(exp = e),bt)
+      equation
+        bt = statesExp(e, bt);
+      then
+        bt;
+    case (DAE.RELATION(exp1 = e1,exp2 = e2),bt)
+      equation
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),bt)
+      equation
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+        bt = statesExp(e3, bt);
+      then
+        bt;
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt)
+      equation
+        //cr_1 = Expression.stringifyComponentRef(cr) "value irrelevant, give zero" ;
+        bt = DAELow.treeAdd(bt, cr, 0);
+      then
+        bt;
+    case (DAE.CALL(expLst = expl),bt)
+      equation
+        bt = Util.listFold(expl, statesExp, bt);
+      then
+        bt;
+    case (DAE.ARRAY(array = expl),bt)
+      equation
+        bt = Util.listFold(expl, statesExp, bt);
+      then
+        bt;
+    case (DAE.MATRIX(scalar = m),bt)
+      equation
+        bt = statesExpMatrix(m, bt);
+      then
+        bt;
+    case (DAE.TUPLE(PR = expl),bt)
+      equation
+        bt = Util.listFold(expl, statesExp, bt);
+      then
+        bt;
+    case (DAE.CAST(exp = e),bt)
+      equation
+        bt = statesExp(e, bt);
+      then
+        bt;
+    case (DAE.ASUB(exp = e),bt)
+      equation
+        bt = statesExp(e, bt);
+      then
+        bt;
+    case (DAE.REDUCTION(expr = e1,range = e2),bt)
+      equation
+        bt = statesExp(e1, bt);
+        bt = statesExp(e2, bt);
+      then
+        bt;
+    case (_,bt) then bt;
+  end matchcontinue;
+end statesExp;
+
+protected function statesExpMatrix
+"function: statesExpMatrix
+  author: PA
+  Helper function to statesExpression. Deals with matrix exp list."
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
+  input BackendDAE.BinTree inBinTree;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree := matchcontinue (inTplExpExpBooleanLstLst,inBinTree)
+    local
+      list<list<DAE.Exp>> expl_1;
+      list<DAE.Exp> expl_2;
+      BackendDAE.BinTree bt;
+      list<list<tuple<DAE.Exp, Boolean>>> expl;
+
+    case (expl,bt)
+      equation
+        expl_1 = Util.listListMap(expl, Util.tuple21);
+        expl_2 = Util.listFlatten(expl_1);
+        bt = Util.listFold(expl_2, statesExp, bt);
+      then
+        bt;
+    case (_,_)
+      equation
+        Debug.fprint("failtrace", "-states_exp_matrix failed\n");
+      then
+        fail();
+  end matchcontinue;
+end statesExpMatrix;
+
+
 
 protected function processDelayExpressions
 "Assign each call to delay() with a unique id argument"

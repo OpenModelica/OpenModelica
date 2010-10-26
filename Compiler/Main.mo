@@ -45,8 +45,8 @@ protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAETransform;
+protected import BackendDAEUtil;
 protected import BackendDump;
-protected import Parser;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
@@ -70,6 +70,7 @@ protected import SimCode;
 protected import ErrorExt;
 protected import Error;
 protected import CevalScript;
+protected import Parser;
 protected import Env;
 protected import Settings;
 protected import InnerOuter;
@@ -806,7 +807,7 @@ algorithm
         **/
         // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
         Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
-				str = BackendDump.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
+				str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
 				Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );

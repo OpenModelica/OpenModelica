@@ -6147,7 +6147,7 @@ algorithm
   matchcontinue (eqnLst,varLst)
       case (eqnLst,varLst) equation
         discVarLst = Util.listSelect(varLst,BackendDAEUtil.isVarDiscrete);
-        contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,DAELow.varEqual);
+        contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,BackendVariable.varEqual);
 			  discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
 			  contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,DAELow.equationEqual);
 			  then (contEqnLst,contVarLst,discEqnLst,discVarLst);

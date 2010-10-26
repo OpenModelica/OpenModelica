@@ -148,7 +148,7 @@ algorithm
         ieqns_2 = BackendVarTransform.replaceEquations(ieqns_1, vartransf1);
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
-        (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
+        (vars_1,knvars_1) = BackendVariable.moveVariables(vars, knvars, movedvars_1);
         inputsoutputs = Util.listMap1r(algs_1,BackendDAETransform.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
@@ -212,7 +212,7 @@ algorithm
       {e} = BackendVarTransform.replaceEquations({e},replc);
       (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
-      isVariable(cr1, vars, knvars) "cr1 not constant";
+      BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
@@ -228,7 +228,7 @@ algorithm
       {BackendDAE.EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(BackendDAE.EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
-      isVariable(cr1, vars, knvars) "cr1 not constant";
+      BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
@@ -615,287 +615,6 @@ algorithm
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e),src);
   end matchcontinue;
 end simpleEquation;
-
-protected function typeofEquation
-"function: typeofEquation
-  Returns the DAE.ExpType of an equation"
-  input BackendDAE.Equation inEquation;
-  output DAE.ExpType outType;
-algorithm
-  outType:=
-  matchcontinue (inEquation)
-    local
-      DAE.ExpType t;
-      DAE.Exp e;
-    case (BackendDAE.EQUATION(exp = e))
-      equation
-        t = Expression.typeof(e);
-      then
-        t;
-    case (BackendDAE.COMPLEX_EQUATION(lhs = e))
-      equation
-        t = Expression.typeof(e);
-      then
-        t;
-    case (BackendDAE.SOLVED_EQUATION(exp = e))
-      equation
-        t = Expression.typeof(e);
-      then
-        t;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(right = e)))
-      equation
-        t = Expression.typeof(e);
-      then
-        t;
-  end matchcontinue;
-end typeofEquation;
-
-protected function moveVariables
-"function: moveVariables
-  This function takes the two variable lists of a dae (states+alg) and
-  known vars and moves a set of variables from the first to the second set.
-  This function is needed to manage this in complexity O(n) by only
-  traversing the set once for all variables.
-  inputs:  (algAndState: Variables, /* alg+state */
-              known: Variables,       /* known */
-              binTree: BinTree)       /* vars to move from first7 to second */
-  outputs:  (Variables,        /* updated alg+state vars */
-               Variables)             /* updated known vars */
-"
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.BinTree inBinTree3;
-  output BackendDAE.Variables outVariables1;
-  output BackendDAE.Variables outVariables2;
-algorithm
-  (outVariables1,outVariables2):=
-  matchcontinue (inVariables1,inVariables2,inBinTree3)
-    local
-      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
-      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
-      BackendDAE.BinTree mvars;
-    case (vars1,vars2,mvars)
-      equation
-        lst1 = BackendDAEUtil.varList(vars1);
-        lst2 = BackendDAEUtil.varList(vars2);
-        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
-        v1 = BackendDAEUtil.emptyVars();
-        v2 = BackendDAEUtil.emptyVars();
-        vars = BackendVariable.addVars(lst1_1, v1);
-        knvars = BackendVariable.addVars(lst2_1, v2);
-      then
-        (vars,knvars);
-  end matchcontinue;
-end moveVariables;
-
-protected function moveVariables2
-"function: moveVariables2
-  helper function to move_variables.
-  inputs:  (Var list,  /* alg+state vars as list */
-              BackendDAE.Var list,  /* known vars as list */
-              BinTree)  /* move-variables as BackendDAE.BinTree */
-  outputs: (Var list,  /* updated alg+state vars as list */
-              BackendDAE.Var list)  /* update known vars as list */"
-  input list<BackendDAE.Var> inVarLst1;
-  input list<BackendDAE.Var> inVarLst2;
-  input BackendDAE.BinTree inBinTree3;
-  output list<BackendDAE.Var> outVarLst1;
-  output list<BackendDAE.Var> outVarLst2;
-algorithm
-  (outVarLst1,outVarLst2):=
-  matchcontinue (inVarLst1,inVarLst2,inBinTree3)
-    local
-      list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr;
-      BackendDAE.BinTree mvars;
-    case ({},knvars,_) then ({},knvars);
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
-      equation
-        _ = treeGet(mvars, cr) "alg var moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
-      then
-        (vs_1,(v :: knvars_1));
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
-      equation
-        failure(_ = treeGet(mvars, cr)) "alg var not moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
-      then
-        ((v :: vs_1),knvars_1);
-  end matchcontinue;
-end moveVariables2;
-
-protected function isVariable
-"function: isVariable
-
-  This function takes a DAE.ComponentRef and two Variables. It searches
-  the two sets of variables and succeed if the variable is STATE or
-  VARIABLE. Otherwise it fails.
-  Note: An array variable is currently assumed that each scalar element has
-  the same type.
-  inputs:  (DAE.ComponentRef,
-              Variables, /* vars */
-              Variables) /* known vars */
-  outputs: ()"
-  input DAE.ComponentRef inComponentRef1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.Variables inVariables3;
-algorithm
-  _:=
-  matchcontinue (inComponentRef1,inVariables2,inVariables3)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, knvars);
-      then
-        ();
-  end matchcontinue;
-end isVariable;
-
-protected function removeVariableNamed
-"function: removeVariableNamed
-  Removes a varaible from the BackendDAE.Variables set given a ComponentRef name.
-  The removed variable is returned, such that is can be used elsewhere."
-  input BackendDAE.Variables inVariables;
-  input DAE.ComponentRef inComponentRef;
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Var outVar;
-algorithm
-  (outVariables,outVar):=
-  matchcontinue (inVariables,inComponentRef)
-    local
-      String str;
-      BackendDAE.Variables vars,vars_1;
-      DAE.ComponentRef cr;
-      list<BackendDAE.Var> vs;
-      list<BackendDAE.Key> crefs;
-      BackendDAE.Var var;
-    case (vars,cr)
-      equation
-        failure((_,_) = BackendVariable.getVar(cr, vars));
-        print("-remove_variable_named failed. variable ");
-        str = ComponentReference.printComponentRefStr(cr);
-        print(str);
-        print(" not found.\n");
-      then
-        fail();
-    case (vars,cr)
-      equation
-        (vs,_) = BackendVariable.getVar(cr, vars);
-        crefs = Util.listMap(vs, BackendVariable.varCref);
-        vars_1 = Util.listFold(crefs, BackendVariable.deleteVar, vars);
-        var = Util.listFirst(vs) "NOTE: returns first var even if array variable" ;
-      then
-        (vars_1,var);
-    case (_,_)
-      equation
-        print("-remove_variable_named failed\n");
-      then
-        fail();
-  end matchcontinue;
-end removeVariableNamed;
-
-
-protected function statesDaelow
-"function: statesDaelow
-  author: PA
-  Returns a BackendDAE.BinTree of all states in the DAELow
-  This function is used in matching algorithm."
-  input BackendDAE.DAELow inDAELow;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inDAELow)
-    local
-      list<BackendDAE.Var> v_lst;
-      BackendDAE.BinTree bt;
-      BackendDAE.Variables v,kn;
-      BackendDAE.EquationArray e,re,ia;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> al;
-      BackendDAE.EventInfo ev;
-    case (BackendDAE.DAELOW(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = re,initialEqs = ia,arrayEqs = ae,algorithms = al,eventInfo = ev))
-      equation
-        v_lst = BackendDAEUtil.varList(v);
-        bt = statesDaelow2(v_lst, BackendDAE.emptyBintree);
-      then
-        bt;
-  end matchcontinue;
-end statesDaelow;
-
-protected function statesDaelow2
-"function: statesDaelow2
-  author: PA
-  Helper function to statesDaelow."
-  input list<BackendDAE.Var> inVarLst;
-  input BackendDAE.BinTree inBinTree;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inVarLst,inBinTree)
-    local
-      BackendDAE.BinTree bt;
-      DAE.ComponentRef cr;
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-
-    case ({},bt) then bt;
-
-    case ((v :: vs),bt)
-      equation
-        BackendDAE.STATE() = BackendVariable.varKind(v);
-        cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
-/*  is not realy a state
-    case ((v :: vs),bt)
-      equation
-        BackendDAE.DUMMY_STATE() = BackendVariable.varKind(v);
-        cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
-*/
-    case ((v :: vs),bt)
-      equation
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
-  end matchcontinue;
-end statesDaelow2;
 
 public function extendArrExp "
 Author: Frenkel TUD 2010-07"
@@ -3536,27 +3255,6 @@ algorithm
   end matchcontinue;
 end replaceDummyDerOthersExp;
 
-public function varEqual
-"function: varEqual
-  author: PA
-  Returns true if two Vars are equal."
-  input BackendDAE.Var inVar1;
-  input BackendDAE.Var inVar2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVar1,inVar2)
-    local
-      Boolean res;
-      DAE.ComponentRef cr1,cr2;
-    case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
-      equation
-        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
-      then
-        res;
-  end matchcontinue;
-end varEqual;
-
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;
@@ -3853,7 +3551,6 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end varHasSameLastIdent;
-
 
 protected function varStateSelectHeuristicPrio2
 "function varStateSelectHeuristicPrio2
@@ -4294,35 +3991,6 @@ algorithm
         fail();
   end matchcontinue;
 end equationAdd;
-
-public function systemSize "returns the size of the dae system"
-input BackendDAE.DAELow dae;
-output Integer n;
-algorithm
-  n := matchcontinue(dae)
-  local BackendDAE.EquationArray eqns;
-    case(BackendDAE.DAELOW(orderedEqs = eqns))
-      equation
-        n = BackendDAEUtil.equationSize(eqns);
-      then n;
-
-  end matchcontinue;
-end systemSize;
-
-public function varsSize "function: varsSize
-  author: PA
-
-  Returns the number of variables
-"
-  input BackendDAE.Variables inVariables;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  matchcontinue (inVariables)
-    local BackendDAE.Value n;
-    case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
-  end matchcontinue;
-end varsSize;
 
 public function equationSetnth "function: equationSetnth
   author: PA
@@ -7571,43 +7239,6 @@ algorithm
   end matchcontinue;
 end bintreeDepth;
 
-public function isVarKnown "function: isVarKnown
-  author: PA
-
-  Returns true if the the variable is present in the variable list.
-  This is done by traversing the list, searching for a matching variable
-  name.
-"
-  input list<BackendDAE.Var> inVarLst;
-  input DAE.ComponentRef inComponentRef;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inVarLst,inComponentRef)
-    local
-      DAE.ComponentRef var_name,cr;
-      BackendDAE.Var variable;
-      BackendDAE.Value indx;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<BackendDAE.Var> rest;
-      Boolean res;
-    case ({},var_name) then false;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
-      then
-        true;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
-      equation
-        res = isVarKnown(rest, var_name);
-      then
-        res;
-  end matchcontinue;
-end isVarKnown;
-
 public function getAllExps "function: getAllExps
   author: PA
 
@@ -9255,7 +8886,7 @@ algorithm
       se = generadeDivExpErrorMsg(e,e2,vars);
       /* check if expression contains variables */
       crlst = Expression.extractCrefsFromExp(e2);
-      boollst = Util.listMap1r(crlst,isVarKnown,varlst);
+      boollst = Util.listMap1r(crlst,BackendVariables.isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
     then (se,bres);
 end matchcontinue;

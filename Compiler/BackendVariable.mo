@@ -61,6 +61,69 @@ protected import Util;
  * =======================================================
  */
 
+public function isVarKnown "function: isVarKnown
+  author: PA
+
+  Returns true if the the variable is present in the variable list.
+  This is done by traversing the list, searching for a matching variable
+  name.
+"
+  input list<BackendDAE.Var> inVarLst;
+  input DAE.ComponentRef inComponentRef;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVarLst,inComponentRef)
+    local
+      DAE.ComponentRef var_name,cr;
+      BackendDAE.Var variable;
+      BackendDAE.Value indx;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      list<BackendDAE.Var> rest;
+      Boolean res;
+    case ({},var_name) then false;
+    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
+      then
+        true;
+    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
+      equation
+        res = isVarKnown(rest, var_name);
+      then
+        res;
+  end matchcontinue;
+end isVarKnown;
+
+
+
+
+public function varEqual
+"function: varEqual
+  author: PA
+  Returns true if two Vars are equal."
+  input BackendDAE.Var inVar1;
+  input BackendDAE.Var inVar2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar1,inVar2)
+    local
+      Boolean res;
+      DAE.ComponentRef cr1,cr2;
+    case (BackendDAE.VAR(varName = cr1),BackendDAE.VAR(varName = cr2))
+      equation
+        res = ComponentReference.crefEqualNoStringCompare(cr1, cr2) "A BackendDAE.Var is identified by its component reference" ;
+      then
+        res;
+  end matchcontinue;
+end varEqual;
+
+
+
 public function setVarFixed
 "function: setVarFixed
   author: PA
@@ -1095,6 +1158,158 @@ end vararrayNth;
  *
  * =======================================================
  */
+
+public function varsSize "function: varsSize
+  author: PA
+
+  Returns the number of variables
+"
+  input BackendDAE.Variables inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger:=
+  matchcontinue (inVariables)
+    local BackendDAE.Value n;
+    case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
+  end matchcontinue;
+end varsSize;
+
+
+
+public function isVariable
+"function: isVariable
+
+  This function takes a DAE.ComponentRef and two Variables. It searches
+  the two sets of variables and succeed if the variable is STATE or
+  VARIABLE. Otherwise it fails.
+  Note: An array variable is currently assumed that each scalar element has
+  the same type.
+  inputs:  (DAE.ComponentRef,
+              Variables, /* vars */
+              Variables) /* known vars */
+  outputs: ()"
+  input DAE.ComponentRef inComponentRef1;
+  input BackendDAE.Variables inVariables2;
+  input BackendDAE.Variables inVariables3;
+algorithm
+  _:=
+  matchcontinue (inComponentRef1,inVariables2,inVariables3)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars,knvars;
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, vars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = BackendVariable.getVar(cr, knvars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = BackendVariable.getVar(cr, knvars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = BackendVariable.getVar(cr, knvars);
+      then
+        ();
+  end matchcontinue;
+end isVariable;
+
+public function moveVariables
+"function: moveVariables
+  This function takes the two variable lists of a dae (states+alg) and
+  known vars and moves a set of variables from the first to the second set.
+  This function is needed to manage this in complexity O(n) by only
+  traversing the set once for all variables.
+  inputs:  (algAndState: Variables, /* alg+state */
+              known: Variables,       /* known */
+              binTree: BinTree)       /* vars to move from first7 to second */
+  outputs:  (Variables,        /* updated alg+state vars */
+               Variables)             /* updated known vars */
+"
+  input BackendDAE.Variables inVariables1;
+  input BackendDAE.Variables inVariables2;
+  input BackendDAE.BinTree inBinTree3;
+  output BackendDAE.Variables outVariables1;
+  output BackendDAE.Variables outVariables2;
+algorithm
+  (outVariables1,outVariables2):=
+  matchcontinue (inVariables1,inVariables2,inBinTree3)
+    local
+      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
+      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
+      BackendDAE.BinTree mvars;
+    case (vars1,vars2,mvars)
+      equation
+        lst1 = BackendDAEUtil.varList(vars1);
+        lst2 = BackendDAEUtil.varList(vars2);
+        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
+        v1 = BackendDAEUtil.emptyVars();
+        v2 = BackendDAEUtil.emptyVars();
+        vars = BackendVariable.addVars(lst1_1, v1);
+        knvars = BackendVariable.addVars(lst2_1, v2);
+      then
+        (vars,knvars);
+  end matchcontinue;
+end moveVariables;
+
+protected function moveVariables2
+"function: moveVariables2
+  helper function to move_variables.
+  inputs:  (Var list,  /* alg+state vars as list */
+              BackendDAE.Var list,  /* known vars as list */
+              BinTree)  /* move-variables as BackendDAE.BinTree */
+  outputs: (Var list,  /* updated alg+state vars as list */
+              BackendDAE.Var list)  /* update known vars as list */"
+  input list<BackendDAE.Var> inVarLst1;
+  input list<BackendDAE.Var> inVarLst2;
+  input BackendDAE.BinTree inBinTree3;
+  output list<BackendDAE.Var> outVarLst1;
+  output list<BackendDAE.Var> outVarLst2;
+algorithm
+  (outVarLst1,outVarLst2):=
+  matchcontinue (inVarLst1,inVarLst2,inBinTree3)
+    local
+      list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      BackendDAE.BinTree mvars;
+    case ({},knvars,_) then ({},knvars);
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+      equation
+        _ = treeGet(mvars, cr) "alg var moved to known vars" ;
+        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+      then
+        (vs_1,(v :: knvars_1));
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+      equation
+        failure(_ = treeGet(mvars, cr)) "alg var not moved to known vars" ;
+        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+      then
+        ((v :: vs_1),knvars_1);
+  end matchcontinue;
+end moveVariables2;
+
 
 
 public function isTopLevelInputOrOutput
