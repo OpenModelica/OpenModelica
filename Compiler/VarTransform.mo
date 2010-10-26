@@ -110,6 +110,7 @@ type Value2 = list<DAE.ComponentRef>;
 
 protected import Absyn;
 protected import Algorithm;
+protected import BaseHashTable;
 protected import Exp;
 protected import System;
 protected import Util;
@@ -197,7 +198,7 @@ algorithm
       DAE.Function f1,f2;
 
       // if no replacements, return dae, no need to traverse.
-    case(dae,REPLACEMENTS(HashTable2.HASHTABLE(numberOfEntries=0),_),condExpFunc) then dae;
+    case(dae,REPLACEMENTS((_,_,_,0,_),_),condExpFunc) then dae;
 
     case({},repl,condExpFunc) then {};
 
@@ -788,7 +789,7 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable= ht))
       equation
-        (tplLst) = HashTable2.hashTableList(ht);
+        (tplLst) = BaseHashTable.hashTableList(ht);
         str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
         print("Replacements: (");
         len = listLength(tplLst);
@@ -819,7 +820,7 @@ algorithm ostr := matchcontinue (inVariableReplacements)
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable = ht))
       equation
-        (tplLst) = HashTable2.hashTableList(ht);
+        (tplLst) = BaseHashTable.hashTableList(ht);
         str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
         s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
       then
@@ -840,7 +841,7 @@ algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
     case (REPLACEMENTS(hashTable = ht))
       equation
-        tplLst = HashTable2.hashTableList(ht);
+        tplLst = BaseHashTable.hashTableList(ht);
         crefs = Util.listMap(tplLst,Util.tuple21);
         dsts = Util.listMap(tplLst,Util.tuple22);
       then
@@ -867,7 +868,7 @@ algorithm
     HashTable2.HashTable ht;
     case (REPLACEMENTS(ht,_))
       equation
-          sources = HashTable2.hashTableKeyList(ht);
+          sources = BaseHashTable.hashTableKeyList(ht);
       then sources;
   end matchcontinue;
 end replacementSources;
@@ -884,7 +885,7 @@ algorithm
 
     case (REPLACEMENTS(ht,_))
       equation
-        targets = HashTable2.hashTableValueList(ht);
+        targets = BaseHashTable.hashTableValueList(ht);
         targets2 = Util.listFlatten(Util.listMap(targets,Exp.extractCrefsFromExp));
       then 
         targets2;
@@ -916,7 +917,7 @@ algorithm
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
      // equation
-     //   olddst = HashTable2.get(src, ht) "if rule a->b exists, fail" ;
+     //   olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail" ;
      // then
      //   fail();
      
@@ -932,7 +933,7 @@ algorithm
           ", ",s4,")\n"});
           print(s);
         Debug.fprint("addrepl", s);*/
-        ht_1 = HashTable2.add((src_1, dst_1),ht);
+        ht_1 = BaseHashTable.add((src_1, dst_1),ht);
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
       then
         REPLACEMENTS(ht_1,invHt_1);
@@ -957,7 +958,7 @@ algorithm
       VariableReplacements repl,repl1;
     case (repl as REPLACEMENTS(ht,invHt))
       equation
-        tplLst = HashTable2.hashTableList(ht);
+        tplLst = BaseHashTable.hashTableList(ht);
         (repl1,_) = addMultiDimReplacements1(repl,tplLst);
       then repl1;
     case (repl) then repl;
@@ -1115,7 +1116,7 @@ algorithm
       equation
         true = intEq(i,1);
         // add to hashtable
-        ht_1 = HashTable2.add((src, e),ht);
+        ht_1 = BaseHashTable.add((src, e),ht);
         invHt_1 = addReplacementInv(invHt, src, e);
         tplLst1 = listAppend({(src, e)},tplLst);       
         (repl,alst1,tplLst3,tplLst2) = addMultiDimReplacements2(REPLACEMENTS(ht_1,invHt_1),alst,tplLst1,{});
@@ -1147,12 +1148,12 @@ algorithm
       String s1,s2,s3,s4,s;
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
       equation
-        olddst = HashTable2.get(src,ht) "if rule a->b exists, fail" ;
+        olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
       equation
-        ht_1 = HashTable2.add((src, dst),ht);
+        ht_1 = BaseHashTable.add((src, dst),ht);
         invHt_1 = addReplacementInv(invHt, src, dst);
       then
         REPLACEMENTS(ht_1,invHt_1);
@@ -1342,7 +1343,7 @@ algorithm
       HashTable2.HashTable ht;
     case({},repl,_) then repl;
     case(cr::crs,repl as REPLACEMENTS(hashTable=ht),singleRepl) equation
-      crDst = HashTable2.get(cr,ht);
+      crDst = BaseHashTable.get(cr,ht);
       crDst = replaceExp(crDst,singleRepl,NONE());
       repl1=addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
       repl2 = makeTransitive12(crs,repl1,singleRepl);
@@ -1428,7 +1429,7 @@ algorithm
       HashTable2.HashTable ht;
     case (REPLACEMENTS(hashTable=ht),src)
       equation
-        dst = HashTable2.get(src,ht);
+        dst = BaseHashTable.get(src,ht);
       then
         dst;
   end matchcontinue;

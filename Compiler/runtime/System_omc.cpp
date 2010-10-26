@@ -71,4 +71,55 @@ extern int System_hash(unsigned char* str)
   return djb2_hash(str);
 }
 
+/* Old RML impl.
+void         *rml_external_roots_trail[1024] = {0};
+rml_uint_t    rml_external_roots_trail_size = 1024;
+rml_uint_t    rml_external_roots_trail_index_max = 0;
+
+// forward my external roots
+void rml_user_gc(struct rml_xgcstate *state)
+{
+  rml_user_gc_callback(state, rml_external_roots_trail, rml_external_roots_trail_index_max*sizeof(void*));
+}
+
+RML_BEGIN_LABEL(System__addToRoots)
+{
+    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
+
+    if (rml_trace_enabled)
+    {
+      fprintf(stderr, "System__addToRoots\n"); fflush(stderr);
+    }
+
+    if (i >= rml_external_roots_trail_size)
+      RML_TAILCALLK(rmlFC);
+
+    rml_external_roots_trail[i] = rmlA1;
+
+    // remember the max
+    rml_external_roots_trail_index_max = max(rml_external_roots_trail_index_max, i+1);
+
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getFromRoots)
+{
+    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
+
+    if (rml_trace_enabled)
+    {
+      fprintf(stderr, "System__getFromRoots\n"); fflush(stderr);
+    }
+
+    if (i > rml_external_roots_trail_index_max || i >= rml_external_roots_trail_size)
+      RML_TAILCALLK(rmlFC);
+
+    rmlA0 = rml_external_roots_trail[i];
+
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+*/
+
 }

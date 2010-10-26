@@ -24,6 +24,7 @@ public import ConnectionGraph;
 public import RTOpts;
 public import HashTable2;
 
+protected import BaseHashTable;
 protected import Ceval;
 protected import Util;
 protected import Error;
@@ -548,7 +549,7 @@ algorithm
 
     case(((e as DAE.CREF(componentRef = (cr as DAE.CREF_QUAL(identType=_)))),ht2))
       equation
-        tmpExp = HashTable2.get(cr,ht2);
+        tmpExp = BaseHashTable.get(cr,ht2);
       then 
         ((tmpExp,ht2));
     case((e,ht2)) then ((e,ht2));
@@ -598,7 +599,7 @@ algorithm
     case({},ht2) then ht2;
     case((cr,e)::replacements,ht2)
       equation
-        ht2 = HashTable2.add((cr,e),ht2);
+        ht2 = BaseHashTable.add((cr,e),ht2);
         ht2 = generateHashMap(replacements,ht2);
       then
         ht2;
