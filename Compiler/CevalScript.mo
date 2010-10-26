@@ -64,6 +64,7 @@ protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendDAETransform;
+protected import BackendVariable;
 protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
@@ -3828,7 +3829,7 @@ public function subtractDummy
 algorithm
   (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
     case(vars,eqnSize,varSize) equation
-      (_,_) = DAELow.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.ET_OTHER(),{}),vars);
+      (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.ET_OTHER(),{}),vars);
     then (eqnSize-1,varSize-1);
     case(vars,eqnSize,varSize) then (eqnSize,varSize);
   end matchcontinue;

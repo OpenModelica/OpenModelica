@@ -55,6 +55,7 @@ public import RTOpts;
 public import Types;
 
 protected import BackendDAETransform;
+protected import BackendVariable;
 protected import Debug;
 protected import Error;
 protected import Exp;
@@ -218,19 +219,19 @@ algorithm outExp := matchcontinue(inExp)
     equation
       // exlude time
       failure(DAE.CREF_IDENT(ident = "time",subscriptLst = {}) = cr);
-      (_,_) = DAELow.getVar(cr, timevars);
+      (_,_) = BackendVariable.getVar(cr, timevars);
     then
       ((e, (e::crefOrDerCref,derCref,timevars) ));
   // der(CREF)    
   case ( (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef = cr)}), (crefOrDerCref,derCref,timevars)) )
     equation
-      (_,_) = DAELow.getVar(cr, timevars);
+      (_,_) = BackendVariable.getVar(cr, timevars);
     then
       ((e, (e::crefOrDerCref,e1::derCref,timevars) ));
   // der(der(CREF))    
   case ( (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)})}), (crefOrDerCref,derCref,timevars)) )
     equation
-      (_,_) = DAELow.getVar(cr, timevars);
+      (_,_) = BackendVariable.getVar(cr, timevars);
     then
       ((e, (e::crefOrDerCref,e1::derCref,timevars) ));      
   case(inExp) then inExp;
@@ -339,7 +340,7 @@ algorithm
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then DAE.RCONST(1.0);
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
-        ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
+        ({BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())},_) = BackendVariable.getVar(cr, timevars);
         cr = DAELow.crefPrefixDer(cr);
       then
         DAE.CREF(cr, tp);
@@ -347,7 +348,7 @@ algorithm
 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
-        (_,_) = DAELow.getVar(cr, timevars);
+        (_,_) = BackendVariable.getVar(cr, timevars);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},false,true,tp,DAE.NO_INLINE());
 

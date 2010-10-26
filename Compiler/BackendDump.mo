@@ -44,6 +44,8 @@ public import DAE;
 
 protected import Absyn;
 protected import Algorithm;
+protected import BackendVarTransform;
+protected import BackendVariable;
 protected import DAEEXT;
 protected import DAEDump;
 protected import DAELow;
@@ -68,7 +70,7 @@ algorithm
       String sc;
     case(c,variables)
       equation
-        ((BackendDAE.VAR(varName=co):: _),_) = DAELow.getVar(c,variables);
+        ((BackendDAE.VAR(varName=co):: _),_) = BackendVariable.getVar(c,variables);
         sc = ComponentReference.printComponentRefStr(co);
       then
         sc;
@@ -939,7 +941,7 @@ algorithm
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
-        print(" fixed:");print(Util.boolString(DAELow.varFixed(v)));
+        print(" fixed:");print(Util.boolString(BackendVariable.varFixed(v)));
         print("\n");
         dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
       then
@@ -979,7 +981,7 @@ algorithm
         print(ComponentReference.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
-        print(" fixed:");print(Util.boolString(DAELow.varFixed(v)));
+        print(" fixed:");print(Util.boolString(BackendVariable.varFixed(v)));
         print("\n");
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);
@@ -1218,7 +1220,7 @@ algorithm
     case ((dae as BackendDAE.DAELOW(orderedVars = vars)),(v :: vs))
       equation
         s1 = dumpMarkedVars(dae, vs);
-        BackendDAE.VAR(varName = cr) = DAELow.getVarAt(vars, v);
+        BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);
         s2 = ComponentReference.printComponentRefStr(cr);
         s3 = intString(v);
         res = stringAppendList({s2,"(",s3,"), ",s1});

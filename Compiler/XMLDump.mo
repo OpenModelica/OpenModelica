@@ -90,6 +90,7 @@ public import RTOpts;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
+protected import BackendVariable;
 protected import DAEUtil;
 protected import Dump;
 protected import Exp;
@@ -3331,7 +3332,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
+                     intString(indx),Util.boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),
                      dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3400,7 +3401,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
+                        Util.boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the

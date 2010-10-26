@@ -734,7 +734,7 @@ algorithm
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
+        ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = BackendVariable.vararrayNth(vararr, v_1);
         cr1 = Exp.extractCrefsFromExp(e1);
         cr2 = Exp.extractCrefsFromExp(e2);
         crs = listAppend(cr1, cr2);

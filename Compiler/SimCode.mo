@@ -1776,9 +1776,9 @@ algorithm
         outputvars = Util.listSelect(varlst,DAELow.isVarOnTopLevelAndOutput);
 	      outputvars = Util.sort(outputvars, BackendVariable.varIndexComparer);
 
-        comref_states = Util.listMap(states,DAELow.varCref);
-        comref_inputvars = Util.listMap(inputvars2,DAELow.varCref);
-        comref_outputvars = Util.listMap(outputvars,DAELow.varCref);
+        comref_states = Util.listMap(states,BackendVariable.varCref);
+        comref_inputvars = Util.listMap(inputvars2,BackendVariable.varCref);
+        comref_outputvars = Util.listMap(outputvars,BackendVariable.varCref);
         
         //e_lst = replaceDerOpInEquationList(e_lst);
         //e_lst = solveDAELow(e_lst, varlst, arrayList(ass2));
@@ -2451,7 +2451,7 @@ algorithm
         // remove those vars that are solved in when equations
         //vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
         // replace var with cref
-        vLst2 = Util.listMap(vLst, DAELow.varCref);
+        vLst2 = Util.listMap(vLst, BackendVariable.varCref);
       then vLst2;
   end matchcontinue;
 end extractDiscreteModelVars;
@@ -2887,7 +2887,7 @@ algorithm
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
-        true = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
+        true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
       then
@@ -2905,7 +2905,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
-        false = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
+        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
@@ -3003,7 +3003,7 @@ algorithm
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
-        true = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
+        true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
       then
@@ -3021,7 +3021,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
-        false = ComponentReference.crefEqualNoStringCompare(DAELow.varCref(v),varOutput);
+        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
@@ -3483,7 +3483,7 @@ algorithm
         eqn_lst = BackendDAEUtil.equationList(eqn);
         var_lst = BackendDAEUtil.varList(v);
         // get names from variables
-        crefs = Util.listMap(var_lst, DAELow.varCref);
+        crefs = Util.listMap(var_lst, BackendVariable.varCref);
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         crefs1 = Util.listAddElementFirst(ComponentReference.makeCrefIdent("shift",DAE.ET_REAL(),{}),crefs);
@@ -3564,7 +3564,7 @@ algorithm
     case ({},_) then {};
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
       equation
-        cr = DAELow.varCref(v);
+        cr = BackendVariable.varCref(v);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = solve(e1, e2, varexp);
         restEqs = extractDiscEqs(eqns, vs);
@@ -3722,7 +3722,7 @@ algorithm
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
         var_lst = BackendDAEUtil.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCref);
+        crefs = Util.listMap(var_lst, BackendVariable.varCref);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -3735,7 +3735,7 @@ algorithm
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
         var_lst = BackendDAEUtil.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCref);
+        crefs = Util.listMap(var_lst, BackendVariable.varCref);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -3900,7 +3900,7 @@ algorithm
         // get non relaxation equations
         block_1 = Util.listSelect1(block_,r,Util.listNotContains);
         // get names from variables
-        crefs = Util.listMap(var_lst, DAELow.varCref);
+        crefs = Util.listMap(var_lst, BackendVariable.varCref);
         // generade replacement from non residual eqns           
         repl = VarTransform.emptyReplacements();
         (repl_1,eqns) = getRelaxationReplacements(block_1,ass2,crefs,eqn_lst,repl);
@@ -4324,7 +4324,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
-        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),DAELow.varCref);
+        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
@@ -4336,7 +4336,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
-        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),DAELow.varCref);
+        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
 
         // The variables solved for and the output variables of the algorithm must be the same.
@@ -4736,7 +4736,7 @@ algorithm
         block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (dlowvar as BackendDAE.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
+        (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
         simvar = dlowvarToSimvar(dlowvar);
       then
@@ -4749,7 +4749,7 @@ algorithm
       equation
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (dlowvar as BackendDAE.VAR(varName = cr)) = DAELow.getVarAt(vars, v);
+        (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
         simvar = dlowvarToSimvar(dlowvar);
       then
@@ -5595,7 +5595,7 @@ algorithm
      equation
        v = ass2[eqnIndx];
        v_1 = v - 1;
-       (var) = DAELow.vararrayNth(vararr, v_1);
+       (var) = BackendVariable.vararrayNth(vararr, v_1);
        b = hasDiscreteVar({var});
        eqnLst = selectContinuousEquations(eqnLst,eqnIndx+1,ass2,daelow);
        eqnLst = Util.if_(b,eqnLst,e::eqnLst);
@@ -5628,7 +5628,7 @@ algorithm
     case ({}) then {};
     case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)) :: vars)) /* add equations for variables with fixed = true */
       equation
-        true = DAELow.varFixed(v);
+        true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
         startv = DAEUtil.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
@@ -6104,13 +6104,13 @@ algorithm
     case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
     case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
-        BackendDAE.BOOL() = DAELow.varType(v);
+        BackendDAE.BOOL() = BackendVariable.varType(v);
         (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
       then
         (({"1.0","0.0"} :: values),(2 :: dims));
     case (rels,(v :: vs),_)
       equation
-        BackendDAE.INT() = DAELow.varType(v);
+        BackendDAE.INT() = BackendVariable.varType(v);
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables."});
       then
@@ -6164,11 +6164,11 @@ algorithm
     local Exp.ComponentRef cr1,cr;
       DAE.Exp e2;
     case (v,(eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
-      cr1=DAELow.varCref(v);
+      cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then eqn;
     case(v,(eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_) equation
-      cr1=DAELow.varCref(v);
+      cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then eqn;
     case(v,_::eqnLst) equation
@@ -6176,7 +6176,7 @@ algorithm
     then eqn;
     case(v,_) equation
       print("findDiscreteEquation failed, searching for ");
-      print(ComponentReference.printComponentRefStr(DAELow.varCref(v)));
+      print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
       print("\n");
     then fail();
   end matchcontinue;
@@ -6550,7 +6550,7 @@ algorithm
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
-        var = DAELow.getVarAt(vars, v);
+        var = BackendVariable.getVarAt(vars, v);
       then
         (eqn,var);
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
@@ -6709,16 +6709,16 @@ algorithm
       equation
       (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
         _::_ = Util.listSelect(var_lst,BackendDAEUtil.isVarDiscrete);
-        discVars = DAELow.addVars(var_lst,discVars);
+        discVars = BackendVariable.addVars(var_lst,discVars);
       then discVars;
 
       /* Equation has variablity discrete time */
     case(discVars,vars,knvars,eqns,blck,ass2,mT) equation
       (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, discVars, ass2);
-      var_lst = Util.listMap1(var_lst,DAELow.setVarKind,BackendDAE.DISCRETE());
-      discVars = DAELow.addVars(var_lst,discVars);
+      var_lst = Util.listMap1(var_lst,BackendVariable.setVarKind,BackendDAE.DISCRETE());
+      discVars = BackendVariable.addVars(var_lst,discVars);
       _::_ = Util.listSelect2(eqn_lst,discVars,knvars,BackendDAEUtil.isDiscreteEquation);
-      discVars = DAELow.addVars(var_lst,discVars);
+      discVars = BackendVariable.addVars(var_lst,discVars);
       then discVars;
   end matchcontinue;
 end blockSolvesDiscrete;
@@ -7165,7 +7165,7 @@ algorithm
       commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
       (unit, displayUnit) = extractVarUnit(dae_var_attr);
       initVal = getInitialValue(dlowVar);
-      isFixed = DAELow.varFixed(dlowVar);
+      isFixed = BackendVariable.varFixed(dlowVar);
       type_ = DAELow.makeExpType(tp);
       isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
       arrayCref = getArrayCref(dlowVar);

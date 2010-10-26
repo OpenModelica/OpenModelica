@@ -251,7 +251,7 @@ algorithm
         lower2(xs, functionTree, states, vars, knvars, extVars, whenclauses);
         v_1 = lowerExtObjVar(v);
         SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        extVars2 = DAELow.addVar(v_2, extVars);
+        extVars2 = BackendVariable.addVar(v_2, extVars);
       then
         (vars,knvars,extVars2,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
 
@@ -279,7 +279,7 @@ algorithm
         (v_1,SOME(e1),states) = lowerVar(v, states);
         SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         e2 = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        vars_1 = DAELow.addVar(v_2, vars);
+        vars_1 = BackendVariable.addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,BackendDAE.EQUATION(DAE.CREF(cr, DAE.ET_OTHER()), e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -291,7 +291,7 @@ algorithm
         true = isStateOrAlgvar(v);
         (v_1,NONE(),states) = lowerVar(v, states);
         SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        vars_1 = DAELow.addVar(v_2, vars);
+        vars_1 = BackendVariable.addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -302,7 +302,7 @@ algorithm
         = lower2(xs, functionTree, states, vars, knvars, extVars, whenclauses);
         v_1 = lowerKnownVar(v) "in previous rule, lower_var failed." ;
         SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        knvars_1 = DAELow.addVar(v_2, knvars);
+        knvars_1 = BackendVariable.addVar(v_2, knvars);
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -1868,7 +1868,7 @@ algorithm
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
         cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.ET_REAL(),{});
-        vars_1 = DAELow.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
@@ -1922,8 +1922,8 @@ algorithm
     case (v,{}) then v;
     case (v,(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)) :: xs))
       equation
-        ((BackendDAE.VAR(cr,_,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = DAELow.getVar(cr, v);
-        v_1 = DAELow.addVar(BackendDAE.VAR(cr,BackendDAE.DISCRETE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), v);
+        ((BackendDAE.VAR(cr,_,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, v);
+        v_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DISCRETE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), v);
         v_2 = detectImplicitDiscrete(v_1, xs);
       then
         v_2;
@@ -2504,8 +2504,8 @@ algorithm
     case(vars,{}) then vars;
     case(vars,cr::newStates)
       equation
-        ((BackendDAE.VAR(cr1,kind,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = DAELow.getVar(cr, vars);
-        vars = DAELow.addVar(BackendDAE.VAR(cr1,BackendDAE.STATE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), vars);
+        ((BackendDAE.VAR(cr1,kind,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars);
+        vars = BackendVariable.addVar(BackendDAE.VAR(cr1,BackendDAE.STATE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), vars);
         vars = updateStatesVars(vars,newStates);
       then vars;
     case(vars,cr::newStates)

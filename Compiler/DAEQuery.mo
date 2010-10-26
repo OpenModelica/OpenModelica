@@ -44,6 +44,7 @@ import SCode;
 
 protected
 import BackendDAEUtil;
+import BackendVariable;
 import System;
 import Util;
 import Exp;
@@ -707,7 +708,7 @@ algorithm
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
-        DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
+        BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
 	                               x is inserted as negative value, since it is needed by debugging and index
 	                               reduction using dummy derivatives" ;
         p_1 = Util.listMap1r(p, int_sub, 0);
@@ -716,25 +717,25 @@ algorithm
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
@@ -866,20 +867,20 @@ algorithm
         pStr;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        (_,p) = DAELow.getVar(cr, vars);
+        (_,p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         {};
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* pre(v) is considered a known variable */ //IS IT????
       local String ss;
       equation
-        (_,p) = DAELow.getVar(cr, vars);
+        (_,p) = BackendVariable.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
         //ss = printExpStr(cr, vars);
         //pStr = ss;

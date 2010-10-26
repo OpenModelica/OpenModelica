@@ -206,7 +206,7 @@ algorithm
 		    cr = ComponentReference.makeCrefIdent(ident,DAE.ET_INT(),{});
 		    var = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
 		          DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
-		    vars = DAELow.addVar(var,vars);
+		    vars = BackendVariable.addVar(var,vars);
 		  then
 		    ((e, (vars,crefs)));
 		/* case for functionpointers */    
@@ -215,12 +215,12 @@ algorithm
 		    ((e, (vars,crefs)));		    
 		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
 		  equation
-		     (_,_) = DAELow.getVar(cr, vars);
+		     (_,_) = BackendVariable.getVar(cr, vars);
 		  then
 		    ((e, (vars,crefs)));
 		case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
 		  equation
-		     failure((_,_) = DAELow.getVar(cr, vars));
+		     failure((_,_) = BackendVariable.getVar(cr, vars));
 		  then
 		    ((e, (vars,cr::crefs)));
 		case (_) then inTuple;
@@ -610,7 +610,7 @@ algorithm
     case ((v :: vs))
       equation
         vars = listVar(vs);
-        vars_1 = DAELow.addVar(v, vars);
+        vars_1 = BackendVariable.addVar(v, vars);
       then
         vars_1;
   end matchcontinue;
@@ -734,7 +734,7 @@ algorithm
 
     case (DAE.CREF(componentRef = cr),vars,knvars)
       equation
-        ((BackendDAE.VAR(varKind = kind) :: _),_) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, vars);
         res = isKindDiscrete(kind);
       then
         res;
@@ -746,8 +746,8 @@ algorithm
     case (DAE.CREF(componentRef = cr),vars,knvars)
       local BackendDAE.Var v;
       equation
-        failure((_,_) = DAELow.getVar(cr, vars));
-        (v::_,_) = DAELow.getVar(cr,knvars);
+        failure((_,_) = BackendVariable.getVar(cr, vars));
+        (v::_,_) = BackendVariable.getVar(cr,knvars);
         true = isInput(v);
       then
         false;
@@ -755,8 +755,8 @@ algorithm
         /* parameters & constants */
     case (DAE.CREF(componentRef = cr),vars,knvars)
       equation
-        failure((_,_) = DAELow.getVar(cr, vars));
-        ((BackendDAE.VAR(varKind = kind) :: _),_) = DAELow.getVar(cr, knvars);
+        failure((_,_) = BackendVariable.getVar(cr, vars));
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, knvars);
         res = isKindDiscrete(kind);
       then
         res;
@@ -1094,7 +1094,7 @@ algorithm
         res; 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
       equation
-        (_,_) = DAELow.getVar(cr, vars);
+        (_,_) = BackendVariable.getVar(cr, vars);
       then
         {e};
     case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
@@ -1138,12 +1138,12 @@ algorithm
         res;
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = DAELow.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
       then
         {e};
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        (_,p) = DAELow.getVar(cr, vars);
+        (_,p) = BackendVariable.getVar(cr, vars);
       then
         {};
     case (DAE.CALL(expLst = expl),vars)
@@ -1349,8 +1349,8 @@ algorithm
         
     case (DAE.CREF(componentRef = cref), _, _, _)
       equation
-        (arrayElements, _) = DAELow.getVar(cref, vars);
-        varCrefs = Util.listMap(arrayElements, DAELow.varCref);
+        (arrayElements, _) = BackendVariable.getVar(cref, vars);
+        varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
         varExprs = Util.listMap(varCrefs, Exp.crefExp);
       then varExprs;
 
@@ -1358,8 +1358,8 @@ algorithm
       equation
         // If the range is not constant, then we just extract all array elements
         // of the array.
-        (arrayElements, _) = DAELow.getVar(cref, vars);
-        varCrefs = Util.listMap(arrayElements, DAELow.varCref);
+        (arrayElements, _) = BackendVariable.getVar(cref, vars);
+        varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
         varExprs = Util.listMap(varCrefs, Exp.crefExp);
       then varExprs;
       
@@ -1746,7 +1746,7 @@ algorithm
       BackendDAE.Value v_indx,v_indx_1;
     case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
-        (_,v_indxs) = DAELow.getVar(cr, vars);
+        (_,v_indxs) = BackendVariable.getVar(cr, vars);
         v_indxs_1 = Util.listMap1(v_indxs, int_sub, 1);
         eqns = Util.listMap1r(v_indxs_1, arrayNth, a1);
         ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
@@ -1754,7 +1754,7 @@ algorithm
         ((dae,arr_1,m,mt,a1,a2));
     case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
-        failure((_,_) = DAELow.getVar(cr, vars));
+        failure((_,_) = BackendVariable.getVar(cr, vars));
         print("mark_state_equation var ");
         s = ComponentReference.printComponentRefStr(cr);
         print(s);
@@ -1763,7 +1763,7 @@ algorithm
         fail();
     case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
-        (_,{v_indx}) = DAELow.getVar(cr, vars);
+        (_,{v_indx}) = BackendVariable.getVar(cr, vars);
         v_indx_1 = v_indx - 1;
         failure(eqn = a1[v_indx_1 + 1]);
         print("mark_state_equation index =");
@@ -1999,6 +1999,53 @@ algorithm
   end matchcontinue;
 end varsInEqn;
 
+public function subscript2dCombinations
+"function: susbscript_2d_combinations
+  This function takes two lists of list of subscripts and combines them in
+  all possible combinations. This is used when finding all indexes of a 2d
+  array.
+  For instance, subscript2dCombinations({{a},{b},{c}},{{x},{y},{z}})
+  => {{a,x},{a,y},{a,z},{b,x},{b,y},{b,z},{c,x},{c,y},{c,z}}
+  inputs:  (DAE.Subscript list list /* dim1 subs */,
+              DAE.Subscript list list /* dim2 subs */)
+  outputs: (DAE.Subscript list list)"
+  input list<list<DAE.Subscript>> inExpSubscriptLstLst1;
+  input list<list<DAE.Subscript>> inExpSubscriptLstLst2;
+  output list<list<DAE.Subscript>> outExpSubscriptLstLst;
+algorithm
+  outExpSubscriptLstLst := matchcontinue (inExpSubscriptLstLst1,inExpSubscriptLstLst2)
+    local
+      list<list<DAE.Subscript>> lst1,lst2,res,ss,ss2;
+      list<DAE.Subscript> s1;
+    case ({},_) then {};
+    case ((s1 :: ss),ss2)
+      equation
+        lst1 = subscript2dCombinations2(s1, ss2);
+        lst2 = subscript2dCombinations(ss, ss2);
+        res = listAppend(lst1, lst2);
+      then
+        res;
+  end matchcontinue;
+end subscript2dCombinations;
+
+protected function subscript2dCombinations2
+  input list<DAE.Subscript> inExpSubscriptLst;
+  input list<list<DAE.Subscript>> inExpSubscriptLstLst;
+  output list<list<DAE.Subscript>> outExpSubscriptLstLst;
+algorithm
+  outExpSubscriptLstLst := matchcontinue (inExpSubscriptLst,inExpSubscriptLstLst)
+    local
+      list<list<DAE.Subscript>> lst1,ss2;
+      list<DAE.Subscript> elt1,ss,s2;
+    case (_,{}) then {};
+    case (ss,(s2 :: ss2))
+      equation
+        lst1 = subscript2dCombinations2(ss, ss2);
+        elt1 = listAppend(ss, s2);
+      then
+        (elt1 :: lst1);
+  end matchcontinue;
+end subscript2dCombinations2;
 
 
 end BackendDAEUtil;
