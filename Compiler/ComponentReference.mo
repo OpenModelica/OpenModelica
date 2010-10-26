@@ -55,7 +55,7 @@ protected import Util;
 
 
 /***************************************************/
-/* Generate  */
+/* generate a ComponentRef */
 /***************************************************/
 
 
@@ -84,7 +84,7 @@ end makeCrefQual;
 
 
 /***************************************************/
-/* Transform  */
+/* transform to other types */
 /***************************************************/
 
 public function crefToPath
@@ -498,215 +498,6 @@ algorithm
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
 
-/***************************************************/
-/* Get Items  */
-/***************************************************/
-
-
-public function crefLastPath
-  "Returns the last identifier of a cref as an Absyn.IDENT."
-  input DAE.ComponentRef inComponentRef;
-  output Absyn.Path outPath;
-algorithm
-  outPath := matchcontinue(inComponentRef)
-    local
-      DAE.Ident i;
-      DAE.ComponentRef c;
-    case DAE.CREF_IDENT(ident = i, subscriptLst = {}) then Absyn.IDENT(i);
-    case DAE.CREF_QUAL(componentRef = c, subscriptLst = {}) then crefLastPath(c);
-  end matchcontinue;
-end crefLastPath;
-
-public function crefLastIdent
-"function: crefLastIdent
-  author: PA
-  Returns the last identfifier of a ComponentRef."
-  input DAE.ComponentRef inComponentRef;
-  output DAE.Ident outIdent;
-algorithm
-  outIdent:=
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id,res;
-      DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id)) then id;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastIdent(cr);
-      then
-        res;
-  end matchcontinue;
-end crefLastIdent;
-
-public function crefLastCref "
-  Return the last ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output DAE.ComponentRef outComponentRef;
-algorithm 
-  outComponentRef:= 
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id;
-      DAE.ComponentRef res,cr;
-    case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastCref(cr);
-      then
-        res;
-  end matchcontinue;
-end crefLastCref;
-
-public function crefType "Function: crefType 
-Function for extracting the type out of the first cref of a componentReference. 
-"
-  input DAE.ComponentRef inRef;
-  output DAE.ExpType res;
-algorithm
-  res :=
-  matchcontinue (inRef)
-    local
-      DAE.ExpType t2;
-      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
-      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
-      case(inRef)
-        local String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
-          s = printComponentRefStr(inRef);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
-  end matchcontinue;
-end crefType;
-
-public function crefLastType "returns the 'last' type of a cref.
-
-For instance, for the cref 'a.b' it returns the type in identifier 'b'
-"
-  input DAE.ComponentRef inRef;
-  output DAE.ExpType res;
-algorithm
-  res :=
-  matchcontinue (inRef)
-    local
-      DAE.ExpType t2; 
-      DAE.ComponentRef cr;
-      case(inRef as DAE.CREF_IDENT(_,t2,_))
-        then
-          t2;
-      case(inRef as DAE.CREF_QUAL(_,_,_,cr))
-        then
-          crefLastType(cr);
-  end matchcontinue;
-end crefLastType;
-
-public function crefSubs "
-function: crefSubs
-  Return the all subscripts of a ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output list<DAE.Subscript> outSubscriptLst;
-algorithm
-  outSubscriptLst:=
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id;
-      list<DAE.Subscript> subs,res;
-      DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
-      then subs;
-    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
-      equation
-        res = crefSubs(cr);
-        res = listAppend(subs,res);
-      then
-        res;
-  end matchcontinue;
-end crefSubs;
-
-public function crefLastSubs "
-function: crefLastSubs
-  Return the last subscripts of a ComponentRef"
-  input DAE.ComponentRef inComponentRef;
-  output list<DAE.Subscript> outSubscriptLst;
-algorithm
-  outSubscriptLst:=
-  matchcontinue (inComponentRef)
-    local
-      DAE.Ident id;
-      list<DAE.Subscript> subs,res;
-      DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastSubs(cr);
-      then
-        res;
-  end matchcontinue;
-end crefLastSubs;
-
-public function crefFirstCref
-"Returns the first part of a component reference, i.e the identifier"
-  input DAE.ComponentRef inCr;
-  output DAE.ComponentRef outCr;
-algorithm
-  outCr := matchcontinue(inCr)
-    local 
-      DAE.Ident id;
-      list<DAE.Subscript> subs;
-      DAE.ComponentRef cr;
-      DAE.ExpType t2;
-    
-    case( DAE.CREF_QUAL(id,t2,subs,cr)) then DAE.CREF_IDENT(id,t2,{});
-    case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
-  end matchcontinue;
-end crefFirstCref;
-
-public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
-Author: PA
-Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
-For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
-one dimension is lifted.
-See also, crefType.
-"
-  input DAE.ComponentRef cr;
-  output DAE.ExpType res;
-algorithm 
- res := Exp.unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
-end crefTypeConsiderSubs;
-
-public function crefNameType "Function: crefType
-Function for extracting the name and type out of the first cref of a componentReference.
-"
-  input DAE.ComponentRef inRef;
-  output DAE.Ident id;
-  output DAE.ExpType res;
-algorithm
-  (id,res) :=
-  matchcontinue (inRef)
-    local
-      DAE.ExpType t2;
-      DAE.Ident name;
-      case(inRef as DAE.CREF_IDENT(name,t2,_))
-        then
-          (name,t2);
-      case(inRef as DAE.CREF_QUAL(name,t2,_,_))
-        then
-          (name,t2);
-      case(inRef)
-        local String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
-          s = printComponentRefStr(inRef);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
-  end matchcontinue;
-end crefNameType;
 
 /***************************************************/
 /* Compare  */
@@ -1275,6 +1066,217 @@ algorithm ob := matchcontinue(inExp,ad)
 end containWholeDim3;
 
 /***************************************************/
+/* Getter  */
+/***************************************************/
+
+
+public function crefLastPath
+  "Returns the last identifier of a cref as an Absyn.IDENT."
+  input DAE.ComponentRef inComponentRef;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inComponentRef)
+    local
+      DAE.Ident i;
+      DAE.ComponentRef c;
+    case DAE.CREF_IDENT(ident = i, subscriptLst = {}) then Absyn.IDENT(i);
+    case DAE.CREF_QUAL(componentRef = c, subscriptLst = {}) then crefLastPath(c);
+  end matchcontinue;
+end crefLastPath;
+
+public function crefLastIdent
+"function: crefLastIdent
+  author: PA
+  Returns the last identfifier of a ComponentRef."
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Ident outIdent;
+algorithm
+  outIdent:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id)) then id;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastIdent(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastIdent;
+
+public function crefLastCref "
+  Return the last ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:= 
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      DAE.ComponentRef res,cr;
+    case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastCref(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastCref;
+
+public function crefType "Function: crefType 
+Function for extracting the type out of the first cref of a componentReference. 
+"
+  input DAE.ComponentRef inRef;
+  output DAE.ExpType res;
+algorithm
+  res :=
+  matchcontinue (inRef)
+    local
+      DAE.ExpType t2;
+      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
+      case(inRef)
+        local String s;
+        equation
+					true = RTOpts.debugFlag("failtrace");
+          Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
+          s = printComponentRefStr(inRef);
+          Debug.fprint("failtrace", s);
+          Debug.fprint("failtrace", "\n");
+        then
+          fail();
+  end matchcontinue;
+end crefType;
+
+public function crefLastType "returns the 'last' type of a cref.
+
+For instance, for the cref 'a.b' it returns the type in identifier 'b'
+"
+  input DAE.ComponentRef inRef;
+  output DAE.ExpType res;
+algorithm
+  res :=
+  matchcontinue (inRef)
+    local
+      DAE.ExpType t2; 
+      DAE.ComponentRef cr;
+      case(inRef as DAE.CREF_IDENT(_,t2,_))
+        then
+          t2;
+      case(inRef as DAE.CREF_QUAL(_,_,_,cr))
+        then
+          crefLastType(cr);
+  end matchcontinue;
+end crefLastType;
+
+public function crefSubs "
+function: crefSubs
+  Return the all subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
+      then subs;
+    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+      equation
+        res = crefSubs(cr);
+        res = listAppend(subs,res);
+      then
+        res;
+  end matchcontinue;
+end crefSubs;
+
+public function crefLastSubs "
+function: crefLastSubs
+  Return the last subscripts of a ComponentRef"
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      DAE.Ident id;
+      list<DAE.Subscript> subs,res;
+      DAE.ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
+    case (DAE.CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastSubs(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastSubs;
+
+public function crefFirstCref
+"Returns the first part of a component reference, i.e the identifier"
+  input DAE.ComponentRef inCr;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+    local 
+      DAE.Ident id;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+      DAE.ExpType t2;
+    
+    case( DAE.CREF_QUAL(id,t2,subs,cr)) then DAE.CREF_IDENT(id,t2,{});
+    case( DAE.CREF_IDENT(id,t2,subs)) then DAE.CREF_IDENT(id,t2,{});
+  end matchcontinue;
+end crefFirstCref;
+
+public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
+Author: PA
+Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
+For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
+one dimension is lifted.
+See also, crefType.
+"
+  input DAE.ComponentRef cr;
+  output DAE.ExpType res;
+algorithm 
+ res := Exp.unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
+end crefTypeConsiderSubs;
+
+public function crefNameType "Function: crefType
+Function for extracting the name and type out of the first cref of a componentReference.
+"
+  input DAE.ComponentRef inRef;
+  output DAE.Ident id;
+  output DAE.ExpType res;
+algorithm
+  (id,res) :=
+  matchcontinue (inRef)
+    local
+      DAE.ExpType t2;
+      DAE.Ident name;
+      case(inRef as DAE.CREF_IDENT(name,t2,_))
+        then
+          (name,t2);
+      case(inRef as DAE.CREF_QUAL(name,t2,_,_))
+        then
+          (name,t2);
+      case(inRef)
+        local String s;
+        equation
+					true = RTOpts.debugFlag("failtrace");
+          Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
+          s = printComponentRefStr(inRef);
+          Debug.fprint("failtrace", s);
+          Debug.fprint("failtrace", "\n");
+        then
+          fail();
+  end matchcontinue;
+end crefNameType;
+
+
+/***************************************************/
 /* Change  */
 /***************************************************/
 
@@ -1758,7 +1760,7 @@ algorithm
 end stringifyComponentRef;
 
 /***************************************************/
-/* Print  */
+/* Print and Dump */
 /***************************************************/
 
 public function printComponentRef
