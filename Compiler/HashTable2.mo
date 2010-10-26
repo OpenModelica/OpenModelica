@@ -5,13 +5,6 @@ encapsulated package HashTable2 "
 
   All rights reserved.
 
-
-  Based on HashTable.mo but
-  Key 		= DAE.ComponentRef
-  Value 	= DAE.Exp
-
-  Not used by OpenModelica!
-
   RCS: $Id$
 
   "
@@ -31,51 +24,49 @@ public import DAE;
 public import ComponentReference;
 protected import Exp;
 protected import System;
-protected import Util;
 
 public type Key = DAE.ComponentRef;
 public type Value = DAE.Exp;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
-public constant HashTableCrefFunctionsType HashTableCrefToExpFunctions = (hashFuncCref,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,Exp.printExpStr);
 public type HashTable = tuple<
-  array<list<tuple<DAE.ComponentRef,Integer>>>,
-  tuple<Integer,Integer,array<Option<tuple<DAE.ComponentRef,DAE.Exp>>>>,
+  array<list<tuple<Key,Integer>>>,
+  tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
   Integer,
   Integer,
   HashTableCrefFunctionsType
 >;
 
 partial function FuncHashCref
-  input DAE.ComponentRef cr;
+  input Key cr;
   output Integer res;
 end FuncHashCref;
 
 partial function FuncCrefEqual
-  input DAE.ComponentRef cr1;
-  input DAE.ComponentRef cr2;
+  input Key cr1;
+  input Key cr2;
   output Boolean res;
 end FuncCrefEqual;
 
 partial function FuncCrefStr
-  input DAE.ComponentRef cr;
+  input Key cr;
   output String res;
 end FuncCrefStr;
 
 partial function FuncExpStr
-  input DAE.Exp exp;
+  input Value exp;
   output String res;
 end FuncExpStr;
 
-protected function hashFuncCref
-"Calculates a hash value for DAE.ComponentRef"
-  input DAE.ComponentRef cr;
+public function hashFunc
+"Calculates a hash value for Key"
+  input Key cr;
   output Integer res;
   String crstr;
 algorithm
   crstr := ComponentReference.printComponentRefStr(cr);
   res := System.hash(crstr);
-end hashFuncCref;
+end hashFunc;
 
 public function emptyHashTable
 "
@@ -84,7 +75,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,HashTableCrefToExpFunctions);
+  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,Exp.printExpStr));
 end emptyHashTable;
 
 public function emptyHashTableSized
@@ -95,7 +86,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,HashTableCrefToExpFunctions);
+  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,Exp.printExpStr));
 end emptyHashTableSized;
 
 end HashTable2;

@@ -14,6 +14,7 @@ public import Env;
 public import HashTable;
 public import Absyn;
 
+protected import BaseHashTable;
 protected import DAEUtil;
 protected import Exp;
 protected import Interactive;
@@ -499,7 +500,7 @@ algorithm
       print("instStore, s:");
       printStore(s);
       print("\nht:");
-      HashTable.dumpHashTable(h);
+      BaseHashTable.dumpHashTable(h);
     then ();
     case(UnitAbsyn.NOSTORE()) then ();
   end matchcontinue;
@@ -681,7 +682,7 @@ algorithm
         (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
         terms = listAppend(terms,terms2);
         //print("built terms, store :"); printStore(st);
-        //print("ht =");HashTable.dumpHashTable(ht);
+        //print("ht =");BaseHashTable.dumpHashTable(ht);
         st = createTypeParameterLocations(st);
         // print("built type param, store :"); printStore(st);
         terms = listReverse(terms);
@@ -727,7 +728,7 @@ algorithm
       unit = str2unit(unitStr,NONE());
       unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
-       ht = HashTable.add((cr,indx),ht);
+       ht = BaseHashTable.add((cr,indx),ht);
     then UnitAbsyn.INSTSTORE(st,ht,res);
     case(store,(DAE.T_REAL(_::vs),optPath),cr) equation
      then instAddStore(store,(DAE.T_REAL(vs),optPath),cr);
@@ -736,7 +737,7 @@ algorithm
     case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL({}),_),cr) equation
 
       (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
-       ht = HashTable.add((cr,indx),ht);
+       ht = BaseHashTable.add((cr,indx),ht);
     then UnitAbsyn.INSTSTORE(st,ht,res);
 
     case(store,(DAE.T_COMPLEX(complexTypeOption=SOME(tp)),_),cr) equation
@@ -851,13 +852,13 @@ algorithm
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
       cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
-      indx = HashTable.get(cref_,ht);
+      indx = BaseHashTable.get(cref_,ht);
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
         cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
-        ht = HashTable.add((cref_,nextElt),ht);
+        ht = BaseHashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
 
@@ -952,14 +953,14 @@ algorithm
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = HashTable.get(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),ht);
+      indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(env,e as DAE.ICONST(i),divOrMul,ht,store) local Integer i; equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
@@ -967,7 +968,7 @@ algorithm
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     case(env,DAE.CAST(_,e1),divOrMul,ht,store) equation
@@ -975,7 +976,7 @@ algorithm
     then (ut,terms,store);
 
     case(env,e as DAE.CREF(cr,_),divOrMul,ht,store) equation
-     indx = HashTable.get(cr,ht);
+     indx = BaseHashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* special case for pow */
@@ -1316,14 +1317,14 @@ algorithm
       DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
       unit = str2unit(unitStr,NONE()); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
-      ht = HashTable.add((cr,indx),ht);
+      ht = BaseHashTable.add((cr,indx),ht);
       (store,ht) = buildStores2(DAE.DAE(elts),store,ht);
     then (store,ht);
 
     /* Failed to parse will give unspecified unit*/
     case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),store,ht) equation
       (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
-      ht = HashTable.add((cr,indx),ht);
+      ht = BaseHashTable.add((cr,indx),ht);
     then (store,ht);
 
     case(DAE.DAE(elementLst = _::elts),store,ht) equation
@@ -1379,7 +1380,7 @@ algorithm
       (store,indx) = add(unit,store);
       s1 = realString(r);
       cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
-      ht = HashTable.add((cref_,indx),ht);
+      ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
    case(DAE.CAST(_,DAE.ICONST(i)),store,ht,parentOp) equation
@@ -1387,7 +1388,7 @@ algorithm
       (store,indx) = add(unit,store);
       s1 = intString(i);
       cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
-      ht = HashTable.add((cref_,indx),ht);
+      ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
     case(DAE.BINARY(e1,op,e2),store,ht,parentOp) equation

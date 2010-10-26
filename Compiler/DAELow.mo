@@ -76,7 +76,6 @@ protected import RTOpts;
 protected import System;
 protected import Util;
 protected import DAEDump;
-protected import Inline;
 protected import ValuesUtil;
 protected import VarTransform;
 protected import BackendDAEUtil;

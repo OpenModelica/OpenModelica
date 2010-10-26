@@ -6762,4 +6762,12 @@ algorithm
   end matchcontinue;
 end isSuccess;
 
+public function id
+  input A a;
+  output A oa;
+  replaceable type A subtypeof Any;
+algorithm
+  oa := a;
+end id;
+
 end Util;

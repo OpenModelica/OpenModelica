@@ -216,6 +216,7 @@ end matchcontinue;
 end getBoundStartEquation;
 
 protected import Algorithm;
+protected import BaseHashTable;
 protected import Ceval;
 protected import Debug;
 protected import Error;
@@ -5099,7 +5100,7 @@ algorithm
           DAE.BINARY(exp,DAE.SUB(DAE.ET_REAL()),DAE.CREF(cref_1,DAE.ET_REAL())),
           DAE.DIV(DAE.ET_REAL()),
           DAE.CREF(cref_2,DAE.ET_REAL()));
-        crs1 = HashTable.add((cr,0),crs0);
+        crs1 = BaseHashTable.add((cr,0),crs0);
       then (exp,crs1);
     case (exp,crs0) then (exp,crs0);
   end matchcontinue;

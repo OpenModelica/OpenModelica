@@ -1,4 +1,4 @@
-package BaseHashTable "
+encapsulated package BaseHashTable "
 	This file is an extension to OpenModelica.
 
   Copyright (c) 2007 MathCore Engineering AB
@@ -26,7 +26,6 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 
 /* HashTable instance specific code */
 
-protected import System;
 protected import Util;
 
 /* Generic hashtable code below!! */
@@ -40,8 +39,8 @@ public function emptyHashTableWork
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 
-  type Key = DAE.ComponentRef;
-  type Value = DAE.Value;
+  replaceable type Key subtypeof Any;
+  replaceable type Value subtypeof Any;
   type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
   type HashVector = array<list<tuple<Key,Integer>>>;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;

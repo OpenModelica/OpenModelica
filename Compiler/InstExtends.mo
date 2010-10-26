@@ -53,6 +53,7 @@ public import SCode;
 public import Prefix;
 
 // protected imports
+protected import BaseHashTable;
 protected import Builtin;
 protected import Debug;
 protected import Dump;
@@ -669,30 +670,30 @@ algorithm
       Absyn.Path p;
     case (SCode.COMPONENT(component = id),ht)
       equation
-        ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
+        ht = BaseHashTable.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.CLASSDEF(name = id),ht)
       equation        
-        ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
+        ht = BaseHashTable.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.IMPORT(imp = Absyn.NAMED_IMPORT(name = id, path = p)),ht)
       equation
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;
     case (SCode.IMPORT(imp = Absyn.QUAL_IMPORT(path = p)),ht)
       equation
         id = Absyn.pathLastIdent(p);
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;
     // adrpo: 2010-10-07 handle unqualified imports!!! TODO! FIXME! should we just ignore them??
     //                   this fixes bug: #1234 https://openmodelica.org:8443/cb/issue/1234
     case (SCode.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = p)),ht)
       equation
         id = Absyn.pathLastIdent(p);
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;        
   end matchcontinue;
 end getLocalIdentElement;
@@ -1150,7 +1151,7 @@ algorithm
     case (cache,env,path1,ht)
       equation
         id = Absyn.pathFirstIdent(path1);
-        path2 = HashTableStringToPath.get(id,ht);
+        path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
         //Debug.fprintln("debug","Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
@@ -1183,7 +1184,7 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         //Debug.traceln("Try ht lookup " +& id);
-        path = HashTableStringToPath.get(id,ht);
+        path = BaseHashTable.get(id,ht);
         //Debug.traceln("Got path " +& Absyn.pathString(path));
       then (cache,Absyn.crefReplaceFirstIdent(cref,path));
     case (cache,env,cref,ht)

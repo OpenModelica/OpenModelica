@@ -122,6 +122,7 @@ public type InstDims = list<list<DAE.Subscript>>
  E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
 
 // protected imports
+protected import BaseHashTable;
 protected import Builtin;
 protected import Ceval;
 protected import ConnectUtil;
@@ -1374,7 +1375,7 @@ algorithm
 
       /* Only traverse on top scope */
     case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE((v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE()))))::elts)) equation
-      indx = HashTable.get(DAEUtil.varCref(v),ht);
+      indx = BaseHashTable.get(DAEUtil.varCref(v),ht);
       SOME(unit) = vec[indx];
       unitStr = UnitAbsynBuilder.unit2str(unit);
       varOpt = DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
@@ -8256,7 +8257,7 @@ algorithm
         crefs3 = getCrefFromCond(cond);
         crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
-        updatedComps = HashTable5.add((cref,0),updatedComps);
+        updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,csets,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl, updatedComps);
         (cache,env_1,ih,csets_1,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,finalPrefix,io,info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
       then
@@ -8340,7 +8341,7 @@ algorithm
       Absyn.Info rinfo;
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
-        1 = HashTable5.get(cref, updatedComps);
+        1 = BaseHashTable.get(cref, updatedComps);
       then (cache,env,ih,csets,updatedComps);
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation        
@@ -8374,9 +8375,9 @@ algorithm
         /* type info present */
         //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
-        //updatedComps = HashTable5.delete(cref,updatedComps);
+        //updatedComps = BaseHashTable.delete(cref,updatedComps);
         
-        updatedComps = HashTable5.add((cref,1),updatedComps);
+        updatedComps = BaseHashTable.add((cref,1),updatedComps);
       then (cache,env,ih,csets_1,updatedComps);
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
@@ -13963,7 +13964,7 @@ algorithm
   (outMods,outCmod,outM) := matchcontinue(variability,updatedComps,cref,mods,cmod,m)
     case (variability,updatedComps,cref,mods,cmod,m)
       equation
-        _ = HashTable5.get(cref,updatedComps);
+        _ = BaseHashTable.get(cref,updatedComps);
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 

@@ -325,6 +325,7 @@ end addConnection;
 // ********* protected section ********* //
 // ************************************* //
 
+protected import BaseHashTable;
 protected import Exp;
 protected import Debug;
 protected import DAEDump;
@@ -350,12 +351,12 @@ algorithm
 
     case (partition, ref)
       equation
-        parent = HashTableCG.get(ref, partition);
+        parent = BaseHashTable.get(ref, partition);
         parentCanonical = canonical(partition, parent);
         //Debug.fprintln("cgraph", 
         //  "- ConnectionGraph.canonical_case1(" +& ComponentReference.printComponentRefStr(ref) +& ") = " +&
         //  ComponentReference.printComponentRefStr(parentCanonical));        
-        //partition2 = HashTableCG.add((ref, parentCanonical), partition);
+        //partition2 = BaseHashTable.add((ref, parentCanonical), partition);
       then parentCanonical;
 
     case (partition,ref)
@@ -758,7 +759,7 @@ algorithm
     // not the same, add it 
     case(partition,ref1,ref2)
       equation
-        partition = HashTableCG.add((ref1,ref2), partition);
+        partition = BaseHashTable.add((ref1,ref2), partition);
       then (partition, true);
   end matchcontinue;
 end connectCanonicalComponents;
@@ -778,7 +779,7 @@ algorithm
 
     case(table, (root::tail), firstRoot)
       equation
-        table = HashTableCG.add((root,firstRoot), table);
+        table = BaseHashTable.add((root,firstRoot), table);
         table = addRootsToTable(table, tail, firstRoot);
       then table;
     case(table, {}, _) then table;

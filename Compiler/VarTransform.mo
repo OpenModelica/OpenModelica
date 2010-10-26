@@ -1214,15 +1214,15 @@ algorithm
       list<DAE.ComponentRef> srcs;
     case (invHt,src,dst)
       equation
-        failure(_ = HashTable3.get(dst,invHt)) "No previous elt for dst -> src" ;
-        invHt_1 = HashTable3.add((dst, {src}),invHt);
+        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
+        invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
         invHt_1;
     case (invHt,src,dst)
       equation
-        srcs = HashTable3.get(dst,invHt) "previous elt for dst -> src, append.." ;
+        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
         srcs = Util.listUnion({},src::srcs);
-        invHt_1 = HashTable3.add((dst, srcs),invHt);
+        invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
         invHt_1;
   end matchcontinue;
@@ -1317,7 +1317,7 @@ algorithm
       // is introduced
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
       equation
-        lst = HashTable3.get(src, invHt);
+        lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(10),src,dst);
         repl_1 = makeTransitive12(lst,repl,singleRepl);
       then

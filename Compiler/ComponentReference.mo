@@ -1841,5 +1841,12 @@ algorithm
   end matchcontinue;
 end printComponentRef2;
 
+public function printComponentRefListStr
+  input list<DAE.ComponentRef> crs;
+  output String res;
+algorithm
+  res := "{" +& Util.stringDelimitList(Util.listMap(crs, printComponentRefStr), ",") +& "}";
+end printComponentRefListStr;
+
 end ComponentReference;
 
