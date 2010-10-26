@@ -6739,7 +6739,6 @@ algorithm
     case "rem" then elabBuiltinRem;
     case "diagonal" then elabBuiltinDiagonal;
     case "differentiate" then elabBuiltinDifferentiate;
-    case "simplify" then elabBuiltinSimplify;
     case "noEvent" then elabBuiltinNoevent;
     case "edge" then elabBuiltinEdge;
     case "sign" then elabBuiltinSign;
@@ -6758,12 +6757,38 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
-      
-    case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
-    case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
     case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
   end matchcontinue;
 end elabBuiltinHandler;
+
+public function elabBuiltinHandlerInternal "function: elabBuiltinHandlerInternal
+
+  This function dispatches the elaboration of builtin operators by
+  returning the appropriate function. When a new builtin operator is
+  added, a new rule has to be added to this function.
+"
+  input Ident inIdent;
+  output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
+  partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
+    input Env.Cache inCache;
+    input Env.Env inEnv;
+    input list<Absyn.Exp> inAbsynExpLst;
+    input list<Absyn.NamedArg> inNamedArg;
+    input Boolean inBoolean;
+    input Prefix.Prefix inPrefix;
+    input Absyn.Info info;
+    output Env.Cache outCache;
+    output DAE.Exp outExp;
+    output DAE.Properties outProperties;
+  end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
+algorithm
+  outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
+  matchcontinue (inIdent)
+    case "simplify" then elabBuiltinSimplify;
+    case "getField" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
+    case "uniontypeMetarecordTypedefEqual" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
+  end matchcontinue;
+end elabBuiltinHandlerInternal;
 
 protected function isBuiltinFunc "function: isBuiltinFunc
   Returns true if the function name given as argument
@@ -6787,6 +6812,11 @@ algorithm
         _ = elabBuiltinHandler(id);
       then
         (cache,true,inPath);
+    case (cache, Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)),_)
+      equation
+        _ = elabBuiltinHandlerInternal(id);
+      then
+        (cache,true,inPath);
     case (cache,Absyn.FULLYQUALIFIED(path),pre)
       equation
         (cache,true,path) = isBuiltinFunc(cache,path,pre);
@@ -6795,6 +6825,7 @@ algorithm
     case (cache, Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       then
         (cache,true,inPath);
+    
     case (cache,path,pre)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = path);
@@ -6886,6 +6917,13 @@ algorithm
         (cache,exp,prop) = handler(cache,env, args, nargs, impl,pre,info);
       then
         (cache,exp,prop);
+    case (cache,env,Absyn.CREF_QUAL(name = "OpenModelicaInternal", componentRef = Absyn.CREF_IDENT(name = name)),args,nargs,impl,pre,info)
+      equation
+        handler = elabBuiltinHandlerInternal(name);
+        (cache,exp,prop) = handler(cache,env, args, nargs, impl,pre,info);
+      then
+        (cache,exp,prop);
+
     /* special handling for MultiBody 3.x rooted() operator */
     case (cache,env,Absyn.CREF_IDENT(name = "rooted"),args,nargs,impl,pre,info)
       equation
@@ -6965,7 +7003,7 @@ algorithm
     /* Interactive mode */
     case (cache,env,fn,args,nargs,(impl as true),st,pre,info)
       equation
-        false = hasBuiltInHandler(fn,args,pre);
+        false = hasBuiltInHandler(fn,args,pre,info);
         Debug.fprintln("sei", "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
@@ -6978,7 +7016,7 @@ algorithm
     /* Non-interactive mode */
     case (cache,env,fn,args,nargs,(impl as false),st,pre,info)
       equation
-        false = hasBuiltInHandler(fn,args,pre);
+        false = hasBuiltInHandler(fn,args,pre,info);
         Debug.fprint("sei", "elab_call 4: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln("sei", fnstr);
@@ -7011,25 +7049,27 @@ protected function hasBuiltInHandler "
 Author: BZ, 2009-02
 Determine if a function has a builtin handler or not.
 "
-input Absyn.ComponentRef fn;
-input list<Absyn.Exp> expl;
-input Prefix.Prefix inPrefix;
-output Boolean b;
-algorithm b := matchcontinue(fn,expl,inPrefix)
-case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl,pre)
-  local String name,s,ps; list<String> lst;
-    Prefix.Prefix pre;
-    equation
-      _ = elabBuiltinHandler(name);
-      //print(" error, handler found for " +& name +& "\n");
-      lst = Util.listMap(expl, Dump.printExpStr);
-      s = Util.stringDelimitList(lst, ", ");
-      s = System.stringAppendList({name,"(",s,")'.\n"});
-      ps = PrefixUtil.printPrefixStr3(pre);
-      Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,ps});
+  input Absyn.ComponentRef fn;
+  input list<Absyn.Exp> expl;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Boolean b;
+algorithm
+  b := matchcontinue(fn,expl,inPrefix,info)
+    local String name,s,ps; list<String> lst;
+      Prefix.Prefix pre;
+    case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl,pre,info)
+      equation
+        _ = elabBuiltinHandler(name);
+        //print(" error, handler found for " +& name +& "\n");
+        lst = Util.listMap(expl, Dump.printExpStr);
+        s = Util.stringDelimitList(lst, ", ");
+        s = System.stringAppendList({name,"(",s,")'.\n"});
+        ps = PrefixUtil.printPrefixStr3(pre);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,ps}, info);
       then
         true;
-case(_,_,_) then false;
+    case(_,_,_,_) then false;
   end matchcontinue;
 end hasBuiltInHandler;
 

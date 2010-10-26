@@ -2915,9 +2915,6 @@ algorithm
     case (env)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        env = Env.extendFrameT(env, "mmc_get_field", anyInteger2any);
-        env = Env.extendFrameT(env, "mmc_get_field", anyAnyString2any);
-        env = Env.extendFrameT(env, "mmc_uniontype_metarecord_typedef_equal", anyIntegerInteger2boolean);
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
 
         // Boolean Operations

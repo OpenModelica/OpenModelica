@@ -1793,7 +1793,7 @@ algorithm
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
         fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields)}, {});
-        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_uniontype_metarecord_typedef_equal",{})), fargs);
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("OpenModelicaInternal",{},Absyn.CREF_IDENT("uniontypeMetarecordTypedefEqual",{}))), fargs);
         exp = Absyn.LUNARY(Absyn.NOT(), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
@@ -2046,7 +2046,7 @@ algorithm
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_get_field",{})),
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("OpenModelicaInternal",{},Absyn.CREF_IDENT("getField",{}))),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.INTEGER(n)},{}))),NONE(),info);
         localAccList = elem::localAccList;
         localAccList = createPathVarAssignments(localRecVarName,restVar,{},localAccList,n+1,info);
@@ -2087,7 +2087,7 @@ algorithm
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_get_field",{})),
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("OpenModelicaInternal",{},Absyn.CREF_IDENT("getField",{}))),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.CREF(cref),Absyn.STRING(firstFieldName)},{}))),NONE(),info);
         localAccList = elem::localAccList;
         localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
