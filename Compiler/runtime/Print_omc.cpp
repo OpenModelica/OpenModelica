@@ -34,13 +34,13 @@ extern "C" {
 
 #include "printimpl.c"
 
-extern void printErrorBuf(const char* str)
+extern void Print_printErrorBuf(const char* str)
 {
   if (PrintImpl__printErrorBuf(str))
     throw 1;
 }
 
-extern void printBuf(const char* str)
+extern void Print_printBuf(const char* str)
 {
   if (PrintImpl__printBuf(str))
     throw 1;
@@ -72,23 +72,23 @@ extern const char* Print_getErrorString(void)
   return strdup(res);
 }
 
-extern void clearErrorBuf(void)
+extern void Print_clearErrorBuf(void)
 {
   PrintImpl__clearErrorBuf();
 }
 
-extern void clearBuf(void)
+extern void Print_clearBuf(void)
 {
   PrintImpl__clearBuf();
 }
 
-extern void printBufSpace(int numSpace)
+extern void Print_printBufSpace(int numSpace)
 {
   if (PrintImpl__printBufSpace(numSpace))
     throw 1;
 }
 
-extern void printBufNewLine(void)
+extern void Print_printBufNewLine(void)
 {
   if (PrintImpl__printBufNewLine())
     throw 1;

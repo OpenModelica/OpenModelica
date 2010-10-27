@@ -44,73 +44,73 @@ package Print
 public function setBufSize
   input Integer newSize;
 
-  external "C" ;
+  external "C" Print_setBufSize(newSize) annotation(Library = "omcruntime");
 end setBufSize;
 
 public function unSetBufSize
   input Integer newSize "not used, this is a debuging func";
 
-  external "C" ;
+  external "C" Print_unSetBufSize(newSize) annotation(Library = "omcruntime");
 end unSetBufSize;
 
 public function printErrorBuf
   input String inString;
 
-  external "C" ;
+  external "C" Print_printErrorBuf(inString) annotation(Library = "omcruntime");
 end printErrorBuf;
 
 public function clearErrorBuf
 
-  external "C" ;
+  external "C" Print_clearErrorBuf() annotation(Library = "omcruntime");
 end clearErrorBuf;
 
 public function getErrorString
   output String outString;
 
-  external "C" outString = Print_getErrorString();
+  external "C" outString = Print_getErrorString() annotation(Library = "omcruntime");
 end getErrorString;
 
 public function printBuf
   input String inString;
 
-  external "C" ;
+  external "C" Print_printBuf(inString) annotation(Library = "omcruntime");
 end printBuf;
 
 public function clearBuf
 
-  external "C" ;
+  external "C" Print_clearBuf() annotation(Library = "omcruntime");
 end clearBuf;
 
 public function getString "Does not clear the buffer"
   output String outString;
 
-  external "C" outString = Print_getString();
+  external "C" outString = Print_getString() annotation(Library = "omcruntime");
 end getString;
 
 public function writeBuf
   input String inString;
 
-  external "C" ;
+  external "C" Print_writeBuf(inString) annotation(Library = "omcruntime");
 end writeBuf;
 
 public function getBufLength
 "Gets the actual length of the filled space in the print buffer."
   output Integer outBufFilledLength;
 
-  external "C" outBufFilledLength = Print_getBufLength();
+  external "C" outBufFilledLength = Print_getBufLength() annotation(Library = "omcruntime");
 end getBufLength;
 
 public function printBufSpace
 "Prints the given number of spaces to the print buffer."
   input Integer inNumOfSpaces;
 
-  external "C" ;
+  external "C" Print_printBufSpace(inNumOfSpaces) annotation(Library = "omcruntime");
 end printBufSpace;
 
 public function printBufNewLine 
 "Prints one new line character to the print buffer."
 
-  external "C" ;
+  external "C" Print_printBufNewLine() annotation(Library = "omcruntime");
 end printBufNewLine;
 
 public function hasBufNewLineAtEnd 
@@ -118,7 +118,7 @@ public function hasBufNewLineAtEnd
  It is a (temporary) workaround to stringLength()'s O(n) cost." 
   output Boolean outHasNewLineAtEnd ;
 
-  external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd();
+  external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd() annotation(Library = "omcruntime");
 end hasBufNewLineAtEnd;
 
 end Print;
