@@ -837,8 +837,8 @@ algorithm
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        indexed_dlow = BackendVariable.translateDae(dlow_1,NONE());
+        indexed_dlow_1 = BackendVariable.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);

@@ -3983,8 +3983,8 @@ algorithm
         mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        indexed_dlow = BackendVariable.translateDae(dlow_1,NONE());
+        indexed_dlow_1 = BackendVariable.calculateValues(indexed_dlow);
         xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
