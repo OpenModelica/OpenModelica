@@ -2041,7 +2041,7 @@ public function unparseType
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inType)
+  match (inType)
     local
       Ident s1,s2,str,tys,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
       list<Ident> l,vars,paramstrs,tystrs;
@@ -2206,7 +2206,7 @@ algorithm
     case ((DAE.T_NOTYPE(),_)) then "#NOTYPE#";
     case ((DAE.T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#";
     case (ty) then "Internal error Types.unparseType: not implemented yet\n";
-  end matchcontinue;
+  end match;
 end unparseType;
 
 public function unparseConst "function: unparseConst
@@ -5670,7 +5670,7 @@ algorithm
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
         (_,tys) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, false);
       then ((DAE.T_TUPLE(tys),optPath));
-    case (ty as (DAE.T_NORETCALL,_)) then ty;
+    case (ty as (DAE.T_NORETCALL(),_)) then ty;
     case ty1
       equation
         ({e},{ty2}) = makeDummyExpAndTypeLists({ty1});
@@ -5693,8 +5693,8 @@ algorithm
     case _::rest
       equation
         (restExp,restType) = makeDummyExpAndTypeLists(rest);
-        cref_  = ComponentReference.makeCrefIdent("#DummyExp#",DAE.ET_OTHER,{});
-      then (DAE.CREF(cref_,DAE.ET_OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
+        cref_  = ComponentReference.makeCrefIdent("#DummyExp#",DAE.ET_OTHER(),{});
+      then (DAE.CREF(cref_,DAE.ET_OTHER())::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
   end matchcontinue;
 end makeDummyExpAndTypeLists;
 
@@ -5708,7 +5708,7 @@ algorithm
       list<Type> tys;
       Type ty;
     case ((DAE.T_TUPLE(tys),_)) then tys;
-    case ((DAE.T_NORETCALL,_)) then {};
+    case ((DAE.T_NORETCALL(),_)) then {};
     case ty then {ty};
   end matchcontinue;
 end resTypeToListTypes;

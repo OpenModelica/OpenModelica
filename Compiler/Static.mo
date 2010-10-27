@@ -624,7 +624,7 @@ algorithm
       Boolean correctTypes;
       DAE.Type t;
     equation
-      t = (DAE.T_LIST((DAE.T_NOTYPE,NONE())),NONE());
+      t = (DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE());
       prop = DAE.PROP(t,DAE.C_CONST());
     then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
 
@@ -1287,7 +1287,7 @@ algorithm
     case(DAE.C_CONST()) then SCode.CONST();
     case(DAE.C_UNKNOWN())
       equation
-        Debug.fprintln("failtrace", "- Static.constToVariability failed on DAE.C_UNKNOWN");
+        Debug.fprintln("failtrace", "- Static.constToVariability failed on DAE.C_UNKNOWN()");
       then
         fail();
   end matchcontinue;
@@ -3500,8 +3500,7 @@ algorithm
     case (elst,indx,dim1)
       equation
         (indx <= dim1) = true;
-        lindx = indx - 1;
-        (e :: es) = Util.listMap1(elst, list_nth, lindx);
+        (e :: es) = Util.listMap1(elst, listGet, indx);
         e_1 = Util.tuple21(e);
         tp = Expression.typeof(e_1);
         indx_1 = indx + 1;
@@ -3809,12 +3808,11 @@ algorithm
       then
         (cache,exp_2,DAE.PROP(tp,c));
     case (cache,env,{exp},_,impl,pre,info)
-      local DAE.Exp exp;
       equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        (cache,exp_1,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         (tp,_) = Types.flattenArrayType(tp);
         false = Types.basicType(tp);
-        s = ExpressionDump.printExpStr(exp);
+        s = ExpressionDump.printExpStr(exp_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.OPERAND_BUILTIN_TYPE, {"pre",pre_str,s}, info);
       then
@@ -4099,7 +4097,7 @@ algorithm
         (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
         expList = {s1_1, DAE.ICONST(i), DAE.ICONST(numFields)};
         s1_1 = makeBuiltinCall("mmc_uniontype_metarecord_typedef_equal", 
-            expList, DAE.ET_BOOL);
+            expList, DAE.ET_BOOL());
       then
         (cache,s1_1,DAE.PROP(DAE.T_BOOL_DEFAULT,c));
     case (_,_,_,_,_,_,_)
@@ -4281,7 +4279,7 @@ algorithm
       DAE.Exp call;
     case (cache,env,{},{},impl,_,info)
       equation
-        call = makeBuiltinCall("initial", {}, DAE.ET_BOOL);
+        call = makeBuiltinCall("initial", {}, DAE.ET_BOOL());
       then (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
     case (cache,env,_,_,_,pre,info)
@@ -4321,7 +4319,7 @@ algorithm
       DAE.Exp call;
     case (cache,env,{},{},impl,_,info)
       equation
-        call = makeBuiltinCall("terminal", {}, DAE.ET_BOOL);
+        call = makeBuiltinCall("terminal", {}, DAE.ET_BOOL());
       then (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
     case (cache,env,_,_,impl,pre,info)
@@ -5489,7 +5487,7 @@ algorithm
     case (cache,env,{exp},_,impl,pre,info)
       equation
         (cache,exp_1,prop,_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        exp_1 = makeBuiltinCall("noEvent", {exp_1}, DAE.ET_BOOL);
+        exp_1 = makeBuiltinCall("noEvent", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, prop);
   end matchcontinue;
@@ -5526,7 +5524,7 @@ algorithm
     case (cache,env,{exp},_,impl,pre,info) /* Constness: C_VAR */
       equation
         (cache,exp_1,DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR()),_) = elabExp(cache, env, exp, impl,NONE(),true,pre,info);
-        exp_2 = makeBuiltinCall("edge", {exp_1}, DAE.ET_BOOL);
+        exp_2 = makeBuiltinCall("edge", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_2, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5627,7 +5625,7 @@ algorithm
         list<DAE.Dimension> dims;
       equation
         (_,_,DAE.PROP(ety,c),_) = elabExp(cache, env, exp, impl,NONE(),false,pre,info);
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         dims = Types.getRealOrIntegerDimensions(ety);
         (e,ty) = Expression.makeZeroExpression(dims);
       then
@@ -5719,7 +5717,7 @@ algorithm
         (cache,interval_1,DAE.PROP(tp2,_),_) = elabExp(cache,env, interval, impl,NONE(),true,pre,info);
         Types.integerOrReal(tp1);
         Types.integerOrReal(tp2);
-        call = makeBuiltinCall("sample", {start_1, interval_1}, DAE.ET_BOOL);
+        call = makeBuiltinCall("sample", {start_1, interval_1}, DAE.ET_BOOL());
       then
         (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5779,7 +5777,7 @@ algorithm
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         Types.simpleType(tp1);
         (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
-        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL);
+        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5788,7 +5786,7 @@ algorithm
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         Types.simpleType(tp1);
         Types.discreteType(tp1);
-        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL);
+        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5797,7 +5795,7 @@ algorithm
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
         Types.simpleType(tp1);
-        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL);
+        exp_1 = makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
@@ -5863,9 +5861,10 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
       String sp;
-    case (cache,env,(dim :: matrices),_,impl,pre,info) /* impl */
+      Absyn.Exp dim_aexp;
+    case (cache,env,(dim_aexp :: matrices),_,impl,pre,info) /* impl */
       equation
-        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
+        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
         (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), NONE(), Ceval.MSG());
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         true = sameDimensionsExceptionDimX(props,dim);
@@ -5878,22 +5877,20 @@ algorithm
         exp = makeBuiltinCall("cat", dim_exp :: matrices_1, etp);
       then
         (cache,exp,DAE.PROP(result_type_1,const));
-    case (cache,env,(dim :: matrices),_,impl,pre,info)
-      local Absyn.Exp dim;
+    case (cache,env,(dim_aexp :: matrices),_,impl,pre,info)
       equation
-        (cache,dim_exp,tp,_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
+        (cache,dim_exp,tp,_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
         failure(DAE.PROP((DAE.T_INTEGER(_),_),const1) = tp);
         sp = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER, {"First","cat",sp}, info);
       then
         fail();
-    case (cache,env,(dim :: matrices),_,impl,pre,info)
-      local Absyn.Exp dim;
+    case (cache,env,(dim_aexp :: matrices),_,impl,pre,info)
       equation
-        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
+        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         false = sameDimensions(props);
-        lst = Util.listMap((dim :: matrices), Dump.printExpStr);
+        lst = Util.listMap((dim_aexp :: matrices), Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         str = System.stringAppendList({"cat(",s,")"});
@@ -5975,7 +5972,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),c),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
-        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG(), Ceval.MSG);
+        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG(), Ceval.MSG());
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), NONE(), msg);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
@@ -6001,7 +5998,7 @@ algorithm
         ety = Types.elabType(ty);
         call = makeBuiltinCall("identity", {dim_exp}, ety);
       then
-        (cache, call, DAE.PROP(ty,DAE.C_VAR));
+        (cache, call, DAE.PROP(ty,DAE.C_VAR()));
         
   end matchcontinue;
 end elabBuiltinIdentity;
@@ -6035,8 +6032,8 @@ algorithm
       then
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
-             false, true, DAE.ET_BOOL,DAE.NO_INLINE()),
-        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR));
+             false, true, DAE.ET_BOOL(),DAE.NO_INLINE()),
+        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
   end matchcontinue;
 end elabBuiltinIsRoot;
 
@@ -6105,18 +6102,18 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae;
       Prefix.Prefix pre;
-
-    case (cache,env,{e},_,impl,pre,info) /*  scalar({a}) => a */
+      Absyn.Exp aexp;
+    case (cache,env,{aexp},_,impl,pre,info) /*  scalar({a}) => a */
       equation
-        (cache,DAE.ARRAY(_,_,{e}),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,DAE.ARRAY(_,_,{e}),DAE.PROP(tp,c),_) = elabExp(cache,env,aexp,impl,NONE(),true,pre,info);
         scalar_tp = Types.unliftArray(tp);
         Types.simpleType(scalar_tp);
       then
         (cache,e,DAE.PROP(scalar_tp,c));
 
-    case (cache,env,{e},_,impl,pre,info) /* scalar([a]) => a */
+    case (cache,env,{aexp},_,impl,pre,info) /* scalar([a]) => a */
       equation
-        (cache,DAE.MATRIX(_,_,{{(e,_)}}),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,DAE.MATRIX(_,_,{{(e,_)}}),DAE.PROP(tp,c),_) = elabExp(cache,env,aexp,impl,NONE(),true,pre,info);
         tp_1 = Types.unliftArray(tp);
         scalar_tp = Types.unliftArray(tp_1);
         Types.simpleType(scalar_tp);
@@ -6339,7 +6336,7 @@ algorithm
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre, info);
         c = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
-        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
+        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING());
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
     
@@ -6361,7 +6358,7 @@ algorithm
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre, info);
         c = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
-        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
+        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING());
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
   end matchcontinue;
@@ -6712,7 +6709,7 @@ public function elabBuiltinHandler "function: elabBuiltinHandler
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
 algorithm
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
-  matchcontinue (inIdent)
+  match (inIdent)
     case "delay" then elabBuiltinDelay;
     case "smooth" then elabBuiltinSmooth;
     case "size" then elabBuiltinSize;  /* impl */
@@ -6758,7 +6755,7 @@ algorithm
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
     case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
-  end matchcontinue;
+  end match;
 end elabBuiltinHandler;
 
 public function elabBuiltinHandlerInternal "function: elabBuiltinHandlerInternal
@@ -8389,7 +8386,7 @@ protected function createDummyFarg
   input String name;
   output DAE.FuncArg farg;
 algorithm
-  farg := (name, (DAE.T_NOTYPE,NONE()));
+  farg := (name, (DAE.T_NOTYPE(),NONE()));
 end createDummyFarg;
 
 protected function transformModificationsToNamedArguments
@@ -10138,7 +10135,8 @@ algorithm
   outString:=
   matchcontinue (inSlotLst)
     local
-      Ident farg_str,filled,str,s,s1,s2,res;
+      Boolean filled;
+      Ident farg_str,filledStr,str,s,s1,s2,res;
       list<Ident> str_lst;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       Option<DAE.Exp> exp;
@@ -10147,11 +10145,11 @@ algorithm
     case ((SLOT(an = farg,slotFilled = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
       equation
         farg_str = Types.printFargStr(farg);
-        filled = Util.if_(filled, "filled", "not filled");
+        filledStr = Util.if_(filled, "filled", "not filled");
         str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
         str_lst = Util.listMap(ds, ExpressionDump.dimensionString);
         s = Util.stringDelimitList(str_lst, ", ");
-        s1 = System.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
+        s1 = System.stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
         res = stringAppend(s1, s2);
       then
@@ -10377,19 +10375,20 @@ algorithm
   matchcontinue (inIdent,inTypesFuncArgLst)
     local
       Ident id,id2;
-      tuple<DAE.TType, Option<Absyn.Path>> farg;
-      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> ts;
-    case (id,((id2,farg) :: ts))
+      DAE.Type ty;
+      tuple<String,DAE.Type> farg;
+      list<tuple<Ident, DAE.Type>> ts;
+    case (id,(id2,ty) :: ts)
       equation
         true = stringEqual(id, id2);
       then
-        farg;
-    case (id,((farg as (id2,_)) :: ts))
+        ty;
+    case (id,(id2,_) :: ts)
       equation
         false = stringEqual(id, id2);
-        farg = findNamedArgType(id, ts);
+        ty = findNamedArgType(id, ts);
       then
-        farg;
+        ty;
   end matchcontinue;
 end findNamedArgType;
 
@@ -13948,20 +13947,20 @@ protected function unevaluatedFunctionVariability
   "In a function we might have input arguments with unknown dimensions, and in
   that case we can't expand calls such as fill. A function call is therefore
   created with variable variability. This function checks that we're inside a
-  function and returns DAE.C_VAR, or fails if we're not inside a function. 
+  function and returns DAE.C_VAR(), or fails if we're not inside a function. 
   
   The exception is if checkModel is used, in which case we don't know what the
   variability would have been had all parameters received a binding. We can't
   set the variability to variable or parameter because then we might get
   bindings with higher variability than the component, and we can't set it to
   constant because that would cause the compiler to try and constant evaluate
-  the call. So we set it to DAE.C_UNKNOWN instead."
+  the call. So we set it to DAE.C_UNKNOWN() instead."
   input Env.Env inEnv;
   output DAE.Const outConst;
 algorithm
   outConst := matchcontinue(inEnv)
-    case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR;
-    case _ equation true = OptManager.getOption("checkModel"); then DAE.C_UNKNOWN;
+    case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR();
+    case _ equation true = OptManager.getOption("checkModel"); then DAE.C_UNKNOWN();
   end matchcontinue;
 end unevaluatedFunctionVariability;
 

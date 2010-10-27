@@ -2264,8 +2264,8 @@ algorithm
       DAE.ComponentRef cr;
       list<Frame> fl;
     case ({}) then false;
-    case (FRAME(optType = SOME(FUNCTION_SCOPE)) :: _) then true;
-    case (FRAME(optType = SOME(CLASS_SCOPE)) :: _) then false;
+    case (FRAME(optType = SOME(FUNCTION_SCOPE())) :: _) then true;
+    case (FRAME(optType = SOME(CLASS_SCOPE())) :: _) then false;
     case (_ :: fl) then inFunctionScope(fl);
   end matchcontinue;
 end inFunctionScope;
@@ -2275,8 +2275,8 @@ public function classInfToScopeType
   output Option<ScopeType> outType;
 algorithm
   outType := matchcontinue(inState)
-    case ClassInf.FUNCTION(path = _) then SOME(FUNCTION_SCOPE);
-    case _ then SOME(CLASS_SCOPE);
+    case ClassInf.FUNCTION(path = _) then SOME(FUNCTION_SCOPE());
+    case _ then SOME(CLASS_SCOPE());
   end matchcontinue;
 end classInfToScopeType;
 

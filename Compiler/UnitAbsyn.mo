@@ -95,7 +95,7 @@ type UnitTerms = list<UnitTerm>;
 
 uniontype Store
   record STORE
-    Option<Unit>[:] storeVector;
+    array<Option<Unit>> storeVector;
     Integer numElts "Number of elements stored in vector" ;
   end STORE;
 end Store;

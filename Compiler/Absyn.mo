@@ -2469,7 +2469,7 @@ algorithm crefs := matchcontinue(subs)
     list<ComponentRef> crefs1;
     Exp exp;
     case({}) then {};
-    case(NOSUB::subs) then getCrefsFromSubs(subs);
+    case(NOSUB()::subs) then getCrefsFromSubs(subs);
     case(SUBSCRIPT(exp)::subs)
       equation
         crefs1 = getCrefsFromSubs(subs);
@@ -2504,7 +2504,7 @@ algorithm
     case (REAL(value = _),checkSubs) then {};
     case (STRING(value = _),checkSubs) then {};
     case (BOOL(value = _),checkSubs) then {};
-    case (CREF(componentRef = (cr as WILD)),_) then {};
+    case (CREF(componentRef = WILD()),_) then {};
     case (CREF(componentRef = cr),false) then {cr};
 
     case (CREF(componentRef = (cr)),true)
@@ -3718,7 +3718,7 @@ input Subscript ss1,ss2;
 output Boolean b;
 algorithm b:= matchcontinue(ss1,ss2)
   local Exp e1,e2;
-  case(NOSUB,NOSUB) then true;
+  case(NOSUB(),NOSUB()) then true;
   case(SUBSCRIPT(e1),SUBSCRIPT(e2)) then expEqual(e1,e2);
   case(_,_) then false;
   end matchcontinue;
