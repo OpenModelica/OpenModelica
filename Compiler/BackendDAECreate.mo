@@ -3353,5 +3353,4 @@ algorithm
   end matchcontinue;
 end whenEquationsIndices2;
 
-
 end BackendDAECreate;

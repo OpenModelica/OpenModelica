@@ -1831,6 +1831,31 @@ algorithm
   end matchcontinue;
 end createLinearModelMatrixes;
 
+protected function collectDelayExpressions
+"Put expression into a list if it is a call to delay().
+Useable as a function parameter for Expression.traverseExpression."
+  input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
+  output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> l;
+    case ((e as DAE.CALL(path = Absyn.IDENT("delay")), l))
+      then ((e, e :: l));
+    case ((e, l)) then ((e, l));
+  end matchcontinue;
+end collectDelayExpressions;
+
+protected function findDelaySubExpressions
+"Return all subexpressions of inExp that are calls to delay()"
+  input DAE.Exp inExp;
+  input list<Integer> inDummy "this is a dummy for traverseDAELowExps";
+  output list<DAE.Exp> outExps;
+algorithm
+  ((_, outExps)) := Expression.traverseExp(inExp, collectDelayExpressions, {});
+end findDelaySubExpressions;
+
 protected function extractDelayedExpressions
   input BackendDAE.DAELow dlow;
   output list<tuple<Integer, DAE.Exp>> delayedExps;
@@ -1841,7 +1866,7 @@ algorithm
       list<DAE.Exp> exps;
     case (dlow)
       equation
-        exps = DAELow.traverseDAELowExps(dlow,true,DAELow.findDelaySubExpressions,{});
+        exps = DAELow.traverseDAELowExps(dlow,true,findDelaySubExpressions,{});
         delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
