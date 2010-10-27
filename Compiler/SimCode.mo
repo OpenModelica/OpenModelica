@@ -2873,7 +2873,7 @@ algorithm
         // section.
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
-        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);
 
@@ -2989,7 +2989,7 @@ algorithm
         // section.
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
-        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);
 
@@ -4312,7 +4312,7 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
-        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg,NONE());
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
         equation_ = SES_ALGORITHM(algStatements);
       then equation_;
     /* Error message, inverse algorithms not supported yet */

@@ -65,6 +65,7 @@ protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendDAECreate;
 protected import BackendVariable;
+protected import BackendDAEOptimize;
 protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
@@ -3515,7 +3516,7 @@ algorithm
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = BackendDAEUtil.equationSize(eqns);
         (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
-        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);
@@ -3555,7 +3556,7 @@ algorithm
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = BackendDAEUtil.equationSize(eqns);
         (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
-        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);

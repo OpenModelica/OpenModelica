@@ -1297,13 +1297,13 @@ algorithm
     case ({},knvars,_) then ({},knvars);
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        _ = DAELow.treeGet(mvars, cr) "alg var moved to known vars" ;
+        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         (vs_1,(v :: knvars_1));
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
       equation
-        failure(_ = DAELow.treeGet(mvars, cr)) "alg var not moved to known vars" ;
+        failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
         (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
       then
         ((v :: vs_1),knvars_1);

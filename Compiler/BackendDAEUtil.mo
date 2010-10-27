@@ -54,18 +54,21 @@ protected import Absyn;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import Ceval;
+protected import ClassInf;
 protected import DAELow;
+protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import HashTable2;
-protected import Values;
-protected import ValuesUtil;
+protected import OptManager;
 protected import RTOpts;
 protected import System;
 protected import Util;
+protected import Values;
+protected import ValuesUtil;
 
 
 public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMsg
@@ -228,9 +231,9 @@ algorithm
 	end matchcontinue;
 end traversecheckBackendDAEExp;
 
-/*
- * Util function at Backend using for lowering and other stuff
- */
+/************************************************************
+  Util function at Backend using for lowering and other stuff
+ ************************************************************/
 
 public function systemSize "returns the size of the dae system"
 input BackendDAE.DAELow dae;
@@ -295,7 +298,7 @@ algorithm
       equation
         BackendDAE.STATE() = BackendVariable.varKind(v);
         cr = BackendVariable.varCref(v);
-        bt = DAELow.treeAdd(bt, cr, 0);
+        bt = treeAdd(bt, cr, 0);
         bt = statesDaelow2(vs, bt);
       then
         bt;
@@ -304,7 +307,7 @@ algorithm
       equation
         BackendDAE.DUMMY_STATE() = BackendVariable.varKind(v);
         cr = BackendVariable.varCref(v);
-        bt = DAELow.treeAdd(bt, cr, 0);
+        bt = treeAdd(bt, cr, 0);
         bt = statesDaelow2(vs, bt);
       then
         bt;
@@ -961,7 +964,7 @@ algorithm
     /* Special Case for unextended arrays */
     case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),vars)
       equation
-        (e1,_) = DAELow.extendArrExp(e,NONE());
+        (e1,_) = extendArrExp(e,NONE());
         res = statesAndVarsExp(e1, vars);
       then
         res; 
@@ -1418,9 +1421,9 @@ end isInput;
 
 
 
-/*
- *  Functions that deals with DAELow as input
- */
+/*******************************************
+   Functions that deals with DAELow as input
+********************************************/
 
 public function generateStatePartition "function:generateStatePartition
 
@@ -1920,5 +1923,655 @@ algorithm
   end matchcontinue;
 end subscript2dCombinations2;
 
+/**************************
+  BackendDAE.BinTree stuff
+ **************************/
+
+public function treeGet "function: treeGet
+  author: PA
+
+  Copied from generic implementation. Changed that no hashfunction is passed
+  since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
+  to get a unique ordering.
+"
+  input BackendDAE.BinTree bt;
+  input BackendDAE.Key key;
+  output BackendDAE.Value v;
+  String keystr;
+algorithm
+  keystr := ComponentReference.printComponentRefStr(key);
+  v := treeGet2(bt, keystr);
+end treeGet;
+
+protected function treeGet2 "function: treeGet2
+  author: PA
+
+  Helper function to tree_get
+"
+  input BackendDAE.BinTree inBinTree;
+  input String inString;
+  output BackendDAE.Value outValue;
+algorithm
+  outValue:=
+  matchcontinue (inBinTree,inString)
+    local
+      String rkeystr,keystr;
+      DAE.ComponentRef rkey;
+      BackendDAE.Value rval,cmpval,res;
+      Option<BackendDAE.BinTree> left,right;
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),keystr)
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        0 = System.strcmp(rkeystr, keystr);
+      then
+        rval;
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),keystr)
+      local BackendDAE.BinTree right;
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the right" ;
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = true;
+        res = treeGet2(right, keystr);
+      then
+        res;
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left),rightSubTree = right),keystr)
+      local BackendDAE.BinTree left;
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the left" ;
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = false;
+        res = treeGet2(left, keystr);
+      then
+        res;
+  end matchcontinue;
+end treeGet2;
+
+public function treeAddList "function: treeAddList
+  author: Frenkel TUD
+"
+  input BackendDAE.BinTree inBinTree;
+  input list<BackendDAE.Key> inKeyLst;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree :=
+  matchcontinue (inBinTree,inKeyLst)
+    local
+      BackendDAE.Key key;
+      list<BackendDAE.Key> res;
+      BackendDAE.BinTree bt,bt_1,bt_2;
+    case (bt,{}) then bt;
+    case (bt,key::res)
+      local DAE.ComponentRef nkey;
+    equation
+      bt_1 = treeAdd(bt,key,0);
+      bt_2 = treeAddList(bt_1,res);
+    then bt_2;  
+  end matchcontinue;
+end treeAddList;
+
+public function treeAdd "function: treeAdd
+  author: PA
+
+  Copied from generic implementation. Changed that no hashfunction is passed
+  since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
+  to get a unique ordering.
+"
+  input BackendDAE.BinTree inBinTree;
+  input BackendDAE.Key inKey;
+  input BackendDAE.Value inValue;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree:=
+  matchcontinue (inBinTree,inKey,inValue)
+    local
+      DAE.ComponentRef key,rkey;
+      BackendDAE.Value value,rval,cmpval;
+      String rkeystr,keystr;
+      Option<BackendDAE.BinTree> left,right;
+      BackendDAE.BinTree t_1,t,right_1,left_1;
+    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,value)
+      local DAE.ComponentRef nkey;
+      equation
+        nkey = key;
+      then BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(nkey,value)),NONE(),NONE());
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),key,value)
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
+        0 = System.strcmp(rkeystr, keystr);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,value)),left,right);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,value)
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = true;
+        t_1 = treeAdd(t, key, value);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(t_1));
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,value)
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = true;
+        right_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(right_1));
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,value)
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = false;
+        t_1 = treeAdd(t, key, value);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),SOME(t_1),right);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,value)
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node";
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = false;
+        left_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),SOME(left_1),right);
+    case (_,_,_)
+      equation
+        print("tree_add failed\n");
+      then
+        fail();
+  end matchcontinue;
+end treeAdd;
+
+protected function treeDelete "function: treeDelete
+  author: PA
+
+  This function deletes an entry from the BinTree.
+"
+  input BackendDAE.BinTree inBinTree;
+  input BackendDAE.Key inKey;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree:=
+  matchcontinue (inBinTree,inKey)
+    local
+      BackendDAE.BinTree bt,right_1,right,t_1,t;
+      DAE.ComponentRef key,rkey;
+      String rkeystr,keystr;
+      BackendDAE.TreeValue rightmost;
+      Option<BackendDAE.BinTree> optright_1,left,lleft,lright,topt_1;
+      BackendDAE.Value rval,cmpval;
+      Option<BackendDAE.TreeValue> leftval;
+    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) then bt;
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),key)
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when existing right node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
+        0 = System.strcmp(rkeystr, keystr);
+        (rightmost,right_1) = treeDeleteRightmostValue(right);
+        optright_1 = treePruneEmptyNodes(right_1);
+      then
+        BackendDAE.TREENODE(SOME(rightmost),left,optright_1);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(BackendDAE.TREENODE(leftval,lleft,lright)),rightSubTree = NONE()),key)
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
+        0 = System.strcmp(rkeystr, keystr);
+      then
+        BackendDAE.TREENODE(leftval,lleft,lright);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
+      equation
+        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
+        keystr = ComponentReference.printComponentRefStr(key);
+        0 = System.strcmp(rkeystr, keystr);
+      then
+        BackendDAE.TREENODE(NONE(),NONE(),NONE());
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key)
+      local Option<BackendDAE.BinTree> right;
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "delete in right subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = true;
+        t_1 = treeDelete(t, key);
+        topt_1 = treePruneEmptyNodes(t_1);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,topt_1);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key)
+      local Option<BackendDAE.BinTree> right;
+      equation
+        keystr = ComponentReference.printComponentRefStr(key) "delete in left subtree" ;
+        rkeystr = ComponentReference.printComponentRefStr(rkey);
+        cmpval = System.strcmp(rkeystr, keystr);
+        (cmpval > 0) = false;
+        t_1 = treeDelete(t, key);
+        topt_1 = treePruneEmptyNodes(t_1);
+      then
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),topt_1,right);
+    case (_,_)
+      equation
+        print("tree_delete failed\n");
+      then
+        fail();
+  end matchcontinue;
+end treeDelete;
+
+protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
+  author: PA
+
+  This function takes a BackendDAE.BinTree and deletes the rightmost value of the tree.
+  Tt returns this value and the updated BinTree. This function is used in
+  the binary tree deletion function \'tree_delete\'.
+
+  inputs:  (BinTree)
+  outputs: (TreeValue, /* deleted value */
+              BackendDAE.BinTree    /* updated bintree */)
+"
+  input BackendDAE.BinTree inBinTree;
+  output BackendDAE.TreeValue outTreeValue;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  (outTreeValue,outBinTree):=
+  matchcontinue (inBinTree)
+    local
+      BackendDAE.TreeValue treevalue,value;
+      BackendDAE.BinTree left,right_1,right,bt;
+      Option<BackendDAE.BinTree> rightopt_1;
+      Option<BackendDAE.TreeValue> treeval;
+    case (BackendDAE.TREENODE(value = SOME(treevalue),leftSubTree = NONE(),rightSubTree = NONE())) then (treevalue,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
+    case (BackendDAE.TREENODE(value = SOME(treevalue),leftSubTree = SOME(left),rightSubTree = NONE())) then (treevalue,left);
+    case (BackendDAE.TREENODE(value = treeval,leftSubTree = left,rightSubTree = SOME(right)))
+      local Option<BackendDAE.BinTree> left;
+      equation
+        (value,right_1) = treeDeleteRightmostValue(right);
+        rightopt_1 = treePruneEmptyNodes(right_1);
+      then
+        (value,BackendDAE.TREENODE(treeval,left,rightopt_1));
+    case (BackendDAE.TREENODE(value = SOME(treeval),leftSubTree = NONE(),rightSubTree = SOME(right)))
+      local BackendDAE.TreeValue treeval;
+      equation
+        failure((_,_) = treeDeleteRightmostValue(right));
+        print("right value was empty , left NONE\n");
+      then
+        (treeval,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
+    case (bt)
+      equation
+        print("-tree_delete_rightmost_value failed\n");
+      then
+        fail();
+  end matchcontinue;
+end treeDeleteRightmostValue;
+
+protected function treePruneEmptyNodes "function: tree_prune_emtpy_nodes
+  author: PA
+
+  This function is a helper function to tree_delete
+  It is used to delete empty nodes of the BackendDAE.BinTree representation, that might be introduced
+  when deleting nodes.
+"
+  input BackendDAE.BinTree inBinTree;
+  output Option<BackendDAE.BinTree> outBinTreeOption;
+algorithm
+  outBinTreeOption:=
+  matchcontinue (inBinTree)
+    local BackendDAE.BinTree bt;
+    case BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()) then NONE();
+    case bt then SOME(bt);
+  end matchcontinue;
+end treePruneEmptyNodes;
+
+protected function bintreeDepth "function: bintreeDepth
+  author: PA
+
+  This function calculates the depth of the Binary Tree given
+  as input. It can be used for debugging purposes to investigate
+  how balanced binary trees are.
+"
+  input BackendDAE.BinTree inBinTree;
+  output Integer outInteger;
+algorithm
+  outInteger:=
+  matchcontinue (inBinTree)
+    local
+      BackendDAE.Value ld,rd,res;
+      BackendDAE.BinTree left,right;
+    case (BackendDAE.TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
+    case (BackendDAE.TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
+      equation
+        ld = bintreeDepth(left);
+        rd = bintreeDepth(right);
+        res = intMax(ld, rd);
+      then
+        res + 1;
+    case (BackendDAE.TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
+      equation
+        ld = bintreeDepth(left);
+      then
+        ld;
+    case (BackendDAE.TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
+      equation
+        rd = bintreeDepth(right);
+      then
+        rd;
+  end matchcontinue;
+end bintreeDepth;
+
+
+/************************************
+  stuff that deals with extendArrExp
+ ************************************/
+
+public function extendArrExp "
+Author: Frenkel TUD 2010-07"
+  input DAE.Exp inExp;
+  input Option<DAE.FunctionTree> infuncs;  
+  output DAE.Exp outExp;
+  output Option<DAE.FunctionTree> outfuncs;  
+algorithm 
+  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
+    local DAE.Exp e;
+    case(inExp,infuncs)
+      equation
+        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingextendArrExp, infuncs);
+      then
+        (e,outfuncs);
+    case(inExp,infuncs) then (inExp,infuncs);        
+  end matchcontinue;
+end extendArrExp;
+
+protected function traversingextendArrExp "
+Author: Frenkel TUD 2010-07.
+  This function extend all array and record componentrefs to there
+  elements. This is necessary for BLT and substitution of simple 
+  equations."
+  input tuple<DAE.Exp, Option<DAE.FunctionTree> > inExp;
+  output tuple<DAE.Exp, Option<DAE.FunctionTree> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    Option<DAE.FunctionTree> funcs;
+    DAE.ComponentRef cr;
+    list<DAE.ComponentRef> crlst;
+    DAE.ExpType t,ty;
+    DAE.Dimension id, jd;
+    list<DAE.Dimension> ad;
+    Integer i,j;
+    list<list<DAE.Subscript>> subslst,subslst1;
+    list<DAE.Exp> expl;
+    DAE.Exp e,e_new;
+    list<DAE.ExpVar> varLst;
+    Absyn.Path name;
+    tuple<DAE.Exp, Option<DAE.FunctionTree> > restpl;  
+    list<list<tuple<DAE.Exp, Boolean>>> scalar;
+    
+  // CASE for Matrix    
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
+    equation
+        i = Expression.dimensionSize(id);
+        j = Expression.dimensionSize(jd);
+        subslst = dimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        scalar = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,scalar);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+  
+  // CASE for Matrix and checkModel is on    
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
+    equation
+        true = OptManager.getOption("checkModel");
+        // consider size 1
+        i = Expression.dimensionSize(DAE.DIM_INTEGER(1));
+        j = Expression.dimensionSize(DAE.DIM_INTEGER(1));
+        subslst = dimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        scalar = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,scalar);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+  
+  // CASE for Array
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+    equation
+        subslst = dimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+
+  // CASE for Array and checkModel is on
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+    equation
+        true = OptManager.getOption("checkModel");
+        // consider size 1      
+        subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+  // CASE for Records
+  case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
+    equation
+        expl = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e);
+        e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
+        restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
+    then 
+      (restpl);
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingextendArrExp;
+
+protected function makeMatrix
+  input list<DAE.Exp> expl;
+  input Integer r;
+  input Integer n;
+  input list<tuple<DAE.Exp, Boolean>> incol;
+  output list<list<tuple<DAE.Exp, Boolean>>> scalar;
+algorithm
+  scalar := matchcontinue (expl, r, n, incol)
+    local 
+      DAE.Exp e;
+      list<DAE.Exp> rest;
+      list<list<tuple<DAE.Exp, Boolean>>> res;
+      list<tuple<DAE.Exp, Boolean>> col;
+      Expression.Type tp;
+      Boolean builtin;      
+  case({},r,n,incol)
+    equation
+      col = listReverse(incol);
+    then {col};  
+  case(e::rest,r,n,incol)
+    equation
+      true = intEq(r,0);
+      col = listReverse(incol);
+      res = makeMatrix(e::rest,n,n,{});
+    then      
+      (col::res);
+  case(e::rest,r,n,incol)
+    equation
+      tp = Expression.typeof(e);
+      builtin = Expression.typeBuiltin(tp);
+      res = makeMatrix(rest,r-1,n,(e,builtin)::incol);
+    then      
+      res;
+  end matchcontinue;
+end makeMatrix;
+  
+public function collateAlgorithm "
+Author: Frenkel TUD 2010-07"
+  input DAE.Algorithm inAlg;
+  input Option<DAE.FunctionTree> infuncs;  
+  output DAE.Algorithm outAlg;
+algorithm 
+  outAlg := matchcontinue(inAlg,infuncs)
+    local list<DAE.Statement> statementLst;
+    case(DAE.ALGORITHM_STMTS(statementLst=statementLst),infuncs)
+      equation
+        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, collateArrExp, infuncs);
+      then
+        DAE.ALGORITHM_STMTS(statementLst);
+    case(inAlg,infuncs) then inAlg;        
+  end matchcontinue;
+end collateAlgorithm;
+
+public function collateArrExp "
+Author: Frenkel TUD 2010-07"
+  input DAE.Exp inExp;
+  input Option<DAE.FunctionTree> infuncs;  
+  output DAE.Exp outExp;
+  output Option<DAE.FunctionTree> outfuncs;  
+algorithm 
+  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
+    local DAE.Exp e;
+    case(inExp,infuncs)
+      equation
+        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingcollateArrExp, infuncs);
+      then
+        (e,outfuncs);
+    case(inExp,infuncs) then (inExp,infuncs);        
+  end matchcontinue;
+end collateArrExp;  
+  
+protected function traversingcollateArrExp "
+Author: Frenkel TUD 2010-07."
+  input tuple<DAE.Exp, Option<DAE.FunctionTree> > inExp;
+  output tuple<DAE.Exp, Option<DAE.FunctionTree> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    Option<DAE.FunctionTree> funcs;
+    DAE.ComponentRef cr;
+    DAE.ExpType ty;
+    Integer i;
+    DAE.Exp e,e1,e1_1,e1_2;
+    Boolean b;
+    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));
+    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));        
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_),funcs))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));  
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_),funcs))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));               
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingcollateArrExp;  
+
+public function dimensionsToRange
+  "Converts a list of dimensions to a list of integer ranges."
+  input list<DAE.Dimension> dims;
+  output list<list<DAE.Subscript>> outRangelist;
+algorithm
+  outRangelist := matchcontinue(dims)
+  local 
+    Integer i;
+    list<list<DAE.Subscript>> rangelist;
+    list<Integer> range;
+    list<DAE.Subscript> subs;
+    DAE.Dimension d;
+    case({}) then {};
+    case(DAE.DIM_UNKNOWN::dims) 
+      equation
+        rangelist = dimensionsToRange(dims);
+      then {}::rangelist;
+    case(d::dims) equation
+      i = Expression.dimensionSize(d);
+      range = Util.listIntRange(i);
+      subs = rangesToSubscript(range);
+      rangelist = dimensionsToRange(dims);
+    then subs::rangelist;
+  end matchcontinue;
+end dimensionsToRange;
+
+public function rangesToSubscript "
+Author: Frenkel TUD 2010-05"
+  input list<Integer> inRange;
+  output list<DAE.Subscript> outSubs;
+algorithm
+  outSubs := matchcontinue(inRange)
+  local 
+    Integer i;
+    list<Integer> res;
+    list<DAE.Subscript> range;
+    case({}) then {};
+    case(i::res) 
+      equation
+        range = rangesToSubscript(res);
+      then DAE.INDEX(DAE.ICONST(i))::range;
+  end matchcontinue;
+end rangesToSubscript;
+
+public function rangesToSubscripts "
+Author: Frenkel TUD 2010-05"
+  input list<list<DAE.Subscript>> inRangelist;
+  output list<list<DAE.Subscript>> outSubslst;
+algorithm
+  outSubslst := matchcontinue(inRangelist)
+  local 
+    list<list<DAE.Subscript>> rangelist,rangelist1;
+    list<list<list<DAE.Subscript>>> rangelistlst;
+    list<DAE.Subscript> range;
+    case({}) then {};
+    case(range::{})
+      equation
+        rangelist = Util.listMap(range,Util.listCreate); 
+      then rangelist;
+    case(range::rangelist)
+      equation
+      rangelist = rangesToSubscripts(rangelist);
+      rangelistlst = Util.listMap1(range,rangesToSubscripts1,rangelist);
+      rangelist1 = Util.listFlatten(rangelistlst);
+    then rangelist1;
+  end matchcontinue;
+end rangesToSubscripts;
+
+protected function rangesToSubscripts1 "
+Author: Frenkel TUD 2010-05"
+  input DAE.Subscript inSub;
+  input list<list<DAE.Subscript>> inRangelist;
+  output list<list<DAE.Subscript>> outSubslst;
+algorithm
+  outSubslst := matchcontinue(inSub,inRangelist)
+  local 
+    list<list<DAE.Subscript>> rangelist,rangelist1;
+    DAE.Subscript sub;
+    case(sub,rangelist)
+      equation
+      rangelist1 = Util.listMap1r(rangelist,Util.listAddElementFirst,sub);
+    then rangelist1;
+  end matchcontinue;
+end rangesToSubscripts1;
 
 end BackendDAEUtil;

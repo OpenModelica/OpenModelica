@@ -46,6 +46,8 @@ public import BackendVariable;
 
 protected import Algorithm;
 protected import BackendDump;
+protected import BackendDAEUtil;
+protected import BackendDAEOptimize;
 protected import ComponentReference;
 protected import ClassInf;
 protected import DAEUtil;
@@ -60,7 +62,6 @@ protected import RTOpts;
 protected import Util;
 protected import DAEDump;
 protected import Inline;
-protected import BackendDAEUtil;
 
 
 public function lower
@@ -124,7 +125,7 @@ algorithm
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
         aeqns = listAppend(aeqns,iaeqns);
-        (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = DAELow.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
+        (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
@@ -159,7 +160,7 @@ algorithm
         eqns = listAppend(algeqns, eqns);
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
-        // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = DAELow.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = .BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
         aliasVars = BackendDAEUtil.emptyAliasVariables();
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
@@ -762,13 +763,13 @@ algorithm
     // States appear differentiated among equations
     case (DAE.VARIABLE(),_,v,_,_,_,states,daeAttr)
       equation
-        _ = DAELow.treeGet(states, v);
+        _ = BackendDAEUtil.treeGet(states, v);
       then
         (BackendDAE.STATE(),states);
     // Or states have StateSelect.always
     case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()),_,_,_)))
       equation
-      states = DAELow.treeAdd(states, v, 0);  
+      states = BackendDAEUtil.treeAdd(states, v, 0);  
     then (BackendDAE.STATE(),states);
 
     case (DAE.VARIABLE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
@@ -990,8 +991,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        (e1_2,_) = DAELow.extendArrExp(e1_1,SOME(funcs));
-        (e2_2,_) = DAELow.extendArrExp(e2_1,SOME(funcs));
+        (e1_2,_) = BackendDAEUtil.extendArrExp(e1_1,SOME(funcs));
+        (e2_2,_) = BackendDAEUtil.extendArrExp(e2_1,SOME(funcs));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
       then
@@ -1001,8 +1002,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        (e1_2,_) = DAELow.extendArrExp(e1_1,SOME(funcs));
-        (e2_2,_) = DAELow.extendArrExp(e2_1,SOME(funcs));
+        (e1_2,_) = BackendDAEUtil.extendArrExp(e1_1,SOME(funcs));
+        (e2_2,_) = BackendDAEUtil.extendArrExp(e2_1,SOME(funcs));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
       then
@@ -1672,8 +1673,8 @@ algorithm
     case (vars,DAE.STMT_ASSIGN_ARR(type_ = DAE.ET_ARRAY(ty=tp,arrayDimensions=ad), componentRef = cr, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);  
-        subslst = DAELow.dimensionsToRange(ad);
-        subslst1 = DAELow.rangesToSubscripts(subslst);
+        subslst = BackendDAEUtil.dimensionsToRange(ad);
+        subslst1 = BackendDAEUtil.rangesToSubscripts(subslst);
         crefs = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crefs,Expression.makeCrefExp,tp);             
       then (inputs,expl);
@@ -1925,7 +1926,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt)
       equation
         //cr_1 = Expression.stringifyComponentRef(cr) "value irrelevant, give zero" ;
-        bt = DAELow.treeAdd(bt, cr, 0);
+        bt = BackendDAEUtil.treeAdd(bt, cr, 0);
       then
         bt;
     case (DAE.CALL(expLst = expl),bt)
@@ -3288,7 +3289,7 @@ algorithm
     local list<DAE.Statement> statementLst;
     case(DAE.ALGORITHM_STMTS(statementLst=statementLst),funcs)
       equation
-        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, DAELow.extendArrExp, funcs);
+        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, BackendDAEUtil.extendArrExp, funcs);
       then
         DAE.ALGORITHM_STMTS(statementLst);
     case(inAlg,funcs) then inAlg;        
