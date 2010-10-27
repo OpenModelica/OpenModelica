@@ -1131,7 +1131,7 @@ algorithm
     case (dae, dlow)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        explist = DAELow.getAllExps(dlow);
+        //explist = DAELow.getAllExps(dlow);
         //fcallexps = getMatchingExpsList(explist, matchFnRefs);
         fcallexps = DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
         calledfuncs = Util.listMap(fcallexps, getCallPath);

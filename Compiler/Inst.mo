@@ -145,6 +145,7 @@ protected import MetaUtil;
 protected import ModUtil;
 protected import OptManager;
 protected import PrefixUtil;
+protected import SCodeUtil;
 protected import Static;
 protected import Types;
 protected import UnitAbsynBuilder;
@@ -10157,9 +10158,16 @@ algorithm
   local
     list<SCode.Annotation> anns;
     list<SCode.Element> elemDecl;
-
-    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inIH,inPrefix,info)
+    Absyn.Annotation absynann;
+    SCode.Annotation ann;
+    
+    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=NONE()),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
+
+    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=SOME(Absyn.EXTERNALDECL(annotation_=SOME(absynann)))),baseFunc,inCache,inEnv,inIH,inPrefix,info)
+    equation
+      ann = SCodeUtil.translateAnnotation(absynann);
+    then getDeriveAnnotation2(ann::anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
     case(SCode.CLASS_EXTENDS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
