@@ -42,8 +42,9 @@ class StringHandler
 public:
     StringHandler();
     ~StringHandler();
-    enum ModelicaClasses {MODEL, PACKAGE, PRIMITIVE, CONNECTOR, RECORD, BLOCK, TYPE, FUNCTION, CLASS, PARAMETER,
+    enum ModelicaClasses {MODEL, CLASS, CONNECTOR, RECORD, BLOCK, FUNCTION, PACKAGE, PRIMITIVE, TYPE, PARAMETER,
                           CONSTANT, PROTECTED};
+    static QString getModelicaClassType(int type);
     static QString removeFirstLastCurlBrackets(QString value);
     static QString removeFirstLastBrackets(QString value);
     static QString removeFirstLastQuotes(QString value);
@@ -52,8 +53,9 @@ public:
     static QStringList getStrings(QString value);
     static QStringList getStrings(QString value, char start, char end);
     static QString getLastWordAfterDot(QString value);
+    static QString getFirstWordBeforeDot(QString value);
     static QString removeLastSlashWord(QString value);
-    static QString removeLastDotWord(QString value);
+    static QString removeLastWordAfterDot(QString value);
 };
 
 #endif // STRINGHANDLER_H

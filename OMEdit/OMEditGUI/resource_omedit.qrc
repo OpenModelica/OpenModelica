@@ -28,5 +28,13 @@
         <file>Resources/icons/omeditor.png</file>
         <file>Resources/icons/check.png</file>
         <file>Resources/icons/rename.png</file>
+        <file>Resources/icons/zoom100.png</file>
+        <file>Resources/icons/zoomIn.png</file>
+        <file>Resources/icons/zoomOut.png</file>
+        <file>Resources/icons/branch-closed.png</file>
+        <file>Resources/icons/branch-end.png</file>
+        <file>Resources/icons/branch-more.png</file>
+        <file>Resources/icons/branch-open.png</file>
+        <file>Resources/icons/vline.png</file>
     </qresource>
 </RCC>

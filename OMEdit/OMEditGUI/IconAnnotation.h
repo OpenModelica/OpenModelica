@@ -77,7 +77,6 @@ private:
     QAction *mpIconPropertiesAction;
 
     void createActions();
-    void getAnnotationString();
 public:
     IconAnnotation(QString value, QString name, QString className, QPointF position, OMCProxy *omc,
                    GraphicsScene *graphicsScene, GraphicsView *graphicsView);
@@ -86,7 +85,10 @@ public:
                    GraphicsView *graphicsView);
     ~IconAnnotation();
 
-    QRectF mRectangle;
+    QRectF mRectangle;    // stores the extent points
+    bool mPreserveAspectRatio;
+    qreal mInitialScale;
+    QList<qreal> mGrid;
     OMCProxy *mpOMCProxy;
     GraphicsScene *mpGraphicsScene;
     GraphicsView *mpGraphicsView;
@@ -100,7 +102,7 @@ public:
     QList<ComponentAnnotation*> mpComponentsList;
     QList<IconParameters*> mpIconParametersList;
 
-    void parseIconAnnotationString(QGraphicsItem *item, QString value);
+    void parseIconAnnotationString(ShapeAnnotation *item, QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     QString getName();
@@ -108,18 +110,18 @@ public:
     void updateParameterValue(QString oldValue, QString newValue);
     QString getClassName();
     void getClassComponents(QString className, bool libraryIcon = false);
-    QList<QPointF> getBoundingRect();
     void createSelectionBox();
     void setSelectionBoxActive();
     void setSelectionBoxPassive();
     void setSelectionBoxHover();
     void updateSelectionBox();
     void addConnector(Connector *item);
+    QString getAnnotationString();
 signals:
     void componentMoved();
     void componentDeleted();
     void componentSelected();
-    void componentRotated();
+    void componentRotated(bool isRotated);
     void componentScaled();
 public slots:
     void showSelectionBox();

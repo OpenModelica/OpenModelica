@@ -62,14 +62,20 @@ QString GUIMessages::getMessage(int type)
         return "Simulation Stop Time is not defined.";
     else if (type == SIMULATION_STARTTIME_LESSTHAN_STOPTIME)
         return "Simulation Start Time should be less than Stop Time.";
-    else if (type == ENTER_PACKAGE_NAME)
-        return "Please enter Package Name.";
-    else if (type == ENTER_MODEL_NAME)
-        return "Please enter Model Name.";
+    else if (type == ENTER_NAME)
+        return "Please enter %1 Name.";
+    else if (type == MODEL_ALREADY_EXISTS)
+        return "%1 %2 already exits %3.";
+    else if (type == ITEM_ALREADY_EXISTS)
+        return "An item with the same name alresady exists. Please try some other name.";
     else if (type == OPEN_MODELICA_HOME_NOT_FOUND)
         return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
     else if (type == ERROR_OCCURRED)
-        return "Following Error has occurred.";
+        return "Following Error has occurred. \n\n %1.";
+    else if (type == ERROR_IN_MODELICA_TEXT)
+        return "Following Errors are found in Modelica Text. \n\n %1.";
+    else if (type == UNDO_OR_FIX_ERRORS)
+        return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
     else if (type == NO_OPEN_MODELICA_KEYWORDS)
         return "Please make sure you are not using any Open Modelica Keywords like (model, package, record, class etc.)";
     else if (type == INCOMPATIBLE_CONNECTORS)

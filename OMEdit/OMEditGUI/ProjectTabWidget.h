@@ -106,6 +106,7 @@ public slots:
     void zoomOut();
     void showGridLines(bool showLines);
     void selectAll();
+    void saveModelAnnotation();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
     virtual void dropEvent(QDropEvent *event);
@@ -137,23 +138,34 @@ private:
     QPushButton *mpModelicaTextButton;
     ModelicaEditor *mpModelicaEditor;
     GraphicsViewScroll *mpViewScrollArea;
+    QList<ProjectTab*> mChildModelsList;
 public:
     ProjectTab(ProjectTabWidget *parent = 0);
     void updateTabName(QString name, QString nameStructure);
+    //ProjectTab* getChild();
+    void addChildModel(ProjectTab *model);
+    void updateModel(QString name);
+    bool loadModelFromText(QString name);
+    bool loadRootModel(QString model);
+    bool loadSubModel(QString model);
 
+    ProjectTab *mpParentModel;
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;
     GraphicsScene *mpGraphicsScene;
     QString mModelFileName;
     QString mModelName;
     QString mModelNameStructure;
+    int mType;
     bool mIsSaved;
     int mTabPosition;
+signals:
+    void disableMainWindow(bool disable);
 public slots:
     void hasChanged();
     void showModelicaModel();
     void showModelicaText();
-    void ModelicaEditorTextChanged();
+    bool ModelicaEditorTextChanged();
 };
 
 class MainWindow;
@@ -164,13 +176,19 @@ public:
     ProjectTabWidget(MainWindow *parent = 0);
     ProjectTab* getCurrentTab();
     ProjectTab* getTabByName(QString name);
+    int addTab(ProjectTab *tab, QString tabName);
     void removeTab(int index);
+    void disableTabs(bool disable);
 
     MainWindow *mpParentMainWindow;
     bool mShowLines;
+    bool mToolBarEnabled;
+signals:
+    void tabAdded();
+    void tabRemoved();
 public slots:
-    void addProjectTab(ProjectTab *projectTab, QString tabName="Untitled");
-    void addNewProjectTab(QString tabName, QString modelStructure);
+    void addProjectTab(ProjectTab *projectTab, QString modelName, int type);
+    void addNewProjectTab(QString modelName, QString modelStructure, int type);
     void saveProjectTab();
     void saveProjectTabAs();
     void saveProjectTab(int index, bool saveAs);
@@ -182,6 +200,8 @@ public slots:
     void zoomIn();
     void zoomOut();
     void updateTabIndexes();
+    void enableViewToolbar();
+    void disableViewToolbar();
 };
 
 #endif // PROJECTTABWIDGET_H

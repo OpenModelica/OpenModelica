@@ -57,7 +57,10 @@ public:
 
     QString mClassName;
     QString mIconAnnotationString;
-    QRectF mRectangle;
+    QRectF mRectangle;    // stores the extent points
+    bool mPreserveAspectRatio;
+    qreal mInitialScale;
+    QList<qreal> mGrid;
     QList<LineAnnotation*> mpLinesList;
     QList<PolygonAnnotation*> mpPolygonsList;
     QList<RectangleAnnotation*> mpRectanglesList;

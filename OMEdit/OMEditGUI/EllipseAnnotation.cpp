@@ -33,7 +33,7 @@
 
 #include "EllipseAnnotation.h"
 
-EllipseAnnotation::EllipseAnnotation(QString shape, QGraphicsItem *parent)
+EllipseAnnotation::EllipseAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
     : ShapeAnnotation(parent)
 {
     // initialize the Line Patterns map.
@@ -72,22 +72,39 @@ EllipseAnnotation::EllipseAnnotation(QString shape, QGraphicsItem *parent)
     // if first item of list is true then the Ellipse should be visible.
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
+    int index = 0;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
+        mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
+
+        mRotation = static_cast<QString>(list.at(3)).toFloat();
+        index = 3;
+    }
+
     // 2,3,4 items of list contains the line color.
+    index = index + 1;
     int red, green, blue;
 
-    red = static_cast<QString>(list.at(1)).toInt();
-    green = static_cast<QString>(list.at(2)).toInt();
-    blue = static_cast<QString>(list.at(3)).toInt();
+    red = static_cast<QString>(list.at(index)).toInt();
+    index = index + 1;
+    green = static_cast<QString>(list.at(index)).toInt();
+    index = index + 1;
+    blue = static_cast<QString>(list.at(index)).toInt();
     this->mLineColor = QColor (red, green, blue);
 
     // 5,6,7 items of list contains the fill color.
-    red = static_cast<QString>(list.at(4)).toInt();
-    green = static_cast<QString>(list.at(5)).toInt();
-    blue = static_cast<QString>(list.at(6)).toInt();
+    index = index + 1;
+    red = static_cast<QString>(list.at(index)).toInt();
+    index = index + 1;
+    green = static_cast<QString>(list.at(index)).toInt();
+    index = index + 1;
+    blue = static_cast<QString>(list.at(index)).toInt();
     this->mFillColor = QColor (red, green, blue);
 
     // 8 item of the list contains the line pattern.
-    QString linePattern = StringHandler::getLastWordAfterDot(list.at(7));
+    index = index + 1;
+    QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
     QMap<QString, Qt::PenStyle>::iterator it;
     for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
     {
@@ -99,7 +116,8 @@ EllipseAnnotation::EllipseAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // 9 item of the list contains the fill pattern.
-    QString fillPattern = StringHandler::getLastWordAfterDot(list.at(8));
+    index = index + 1;
+    QString fillPattern = StringHandler::getLastWordAfterDot(list.at(index));
     QMap<QString, Qt::BrushStyle>::iterator fill_it;
     for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
     {
@@ -111,14 +129,19 @@ EllipseAnnotation::EllipseAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // 10 item of the list contains the thickness.
-    this->mThickness = static_cast<QString>(list.at(9)).toFloat();
+    index = index + 1;
+    this->mThickness = static_cast<QString>(list.at(index)).toFloat();
 
     // 11, 12, 13, 14 items of the list contains the extent points of Ellipse.
-    qreal x = static_cast<QString>(list.at(10)).toFloat();
-    qreal y = static_cast<QString>(list.at(11)).toFloat();
+    index = index + 1;
+    qreal x = static_cast<QString>(list.at(index)).toFloat();
+    index = index + 1;
+    qreal y = static_cast<QString>(list.at(index)).toFloat();
     QPointF p1 (x, y);
-    x = static_cast<QString>(list.at(12)).toFloat();
-    y = static_cast<QString>(list.at(13)).toFloat();
+    index = index + 1;
+    x = static_cast<QString>(list.at(index)).toFloat();
+    index = index + 1;
+    y = static_cast<QString>(list.at(index)).toFloat();
     QPointF p2 (x, y);
 
     this->mExtent.append(p1);

@@ -33,13 +33,11 @@
 
 #include "CornerItem.h"
 
-CornerItem::CornerItem(qreal x, qreal y, Qt::Corner corner, GraphicsScene *graphicsScene, GraphicsView *graphicsView, QGraphicsItem *parent)
-    : QGraphicsItem(parent), mpGraphicsScene(graphicsScene), mpGraphicsView(graphicsView),
-      mItemClicked(false), mCorner(corner), mScaleIncrementBy(1.02), mScaleDecrementBy(1/1.02)
+CornerItem::CornerItem(qreal x, qreal y, Qt::Corner corner, QGraphicsItem *parent)
+    : QGraphicsItem(parent), mItemClicked(false), mCorner(corner), mScaleIncrementBy(1.10), mScaleDecrementBy(1/1.10)
 {
     setFlags(QGraphicsItem::ItemIgnoresTransformations);
     this->scale(1.0, -1.0);
-    this->mpGraphicsScene->addItem(this);
     this->mActivePen = QPen(Qt::red, 3);
     this->mHoverPen = QPen(Qt::darkRed, 3);
     updateCornerItem(x, y, corner);
@@ -162,15 +160,16 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         {
         case Qt::TopLeftCorner:
             {
-                if (this->mClickPos.x() < event->pos().x())
+                if ((this->mClickPos.x() < event->pos().x()) or (this->mClickPos.y() > event->pos().y()))
+                {
                     resizeFactorX = this->mScaleDecrementBy;
-                else if (this->mClickPos.x() > event->pos().x())
-                    resizeFactorX = this->mScaleIncrementBy;
-
-                if (this->mClickPos.y() < event->pos().y())
-                    resizeFactorY = this->mScaleIncrementBy;
-                else if (this->mClickPos.y() > event->pos().y())
                     resizeFactorY = this->mScaleDecrementBy;
+                }
+                else if ((this->mClickPos.x() > event->pos().x()) or (this->mClickPos.y() < event->pos().y()))
+                {
+                    resizeFactorX = this->mScaleIncrementBy;
+                    resizeFactorY = this->mScaleIncrementBy;
+                }
                 break;
             }
         case Qt::TopRightCorner:

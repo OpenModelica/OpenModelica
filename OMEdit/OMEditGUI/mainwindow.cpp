@@ -38,7 +38,6 @@
  * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
  */
 
-#include <iostream>
 #include <QtGui>
 
 #include "mainwindow.h"
@@ -84,10 +83,18 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     libdock = new QDockWidget(tr(" Components"), this);
     libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpLibrary = new LibraryWidget(this);
+    // Set the annotations version to 3.x
+    if (!mExitApplication)
+    {
+        mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION2X);
+    }
     // Loads and adds the OM Standard Library into the Library Widget.
     splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
+    // If there is an error while starting OMC then dont load the MSL
     if (!mExitApplication)
+    {
         mpLibrary->addModelicaStandardLibrary();
+    }
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
 
@@ -131,8 +138,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setStatusBar(statusBar);
 
     // Create a New Project Widget
-    this->mpNewPackage = new NewPackage(this);
-    this->mpNewModel = new NewModel(this);
+    mpModelCreator = new ModelCreator(this);
 
     QMetaObject::connectSlotsByName(this);
 }
@@ -143,23 +149,9 @@ MainWindow::~MainWindow()
     delete mpProjectTabs;
     delete menubar;
     delete statusBar;
-    delete mpNewPackage;
-    delete mpNewModel;
+    delete mpModelCreator;
 }
 
-/*
-//! Opens the plot widget.
-void MainWindow::plot()
-{
-    QDockWidget *varPlotDock = new QDockWidget(tr("Plot Variables"), this);
-    varPlotDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    VariableListDialog *variableList = new VariableListDialog(this);
-    varPlotDock->setWidget(variableList);
-    //variableList->show();
-    addDockWidget(Qt::RightDockWidgetArea, varPlotDock);
-
-}
-*/
 //! Event triggered re-implemented method that closes the main window.
 //! First all tabs (models) are closed, if the user do not push Cancel
 //! (closeAllProjectTabs then returns 'false') the event is accepted and
@@ -185,14 +177,35 @@ void MainWindow::createActions()
 {
     newAction = new QAction(tr("New"), this);
 
-    newPackageAction = new QAction(tr("Package"), this);
-    newPackageAction->setStatusTip(tr("Create New Package"));
-    connect(newPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
-
     newModelAction = new QAction(tr("Model"), this);
     newModelAction->setStatusTip(tr("Create New Model"));
     newModelAction->setShortcut(QKeySequence("Ctrl+n"));
     connect(newModelAction, SIGNAL(triggered()), SLOT(openNewModel()));
+
+    newClassAction = new QAction(tr("Class"), this);
+    newClassAction->setStatusTip(tr("Create New Class"));
+    connect(newClassAction, SIGNAL(triggered()), SLOT(openNewClass()));
+
+    newConnectorAction = new QAction(tr("Connector"), this);
+    newConnectorAction->setStatusTip(tr("Create New Connector"));
+    connect(newConnectorAction, SIGNAL(triggered()), SLOT(openNewConnector()));
+
+    newRecordAction = new QAction(tr("Record"), this);
+    newRecordAction->setStatusTip(tr("Create New Record"));
+    connect(newRecordAction, SIGNAL(triggered()), SLOT(openNewRecord()));
+
+    newBlockAction = new QAction(tr("Block"), this);
+    newBlockAction->setStatusTip(tr("Create New Block"));
+    connect(newBlockAction, SIGNAL(triggered()), SLOT(openNewBlock()));
+
+    newFunctionAction = new QAction(tr("Function"), this);
+    newFunctionAction->setStatusTip(tr("Create New Function"));
+    connect(newFunctionAction, SIGNAL(triggered()), SLOT(openNewFunction()));
+
+    newPackageAction = new QAction(tr("Package"), this);
+    newPackageAction->setStatusTip(tr("Create New Package"));
+    newPackageAction->setShortcut(QKeySequence("Ctrl+p"));
+    connect(newPackageAction, SIGNAL(triggered()), SLOT(openNewPackage()));
 
     openAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open"), this);
     openAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -225,6 +238,9 @@ void MainWindow::createActions()
     pasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
     pasteAction->setShortcut(QKeySequence("Ctrl+v"));
 
+    gridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
+    gridLinesAction->setCheckable(true);
+
     resetZoomAction = new QAction(QIcon(":/Resources/icons/zoom100.png"), tr("Reset Zoom"), this);
 
     zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
@@ -242,9 +258,6 @@ void MainWindow::createActions()
     closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
     connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
-
-    gridLinesAction = new QAction(QIcon(":/Resources/icons/grid.png"), tr("Grid Lines"), this);
-    gridLinesAction->setCheckable(true);
 
     simulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Simulate"), this);
     simulationAction->setStatusTip(tr("Simulate the Model"));
@@ -288,6 +301,11 @@ void MainWindow::createMenus()
 
     //Add the actionbuttons to the menues
     menuNew->addAction(newModelAction);
+    menuNew->addAction(newClassAction);
+    menuNew->addAction(newConnectorAction);
+    menuNew->addAction(newRecordAction);
+    menuNew->addAction(newBlockAction);
+    menuNew->addAction(newFunctionAction);
     menuNew->addAction(newPackageAction);
 
     menuFile->addAction(menuNew->menuAction());
@@ -314,7 +332,11 @@ void MainWindow::createMenus()
     menuView->addAction(messageAction);
     menuView->addAction(fileToolBar->toggleViewAction());
     menuView->addAction(editToolBar->toggleViewAction());
+    menuView->addSeparator();
     menuView->addAction(gridLinesAction);
+    menuView->addAction(resetZoomAction);
+    menuView->addAction(zoomInAction);
+    menuView->addAction(zoomOutAction);
 
     menuSimulation->addAction(simulationAction);
     menuSimulation->addAction(plotAction);
@@ -338,6 +360,11 @@ void MainWindow::createToolbars()
     QToolButton *newMenuButton = new QToolButton(fileToolBar);
     QMenu *newMenu = new QMenu(newMenuButton);
     newMenu->addAction(newModelAction);
+    newMenu->addAction(newClassAction);
+    newMenu->addAction(newConnectorAction);
+    newMenu->addAction(newRecordAction);
+    newMenu->addAction(newBlockAction);
+    newMenu->addAction(newFunctionAction);
     newMenu->addAction(newPackageAction);
 
     newMenuButton->setMenu(newMenu);
@@ -378,16 +405,46 @@ void MainWindow::openSimulation()
     this->mpSimulationWidget->show();
 }
 
-//! Opens the new package widget.
-void MainWindow::openNewPackage()
-{
-    this->mpNewPackage->show();
-}
-
 //! Opens the new model widget.
 void MainWindow::openNewModel()
 {
-    this->mpNewModel->show();
+    this->mpModelCreator->show(StringHandler::MODEL);
+}
+
+//! Opens the new class widget.
+void MainWindow::openNewClass()
+{
+    this->mpModelCreator->show(StringHandler::CLASS);
+}
+
+//! Opens the new connector widget.
+void MainWindow::openNewConnector()
+{
+    this->mpModelCreator->show(StringHandler::CONNECTOR);
+}
+
+//! Opens the new record widget.
+void MainWindow::openNewRecord()
+{
+    this->mpModelCreator->show(StringHandler::RECORD);
+}
+
+//! Opens the new block widget.
+void MainWindow::openNewBlock()
+{
+    this->mpModelCreator->show(StringHandler::BLOCK);
+}
+
+//! Opens the new function widget.
+void MainWindow::openNewFunction()
+{
+    this->mpModelCreator->show(StringHandler::FUNCTION);
+}
+
+//! Opens the new package widget.
+void MainWindow::openNewPackage()
+{
+    this->mpModelCreator->show(StringHandler::PACKAGE);
 }
 
 //! Opens the new model widget.
@@ -440,6 +497,19 @@ void MainWindow::openOMShell()
 
     QProcess *process = new QProcess();
     process->start(omShellPath);
+}
+
+void MainWindow::disableMainWindow(bool disable)
+{
+    menubar->setDisabled(disable);
+    fileToolBar->setDisabled(disable);
+    editToolBar->setDisabled(disable);
+    simulationToolBar->setDisabled(disable);
+    viewToolBar->setDisabled(disable);
+    mpLibrary->setDisabled(disable);
+    mpProjectTabs->disableTabs(disable);
+    mpMessageWidget->setDisabled(disable);
+    mpPlotWidget->setDisabled(disable);
 }
 
 /*

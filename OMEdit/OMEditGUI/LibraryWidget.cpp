@@ -69,6 +69,7 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
     setColumnCount(1);
     setIndentation(Helper::treeIndentation);
     setContextMenuPolicy(Qt::CustomContextMenu);
+    setExpandsOnDoubleClick(false);
 
     createActions();
 
@@ -92,17 +93,17 @@ void ModelicaTree::createActions()
     connect(mCheckModelAction, SIGNAL(triggered()), SLOT(checkClass()));
 
     mDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
-    connect(mDeleteAction, SIGNAL(triggered()), SLOT(deleteClass()));
+    connect(mDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
 }
 
 ModelicaTreeNode* ModelicaTree::getNode(QString name)
 {
     foreach (ModelicaTreeNode *node, mModelicaTreeNodesList)
     {
-        if (node->toolTip(0) == name)
+        if (node->mNameStructure == name)
             return node;
     }
-    return NULL;
+    return 0;
 }
 
 void ModelicaTree::deleteNode(ModelicaTreeNode *item)
@@ -153,6 +154,7 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
+    setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
 }
 
@@ -163,24 +165,17 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item);
     ProjectTab *pCurrentTab;
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
-    if (treeNode->mType == StringHandler::MODEL)
+    pCurrentTab = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
+    if (pCurrentTab)
     {
-        pCurrentTab = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
-        if (pCurrentTab)
-        {
-            pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
-            isFound = true;
-        }
-        // if the tab is closed by user then reopen it and set is current tab
-        if (!isFound)
-        {
-            //! @todo make it better load the model here and get the components required.
-            pMainWindow->mpProjectTabs->addProjectTab(new ProjectTab(pMainWindow->mpProjectTabs), "model1234");
-        }
+        pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
+        isFound = true;
     }
-    else
+    // if the tab is closed by user then reopen it and set is current tab
+    if (!isFound)
     {
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ONLY_MODEL_ALLOWED));
+        //! @todo make it better load the model here and get the components required.
+        //pMainWindow->mpProjectTabs->addProjectTab(new ProjectTab(pMainWindow->mpProjectTabs), "model1234");
     }
 }
 
@@ -215,11 +210,15 @@ void ModelicaTree::checkClass()
 
 }
 
-void ModelicaTree::deleteClass()
+bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
 {
     QString msg;
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
-    ModelicaTreeNode *treeNode = mpParentLibraryWidget->mSelectedModelicaNode;
+    ModelicaTreeNode *treeNode;
+    if (!node)
+        treeNode = mpParentLibraryWidget->mSelectedModelicaNode;
+    else
+        treeNode = node;
 
     switch (treeNode->mType)
     {
@@ -247,25 +246,24 @@ void ModelicaTree::deleteClass()
         break;
     case QMessageBox::No:
         // No was clicked
-        return;
+        return false;
     default:
         // should never be reached
-        return;
+        return false;
     }
 
-    if (pMainWindow->mpOMCProxy->deleteClass(mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure))
+    if (pMainWindow->mpOMCProxy->deleteClass(treeNode->mNameStructure))
     {
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(mpParentLibraryWidget->mSelectedModelicaNode->mName +
-                                                          " deleted successfully.");
+        pMainWindow->mpMessageWidget->printGUIInfoMessage(treeNode->mName + " deleted successfully.");
         deleteNode(treeNode);
+        return true;
     }
     else
     {
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(QString(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED))
-                                                          .append(" while deleting ")
-                                                          .append(mpParentLibraryWidget->mSelectedModelicaNode->mName)
-                                                          .append("\n")
-                                                          .append(pMainWindow->mpOMCProxy->getResult()));
+        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                                                          .arg(pMainWindow->mpOMCProxy->getResult())
+                                                          .append("while deleting " + treeNode->mName));
+        return false;
     }
 }
 
@@ -282,6 +280,7 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpTree->setDragEnabled(true);
     mpTree->setIconSize(Helper::iconSize);
     mpTree->setColumnCount(1);
+    mpTree->setExpandsOnDoubleClick(false);
 
     mpModelicaTree = new ModelicaTree(this);
 
@@ -292,7 +291,6 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
 
     setLayout(mpGrid);
 
-    connect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(showLib(QTreeWidgetItem*)));
     connect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
 }
 
@@ -508,8 +506,33 @@ IconAnnotation* LibraryWidget::getGlobalIconObject(QString className)
     return NULL;
 }
 
-void LibraryWidget::updateNodeText(QString text, QString textStructure)
+void LibraryWidget::updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node)
 {
-    mSelectedModelicaNode->setText(0, text);
-    mSelectedModelicaNode->setToolTip(0, textStructure);
+    ModelicaTreeNode *treeNode;
+    if (!node)
+        treeNode = mSelectedModelicaNode;
+    else
+        treeNode = node;
+
+    // update the corresponding tab
+    ProjectTab *pCurrentTab = mpParentMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
+    if (pCurrentTab)
+    {
+        pCurrentTab->updateTabName(text, textStructure);
+    }
+
+    // udate the node
+    treeNode->mName = text;
+    treeNode->mNameStructure = textStructure;
+    treeNode->setText(0, text);
+    treeNode->setToolTip(0, textStructure);
+
+    // if the node has childs
+    int count = treeNode->childCount();
+    for (int i = 0 ; i < count ; i++)
+    {
+        // update the tabs of child nodes
+        ModelicaTreeNode *item = dynamic_cast<ModelicaTreeNode*>(treeNode->child(i));
+        updateNodeText(item->mName, QString(textStructure).append(".").append(item->mName), item);
+    }
 }

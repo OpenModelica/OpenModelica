@@ -35,11 +35,16 @@
 #define ELLIPSEANNOTATION_H
 
 #include "ShapeAnnotation.h"
+#include "IconAnnotation.h"
+
+class OMCProxy;
 
 class EllipseAnnotation : public ShapeAnnotation
 {
 private:
     bool mVisible;
+    QPointF mOrigin;
+    qreal mRotation;
     QColor mLineColor;
     QColor mFillColor;
     QMap<QString, Qt::PenStyle> mLinePatternsMap;
@@ -49,7 +54,7 @@ private:
     qreal mThickness;
     QList<QPointF> mExtent;
 public:
-    EllipseAnnotation(QString shape, QGraphicsItem *parent = 0);
+    EllipseAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawEllipseAnnotaion(QPainter *painter);

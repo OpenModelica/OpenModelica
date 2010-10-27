@@ -43,10 +43,12 @@ class ModelicaEditor : public QTextEdit
     Q_OBJECT
 public:
     ModelicaEditor(ProjectTab *pParent = 0);
+    QString getModelName();
 
     ProjectTab *mpParentProjectTab;
+    QString mLastValidText;
 signals:
-    void focusOut();
+    bool focusOut();
 protected:
     virtual void focusOutEvent(QFocusEvent *e);
 };

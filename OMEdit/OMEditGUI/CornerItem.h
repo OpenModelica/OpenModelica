@@ -47,8 +47,6 @@ class CornerItem : public QObject, public QGraphicsItem
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 private:
-    GraphicsScene *mpGraphicsScene;
-    GraphicsView *mpGraphicsView;
     QVector<QPointF> mLines;
     QRectF mRectangle;
     QPen mPen;
@@ -60,7 +58,7 @@ private:
     qreal mScaleIncrementBy;
     qreal mScaleDecrementBy;
 public:
-    CornerItem(qreal x, qreal y, Qt::Corner corner, GraphicsScene *graphicsScene, GraphicsView *graphicsView, QGraphicsItem *parent = 0);
+    CornerItem(qreal x, qreal y, Qt::Corner corner, QGraphicsItem *parent = 0);
     void updateCornerItem(qreal x, qreal y, Qt::Corner corner);
     void setActive();
     void setPassive();

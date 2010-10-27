@@ -54,6 +54,30 @@ StringHandler::~StringHandler()
 
 }
 
+QString StringHandler::getModelicaClassType(int type)
+{
+    switch (type)
+    {
+    case StringHandler::MODEL:
+        return "Model";
+    case StringHandler::CLASS:
+        return "Class";
+    case StringHandler::CONNECTOR:
+        return "Connector";
+    case StringHandler::RECORD:
+        return "Record";
+    case StringHandler::BLOCK:
+        return "Block";
+    case StringHandler::FUNCTION:
+        return "Function";
+    case StringHandler::PACKAGE:
+        return "Package";
+    default:
+        // should never be reached
+        return "";
+    }
+}
+
 //! Removes the first and last curly brackest {} from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeFirstLastCurlBrackets(QString value)
@@ -178,6 +202,24 @@ QString StringHandler::getLastWordAfterDot(QString value)
     }
 }
 
+QString StringHandler::getFirstWordBeforeDot(QString value)
+{
+    if (value.isEmpty())
+    {
+        return "";
+    }
+
+    int pos = value.indexOf('.');
+    if (pos >= 0)
+    {
+        return value.mid(0, (pos));
+    }
+    else
+    {
+        return value;
+    }
+}
+
 QString StringHandler::removeLastSlashWord(QString value)
 {
     if (value.isEmpty())
@@ -197,7 +239,7 @@ QString StringHandler::removeLastSlashWord(QString value)
     }
 }
 
-QString StringHandler::removeLastDotWord(QString value)
+QString StringHandler::removeLastWordAfterDot(QString value)
 {
     if (value.isEmpty())
     {

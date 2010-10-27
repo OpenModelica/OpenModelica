@@ -33,7 +33,7 @@
 
 #include "LineAnnotation.h"
 
-LineAnnotation::LineAnnotation(QString shape, QGraphicsItem *parent)
+LineAnnotation::LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
     : ShapeAnnotation(parent)
 {
     // initialize the Line Patterns map.
@@ -54,8 +54,20 @@ LineAnnotation::LineAnnotation(QString shape, QGraphicsItem *parent)
     // if first item of list is true then the Line should be visible.
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
+    int index = 0;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+        mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
+        mOrigin.setY(static_cast<QString>(originList.at(1)).toFloat());
+
+        mRotation = static_cast<QString>(list.at(2)).toFloat();
+        index = 2;
+    }
+
     // second item of list contains the points.
-    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+    index = index + 1;
+    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
 
     foreach (QString point, pointsList)
     {
@@ -72,7 +84,8 @@ LineAnnotation::LineAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // third item of list contains the color.
-    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(2)));
+    index = index + 1;
+    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
     if (colorList.size() < 3)
     {
         return;
@@ -85,7 +98,8 @@ LineAnnotation::LineAnnotation(QString shape, QGraphicsItem *parent)
     this->mLineColor = QColor (red, green, blue);
 
     // fourth item of list contains the Line Pattern.
-    QString linePattern = StringHandler::getLastWordAfterDot(list.at(3));
+    index = index + 1;
+    QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
     QMap<QString, Qt::PenStyle>::iterator it;
     for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
     {
@@ -97,15 +111,26 @@ LineAnnotation::LineAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // fifth item of list contains the Line thickness.
-    this->mThickness = static_cast<QString>(list.at(4)).toFloat();
+    index = index + 1;
+    this->mThickness = static_cast<QString>(list.at(index)).toFloat();
 
     // sixth item of list contains the Line Arrows.
+    index = index + 1;
     // Leave it for now.
 
     // seventh item of list contains the Line Arrow Size.
+    index = index + 1;
 
     // eighth item of list contains the smooth.
-    this->mSmooth = static_cast<QString>(list.at(7)).contains("true");
+    index = index + 1;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
+    }
+    else if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
+    }
 }
 
 QRectF LineAnnotation::boundingRect() const

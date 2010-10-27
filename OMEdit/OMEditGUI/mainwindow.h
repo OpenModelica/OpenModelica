@@ -70,9 +70,7 @@ class ProjectTabWidget;
 class GraphicsView;
 class GraphicsScene;
 class LibraryWidget;
-class NewProject;
-class NewPackage;
-class NewModel;
+class ModelCreator;
 class SimulationWidget;
 class PlotWidget;
 
@@ -91,9 +89,7 @@ public:
     LibraryWidget *mpLibrary;
     SimulationWidget *mpSimulationWidget;
     PlotWidget *mpPlotWidget;
-    NewProject *mpNewProject;
-    NewPackage *mpNewPackage;
-    NewModel *mpNewModel;
+    ModelCreator *mpModelCreator;
     OMCProxy *mpOMCProxy;
     QMenuBar *menubar;
     QMenu *menuFile;
@@ -106,8 +102,13 @@ public:
     QStatusBar *statusBar;
     QPushButton *mpBackButton;
     QAction *newAction;
-    QAction *newPackageAction;
     QAction *newModelAction;
+    QAction *newClassAction;
+    QAction *newConnectorAction;
+    QAction *newRecordAction;
+    QAction *newBlockAction;
+    QAction *newFunctionAction;
+    QAction *newPackageAction;
     QAction *openAction;
     QAction *saveAction;
     QAction *saveAsAction;
@@ -139,9 +140,16 @@ public:
     void closeEvent(QCloseEvent *event);
 private slots:
     void openSimulation();
-    void openNewPackage();
     void openNewModel();
+    void openNewClass();
+    void openNewConnector();
+    void openNewRecord();
+    void openNewBlock();
+    void openNewFunction();
+    void openNewPackage();
     void openOMShell();
+public slots:
+    void disableMainWindow(bool disable);
 private:
     void createActions();
     void createMenus();

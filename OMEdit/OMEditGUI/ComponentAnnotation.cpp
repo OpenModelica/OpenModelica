@@ -58,6 +58,18 @@ ComponentAnnotation::ComponentAnnotation(QString value, QString className, QStri
     parseTransformationString(transformationStr);
 }
 
+void ComponentAnnotation::setDefaultValues()
+{
+    mVisible = true;
+    mPositionX = 0;
+    mPositionY = 0;
+    mFlipHorizontal = false;
+    mFlipVertical = false;
+    mRotateAngle = 0;
+    mScale = 0;
+    mAspectRatio = 1;
+}
+
 void ComponentAnnotation::parseTransformationString(QString value)
 {
     value = StringHandler::removeFirstLastCurlBrackets(value);

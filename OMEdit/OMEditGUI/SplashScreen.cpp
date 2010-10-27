@@ -57,7 +57,7 @@ void SplashScreen::setMessage()
     this->mFonts.append(QFont("Arial", 20));
     this->mColors.append(QColor(213, 218, 220));
 
-    this->mPoints.append(QPointF(110, 322));
+    //this->mPoints.append(QPointF(110, 322));
     this->mFonts.append(QFont("Helvetica", 21));
     this->mColors.append(QColor(Qt::white));
 
@@ -81,7 +81,10 @@ void SplashScreen::drawContents(QPainter *painter)
 
     painter->setFont(this->mFonts.at(2));
     painter->setPen(this->mColors.at(2));
-    painter->drawText(this->mPoints.at(2), this->mMessages.at(2));
+    //painter->drawText(this->mPoints.at(2), this->mMessages.at(2));
+    QRect r = rect();
+    r.setRect(r.x(), r.y(), r.width(), r.height() -12);
+    painter->drawText(r, Qt::AlignBottom | Qt::AlignCenter, this->mMessages.at(2));
 
     painter->setFont(QFont("Verdana", 9));
     QSplashScreen::drawContents(painter);

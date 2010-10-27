@@ -35,6 +35,9 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
+#include "IconAnnotation.h"
+
+class OMCProxy;
 
 class LineAnnotation : public ShapeAnnotation
 {
@@ -43,11 +46,13 @@ private:
     qreal mThickness;
     bool mSmooth;
     bool mVisible;
+    QPointF mOrigin;
+    qreal mRotation;
     QList<QPointF> mPoints;
     QMap<QString, Qt::PenStyle> mLinePatternsMap;
     Qt::PenStyle mLinePattern;
 public:
-    LineAnnotation(QString shape, QGraphicsItem *parent = 0);
+    LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawLineAnnotaion(QPainter *painter);

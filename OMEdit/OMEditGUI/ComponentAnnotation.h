@@ -62,6 +62,7 @@ public:
                         ComponentsProperties *pComponentProperties, IconAnnotation *pParent);
     ComponentAnnotation(QString value, QString className, QString transformationStr,
                         ComponentsProperties *pComponentProperties, IconAnnotation *pParent, bool libraryIcon);
+    void setDefaultValues();
     void parseTransformationString(QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
@@ -71,7 +72,10 @@ public:
     QString mClassName;
     QString mIconAnnotationString;
     QString mTransformationString;
-    QRectF mRectangle;
+    QRectF mRectangle;    // stores the extent points
+    bool mPreserveAspectRatio;
+    qreal mInitialScale;
+    QList<qreal> mGrid;
     qreal mPositionX;
     qreal mPositionY;
     ComponentsProperties *mpComponentProperties;

@@ -1,21 +1,21 @@
 /* Library Widget Styles */
-/*QTreeWidget::branch {
-    border-image: url(../icons/vline.png) 0;
+QTreeWidget::branch {
+    border-image: url(:/Resources/icons/vline.png) 0;
 }
 QTreeWidget::branch:has-siblings:adjoins-item {
-    border-image: url(../icons/branch-more.png) 0;
+    border-image: url(:/Resources/icons/branch-more.png) 0;
 }
 QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(../icons/branch-end.png) 0;
+    border-image: url(:/Resources/icons/branch-end.png) 0;
 }
 QTreeWidget::branch:has-children:!has-siblings:closed, QTreeWidget::branch:closed:has-children:has-siblings {
     border-image: none;
-    image: url(../icons/branch-closed.png);
+    image: url(:/Resources/icons/branch-closed.png);
 }
 QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:has-children:has-siblings  {
     border-image: none;
-    image: url(../icons/branch-open.png);
-}*/
+    image: url(:/Resources/icons/branch-open.png);
+}
 /* End of Library Widget Styles */
 
 /* Modelica Model and Text Buttons Styles */
@@ -38,7 +38,4 @@ QPushButton#ModelicaModelButton:checked, QPushButton#ModelicaTextButton:checked 
 
 QTextEdit, QLineEdit {
     border: 1px solid gray;
-}
-QMessageBox {
-    background-color: lightgray;
 }

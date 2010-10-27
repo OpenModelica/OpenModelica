@@ -38,6 +38,7 @@
 //! @brief Contains functions used for communication with Open Modelica Compiler.
 
 #include <stdexcept>
+#include <stdlib.h>
 
 #include "OMCProxy.h"
 #include "OMCThread.h"
@@ -59,7 +60,6 @@ OMCProxy::OMCProxy(MainWindow *pParent)
     this->mpParentMainWindow = pParent;
     this->mpOMCLogger = new QDialog();
     this->mpOMCLogger->setWindowFlags(Qt::WindowTitleHint);
-    this->mpOMCLogger->setMaximumSize(640, 480);
     this->mpOMCLogger->setMinimumSize(640, 480);
     this->mpOMCLogger->setWindowIcon(QIcon(":/Resources/icons/console.png"));
     this->mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - OMC Messages Log"));
@@ -67,9 +67,17 @@ OMCProxy::OMCProxy(MainWindow *pParent)
     this->mpTextEdit = new QTextEdit();
     this->mpTextEdit->setReadOnly(true);
     // Set the Layout
-    QHBoxLayout *layout = new QHBoxLayout(this->mpOMCLogger);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(this->mpTextEdit);
+    QHBoxLayout *horizontallayout = new QHBoxLayout;
+    horizontallayout->setContentsMargins(0, 0, 0, 0);
+    mpExpressionTextBox = new QLineEdit;
+    mpSendButton = new QPushButton("Send");
+    connect(mpSendButton, SIGNAL(pressed()), SLOT(sendCustomExpression()));
+    horizontallayout->addWidget(mpExpressionTextBox);
+    horizontallayout->addWidget(mpSendButton);
+    QVBoxLayout *verticalallayout = new QVBoxLayout;
+    verticalallayout->addWidget(this->mpTextEdit);
+    verticalallayout->addLayout(horizontallayout);
+    mpOMCLogger->setLayout(verticalallayout);
     //start the server
     if(!startServer())      // if we are unable to start OMC. Exit the application.
     {
@@ -305,6 +313,15 @@ void OMCProxy::catchException()
     restartApplication();
 }
 
+void OMCProxy::sendCustomExpression()
+{
+    if (mpExpressionTextBox->text().isEmpty())
+        return;
+
+    sendCommand(mpExpressionTextBox->text());
+    mpExpressionTextBox->setText(QString());
+}
+
 void OMCProxy::removeObjectRefFile()
 {
     QFile::remove(mObjectRefFile);
@@ -332,6 +349,52 @@ QString OMCProxy::getErrorString()
 QString OMCProxy::getVersion()
 {
     sendCommand("getVersion()");
+    return getResult();
+}
+
+bool OMCProxy::setAnnotationVersion(int version)
+{
+    if (version == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        mAnnotationVersion = OMCProxy::ANNOTATION_VERSION2X;
+        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl221"));
+        sendCommand("setAnnotationVersion(\"2.x\")");
+    }
+    else if (version == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
+        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl31"));
+        sendCommand("setAnnotationVersion(\"3.x\")");
+    }
+
+    if (getResult().toLower().contains("true"))
+        return true;
+    else
+    {
+        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl221"));
+        mAnnotationVersion = OMCProxy::ANNOTATION_VERSION2X;
+        return false;
+    }
+}
+
+QString OMCProxy::getAnnotationVersion()
+{
+    sendCommand("getAnnotationVersion()");
+    return getResult();
+}
+
+bool OMCProxy::setEnvironmentVar(QString name, QString value)
+{
+    sendCommand("setEnvironmentVar(\"" + name + "\", \"" + value + "\")");
+    if (getResult().toLower().contains("ok"))
+        return true;
+    else
+        return false;
+}
+
+QString OMCProxy::getEnvironmentVar(QString name)
+{
+    sendCommand("getEnvironmentVar(\"" + name + "\")");
     return getResult();
 }
 
@@ -533,6 +596,15 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
         return true;
 }
 
+bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
+{
+    sendCommand("within " + parentClassName + "; " + modelText);
+    if (getResult().contains("error"))
+        return false;
+    else
+        return true;
+}
+
 bool OMCProxy::createModel(QString modelName)
 {
     sendCommand("createModel(" + modelName + ")");
@@ -602,10 +674,28 @@ bool OMCProxy::save(QString modelName)
         return false;
 }
 
+bool OMCProxy::saveModifiedModel(QString modelText)
+{
+    sendCommand(modelText);
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
+}
+
 QString OMCProxy::list(QString className)
 {
     sendCommand("list(" + className + ")");
     return StringHandler::removeFirstLastQuotes(getResult()).trimmed();
+}
+
+bool OMCProxy::addClassAnnotation(QString className, QString annotation)
+{
+    sendCommand("addClassAnnotation(" + className + ", " + annotation + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
 }
 
 bool OMCProxy::addComponent(QString name, QString className, QString modelName)
@@ -633,6 +723,15 @@ bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newNa
         return false;
     else
         return true;
+}
+
+bool OMCProxy::updateComponent(QString name, QString className, QString modelName, QString annotation)
+{
+    sendCommand("updateComponent(" + name + "," + className + "," + modelName + "," + annotation + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
 }
 
 bool OMCProxy::addConnection(QString from, QString to, QString className)

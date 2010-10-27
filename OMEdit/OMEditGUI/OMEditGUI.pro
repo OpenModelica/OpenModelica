@@ -138,3 +138,5 @@ FORMS += \
 RESOURCES += resource_omedit.qrc
 
 RC_FILE = rc_omedit.rc
+
+DESTDIR = ../bin

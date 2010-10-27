@@ -79,7 +79,7 @@ private:
 signals:
     void endComponentConnected();
 public slots:
-    void drawConnector();
+    void drawConnector(bool isRotated = false);
     void updateStartPoint(QPointF point);
     void updateEndPoint(QPointF point);
     void moveAllPoints(qreal offsetX, qreal offsetY);

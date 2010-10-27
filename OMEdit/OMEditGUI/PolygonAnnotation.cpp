@@ -33,7 +33,7 @@
 
 #include "PolygonAnnotation.h"
 
-PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
+PolygonAnnotation::PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
     : ShapeAnnotation(parent)
 {
     // initialize the Line Patterns map.
@@ -67,8 +67,20 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     // if first item of list is true then the Polygon should be visible.
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
+    int index = 0;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+        mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
+        mOrigin.setY(static_cast<QString>(originList.at(1)).toFloat());
+
+        mRotation = static_cast<QString>(list.at(2)).toFloat();
+        index = 2;
+    }
+
     // second item of list contains the color.
-    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+    index = index + 1;
+    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
     if (colorList.size() < 3)
     {
         return;
@@ -80,7 +92,8 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     this->mLineColor = QColor (red, green, blue);
 
     // third item of list contains the color.
-    QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(2)));
+    index = index + 1;
+    QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
     if (fillColorList.size() < 3)
     {
         return;
@@ -92,7 +105,8 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     this->mFillColor = QColor (red, green, blue);
 
     // fourth item of list contains the Line Pattern.
-    QString linePattern = StringHandler::getLastWordAfterDot(list.at(3));
+    index = index + 1;
+    QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
     QMap<QString, Qt::PenStyle>::iterator it;
     for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
     {
@@ -104,7 +118,8 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // fifth item of list contains the Line Pattern.
-    QString fillPattern = StringHandler::getLastWordAfterDot(list.at(4));
+    index = index + 1;
+    QString fillPattern = StringHandler::getLastWordAfterDot(list.at(index));
     QMap<QString, Qt::BrushStyle>::iterator fill_it;
     for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
     {
@@ -116,10 +131,12 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // sixth item of list contains the thickness.
-    this->mThickness = static_cast<QString>(list.at(5)).toFloat();
+    index = index + 1;
+    this->mThickness = static_cast<QString>(list.at(index)).toFloat();
 
     // seventh item of list contains the points.
-    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(6)));
+    index = index + 1;
+    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
     foreach (QString point, pointsList)
     {
         QStringList polygonPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
@@ -133,7 +150,15 @@ PolygonAnnotation::PolygonAnnotation(QString shape, QGraphicsItem *parent)
     }
 
     // eighth item of the list contains the corner radius.
-    this->mSmooth = static_cast<QString>(list.at(7)).contains("true");
+    index = index + 1;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
+    }
+    else if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
+    }
 }
 
 QRectF PolygonAnnotation::boundingRect() const

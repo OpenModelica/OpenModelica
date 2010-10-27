@@ -41,6 +41,30 @@
 #include "mainwindow.h"
 
 class MainWindow;
+
+class ModelCreator : public QDialog
+{
+    Q_OBJECT
+public:
+    ModelCreator(MainWindow *parent = 0);
+    ~ModelCreator();
+    void show(int type);
+
+    MainWindow *mpParentMainWindow;
+private:
+    int mType;
+    QLabel *mpNameLabel;
+    QLineEdit *mpNameTextBox;
+    QLabel *mpParentPackageLabel;
+    QComboBox *mpParentPackageCombo;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
+public slots:
+    void create();
+};
+
+
 /*
 class NewProject : public QDialog
 {
@@ -63,7 +87,7 @@ public slots:
     void createProject();
     void openFileDialog();
 };
-*/
+
 
 class NewPackage : public QDialog
 {
@@ -106,7 +130,7 @@ private:
 public slots:
     void createModel();
 };
-
+*/
 class RenameClassWidget : public QDialog
 {
     Q_OBJECT

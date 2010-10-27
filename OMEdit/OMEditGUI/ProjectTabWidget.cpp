@@ -41,12 +41,6 @@
 #include <QtGui>
 #include <QSizePolicy>
 #include <QMap>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstdlib>
-#include <cassert>
 
 #include "ProjectTabWidget.h"
 #include "LibraryWidget.h"
@@ -70,7 +64,6 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->setMinimumSize(2000,2000);
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
-    this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
     this->scale(2.0, -2.0);
     this->createActions();
@@ -99,7 +92,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->drawRect(this->sceneRect());
 
     //! @todo Grid Lines changes when resize the window. Update it.
-    if (this->mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
+    if (mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
     {
         painter->scale(1.0, -1.0);
         painter->setBrush(Qt::NoBrush);
@@ -167,8 +160,6 @@ void GraphicsView::dropEvent(QDropEvent *event)
                                          this->mpParentProjectTab->mpGraphicsScene, this);
             addIconObject(newIcon);
         }
-        // Add the component to model in OMC Global Scope.
-        pMainWindow->mpOMCProxy->addComponent(iconName, item->toolTip(0), mpParentProjectTab->mModelNameStructure);
         event->accept();
     }
     else
@@ -182,6 +173,14 @@ Connector* GraphicsView::getConnector()
 
 void GraphicsView::addIconObject(IconAnnotation *icon)
 {
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    // Add the component to model in OMC Global Scope.
+    pMainWindow->mpOMCProxy->addComponent(icon->getName(), icon->getClassName(),
+                                          mpParentProjectTab->mModelNameStructure);
+    // Add component annotation.
+    pMainWindow->mpOMCProxy->updateComponent(icon->getName(), icon->getClassName(),
+                                             mpParentProjectTab->mModelNameStructure, icon->getAnnotationString());
+    // add the component to local list.
     mIconsList.append(icon);
 }
 
@@ -492,7 +491,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
 void GraphicsView::resetZoom()
 {
     this->resetMatrix();
-    this->scale(5.3, -2.3);
+    this->scale(2.0, -2.0);
 }
 
 //! Increases zoom factor by 15%.
@@ -500,7 +499,8 @@ void GraphicsView::resetZoom()
 //! @see zoomOut()
 void GraphicsView::zoomIn()
 {
-    this->scale(1.15, 1.15);
+    //this->scale(1.15, 1.15);
+    this->scale(2.0, 2.0);
 }
 
 //! Decreases zoom factor by 13.04% (1 - 1/1.15).
@@ -508,7 +508,8 @@ void GraphicsView::zoomIn()
 //! @see zoomIn()
 void GraphicsView::zoomOut()
 {
-    this->scale(1/1.15, 1/1.15);
+    if (transform().m11() != 2.0 and transform().m22() != -2.0)
+        this->scale(0.5, 0.5);
 }
 
 void GraphicsView::showGridLines(bool showLines)
@@ -527,6 +528,27 @@ void GraphicsView::selectAll()
     }
 }
 
+void GraphicsView::saveModelAnnotation()
+{
+    // get the canvase positions
+    int canvasXStart = -((int)sceneRect().width() / 2);
+    int canvasYStart = -((int)sceneRect().height() / 2);
+    int canvasXEnd = ((int)sceneRect().width() / 2);
+    int canvasYEnd = ((int)sceneRect().height() / 2);
+
+    // create the annotation string
+    QString annotationString = "annotate=Diagram(";
+    annotationString.append("coordinateSystem=CoordinateSystem(extent={{");
+    annotationString.append(QString::number(canvasXStart)).append(", ");
+    annotationString.append(QString::number(canvasYStart)).append("}, {");
+    annotationString.append(QString::number(canvasXEnd)).append(", ");
+    annotationString.append(QString::number(canvasYEnd)).append("}}))");
+
+    // Send the annotation to OMC
+    OMCProxy *pOMCProcy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+    pOMCProcy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString);
+}
+
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
 
@@ -536,6 +558,7 @@ GraphicsScene::GraphicsScene(ProjectTab *parent)
         :   QGraphicsScene(parent)
 {
     mpParentProjectTab = parent;
+    setItemIndexMethod(NoIndex);
     connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
@@ -564,8 +587,6 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     mIsSaved = true;
     mModelFileName.clear();
     mpParentProjectTabWidget = parent;
-    if (!mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->isEnabled())
-        mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->setEnabled(true);
 
     mpGraphicsScene = new GraphicsScene(this);
     mpGraphicsView  = new GraphicsView(this);
@@ -605,6 +626,9 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     tabLayout->addWidget(mpModelicaEditor);
     tabLayout->addItem(layout);
     setLayout(tabLayout);
+
+    connect(this, SIGNAL(disableMainWindow(bool)),
+            mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
 }
 
 void ProjectTab::updateTabName(QString name, QString nameStructure)
@@ -616,6 +640,27 @@ void ProjectTab::updateTabName(QString name, QString nameStructure)
         mpParentProjectTabWidget->setTabText(mTabPosition, mModelName);
     else
         mpParentProjectTabWidget->setTabText(mTabPosition, QString(mModelName).append("*"));
+}
+
+void ProjectTab::addChildModel(ProjectTab *model)
+{
+    mChildModelsList.append(model);
+}
+
+void ProjectTab::updateModel(QString name)
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    QString newNameStructure;
+    QString oldModelName = mModelName;
+    // rename the model, if user has changed the name
+    if (pMainWindow->mpOMCProxy->renameClass(mModelNameStructure, name))
+    {
+        newNameStructure = StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult());
+        // Change the name in tree
+        ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
+        pMainWindow->mpLibrary->updateNodeText(name, newNameStructure, node);
+        pMainWindow->mpMessageWidget->printGUIInfoMessage("Renamed '"+oldModelName+"' to '"+name+"'");
+    }
 }
 
 //! Should be called when a model has changed in some sense,
@@ -635,6 +680,8 @@ void ProjectTab::hasChanged()
 
 void ProjectTab::showModelicaModel()
 {
+    // Enable the main window
+    emit disableMainWindow(false);
     mpModelicaModelButton->setChecked(true);
     mpModelicaTextButton->setChecked(false);
     mpModelicaEditor->hide();
@@ -643,17 +690,98 @@ void ProjectTab::showModelicaModel()
 
 void ProjectTab::showModelicaText()
 {
+    // Disable the main window
+    emit disableMainWindow(true);
+
     mpModelicaModelButton->setChecked(false);
     mpModelicaTextButton->setChecked(true);
     mpViewScrollArea->hide();
     // get the modelica text of the model
     mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
+    mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
     mpModelicaEditor->show();
 }
 
-void ProjectTab::ModelicaEditorTextChanged()
+bool ProjectTab::loadModelFromText(QString modelName)
 {
-    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->sendCommand(mpModelicaEditor->toPlainText());
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    QString modelNameStructure;
+    // if a model is a sub model then
+    if (mModelNameStructure.contains("."))
+    {
+        modelNameStructure = StringHandler::removeLastWordAfterDot(mModelNameStructure)
+                             .append(".").append(modelName);
+        // if model with this name already exists
+        if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+        {
+            return loadSubModel(modelName);
+        }
+        else
+        {
+            pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+            return false;
+        }
+    }
+    // if a model is a root model then
+    else
+    {
+        modelNameStructure = modelName;
+        if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+        {
+            return loadRootModel(mpModelicaEditor->toPlainText());
+        }
+        else
+        {
+            pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+            return false;
+        }
+    }
+}
+
+bool ProjectTab::loadRootModel(QString model)
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    // if model text is fine then
+    if (pMainWindow->mpOMCProxy->saveModifiedModel(model))
+    {
+        updateModel(StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult()));
+        return true;
+    }
+    // if there is some error in model then dont accept it
+    else
+        return false;
+}
+
+bool ProjectTab::loadSubModel(QString model)
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    // if model text is fine then
+//    if (pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure), model))
+//    {
+        updateModel(model);
+        return true;
+//    }
+//    // if there is some error in model then dont accept it
+//    else
+//        return false;
+}
+
+bool ProjectTab::ModelicaEditorTextChanged()
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    QString modelName = mpModelicaEditor->getModelName();
+    if (!modelName.isEmpty())
+    {
+        if (loadModelFromText(modelName))
+            return true;
+        else
+            return false;
+    }
+    else
+    {
+        pMainWindow->mpOMCProxy->setResult("Unknown error occurred.");
+        return false;
+    }
 }
 
 //! @class ProjectTabWidget
@@ -669,13 +797,15 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     mpParentMainWindow = parent;
     setTabsClosable(true);
     setContentsMargins(0, 0, 0, 0);
-    this->mShowLines = false;
-    if (this->count() == 0)
-        mpParentMainWindow->gridLinesAction->setEnabled(false);
+    mShowLines = false;
+    mToolBarEnabled = true;
 
     connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
     connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
+    connect(this, SIGNAL(tabAdded()), SLOT(enableViewToolbar()));
+    connect(this, SIGNAL(tabRemoved()), SLOT(disableViewToolbar()));
+    emit tabRemoved();
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
     connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
@@ -698,38 +828,68 @@ ProjectTab* ProjectTabWidget::getTabByName(QString name)
             return pCurrentTab;
         }
     }
-    return NULL;
+    return 0;
+}
+
+//! Reimplemented function to add the Tab.
+int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
+{
+    int position = QTabWidget::addTab(tab, tabName);
+    tab->mpGraphicsView->saveModelAnnotation();
+    emit tabAdded();
+    return position;
 }
 
 //! Reimplemented function to remove the Tab.
 void ProjectTabWidget::removeTab(int index)
 {
-    if (this->count() == 0)
-        mpParentMainWindow->gridLinesAction->setEnabled(false);
-
     QTabWidget::removeTab(index);
+    emit tabRemoved();
+    mpParentMainWindow->disableMainWindow(false);
+}
+
+void ProjectTabWidget::disableTabs(bool disable)
+{
+    int i = count();
+    while(i > 0)
+    {
+        i = i - 1;
+        if (i != currentIndex())
+            setTabEnabled(i, !disable);
+    }
 }
 
 //! Adds an existing ProjectTab object to itself.
 //! @see closeProjectTab(int index)
-void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString tabName)
+void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, int type)
 {
     /*projectTab->setParent(this);*/
     projectTab->mIsSaved = false;
-    projectTab->mModelName = tabName;
-    projectTab->mModelNameStructure = tabName;
-    projectTab->mTabPosition = addTab(projectTab, tabName);
+    projectTab->mModelName = modelName;
+    projectTab->mModelNameStructure = modelName;
+    projectTab->mType = type;
+    projectTab->mTabPosition = addTab(projectTab, modelName);
     setCurrentWidget(projectTab);
 }
 
 //! Adds a ProjectTab object (a new tab) to itself.
 //! @see closeProjectTab(int index)
-void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure)
+void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int type)
 {
     ProjectTab *newTab = new ProjectTab(this);
+    if (getTabByName(StringHandler::removeLastWordAfterDot(modelStructure)))
+    {
+        newTab->mpParentModel = getTabByName(StringHandler::removeLastWordAfterDot(modelStructure));
+        newTab->mpParentModel->addChildModel(newTab);
+    }
+    else
+    {
+        newTab->mpParentModel = 0;
+    }
     newTab->mIsSaved = false;
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
+    newTab->mType = type;
     newTab->mTabPosition = addTab(newTab, modelName.append(QString("*")));
     setCurrentWidget(newTab);
 }
@@ -815,8 +975,8 @@ bool ProjectTabWidget::saveModel(bool saveAs)
                 else
                 {
                     QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                         GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
-                                         "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+                                         GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+                                         arg(pMainWindow->mpOMCProxy->getResult()), tr("OK"));
                     return false;
                 }
             }
@@ -824,8 +984,8 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             else
             {
                 QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                     GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
-                                     "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+                                     GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+                                     arg(pMainWindow->mpOMCProxy->getResult()), tr("OK"));
                 return false;
             }
         }
@@ -840,8 +1000,8 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         else
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED) +
-                                 "\n\n" + pMainWindow->mpOMCProxy->getResult(), tr("OK"));
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+                                 arg(pMainWindow->mpOMCProxy->getResult()), tr("OK"));
             return false;
         }
     }
@@ -853,6 +1013,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
+    ModelicaTree *pTree = mpParentMainWindow->mpLibrary->mpModelicaTree;
     ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
     if (!(pCurrentTab->mIsSaved))
     {
@@ -878,10 +1039,8 @@ bool ProjectTabWidget::closeProjectTab(int index)
             return true;
         case QMessageBox::Discard:
             // Don't Save was clicked
-            if (mpParentMainWindow->mpOMCProxy->deleteClass(pCurrentTab->mModelNameStructure))
+            if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
                 removeTab(index);
-            else
-                mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::DELETE_FAIL));
             return true;
         case QMessageBox::Cancel:
             // Cancel was clicked
@@ -975,5 +1134,29 @@ void ProjectTabWidget::updateTabIndexes()
     for (int i = 0 ; i < count() ; i++)
     {
         (dynamic_cast<ProjectTab*>(widget(i)))->mTabPosition = i;
+    }
+}
+
+void ProjectTabWidget::enableViewToolbar()
+{
+    if (!mToolBarEnabled)
+    {
+        mpParentMainWindow->gridLinesAction->setEnabled(true);
+        mpParentMainWindow->resetZoomAction->setEnabled(true);
+        mpParentMainWindow->zoomInAction->setEnabled(true);
+        mpParentMainWindow->zoomOutAction->setEnabled(true);
+        mToolBarEnabled = true;
+    }
+}
+
+void ProjectTabWidget::disableViewToolbar()
+{
+    if (mToolBarEnabled and (count() == 0))
+    {
+        mpParentMainWindow->gridLinesAction->setEnabled(false);
+        mpParentMainWindow->resetZoomAction->setEnabled(false);
+        mpParentMainWindow->zoomInAction->setEnabled(false);
+        mpParentMainWindow->zoomOutAction->setEnabled(false);
+        mToolBarEnabled = false;
     }
 }

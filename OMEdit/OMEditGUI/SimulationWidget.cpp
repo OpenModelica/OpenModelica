@@ -39,6 +39,8 @@ SimulationWidget::SimulationWidget(MainWindow *parent)
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
     setMinimumSize(375, 370);
     mpParentMainWindow = parent;
+
+    setUpForm();
 }
 
 SimulationWidget::~SimulationWidget()

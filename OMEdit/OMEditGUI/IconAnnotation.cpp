@@ -38,7 +38,7 @@ IconAnnotation::IconAnnotation(QString value, QString name, QString className, Q
     : mIconAnnotationString(value), mName(name), mClassName(className), mIsClone(false), mpOMCProxy(omc),
       mpGraphicsScene(graphicsScene), mpGraphicsView(graphicsView)
 {
-    this->scale(Helper::globalXScale, Helper::globalYScale);
+    scale(Helper::globalXScale, Helper::globalYScale);
     mpGraphicsScene->addItem(this);
     setPos(position);
     setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemSendsGeometryChanges);
@@ -106,7 +106,7 @@ IconAnnotation::~IconAnnotation()
 
 //! Parses the result of getIconAnnotation command.
 //! @param value is the result of getIconAnnotation command obtained from OMC.
-void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString value)
+void IconAnnotation::parseIconAnnotationString(ShapeAnnotation *item, QString value)
 {
     value = StringHandler::removeFirstLastCurlBrackets(value);
     if (value.isEmpty())
@@ -114,9 +114,16 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         return;
     }
     QStringList list = StringHandler::getStrings(value);
-    if (list.size() < 4)
+
+    if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
-        return;
+        if (list.size() < 9)
+            return;
+    }
+    else if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        if (list.size() < 4)
+            return;
     }
     qreal x1, x2, y1, y2, width, height;
     x1 = static_cast<QString>(list.at(0)).toFloat();
@@ -138,9 +145,20 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         return;
     }
 
-    // Check with Mohsen about the new IconAnnotation Standard Problem of SimForge
+    QStringList shapesList;
 
-    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)), '(', ')');
+    if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        mPreserveAspectRatio = static_cast<QString>(list.at(4)).contains("true");
+        mInitialScale = static_cast<QString>(list.at(5)).toFloat();
+        mGrid.append(static_cast<QString>(list.at(6)).toFloat());
+        mGrid.append(static_cast<QString>(list.at(7)).toFloat());
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
+    }
+    else if (mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)), '(', ')');
+    }
 
     // Now parse the shapes available in list
 
@@ -151,7 +169,7 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         {
             shape = shape.mid(QString("Line").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            LineAnnotation *lineAnnotation = new LineAnnotation(shape, item);
+            LineAnnotation *lineAnnotation = new LineAnnotation(shape, mpOMCProxy, item);
 
             if (dynamic_cast<IconAnnotation*>(item))
                 (dynamic_cast<IconAnnotation*>(item))->mpLinesList.append(lineAnnotation);
@@ -164,7 +182,7 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         {
             shape = shape.mid(QString("Polygon").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            PolygonAnnotation *polygonAnnotation = new PolygonAnnotation(shape, item);
+            PolygonAnnotation *polygonAnnotation = new PolygonAnnotation(shape, mpOMCProxy, item);
 
             if (dynamic_cast<IconAnnotation*>(item))
                 (dynamic_cast<IconAnnotation*>(item))->mpPolygonsList.append(polygonAnnotation);
@@ -177,7 +195,7 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         {
             shape = shape.mid(QString("Rectangle").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            RectangleAnnotation *rectangleAnnotation = new RectangleAnnotation(shape, item);
+            RectangleAnnotation *rectangleAnnotation = new RectangleAnnotation(shape, mpOMCProxy, item);
 
             if (dynamic_cast<IconAnnotation*>(item))
                 (dynamic_cast<IconAnnotation*>(item))->mpRectanglesList.append(rectangleAnnotation);
@@ -190,7 +208,7 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         {
             shape = shape.mid(QString("Ellipse").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, item);
+            EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, mpOMCProxy, item);
 
             if (dynamic_cast<IconAnnotation*>(item))
                 (dynamic_cast<IconAnnotation*>(item))->mpEllipsesList.append(ellipseAnnotation);
@@ -203,7 +221,7 @@ void IconAnnotation::parseIconAnnotationString(QGraphicsItem *item, QString valu
         {
             shape = shape.mid(QString("Text").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
-            TextAnnotation *textAnnotation = new TextAnnotation(shape, item);
+            TextAnnotation *textAnnotation = new TextAnnotation(shape, mpOMCProxy, item);
 
             if (dynamic_cast<IconAnnotation*>(item))
                 (dynamic_cast<IconAnnotation*>(item))->mpTextsList.append(textAnnotation);
@@ -222,44 +240,24 @@ QRectF IconAnnotation::boundingRect() const
 
 void IconAnnotation::createSelectionBox()
 {
-    // get the co-ordinates of rectangle and map them to item
-    QList<QPointF> pointsList = getBoundingRect();
-    // create top left selection box
-    this->mpTopLeftCornerItem = new CornerItem(pointsList.at(0).x(), pointsList.at(1).y(), Qt::TopLeftCorner,
-                                               mpGraphicsScene, mpGraphicsView);
+    qreal x1, y1, x2, y2;
+    boundingRect().getCoords(&x1, &y1, &x2, &y2);
+
+    mpTopLeftCornerItem = new CornerItem(x1, y2, Qt::TopLeftCorner, this);
     connect(mpTopLeftCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
     connect(mpTopLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
     // create top right selection box
-    this->mpTopRightCornerItem = new CornerItem(pointsList.at(1).x(), pointsList.at(1).y(), Qt::TopRightCorner,
-                                                mpGraphicsScene, mpGraphicsView);
+    mpTopRightCornerItem = new CornerItem(x2, y2, Qt::TopRightCorner, this);
     connect(mpTopRightCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
     connect(mpTopRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
     // create bottom left selection box
-    this->mpBottomLeftCornerItem = new CornerItem(pointsList.at(0).x(), pointsList.at(0).y(), Qt::BottomLeftCorner,
-                                                  mpGraphicsScene, mpGraphicsView);
+    mpBottomLeftCornerItem = new CornerItem(x1, y1, Qt::BottomLeftCorner, this);
     connect(mpBottomLeftCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
     connect(mpBottomLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
     // create bottom right selection box
-    this->mpBottomRightCornerItem = new CornerItem(pointsList.at(1).x(), pointsList.at(0).y(), Qt::BottomRightCorner,
-                                                   mpGraphicsScene, mpGraphicsView);
+    mpBottomRightCornerItem = new CornerItem(x2, y1, Qt::BottomRightCorner, this);
     connect(mpBottomRightCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
     connect(mpBottomRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
-}
-
-QList<QPointF> IconAnnotation::getBoundingRect()
-{
-    QList<QPointF> points;
-    qreal x1, y1, x2, y2;
-    QPointF scenePoints;
-    this->boundingRect().getCoords(&x1, &y1, &x2, &y2);
-
-    scenePoints = mapToScene(x1, y1);
-    points.append(scenePoints);
-
-    scenePoints = mapToScene(x2, y2);
-    points.append(scenePoints);
-
-    return points;
 }
 
 void IconAnnotation::createActions()
@@ -268,18 +266,11 @@ void IconAnnotation::createActions()
     mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
 }
 
-void IconAnnotation::getAnnotationString()
-{
-
-}
-
 void IconAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     Q_UNUSED(painter);
     Q_UNUSED(option);
     Q_UNUSED(widget);
-
-    getAnnotationString();
 }
 
 //! Event when mouse cursor enters component icon.
@@ -350,12 +341,10 @@ QVariant IconAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
     else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit componentMoved();
-        updateSelectionBox();
     }
     else if (change == QGraphicsItem::ItemRotationHasChanged)
     {
-        emit componentRotated();
-        //! @todo the selection box inverts with rotation. Fix it!!!!!!!!
+        emit componentRotated(true);
         updateSelectionBox();
     }
     else if (change == QGraphicsItem::ItemScaleHasChanged)
@@ -397,27 +386,87 @@ void IconAnnotation::showSelectionBox()
 
 void IconAnnotation::updateSelectionBox()
 {
-    QList<QPointF> pointsList = getBoundingRect();
-    // create top left selection box
-    this->mpTopLeftCornerItem->updateCornerItem(pointsList.at(0).x(), pointsList.at(1).y(), Qt::TopLeftCorner);
-    this->mpTopRightCornerItem->updateCornerItem(pointsList.at(1).x(), pointsList.at(1).y(), Qt::TopRightCorner);
-    this->mpBottomLeftCornerItem->updateCornerItem(pointsList.at(0).x(), pointsList.at(0).y(), Qt::BottomLeftCorner);
-    this->mpBottomRightCornerItem->updateCornerItem(pointsList.at(1).x(), pointsList.at(0).y(), Qt::BottomRightCorner);
+    qreal x1, y1, x2, y2;
+    boundingRect().getCoords(&x1, &y1, &x2, &y2);
+    if (rotation() == 0)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x1, y1, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x1, y2, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x2, y2, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x2, y1, Qt::BottomRightCorner);
+    }
+    // Clockwise rotation angles
+    else if (rotation() == -90)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x2, y1, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x1, y1, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x1, y2, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x2, y2, Qt::BottomRightCorner);
+    }
+    else if (rotation() == -180)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x2, y2, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x2, y1, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x1, y1, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x1, y2, Qt::BottomRightCorner);
+    }
+    else if (rotation() == -270)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x1, y2, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x2, y2, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x2, y1, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x1, y1, Qt::BottomRightCorner);
+    }
+    // AntiClockwise rotation angles
+    else if (rotation() == 90)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x1, y2, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x2, y2, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x2, y1, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x1, y1, Qt::BottomRightCorner);
+    }
+    else if (rotation() == 180)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x2, y2, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x2, y1, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x1, y1, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x1, y2, Qt::BottomRightCorner);
+    }
+    else if (rotation() == 270)
+    {
+        mpBottomLeftCornerItem->updateCornerItem(x2, y1, Qt::BottomLeftCorner);
+        mpTopLeftCornerItem->updateCornerItem(x1, y1, Qt::TopLeftCorner);
+        mpTopRightCornerItem->updateCornerItem(x1, y2, Qt::TopRightCorner);
+        mpBottomRightCornerItem->updateCornerItem(x2, y2, Qt::BottomRightCorner);
+    }
 }
 
 void IconAnnotation::addConnector(Connector *item)
 {
     connect(this, SIGNAL(componentMoved()), item, SLOT(drawConnector()));
-    connect(this, SIGNAL(componentRotated()), item, SLOT(drawConnector()));
+    connect(this, SIGNAL(componentRotated(bool)), item, SLOT(drawConnector(bool)));
+}
+
+QString IconAnnotation::getAnnotationString()
+{
+    // create the annotation string
+    QString annotationString = "annotate=Placement(transformation(origin=";
+    // add the icon origin
+    annotationString.append("{").append(QString::number(pos().x())).append(",").append(QString::number(pos().x())).append("},");
+    // add icon rotation
+    annotationString.append("rotation=").append(QString::number(rotation())).append("))");
+
+    return annotationString;
 }
 
 void IconAnnotation::resizeIcon(qreal resizeFactorX, qreal resizeFactorY)
 {
     if (resizeFactorX > 0 && resizeFactorY > 0)
     {
-        this->scale(resizeFactorX, resizeFactorY);
+        prepareGeometryChange();
+        //this->scale(resizeFactorX, resizeFactorY);
         update();
-        updateSelectionBox();
+        //updateSelectionBox();
     }
 }
 
@@ -426,10 +475,6 @@ void IconAnnotation::deleteMe()
 {
     mpGraphicsView->deleteIconObject(this);
     mpGraphicsScene->removeItem(this);
-    mpGraphicsScene->removeItem(mpTopLeftCornerItem);
-    mpGraphicsScene->removeItem(mpTopRightCornerItem);
-    mpGraphicsScene->removeItem(mpBottomLeftCornerItem);
-    mpGraphicsScene->removeItem(mpBottomRightCornerItem);
     delete(this);
 }
 

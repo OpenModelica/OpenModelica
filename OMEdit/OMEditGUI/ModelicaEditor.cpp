@@ -40,9 +40,73 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
 }
 
+QString ModelicaEditor::getModelName()
+{
+    // read the name from the text
+    QTextStream inStream(this->toPlainText().toLatin1());
+    while (!inStream.atEnd())
+    {
+        QString line = inStream.readLine();
+        if (line.contains(StringHandler::getModelicaClassType(StringHandler::MODEL).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::CLASS).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::CONNECTOR).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::RECORD).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::BLOCK).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::FUNCTION).toLower()) or
+            line.contains(StringHandler::getModelicaClassType(StringHandler::PACKAGE).toLower()))
+        {
+            int firstpos = line.indexOf(" ");
+            int secondpos = line.indexOf(" ", firstpos);
+            return line.mid(firstpos+1, secondpos+1);
+        }
+    }
+    return QString();
+}
+
 void ModelicaEditor::focusOutEvent(QFocusEvent *e)
 {
-    QTextEdit::focusOutEvent(e);
+    if (document()->isModified())
+    {
+        // if the user makes few mistakes in the text then dont let him change the perspective
+        if (!emit focusOut())
+        {
+            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+            QMessageBox *msgBox = new QMessageBox(pMainWindow);
+            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
+            msgBox->setIcon(QMessageBox::Critical);
+            msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
+                            .arg(pMainWindow->mpOMCProxy->getResult()));
+            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
+            msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
+            msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
 
-    emit focusOut();
+            int answer = msgBox->exec();
+
+            switch (answer)
+            {
+            case QMessageBox::AcceptRole:
+                document()->setModified(false);
+                // revert back to last valid block
+                setText(mLastValidText);
+                e->accept();
+                mpParentProjectTab->showModelicaModel();
+                break;
+            case QMessageBox::RejectRole:
+                document()->setModified(true);
+                e->ignore();
+                setFocus();
+                break;
+            default:
+                // should never be reached
+                document()->setModified(true);
+                e->ignore();
+                setFocus();
+                break;
+            }
+        }
+    }
+    else
+    {
+        e->accept();
+    }
 }

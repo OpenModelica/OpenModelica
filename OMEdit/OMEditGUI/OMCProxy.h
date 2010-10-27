@@ -55,12 +55,17 @@ private:
     QString mName;
     QString mResult;
     QDialog *mpOMCLogger;
+    QLineEdit *mpExpressionTextBox;
+    QPushButton *mpSendButton;
     QTextEdit *mpTextEdit;
     QString mObjectRefFile;
 public:
     OMCProxy(MainWindow *pParent = 0);
     ~OMCProxy();
     MainWindow *mpParentMainWindow;
+    enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};
+    int mAnnotationVersion;
+
     bool startServer();
     void stopServer();
     void sendCommand(const QString expression);
@@ -73,6 +78,10 @@ public:
     void removeObjectRefFile();
     QString getErrorString();
     QString getVersion();
+    bool setAnnotationVersion(int version);
+    QString getAnnotationVersion();
+    bool setEnvironmentVar(QString name, QString value);
+    QString getEnvironmentVar(QString name);
     void loadStandardLibrary();
     bool isStandardLibraryLoaded();
     QStringList getClassNames(QString className);
@@ -93,6 +102,7 @@ public:
     QString loadFile(QString fileName);
     bool createClass(QString type, QString className);
     bool createSubClass(QString type, QString className, QString parentClassName);
+    bool updateSubClass(QString parentClassName, QString modelText);
     bool createModel(QString modelName);
     bool newModel(QString modelName, QString parentModelName);
     bool existClass(QString className);
@@ -101,10 +111,13 @@ public:
     QString getSourceFile(QString modelName);
     bool setSourceFile(QString modelName, QString path);
     bool save(QString modelName);
+    bool saveModifiedModel(QString modelText);
     QString list(QString className);
+    bool addClassAnnotation(QString className, QString annotation);
     bool addComponent(QString name, QString className, QString modelName);
     bool deleteComponent(QString name, QString modelName);
     bool renameComponent(QString modelName, QString oldName, QString newName);
+    bool updateComponent(QString name, QString className, QString modelName, QString annotation);
     bool addConnection(QString from, QString to, QString className);
     bool deleteConnection(QString from, QString to, QString className);
     bool instantiateModel(QString modelName);
@@ -115,6 +128,7 @@ public:
 public slots:
     void openOMCLogger();
     void catchException();
+    void sendCustomExpression();
 };
 
 #endif // OMCPROXY_H

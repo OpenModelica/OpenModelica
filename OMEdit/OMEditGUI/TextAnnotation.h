@@ -38,10 +38,14 @@
 #include "InheritanceAnnotation.h"
 #include "ComponentAnnotation.h"
 
+class OMCProxy;
+
 class TextAnnotation : public ShapeAnnotation
 {
 private:
     bool mVisible;
+    QPointF mOrigin;
+    qreal mRotation;
     QColor mLineColor;
     QColor mFillColor;
     QMap<QString, Qt::PenStyle> mLinePatternsMap;
@@ -57,7 +61,7 @@ private:
     bool mFontItalic;
     int mDefaultFontSize;
 public:
-    TextAnnotation(QString shape, QGraphicsItem *parent = 0);
+    TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void checkNameString(QGraphicsItem *item);

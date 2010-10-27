@@ -94,7 +94,7 @@ public slots:
     void showContextMenu(QPoint point);
     void renameClass();
     void checkClass();
-    void deleteClass();
+    bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
 };
 
 class LibraryWidget : public QWidget
@@ -115,7 +115,7 @@ public:
     bool isTreeItemLoaded(QTreeWidgetItem *item);
     void addGlobalIconObject(IconAnnotation* icon);
     IconAnnotation* getGlobalIconObject(QString className);
-    void updateNodeText(QString text, QString textStructure);
+    void updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node = 0);
 
     MainWindow *mpParentMainWindow;
     ModelicaTreeNode *mSelectedModelicaNode;

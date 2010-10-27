@@ -146,7 +146,7 @@ bool Connector::isActive()
     return mIsActive;
 }
 
-void Connector::drawConnector()
+void Connector::drawConnector(bool isRotated)
 {
     if (!mEndComponentConnected)
     {
@@ -182,7 +182,13 @@ void Connector::drawConnector()
     }
     else
     {
-        if (mpStartComponent->getParentIcon()->isSelected() && mpEndComponent->getParentIcon()->isSelected())
+        if (isRotated)
+        {
+            //Retrieve start and end points from ports in case components have moved
+            updateStartPoint(getStartComponent()->mapToScene(getStartComponent()->boundingRect().center()));
+            updateEndPoint(getEndComponent()->mapToScene(getEndComponent()->boundingRect().center()));
+        }
+        else if (mpStartComponent->getParentIcon()->isSelected() && mpEndComponent->getParentIcon()->isSelected())
         {
             //Both components and connector are selected, so move whole connector along with components
             moveAllPoints(getStartComponent()->mapToScene(getStartComponent()->boundingRect().center()).x()-mPoints[0].x(),
@@ -378,8 +384,8 @@ ConnectorLine::ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNum
     this->endPos = QPointF(x2,y2);
     this->mLineNumber = lineNumber;
     this->mParentConnectorEndComponentConnected = false;
-    this->mActivePen = QPen(Qt::red, 1.0);
-    this->mPassivePen = QPen(Qt::black, 1.0);
+    this->mActivePen = QPen(Qt::red);
+    this->mPassivePen = QPen(Qt::black);
     this->mHoverPen = QPen(Qt::darkRed, 6.9);
 }
 

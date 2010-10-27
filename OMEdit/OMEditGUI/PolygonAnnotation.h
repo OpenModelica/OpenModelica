@@ -35,11 +35,16 @@
 #define POLYGONANNOTATION_H
 
 #include "ShapeAnnotation.h"
+#include "IconAnnotation.h"
+
+class OMCProxy;
 
 class PolygonAnnotation : public ShapeAnnotation
 {
 private:
     bool mVisible;
+    QPointF mOrigin;
+    qreal mRotation;
     QColor mLineColor;
     QColor mFillColor;
     QMap<QString, Qt::PenStyle> mLinePatternsMap;
@@ -52,7 +57,7 @@ private:
     QList<QPointF> mPoints;
     bool mSmooth;
 public:
-    PolygonAnnotation(QString shape, QGraphicsItem *parent = 0);
+    PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawPolygonAnnotaion(QPainter *painter);
