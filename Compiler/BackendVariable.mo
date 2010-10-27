@@ -42,6 +42,7 @@ public import DAE;
 
 protected import Absyn;
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import ComponentReference;
 protected import DAELow;
 protected import DAEUtil;

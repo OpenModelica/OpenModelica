@@ -853,8 +853,8 @@ algorithm
         ();
     case (dae,ass1,ass2,comps)
       equation
-        indexed_dae = BackendVariabletranslateDae(dae,NONE());
-        indexed_dae_1 = BackendVariable.calculateValues(indexed_dae);
+        indexed_dae = BackendVariable.translateDae(dae,NONE());
+        indexed_dae_1 = DAELow.calculateValues(indexed_dae);
         TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
@@ -929,7 +929,7 @@ algorithm
         Print.clearBuf();
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
         indexed_dlow = BackendVariable.translateDae(dlow,NONE());
-        indexed_dlow_1 = BackendVariable.calculateValues(indexed_dlow);
+        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
         //filename = System.stringAppendList({cname_str,".cpp"});
