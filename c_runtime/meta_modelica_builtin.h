@@ -52,6 +52,10 @@ boolAnd_rettype boolAnd(modelica_boolean,modelica_boolean);
 boolOr_rettype boolOr(modelica_boolean,modelica_boolean);
 boolNot_rettype boolNot(modelica_boolean);
 
+modelica_metatype boxptr_boolAnd(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolOr(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolNot(modelica_metatype);
+
 /* Integer Operations */
 typedef modelica_integer intAdd_rettype;
 typedef modelica_integer intSub_rettype;
@@ -266,6 +270,18 @@ void print(modelica_string_t);
 tick_rettype tick();
 mmc__clock_rettype mmc__clock();
 void equality(modelica_metatype, modelica_metatype);
+
+/* Weird RML stuff */
+typedef modelica_metatype getGlobalRoot_rettype;
+typedef modelica_integer valueConstructor_rettype;
+
+getGlobalRoot_rettype getGlobalRoot(int ix);
+void setGlobalRoot(int ix, modelica_metatype val);
+valueConstructor_rettype valueConstructor(modelica_metatype val);
+
+modelica_metatype boxptr_getGlobalRoot(modelica_metatype);
+void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_valueConstructor(modelica_metatype);
 
 #if defined(__cplusplus)
 }

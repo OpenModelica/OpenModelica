@@ -218,21 +218,6 @@ static modelica_integer SystemImpl__writeFile(const char* filename, const char* 
   return 0;
 }
 
-static modelica_integer SystemImpl__stringFind(const char* str, const char* searchStr)
-{
-  int strLen = strlen(str);
-  int strSearchLen = strlen(searchStr);
-  modelica_integer i,retVal=-1;
-
-  for (i=0; i< strLen - strSearchLen+1; i++) {
-    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
-      retVal = i;
-      break;
-    }
-  }
-  return retVal;
-}
-
 #ifdef __cplusplus
 }
 #endif

@@ -377,38 +377,23 @@ RML_BEGIN_LABEL(System__stringFind)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *searchStr = RML_STRINGDATA(rmlA1);
-  int strLen = strlen(str);
-  int strSearchLen = strlen(searchStr);
-  int i,retVal=-1;
-
-  for (i=0; i< strLen - strSearchLen+1; i++) {
-    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
-      retVal = i;
-      break;
-    }
-  }
-  rmlA0 = (void*) mk_icon(retVal);
+  const char *found = strstr(str, searchStr);
+  if (found == NULL)
+    rmlA0 = (void*) mk_icon(-1);
+  else
+    rmlA0 = (void*) mk_icon((long)found-(long)str);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__stringFindString)
 {
-  char *str = RML_STRINGDATA(rmlA0);
-  char *searchStr = RML_STRINGDATA(rmlA1);
-  int strLen = strlen(str);
-  int strSearchLen = strlen(searchStr);
-  int i,retVal=-1;
-
-  for (i=0; i< strLen - strSearchLen+1; i++) {
-    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
-      retVal = i;
-      break;
-    }
-  }
-  if (retVal == -1)
+  const char *str = RML_STRINGDATA(rmlA0);
+  const char *searchStr = RML_STRINGDATA(rmlA1);
+  const char *found = strstr(str, searchStr);
+  if (found == NULL)
     RML_TAILCALLK(rmlFC);
-  rmlA0 = (void*) mk_scon(str+retVal);
+  rmlA0 = mk_scon(found);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

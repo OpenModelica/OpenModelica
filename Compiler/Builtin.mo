@@ -1973,6 +1973,9 @@ protected constant DAE.Type list2boolean=(
 protected constant DAE.Type AlistA2boolean=(
           DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
 
+protected constant DAE.Type boxed2int=(
+          DAE.T_FUNCTION({("x",typeBoxedAny)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+
 protected constant DAE.Type boxed2any=(
           DAE.T_FUNCTION({("x",typeBoxedAny)},((DAE.T_NOTYPE(),NONE())),DAE.NO_INLINE()),NONE());
 
@@ -3027,6 +3030,7 @@ algorithm
         // Global State
         env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
         env = Env.extendFrameT(env, "setGlobalRoot", intBoxedNoRetcall);
+        env = Env.extendFrameT(env, "valueConstructor", boxed2int);
       then env;
     case env then env;
   end matchcontinue;

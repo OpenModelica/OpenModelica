@@ -28,8 +28,26 @@
  *
  */
 
-#define mk_scon(X) X /* Just to make it compile for now... */
 #define RML_TRUE ((void*)1)
 #define RML_FALSE ((void*)0)
+#include "modelica.h"
+#define mk_scon(X) X
+
 #include "errorext.cpp"
 
+extern "C" {
+
+void Error_addMessage(int errorID, const char* msg_type, const char* severity, const char* message, modelica_metatype tokenlst)
+{
+  std::list<std::string> tokens;
+  if (error_on) {
+    while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
+      tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
+      tokenlst=MMC_CDR(tokenlst);
+    }
+    add_message(errorID,msg_type,severity,message,tokens);
+    printf(" Adding message, size: %ld, %s\n",errorMessageQueue.size(),message);
+  }
+}
+
+}

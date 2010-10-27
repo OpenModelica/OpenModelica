@@ -56,11 +56,6 @@ extern const char* System_stringReplace(const char* str, const char* source, con
   return res;
 }
 
-extern int System_stringFind(const char* str, const char* searchStr)
-{
-  return SystemImpl__stringFind(str, searchStr);
-}
-
 extern int System_refEqual(void* a, void* b)
 {
   return a == b;
@@ -69,6 +64,23 @@ extern int System_refEqual(void* a, void* b)
 extern int System_hash(unsigned char* str)
 {
   return djb2_hash(str);
+}
+
+extern int System_stringFind(const char* str, const char* searchStr)
+{
+  const char *found = strstr(str, searchStr);
+  if (found == NULL)
+    return -1;
+  else
+    return found-str;
+}
+
+extern const char* System_stringFindString(const char* str, const char* searchStr)
+{
+  const char *found = strstr(str, searchStr);
+  if (found == NULL)
+    throw 1;
+  return strdup(found);
 }
 
 /* Old RML impl.

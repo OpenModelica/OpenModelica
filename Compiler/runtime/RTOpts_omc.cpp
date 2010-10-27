@@ -75,4 +75,8 @@ extern int RTOpts_showAnnotations() {
   return showAnnotations;
 }
 
+extern int RTOpts_getNoSimplify() {
+  return noSimplify;
+}
+
 }

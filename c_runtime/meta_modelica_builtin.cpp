@@ -47,17 +47,32 @@ extern "C" {
 /* Boolean Operations */
 boolAnd_rettype boolAnd(modelica_boolean b1, modelica_boolean b2)
 {
-  return ((b1 != 0) && b2 != 0 ? 1 : 0);
+  return ((b1 != 0) && (b2 != 0) ? 1 : 0);
 }
 
 boolOr_rettype boolOr(modelica_boolean b1, modelica_boolean b2)
 {
-  return ((b1 != 0) || b2 != 0 ? 1 : 0);
+  return ((b1 != 0) || (b2 != 0) ? 1 : 0);
 }
 
 boolNot_rettype boolNot(modelica_boolean b)
 {
   return (b == 0 ? 1 : 0);
+}
+
+modelica_metatype boxptr_boolAnd(modelica_metatype b1, modelica_metatype b2)
+{
+  return ((b1 != 0) && (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
+}
+
+modelica_metatype boxptr_boolOr(modelica_metatype b1, modelica_metatype b2)
+{
+  return ((b1 != 0) || (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
+}
+
+modelica_metatype boxptr_boolNot(modelica_metatype b)
+{
+  return (b == 0 ? mmc_mk_icon(1) : mmc_mk_icon(0));
 }
 
 /* Integer Operations */
@@ -792,6 +807,33 @@ void equality(modelica_metatype in1, modelica_metatype in2)
 {
   if (!mmc_boxes_equal(in1, in2))
     throw 1;
+}
+
+/* Weird RML crap */
+static modelica_metatype global_roots[1024];
+
+getGlobalRoot_rettype getGlobalRoot(int ix) {
+  return global_roots[ix];
+}
+
+void setGlobalRoot(int ix, modelica_metatype val) {
+  global_roots[ix] = val;
+}
+
+valueConstructor_rettype valueConstructor(modelica_metatype val) {
+  return MMC_HDRCTOR(MMC_GETHDR(val));
+}
+
+modelica_metatype boxptr_getGlobalRoot(modelica_metatype ix) {
+  return global_roots[MMC_UNTAGFIXNUM(ix)];
+}
+
+void boxptr_setGlobalRoot(modelica_metatype ix, modelica_metatype val) {
+  global_roots[MMC_UNTAGFIXNUM(ix)] = val;
+}
+
+modelica_metatype boxptr_valueConstructor(modelica_metatype val) {
+  return mmc_mk_icon(MMC_HDRCTOR(MMC_GETHDR(val)));
 }
 
 }

@@ -76,6 +76,7 @@ typedef int mmc_sint_t;
 #define MMC_STRINGHDR(nbytes)	(((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
 #define MMC_HDRSLOTS(hdr)	((hdr) >> 10)
 #define MMC_GETHDR(x)		(*(mmc_uint_t*)MMC_UNTAGPTR(x))
+#define MMC_HDRCTOR(hdr) (((hdr) >> 2) & 255)
 #define MMC_HDRISSTRING(hdr)	(((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
 #define MMC_HDRSTRLEN(hdr)	(((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
 #define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)

@@ -55,13 +55,13 @@ public function updateCurrentComponent
 end updateCurrentComponent;
 
 public function addMessage
-  input Error.ErrorID inErrorID1;
-  input String inString2;
-  input String inString3;
-  input String inString4;
-  input list<String> inStringLst5;
+  input Error.ErrorID id;
+  input String msg_type;
+  input String msg_severity;
+  input String msg;
+  input list<String> msg_tokens;
 
-  external "C" ;
+  external "C" Error_addMessage(id,msg_type,msg_severity,msg,msg_tokens) annotation(Library = "omcruntime");
 end addMessage;
 
 public function addSourceMessage

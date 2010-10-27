@@ -3610,7 +3610,7 @@ algorithm
         // get from global roots
         tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
-        indexBasedOnValueConstructor = System.getValueConstructor(tt); 
+        indexBasedOnValueConstructor = valueConstructor(tt); 
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // search in the list for a translation
         expTy = searchInMememoryLst(inType, tyLst);
@@ -3627,7 +3627,7 @@ algorithm
         // get from global roots        
         tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
-        indexBasedOnValueConstructor = System.getValueConstructor(tt);        
+        indexBasedOnValueConstructor = valueConstructor(tt);        
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, (inType, expTy)::tyLst);
