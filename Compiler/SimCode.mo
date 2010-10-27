@@ -7642,6 +7642,129 @@ algorithm
   end matchcontinue;
 end getImplicitRecordConstructors;
 
+public function addDivExpErrorMsgtoExp "
+Author: Frenkel TUD 2010-02, Adds the error msg to Expression.Div.
+"
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace> inDlowMode;
+  output DAE.Exp outExp;
+  output list<DAE.Exp> outDivLst;
+algorithm 
+  (outExp,outDivLst) := matchcontinue(inExp,inDlowMode)
+  case(inExp,inDlowMode as (vars,varlst,dzer))
+    local 
+      DAE.Exp exp; 
+      BackendDAE.DAELow dlow;
+      BackendDAE.DivZeroExpReplace dzer;
+      list<DAE.Exp> divlst;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> varlst;
+    equation
+      ((exp,(_,_,_,divlst))) = Expression.traverseExp(inExp, traversingDivExpFinder, (vars,varlst,dzer,{}));
+      then
+        (exp,divlst);
+  end matchcontinue;
+end addDivExpErrorMsgtoExp;
+
+protected function traversingDivExpFinder "
+Author: Frenkel TUD 2010-02"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace,list<DAE.Exp>> > inExp;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace,list<DAE.Exp>> > outExp;
+algorithm
+outExp := matchcontinue(inExp)
+  local
+    BackendDAE.Variables vars;
+    list<BackendDAE.Var> varlst;
+    BackendDAE.DivZeroExpReplace dzer;
+    list<DAE.Exp> divLst;
+    tuple<BackendDAE.Variables,BackendDAE.DivZeroExpReplace,list<DAE.Exp>> dlowmode;
+    DAE.Exp e,e1,e2;
+    Expression.Type ty;
+    String se;
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
+    equation
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+/*
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
+    then ((e, dlowmode ));
+*/    
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+  case(inExp) then (inExp);
+end matchcontinue;
+end traversingDivExpFinder;
+
+protected function traversingDivExpFinder1 "
+Author: Frenkel TUD 2010-02 
+  helper for traversingDivExpFinder"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input tuple<BackendDAE.Variables,list<BackendDAE.Var>,BackendDAE.DivZeroExpReplace> inMode;
+  output String outString;
+  output Boolean outBool;
+algorithm
+  (outString,outBool) := matchcontinue(inExp1,inExp2,inMode)
+  local
+    BackendDAE.Variables vars;
+    DAE.Exp e,e2;
+    String se;
+    list<DAE.ComponentRef> crlst;
+    BackendDAE.Variables vars;
+    list<BackendDAE.Var> varlst;
+    list<Boolean> boollst;
+    Boolean bres;
+  case( e , e2, (vars,varlst,BackendDAE.ALL()) )
+    equation
+      /* generade modelica strings */
+      se = generadeDivExpErrorMsg(e,e2,vars);
+    then (se,false);    
+  case( e , e2, (vars,varlst,BackendDAE.ONLY_VARIABLES()) )
+    equation
+      /* generade modelica strings */
+      se = generadeDivExpErrorMsg(e,e2,vars);
+      /* check if expression contains variables */
+      crlst = Expression.extractCrefsFromExp(e2);
+      boollst = Util.listMap1r(crlst,BackendVariable.isVarKnown,varlst);
+      bres = Util.boolOrList(boollst);
+    then (se,bres);
+end matchcontinue;
+end traversingDivExpFinder1;
+
+protected  function generadeDivExpErrorMsg "
+Author: Frenkel TUD 2010-02. varOrigCref
+"
+input DAE.Exp inExp;
+input DAE.Exp inDivisor;
+input BackendDAE.Variables inVars;
+output String outString;
+protected String se,se2,s,s1;
+algorithm
+  se := ExpressionDump.printExp2Str(inExp,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  se2 := ExpressionDump.printExp2Str(inDivisor,"\"",SOME((BackendDump.printComponentRefStrDIVISION,inVars)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  s := stringAppend(se," because ");
+  s1 := stringAppend(s,se2);
+  outString := stringAppend(s1," == 0");
+end generadeDivExpErrorMsg;
+
 protected function addDivExpErrorMsgtosimJac
 "function addDivExpErrorMsgtosimJac
   helper for addDivExpErrorMsgtoSimEqSystem."
@@ -7691,17 +7814,17 @@ algorithm
       list<DAE.Exp> divLst,divLst1,divLst2;
     case (SES_RESIDUAL(exp = e),inDlowMode)
       equation
-        (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+        (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         (SES_RESIDUAL(e),divLst);      
     case (SES_SIMPLE_ASSIGN(cref = cr, exp = e),inDlowMode)
       equation
-        (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+        (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         (SES_SIMPLE_ASSIGN(cr, e),divLst);      
     case (SES_ARRAY_CALL_ASSIGN(componentRef = cr, exp = e),inDlowMode)
       equation
-        (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+        (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         (SES_ARRAY_CALL_ASSIGN(cr, e),divLst);      
 /*
@@ -7714,7 +7837,7 @@ algorithm
     case (SES_LINEAR(partOfMixed = partOfMixed,vars = vars, beqs = elst, simJac = simJac),inDlowMode)
       equation
         (simJac1,divLst) = listMap1_2(simJac,addDivExpErrorMsgtosimJac,inDlowMode);
-        (elst1,divLst1) = listMap1_2(elst,DAELow.addDivExpErrorMsgtoExp,inDlowMode);
+        (elst1,divLst1) = listMap1_2(elst,addDivExpErrorMsgtoExp,inDlowMode);
         divLst2 = listAppend(divLst,divLst1);
       then
         (SES_LINEAR(partOfMixed,vars,elst1,simJac1),divLst2);      
@@ -7732,7 +7855,7 @@ algorithm
         (SES_MIXED(cont1,vars,discEqs1,values,value_dims),divLst2);      
     case (SES_WHEN(left = cr, right = e, conditions = conditions),inDlowMode)
       equation
-        (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+        (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         (SES_WHEN(cr,e,conditions),divLst);
     case (inSES,_) then (inSES,{});
