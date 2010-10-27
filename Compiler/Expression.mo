@@ -466,26 +466,6 @@ end dimensionSubscript;
 /* Change  */
 /***************************************************/
 
-public function generateCrefsExpFromType "
-Author: Frenkel TUD 2010-05"
-  input DAE.ExpVar inVar;
-  input DAE.Exp inExp;
-  output DAE.Exp outCrefExp;
-algorithm outCrefExp := matchcontinue(inVar,inExp)
-  local
-    String name;
-    DAE.ExpType tp;
-    DAE.ComponentRef cr,cr1;
-    DAE.Exp e;
-  case (DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF(componentRef=cr))
-  equation
-    cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
-    e = makeCrefExp(cr1, tp);
-  then
-    e;
- end matchcontinue;
-end generateCrefsExpFromType;
-
 public function negate
 "function: negate
   author: PA
@@ -2145,6 +2125,26 @@ algorithm cref := matchcontinue(cr)
       DAE.CREF(cr,ty1);
 end matchcontinue;
 end crefExp;
+
+public function generateCrefsExpFromExpVar "
+Author: Frenkel TUD 2010-05"
+  input DAE.ExpVar inVar;
+  input DAE.ComponentRef inCrefPrefix;
+  output DAE.Exp outCrefExp;
+algorithm outCrefExp := matchcontinue(inVar,inCrefPrefix)
+  local
+    String name;
+    DAE.ExpType tp;
+    DAE.ComponentRef cr;
+    DAE.Exp e;
+  case (DAE.COMPLEX_VAR(name=name,tp=tp),inCrefPrefix)
+  equation
+    cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},tp);
+    e = makeCrefExp(cr, tp);
+  then
+    e;
+ end matchcontinue;
+end generateCrefsExpFromExpVar;
 
 public function makeRealArray
 "function: makeRealArray

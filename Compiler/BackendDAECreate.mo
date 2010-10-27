@@ -3044,7 +3044,6 @@ algorithm
     DAE.FunctionTree funcs;
     BackendDAE.Equation eqn;
     DAE.ComponentRef cr1,cr2;
-    DAE.Exp e1,e2;
     list<DAE.Exp> e1lst,e2lst;
     list<DAE.ExpVar> varLst;
     Integer i;
@@ -3058,12 +3057,12 @@ algorithm
     list<DAE.Exp> expLst;
     list<tuple<DAE.Exp,DAE.Exp>> exptpllst;
   // a=b
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
-      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e1);
-      e2lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e2);
+      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
+      e2lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
       compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);
@@ -3080,12 +3079,12 @@ algorithm
     then
       ((complexEqs1,multiEqs2)); 
   // a=Record()
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CALL(path=path,expLst=expLst),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
-      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e1);
+      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);

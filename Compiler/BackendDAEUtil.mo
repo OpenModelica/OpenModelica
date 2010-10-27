@@ -199,7 +199,7 @@ algorithm
         list<DAE.ExpVar> varLst;
       equation
         DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e);
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         expcreflstlst = Util.listMap1(expl,checkBackendDAEExp,vars);
         expcreflst = Util.listFlatten(expcreflstlst);
         creflstlst = Util.listMap(expcreflst,Util.tuple22);
@@ -1405,10 +1405,10 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> mexp;
       list<DAE.ExpVar> varLst;
     /* Special Case for Records */
-    case ((e as DAE.CREF(componentRef = cr)),vars)
+    case ((DAE.CREF(componentRef = cr)),vars)
       equation
         DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e);
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Expression.expEqual);
       then
@@ -2815,9 +2815,9 @@ algorithm outExp := matchcontinue(inExp)
     then
       (restpl);
   // CASE for Records
-  case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
     equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e);
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, funcs);
     then 
