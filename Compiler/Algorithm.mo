@@ -718,7 +718,7 @@ algorithm
       Absyn.Path fname;
     case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp)
       equation
-        crexp = crefToExp(cr);
+        crexp = Expression.makeCrefExp(cr,expty);
       then
         {crexp,exp};
     case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp)
@@ -733,7 +733,7 @@ algorithm
         exps;
     case DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
       equation
-        crexp = crefToExp(cr);
+        crexp = Expression.makeCrefExp(cr,expty);
       then
         {crexp,exp};
     case DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_)
@@ -822,16 +822,6 @@ algorithm
   end matchcontinue;
 end getAllExpsElse;
 
-protected function crefToExp "function: crefToExp
-  Creates an expression from a ComponentRef.
-  The type of the expression will become DAE.ET_OTHER."
-  input DAE.ComponentRef inComponentRef;
-  output DAE.Exp outExp;
-algorithm
-  outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
-end crefToExp;
-
-
 public function traverseExps "function: traverseExps
 
   This function goes through the Algorithm structure and finds all the
@@ -911,8 +901,7 @@ algorithm
       list<Type_b> talst,talst1,talst2,talst3,talst4;
     case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp),func,inTypeA)
       equation
-        crexp = crefToExp(cr);
-        talst = func(crexp,inTypeA);
+        talst = func(e2,inTypeA);
         talst1 = func(exp,inTypeA);
         talst2 = listAppend(talst,talst1);
       then
@@ -933,7 +922,7 @@ algorithm
         talst;
     case (DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp),func,inTypeA)
       equation
-        crexp = crefToExp(cr);
+        crexp = Expression.makeCrefExp(cr,expty);
         talst = func(crexp,inTypeA);
         talst1 = func(exp,inTypeA); 
         talst2 = listAppend(talst,talst1);

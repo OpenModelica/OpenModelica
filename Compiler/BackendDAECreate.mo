@@ -2518,7 +2518,7 @@ algorithm
     local DAE.Exp e;
     case({},vars) then ({},vars);
     case(e::expl,vars) equation
-      ((e,vars)) = expandDerExp((e,vars));
+      ((e,vars)) = Expression.traverseExp(e,expandDerExp,vars);
       (expl,vars) = expandDerExps(expl,vars);
     then (e::expl,vars);
   end matchcontinue;
@@ -2543,7 +2543,7 @@ algorithm
       (newStates,_) = BackendDAEUtil.bintreeToList(bt);
       vars = updateStatesVars(vars,newStates);
     then ((e1,(vars,funcs)));
-    case((e1,(vars,funcs))) then ((e1,(vars,funcs)));
+    case tpl then tpl;
   end matchcontinue;
 end expandDerExp;
 

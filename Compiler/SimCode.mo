@@ -1843,7 +1843,7 @@ algorithm
       list<DAE.Exp> l;
     case ((e as DAE.CALL(path = Absyn.IDENT("delay")), l))
       then ((e, e :: l));
-    case ((e, l)) then ((e, l));
+    case inTuple then inTuple;
   end matchcontinue;
 end collectDelayExpressions;
 
