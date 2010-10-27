@@ -158,7 +158,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
-protected import DAEDump;
+protected import SCodeUtil;
 
 public function newIdent
 "function: newIdent
@@ -10135,9 +10135,16 @@ algorithm
   local
     list<SCode.Annotation> anns;
     list<SCode.Element> elemDecl;
-
-    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inIH,inPrefix)
+    Absyn.Annotation absynann;
+    SCode.Annotation ann;
+    
+    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=NONE()),baseFunc,inCache,inEnv,inIH,inPrefix)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix);
+
+    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=SOME(Absyn.EXTERNALDECL(annotation_=SOME(absynann)))),baseFunc,inCache,inEnv,inIH,inPrefix)
+    equation
+      ann = SCodeUtil.translateAnnotation(absynann);
+    then getDeriveAnnotation2(ann::anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix);
 
     case(SCode.CLASS_EXTENDS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inIH,inPrefix)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix);

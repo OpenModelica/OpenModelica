@@ -637,7 +637,7 @@ algorithm
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.REDUCTION(a,e1_1,b,e2_1);
-    case (e,(timevars,functions))
+    case (e,_)
       equation
         str = Exp.printExpStr(e);
         print("-differentiate_exp_time on ");

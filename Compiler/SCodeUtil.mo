@@ -949,7 +949,7 @@ algorithm
 end translateAnnotationsAlg;
 
 // stefan
-protected function translateAnnotation
+public function translateAnnotation
 "function: translateAnnotation
   translates an Absyn.Annotation into an SCode.Annotation"
   input Absyn.Annotation inAnnotation;
