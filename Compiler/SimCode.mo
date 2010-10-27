@@ -830,8 +830,8 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
+        m = BackendDAEUtil.incidenceMatrix(dlow);
+        mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -957,8 +957,8 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
+        m = BackendDAEUtil.incidenceMatrix(dlow);
+        mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -1637,8 +1637,8 @@ algorithm
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
 
         // replace div operator with div operator with check of Division by zero
-        orderedVars = DAELow.daeVars(dlow);
-        knownVars = DAELow.daeKnVars(dlow);
+        orderedVars = BackendVariable.daeVars(dlow);
+        knownVars = BackendVariable.daeKnVars(dlow);
       	varlst = BackendDAEUtil.varList(orderedVars);
       	varlst1 = BackendDAEUtil.varList(knownVars);
       	varlst2 = listAppend(varlst,varlst1);  
@@ -1744,8 +1744,8 @@ algorithm
         Debug.fcall("linmodel",print,"Generate Linear Model Matrices\n");
         
         // Prepare all needed variables
-        //v = DAELow.daeVars(dlow);
-        //kv = DAELow.daeKnVars(dlow);
+        //v = BackendVariable.daeVars(dlow);
+        //kv = DBackendVariable.daeKnVars(dlow);
       	varlst = BackendDAEUtil.varList(v);
       	varlst1 = BackendDAEUtil.varList(kv);
       	//varlst2 = listAppend(varlst,varlst1);
@@ -1779,7 +1779,7 @@ algorithm
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
-        v = DAELow.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
         JacAVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
         
@@ -1787,7 +1787,7 @@ algorithm
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
-        v = DAELow.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
         JacCVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
         
@@ -1800,7 +1800,7 @@ algorithm
          Debug.fcall("jacdump2", print, "Dump of daelow for Matrix B.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
-        v = DAELow.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
         JacBVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
         
@@ -1808,7 +1808,7 @@ algorithm
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
-        v = DAELow.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
         JacDVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
 
@@ -3229,9 +3229,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = DAELow.incidenceMatrix(cont_subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
@@ -3255,9 +3255,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = DAELow.incidenceMatrix(cont_subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
@@ -3293,9 +3293,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
-        m = DAELow.incidenceMatrix(subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
@@ -3325,9 +3325,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = DAELow.incidenceMatrix(subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
@@ -3399,9 +3399,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = DAELow.incidenceMatrix(subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         // Jacobian of a Linear System is always linear 
@@ -3664,9 +3664,9 @@ algorithm
       equation
         // check Relaxation
         true = RTOpts.debugFlag("relaxation");
-        m = DAELow.incidenceMatrix(d);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(d);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
@@ -4049,8 +4049,8 @@ algorithm
       equation
         dlowVars = BackendDAEUtil.varList(v);
         dlowEqs = BackendDAEUtil.equationList(eqn);
-				m = DAELow.incidenceMatrix(daelow);
-        mT = DAELow.transposeMatrix(m);      
+				m = BackendDAEUtil.incidenceMatrix(daelow);
+        mT = BackendDAEUtil.transposeMatrix(m);      
         SOME(jac) = DAELow.calculateJacobian(v, eqn, ae, m, mT,false);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
@@ -4263,9 +4263,9 @@ algorithm
         re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re); 
         subsystem_dae = BackendDAE.DAELOW(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
-         m = DAELow.incidenceMatrix(subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
+         m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
+        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
+        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac1 = DAELow.calculateJacobian(vars, eqns, ae, m_1, mt_1,false);
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac1);

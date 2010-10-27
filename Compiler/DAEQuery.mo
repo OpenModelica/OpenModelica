@@ -44,6 +44,7 @@ import SCode;
 protected
 import BackendDAEUtil;
 import BackendVariable;
+import BackendEquation;
 import ComponentReference;
 import System;
 import Util;
@@ -577,7 +578,7 @@ algorithm
         res;
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
       equation
-        (cr,e2) = DAELow.getWhenEquationExpr(we);
+        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = DAE.CREF(cr,DAE.ET_OTHER());
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);

@@ -347,8 +347,8 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = BackendDAE.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = BackendDAECreate.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as BackendDAE.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
-        m = DAELow.incidenceMatrix(daelow);
-        mt = DAELow.transposeMatrix(m);
+        m = BackendDAEUtil.incidenceMatrix(daelow);
+        mt = BackendDAEUtil.transposeMatrix(m);
         /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
         jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
@@ -3515,7 +3515,7 @@ algorithm
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = BackendDAEUtil.equationSize(eqns);
-        (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        (eqnSize,varSize) = subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
         simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
@@ -3555,7 +3555,7 @@ algorithm
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = BackendDAEUtil.equationSize(eqns);
-        (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        (eqnSize,varSize) = subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
         simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
@@ -3937,8 +3937,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
+        m = BackendDAEUtil.incidenceMatrix(dlow);
+        mT = BackendDAEUtil.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
@@ -3979,8 +3979,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
+        m = BackendDAEUtil.incidenceMatrix(dlow);
+        mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());

@@ -44,6 +44,7 @@ protected import Absyn;
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import BackendEquation;
 protected import ComponentReference;
 protected import DAEEXT;
 protected import DAEDump;
@@ -237,7 +238,7 @@ algorithm
         ();
     case (BackendDAE.WHEN_EQUATION(whenEquation = w))
       equation
-        (cr,e2) = DAELow.getWhenEquationExpr(w);
+        (cr,e2) = BackendEquation.getWhenEquationExpr(w);
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         res = stringAppendList({s1," =  ",s2,"\n"});

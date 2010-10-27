@@ -1159,6 +1159,31 @@ end vararrayNth;
  * =======================================================
  */
 
+
+public function daeVars
+  input BackendDAE.DAELow inDAELow;
+  output BackendDAE.Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local BackendDAE.Variables vars1,vars2;
+    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars1;
+  end matchcontinue;
+end daeVars;
+
+public function daeKnVars
+  input BackendDAE.DAELow inDAELow;
+  output BackendDAE.Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local BackendDAE.Variables vars1,vars2;
+    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars2;
+  end matchcontinue;
+end daeKnVars;
+
+
+
 public function varsSize "function: varsSize
   author: PA
 

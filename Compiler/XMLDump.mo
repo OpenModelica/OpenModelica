@@ -2691,8 +2691,8 @@ algorithm
       array<Integer> v1,v2;
       list<list<Integer>> comps;
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
       (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = DAELow.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
@@ -2712,8 +2712,8 @@ algorithm
       array<Integer> v1,v2;
       list<list<Integer>> comps;
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2726,8 +2726,8 @@ algorithm
       array<Integer> v1,v2;
       list<list<Integer>> comps;
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
       (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = DAELow.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);

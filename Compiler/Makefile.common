@@ -35,6 +35,7 @@ BackendDAE.mo \
 BackendDump.mo \
 BackendDAECreate.mo \
 BackendDAEOptimize.mo \
+BackendEquation.mo \
 BackendVariable.mo \
 BaseHashTable.mo \
 Builtin.mo \

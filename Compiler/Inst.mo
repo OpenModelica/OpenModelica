@@ -14792,7 +14792,7 @@ algorithm
         // Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
-        (eqnSize,varSize) = CevalScript.subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        (eqnSize,varSize) = CevalScript.subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
         simpleEqnSize = DAELow.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
