@@ -41,7 +41,6 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import Values;
-public import Builtin;
 public import HashTable2;
 
 public constant String derivativeNamePrefix="$DER";

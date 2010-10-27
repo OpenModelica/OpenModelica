@@ -23,7 +23,6 @@ public import BaseHashTable;
 public import DAE;
 protected import ComponentReference;
 protected import HashTable2;
-protected import System;
 
 public type Key = DAE.ComponentRef;
 public type Value = DAE.ComponentRef;

@@ -50,14 +50,15 @@ package DAELow
 
 public import Absyn;
 public import BackendDAE;
+public import Builtin;
 public import DAE;
 public import SCode;
 public import Values;
-public import Builtin;
-public import HashTable2;
 
 protected import Algorithm;
 protected import BackendDump;
+protected import BackendDAETransform;
+protected import BackendDAEUtil;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Ceval;
@@ -77,11 +78,7 @@ protected import OptManager;
 protected import RTOpts;
 protected import System;
 protected import Util;
-protected import DAEDump;
-protected import ValuesUtil;
 protected import VarTransform;
-protected import BackendDAEUtil;
-protected import BackendDAETransform;
 
 public constant String derivativeNamePrefix="$DER";
 

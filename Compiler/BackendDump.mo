@@ -43,7 +43,6 @@ public import DAE;
 protected import Absyn;
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendVarTransform;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEEXT;
