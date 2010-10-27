@@ -576,7 +576,7 @@ algorithm outVal := matchcontinue(env,sc,ht2)
                         classDef=SCode.PARTS(normalEquationLst={},
                                              initialEquationLst={},
                                              normalAlgorithmLst=algs1,
-                                             initialAlgorithmLst=algs2)),ht2)
+                                             initialAlgorithmLst={})),ht2)
     equation
 
       env1 = evaluateAlgorithmsList(env,algs1,ht2);
