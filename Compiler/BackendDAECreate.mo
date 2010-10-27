@@ -2555,26 +2555,15 @@ protected function updateStatesVars
 algorithm
   outVars := matchcontinue(vars,newStates)
     local
-      DAE.ComponentRef cr1;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      BackendDAE.Type vartype;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> value;
-      list<DAE.Subscript> dims;
-      BackendDAE.Value ind;
-      DAE.ElementSource source "origin of equation";
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       DAE.ComponentRef cr;
+      BackendDAE.Var var;
 
     case(vars,{}) then vars;
     case(vars,cr::newStates)
       equation
-        ((BackendDAE.VAR(cr1,kind,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars);
-        vars = BackendVariable.addVar(BackendDAE.VAR(cr1,BackendDAE.STATE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), vars);
+        ((var :: _),_) = BackendVariable.getVar(cr, vars);
+        var = BackendVariable.setVarKind(var,BackendDAE.STATE());
+        vars = BackendVariable.addVar(var, vars);
         vars = updateStatesVars(vars,newStates);
       then vars;
     case(vars,cr::newStates)
