@@ -2165,11 +2165,6 @@ algorithm
         res = System.stringAppendList({"polymorphic<",tystr,">"});
       then
         res;
-    case ((DAE.T_POLYMORPHIC_SOLVED(tystr),_))
-      equation
-        res = Util.stringAppendList({"polymorphic_solved<",tystr,">"});
-      then
-        res;
 
         /* MetaModelica uniontype */
     case ((DAE.T_UNIONTYPE(_),SOME(p)))
@@ -5114,7 +5109,6 @@ algorithm
     case ((DAE.T_UNIONTYPE(_),_)) then true;
     case ((DAE.T_METARECORD(utPath=_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
-    case ((DAE.T_POLYMORPHIC_SOLVED(_),_)) then true;
     case ((DAE.T_META_ARRAY(_),_)) then true;
     case ((DAE.T_FUNCTION(_,_,_),_)) then true;
     case ((DAE.T_BOXED(_),_)) then true;
@@ -5414,23 +5408,27 @@ algorithm
 end polymorphicBindingsStr;
 
 public function fixPolymorphicRestype
-"Uses the polymorphic bindings to determine the result type of the function.
-TODO: This needs to be more generic so for example list<polymorphic<X>> is also translated"
+"Uses the polymorphic bindings to determine the result type of the function."
   input Type ty;
   input PolymorphicBindings bindings;
+  input Absyn.Info info;
   output Type resType;
 algorithm
-  resType := fixPolymorphicRestype2(ty,bindings);
+  //print("Trying to fix restype: " +& unparseType(ty) +& "\n");
+  resType := fixPolymorphicRestype2(ty,"$",bindings,info);
+  //print("OK: " +& unparseType(resType) +& "\n");
 end fixPolymorphicRestype;
 
-protected function fixPolymorphicRestype2 "TODO: This needs to be more generic so for example list<polymorphic<X>> is also translated"
+protected function fixPolymorphicRestype2
   input Type ty;
+  input String prefix;
   input PolymorphicBindings bindings;
+  input Absyn.Info info;
   output Type resType;
 algorithm
-  resType := matchcontinue (ty, bindings)
+  resType := matchcontinue (ty,prefix,bindings,info)
     local
-      String id,id1,id2;
+      String id,id1,id2,bstr,tstr;
       Type t1,t2,ty,ty1,ty2;
       list<Type> tys,tys1,tys2,rest;
       list<String> names1;
@@ -5438,45 +5436,55 @@ algorithm
       DAE.InlineType inline1,inline2;
       Option<Absyn.Path> op1;
 
-    case ((DAE.T_POLYMORPHIC(id),_),bindings)
+    case ((DAE.T_POLYMORPHIC(id),_),prefix,bindings,info)
       equation
-        {t1} = polymorphicBindingsLookup(id, bindings);
+        {t1} = polymorphicBindingsLookup(prefix +& id, bindings);
+        t1 = fixPolymorphicRestype2(t1, "", bindings, info);
       then t1;
-    case ((DAE.T_LIST(t1),_),bindings)
+    case ((DAE.T_LIST(t1),_),prefix,bindings,info)
       equation
-        t2 = fixPolymorphicRestype2(t1, bindings);
+        t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = unboxedType(t2);
       then ((DAE.T_LIST(t2),NONE()));
-    case ((DAE.T_META_ARRAY(t1),_),bindings)
+    case ((DAE.T_META_ARRAY(t1),_),prefix,bindings,info)
       equation
-        t2 = fixPolymorphicRestype2(t1, bindings);
+        t2 = fixPolymorphicRestype2(t1,prefix,bindings, info);
       then ((DAE.T_META_ARRAY(t2),NONE()));
-    case ((DAE.T_METAOPTION(t1),_),bindings)
+    case ((DAE.T_METAOPTION(t1),_),prefix,bindings,info)
       equation
-        t2 = fixPolymorphicRestype2(t1, bindings);
+        t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
       then ((DAE.T_METAOPTION(t2),NONE()));
-    case ((DAE.T_METATUPLE(tys),_),bindings)
+    case ((DAE.T_METATUPLE(tys),_),prefix,bindings,info)
       equation
-        tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
+        tys = Util.listMap3(tys, fixPolymorphicRestype2, prefix, bindings, info);
         tys = Util.listMap(tys, unboxedType);
       then ((DAE.T_METATUPLE(tys),NONE()));
-    case ((DAE.T_TUPLE(tys),_),bindings)
+    case ((DAE.T_TUPLE(tys),_),prefix,bindings,info)
       equation
-        tys = Util.listMap1(tys, fixPolymorphicRestype2, bindings);
+        tys = Util.listMap3(tys, fixPolymorphicRestype2, prefix, bindings, info);
       then ((DAE.T_TUPLE(tys),NONE()));
-    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1),bindings)
+    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1),prefix,bindings,info)
       equation
         names1 = Util.listMap(args1, Util.tuple21);
         tys1 = Util.listMap(args1, Util.tuple22);
-        tys1 = Util.listMap1(tys1, fixPolymorphicRestype2, bindings);
-        ty1 = fixPolymorphicRestype2(ty1,bindings);
+        tys1 = Util.listMap3(tys1, fixPolymorphicRestype2, prefix, bindings, info);
+        ty1 = fixPolymorphicRestype2(ty1,prefix,bindings,info);
         args1 = Util.listThreadTuple(names1,tys1);
         ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
       then ty1;
  
     // Add Uniontype, Function reference(?)
-    case (ty, bindings)
+    case (ty,prefix,bindings,info)
+      equation
+        // failure(isPolymorphic(ty)); Recursive functions like to return polymorphic crap we don't know of
       then ty;
+    case (ty,prefix,bindings,info)
+      equation
+        tstr = unparseType(ty);
+        bstr = polymorphicBindingsStr(bindings);
+        id = "Types.fixPolymorphicRestype failed for type: " +& tstr +& " using bindings: " +& bstr;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {id}, info);
+      then fail();
   end matchcontinue;
 end fixPolymorphicRestype2;
 
@@ -5738,12 +5746,6 @@ algorithm
   (DAE.T_POLYMORPHIC(_),_) := ty;
 end isPolymorphic;
 
-protected function isSolvedPolymorphic
-  input Type ty;
-algorithm
-  (DAE.T_POLYMORPHIC_SOLVED(_),_) := ty;
-end isSolvedPolymorphic;
-
 protected function polymorphicTypeName
   input Type ty;
   output String name;
@@ -5830,7 +5832,6 @@ algorithm
 
     case ((id,{ty})::rest,solvedBindings,unsolvedBindings)
       equation
-        {} = getAllInnerTypesOfType(ty, isSolvedPolymorphic);
         (solvedBindings,unsolvedBindings) = solvePolymorphicBindingsLoop(listAppend(unsolvedBindings,rest),(id,{ty})::solvedBindings,{});
       then (solvedBindings,unsolvedBindings);
 
@@ -5889,21 +5890,21 @@ algorithm
       list<DAE.FuncArg> args1,args2;
       DAE.InlineType inline1,inline2;
       Option<Absyn.Path> op1;
-    case ((ty1 as (DAE.T_POLYMORPHIC_SOLVED(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC_SOLVED(id2),_))::tys2,solvedBindings)
+    case ((ty1 as (DAE.T_POLYMORPHIC(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC(id2),_))::tys2,solvedBindings)
       equation
         false = id1 ==& id2;
         solvedBindings = addPolymorphicBinding(id1,ty2,solvedBindings);
       then (ty2::tys2, solvedBindings);
 
-    case ((ty1 as (DAE.T_POLYMORPHIC_SOLVED(id),_))::tys1,ty2::tys2,solvedBindings)
+    case ((ty1 as (DAE.T_POLYMORPHIC(id),_))::tys1,ty2::tys2,solvedBindings)
       equation
-        failure(isSolvedPolymorphic(ty2));
+        failure(isPolymorphic(ty2));
         solvedBindings = addPolymorphicBinding(id,ty2,solvedBindings);
       then (ty2::tys2, solvedBindings);
     
-    case (ty1::tys1,(ty2 as (DAE.T_POLYMORPHIC_SOLVED(id),_))::tys2,solvedBindings)
+    case (ty1::tys1,(ty2 as (DAE.T_POLYMORPHIC(id),_))::tys2,solvedBindings)
       equation
-        failure(isSolvedPolymorphic(ty1));
+        failure(isPolymorphic(ty1));
         solvedBindings = addPolymorphicBinding(id,ty1,solvedBindings);
       then (ty1::tys2, solvedBindings);
     
@@ -6035,48 +6036,12 @@ algorithm
         args = Util.listThreadTuple(names,tys);
         ty = (DAE.T_FUNCTION(args,ty,inline),op);
       then ty;
-    case ((DAE.T_POLYMORPHIC_SOLVED(id),_),_)
+    case ((DAE.T_POLYMORPHIC(id),_),_)
       equation
         {ty} = polymorphicBindingsLookup(id, solvedBindings);
       then ty;
   end matchcontinue;
 end replaceSolvedBinding;
-
-protected function renamePolymorphicType
-  input Type ty;
-  input String prefix;
-  output Type outTy;
-algorithm
-  outTy := matchcontinue (ty,prefix)
-    local
-      String id;
-      list<Type> tys;
-    case ((DAE.T_LIST(ty),_),_)
-      equation
-        ty = renamePolymorphicType(ty, prefix);
-        ty = unboxedType(ty);
-        ty = (DAE.T_LIST(ty),NONE());
-      then ty;
-    case ((DAE.T_METAOPTION(ty),_),_)
-      equation
-        ty = renamePolymorphicType(ty, prefix);
-        ty = (DAE.T_METAOPTION(ty),NONE());
-      then ty;
-    case ((DAE.T_METATUPLE(tys),_),_)
-      equation
-        tys = Util.listMap1(tys, renamePolymorphicType, prefix);
-        tys = Util.listMap(tys, unboxedType);
-        ty = (DAE.T_METATUPLE(tys),NONE());
-      then ty;
-
-    case ((DAE.T_POLYMORPHIC(id),_),_)
-      equation
-        id = prefix +& "." +& id;
-        ty = (DAE.T_POLYMORPHIC_SOLVED(id),NONE());
-      then ty;
-    case (ty,_) then ty;
-  end matchcontinue;
-end renamePolymorphicType;
 
 protected function subtypePolymorphic
 "A simple subtype() that also binds polymorphic variables.
@@ -6096,7 +6061,9 @@ algorithm
       Absyn.Path path,path1,path2;
       list<String> ids;
     case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
-      then addPolymorphicBinding(id,boxIfUnboxedType(actual),bindings);
+      equation
+        ty = boxIfUnboxedType(actual);
+      then addPolymorphicBinding("$" +& id,ty,bindings);
     case ((DAE.T_BOXED(ty1),_),ty2,bindings)
       equation
         ty1 = unboxedType(ty1);
@@ -6138,10 +6105,7 @@ algorithm
       equation
         false = Absyn.pathEqual(path1,path2);
         tList1 = Util.listMap(farg1, Util.tuple22);
-        tList1 = Util.listMap1(tList1, renamePolymorphicType, Absyn.pathString(path1));
         tList2 = Util.listMap(farg2, Util.tuple22);
-        ty1 = renamePolymorphicType(ty1, Absyn.pathString(path1));
-
         bindings = subtypePolymorphicList(tList1,tList2,bindings);
         bindings = subtypePolymorphic(ty1,ty2,bindings);
       then bindings;
