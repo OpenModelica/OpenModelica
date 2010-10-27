@@ -4434,22 +4434,24 @@ algorithm
       DAE.Function mainFunction;
       list<DAE.Function> d;
       list<DAE.Element> els;
-      list<Absyn.Path> uniontypePaths;
+      list<Absyn.Path> uniontypePaths,paths;
       list<DAE.Type> metarecordTypes;
       DAE.FunctionTree funcs;
-  /* TODO: This would be faster if we simply used the cache... */
     // template based translation
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path);
-        (cache,_) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        (cache,paths) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        // print(Absyn.pathString(path) +& ": " +& Util.stringDelimitList(Util.listMap(paths, Absyn.pathString), ", ") +& "\n");
+        paths = Util.listSetDifference(paths, {path});
 
         // The list of functions is not ordered, so we need to filter out the main function...
-        mainFunction = DAEUtil.getNamedFunction(path, Env.getFunctionTree(cache));
-        d = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
-        d = Util.listSetDifference(d, {mainFunction});
+        funcs = Env.getFunctionTree(cache);
+        // print("Avilable functions: " +& DAEDump.dumpFunctionNamesStr(funcs) +& "\n");
+        mainFunction = DAEUtil.getNamedFunction(path, funcs);
+        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
         uniontypePaths = DAEUtil.getUniontypePaths(d, {});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
@@ -4520,7 +4522,7 @@ algorithm
         (cache,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs prefixing dae */");
       then
-        (cache,(path :: gflist));
+        (cache,gflist);
     case (_,path,env,_)
       local String ss1;
       equation

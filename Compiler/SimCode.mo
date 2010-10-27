@@ -1114,26 +1114,6 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-public function getCalledFunctions
-"Goes through the DAELow structure, finds all function calls, and returns them
-in a list. Removes duplicates."
-  input DAE.DAElist dae;
-  input BackendDAE.DAELow dlow;
-  output list<Absyn.Path> res;
-  list<DAE.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
-  list<Absyn.Path> calledfuncs;
-algorithm
-  //explist := DAELow.getAllExps(dlow);
-  //fcallexps := getMatchingExpsList(explist, matchCalls);
-  fcallexps := DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchCallsAndFnRefs);
-  //fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
-  //fcallexps_2 := getMatchingExpsList(explist, matchFnRefs);
-  //fcallexps_2 := DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
-  //calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
-  calledfuncs := Util.listMap(fcallexps, getCallPath);
-  res := removeDuplicatePaths(calledfuncs);
-end getCalledFunctions;
-
 public function getCalledFunctionReferences
 "Goes through the DAELow structure, finds all function references calls, 
  and returns them in a list. Removes duplicates."
