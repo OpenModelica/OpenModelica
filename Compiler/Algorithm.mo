@@ -822,13 +822,4 @@ algorithm
   end matchcontinue;
 end getAllExpsElse;
 
-protected function crefToExp "function: crefToExp
-  Creates an expression from a ComponentRef.
-  The type of the expression will become DAE.ET_OTHER."
-  input DAE.ComponentRef inComponentRef;
-  output DAE.Exp outExp;
-algorithm
-  outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
-end crefToExp;
-
 end Algorithm;
