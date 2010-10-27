@@ -79,10 +79,10 @@ algorithm
 
     case (inProgram)
       equation
-        System.addToRoots(Inst.instHashIndex, Inst.emptyInstHashTable());
-        System.addToRoots(Types.memoryIndex,  Types.createEmptyTypeMemory());        
+        setGlobalRoot(Inst.instHashIndex, Inst.emptyInstHashTable());
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());        
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
-        // System.addToRoots(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
+        // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
 
         // set the external flag that signals the presence of inner/outer components in the model

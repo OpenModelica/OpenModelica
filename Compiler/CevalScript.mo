@@ -4144,7 +4144,7 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
-        allClassPaths = Util.listSelect(allClassPaths, filterLib);
+        // allClassPaths = Util.listSelect(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");

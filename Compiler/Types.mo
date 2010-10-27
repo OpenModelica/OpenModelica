@@ -3608,7 +3608,7 @@ algorithm
         true = RTOpts.debugFlag("useTypeMemory");        
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots
-        tyMem = System.getFromRoots(memoryIndex);
+        tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
         indexBasedOnValueConstructor = System.getValueConstructor(tt); 
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
@@ -3625,14 +3625,14 @@ algorithm
         expTy = elabType_dispatch(inType);
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots        
-        tyMem = System.getFromRoots(memoryIndex);
+        tyMem = getGlobalRoot(memoryIndex);
         // select a list based on the constructor of TType value
         indexBasedOnValueConstructor = System.getValueConstructor(tt);        
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, (inType, expTy)::tyLst);
         // set the global cache with the new value
-        System.addToRoots(memoryIndex, tyMem);
+        setGlobalRoot(memoryIndex, tyMem);
       then 
         expTy;
   end matchcontinue;
