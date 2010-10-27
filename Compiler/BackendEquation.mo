@@ -38,12 +38,8 @@ package BackendEquation
 
 "
 
-public import Absyn;
 public import BackendDAE;
-public import Builtin;
 public import DAE;
-public import SCode;
-public import Values;
 
 protected import Algorithm;
 protected import BackendDump;
@@ -51,24 +47,15 @@ protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import BackendVarTransform;
 protected import BackendVariable;
-protected import Ceval;
-protected import ClassInf;
 protected import ComponentReference;
-protected import DAEEXT;
-protected import DAEUtil;
 protected import Debug;
 protected import Derive;
-protected import Env;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
-protected import OptManager;
-protected import RTOpts;
-protected import System;
 protected import Util;
-protected import VarTransform;
 
 
 public function getWhenEquationExpr

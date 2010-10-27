@@ -32,7 +32,7 @@
 package Derive
 " file:	 Derive.mo
   package:      Derive
-  description: Differentiation of equations from DAELow
+  description: Differentiation of equations from BackendDAE.DAELow
 
   RCS: $Id$
 
@@ -48,7 +48,6 @@ public import BackendDAE;
 public import Builtin;
 public import DAE;
 public import DAEUtil;
-public import DAELow;
 public import RTOpts;
 public import Types;
 
@@ -735,11 +734,11 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
+        (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
         true =  Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
         // diff explst
-        (dexplst,_) = DAELow.listSplitOnTrue(inExpLst,blst);
-        (dexplst1,_) = DAELow.listSplitOnTrue(inExpLst1,blst1);
+        (dexplst,_) = Util.listSplitOnBoolList(inExpLst,blst);
+        (dexplst1,_) = Util.listSplitOnBoolList(inExpLst1,blst1);
         dexplst_1 = Util.listMap1(dexplst,differentiateExpTime,(timevars,functions));        
         dexplst1_1 = Util.listMap1(dexplst1,differentiateExpTime,(timevars,functions));        
       then
@@ -755,7 +754,7 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
+        (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
         false = Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
         // add Warning
         typlststring = Util.listMap(tlst1,Types.unparseType);
@@ -845,7 +844,7 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
-        (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
+        (expl1,_) = Util.listSplitOnBoolList(expl,blst);
         dexpl = Util.listMap1(expl1,differentiateExpTime,(timevars,functions));
         expl1 = listAppend(expl,dexpl);
       then
@@ -884,7 +883,7 @@ algorithm
       case (blst,(DAE.T_FUNCTION(funcArg=falst),_),(DAE.T_FUNCTION(funcArg=dfalst),_))
       equation
         // generate expected function inputs
-        (falst1,_) = DAELow.listSplitOnTrue(falst,blst);
+        (falst1,_) = Util.listSplitOnBoolList(falst,blst);
         falst2 = listAppend(falst,falst1);
         // compare with derivative function inputs
         tlst = Util.listMap(falst2,Util.tuple22);

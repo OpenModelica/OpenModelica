@@ -5822,6 +5822,26 @@ algorithm
   end matchcontinue;
 end listSplitOnTrue2;
 
+public function listSplitOnBoolList
+"Splits a list into two sublists depending on second list of bools"
+  input list<Type_a> lst;
+  input list<Boolean> blst;
+  output list<Type_a> tlst;
+  output list<Type_a> flst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (tlst,flst) := matchcontinue(lst,blst)
+  local Type_a l;
+    case({},{}) then ({},{});
+    case(l::lst,true::blst) equation
+      (tlst,flst) = listSplitOnBoolList(lst,blst);
+    then (l::tlst,flst);
+    case(l::lst,false::blst) equation
+      (tlst,flst) = listSplitOnBoolList(lst,blst);
+    then (tlst,l::flst);
+  end matchcontinue;
+end listSplitOnBoolList;
+
 public function listSplitEqualParts "function: listSplitEqualParts
   Takes a list of values and an position value.
   The function returns the list splitted into two lists at the position given as argument.
