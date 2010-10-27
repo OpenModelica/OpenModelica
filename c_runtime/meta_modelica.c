@@ -279,6 +279,10 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   void *lhs_data, *rhs_data;
   struct record_description *lhs_desc,*rhs_desc;
 
+  if (lhs == rhs) {
+    return 1;
+  }
+
   if ((0 == ((mmc_sint_t)lhs & 1)) && (0 == ((mmc_sint_t)rhs & 1))) {
     return lhs == rhs;
   }
@@ -291,7 +295,10 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   }
 
   if (h_lhs == MMC_REALHDR) {
-    return mmc_prim_get_real(MMC_REALDATA(lhs)) == mmc_prim_get_real(MMC_REALDATA(rhs));;
+    double d1,d2;
+    d1 = mmc_prim_get_real(lhs);
+    d2 = mmc_prim_get_real(rhs);
+    return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs))
     return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
@@ -319,8 +326,12 @@ int mmc_boxes_equal(void* lhs, void* rhs)
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
     for (i=0; i<numslots; i++) {
-      if (0 == mmc_boxes_equal(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1))))
+      void *tlhs, *trhs;
+      tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
+      trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
+      if (0 == mmc_boxes_equal(tlhs,trhs)) {
         return 0;
+      }
     }
     return 1;
   }
@@ -377,7 +388,7 @@ void printAny(void* any) /* For debugging */
   struct record_description *desc;
 
   if ((0 == ((mmc_sint_t)any & 1))) {
-    fprintf(stderr, "%d", (int) ((mmc_sint_t)any)>>1);
+    fprintf(stderr, "%ld", (long) ((mmc_sint_t)any)>>1);
     return;
   }
   

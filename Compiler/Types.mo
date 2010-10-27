@@ -1533,10 +1533,11 @@ algorithm
     case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_)) then subtype(t1,t2);
     case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_)) then subtype(t1,t2);
     case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_))
-      local list<Type> tList1,tList2; Boolean ret; 
+      local
+        list<Type> tList1,tList2;
       equation
-        ret = subtypeTypelist(tList1,tList2);
-      then ret;
+        res = subtypeTypelist(tList1,tList2);
+      then res;
     case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
       then subtype(t1,t2);
     
@@ -5397,7 +5398,7 @@ protected function polymorphicBindingStr
 algorithm
   (str,tys) := binding;
   // Don't bother doing this fast; it's just for error messages
-  str := "    " +& str +& ":\n" +& Util.stringDelimitList(Util.listMap1r(Util.listMapMap(tys, unboxedType, unparseType), stringAppend, "      "), "\n");
+  str := "    " +& str +& ":\n" +& Util.stringDelimitList(Util.listMap1r(Util.listMap(tys, unparseType), stringAppend, "      "), "\n");
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
@@ -5765,10 +5766,16 @@ algorithm
       list<Type> tys;
       PolymorphicBindings rest;
       tuple<String,list<Type>> first;
-    case (id,ty,{}) then {(id,{ty})};
+    case (id,ty,{})
+      equation
+        ty = unboxedType(ty);
+        ty = boxIfUnboxedType(ty);
+      then {(id,{ty})};
     case (id1,ty,(id2,tys)::rest)
       equation
         true = id1 ==& id2;
+        ty = unboxedType(ty);
+        ty = boxIfUnboxedType(ty);
       then (id2,ty::tys)::rest;
     case (id,ty,first::rest)
       equation
@@ -6061,9 +6068,7 @@ algorithm
       Absyn.Path path,path1,path2;
       list<String> ids;
     case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
-      equation
-        ty = boxIfUnboxedType(actual);
-      then addPolymorphicBinding("$" +& id,ty,bindings);
+      then addPolymorphicBinding("$" +& id,actual,bindings);
     case ((DAE.T_BOXED(ty1),_),ty2,bindings)
       equation
         ty1 = unboxedType(ty1);
