@@ -41,6 +41,7 @@ Builtin.mo \
 Ceval.mo \
 CevalScript.mo \
 Cevalfunc.mo \
+CevalFunction.mo \
 ClassInf.mo \
 ClassLoader.mo \
 ComponentReference.mo \

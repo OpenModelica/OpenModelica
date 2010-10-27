@@ -94,6 +94,7 @@ protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
 protected import OptManager;
+protected import CevalFunction;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -1304,6 +1305,31 @@ algorithm
         cevalIsExternalObjectConstructor(cache,funcpath,env);
       then
         fail();
+        
+    case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
+      local DAE.Function func;
+      equation
+        false = RTOpts.debugFlag("noevalfunc");
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
+        (cache, 
+         sc as SCode.CLASS(
+          partialPrefix = false, 
+          restriction = SCode.R_FUNCTION(), 
+          classDef = cdef),
+         env) = Lookup.lookupClass(cache, env, funcpath, true);
+        (cache, env, _) = Inst.implicitFunctionInstantiation(
+          cache,
+          env,
+          InnerOuter.emptyInstHierarchy,
+          DAE.NOMOD(),
+          Prefix.NOPRE(),
+          Connect.emptySet,
+          sc,
+          {});
+        func = Env.getCachedInstFunc(cache, funcpath);
+        newval = CevalFunction.evaluate(env, func, vallst);
+      then
+        (cache, newval, st);
         
     // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
