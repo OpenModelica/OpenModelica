@@ -1123,11 +1123,14 @@ in a list. Removes duplicates."
   list<DAE.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
   list<Absyn.Path> calledfuncs;
 algorithm
-  explist := DAELow.getAllExps(dlow);
-  fcallexps := getMatchingExpsList(explist, matchCalls);
-  fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
-  fcallexps_2 := getMatchingExpsList(explist, matchFnRefs);
-  calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
+  //explist := DAELow.getAllExps(dlow);
+  //fcallexps := getMatchingExpsList(explist, matchCalls);
+  fcallexps := DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchCallsAndFnRefs);
+  //fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
+  //fcallexps_2 := getMatchingExpsList(explist, matchFnRefs);
+  //fcallexps_2 := DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
+  //calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
+  calledfuncs := Util.listMap(fcallexps, getCallPath);
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
 
@@ -1149,7 +1152,8 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         explist = DAELow.getAllExps(dlow);
-        fcallexps = getMatchingExpsList(explist, matchFnRefs);
+        //fcallexps = getMatchingExpsList(explist, matchFnRefs);
+        fcallexps = DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
         calledfuncs = Util.listMap(fcallexps, getCallPath);
         res = removeDuplicatePaths(calledfuncs);
       then res;
@@ -7436,6 +7440,30 @@ algorithm
 
   end matchcontinue;
 end getMatchingExps;
+
+protected function matchCallsAndFnRefs
+"calls matchCalls and matchFnRefs"
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<DAE.Exp> explst,explst1,explst_1,explst2;
+    case (inExpr)
+      equation
+        explst = matchCalls(inExpr);
+        explst_1 = Util.listSelect(explst, isNotBuiltinCall);
+        explst1 = matchFnRefs(inExpr);
+        explst2 = listAppend(explst,explst_1);
+      then
+        explst2;
+    case (inExpr)
+      equation
+        failure(explst = matchCalls(inExpr));
+        explst1 = matchFnRefs(inExpr);
+      then
+        explst1;
+  end matchcontinue;
+end matchCallsAndFnRefs;
 
 protected function matchCalls
 "Used together with getMatchingExps"
