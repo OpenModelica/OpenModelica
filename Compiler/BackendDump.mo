@@ -42,13 +42,13 @@ public import DAE;
 
 protected import Absyn;
 protected import Algorithm;
+protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendEquation;
 protected import ComponentReference;
 protected import DAEEXT;
 protected import DAEDump;
-protected import DAELow;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
@@ -149,7 +149,7 @@ algorithm
         printTuple(restTuple);
       then ();
     case (_) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.printTuple() failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"printTuple() failed"});
     then fail();      
   end matchcontinue;
 end printTuple;
@@ -1270,7 +1270,7 @@ algorithm
         list<String> strLst,slst;
         String str;
       equation
-        eqns = DAELow.reachableNodes(i, m, mT, ass1, ass2);
+        eqns = BackendDAEOptimize.reachableNodes(i, m, mT, ass1, ass2);
         llst = Util.listMap(eqns,Util.listCreate);
         llst = Util.listMap1(llst,Util.listCons,i);
         slst = Util.listMap(llst,intListStr);

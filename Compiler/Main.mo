@@ -45,6 +45,7 @@ protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
+protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDump;
@@ -54,7 +55,6 @@ protected import SCode;
 protected import SCodeUtil;
 protected import DAE;
 protected import DAEUtil;
-protected import DAELow;
 protected import Inst;
 protected import Interactive;
 protected import Dependency;
@@ -790,14 +790,14 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (v1,v2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", BackendDump.dump, dlow_1);
         Debug.fcall("bltdump", BackendDump.dumpMatching, v1);
-        (comps) = DAELow.strongComponents(m, mT, v1, v2);
+        (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
         /**
          * TODO: Activate this when we call it from a command like +d=...
          *
@@ -853,8 +853,8 @@ algorithm
         ();
     case (dae,ass1,ass2,comps)
       equation
-        indexed_dae = BackendVariable.translateDae(dae,NONE());
-        indexed_dae_1 = DAELow.calculateValues(indexed_dae);
+        indexed_dae = BackendDAEUtil.translateDae(dae,NONE());
+        indexed_dae_1 = BackendDAEUtil.calculateValues(indexed_dae);
         TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
@@ -870,7 +870,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_,_,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(indexed_dae_1);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);
@@ -928,8 +928,8 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
-        indexed_dlow = BackendVariable.translateDae(dlow,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        indexed_dlow = BackendDAEUtil.translateDae(dlow,NONE());
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
         //filename = System.stringAppendList({cname_str,".cpp"});

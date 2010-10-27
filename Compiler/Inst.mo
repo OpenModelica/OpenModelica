@@ -14768,9 +14768,9 @@ algorithm
       DAE.DAElist dae;
       Integer eqnSize,varSize,simpleEqnSize;
       String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      DAELow.EquationArray eqns;
+      BackendDAE.EquationArray eqns;
       Integer elimLevel;
-      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
     // check the balancing of the instantiated model
     // special case for no elements!
     case (classNameOpt, DAE.DAE({},_))
@@ -14787,13 +14787,13 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
-        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
-        = DAELow.lower(dae, false, true);
-        // Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
+        = BackendDAECreate.lower(dae, false, true);
+        // Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
-        eqnSize = DAELow.equationSize(eqns);
+        eqnSize = BackendEquation.equationSize(eqns);
         (eqnSize,varSize) = CevalScript.subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
-        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
         simpleEqnSizeStr = intString(simpleEqnSize);

@@ -54,7 +54,6 @@ public import Absyn;
 public import BackendDAE;
 public import Ceval;
 public import DAE;
-public import DAELow;
 public import Env;
 public import Interactive;
 public import Dependency;
@@ -349,8 +348,8 @@ algorithm
         ((daelow as BackendDAE.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
         m = BackendDAEUtil.incidenceMatrix(daelow);
         mt = BackendDAEUtil.transposeMatrix(m);
-        /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
-        jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
+        /* jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
+        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
@@ -3939,7 +3938,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
+        (_,_,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
@@ -3981,10 +3980,10 @@ algorithm
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
-        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = BackendVariable.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
+        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();

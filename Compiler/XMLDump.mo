@@ -82,13 +82,13 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEEXT;
-public import DAELow;
 public import Values;
 public import SCode;
 public import RTOpts;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
+protected import BackendDAEOptimize;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -1285,12 +1285,12 @@ algorithm
       then ();
     case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=true))
       equation
-        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
-        //This should be done as above. The problem is that the DAELow.equationToResidualForm(eqn) method
+        //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //This should be done as above. The problem is that the BackendEquation.equationToResidualForm(eqn) method
         //is not working as expected, probably due to the fact that considers only scalar right hand side
         //part of equation, i.e. it works correctly if we have something like a = b (with a and b scalar)
         //thus obtaining a -b = 0.
-        //The DAELow.equationToResidualForm is not working properly when the right part of the equation is not
+        //The BackendEquation.equationToResidualForm is not working properly when the right part of the equation is not
         //a scalar. Cosidering the following equation: x = y - z will then results in obtaining the wrong
         //residual equation x - y - z and not x - (y - z).
         //Even if I didn't debug such a method I made some test via printing the equation that confirmed
@@ -1298,7 +1298,7 @@ algorithm
         //By the way, when all doubt will be clearified the follow line:
         dumpResidual(eqn, intString(index),addMMLCode);
         //will be substituted with:
-        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
       then ();
   end matchcontinue;
@@ -2693,8 +2693,8 @@ algorithm
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = DAELow.strongComponents(m, mT, v1, v2);
+      (v1,v2,_,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
@@ -2728,8 +2728,8 @@ algorithm
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = DAELow.strongComponents(m, mT, v1, v2);
+      (v1,v2,_,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);

@@ -44,7 +44,6 @@ protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import ComponentReference;
-protected import DAELow;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
@@ -1161,750 +1160,7 @@ end vararrayNth;
  */
 
 
-public function daeVars
-  input BackendDAE.DAELow inDAELow;
-  output BackendDAE.Variables vars;
-algorithm
-  vars := matchcontinue (inDAELow)
-    local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
-      then vars1;
-  end matchcontinue;
-end daeVars;
-
-public function daeKnVars
-  input BackendDAE.DAELow inDAELow;
-  output BackendDAE.Variables vars;
-algorithm
-  vars := matchcontinue (inDAELow)
-    local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
-      then vars2;
-  end matchcontinue;
-end daeKnVars;
-
-
-
-public function varsSize "function: varsSize
-  author: PA
-
-  Returns the number of variables
-"
-  input BackendDAE.Variables inVariables;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  matchcontinue (inVariables)
-    local BackendDAE.Value n;
-    case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
-  end matchcontinue;
-end varsSize;
-
-
-
-public function isVariable
-"function: isVariable
-
-  This function takes a DAE.ComponentRef and two Variables. It searches
-  the two sets of variables and succeed if the variable is STATE or
-  VARIABLE. Otherwise it fails.
-  Note: An array variable is currently assumed that each scalar element has
-  the same type.
-  inputs:  (DAE.ComponentRef,
-              Variables, /* vars */
-              Variables) /* known vars */
-  outputs: ()"
-  input DAE.ComponentRef inComponentRef1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.Variables inVariables3;
-algorithm
-  _:=
-  matchcontinue (inComponentRef1,inVariables2,inVariables3)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, knvars);
-      then
-        ();
-  end matchcontinue;
-end isVariable;
-
-public function moveVariables
-"function: moveVariables
-  This function takes the two variable lists of a dae (states+alg) and
-  known vars and moves a set of variables from the first to the second set.
-  This function is needed to manage this in complexity O(n) by only
-  traversing the set once for all variables.
-  inputs:  (algAndState: Variables, /* alg+state */
-              known: Variables,       /* known */
-              binTree: BinTree)       /* vars to move from first7 to second */
-  outputs:  (Variables,        /* updated alg+state vars */
-               Variables)             /* updated known vars */
-"
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.BinTree inBinTree3;
-  output BackendDAE.Variables outVariables1;
-  output BackendDAE.Variables outVariables2;
-algorithm
-  (outVariables1,outVariables2):=
-  matchcontinue (inVariables1,inVariables2,inBinTree3)
-    local
-      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
-      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
-      BackendDAE.BinTree mvars;
-    case (vars1,vars2,mvars)
-      equation
-        lst1 = BackendDAEUtil.varList(vars1);
-        lst2 = BackendDAEUtil.varList(vars2);
-        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
-        v1 = BackendDAEUtil.emptyVars();
-        v2 = BackendDAEUtil.emptyVars();
-        vars = addVars(lst1_1, v1);
-        knvars = addVars(lst2_1, v2);
-      then
-        (vars,knvars);
-  end matchcontinue;
-end moveVariables;
-
-protected function moveVariables2
-"function: moveVariables2
-  helper function to move_variables.
-  inputs:  (Var list,  /* alg+state vars as list */
-              BackendDAE.Var list,  /* known vars as list */
-              BinTree)  /* move-variables as BackendDAE.BinTree */
-  outputs: (Var list,  /* updated alg+state vars as list */
-              BackendDAE.Var list)  /* update known vars as list */"
-  input list<BackendDAE.Var> inVarLst1;
-  input list<BackendDAE.Var> inVarLst2;
-  input BackendDAE.BinTree inBinTree3;
-  output list<BackendDAE.Var> outVarLst1;
-  output list<BackendDAE.Var> outVarLst2;
-algorithm
-  (outVarLst1,outVarLst2):=
-  matchcontinue (inVarLst1,inVarLst2,inBinTree3)
-    local
-      list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr;
-      BackendDAE.BinTree mvars;
-    case ({},knvars,_) then ({},knvars);
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
-      equation
-        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
-      then
-        (vs_1,(v :: knvars_1));
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
-      equation
-        failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
-        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
-      then
-        ((v :: vs_1),knvars_1);
-  end matchcontinue;
-end moveVariables2;
-
-
-
-public function isTopLevelInputOrOutput
-"function isTopLevelInputOrOutput
-  author: LP
-
-  This function checks if the provided cr is from a var that is on top model
-  and is an input or an output, and returns true for such variables.
-  It also returns true for input/output connector variables, i.e. variables
-  instantiated from a  connector class, that are instantiated on the top level.
-  The check for top-model is done by spliting the name at \'.\' and
-  check if the list-length is 1.
-  Note: The function needs the known variables to search for input variables
-  on the top level.
-  inputs:  (cref: DAE.ComponentRef,
-              vars: Variables, /* BackendDAE.Variables */
-              knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
-  outputs: bool"
-  input DAE.ComponentRef inComponentRef1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.Variables inVariables3;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inComponentRef1,inVariables2,inVariables3)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars,knvars;
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()) :: _),_) = getVar(cr, vars);
-      then
-        true;
-    case (cr,vars,knvars)
-      equation
-        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
-      then
-        true;
-    case (_,_,_) then false;
-  end matchcontinue;
-end isTopLevelInputOrOutput;
-
-
-
-public function deleteVar
-"function: deleteVar
-  author: PA
-  Deletes a variable from Variables. This is an expensive operation
-  since we need to create a new binary tree with new indexes as well
-  as a new compacted vector of variables."
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output BackendDAE.Variables outVariables;
-algorithm
-  outVariables := matchcontinue (inComponentRef,inVariables)
-    local
-      list<BackendDAE.Var> varlst,varlst_1;
-      BackendDAE.Variables newvars,newvars_1;
-      DAE.ComponentRef cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-      BackendDAE.Value bsize,n;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        varlst = BackendDAEUtil.vararrayList(varr);
-        varlst_1 = deleteVar2(cr, varlst);
-        newvars = BackendDAEUtil.emptyVars();
-        newvars_1 = addVars(varlst_1, newvars);
-      then
-        newvars_1;
-  end matchcontinue;
-end deleteVar;
-
-protected function deleteVar2
-"function: deleteVar2
-  author: PA
-  Helper function to deleteVar.
-  Deletes the var named DAE.ComponentRef from the BackendDAE.Variables list."
-  input DAE.ComponentRef inComponentRef;
-  input list<BackendDAE.Var> inVarLst;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst := matchcontinue (inComponentRef,inVarLst)
-    local
-      DAE.ComponentRef cr1,cr2;
-      list<BackendDAE.Var> vs,vs_1;
-      BackendDAE.Var v;
-    case (_,{}) then {};
-    case (cr1,(BackendDAE.VAR(varName = cr2) :: vs))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-      then
-        vs;
-    case (cr1,(v :: vs))
-      equation
-        vs_1 = deleteVar2(cr1, vs);
-      then
-        (v :: vs_1);
-  end matchcontinue;
-end deleteVar2;
-
-
-
-
-public function existsVar
-"function: existsVar
-  author: PA
-  Return true if a variable exists in the vector"
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inComponentRef,inVariables)
-    local
-      BackendDAE.Value hval,hashindx,indx,bsize,n;
-      list<BackendDAE.CrefIndex> indexes;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr2,cr;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-      String str;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
-        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        true;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
-        failure((_) = vararrayNth(varr, indx));
-        print("could not found variable, cr:");
-        str = ComponentReference.printComponentRefStr(cr);
-        print(str);
-        print("\n");
-      then
-        false;
-    case (_,_) then false;
-  end matchcontinue;
-end existsVar;
-
-
-
-public function addVars "function: addVars
-  author: PA
-
-  Adds a list of \'Var\' to \'Variables\'
-"
-  input list<BackendDAE.Var> varlst;
-  input BackendDAE.Variables vars;
-  output BackendDAE.Variables vars_1;
-  BackendDAE.Variables vars_1;
-algorithm
-  vars_1 := Util.listFold(varlst, addVar, vars);
-end addVars;
-
-public function addVar
-"function: addVar
-  author: PA
-  Add a variable to Variables.
-  If the variable already exists, the function updates the variable."
-  input BackendDAE.Var inVar;
-  input BackendDAE.Variables inVariables;
-  output BackendDAE.Variables outVariables;
-algorithm
-  outVariables := matchcontinue (inVar,inVariables)
-    local
-      BackendDAE.Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
-      BackendDAE.VariableArray varr_1,varr;
-      list<BackendDAE.CrefIndex> indexes;
-      array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
-      String name_str;
-      list<BackendDAE.StringIndex> indexexold;
-      array<list<BackendDAE.StringIndex>> oldhashvec_1,oldhashvec;
-      BackendDAE.Var v,newv;
-      DAE.ComponentRef cr,name;
-      DAE.Flow flowPrefix;
-      BackendDAE.Variables vars;
-    /* adrpo: ignore records!
-    case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
-          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-    then
-      vars;
-    */
-    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-      equation
-        failure((_,_) = getVar(cr, vars)) "adding when not existing previously" ;
-        hval = HashTable2.hashFunc(cr);
-        indx = intMod(hval, bsize);
-        newpos = vararrayLength(varr);
-        varr_1 = vararrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
-        n_1 = vararrayLength(varr_1);
-        name_str = ComponentReference.printComponentRefStr(cr);
-        hvalold = System.hash(name_str);
-        indxold = intMod(hvalold, bsize);
-        indexexold = oldhashvec[indxold + 1];
-        oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,
-          (BackendDAE.STRINGINDEX(name_str,newpos) :: indexexold));
-      then
-        BackendDAE.VARIABLES(hashvec_1,oldhashvec_1,varr_1,bsize,n_1);
-
-    case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-      equation
-        (_,{indx}) = getVar(cr, vars) "adding when already present => Updating value" ;
-        indx_1 = indx - 1;
-        varr_1 = vararraySetnth(varr, indx_1, newv);
-      then
-        BackendDAE.VARIABLES(hashvec,oldhashvec,varr_1,bsize,n);
-
-    case (_,_)
-      equation
-        print("-add_var failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addVar;
-
-public function getVarAt
-"function: getVarAt
-  author: PA
-  Return variable at a given position, enumerated from 1..n"
-  input BackendDAE.Variables inVariables;
-  input Integer inInteger;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar := matchcontinue (inVariables,inInteger)
-    local
-      BackendDAE.Value pos,n;
-      BackendDAE.Var v;
-      BackendDAE.VariableArray vararr;
-    case (BackendDAE.VARIABLES(varArr = vararr),n)
-      equation
-        pos = n - 1;
-        v = vararrayNth(vararr, pos);
-      then
-        v;
-    case (BackendDAE.VARIABLES(varArr = vararr),n)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "getVarAt failed to get the variable at index:" +& intString(n));
-      then
-        fail();
-  end matchcontinue;
-end getVarAt;
-
-public function getVar
-"function: getVar
-  author: PA
-  Return a variable(s) and its index(es) in the vector.
-  The indexes is enumerated from 1..n
-  Normally a variable has only one index, but in case of an array variable
-  it may have several indexes and several scalar variables,
-  therefore a list of variables and a list of  indexes is returned.
-  inputs:  (DAE.ComponentRef, BackendDAE.Variables)
-  outputs: (Var list, int list /* indexes */)"
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst;
-algorithm
-  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
-    local
-      BackendDAE.Var v;
-      BackendDAE.Value indx;
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Value> indxs;
-      list<BackendDAE.Var> vLst;
-
-    case (cr,vars)
-      equation
-        (v,indx) = getVar2(cr, vars) "if scalar found, return it" ;
-      then
-        ({v},{indx});
-    case (cr,vars) /* check if array */
-      equation
-        (vLst,indxs) = getArrayVar(cr, vars);
-      then
-        (vLst,indxs);
-    /* failure
-    case (cr,vars)
-      equation
-        Debug.fprintln("daelow", "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
-      then
-        fail();
-    */
-  end matchcontinue;
-end getVar;
-
-protected function getVar2
-"function: getVar2
-  author: PA
-  Helper function to getVar, checks one scalar variable"
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output BackendDAE.Var outVar;
-  output Integer outInteger;
-algorithm
-  (outVar,outInteger) := matchcontinue (inComponentRef,inVariables)
-    local
-      BackendDAE.Value hval,hashindx,indx,indx_1,bsize,n;
-      list<BackendDAE.CrefIndex> indexes;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr2,cr;
-      DAE.Flow flowPrefix;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-      String str;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation
-        hval = HashTable2.hashFunc(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
-        ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        indx_1 = indx + 1;
-      then
-        (v,indx_1);
-  end matchcontinue;
-end getVar2;
-
-protected function getVar3
-"function: getVar3
-  author: PA
-  Helper function to getVar"
-  input DAE.ComponentRef inComponentRef;
-  input list<BackendDAE.CrefIndex> inCrefIndexLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inComponentRef,inCrefIndexLst)
-    local
-      DAE.ComponentRef cr,cr2;
-      BackendDAE.Value v,res;
-      list<BackendDAE.CrefIndex> vs;
-    case (cr,{})
-      equation
-        //Debug.fprint("failtrace", "-getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
-      then
-        fail();
-    case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      then
-        v;
-    case (cr,(v :: vs))
-      local BackendDAE.CrefIndex v;
-      equation
-        res = getVar3(cr, vs);
-      then
-        res;
-  end matchcontinue;
-end getVar3;
-
-
-
-protected function getArrayVar
-"function: getArrayVar
-  author: PA
-  Helper function to get_var, checks one array variable.
-  I.e. get_array_var(v,<vars>) will for an array v{3} return
-  { v{1},v{2},v{3} }"
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst;
-algorithm
-  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
-    local
-      DAE.ComponentRef cr_1,cr2,cr;
-      BackendDAE.Value hval,hashindx,indx,bsize,n;
-      list<BackendDAE.CrefIndex> indexes;
-      BackendDAE.Var v;
-      list<DAE.Subscript> instdims;
-      DAE.Flow flowPrefix;
-      list<BackendDAE.Var> vs;
-      list<BackendDAE.Value> indxs;
-      BackendDAE.Variables vars;
-      array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
-      BackendDAE.VariableArray varr;
-    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-      equation
-        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
-        hval = HashTable2.hashFunc(cr_1);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr_1, indexes);
-        ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
-        (vs,indxs) = getArrayVar2(instdims, cr, vars);
-      then
-        (vs,indxs);
-    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
-      equation
-        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
-        hval = HashTable2.hashFunc(cr_1);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr_1, indexes);
-        ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
-        (vs,indxs) = getArrayVar2(instdims, cr, vars);
-      then
-        (vs,indxs);
-  end matchcontinue;
-end getArrayVar;
-
-protected function getArrayVar2
-"function: getArrayVar2
-  author: PA
-  Helper function to getArrayVar.
-  Note: Only implemented for arrays of dimension 1 and 2.
-  inputs:  (DAE.InstDims, /* array_inst_dims */
-              DAE.ComponentRef, /* array_var_name */
-              Variables)
-  outputs: (Var list /* arrays scalar vars */,
-              int list /* arrays scalar indxs */)"
-  input DAE.InstDims inInstDims;
-  input DAE.ComponentRef inComponentRef;
-  input BackendDAE.Variables inVariables;
-  output list<BackendDAE.Var> outVarLst;
-  output list<Integer> outIntegerLst;
-algorithm
-  (outVarLst,outIntegerLst) := matchcontinue (inInstDims,inComponentRef,inVariables)
-    local
-      list<BackendDAE.Value> indx_lst,indxs_1,indx_lst1,indx_lst2;
-      list<list<BackendDAE.Value>> indx_lstlst,indxs,indx_lstlst1,indx_lstlst2;
-      list<list<DAE.Subscript>> subscripts_lstlst,subscripts_lstlst1,subscripts_lstlst2,subscripts;
-      list<BackendDAE.Key> scalar_crs;
-      list<list<BackendDAE.Var>> vs;
-      list<BackendDAE.Var> vs_1;
-      BackendDAE.Value i1,i2;
-      DAE.ComponentRef arr_cr;
-      BackendDAE.Variables vars;
-    case ({DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
-      equation
-        indx_lst = Util.listIntRange(i1);
-        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
-      then
-        (vs_1,indxs_1);
-    case ({DAE.INDEX(exp = DAE.ICONST(integer = i1)),DAE.INDEX(exp = DAE.ICONST(integer = i2))},arr_cr,vars)
-      equation
-        indx_lst1 = Util.listIntRange(i1);
-        indx_lstlst1 = Util.listMap(indx_lst1, Util.listCreate);
-        subscripts_lstlst1 = Util.listMap(indx_lstlst1, Expression.intSubscripts);
-        indx_lst2 = Util.listIntRange(i2);
-        indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
-        subscripts_lstlst2 = Util.listMap(indx_lstlst2, Expression.intSubscripts);
-        subscripts = BackendDAEUtil.subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
-        scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
-      then
-        (vs_1,indxs_1);
-    // adrpo: cr can be of form cr.cr.cr[2].cr[3] which means that it has type dimension [2,3] but we only need to walk [3]
-    case ({_,DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
-      equation
-        // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
-        true = ComponentReference.crefHaveSubs(arr_cr);
-        indx_lst = Util.listIntRange(i1);
-        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
-      then
-        (vs_1,indxs_1);
-  end matchcontinue;
-end getArrayVar2;
-
-public function mergeVariables
-"function: mergeVariables
-  author: PA
-  Takes two sets of BackendDAE.Variables and merges them. The variables of the
-  first argument takes precedence over the second set, i.e. if a
-  variable name exists in both sets, the variable definition from
-  the first set is used."
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  output BackendDAE.Variables outVariables;
-algorithm
-  outVariables := matchcontinue (inVariables1,inVariables2)
-    local
-      list<BackendDAE.Var> varlst;
-      BackendDAE.Variables vars1_1,vars1,vars2;
-    case (vars1,vars2)
-      equation
-        varlst = BackendDAEUtil.varList(vars2);
-        vars1_1 = Util.listFold(varlst, addVar, vars1);
-      then
-        vars1_1;
-    case (_,_)
-      equation
-        print("-merge_variables failed\n");
-      then
-        fail();
-  end matchcontinue;
-end mergeVariables;
-
-
-public function translateDae "function: translateDae
-  author: PA
-
-  Translates the dae so variables are indexed into different arrays:
-  - xd for derivatives
-  - x for states
-  - dummy_der for dummy derivatives
-  - dummy for dummy states
-  - y for algebraic variables
-  - p for parameters
-"
-  input BackendDAE.DAELow inDAELow;
-  input Option<String> dummy;
-  output BackendDAE.DAELow outDAELow;
-algorithm
-  outDAELow:=
-  matchcontinue (inDAELow,dummy)
-    local
-      list<BackendDAE.Var> varlst,knvarlst,extvarlst;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> al;
-      list<BackendDAE.WhenClause> wc;
-      list<BackendDAE.ZeroCrossing> zc;
-      BackendDAE.Variables vars, knvars, extVars;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns,seqns,ieqns;
-      BackendDAE.DAELow trans_dae;
-      BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAELOW(vars,knvars,extVars,av,eqns,seqns,ieqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
-      equation
-        varlst = BackendDAEUtil.varList(vars);
-        knvarlst = BackendDAEUtil.varList(knvars);
-        extvarlst = BackendDAEUtil.varList(extVars);
-        varlst = listReverse(varlst);
-        knvarlst = listReverse(knvarlst);
-        extvarlst = listReverse(extvarlst);
-        (varlst,knvarlst,extvarlst) = calculateIndexes(varlst, knvarlst,extvarlst);
-        vars = addVars(varlst, vars);
-        knvars = addVars(knvarlst, knvars);
-        extVars = addVars(extvarlst, extVars);
-        trans_dae = BackendDAE.DAELOW(vars,knvars,extVars,av,eqns,seqns,ieqns,ae,al,
-          BackendDAE.EVENT_INFO(wc,zc),extObjCls);
-        Debug.fcall("dumpindxdae", BackendDump.dump, trans_dae);
-      then
-        trans_dae;
-  end matchcontinue;
-end translateDae;
-
-protected function calculateIndexes "function: calculateIndexes
+public function calculateIndexes "function: calculateIndexes
   author: PA modified by Frenkel TUD
 
   Helper function to translate_dae. Calculates the indexes for each variable
@@ -2791,5 +2047,701 @@ algorithm
   end matchcontinue;
 end calculateIndexes2;
 
+
+
+
+public function daeVars
+  input BackendDAE.DAELow inDAELow;
+  output BackendDAE.Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local BackendDAE.Variables vars1,vars2;
+    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars1;
+  end matchcontinue;
+end daeVars;
+
+public function daeKnVars
+  input BackendDAE.DAELow inDAELow;
+  output BackendDAE.Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local BackendDAE.Variables vars1,vars2;
+    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars2;
+  end matchcontinue;
+end daeKnVars;
+
+
+
+public function varsSize "function: varsSize
+  author: PA
+
+  Returns the number of variables
+"
+  input BackendDAE.Variables inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger:=
+  matchcontinue (inVariables)
+    local BackendDAE.Value n;
+    case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
+  end matchcontinue;
+end varsSize;
+
+
+
+public function isVariable
+"function: isVariable
+
+  This function takes a DAE.ComponentRef and two Variables. It searches
+  the two sets of variables and succeed if the variable is STATE or
+  VARIABLE. Otherwise it fails.
+  Note: An array variable is currently assumed that each scalar element has
+  the same type.
+  inputs:  (DAE.ComponentRef,
+              Variables, /* vars */
+              Variables) /* known vars */
+  outputs: ()"
+  input DAE.ComponentRef inComponentRef1;
+  input BackendDAE.Variables inVariables2;
+  input BackendDAE.Variables inVariables3;
+algorithm
+  _:=
+  matchcontinue (inComponentRef1,inVariables2,inVariables3)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars,knvars;
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, vars);
+      then
+        ();
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, vars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, knvars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, knvars);
+      then
+        ();
+    case (cr,_,knvars)
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, knvars);
+      then
+        ();
+  end matchcontinue;
+end isVariable;
+
+public function moveVariables
+"function: moveVariables
+  This function takes the two variable lists of a dae (states+alg) and
+  known vars and moves a set of variables from the first to the second set.
+  This function is needed to manage this in complexity O(n) by only
+  traversing the set once for all variables.
+  inputs:  (algAndState: Variables, /* alg+state */
+              known: Variables,       /* known */
+              binTree: BinTree)       /* vars to move from first7 to second */
+  outputs:  (Variables,        /* updated alg+state vars */
+               Variables)             /* updated known vars */
+"
+  input BackendDAE.Variables inVariables1;
+  input BackendDAE.Variables inVariables2;
+  input BackendDAE.BinTree inBinTree3;
+  output BackendDAE.Variables outVariables1;
+  output BackendDAE.Variables outVariables2;
+algorithm
+  (outVariables1,outVariables2):=
+  matchcontinue (inVariables1,inVariables2,inBinTree3)
+    local
+      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
+      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
+      BackendDAE.BinTree mvars;
+    case (vars1,vars2,mvars)
+      equation
+        lst1 = BackendDAEUtil.varList(vars1);
+        lst2 = BackendDAEUtil.varList(vars2);
+        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
+        v1 = BackendDAEUtil.emptyVars();
+        v2 = BackendDAEUtil.emptyVars();
+        vars = addVars(lst1_1, v1);
+        knvars = addVars(lst2_1, v2);
+      then
+        (vars,knvars);
+  end matchcontinue;
+end moveVariables;
+
+protected function moveVariables2
+"function: moveVariables2
+  helper function to move_variables.
+  inputs:  (Var list,  /* alg+state vars as list */
+              BackendDAE.Var list,  /* known vars as list */
+              BinTree)  /* move-variables as BackendDAE.BinTree */
+  outputs: (Var list,  /* updated alg+state vars as list */
+              BackendDAE.Var list)  /* update known vars as list */"
+  input list<BackendDAE.Var> inVarLst1;
+  input list<BackendDAE.Var> inVarLst2;
+  input BackendDAE.BinTree inBinTree3;
+  output list<BackendDAE.Var> outVarLst1;
+  output list<BackendDAE.Var> outVarLst2;
+algorithm
+  (outVarLst1,outVarLst2):=
+  matchcontinue (inVarLst1,inVarLst2,inBinTree3)
+    local
+      list<BackendDAE.Var> knvars,vs_1,knvars_1,vs;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      BackendDAE.BinTree mvars;
+    case ({},knvars,_) then ({},knvars);
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+      equation
+        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
+        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+      then
+        (vs_1,(v :: knvars_1));
+    case (((v as BackendDAE.VAR(varName = cr)) :: vs),knvars,mvars)
+      equation
+        failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
+        (vs_1,knvars_1) = moveVariables2(vs, knvars, mvars);
+      then
+        ((v :: vs_1),knvars_1);
+  end matchcontinue;
+end moveVariables2;
+
+
+
+public function isTopLevelInputOrOutput
+"function isTopLevelInputOrOutput
+  author: LP
+
+  This function checks if the provided cr is from a var that is on top model
+  and is an input or an output, and returns true for such variables.
+  It also returns true for input/output connector variables, i.e. variables
+  instantiated from a  connector class, that are instantiated on the top level.
+  The check for top-model is done by spliting the name at \'.\' and
+  check if the list-length is 1.
+  Note: The function needs the known variables to search for input variables
+  on the top level.
+  inputs:  (cref: DAE.ComponentRef,
+              vars: Variables, /* BackendDAE.Variables */
+              knownVars: BackendDAE.Variables /* Known BackendDAE.Variables */)
+  outputs: bool"
+  input DAE.ComponentRef inComponentRef1;
+  input BackendDAE.Variables inVariables2;
+  input BackendDAE.Variables inVariables3;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inComponentRef1,inVariables2,inVariables3)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars,knvars;
+    case (cr,vars,_)
+      equation
+        ((BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = _), varDirection = DAE.OUTPUT()) :: _),_) = getVar(cr, vars);
+      then
+        true;
+    case (cr,vars,knvars)
+      equation
+        ((BackendDAE.VAR(varDirection = DAE.INPUT()) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+      then
+        true;
+    case (_,_,_) then false;
+  end matchcontinue;
+end isTopLevelInputOrOutput;
+
+
+
+public function deleteVar
+"function: deleteVar
+  author: PA
+  Deletes a variable from Variables. This is an expensive operation
+  since we need to create a new binary tree with new indexes as well
+  as a new compacted vector of variables."
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inComponentRef,inVariables)
+    local
+      list<BackendDAE.Var> varlst,varlst_1;
+      BackendDAE.Variables newvars,newvars_1;
+      DAE.ComponentRef cr;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      array<list<BackendDAE.StringIndex>> oldhashvec;
+      BackendDAE.VariableArray varr;
+      BackendDAE.Value bsize,n;
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+      equation
+        varlst = BackendDAEUtil.vararrayList(varr);
+        varlst_1 = deleteVar2(cr, varlst);
+        newvars = BackendDAEUtil.emptyVars();
+        newvars_1 = addVars(varlst_1, newvars);
+      then
+        newvars_1;
+  end matchcontinue;
+end deleteVar;
+
+protected function deleteVar2
+"function: deleteVar2
+  author: PA
+  Helper function to deleteVar.
+  Deletes the var named DAE.ComponentRef from the BackendDAE.Variables list."
+  input DAE.ComponentRef inComponentRef;
+  input list<BackendDAE.Var> inVarLst;
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  outVarLst := matchcontinue (inComponentRef,inVarLst)
+    local
+      DAE.ComponentRef cr1,cr2;
+      list<BackendDAE.Var> vs,vs_1;
+      BackendDAE.Var v;
+    case (_,{}) then {};
+    case (cr1,(BackendDAE.VAR(varName = cr2) :: vs))
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+      then
+        vs;
+    case (cr1,(v :: vs))
+      equation
+        vs_1 = deleteVar2(cr1, vs);
+      then
+        (v :: vs_1);
+  end matchcontinue;
+end deleteVar2;
+
+
+
+
+public function existsVar
+"function: existsVar
+  author: PA
+  Return true if a variable exists in the vector"
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inComponentRef,inVariables)
+    local
+      BackendDAE.Value hval,hashindx,indx,bsize,n;
+      list<BackendDAE.CrefIndex> indexes;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr2,cr;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      array<list<BackendDAE.StringIndex>> oldhashvec;
+      BackendDAE.VariableArray varr;
+      String str;
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+      equation
+        hval = HashTable2.hashFunc(cr);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr, indexes);
+        ((v as BackendDAE.VAR(varName = cr2))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      then
+        true;
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+      equation
+        hval = HashTable2.hashFunc(cr);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr, indexes);
+        failure((_) = vararrayNth(varr, indx));
+        print("could not found variable, cr:");
+        str = ComponentReference.printComponentRefStr(cr);
+        print(str);
+        print("\n");
+      then
+        false;
+    case (_,_) then false;
+  end matchcontinue;
+end existsVar;
+
+
+
+public function addVars "function: addVars
+  author: PA
+
+  Adds a list of \'Var\' to \'Variables\'
+"
+  input list<BackendDAE.Var> varlst;
+  input BackendDAE.Variables vars;
+  output BackendDAE.Variables vars_1;
+  BackendDAE.Variables vars_1;
+algorithm
+  vars_1 := Util.listFold(varlst, addVar, vars);
+end addVars;
+
+public function addVar
+"function: addVar
+  author: PA
+  Add a variable to Variables.
+  If the variable already exists, the function updates the variable."
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVar,inVariables)
+    local
+      BackendDAE.Value hval,indx,newpos,n_1,hvalold,indxold,bsize,n,indx_1;
+      BackendDAE.VariableArray varr_1,varr;
+      list<BackendDAE.CrefIndex> indexes;
+      array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
+      String name_str;
+      list<BackendDAE.StringIndex> indexexold;
+      array<list<BackendDAE.StringIndex>> oldhashvec_1,oldhashvec;
+      BackendDAE.Var v,newv;
+      DAE.ComponentRef cr,name;
+      DAE.Flow flowPrefix;
+      BackendDAE.Variables vars;
+    /* adrpo: ignore records!
+    case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
+          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    then
+      vars;
+    */
+    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+      equation
+        failure((_,_) = getVar(cr, vars)) "adding when not existing previously" ;
+        hval = HashTable2.hashFunc(cr);
+        indx = intMod(hval, bsize);
+        newpos = vararrayLength(varr);
+        varr_1 = vararrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
+        n_1 = vararrayLength(varr_1);
+        name_str = ComponentReference.printComponentRefStr(cr);
+        hvalold = System.hash(name_str);
+        indxold = intMod(hvalold, bsize);
+        indexexold = oldhashvec[indxold + 1];
+        oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,
+          (BackendDAE.STRINGINDEX(name_str,newpos) :: indexexold));
+      then
+        BackendDAE.VARIABLES(hashvec_1,oldhashvec_1,varr_1,bsize,n_1);
+
+    case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+      equation
+        (_,{indx}) = getVar(cr, vars) "adding when already present => Updating value" ;
+        indx_1 = indx - 1;
+        varr_1 = vararraySetnth(varr, indx_1, newv);
+      then
+        BackendDAE.VARIABLES(hashvec,oldhashvec,varr_1,bsize,n);
+
+    case (_,_)
+      equation
+        print("-add_var failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addVar;
+
+public function getVarAt
+"function: getVarAt
+  author: PA
+  Return variable at a given position, enumerated from 1..n"
+  input BackendDAE.Variables inVariables;
+  input Integer inInteger;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue (inVariables,inInteger)
+    local
+      BackendDAE.Value pos,n;
+      BackendDAE.Var v;
+      BackendDAE.VariableArray vararr;
+    case (BackendDAE.VARIABLES(varArr = vararr),n)
+      equation
+        pos = n - 1;
+        v = vararrayNth(vararr, pos);
+      then
+        v;
+    case (BackendDAE.VARIABLES(varArr = vararr),n)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "getVarAt failed to get the variable at index:" +& intString(n));
+      then
+        fail();
+  end matchcontinue;
+end getVarAt;
+
+public function getVar
+"function: getVar
+  author: PA
+  Return a variable(s) and its index(es) in the vector.
+  The indexes is enumerated from 1..n
+  Normally a variable has only one index, but in case of an array variable
+  it may have several indexes and several scalar variables,
+  therefore a list of variables and a list of  indexes is returned.
+  inputs:  (DAE.ComponentRef, BackendDAE.Variables)
+  outputs: (Var list, int list /* indexes */)"
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
+    local
+      BackendDAE.Var v;
+      BackendDAE.Value indx;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Value> indxs;
+      list<BackendDAE.Var> vLst;
+
+    case (cr,vars)
+      equation
+        (v,indx) = getVar2(cr, vars) "if scalar found, return it" ;
+      then
+        ({v},{indx});
+    case (cr,vars) /* check if array */
+      equation
+        (vLst,indxs) = getArrayVar(cr, vars);
+      then
+        (vLst,indxs);
+    /* failure
+    case (cr,vars)
+      equation
+        Debug.fprintln("daelow", "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
+      then
+        fail();
+    */
+  end matchcontinue;
+end getVar;
+
+protected function getVar2
+"function: getVar2
+  author: PA
+  Helper function to getVar, checks one scalar variable"
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Var outVar;
+  output Integer outInteger;
+algorithm
+  (outVar,outInteger) := matchcontinue (inComponentRef,inVariables)
+    local
+      BackendDAE.Value hval,hashindx,indx,indx_1,bsize,n;
+      list<BackendDAE.CrefIndex> indexes;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr2,cr;
+      DAE.Flow flowPrefix;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      array<list<BackendDAE.StringIndex>> oldhashvec;
+      BackendDAE.VariableArray varr;
+      String str;
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+      equation
+        hval = HashTable2.hashFunc(cr);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr, indexes);
+        ((v as BackendDAE.VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+        indx_1 = indx + 1;
+      then
+        (v,indx_1);
+  end matchcontinue;
+end getVar2;
+
+protected function getVar3
+"function: getVar3
+  author: PA
+  Helper function to getVar"
+  input DAE.ComponentRef inComponentRef;
+  input list<BackendDAE.CrefIndex> inCrefIndexLst;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inComponentRef,inCrefIndexLst)
+    local
+      DAE.ComponentRef cr,cr2;
+      BackendDAE.Value v,res;
+      list<BackendDAE.CrefIndex> vs;
+    case (cr,{})
+      equation
+        //Debug.fprint("failtrace", "-getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
+      then
+        fail();
+    case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      then
+        v;
+    case (cr,(v :: vs))
+      local BackendDAE.CrefIndex v;
+      equation
+        res = getVar3(cr, vs);
+      then
+        res;
+  end matchcontinue;
+end getVar3;
+
+
+
+protected function getArrayVar
+"function: getArrayVar
+  author: PA
+  Helper function to get_var, checks one array variable.
+  I.e. get_array_var(v,<vars>) will for an array v{3} return
+  { v{1},v{2},v{3} }"
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
+    local
+      DAE.ComponentRef cr_1,cr2,cr;
+      BackendDAE.Value hval,hashindx,indx,bsize,n;
+      list<BackendDAE.CrefIndex> indexes;
+      BackendDAE.Var v;
+      list<DAE.Subscript> instdims;
+      DAE.Flow flowPrefix;
+      list<BackendDAE.Var> vs;
+      list<BackendDAE.Value> indxs;
+      BackendDAE.Variables vars;
+      array<list<BackendDAE.CrefIndex>> hashvec;
+      array<list<BackendDAE.StringIndex>> oldhashvec;
+      BackendDAE.VariableArray varr;
+    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+      equation
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
+        hval = HashTable2.hashFunc(cr_1);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr_1, indexes);
+        ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
+        (vs,indxs) = getArrayVar2(instdims, cr, vars);
+      then
+        (vs,indxs);
+    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
+      equation
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
+        hval = HashTable2.hashFunc(cr_1);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = getVar3(cr_1, indexes);
+        ((v as BackendDAE.VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
+        true = ComponentReference.crefEqualNoStringCompare(cr_1, cr2);
+        (vs,indxs) = getArrayVar2(instdims, cr, vars);
+      then
+        (vs,indxs);
+  end matchcontinue;
+end getArrayVar;
+
+protected function getArrayVar2
+"function: getArrayVar2
+  author: PA
+  Helper function to getArrayVar.
+  Note: Only implemented for arrays of dimension 1 and 2.
+  inputs:  (DAE.InstDims, /* array_inst_dims */
+              DAE.ComponentRef, /* array_var_name */
+              Variables)
+  outputs: (Var list /* arrays scalar vars */,
+              int list /* arrays scalar indxs */)"
+  input DAE.InstDims inInstDims;
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := matchcontinue (inInstDims,inComponentRef,inVariables)
+    local
+      list<BackendDAE.Value> indx_lst,indxs_1,indx_lst1,indx_lst2;
+      list<list<BackendDAE.Value>> indx_lstlst,indxs,indx_lstlst1,indx_lstlst2;
+      list<list<DAE.Subscript>> subscripts_lstlst,subscripts_lstlst1,subscripts_lstlst2,subscripts;
+      list<BackendDAE.Key> scalar_crs;
+      list<list<BackendDAE.Var>> vs;
+      list<BackendDAE.Var> vs_1;
+      BackendDAE.Value i1,i2;
+      DAE.ComponentRef arr_cr;
+      BackendDAE.Variables vars;
+    case ({DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
+      equation
+        indx_lst = Util.listIntRange(i1);
+        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
+        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
+        vs_1 = Util.listFlatten(vs);
+        indxs_1 = Util.listFlatten(indxs);
+      then
+        (vs_1,indxs_1);
+    case ({DAE.INDEX(exp = DAE.ICONST(integer = i1)),DAE.INDEX(exp = DAE.ICONST(integer = i2))},arr_cr,vars)
+      equation
+        indx_lst1 = Util.listIntRange(i1);
+        indx_lstlst1 = Util.listMap(indx_lst1, Util.listCreate);
+        subscripts_lstlst1 = Util.listMap(indx_lstlst1, Expression.intSubscripts);
+        indx_lst2 = Util.listIntRange(i2);
+        indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
+        subscripts_lstlst2 = Util.listMap(indx_lstlst2, Expression.intSubscripts);
+        subscripts = BackendDAEUtil.subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
+        scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
+        vs_1 = Util.listFlatten(vs);
+        indxs_1 = Util.listFlatten(indxs);
+      then
+        (vs_1,indxs_1);
+    // adrpo: cr can be of form cr.cr.cr[2].cr[3] which means that it has type dimension [2,3] but we only need to walk [3]
+    case ({_,DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
+      equation
+        // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
+        true = ComponentReference.crefHaveSubs(arr_cr);
+        indx_lst = Util.listIntRange(i1);
+        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
+        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
+        vs_1 = Util.listFlatten(vs);
+        indxs_1 = Util.listFlatten(indxs);
+      then
+        (vs_1,indxs_1);
+  end matchcontinue;
+end getArrayVar2;
+
+public function mergeVariables
+"function: mergeVariables
+  author: PA
+  Takes two sets of BackendDAE.Variables and merges them. The variables of the
+  first argument takes precedence over the second set, i.e. if a
+  variable name exists in both sets, the variable definition from
+  the first set is used."
+  input BackendDAE.Variables inVariables1;
+  input BackendDAE.Variables inVariables2;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVariables1,inVariables2)
+    local
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Variables vars1_1,vars1,vars2;
+    case (vars1,vars2)
+      equation
+        varlst = BackendDAEUtil.varList(vars2);
+        vars1_1 = Util.listFold(varlst, addVar, vars1);
+      then
+        vars1_1;
+    case (_,_)
+      equation
+        print("-merge_variables failed\n");
+      then
+        fail();
+  end matchcontinue;
+end mergeVariables;
 
 end BackendVariable;

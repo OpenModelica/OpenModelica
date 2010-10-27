@@ -39,17 +39,16 @@ package BackendDAECreate
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import DAELow;
-public import SCode;
-public import Values;
-public import BackendVariable;
 
 protected import Algorithm;
 protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendDAEOptimize;
+protected import BackendEquation;
+protected import BackendVariable;
 protected import ComponentReference;
 protected import ClassInf;
+protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Derive;
@@ -57,11 +56,12 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import Inline;
 protected import OptManager;
 protected import RTOpts;
+protected import SCode;
 protected import Util;
-protected import DAEDump;
-protected import Inline;
+protected import Values;
 
 
 public function lower
@@ -399,7 +399,7 @@ algorithm
                           right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
           = lowerArrEqn(e,functionTree);
         ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns = listAppend(re, eqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
@@ -428,7 +428,7 @@ algorithm
                           right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
           = lowerArrEqn(e,functionTree);
         ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         ieqns = listAppend(re, ieqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);    
@@ -621,7 +621,7 @@ algorithm
       equation
         // show only on failtrace!
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- DAELow.lower2 failed on: " +& DAEDump.dumpElementsStr({ddl}));
+        Debug.fprintln("failtrace", "- BackendDAECreate.lower2 failed on: " +& DAEDump.dumpElementsStr({ddl}));
       then
         fail();
   end matchcontinue;
@@ -723,7 +723,7 @@ algorithm
 
     case (_)
       equation
-        print("-DAELow.lowerKnownVar failed\n");
+        print("-BackendDAECreat.lowerKnownVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -1080,7 +1080,7 @@ algorithm
         (complexEqs,{});
     case (_,_)
       equation
-        print("- DAELow.lowerComplexEqn failed!\n");
+        print("- BackendDAECreate.lowerComplexEqn failed!\n");
       then ({},{});
   end matchcontinue;
 end lowerComplexEqn;
@@ -1155,7 +1155,7 @@ algorithm
       local String scond;
       equation
         scond = ExpressionDump.printExpStr(cond);
-        print("- DAELow.lowerWhenEqn: Error in lowerWhenEqn. \n when ");
+        print("- BackendDAECreate.lowerWhenEqn: Error in lowerWhenEqn. \n when ");
         print(scond);
         print(" ... \n");
       then fail();
@@ -1220,7 +1220,7 @@ algorithm
     case ((el::xs), i)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- DAELow.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
+        Debug.fprintln("failtrace", "- BackendDAECreate.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
       then 
         fail();
     
@@ -1341,7 +1341,7 @@ algorithm
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1),right=DAE.ARRAY(array=a2),source=source)) :: algs),aindx)
       equation
         ealst = Util.listThreadTuple(a1,a2);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1351,7 +1351,7 @@ algorithm
       equation
         an = Util.listMap(a1,Expression.negate);
         ealst = Util.listThreadTuple(an,a2);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1361,7 +1361,7 @@ algorithm
       equation
         an = Util.listMap(a2,Expression.negate);
         ealst = Util.listThreadTuple(a1,an);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1374,7 +1374,7 @@ algorithm
         a1 = Util.listMap(ebl1,Util.tuple21);
         a2 = Util.listMap(ebl2,Util.tuple21);
         ealst = Util.listThreadTuple(a1,a2);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1388,7 +1388,7 @@ algorithm
         a2 = Util.listMap(ebl2,Util.tuple21);        
         an = Util.listMap(a1,Expression.negate);
         ealst = Util.listThreadTuple(an,a2);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1402,7 +1402,7 @@ algorithm
         a2 = Util.listMap(ebl2,Util.tuple21);        
         an = Util.listMap(a2,Expression.negate);
         ealst = Util.listThreadTuple(a1,an);
-        eqns = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1742,7 +1742,7 @@ algorithm
         
     case(_, _)
       equation
-        Debug.fprintln("failtrace", "- DAELow.lowerStatementInputsOutputs failed\n");
+        Debug.fprintln("failtrace", "- BackendDAECreate.lowerStatementInputsOutputs failed\n");
       then 
         fail();
   end matchcontinue;
@@ -2246,7 +2246,7 @@ algorithm
       (eqns,vars)  = expandDerOperatorEqns(eqns,vars);
     then (e::eqns,vars);
     case(_,_) equation
-      Debug.fprint("failtrace", "-DAELow.expandDerOperatorEqns failed\n");
+      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorEqns failed\n");
       then fail();
     end matchcontinue;
 end expandDerOperatorEqns;
@@ -2286,7 +2286,7 @@ algorithm
     then (BackendDAE.WHEN_EQUATION(wheneq,source),vars);
     case (eqn ,vars) equation
       true = RTOpts.debugFlag("failtrace");
-      Debug.fprint("failtrace", "- DAELow.expandDerOperatorEqn, eqn =");
+      Debug.fprint("failtrace", "- BackendDAECreate.expandDerOperatorEqn, eqn =");
       Debug.fprint("failtrace", BackendDump.equationStr(eqn));
       Debug.fprint("failtrace", " failed\n");
     then fail();
@@ -2329,7 +2329,7 @@ algorithm
     then (a::algs,vars);
 
     case(_,_) equation
-      Debug.fprint("failtrace", "-DAELow.expandDerOperatorAlgs failed\n");
+      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorAlgs failed\n");
       then fail();
 
   end matchcontinue;
@@ -2483,7 +2483,7 @@ algorithm
     then (e::eqns,vars);
 
     case(_,_) equation
-      Debug.fprint("failtrace", "-DAELow.expandDerOperatorArrEqns failed\n");
+      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorArrEqns failed\n");
     then fail();
   end matchcontinue;
 end expandDerOperatorArrEqns;
@@ -2994,7 +2994,7 @@ algorithm
 
     case (_,_,_,_,_)
       equation
-        print("- DAELow.mergeClauses: Error in mergeClauses.\n");
+        print("- BackendDAECreate.mergeClauses: Error in mergeClauses.\n");
       then fail();
   end matchcontinue;
 end mergeClauses;
@@ -3062,10 +3062,10 @@ algorithm
     equation
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
-      e1lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e1);
-      e2lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e2);
+      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e1);
+      e2lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
-      compmultilistlst = Util.listMap2(exptpllst,DAELow.generateextendedRecordEqn,source,funcs);
+      compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);
       multiEqsLst = Util.listMap(compmultilistlst,Util.tuple22);
       complexEqs = Util.listFlatten(complexEqsLst);
@@ -3085,9 +3085,9 @@ algorithm
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
-      e1lst = Util.listMap1(varLst,DAELow.generateCrefsExpFromType,e1);
+      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
-      compmultilistlst = Util.listMap2(exptpllst,DAELow.generateextendedRecordEqn,source,funcs);
+      compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);
       multiEqsLst = Util.listMap(compmultilistlst,Util.tuple22);
       complexEqs = Util.listFlatten(complexEqsLst);
@@ -3104,6 +3104,57 @@ algorithm
   case(eqn,_) then (({eqn},{}));      
 end matchcontinue;
 end extendRecordEqns;
+
+protected function generateextendedRecordEqn "
+Author: Frenkel TUD 2010-05"
+  input tuple<DAE.Exp,DAE.Exp> inExp;
+  input DAE.ElementSource Source;
+  input DAE.FunctionTree inFuncs;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>> outTuplEqnLst;
+algorithm 
+  outTuplEqnLst := matchcontinue(inExp,Source,inFuncs)
+  local
+    DAE.Exp e1,e2,e1_1,e2_1,e2_2;
+    list<DAE.Exp> e1lst, e2lst;
+    DAE.ElementSource source;
+    DAE.ComponentRef cr1,cr2;
+    list<DAE.ComponentRef> crlst1,crlst2;
+    BackendDAE.Equation eqn;
+    list<BackendDAE.Equation> eqnlst;
+    list<tuple<DAE.Exp,DAE.Exp>> exptplst;
+    list<list<DAE.Subscript>> subslst,subslst1;
+    Expression.Type tp;
+    list<DAE.Dimension> ad;
+    list<Integer> ds;
+  // array types to array equations  
+  case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
+  equation 
+    (e1_1,_) = BackendDAEUtil.extendArrExp(e1,SOME(inFuncs));
+    (e2_1,_) = BackendDAEUtil.extendArrExp(e2,SOME(inFuncs));
+    e2_2 = ExpressionSimplify.simplify(e2_1);
+    ds = Util.listMap(ad, Expression.dimensionSize);
+  then
+    (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
+  // other types  
+  case ((e1 as DAE.CREF(componentRef=cr1),e2),source,inFuncs)
+  equation 
+    tp = Expression.typeof(e1);
+    false = DAEUtil.expTypeComplex(tp);
+    (e1_1,_) = BackendDAEUtil.extendArrExp(e1,SOME(inFuncs));
+    (e2_1,_) = BackendDAEUtil.extendArrExp(e2,SOME(inFuncs));
+    e2_2 = ExpressionSimplify.simplify(e2_1);
+    eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
+  then
+    (({eqn},{}));    
+  // complex type
+  case ((e1,e2),source,inFuncs)
+  equation 
+    tp = Expression.typeof(e1);
+    true = DAEUtil.expTypeComplex(tp);
+  then
+    (({BackendDAE.COMPLEX_EQUATION(-1,e1,e2,source)},{}));    
+ end matchcontinue;
+end generateextendedRecordEqn;
 
 protected function isStateOrAlgvar
   "@author adrpo

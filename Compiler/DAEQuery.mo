@@ -38,7 +38,6 @@ package DAEQuery
 
 public
 import BackendDAE;
-import DAELow;
 import SCode;
 
 protected

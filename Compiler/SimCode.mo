@@ -57,7 +57,6 @@ public import BackendDAE;
 public import BackendDAEUtil;
 public import Values;
 public import Types;
-public import DAELow;
 public import Env;
 public import Dependency;
 public import Interactive;
@@ -71,15 +70,18 @@ public import Inline;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
+protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendVarTransform;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
+protected import Linearization;
 protected import SCodeUtil;
-protected import ClassInf;
 protected import SimCodeC;
 protected import SimCodeCSharp;
 protected import SimCodeFMU;
@@ -92,7 +94,6 @@ protected import Settings;
 protected import RTOpts;
 protected import System;
 protected import VarTransform;
-protected import BackendVarTransform;
 protected import CevalScript;
 protected import ModUtil;
 protected import DAEDump;
@@ -833,12 +834,12 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = BackendVariable.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
@@ -960,12 +961,12 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = BackendVariable.translateDae(dlow_1,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
@@ -1132,9 +1133,8 @@ algorithm
     case (dae, dlow)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        //explist = DAELow.getAllExps(dlow);
         //fcallexps = getMatchingExpsList(explist, matchFnRefs);
-        fcallexps = DAELow.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
+        fcallexps = BackendDAEUtil.traverseDAELowExps(dlow,true,getMatchingExps,matchFnRefs);
         calledfuncs = Util.listMap(fcallexps, getCallPath);
         res = removeDuplicatePaths(calledfuncs);
       then res;
@@ -1767,18 +1767,18 @@ algorithm
         
         //e_lst = replaceDerOpInEquationList(e_lst);
         //e_lst = solveDAELow(e_lst, varlst, arrayList(ass2));
-        //e = DAELow.listEquation(e_lst);
+        //e = BackendDAEUtil.listEquation(e_lst);
         //dlow = BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
         // Create SimCode structure for Jacobian or rather for Linearization
 
         // Differentiate the System w.r.t states for matrices A and C
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. states.\n");   
-        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_states, states, inputvars, paramvars); 
+        deriveddlow1 = Linearization.generateSymbolicJacobian(dlow, functions, comref_states, states, inputvars, paramvars); 
         Debug.fcall("linmodel",print,"Done! Create now Matrixes A and C for linear model.\n");
         
          // create Matrix A and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
-        (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
+        (deriveddlow2, v1, v2, comps1) = Linearization.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
@@ -1786,7 +1786,7 @@ algorithm
         
         // create Matrix C and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
-        (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
+        (deriveddlow2, v1, v2, comps1) = Linearization.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
@@ -1794,12 +1794,12 @@ algorithm
         
         // Differentiate the System w.r.t states for matrices B and D
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. inputs.\n");
-        deriveddlow1 = DAELow.generateSymbolicJacobian(dlow, functions, comref_inputvars, states, inputvars, paramvars);
+        deriveddlow1 = Linearization.generateSymbolicJacobian(dlow, functions, comref_inputvars, states, inputvars, paramvars);
         Debug.fcall("linmodel",print,"Done! Create now Matrixes B and D for linear model.\n");
 
          // create Matrix B and variables
          Debug.fcall("jacdump2", print, "Dump of daelow for Matrix B.\n");
-        (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
+        (deriveddlow2, v1, v2, comps1) = Linearization.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
@@ -1807,7 +1807,7 @@ algorithm
         
         // create Matrix D and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
-        (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
+        (deriveddlow2, v1, v2, comps1) = Linearization.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquationsLin(false, false, false, functions, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
         derivedVariables = BackendDAEUtil.varList(v);
@@ -1866,7 +1866,7 @@ algorithm
       list<DAE.Exp> exps;
     case (dlow)
       equation
-        exps = DAELow.traverseDAELowExps(dlow,true,findDelaySubExpressions,{});
+        exps = BackendDAEUtil.traverseDAELowExps(dlow,true,findDelaySubExpressions,{});
         delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
@@ -2707,7 +2707,6 @@ algorithm
   end matchcontinue;
 end createEquations;
 
-
 protected function createEquationsLin
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
@@ -3115,7 +3114,7 @@ algorithm
         tp = Expression.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
-        (subs,entrylst1) = DAELow.getArrayEquationSub(aindx,ad,inEntrylst);
+        (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(aindx,ad,inEntrylst);
         res_exp = Expression.applyExpSubscripts(res_exp,subs);        
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
@@ -3137,13 +3136,13 @@ algorithm
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
         */
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations","Perform non-linear operations outside the when-equation (this is slower, but works)"},DAELow.equationInfo(eq));
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations","Perform non-linear operations outside the when-equation (this is slower, but works)"},BackendEquation.equationInfo(eq));
       then
         fail();
         
     case (eq::_,_,_)
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"},DAELow.equationInfo(eq));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"},BackendEquation.equationInfo(eq));
       then
         fail();    
   end matchcontinue;
@@ -3259,8 +3258,8 @@ algorithm
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
-        jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         equations_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
@@ -3286,8 +3285,8 @@ algorithm
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
-        jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
         simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
@@ -3322,16 +3321,16 @@ algorithm
         m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-        (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAEOptimize.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (comps) = BackendDAEOptimize.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
         comps_flat = Util.listFlatten(comps_1);
         rf = Util.listFlatten(r);
         tf = Util.listFlatten(t);
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
-        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, helpVarInfo);
       then
         {equation_};
@@ -3355,8 +3354,8 @@ algorithm
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
-        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
@@ -3429,9 +3428,9 @@ algorithm
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         // Jacobian of a Linear System is always linear 
-        //jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        //jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         jac_tp = BackendDAE.JAC_TIME_VARYING();
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
@@ -3693,8 +3692,8 @@ algorithm
         m = BackendDAEUtil.incidenceMatrix(d);
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-        (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAEOptimize.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (comps) = BackendDAEOptimize.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -4077,7 +4076,7 @@ algorithm
         dlowEqs = BackendDAEUtil.equationList(eqn);
 				m = BackendDAEUtil.incidenceMatrix(daelow);
         mT = BackendDAEUtil.transposeMatrix(m);      
-        SOME(jac) = DAELow.calculateJacobian(v, eqn, ae, m, mT,false);
+        SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
@@ -4101,7 +4100,7 @@ algorithm
       DAE.Exp rhs_exp_1;
     case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e)), v)
       equation
-//        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
+//        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
 //        rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
 //      then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
       then ((row - 1, col - 1, SES_RESIDUAL(e)));
@@ -4130,14 +4129,14 @@ algorithm
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;  
      case (BackendDAE.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
-        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
         rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
       then (rhs_exp_1,inEntrylst);
     case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
         tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,inEntrylst);
@@ -4147,9 +4146,9 @@ algorithm
         tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         ad = Util.listMap(ds,Util.makeOption);
-        (subs,entrylst1) = DAELow.getArrayEquationSub(index,ad,inEntrylst);
+        (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,inEntrylst);
         new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
-        rhs_exp = DAELow.getEqnsysRhsExp(new_exp1, v);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         tp1 = Expression.typeof(rhs_exp);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
@@ -4157,7 +4156,7 @@ algorithm
     case (dlowEq,_,_,_)
       equation
         BackendDump.dumpEqns({dlowEq});
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},DAELow.equationInfo(dlowEq));
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},BackendEquation.equationInfo(dlowEq));
       then
         fail();        
   end matchcontinue;
@@ -4286,15 +4285,15 @@ algorithm
         DAE.ARRAY(scalar=true,array=ea1) = e1;
         DAE.ARRAY(scalar=true,array=ea2) = e2;
         ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re); 
         subsystem_dae = BackendDAE.DAELOW(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
          m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac1 = DAELow.calculateJacobian(vars, eqns, ae, m_1, mt_1,false);
-        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac1);
+        jac1 = BackendDAEUtil.calculateJacobian(vars, eqns, ae, m_1, mt_1,false);
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);
         equations_ = createOdeSystem2(mixedEvent, genDiscrete, subsystem_dae, jac1, jac_tp, block_,helpVarInfo);             
       then
         equations_;          
@@ -4466,10 +4465,10 @@ algorithm
         ie2_lst = generateInitialEquationsFromStart(vars_lst);
         eqns_lst = selectContinuousEquations(eqns_lst, 1, ass2, dlow);
 
-        eqns_lst = Util.listMap(eqns_lst, DAELow.equationToResidualForm);
-        se_lst = Util.listMap(se_lst, DAELow.equationToResidualForm);
-        ie_lst = Util.listMap(ie_lst, DAELow.equationToResidualForm);
-        ie2_lst = Util.listMap(ie2_lst, DAELow.equationToResidualForm);
+        eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
+        se_lst = Util.listMap(se_lst, BackendEquation.equationToResidualForm);
+        ie_lst = Util.listMap(ie_lst, BackendEquation.equationToResidualForm);
+        ie2_lst = Util.listMap(ie2_lst, BackendEquation.equationToResidualForm);
 
         residualEquationsTmp = listAppend(eqns_lst, se_lst);
         residualEquationsTmp = listAppend(residualEquationsTmp, ie_lst);
@@ -4822,7 +4821,7 @@ algorithm
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
         (nx, ny, np, ng, ng_sam, next, ny_string, np_string, ny_int, np_int, ny_bool, np_bool) =
-          DAELow.calculateSizes(dlow);
+          BackendDAEUtil.calculateSizes(dlow);
         ng_1 = filterNg(ng);
         ng_sam_1 = filterNg(ng_sam);
       then
@@ -5286,7 +5285,7 @@ algorithm
       String varNameStr;
     case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initialEqs)
       equation
-        initCrefs = DAELow.equationsCrefs(initialEqs);
+        initCrefs = BackendEquation.equationsCrefs(initialEqs);
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
@@ -6159,7 +6158,7 @@ algorithm
         discVarLst = Util.listSelect(varLst,BackendDAEUtil.isVarDiscrete);
         contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,BackendVariable.varEqual);
 			  discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
-			  contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,DAELow.equationEqual);
+			  contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
 			  then (contEqnLst,contVarLst,discEqnLst,discVarLst);
   end matchcontinue;
 end splitMixedEquations;
@@ -6597,7 +6596,7 @@ algorithm
       array<Integer> ass2;
     case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
       equation
-        block_ = DAELow.getEquationBlock(e, blocks);
+        block_ = BackendDAEUtil.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         res = isMixedSystem(var_lst,eqn_lst);
       then
@@ -6631,7 +6630,7 @@ algorithm
       array<Integer> ass2;
     case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),e,blocks,ass2) /* equation blocks ass2 */
       equation
-        block_ = DAELow.getEquationBlock(e, blocks);
+        block_ = BackendDAEUtil.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         true = isMixedSystem(var_lst,eqn_lst);
       then
@@ -7176,7 +7175,7 @@ algorithm
       (unit, displayUnit) = extractVarUnit(dae_var_attr);
       initVal = getInitialValue(dlowVar);
       isFixed = BackendVariable.varFixed(dlowVar);
-      type_ = DAELow.makeExpType(tp);
+      type_ = BackendDAEUtil.makeExpType(tp);
       isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
       arrayCref = getArrayCref(dlowVar);
     then
@@ -7855,7 +7854,7 @@ algorithm
 /*
     case (SES_ALGORITHM(),inDlowMode)
       equation
-        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+        e = addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         SES_ALGORITHM();
 */              
@@ -7978,7 +7977,7 @@ algorithm
     local DAE.Ident ident; Boolean b;
     case (DAE.CREF_QUAL(ident = ident))
       equation
-        b = stringEqual(ident,DAELow.derivativeNamePrefix);
+        b = stringEqual(ident,BackendDAE.derivativeNamePrefix);
       then b;
     case (_) then false;
   end matchcontinue;
