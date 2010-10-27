@@ -7421,30 +7421,6 @@ algorithm
   end matchcontinue;
 end getMatchingExps;
 
-protected function matchCallsAndFnRefs
-"calls matchCalls and matchFnRefs"
-  input DAE.Exp inExpr;
-  output list<DAE.Exp> outExprLst;
-algorithm
-  outExprLst := matchcontinue (inExpr)
-    local list<DAE.Exp> explst,explst1,explst_1,explst2;
-    case (inExpr)
-      equation
-        explst = matchCalls(inExpr);
-        explst_1 = Util.listSelect(explst, isNotBuiltinCall);
-        explst1 = matchFnRefs(inExpr);
-        explst2 = listAppend(explst,explst_1);
-      then
-        explst2;
-    case (inExpr)
-      equation
-        failure(explst = matchCalls(inExpr));
-        explst1 = matchFnRefs(inExpr);
-      then
-        explst1;
-  end matchcontinue;
-end matchCallsAndFnRefs;
-
 protected function matchCalls
 "Used together with getMatchingExps"
   input DAE.Exp inExpr;
