@@ -29,9 +29,9 @@
  *
  */
 
-package BackendDAETransform
-" file:         BackendDAETransform.mo
-  package:     BackendDAETransform
+package BackendDAECreate
+" file:         BackendDAECreate.mo
+  package:     BackendDAECreate
   description:  This file contains all functions for transforming the DAE structure 
                 to the BackendDAE. 
 "
@@ -3353,4 +3353,4 @@ algorithm
 end whenEquationsIndices2;
 
 
-end BackendDAETransform;
+end BackendDAECreate;

@@ -57,7 +57,7 @@ public import Values;
 
 protected import Algorithm;
 protected import BackendDump;
-protected import BackendDAETransform;
+protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import BackendVarTransform;
 protected import BackendVariable;
@@ -146,7 +146,7 @@ algorithm
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = BackendVariable.moveVariables(vars, knvars, movedvars_1);
-        inputsoutputs = Util.listMap1r(algs_1,BackendDAETransform.lowerAlgorithmInputsOutputs,vars_1);
+        inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
         // return aliasVars empty for now
@@ -1515,7 +1515,7 @@ algorithm
         algs = arrayList(al);
         (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
          BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
-        (zero_crossings) = BackendDAETransform.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
+        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
         e = BackendDAEUtil.listEquation(e_lst);
         re = BackendDAEUtil.listEquation(re_lst);
         ie = BackendDAEUtil.listEquation(ie_lst);

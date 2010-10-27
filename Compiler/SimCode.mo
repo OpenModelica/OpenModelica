@@ -69,7 +69,7 @@ public import DAE;
 public import Inline;
 
 protected import BackendDump;
-protected import BackendDAETransform;
+protected import BackendDAECreate;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -827,7 +827,7 @@ algorithm
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(dae);
-        dlow = BackendDAETransform.lower(dae, funcs, addDummy, true);
+        dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
@@ -954,7 +954,7 @@ algorithm
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAETransform.lower(dae, funcs, addDummy, true);
+        dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
@@ -2641,7 +2641,7 @@ algorithm
         BackendDAE.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (BackendDAE.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
-        zcEqns = BackendDAETransform.zeroCrossingsEquations(dlow);
+        zcEqns = BackendDAECreate.zeroCrossingsEquations(dlow);
         true = listMember(index, zcEqns);
         equations = createEquations(includeWhen, true, genDiscrete, dlow, ass1, ass2, restComps, helpVarInfo);
       then
