@@ -449,12 +449,14 @@ protected function doBalance3 "help function to doBalance2"
   output AvlTree outBt;
 algorithm
   outBt := matchcontinue(bt)
-  local AvlTree rr;
-    case(bt) equation
-      true = differenceInHeight(getOption(rightNode(bt))) > 0;
-      rr = rotateRight(getOption(rightNode(bt)));
-      bt = setRight(bt,SOME(rr));
-    then bt;
+    local
+      AvlTree rr;
+    case (bt)
+      equation
+        true = differenceInHeight(getOption(rightNode(bt))) > 0;
+        rr = rotateRight(getOption(rightNode(bt)));
+        bt = setRight(bt,SOME(rr));
+      then bt;
     case(bt) then bt;
   end matchcontinue;
 end doBalance3;
@@ -519,21 +521,23 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-input AvlTree node;
-input AvlTree parent;
-output AvlTree outParent "updated parent";
+  input AvlTree node;
+  input AvlTree parent;
+  output AvlTree outParent "updated parent";
 algorithm
   outParent := matchcontinue(node,parent)
-    local Option<AvlTreeValue> value;
-      Integer height ;
-      AvlTree left,right,bt,leftNode,rightNode;
+    local
+      Option<AvlTreeValue> value;
+      Integer height;
+      AvlTree bt;
 
-    case(node,parent) equation
-      parent = setRight(parent,leftNode(node));
-      parent = balance(parent);
-      node = setLeft(node,SOME(parent));
-      bt = balance(node);
-    then bt;
+    case  (node,parent)
+      equation
+        parent = setRight(parent,leftNode(node));
+        parent = balance(parent);
+        node = setLeft(node,SOME(parent));
+        bt = balance(node);
+      then bt;
   end matchcontinue;
 end exchangeLeft;
 

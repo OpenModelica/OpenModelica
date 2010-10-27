@@ -1663,37 +1663,15 @@ public function avlTreeAdd "
   input AvlKey inKey;
   input AvlValue inValue;
   output AvlTree outAvlTree;
-  partial function FuncTypeKeyToInteger
-    input AvlKey inKey;
-    output Integer outInteger;
-  end FuncTypeKeyToInteger;
 algorithm
   outAvlTree := matchcontinue (inAvlTree,inKey,inValue)
     local
-      partial function FuncTypeStringToInteger
-        input AvlKey inString;
-        output Integer outInteger;
-      end FuncTypeStringToInteger;
       AvlKey key,rkey;
       AvlValue value,rval;
       Option<AvlTree> left,right;
-      FuncTypeStringToInteger hashfunc;
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
     
-    /* adrpo 2010-10-07: what is this??? WHAT is "lskf" KEY??
-    // empty tree
-    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key as "lskf",value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
-    
-		// replace this node
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key as "lskf",value)
-      equation
-        true = stringEqual(rkey, key);
-        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
-      then
-        bt;*/
-        
     // empty tree
     case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
@@ -1957,14 +1935,15 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-input AvlTree node;
-input AvlTree parent;
-output AvlTree outParent "updated parent";
+  input AvlTree node;
+  input AvlTree parent;
+  output AvlTree outParent "updated parent";
 algorithm
   outParent := matchcontinue(node,parent)
-    local Option<AvlTreeValue> value;
+    local
+      Option<AvlTreeValue> value;
       Integer height ;
-      AvlTree left,right,bt,leftNode,rightNode;
+      AvlTree bt;
 
     case(node,parent) equation
       parent = setRight(parent,leftNode(node));
@@ -2035,22 +2014,13 @@ public function avlTreeGet "  Get a value from the binary tree given a key.
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
-  partial function FuncTypeKeyToInteger
-    input AvlKey inKey;
-    output Integer outInteger;
-  end FuncTypeKeyToInteger;
 algorithm
   outValue:=
   matchcontinue (inAvlTree,inKey)
     local
-      partial function FuncTypeStringToInteger
-        input AvlKey inString;
-        output Integer outInteger;
-      end FuncTypeStringToInteger;
       AvlKey rkey,key;
       AvlValue rval,res;
       Option<AvlTree> left,right;
-      FuncTypeStringToInteger hashfunc;
       Integer rhval;
     
     // hash func Search to the right

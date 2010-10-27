@@ -4583,14 +4583,15 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-input DAE.AvlTree node;
-input DAE.AvlTree parent;
-output DAE.AvlTree outParent "updated parent";
+  input DAE.AvlTree node;
+  input DAE.AvlTree parent;
+  output DAE.AvlTree outParent "updated parent";
 algorithm
   outParent := matchcontinue(node,parent)
-    local Option<DAE.AvlTreeValue> value;
-      Integer height ;
-      DAE.AvlTree left,right,bt,leftNode,rightNode;
+    local
+      Option<DAE.AvlTreeValue> value;
+      Integer height;
+      DAE.AvlTree bt;
 
     case(node,parent) equation
       parent = setRight(parent,leftNode(node));
