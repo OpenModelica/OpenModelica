@@ -36,7 +36,7 @@ PROGP = omcp
 SCRIPT_FILES = Compile doPlot openmodelica.lefty
 
 #SUBDIRS= ast runtime
-SUBDIRS	= runtime absyn_builder modpar
+SUBDIRS	= runtime modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h

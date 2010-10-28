@@ -3573,6 +3573,18 @@ algorithm
   tyMemory := arrayCreate(21, {});
 end createEmptyTypeMemory;
 
+// define constants so they don't consume memory!
+public
+ constant DAE.ExpType etInt         = DAE.ET_INT();
+ constant DAE.ExpType etReal        = DAE.ET_REAL();
+ constant DAE.ExpType etBool        = DAE.ET_BOOL();
+ constant DAE.ExpType etString      = DAE.ET_STRING();
+ constant DAE.ExpType etNoRetCall   = DAE.ET_NORETCALL();
+ constant DAE.ExpType etFuncRefVar  = DAE.ET_FUNCTION_REFERENCE_VAR();
+ constant DAE.ExpType etUnionType   = DAE.ET_UNIONTYPE();
+ constant DAE.ExpType etPolyMorphic = DAE.ET_POLYMORPHIC();
+
+
 public function elabType 
 "@author: adrpo
   searches in the global cache for the translation DAE.Type -> DAE.ExpType
@@ -3589,19 +3601,20 @@ algorithm
       TType tt;
       Integer indexBasedOnValueConstructor;
 
-    // normal execution, do not use type memory.
-    case (inType)
-      equation
-        false = RTOpts.debugFlag("useTypeMemory");
-        // call the function to get the DAE.ExpType translation from DAE.Type
-        expTy = elabType_dispatch(inType);
-      then
-        expTy;
-    
+    // speedup some of the types that do not actually translate contents 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then etInt;
+    case ((DAE.T_REAL(varLstReal = _),_)) then etReal;
+    case ((DAE.T_BOOL(varLstBool = _),_)) then etBool;
+    case ((DAE.T_STRING(varLstString = _),_)) then etString;
+    case ((DAE.T_NORETCALL(),_)) then etNoRetCall;
+    case ((DAE.T_FUNCTION(_,_,_),_)) then etFuncRefVar;
+    case ((DAE.T_UNIONTYPE(_),_)) then etUnionType;
+    case ((DAE.T_METARECORD(_,_),_)) then etUnionType;
+    case ((DAE.T_POLYMORPHIC(_),_)) then etPolyMorphic;
+
     // see if we have it in memory
     case (inType as (tt, _))
-      equation
-        true = RTOpts.debugFlag("useTypeMemory");        
+      equation        
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots
         tyMem = getGlobalRoot(memoryIndex);
@@ -3616,7 +3629,6 @@ algorithm
     // we didn't find it, add it
     case (inType as (tt, _))
       equation
-        true = RTOpts.debugFlag("useTypeMemory");
         // call the function to get the DAE.ExpType translation from DAE.Type
         expTy = elabType_dispatch(inType);
         // oh the horror. if you don't understand this, contact adrpo
