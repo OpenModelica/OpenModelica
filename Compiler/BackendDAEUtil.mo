@@ -123,9 +123,11 @@ end printcheckBackendDAEWithErrorMsg;
 public function checkBackendDAE "function: checkBackendDAE
   author: Frenkel TUD
 
-  This function checks the BackendDAE object if 
-  all component refercences used in the expressions are 
-  part of the BackendDAE object. Returns all component references
+  This function checks the BackendDAE object if
+  -  all component refercences used in the expressions are 
+  part of the BackendDAE object.
+  - all variables that are reinit are states
+  Returns all component references
   which not part of the BackendDAE object. 
 "
   input BackendDAE.DAELow inBackendDAE;
@@ -4912,22 +4914,13 @@ algorithm
       DAE.Statement elsew;
       Absyn.Path fname;
       list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp),func,inTypeA)
-      equation
-        crexp = Expression.makeCrefExp(cr,DAE.ET_OTHER());
-        talst = func(crexp,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2; 
-    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp),func,inTypeA)
-      local list<DAE.Exp> ea2;
+    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = e2,exp = exp),func,inTypeA)
       equation
         talst = func(e2,inTypeA);
         talst1 = func(exp,inTypeA);
         talst2 = listAppend(talst,talst1);
       then
-        talst2;  
+        talst2; 
     case (DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp),func,inTypeA)
       equation
         exps = listAppend(explist, {exp});
@@ -4936,7 +4929,7 @@ algorithm
         talst;
     case (DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp),func,inTypeA)
       equation
-        crexp = Expression.makeCrefExp(cr,DAE.ET_OTHER());
+        crexp = Expression.makeCrefExp(cr,expty);
         talst = func(crexp,inTypeA);
         talst1 = func(exp,inTypeA); 
         talst2 = listAppend(talst,talst1);
@@ -4983,13 +4976,28 @@ algorithm
         talst2 = listAppend(talst,talst1);
       then
         talst2;    
-    case (DAE.STMT_BREAK(source = _),_,_) then {};
+    case (DAE.STMT_TERMINATE(msg= e1),func,inTypeA)
+      equation
+        talst = func(e1,inTypeA);
+      then
+        talst;  
+    case(DAE.STMT_REINIT(var = e1, value = e2),func,inTypeA) 
+      equation
+        talst = func(e1,inTypeA);
+        talst1 = func(e2,inTypeA);
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;       
+    case (DAE.STMT_NORETCALL(exp = e1),func,inTypeA) 
+      equation
+        talst = func(e1,inTypeA);
+      then talst;          
     case (DAE.STMT_RETURN(source = _),_,_) then {};
+    case (DAE.STMT_BREAK(source = _),_,_) then {};
     case (DAE.STMT_FAILURE(body = stmts),func,inTypeA)
       equation
         talst = traverseExpsStmts(stmts,func,inTypeA);
       then talst;
-    case (DAE.STMT_THROW(source = _),_,_) then {};
     case (DAE.STMT_TRY(tryBody = stmts),func,inTypeA)
       equation
         talst = traverseExpsStmts(stmts,func,inTypeA);
@@ -5000,17 +5008,9 @@ algorithm
         talst = traverseExpsStmts(stmts,func,inTypeA);
       then
         talst;
-    case (DAE.STMT_NORETCALL(exp = e1),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-      then talst; 
-    case(DAE.STMT_REINIT(var = e1, value = e2),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;
+    case (DAE.STMT_THROW(source = _),_,_) then {};
+    case (DAE.STMT_GOTO(source = _),_,_) then {};
+    case (DAE.STMT_LABEL(source = _),_,_) then {};
     case(DAE.STMT_MATCHCASES(caseStmt = exps),func,inTypeA)
       equation
         talst = Util.listMapFlat1(exps,func,inTypeA);
@@ -5018,7 +5018,7 @@ algorithm
         talst;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Algorithm.traverseExpsStmt failed");
+        Debug.fprintln("failtrace", "- BackendDAEUtil.traverseExpsStmt failed");
       then
         fail();
   end matchcontinue;

@@ -1176,7 +1176,7 @@ algorithm
       BackendDAE.Value i;
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.ReinitStatement> reinit;
-      DAE.Exp e_2,cre,e;
+      DAE.Exp e_2,cre,e,cond;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Element> xs;
       DAE.Element el;
@@ -1195,6 +1195,13 @@ algorithm
       then
         ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e,NONE()),source) :: eqnl),reinit);
 
+    case ((DAE.ASSERT(condition=cond,message = e,source = source) :: xs),i)
+      local DAE.ComponentRef cref_;
+      equation
+        (eqnl,reinit) = lowerWhenEqn2(xs, i);
+      then
+        (eqnl,(BackendDAE.ASSERT(cond,e,source) :: reinit));
+
     case ((DAE.REINIT(componentRef = cr,exp = e,source = source) :: xs),i)
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
@@ -1205,10 +1212,8 @@ algorithm
       local DAE.ComponentRef cref_;
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
-        e_2 = ExpressionSimplify.simplify(e); // Expression.stringifyCrefs(ExpressionSimplify.simplify(e));
-        cref_ = ComponentReference.makeCrefIdent("_", DAE.ET_OTHER(), {});
       then
-        ((BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cref_,e_2,NONE()),source) :: eqnl),reinit);
+        (eqnl,(BackendDAE.TERMINATE(e,source) :: reinit));
     
     case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i)
       equation
@@ -1629,56 +1634,32 @@ algorithm
       BackendDAE.Variables vars;
       DAE.ExpType tp;
       DAE.ComponentRef cr;
-      DAE.Exp e, e2;
+      DAE.Exp e,exp1, e2;
       list<Algorithm.Statement> statements;
       Algorithm.Statement stmt;
-      list<DAE.Exp> expl;
       list<Algorithm.Statement> stmts;
       Algorithm.Else elsebranch;
-      list<DAE.Exp> inputs,inputs1,inputs2,inputs3,outputs,outputs1,outputs2;
-      list<DAE.ComponentRef> crefs;
-      DAE.Exp exp1;
-      list<DAE.Dimension> ad;
-      list<list<DAE.Subscript>> subslst,subslst1;
+      list<DAE.Exp> expl,inputs,inputs1,inputs2,inputs3,outputs,outputs1,outputs2;
       // a := expr;
     case (vars,DAE.STMT_ASSIGN(type_ = tp,exp1 = exp1,exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e, vars);
+        outputs =  BackendDAEUtil.statesAndVarsExp(exp1, vars);
       then
-        (inputs,{exp1});
-    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE()))
-      equation
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
-        inputs2 = list_append(BackendDAEUtil.statesAndVarsExp(e, vars),inputs);
-      then
-        (inputs2,outputs);
-    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
-      equation
-        (inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
-        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
-        inputs2 = list_append(BackendDAEUtil.statesAndVarsExp(e, vars),inputs);
-        outputs2 = list_append(outputs, outputs1);
-      then
-        (inputs2,outputs2);
+        (inputs,outputs);
       // (a,b,c) := foo(...)
     case (vars,DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);
-        crefs = Util.listFlatten(Util.listMap(expl,Expression.extractCrefsFromExp));
-        outputs =  Util.listMap1(crefs,Expression.makeCrefExp,DAE.ET_OTHER());
+        outputs = Util.listFlatten(Util.listMap1(expl,BackendDAEUtil.statesAndVarsExp,vars));
       then
-        (inputs,outputs);
-
+        (inputs,outputs);     
     // v := expr   where v is array.
-    case (vars,DAE.STMT_ASSIGN_ARR(type_ = DAE.ET_ARRAY(ty=tp,arrayDimensions=ad), componentRef = cr, exp = e))
+    case (vars,DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);  
-        subslst = BackendDAEUtil.dimensionsToRange(ad);
-        subslst1 = BackendDAEUtil.rangesToSubscripts(subslst);
-        crefs = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crefs,Expression.makeCrefExp,tp);             
-      then (inputs,expl);
-
+        outputs =  BackendDAEUtil.statesAndVarsExp(Expression.makeCrefExp(cr,tp), vars);          
+      then (inputs,outputs);      
     case(vars,DAE.STMT_IF(exp = e, statementLst = stmts, else_ = elsebranch))
       equation
         ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
@@ -1687,16 +1668,7 @@ algorithm
         inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Expression.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
-
-    case(vars,DAE.STMT_ASSERT(cond = e1,msg=e2))
-      local DAE.Exp e1,e2;
-      equation
-        inputs1 = BackendDAEUtil.statesAndVarsExp(e1,vars);
-        inputs2 = BackendDAEUtil.statesAndVarsExp(e1,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
-     then (inputs,{});
-
-    case(vars, DAE.STMT_FOR(ident = iteratorName, exp = e, statementLst = stmts))
+   case(vars, DAE.STMT_FOR(type_= tp, ident = iteratorName, exp = e, statementLst = stmts))
       local
         DAE.Ident iteratorName;
         DAE.Exp iteratorExp;
@@ -1709,37 +1681,89 @@ algorithm
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
         // Split the output variables into variables that depend on the loop
         // variable and variables that don't.
-        cref_ = ComponentReference.makeCrefIdent(iteratorName, DAE.ET_INT(), {});
-        iteratorExp = DAE.CREF(cref_, DAE.ET_INT());
+        cref_ = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        iteratorExp = DAE.CREF(cref_, tp);
         (arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, BackendDAEUtil.isLoopDependent, iteratorExp);
         arrayVars = Util.listMap(arrayVars, BackendDAEUtil.devectorizeArrayVar);
         // Explode array variables into their array elements.
         // I.e. var[i] => var[1], var[2], var[3] etc.
         arrayElements = Util.listMap3(arrayVars, BackendDAEUtil.explodeArrayVars, iteratorExp, e, vars);
         flattenedElements = Util.listFlatten(arrayElements);
-        inputs = Util.listUnion(inputs1, inputs2);
-        outputs = Util.listUnion(nonArrayVars, flattenedElements);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+        outputs = Util.listListUnionOnTrue({nonArrayVars, flattenedElements}, Expression.expEqual);
       then (inputs, outputs);
-        
     case(vars, DAE.STMT_WHILE(exp = e, statementLst = stmts))
       equation
         ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
-        inputs = Util.listUnion(inputs1, inputs2);
+        inputs =  Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
       then (inputs, outputs);
-        
+    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE()))
+      equation
+        ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
+        inputs =  Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+      then
+        (inputs,outputs);
+    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
+      equation
+        (inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
+        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        inputs3 = BackendDAEUtil.statesAndVarsExp(e, vars);
+        inputs =  Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Expression.expEqual);
+        outputs = Util.listListUnionOnTrue({outputs1, outputs2}, Expression.expEqual);
+      then
+        (inputs,outputs);
+    case(vars,DAE.STMT_ASSERT(cond = e1,msg=e2))
+      local DAE.Exp e1,e2;
+      equation
+        inputs1 = BackendDAEUtil.statesAndVarsExp(e1,vars);
+        inputs2 = BackendDAEUtil.statesAndVarsExp(e1,vars);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+     then (inputs,{});
+    case(vars, DAE.STMT_TERMINATE(msg = e2))
+      equation
+        inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);
+      then
+        (inputs, {}); 
+    // TODO: is the reinit var a input or a output    
+    case(vars, DAE.STMT_REINIT(var = e as DAE.CREF(componentRef = _), value = e2))
+      equation
+        inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);
+      then
+        (inputs, {e});        
     case(vars, DAE.STMT_NORETCALL(exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e, vars);
       then
         (inputs, {});
-    
-    case(vars, DAE.STMT_REINIT(var = e as DAE.CREF(componentRef = _), value = e2))
+    case(vars, DAE.STMT_RETURN(_)) then ({}, {});
+    // MetaModelica extension. KS  
+    case(vars, DAE.STMT_FAILURE(body = statements))
       equation
-        inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);
-      then
-        (e :: inputs, {});
-        
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+      then (inputs,outputs);
+     case(vars, DAE.STMT_TRY(tryBody = statements))
+      equation
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+      then (inputs,outputs);
+     case(vars, DAE.STMT_CATCH(catchBody = statements))
+      equation
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+      then (inputs,outputs);    
+     case(vars, DAE.STMT_CATCH(catchBody = statements))
+      equation
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+      then (inputs,outputs);                    
+    case(vars, DAE.STMT_THROW(source=_)) then ({}, {});
+    case(vars, DAE.STMT_GOTO(source=_)) then ({}, {});
+    case(vars, DAE.STMT_LABEL(source=_)) then ({}, {});
+     case(vars, DAE.STMT_MATCHCASES(inputExps = expl,caseStmt=inputs2))
+      equation
+        inputs1 = Util.listFlatten(Util.listMap1(expl,BackendDAEUtil.statesAndVarsExp,vars));
+        inputs3 = Util.listFlatten(Util.listMap1(inputs2,BackendDAEUtil.statesAndVarsExp,vars));
+        inputs = Util.listListUnionOnTrue({inputs1, inputs3}, Expression.expEqual);
+      then (inputs,{});        
     case(_, _)
       equation
         Debug.fprintln("failtrace", "- BackendDAECreate.lowerStatementInputsOutputs failed\n");
@@ -3107,9 +3131,6 @@ algorithm
     DAE.ComponentRef cr1,cr2;
     list<DAE.ComponentRef> crlst1,crlst2;
     BackendDAE.Equation eqn;
-    list<BackendDAE.Equation> eqnlst;
-    list<tuple<DAE.Exp,DAE.Exp>> exptplst;
-    list<list<DAE.Subscript>> subslst,subslst1;
     Expression.Type tp;
     list<DAE.Dimension> ad;
     list<Integer> ds;

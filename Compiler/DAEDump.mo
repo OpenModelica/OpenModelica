@@ -1785,6 +1785,14 @@ algorithm
       then
         str;
 
+    case (DAE.STMT_TERMINATE(msg = msg),i)
+      equation
+        s1 = indentStr(i);
+        msg_str = ExpressionDump.printExpStr(msg);
+        str = stringAppendList({s1,"terminate(",msg_str,");\n"});
+      then
+        str;
+
     case (DAE.STMT_NORETCALL(exp = e),i)
       equation
         s1 = indentStr(i);

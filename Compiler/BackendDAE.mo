@@ -160,8 +160,20 @@ uniontype ReinitStatement "- Reinit Statement"
     DAE.ElementSource source "origin of equation";
   end REINIT;
 
+  record ASSERT
+    DAE.Exp condition;
+    DAE.Exp message;
+    DAE.ElementSource source "the origin of the component/equation/algorithm";
+  end ASSERT;  
+  
+  record TERMINATE " The Modelica builtin terminate(msg)"
+    DAE.Exp message;
+    DAE.ElementSource source "the origin of the component/equation/algorithm";
+  end TERMINATE; 
+
   record EMPTY_REINIT
   end EMPTY_REINIT;
+  
 end ReinitStatement;
 
 public

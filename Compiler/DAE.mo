@@ -494,7 +494,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_IF;
 
   record STMT_FOR
-    ExpType type_;
+    ExpType type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident ident;
     Exp exp;
