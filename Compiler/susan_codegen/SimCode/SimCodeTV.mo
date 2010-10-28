@@ -832,8 +832,8 @@ package DAE
     record STMT_FOR
       ExpType type_;
       Boolean iterIsArray;
-      Ident ident;
-      Exp exp;
+      Ident iter;
+      Exp range;
       list<Statement> statementLst;
       ElementSource source;
     end STMT_FOR;
@@ -849,6 +849,10 @@ package DAE
       list<Integer> helpVarIndices;
       ElementSource source;
     end STMT_WHEN;
+    record STMT_TERMINATE
+      Exp msg;
+      ElementSource source;
+    end STMT_TERMINATE;  
     record STMT_ASSERT
       Exp cond;
       Exp msg;

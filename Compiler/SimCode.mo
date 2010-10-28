@@ -2433,12 +2433,13 @@ algorithm
     local
       BackendDAE.EquationArray r;
       list<BackendDAE.Equation> removedEquationsTmp;
-    case (BackendDAE.DAE(removedEqs=r))
+      array<Algorithm.Algorithm> algs;
+    case (BackendDAE.DAE(removedEqs=r,algorithms=algs))
       equation
         removedEquationsTmp = BackendDAEUtil.equationList(r);
 
-        removedEquations = Util.listMap(removedEquationsTmp,
-                                        dlowEqToSimEqSystem);
+        removedEquations = Util.listMap1(removedEquationsTmp,
+                                        dlowEqToSimEqSystem,algs);
       then removedEquations;
   end matchcontinue;
 end createRemovedEquations;
@@ -2885,7 +2886,7 @@ algorithm
         SES_NONLINEAR(index, resEqs, {cr_1});
 
     /* Algorithm for single variable. */
-    case (e, BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
+    case (e, BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,algorithms=algs), ass1, ass2, helpVarInfo)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
@@ -2898,7 +2899,7 @@ algorithm
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
-        alg = alg[indx + 1];
+        alg = algs[indx + 1];
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);
@@ -4478,8 +4479,8 @@ algorithm
         residualEquationsTmp = Util.listFilter(residualEquationsTmp,
                                                failUnlessResidual);
 
-        residualEquations = Util.listMap(residualEquationsTmp,
-                                         dlowEqToSimEqSystem);
+        residualEquations = Util.listMap1(residualEquationsTmp,
+                                         dlowEqToSimEqSystem,al);
       then
         residualEquations;
     case (_,_,_)
@@ -4493,17 +4494,27 @@ end createResidualEquations;
 
 protected function dlowEqToSimEqSystem
   input BackendDAE.Equation inEquation;
+  input array<Algorithm.Algorithm> algs;
   output SimEqSystem outEquation;
 algorithm
   outEquation:=
-  matchcontinue (inEquation)
+  matchcontinue (inEquation,algs)
     local
       DAE.ComponentRef cr;
       DAE.Exp exp_;
-    case (BackendDAE.SOLVED_EQUATION(cr, exp_, _))
+      Algorithm.Algorithm alg;
+      Integer indx;
+      list<DAE.Statement> algStatements;
+    case (BackendDAE.SOLVED_EQUATION(cr, exp_, _),_)
       then SES_SIMPLE_ASSIGN(cr, exp_);
-    case (BackendDAE.RESIDUAL_EQUATION(exp_, _))
+    case (BackendDAE.RESIDUAL_EQUATION(exp_, _),_)
       then SES_RESIDUAL(exp_);
+    case (BackendDAE.ALGORITHM(index=indx),algs)
+      equation
+        alg = algs[indx + 1];
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+      then
+        SES_ALGORITHM(algStatements);       
   end matchcontinue;
 end dlowEqToSimEqSystem;
 
@@ -4529,7 +4540,8 @@ algorithm
       list<BackendDAE.Equation> eqns_lst;
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
-    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars))
+      array<Algorithm.Algorithm> algs;
+    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs))
       equation
         initialEquationsTmp2 = {};
         // vars
@@ -4541,8 +4553,8 @@ algorithm
         initialEquationsTmp = createInitialAssignmentsFromStart(knvars_lst);
         initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
 
-        initialEquations = Util.listMap(initialEquationsTmp2,
-                                        dlowEqToSimEqSystem);
+        initialEquations = Util.listMap1(initialEquationsTmp2,
+                                        dlowEqToSimEqSystem,algs);
       then
         initialEquations;
     case (_)
@@ -4567,7 +4579,8 @@ algorithm
       list<BackendDAE.Equation> eqns_lst;
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
-    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars))
+      array<Algorithm.Algorithm> algs;
+    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs))
       equation
         parameterEquationsTmp = {};
         // kvars params
@@ -4575,8 +4588,8 @@ algorithm
         tempEqs = createInitialParamAssignments(knvars_lst);
         parameterEquationsTmp = listAppend(parameterEquationsTmp, tempEqs);
 
-        parameterEquations = Util.listMap(parameterEquationsTmp,
-                                          dlowEqToSimEqSystem);
+        parameterEquations = Util.listMap1(parameterEquationsTmp,
+                                          dlowEqToSimEqSystem,algs);
         //?? why is this reversed ???
         parameterEquations = listReverse(parameterEquations);
       then
@@ -4764,6 +4777,11 @@ algorithm
         simvar = dlowvarToSimvar(dlowvar);
       then
         (simvar :: crs);
+    case (_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createZeroCrossingNeedSave failed"});
+      then
+        fail();        
   end matchcontinue;
 end createZeroCrossingNeedSave;
 
@@ -4800,7 +4818,7 @@ algorithm
         MODELINFO(class_, directory, varInfo, vars);
     case (_,_,_,_,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createModelInfo failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfo failed"});
       then
         fail();
   end matchcontinue;

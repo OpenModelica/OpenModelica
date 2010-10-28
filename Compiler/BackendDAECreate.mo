@@ -61,7 +61,6 @@ protected import OptManager;
 protected import RTOpts;
 protected import SCode;
 protected import Util;
-protected import Values;
 
 
 public function lower
@@ -89,11 +88,11 @@ algorithm
       BackendDAE.BinTree s;
       BackendDAE.Variables vars,knvars,vars_1,extVars;
       BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
-      list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,multidimeqns,imultidimeqns,eqns_1;
+      list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,multidimeqns,imultidimeqns,eqns_1;
       list<BackendDAE.MultiDimEquation> aeqns,aeqns1,iaeqns;
       list<DAE.Algorithm> algs,algs_1;
       list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
-      list<BackendDAE.ZeroCrossing> zero_crossings;
+      list<BackendDAE.ZeroCrossing> zero_crossings,zero_crossings1;
       BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
       array<BackendDAE.MultiDimEquation> arr_md_eqns;
       array<DAE.Algorithm> algarr;
@@ -119,17 +118,19 @@ algorithm
         (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
 
         whenclauses_1 = listReverse(whenclauses);
-        algeqns = lowerAlgorithms(vars, algs);
+        (algeqns,algeqns1) = lowerAlgorithms(vars, algs);
         (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
         eqns = listAppend(algeqns, eqns);
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
         aeqns = listAppend(aeqns,iaeqns);
+        reqns = listAppend(algeqns1, reqns);
         (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
+        vars_1 = detectImplicitDiscreteAlgs(vars_1, algs_1);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
-        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,listAppend(eqns_1,reqns),aeqns1,whenclauses_1,algs);
         eqnarr = BackendDAEUtil.listEquation(eqns_1);
         reqnarr = BackendDAEUtil.listEquation(reqns);
         ieqnarr = BackendDAEUtil.listEquation(ieqns);
@@ -155,17 +156,19 @@ algorithm
         (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
 
         whenclauses_1 = listReverse(whenclauses);
-        algeqns = lowerAlgorithms(vars, algs);
+        (algeqns,algeqns1) = lowerAlgorithms(vars, algs);
        (multidimeqns,imultidimeqns) = lowerMultidimeqns(vars, aeqns, iaeqns);
         eqns = listAppend(algeqns, eqns);
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
+        reqns = listAppend(algeqns1, reqns);
         // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = .BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
         aliasVars = BackendDAEUtil.emptyAliasVariables();
         vars_1 = detectImplicitDiscrete(vars, eqns);
+        vars_1 = detectImplicitDiscreteAlgs(vars_1, algs);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
-        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,listAppend(eqns_1,reqns),aeqns,whenclauses_1,algs);
         eqnarr = BackendDAEUtil.listEquation(eqns_1);
         reqnarr = BackendDAEUtil.listEquation(reqns);
         ieqnarr = BackendDAEUtil.listEquation(ieqns);
@@ -1503,8 +1506,9 @@ protected function lowerAlgorithms
   input BackendDAE.Variables vars;
   input list<DAE.Algorithm> algs;
   output list<BackendDAE.Equation> eqns;
+  output list<BackendDAE.Equation> eqns1 "algorithms with no outputs will be moved to known equations";
 algorithm
-  (eqns,_) := lowerAlgorithms2(vars, algs, 0);
+  (eqns,eqns1,_) := lowerAlgorithms2(vars, algs, 0);
 end lowerAlgorithms;
 
 protected function lowerAlgorithms2
@@ -1517,24 +1521,26 @@ protected function lowerAlgorithms2
   input list<DAE.Algorithm> inAlgorithmAlgorithmLst;
   input Integer inInteger;
   output list<BackendDAE.Equation> outEquationLst;
+  output list<BackendDAE.Equation> outEquationLst1 "algorithms with no outputs will be moved to known equations";
   output Integer outInteger;
 algorithm
-  (outEquationLst,outInteger) := matchcontinue (inVariables,inAlgorithmAlgorithmLst,inInteger)
+  (outEquationLst,outEquationLst1,outInteger) := matchcontinue (inVariables,inAlgorithmAlgorithmLst,inInteger)
     local
       BackendDAE.Variables vars;
       BackendDAE.Value aindx;
-      list<BackendDAE.Equation> eqns,eqns2,res;
+      list<BackendDAE.Equation> eqns,eqns_1,eqns1,eqns1_1,res,res1;
       DAE.Algorithm a;
       list<DAE.Algorithm> algs;
-    case (vars,{},aindx) then ({},aindx);
+    case (vars,{},aindx) then ({},{},aindx);
     case (vars,(a :: algs),aindx)
       equation
-        eqns = lowerAlgorithm(vars, a, aindx);
+        (eqns,eqns1) = lowerAlgorithm(vars, a, aindx);
         aindx = aindx + 1;
-        (eqns2,aindx) = lowerAlgorithms2(vars, algs, aindx);
-        res = listAppend(eqns, eqns2);
+        (eqns_1,eqns1_1,aindx) = lowerAlgorithms2(vars, algs, aindx);
+        res = listAppend(eqns_1, eqns);
+        res1 = listAppend(eqns1_1, eqns1);
       then
-        (res,aindx);
+        (res,res1,aindx);
   end matchcontinue;
 end lowerAlgorithms2;
 
@@ -1549,12 +1555,13 @@ protected function lowerAlgorithm
   input DAE.Algorithm a;
   input Integer aindx;
   output list<BackendDAE.Equation> lst;
+  output list<BackendDAE.Equation> lst1 "algorithms with no outputs will be moved to known equations";
   list<DAE.Exp> inputs,outputs;
   BackendDAE.Value numnodes;
 algorithm
   ((inputs,outputs)) := lowerAlgorithmInputsOutputs(vars, a);
   numnodes := listLength(outputs);
-  lst := lowerAlgorithm2(inputs, outputs, numnodes, aindx);
+  (lst,lst1) := lowerAlgorithm2(inputs, outputs, numnodes, aindx);
 end lowerAlgorithm;
 
 protected function lowerAlgorithm2
@@ -1570,19 +1577,23 @@ protected function lowerAlgorithm2
   input Integer inInteger3;
   input Integer inInteger4;
   output list<BackendDAE.Equation> outEquationLst;
+  output list<BackendDAE.Equation> outEquationLst1 "algorithms with no outputs will be moved to known equations";
 algorithm
-  outEquationLst := matchcontinue (inExpExpLst1,inExpExpLst2,inInteger3,inInteger4)
+  (outEquationLst,outEquationLst1) := matchcontinue (inExpExpLst1,inExpExpLst2,inInteger3,inInteger4)
     local
       BackendDAE.Value numnodes_1,numnodes,aindx;
-      list<BackendDAE.Equation> res;
+      list<BackendDAE.Equation> res,res1;
       list<DAE.Exp> inputs,outputs;
-    case (_,_,0,_) then {};
+    case ({},_,0,_) then ({},{});
+    case (inputs,outputs,0,aindx)
+      then
+        ({},{BackendDAE.ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource)});
     case (inputs,outputs,numnodes,aindx)
       equation
         numnodes_1 = numnodes - 1;
-        res = lowerAlgorithm2(inputs, outputs, numnodes_1, aindx);
+        (res,res1) = lowerAlgorithm2(inputs, outputs, numnodes_1, aindx);
       then
-        (BackendDAE.ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource) :: res);
+        (BackendDAE.ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource) :: res,res1);
   end matchcontinue;
 end lowerAlgorithm2;
 
@@ -1668,7 +1679,7 @@ algorithm
         inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Expression.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
-   case(vars, DAE.STMT_FOR(type_= tp, ident = iteratorName, exp = e, statementLst = stmts))
+   case(vars, DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = stmts))
       local
         DAE.Ident iteratorName;
         DAE.Exp iteratorExp;
@@ -1726,7 +1737,7 @@ algorithm
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);
       then
-        (inputs, {e});        
+        (inputs, {});        
     case(vars, DAE.STMT_NORETCALL(exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e, vars);
@@ -1994,28 +2005,18 @@ algorithm
   outVariables := matchcontinue (inVariables,inEquationLst)
     local
       BackendDAE.Variables v,v_1,v_2;
-      DAE.ComponentRef cr,orig;
-      DAE.VarDirection dir;
-      BackendDAE.Type vartype;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> value;
-      list<DAE.Subscript> dims;
-      BackendDAE.Value ind;
-      DAE.ElementSource source "origin of equation";
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
+      DAE.ComponentRef cr;
       list<BackendDAE.Equation> xs;
+      BackendDAE.Var var;
     case (v,{}) then v;
     case (v,(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)) :: xs))
       equation
-        ((BackendDAE.VAR(cr,_,dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, v);
-        v_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DISCRETE(),dir,vartype,bind,value,dims,ind,source,attr,comment,flowPrefix,streamPrefix), v);
+        ((var :: _),_) = BackendVariable.getVar(cr, v);
+        var = BackendVariable.setVarKind(var,BackendDAE.DISCRETE());
+        v_1 = BackendVariable.addVar(var, v);
         v_2 = detectImplicitDiscrete(v_1, xs);
       then
         v_2;
-        /* TODO: should also check when-algorithms */
     case (v,(_ :: xs))
       equation
         v_1 = detectImplicitDiscrete(v, xs);
@@ -2023,6 +2024,103 @@ algorithm
         v_1;
   end matchcontinue;
 end detectImplicitDiscrete;
+
+protected function detectImplicitDiscreteAlgs
+"function: detectImplicitDiscreteAlgs
+  This function updates the variable kind to discrete
+  for variables set in when equations."
+  input BackendDAE.Variables inVariables;
+  input list<DAE.Algorithm> inAlgsLst;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVariables,inAlgsLst)
+    local
+      BackendDAE.Variables v,v_1,v_2;
+      list<DAE.Statement> statementLst;
+      list<DAE.Algorithm> xs;
+    case (v,{}) then v;   
+    case (v,(DAE.ALGORITHM_STMTS(statementLst = statementLst) :: xs))
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,false);
+        v_2 = detectImplicitDiscreteAlgs(v_1, xs);
+      then
+        v_2;
+    case (v,(_ :: xs))
+      equation
+        v_1 = detectImplicitDiscreteAlgs(v, xs);
+      then
+        v_1;
+  end matchcontinue;
+end detectImplicitDiscreteAlgs;
+
+protected function detectImplicitDiscreteAlgsStatemens
+"function: detectImplicitDiscreteAlgsStatemens
+  This function updates the variable kind to discrete
+  for variables set in when equations."
+  input BackendDAE.Variables inVariables;
+  input list<DAE.Statement> inStatementLst;
+  input Boolean insideWhen "true if its called from a when statement";
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVariables,inStatementLst,insideWhen)
+    local
+      BackendDAE.Variables v,v_1,v_2,v_3;
+      DAE.ComponentRef cr;
+      list<DAE.Statement> xs,statementLst;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> vars;
+      DAE.Statement statement;
+      Boolean b;
+    case (v,{},_) then v;
+    case (v,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
+      equation
+        ((var :: _),_) = BackendVariable.getVar(cr, v);
+        var = BackendVariable.setVarKind(var,BackendDAE.DISCRETE());
+        v_1 = BackendVariable.addVar(var, v);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+      then
+        v_2; 
+    case (v,(DAE.STMT_ASSIGN_ARR(componentRef = cr) :: xs),true)
+      equation
+        (vars,_) = BackendVariable.getVar(cr, v);
+        vars = Util.listMap1(vars,BackendVariable.setVarKind,BackendDAE.DISCRETE());
+        v_1 = BackendVariable.addVars(vars,v);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+      then
+        v_2; 
+    case (v,(DAE.STMT_IF(statementLst = statementLst) :: xs),true)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+      then
+        v_2;          
+    case (v,(DAE.STMT_FOR(statementLst = statementLst) :: xs),true)
+      equation
+        /* TODO: use the range for the componentreferences */
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+      then
+        v_2; 
+    case (v,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = NONE()) :: xs),_)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,false);
+      then
+        v_2;
+    case (v,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = SOME(statement)) :: xs),_)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,{statement},true);
+        v_3 = detectImplicitDiscreteAlgsStatemens(v_2, xs,false);
+      then
+        v_3;        
+    case (v,(_ :: xs),b)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, xs,b);
+      then
+        v_1;
+  end matchcontinue;
+end detectImplicitDiscreteAlgsStatemens;
 
 protected function sortEqn
 "function: sortEqn
@@ -2456,7 +2554,7 @@ algorithm
 
     case(DAE.STMT_REINIT(e1,e2,source),vars) equation
       ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-      ((e1,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
+      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
     then (DAE.STMT_REINIT(e1,e2,source),vars);
 
     case(stmt,vars)      then (stmt,vars);

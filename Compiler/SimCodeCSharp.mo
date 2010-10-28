@@ -6139,11 +6139,11 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.STMT_FOR(exp = (i_rng as DAE.RANGE(ty = _)), type_ = i_type__, iterIsArray = i_iterIsArray, statementLst = i_statementLst, ident = i_ident),
+           DAE.STMT_FOR(range = (i_rng as DAE.RANGE(ty = _)), type_ = i_type__, iterIsArray = i_iterIsArray, statementLst = i_statementLst, iter = i_iter),
            i_context,
            i_simCode )
       local
-        DAE.Ident i_ident;
+        DAE.Ident i_iter;
         list<DAE.Statement> i_statementLst;
         Boolean i_iterIsArray;
         DAE.ExpType i_type__;
@@ -6157,7 +6157,7 @@ algorithm
         i_stmtStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_stmtStr = lm_150(i_stmtStr, i_statementLst, i_simCode, i_context);
         i_stmtStr = Tpl.popIter(i_stmtStr);
-        (txt, i_stmtStr) = algStmtForRange_impl(txt, i_rng, i_ident, Tpl.textString(i_identType), Tpl.textString(i_identTypeShort), i_stmtStr, i_context, i_simCode);
+        (txt, i_stmtStr) = algStmtForRange_impl(txt, i_rng, i_iter, Tpl.textString(i_identType), Tpl.textString(i_identTypeShort), i_stmtStr, i_context, i_simCode);
       then txt;
 
     case ( txt,

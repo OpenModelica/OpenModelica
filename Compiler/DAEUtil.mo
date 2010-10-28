@@ -3769,7 +3769,7 @@ algorithm
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);

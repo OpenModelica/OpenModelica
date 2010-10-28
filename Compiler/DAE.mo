@@ -496,8 +496,8 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record STMT_FOR
     ExpType type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
-    Ident ident;
-    Exp exp;
+    Ident iter "the iterator variable";
+    Exp range "range for the loop";
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_FOR;
@@ -1093,9 +1093,9 @@ uniontype Exp "Expressions
 
   record RANGE
     ExpType ty;
-    Exp exp;
-    Option<Exp> expOption;
-    Exp range "Range constructor, e.g. 1:0.5:10" ;
+    Exp exp "start value";
+    Option<Exp> expOption "step value";
+    Exp range "stop value; Range constructor, e.g. 1:0.5:10" ;
   end RANGE;
 
   record TUPLE

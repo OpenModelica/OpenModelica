@@ -458,7 +458,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1);
-    case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,ident=ident,exp=e1,statementLst=statementLst,source=source)::es),repl)
+    case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)::es),repl)
       local 
         Boolean iterIsArray;
         DAE.Ident ident;

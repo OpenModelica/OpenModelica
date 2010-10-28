@@ -166,7 +166,7 @@ algorithm
         algs = arrayList(al);
         (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = BackendDAEOptimize.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
          BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
-        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
+        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,listAppend(e_lst,re_lst),ae_lst,whenclauses,algs);
         e = BackendDAEUtil.listEquation(e_lst);
         re = BackendDAEUtil.listEquation(re_lst);
         ie = BackendDAEUtil.listEquation(ie_lst);
@@ -1653,7 +1653,7 @@ algorithm
        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_IF(e1,stlst1,else_1,source)::st);
-  case (DAE.STMT_FOR(type_=t,iterIsArray=b,ident=id,exp=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
+  case (DAE.STMT_FOR(type_=t,iterIsArray=b,iter=id,range=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
     local 
       Boolean b;
       DAE.Ident id;
@@ -2002,7 +2002,7 @@ algorithm
        (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
     then
       (DAE.STMT_IF(e1,stlst1,else_1,source)::st,vars3);
-  case (DAE.STMT_FOR(type_=t,iterIsArray=b,ident=id,exp=e,statementLst=stlst,source=source)::rest,inVariables)
+  case (DAE.STMT_FOR(type_=t,iterIsArray=b,iter=id,range=e,statementLst=stlst,source=source)::rest,inVariables)
     local 
       Boolean b;
       DAE.Ident id;

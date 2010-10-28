@@ -690,20 +690,6 @@ algorithm
   end matchcontinue;
 end makeExpType;
 
-public function systemSize "returns the size of the dae system"
-input BackendDAE.BackendDAE dae;
-output Integer n;
-algorithm
-  n := matchcontinue(dae)
-  local BackendDAE.EquationArray eqns;
-    case(BackendDAE.DAE(orderedEqs = eqns))
-      equation
-        n = equationSize(eqns);
-      then n;
-
-  end matchcontinue;
-end systemSize;
-
 public function statesDaelow
 "function: statesDaelow
   author: PA
@@ -1758,10 +1744,31 @@ algorithm
   end matchcontinue;
 end equationNth;
 
+public function systemSize 
+"function: equationSize
+  author: Frenkel TUD
+
+  Returns the size of the dae system, which 
+  corresponds to the number of equations in a system.
+"
+input BackendDAE.BackendDAE dae;
+output Integer n;
+algorithm
+  n := matchcontinue(dae)
+  local
+     BackendDAE.EquationArray eqns;
+    case(BackendDAE.DAE(orderedEqs = eqns))
+      equation
+        n = equationSize(eqns);
+      then n;
+  end matchcontinue;
+end systemSize;
+
+
 public function equationSize "function: equationSize
   author: PA
 
-  Returns the number of equations in an EquationArray, which
+  Returns the number of equations in an EquationArray, which 
   corresponds to the number of equations in a system.
   NOTE: Array equations and algorithms are represented several times
   in the array so the number of elements of the array corresponds to
@@ -4943,7 +4950,7 @@ algorithm
         talst3 = traverseExpsElse(else_,func,inTypeA);
         talst4 = listAppend(talst2,talst3);  
       then talst4;
-    case (DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts),func,inTypeA)
+    case (DAE.STMT_FOR(type_ = expty,iterIsArray = flag,iter = id,range = exp,statementLst = stmts),func,inTypeA)
       equation
         talst = traverseExpsStmts(stmts,func,inTypeA);
         talst1 = func(exp,inTypeA);

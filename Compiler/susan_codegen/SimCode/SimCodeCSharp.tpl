@@ -1128,12 +1128,12 @@ template algStatement(DAE.Statement it, Context context, SimCode simCode) ::=
     }
     <%elseExpr(else_, context, simCode)%>
     >>
-  case STMT_FOR(exp=rng as RANGE(__)) then
+  case STMT_FOR(range=rng as RANGE(__)) then
     let identType = expType(type_, iterIsArray) //TODO: ?? what is this for ... no array typed iterator is possible ???
     let identTypeShort = expTypeShort(type_)
     let stmtStr = (statementLst |> stmt => algStatement(stmt, context, simCode)
                    ;separator="\n")
-    algStmtForRange_impl(rng, ident, identType, identTypeShort, stmtStr, context, simCode)
+    algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, simCode)
   
   case s as STMT_FOR(__) then "algStmtForGeneric_NOT_IMPLEMENTED"
     //  algStmtForGeneric(s, context, &varDecls /*BUFC*/)
@@ -1151,16 +1151,16 @@ template algStatement(DAE.Statement it, Context context, SimCode simCode) ::=
   
   case _ then "NOT_IMPLEMENTED_ALG_STATEMENT"
  /*
-  case STMT_FOR(exp = rng as RANGE(__)) then
+  case STMT_FOR(range = rng as RANGE(__)) then
     <<
     {
       <%expTypeA(type_, boolean)%> 
         _r1 = <%daeExp(rng.exp,isSimulationCode)%>,
         _r2 = <%match rng.expOption case SOME(eo) then daeExp(eo,isSimulationCode) else "(1)"%>,
         _r3 = <%daeExp(rng.range,isSimulationCode)%>,
-        <%ident%>;
+        <%iter%>;
 
-      for (<%ident%> = _r1; in_range_<%expTypeShort(type_)%>(<%ident%>, _r1, _r3); <%ident%> += _r2) {
+      for (<%iter%> = _r1; in_range_<%expTypeShort(type_)%>(<%iter%>, _r1, _r3); <%iter%> += _r2) {
         <%statementLst |> it => algStatement(it) ;separator="\n" /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ %>        
       }
     } /*end for*/

@@ -1480,7 +1480,7 @@ algorithm
         Print.printBuf("end if;\n");
       then
         ();
-    case (DAE.STMT_FOR(ident = id,exp = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("for ");
@@ -1737,7 +1737,7 @@ algorithm
         str = stringAppend(s11, "end if;\n");
       then
         str;
-    case (DAE.STMT_FOR(ident = id,exp = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
       equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "for ");

@@ -1171,7 +1171,7 @@ algorithm
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;
       
-    case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, ident=ident, exp=exp, statementLst=statementLst, source=elemSrc)::restStatements, var, functions) local
+    case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=elemSrc)::restStatements, var, functions) local
       DAE.ExpType type_;
       Boolean iterIsArray;
       DAE.Ident ident;

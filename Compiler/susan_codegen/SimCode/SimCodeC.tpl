@@ -3693,6 +3693,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_FOR(__)          then algStmtFor(s, context, &varDecls /*BUFC*/)
   case s as STMT_WHILE(__)        then algStmtWhile(s, context, &varDecls /*BUFC*/)
   case s as STMT_ASSERT(__)       then algStmtAssert(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TERMINATE(__)    then algStmtTerminate(s, context, &varDecls /*BUFC*/)
   case s as STMT_WHEN(__)         then algStmtWhen(s, context, &varDecls /*BUFC*/)
   case s as STMT_MATCHCASES(__)   then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
   case s as STMT_BREAK(__)        then 'break;<%\n%>'
@@ -3888,7 +3889,7 @@ template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/
  "Generates a for algorithm statement."
 ::=
   match stmt
-  case s as STMT_FOR(exp=rng as RANGE(__)) then
+  case s as STMT_FOR(range=rng as RANGE(__)) then
     algStmtForRange(s, context, &varDecls /*BUFC*/)
   case s as STMT_FOR(__) then
     algStmtForGeneric(s, context, &varDecls /*BUFC*/)
@@ -3899,12 +3900,12 @@ template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*B
  "Generates a for algorithm statement where range is RANGE."
 ::=
 match stmt
-case STMT_FOR(exp=rng as RANGE(__)) then
+case STMT_FOR(range=rng as RANGE(__)) then
   let identType = expType(type_, iterIsArray)
   let identTypeShort = expTypeShort(type_)
   let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls)
                  ;separator="\n")
-  algStmtForRange_impl(rng, ident, identType, identTypeShort, stmtStr, context, &varDecls)
+  algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls)
 end algStmtForRange;
 
 template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls)
@@ -3946,7 +3947,7 @@ case STMT_FOR(__) then
   let arrayType = expTypeArray(type_)
   let stmtStr = (statementLst |> stmt => 
     algStatement(stmt, context, &varDecls) ;separator="\n")
-  algStmtForGeneric_impl(exp, ident, iterType, arrayType, iterIsArray, stmtStr, 
+  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, 
     context, &varDecls)
 end algStmtForGeneric;
 
@@ -4009,6 +4010,19 @@ case STMT_ASSERT(__) then
   MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
   >>
 end algStmtAssert;
+
+template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates an assert algorithm statement."
+::=
+match stmt
+case STMT_TERMINATE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let msgVar = daeExp(msg, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>
+  MODELICA_TERMINATE(<%msgVar%>);
+  >>
+end algStmtTerminate;
 
 template algStmtMatchcasesVarDeclsAndAssign(list<Exp> expList, Context context, Text &varDecls, Text &varAssign, Text &preExp)
 ::=
