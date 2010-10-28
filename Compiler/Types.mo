@@ -3609,7 +3609,7 @@ algorithm
     case ((DAE.T_NORETCALL(),_)) then etNoRetCall;
     case ((DAE.T_FUNCTION(_,_,_),_)) then etFuncRefVar;
     case ((DAE.T_UNIONTYPE(_),_)) then etUnionType;
-    case ((DAE.T_METARECORD(_,_),_)) then etUnionType;
+    case ((DAE.T_METARECORD(_,_,_),_)) then etUnionType;
     case ((DAE.T_POLYMORPHIC(_),_)) then etPolyMorphic;
 
     // see if we have it in memory
