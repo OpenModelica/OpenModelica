@@ -32,7 +32,7 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;">Copyright: (c) Linköping University, PELAB, 2003-2010.&lt;br />Contact: OpenModelica@ida.liu.se&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;">OpenModelica Project web site:  www.openmodelica.org&lt;br />&lt;br />DrControl Authors: (2010 version) Mohsen Torabzadeh-Tari &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;">OpenModelica Project web site:  www.openmodelica.org&lt;br />&lt;br />DrControl Authors: (2010 version) Mohsen Torabzadeh-Tari and Martin Sjölund&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         <Rule name="FontSize">14</Rule>
       </TextCell>
       <TextCell style="Text">
@@ -585,6 +585,16 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">    &lt;/span>&lt;a href="LQ/E342tanksystem.onb">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3.4.2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">    &lt;/span>&lt;a href="LQ/E343kinematic.onb">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3.4.3&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
             </TextCell>
           </GroupCell>
         </GroupCell>
