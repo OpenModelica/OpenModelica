@@ -134,21 +134,6 @@ static int set_ldflags(char *str)
   return 0;
 }
 
-#if defined(_MSC_VER)
-
-#else
-inline
-#endif
-RML_BEGIN_LABEL(System__hash)
-{
-  char *str = RML_STRINGDATA(rmlA0);
-  rml_uint_t hash = (rml_uint_t)djb2_hash(str);
-  // fprintf(stderr, "hashing: %s into: %d \n", str, hash); fflush(stderr); fflush(stdout);
-  rmlA0 = RML_PRIM_INT_ABS(RML_IMMEDIATE(RML_TAGFIXNUM(hash)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__regularFileExists)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -341,11 +326,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__strcmp)
 {
-  char *str = RML_STRINGDATA(rmlA0);
-  char *str2 = RML_STRINGDATA(rmlA1);
-  int res = strcmp(str,str2);
+  char *str0 = RML_STRINGDATA(rmlA0);
+  char *str1 = RML_STRINGDATA(rmlA1);
+  int res = strcmp(str0,str1);
   /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
-  if      (res>0) res = 1;
+  if      (res>0) res =  1;
   else if (res<0) res = -1;
   rmlA0 = (void*) mk_icon(res);
   RML_TAILCALLK(rmlSC);
@@ -773,78 +758,6 @@ RML_BEGIN_LABEL(System__removeFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__realCeil)
-{
-  rmlA0 = rml_prim_mkreal(ceil(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-
-RML_BEGIN_LABEL(System__asin)
-{
-  rmlA0 = rml_prim_mkreal(asin(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__acos)
-{
-  rmlA0 = rml_prim_mkreal(acos(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__atan)
-{
-  rmlA0 = rml_prim_mkreal(atan(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__atan2)
-{
-  rmlA0 = rml_prim_mkreal(atan2(rml_prim_get_real(rmlA0),
-        rml_prim_get_real(rmlA1)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__cosh)
-{
-  rmlA0 = rml_prim_mkreal(cosh(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__log)
-{
-  rmlA0 = rml_prim_mkreal(log(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__log10)
-{
-  rmlA0 = rml_prim_mkreal(log10(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__sinh)
-{
-  rmlA0 = rml_prim_mkreal(sinh(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__tanh)
-{
-  rmlA0 = rml_prim_mkreal(tanh(rml_prim_get_real(rmlA0)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 double next_realelt(double *arr)
 {
   static int curpos;
@@ -1208,145 +1121,6 @@ RML_BEGIN_LABEL(System__tmpTickReset)
 }
 RML_END_LABEL
 
-
-
-RML_BEGIN_LABEL(System__listAppendUnsafe)
-{
-  // call RML__listAppend
-  RML_TAILCALLQ(RML__listAppend,2);
-  // this is an alternative
-#if 0
-    void *lst, *tmp;
-    rml_uint_t idx = 0;
-    lst = rmlA0;
-
-    if (rml_trace_enabled)
-    {
-      fprintf(stderr, "System.listAppendUnsafe\n"); fflush(stderr);
-    }
-
-    /* the first list is empty */
-    if (RML_GETHDR(rmlA0) != RML_CONSHDR)
-    {
-      rmlA0 = rmlA1; /* the first list was empty, return the second list. */
-      RML_TAILCALLK(rmlSC);
-    }
-    /* the second list is empty */
-    if (RML_GETHDR(rmlA1) != RML_CONSHDR)
-    {
-      rmlA0 = rmlA0; /* the second list was empty, return the first list. */
-      RML_TAILCALLK(rmlSC);
-    }
-
-    /* find the end of the first list! */
-    while( RML_GETHDR(lst) == RML_CONSHDR )
-    {
-      if (RML_GETHDR(tmp = RML_CDR(lst)) != RML_CONSHDR)
-        break;
-      else
-        lst = tmp; /* move to next element */
-    }
-
-    struct rml_struct *p = RML_UNTAGPTR(lst);
-    /* set the cdr of the last element in the first list to the first element in the second list */
-    p->data[1] = rmlA1;
-    for (idx = rml_array_trail_size; &rml_array_trail[idx] >= rmlATP; idx--)
-      if (rml_array_trail[idx] == lst) /* if found, do not add again */
-      {
-        rmlA0 = rmlA0; /* return the pointer to the first list */
-        /* return resulting list */
-        RML_TAILCALLK(rmlSC);
-      }
-    /* add the address of the list element into the roots to be
-     *  taken into consideration at the garbage collection time
-     */
-    if( rmlATP == &rml_array_trail[0] )
-    {
-      (void)fprintf(stderr, "Array Trail Overflow!\n");
-      rml_exit(1);
-    }
-    *--rmlATP = lst;
-
-    rmlA0 = rmlA0; /* return the pointer to the first list */
-    /* return resulting list */
-    RML_TAILCALLK(rmlSC);
-#endif
-
-}
-RML_END_LABEL
-
-void         *rml_external_roots_trail[1024] = {0};
-rml_uint_t    rml_external_roots_trail_size = 1024;
-rml_uint_t    rml_external_roots_trail_index_max = 0;
-
-/* forward my external roots */
-void rml_user_gc(struct rml_xgcstate *state)
-{
-  rml_user_gc_callback(state, rml_external_roots_trail, rml_external_roots_trail_index_max*sizeof(void*));
-}
-
-RML_BEGIN_LABEL(System__addToRoots)
-{
-    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
-
-    if (rml_trace_enabled)
-    {
-      fprintf(stderr, "System__addToRoots\n"); fflush(stderr);
-    }
-
-    if (i >= rml_external_roots_trail_size)
-      RML_TAILCALLK(rmlFC);
-
-    rml_external_roots_trail[i] = rmlA1;
-
-    /* remember the max */
-    rml_external_roots_trail_index_max = max(rml_external_roots_trail_index_max, i+1);
-
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getFromRoots)
-{
-    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
-
-    if (rml_trace_enabled)
-    {
-      fprintf(stderr, "System__getFromRoots\n"); fflush(stderr);
-    }
-
-    if (i > rml_external_roots_trail_index_max || i >= rml_external_roots_trail_size)
-      RML_TAILCALLK(rmlFC);
-
-    rmlA0 = rml_external_roots_trail[i];
-
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-
-RML_BEGIN_LABEL(System__enableTrace)
-{
-  rml_trace_enabled = 1;
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System__enableTrace\n"); fflush(stderr);
-  }
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__disableTrace)
-{
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System__disableTrace\n"); fflush(stderr);
-  }
-  rml_trace_enabled = 0;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 /* is the same for both Windows/Linux */
 RML_BEGIN_LABEL(System__systemCall)
 {
@@ -1471,10 +1245,6 @@ RML_BEGIN_LABEL(System__isSameFile)
 }
 RML_END_LABEL
 
-
-
-
-
 RML_BEGIN_LABEL(System__os)
 {
   char *envvalue;
@@ -1487,8 +1257,6 @@ RML_BEGIN_LABEL(System__os)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-
 
 RML_BEGIN_LABEL(System__getExeExt)
 {
@@ -1632,8 +1400,6 @@ RML_BEGIN_LABEL(System__groupDelimiter)
 }
 RML_END_LABEL
 
-
-
 RML_BEGIN_LABEL(System__pwd)
 {
   char buf[MAXPATHLEN];
@@ -1651,11 +1417,6 @@ RML_BEGIN_LABEL(System__pwd)
 }
 RML_END_LABEL
 
-
-
-
-
-
 /* RML_BEGIN_LABEL(System__modelicapath) */
 /* { */
 /*   char *path = getenv("OPENMODELICALIBRARY"); */
@@ -1666,7 +1427,6 @@ RML_END_LABEL
 /*   RML_TAILCALLK(rmlSC); */
 /* } */
 /* RML_END_LABEL */
-
 
 /* adrpo@ida added 2005-11-24 */
 RML_BEGIN_LABEL(System__setEnv)
@@ -1683,8 +1443,6 @@ RML_BEGIN_LABEL(System__setEnv)
 }
 RML_END_LABEL
 
-
-
 RML_BEGIN_LABEL(System__subDirectories)
 {
   void *res;
@@ -1695,7 +1453,6 @@ RML_BEGIN_LABEL(System__subDirectories)
   HANDLE sh;
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
-
 
   sprintf(pattern, "%s\\*.*", directory);
 
@@ -1718,7 +1475,6 @@ RML_BEGIN_LABEL(System__subDirectories)
 }
 RML_END_LABEL
 
-
 RML_BEGIN_LABEL(System__moFiles)
 {
   void *res;
@@ -1729,7 +1485,6 @@ RML_BEGIN_LABEL(System__moFiles)
   HANDLE sh;
   if (directory == NULL)
     RML_TAILCALLK(rmlFC);
-
 
   sprintf(pattern, "%s\\*.mo", directory);
 
@@ -1749,7 +1504,6 @@ RML_BEGIN_LABEL(System__moFiles)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
 
 int fileExistsLocal(char * s){
   int ret=-1;
@@ -1927,7 +1681,6 @@ RML_BEGIN_LABEL(System__platform)
 //}
 
 
-
 RML_BEGIN_LABEL(System__enableSendData)
 {
   int enable = RML_UNTAGFIXNUM(rmlA0);
@@ -1935,7 +1688,6 @@ RML_BEGIN_LABEL(System__enableSendData)
     _putenv("enableSendData=1");
   else
     _putenv("enableSendData=0");
-
 
 //  enableSendData(enable);
     RML_TAILCALLK(rmlSC);
@@ -1966,7 +1718,6 @@ RML_BEGIN_LABEL(System__setVariableFilter)
 }
 RML_END_LABEL
 
-
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
@@ -1987,7 +1738,6 @@ RML_BEGIN_LABEL(System__getFileModificationTime)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
 
 RML_BEGIN_LABEL(System__getCurrentTimeStr)
 {
@@ -2072,7 +1822,6 @@ void reallocdirents(struct dirent ***entries,
   *entries = newentries;
 }
 
-
 /*
  * compar function is ignored
  */
@@ -2111,7 +1860,6 @@ int scandir(const char* dirname,
 }
 
 #endif /* 0 */
-
 
 void System_5finit(void)
 {
@@ -2581,7 +2329,6 @@ int file_select_directories(const struct dirent *entry)
   }
 }
 
-
 RML_BEGIN_LABEL(System__subDirectories)
 {
   int i,count;
@@ -2681,7 +2428,6 @@ char *path_cat (const char *str1, char *str2,char *fileString) {
     result[0]='\0';
     return result;
 }
-
 
 RML_BEGIN_LABEL(System__getPackageFileNames)
 {
@@ -2978,80 +2724,3 @@ RML_BEGIN_LABEL(System__getTimerStackIndex)
 }
 RML_END_LABEL
 
-/*
- * adrpo: an implementation of stringAppendList in low level C
- *        this will be part of the new MetaModelica/RML relase
- *        in the near future.
- *  NOTE: do not inspire yourself from this function to implement
- *        new external C function as if you don't understand the
- *        MetaModelica GC and runtime there'll be trouble :)
- */
-RML_BEGIN_LABEL(System__stringAppendList)
-{
-  /* count the length of elements in the list */
-  rml_uint_t len_car = 0;
-  rml_uint_t len_cur = 0;
-  rml_uint_t len = 0;
-  struct rml_string *str = 0;
-  void *lst = rmlA0;
-  while( RML_GETHDR(lst) == RML_CONSHDR ) {
-    len += RML_HDRSTRLEN(RML_GETHDR(RML_CAR(lst)));
-    lst = RML_CDR(lst);
-  }
-
-  /* allocate the string */
-  str = rml_prim_mkstring(len, 1);
-  if (len == 0) /* if the list is empty, return empty string! */
-  {
-    str->data[0] = '\0';     /* set the end to 0 */
-    rmlA0 = RML_TAGPTR(str); /* set the result to the tagged pointer */
-    RML_TAILCALLK(rmlSC);    /* return from the function */
-  }
-
-  /* re-read the rmlA0 as it might have been moved by the GC */
-  lst = rmlA0;
-  while( RML_GETHDR(lst) == RML_CONSHDR ) {
-    void* car = RML_CAR(lst);
-    len_car = RML_HDRSTRLEN(RML_GETHDR(car));
-    (void)memcpy(
-      &str->data[len_cur],
-      RML_STRINGDATA(car),
-      len_car);
-    len_cur += len_car;
-  lst = RML_CDR(lst);
-  }
-  str->data[len_cur] = '\0';
-  rmlA0 = RML_TAGPTR(str);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-/*
- * adrpo: check if two pointers are equal
- */
-RML_BEGIN_LABEL(System__refEqual)
-{
-  rmlA0 = (rmlA0 == rmlA1) ? RML_TRUE : RML_FALSE;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-/*
- * adrpo: return the pointer of a value as integer
- */
-RML_BEGIN_LABEL(System__refInteger)
-{
-  rmlA0 = RML_TAGFIXNUM((rml_uint_t)rmlA0);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-/*
- * adrpo: return the constructor of the given value
- */
-RML_BEGIN_LABEL(System__getValueConstructor)
-{
-  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(RML_HDRCTOR(RML_GETHDR(rmlA0))));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL

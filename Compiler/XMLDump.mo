@@ -618,7 +618,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," = ",s2,"\n"});
+        s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -638,7 +638,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," = ",s2,"\n"});
+        s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(false));
@@ -649,7 +649,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," - (",s2,") = 0\n"});
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -673,7 +673,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," - (",s2,") = 0\n"});
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
@@ -1356,7 +1356,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," = ",s2});
+        res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1376,7 +1376,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," = ",s2});
+        res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
@@ -1388,7 +1388,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),System.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -1399,7 +1399,7 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1418,7 +1418,7 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,">","&gt;");
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
@@ -1429,7 +1429,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1450,7 +1450,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
@@ -1460,7 +1460,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1478,7 +1478,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
@@ -1751,7 +1751,7 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
-        dumpListSeparator(es, dumpRow, System.stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
+        dumpListSeparator(es, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
@@ -3154,7 +3154,7 @@ algorithm
     case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,"")
     equation
     /*
-      str= System.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
+      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
     then str;
     */
@@ -3184,7 +3184,7 @@ algorithm
       Print.printBuf("\">");
     then ();
       /*
-      str= System.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
+      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\"  stream=\"",streamPrefix,"\" comment=\"",comment,"\">"});
     then str;
     */
@@ -3611,7 +3611,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," ( ",s2,") = 0"});
+        res = stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3635,7 +3635,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - ( ",s2, " ) = 0"});
+        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
@@ -3647,7 +3647,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),System.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -3658,7 +3658,7 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - ( ",s2," ) := 0"});
+        res = stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3681,7 +3681,7 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
@@ -3692,7 +3692,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3717,7 +3717,7 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
@@ -3727,7 +3727,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3745,7 +3745,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
@@ -3795,7 +3795,7 @@ algorithm
     local Dump.Ident str,cmt;
     case (SOME(SCode.COMMENT(_,SOME(cmt))))
       equation
-        //str = System.stringAppendList({" \"",cmt,"\""});
+        //str = stringAppendList({" \"",cmt,"\""});
         str = cmt;
       then
         str;

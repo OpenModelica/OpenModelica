@@ -732,7 +732,7 @@ algorithm
     // The class and the path match => instantiate the class.
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
       equation
-        true = stringEqual(name, name2);
+        true = stringEq(name, name2);
         (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih,
           UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
             Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
@@ -750,8 +750,8 @@ algorithm
     // The class does not match the path, and no more classes left => error.
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: {}),(path as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name, name2);
-        false = stringEqual(name2, "");
+        false = stringEq(name, name2);
+        false = stringEq(name2, "");
         Error.addMessage(Error.LOAD_MODEL_ERROR, {name2});
       then
         fail();
@@ -759,7 +759,7 @@ algorithm
     // The class does not match the path, but there are more classes left => continue searching for a matching class.
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name, name2);
+        false = stringEq(name, name2);
         _::_ = cs; // non empty list 
         (cache,env,ih,dae) = instClassInProgram(cache, env, ih, cs, path);
       then
@@ -803,7 +803,7 @@ algorithm
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
       local String s;
       equation
-        true = stringEqual(name, name2);
+        true = stringEq(name, name2);
         env = Env.extendFrameC(env, c);
         (cache,env_1,ih,dae) = implicitInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
       then
@@ -811,7 +811,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name, name2);
+        false = stringEq(name, name2);
         (cache,env,ih,dae) = instClassInProgramImplicit(cache, env, ih, cs, path);
       then
         (cache,env,ih,dae);
@@ -853,7 +853,7 @@ algorithm
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),Absyn.IDENT(name = name2))
       local String s;
       equation
-        true = stringEqual(name1, name2);
+        true = stringEq(name1, name2);
         env = Env.extendFrameC(env, c);
         (cache,env_1,ih) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
       then
@@ -861,7 +861,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name1, name2);
+        false = stringEq(name1, name2);
         (cache,env,ih) = instFunctionInProgramImplicit(cache,env,ih, cs, path);
       then
         (cache,env,ih);
@@ -899,7 +899,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name1, name2);
+        false = stringEq(name1, name2);
         (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
         (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
         dae = DAEUtil.joinDaes(dae1, dae2);
@@ -908,14 +908,14 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.IDENT(name = name2)))
       equation
-        true = stringEqual(name1, name2);
+        true = stringEq(name1, name2);
         (cache,env_1,ih,dae2) = instClassDecls(cache,env,ih, cs, ref);
       then
         (cache,env_1,ih,dae2);
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation
-        true = stringEqual(name1, name2);
+        true = stringEq(name1, name2);
         (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
         (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
         dae = DAEUtil.joinDaes(dae1, dae2);
@@ -924,7 +924,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation
-        false = stringEqual(name1, name2);
+        false = stringEq(name1, name2);
         (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {})  ;
         (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
         dae = DAEUtil.joinDaes(dae1, dae2);
@@ -1548,13 +1548,13 @@ algorithm outCref := matchcontinue(cr1,cr2)
     list<DAE.Subscript> subs;
   case(DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
     equation
-      true = stringEqual(name,name2);
+      true = stringEq(name,name2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,child2);
 
   case(DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     equation
-      true = stringEqual(name,name2);
+      true = stringEq(name,name2);
       outCref = updateCrefTypesWithConnectorPrefix(child,child2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
@@ -3920,14 +3920,14 @@ algorithm
       local
         list<Absyn.ComponentRef> crefs,crefs2;
       equation
-        true = stringEqual(name,name2);
+        true = stringEq(name,name2);
         outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
       then
         selem::outComps;
         */
     case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
-        //false = stringEqual(name,name2);
+        //false = stringEq(name,name2);
         allComps = selem::allComps;
         existing = name2::existing;
         outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
@@ -3938,7 +3938,7 @@ algorithm
       local
         list<Absyn.ComponentRef> crefs,crefs2;
       equation
-        true = stringEqual(name,name2);
+        true = stringEq(name,name2);
         crefs = getCrefFromMod(scmod);
         allComps = listAppend(inComps,allComps);
         existing = name2::existing;
@@ -3948,7 +3948,7 @@ algorithm
 
     case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
-        false = stringEqual(name,name2);
+        false = stringEq(name,name2);
         allComps = selem::allComps;
       then extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
 
@@ -3997,19 +3997,19 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
   case({},_,_,_) then {};
   case(Absyn.CREF_QUAL(s1,_,(acr as Absyn.CREF_IDENT(s2,_)))::acrefs,remainingComps,className,existing)
     equation
-      true = stringEqual(className,s1); // in same scope look up.
+      true = stringEq(className,s1); // in same scope look up.
       acrefs = acr::acrefs;
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case((acr as Absyn.CREF_QUAL(s1,_,_))::acrefs,remainingComps,className,existing)
     equation
-      false = stringEqual(className,s1);
+      false = stringEq(className,s1);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
     then
       outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing) // modifer dep already added
     equation
-      true = Util.listContainsWithCompareFunc(s1,existing,stringEqual);
+      true = Util.listContainsWithCompareFunc(s1,existing,stringEq);
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing)
@@ -4045,13 +4045,13 @@ algorithm
       Absyn.Path p, newPath;
     case(clsName, p) // self reference, remove the first.
       equation
-        true = stringEqual(clsName, Absyn.pathFirstIdent(p));
+        true = stringEq(clsName, Absyn.pathFirstIdent(p));
         newPath = Absyn.removePrefix(Absyn.IDENT(clsName), p);
       then
         newPath;
     case(clsName, p) // not self reference, return the same.
       equation
-        false = stringEqual(clsName, Absyn.pathFirstIdent(p));
+        false = stringEq(clsName, Absyn.pathFirstIdent(p));
       then
         p;
   end matchcontinue;
@@ -4815,7 +4815,7 @@ algorithm omods := matchcontinue(dep,elems)
   case(dep,( tpl as (SCode.COMPONENT(component=name1),cmod))::elems)
     equation
       name2 = Absyn.printComponentRefStr(dep);
-      true = stringEqual(name2,name1);
+      true = stringEq(name2,name1);
       cmod = DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name2,cmod)},NONE());
       then
         cmod;
@@ -5076,7 +5076,7 @@ algorithm
                  
         (cache,env_1,ih,store,dae1,csets_1,ci_state_1,tys1,graph) =
           instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl, callscope, graph);
-        /*s1 = Util.if_(stringEqual("n", str),DAE.dumpElementsStr(dae1),"");
+        /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
         Error.updateCurrentComponent("",NONE());
         (cache,env_2,ih,store,dae2,csets_2,ci_state_2,tys2,graph) =
@@ -5129,13 +5129,13 @@ algorithm _ := matchcontinue(subs,prior,pre,str)
   case({},_,pre,str) then ();
   case(DAE.NAMEMOD(ident = n)::subs,prior,pre,str)
     equation
-      false = Util.listContainsWithCompareFunc(n,prior,stringEqual);
+      false = Util.listContainsWithCompareFunc(n,prior,stringEq);
       verifySingleMod2(subs,n::prior,pre,str);
       then
         ();
   case(DAE.NAMEMOD(ident = n)::subs,prior,pre,str)
     equation
-      true = Util.listContainsWithCompareFunc(n,prior,stringEqual);
+      true = Util.listContainsWithCompareFunc(n,prior,stringEq);
       s1 = makePrefixString(pre);
       Error.addMessage(Error.MULTIPLE_MODIFIER, {n,s1});
       then
@@ -5555,7 +5555,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,cistate,
           ((comp as SCode.COMPONENT(component = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
       equation
-        true = stringEqual(n, Absyn.pathLastIdent(tpp));
+        true = stringEq(n, Absyn.pathLastIdent(tpp));
         ns = Env.printEnvPathStr(env) +& "." +& Absyn.pathString(tpp);
         Error.addMessageOrSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
       then
@@ -5949,7 +5949,7 @@ algorithm
       equation
         //print("  instElement: A component: " +& n +& "\n");
         //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
-        //false = stringEqual(n, Absyn.pathLastIdent(t));
+        //false = stringEq(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
         comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,aInfo,cc);
         // Fails if multiple decls not identical
@@ -6206,7 +6206,7 @@ algorithm
            Absyn.TPATH(t,_),cc=cc),_),_,_,_,_)
       local Absyn.ComponentRef tref; SCode.Variability vt;
       equation
-        //false = stringEqual(n, Absyn.pathLastIdent(t));
+        //false = stringEq(n, Absyn.pathLastIdent(t));
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
@@ -6319,7 +6319,7 @@ algorithm
       equation
         Absyn.CREF_IDENT(id2,_) = Absyn.crefGetFirst(cr);
         // prefix == first part of cref
-        0 = System.strcmp(id2,id);
+        0 = stringCompare(id2,id);
         cr1 = Absyn.crefStripFirst(cr);
       then ((Absyn.CREF(cr1),(id,cnt+1)));
     // other expressions falltrough
@@ -6443,7 +6443,7 @@ algorithm
           (newComp as (SCode.CLASSDEF(name=n,classDef=SCode.CLASS(classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ ))),_)),_,_)
       equation
         n=n+&"$parent";
-        true = stringEqual(n, n2);
+        true = stringEq(n, n2);
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -6543,7 +6543,7 @@ algorithm
         Option<Absyn.Exp> cond1, cond2;
       equation
         // see if the most stuff is the same!
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         true = ModUtil.innerOuterEqual(io1, io2);        
         true = Util.boolEqual(fp1, fp2);
         true = Util.boolEqual(rp1, rp2);
@@ -6557,7 +6557,7 @@ algorithm
         (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
         (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
         // the class has the same environment
-        true = stringEqual(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
+        true = stringEq(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
         // the classes are the same!
         true = SCode.classEqual(c1, c2);
         // add a warning and let it continue!
@@ -6597,7 +6597,7 @@ algorithm
       equation
         sl1=Util.listMap(enumLst,SCode.enumName);
         sl2=Util.listMap(elementLst,SCode.elementName);
-        boolList=Util.listThreadMap(sl1,sl2,stringEqual);
+        boolList=Util.listThreadMap(sl1,sl2,stringEq);
         true=Util.boolAndList(boolList);
       then ();
 
@@ -6605,7 +6605,7 @@ algorithm
       equation
         sl1=Util.listMap(enumLst,SCode.enumName);
         sl2=Util.listMap(elementLst,SCode.elementName);
-        boolList=Util.listThreadMap(sl1,sl2,stringEqual);
+        boolList=Util.listThreadMap(sl1,sl2,stringEq);
         true=Util.boolAndList(boolList);
       then ();
 
@@ -6642,7 +6642,7 @@ algorithm
       equation
         Absyn.CREF_IDENT(name = n1,subscripts = {}) = cr1;
         Absyn.CREF_IDENT(name = n2,subscripts = {}) = cr2;
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
@@ -6650,7 +6650,7 @@ algorithm
       equation
         Absyn.CREF_QUAL(name = n1) = cr1;
         Absyn.CREF_IDENT(name = n2) = cr2;
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
@@ -6721,7 +6721,7 @@ algorithm
                           typeSpec = t2,modifications = old_mod,cc=(cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
           pre,ci_state,csets,impl,cmod)
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         compsOnConstrain = extractConstrainingComps(cc,env,pre) "extract components belonging to constraining class";
         crefs = getCrefFromMod(mod);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl);
@@ -6747,7 +6747,7 @@ algorithm
                           typeSpec = t2,modifications = old_mod,cc=(cc as NONE())),
           pre,ci_state,csets,impl,cmod)
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         crefs = getCrefFromMod(mod);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl) "m" ;
         info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
@@ -6762,7 +6762,7 @@ algorithm
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as SCode.CLASSDEF(name = n1) ),rmod) :: rest))),
           SCode.CLASSDEF(name = n2),pre,ci_state,csets,impl,cmod)
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         //crefs = getCrefFromMod(mod);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), {Absyn.CREF_IDENT(n2,{})}, ci_state, csets, impl) "m" ;
         //(cache,m_1) = Mod.elabMod(cache, env_1, ih, pre, mod, impl);
@@ -6778,7 +6778,7 @@ algorithm
       local Absyn.TypeSpec apt;
       equation
         n2 = Absyn.typeSpecPathString(apt);
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         (cache,env_1,ih,csets) = updateComponentsInEnv(cache,env,ih, pre, DAE.NOMOD(), {Absyn.CREF_IDENT(n2,{})}, ci_state, csets, impl) "m" ;
       then
         (cache,env_1,ih,redecl,rmod,csets);
@@ -6788,7 +6788,7 @@ algorithm
           pre,ci_state,csets,impl,cmod)
       local DAE.Mod mod;
       equation
-        false = stringEqual(n1, n2);
+        false = stringEq(n1, n2);
         (cache,env_1,ih,newcomp,mod,csets) =
           redeclareType(cache, env, ih, DAE.REDECL(redfin,rest), comp, pre, ci_state, csets, impl, cmod);
       then
@@ -6865,7 +6865,7 @@ algorithm osubs := matchcontinue(subs,elems)
   case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,elems)
     equation
       osubs = keepConstrainingTypeModifersOnly2(subs,elems);
-      b = Util.listContainsWithCompareFunc(n,elems,stringEqual);
+      b = Util.listContainsWithCompareFunc(n,elems,stringEq);
       osubs2 = Util.if_(b, {sub},{});
       osubs = listAppend(osubs2,osubs);
       then
@@ -10249,7 +10249,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inP
 
       /*print("\n adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
       dbgString = Absyn.optPathString(defaultDerivative);
-      dbgString = Util.if_(stringEqual(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
+      dbgString = Util.if_(stringEq(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
       print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");
       print("**** Deriving function: " +& Absyn.pathString(deriveFunc) +& "\n");
       print("**** Conditions: " +& Util.stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") +& "\n");
@@ -10341,7 +10341,7 @@ algorithm
         /* found matching input*/
       case(SCode.COMPONENT(component=str2,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,str,currPos)
         equation
-          true = stringEqual(str2, str);
+          true = stringEq(str2, str);
           then
             currPos;
 
@@ -11972,7 +11972,7 @@ algorithm
     
     case (mod,DAE.TYPES_VAR(name,binding=binding)::_,etype,index_list,bind_name,useConstValue) 
       equation
-        true = stringEqual(name, bind_name);
+        true = stringEq(name, bind_name);
       then 
         bindingExp(binding);
     
@@ -12775,7 +12775,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),Absyn.IDENT(name = name2))
       equation
-        true = stringEqual(name1, name2);
+        true = stringEq(name1, name2);
         (cache,env_1,ih,_,dae,_,_,_,_,_) =
           instClass(cache,env,ih, UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
                     {}, false, INNER_CALL(), ConnectionGraph.EMPTY) "impl" ;
@@ -12784,7 +12784,7 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation
-        false = stringEqual(name1, name2);
+        false = stringEq(name1, name2);
         (cache,env,ih,dae) = instBoschClassInProgram(cache,env,ih, cs, path);
       then
         (cache,env,ih,dae);
@@ -13304,7 +13304,7 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
     
   case(DAE.NAMEMOD(id, mod) :: rest, name, premod)
     equation
-        true = stringEqual(id, name);
+        true = stringEq(id, name);
     rest2 = listAppend(premod,rest);
     then
       (mod, rest2);
@@ -13492,7 +13492,7 @@ algorithm
     case( (head as  (SCode.CLASSDEF(name = id1),m))::rest, path)
       equation
         id2 = Absyn.pathString(path);
-        true = stringEqual(id1,id2);
+        true = stringEq(id1,id2);
         (rec1,rec2) = modifyInstantiateClass2(rest,path);
       then
         (head::rec1,rec2);
@@ -14241,7 +14241,7 @@ public function hashFunc
   input Absyn.Path p;
   output Integer res;
 algorithm
-  res := System.hash(Absyn.pathString(p));
+  res := stringHashDjb2(Absyn.pathString(p));
 end hashFunc;
 
 public function keyEqual
@@ -14249,7 +14249,7 @@ public function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := stringEqual(Absyn.pathString(key1),Absyn.pathString(key2));
+     res := stringEq(Absyn.pathString(key1),Absyn.pathString(key2));
 end keyEqual;
 
 public function dumpInstHashTable ""
@@ -14777,7 +14777,7 @@ algorithm
       equation
         //classNameStr = Absyn.optPathString(classNameOpt);
         //warnings = Error.printMessagesStr();
-        //retStr= System.stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
+        //retStr= stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
         // do not show empty elements with 0 vars and 0 equs
         // Debug.fprintln("checkModel", retStr);
     then ();
@@ -14799,7 +14799,7 @@ algorithm
         simpleEqnSizeStr = intString(simpleEqnSize);
         classNameStr = Absyn.optPathString(classNameOpt);
         warnings = Error.printMessagesStr();
-        retStr= System.stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr,
+        retStr= stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr,
                                        " equation(s) and ", varSizeStr," variable(s). ",
                                        simpleEqnSizeStr, " of these are trivial equation(s).",
                                        warnings});

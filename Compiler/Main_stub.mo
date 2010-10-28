@@ -117,7 +117,7 @@ protected function makeDebugResult
   Boolean dumpflag;
 algorithm
   debugstr := Print.getString();
-  res_with_debug := System.stringAppendList(
+  res_with_debug := stringAppendList(
           {res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",
           flagstr,")---\n"});
   dumpflag := RTOpts.debugFlag(flagstr);
@@ -159,14 +159,14 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
-        true = stringEqual(last, "mo");
+        true = stringEq(last, "mo");
       then
         ();
     case (filename)
       equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
-        true = stringEqual(last, "mof");
+        true = stringEq(last, "mof");
       then
         ();
   end matchcontinue;
@@ -181,7 +181,7 @@ protected function isFlatModelicaFile
 algorithm
   lst := System.strtok(filename, ".");
   (last :: _) := listReverse(lst);
-  true := stringEqual(last, "mof");
+  true := stringEq(last, "mof");
 end isFlatModelicaFile;
 
 protected function versionRequest

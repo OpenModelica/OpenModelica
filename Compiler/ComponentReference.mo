@@ -277,7 +277,7 @@ algorithm
     case ((e :: xs))
       equation
         s = Dump.printSubscriptsStr({e});
-        str = System.stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
+        str = stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
         //print("#Error converting subscript: " +& s +& " to Expression.\n");
         //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);
@@ -309,7 +309,7 @@ algorithm
       then ss;
     case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
       equation
-        ns = System.stringAppendList({inPreString, s, inNameSeparator});
+        ns = stringAppendList({inPreString, s, inNameSeparator});
         ss = crefToStr(ns,n,inNameSeparator);
       then
         ss;
@@ -396,7 +396,7 @@ algorithm
         true = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str = System.stringAppendList({str, "__", strrest});
+        str = stringAppendList({str, "__", strrest});
       then
         str;
     
@@ -406,7 +406,7 @@ algorithm
         false = RTOpts.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str = System.stringAppendList({str, ".", strrest});
+        str = stringAppendList({str, ".", strrest});
       then
         str;
     
@@ -435,7 +435,7 @@ algorithm
       equation
         true = RTOpts.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        str = System.stringAppendList({s, "_L", str, "_R"});
+        str = stringAppendList({s, "_L", str, "_R"});
       then
         str;
     
@@ -444,7 +444,7 @@ algorithm
       equation
         false = RTOpts.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        str = System.stringAppendList({s, "[", str, "]"});
+        str = stringAppendList({s, "[", str, "]"});
       then
         str;
   end matchcontinue;
@@ -471,7 +471,7 @@ algorithm
         // this printing way will be useful when adressin the  'crefEqual' bug.
         // str = ComponentReference.printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
-        str = System.stringAppendList({str," [",str2,"]"});
+        str = stringAppendList({str," [",str2,"]"});
       then
         str;
     
@@ -481,7 +481,7 @@ algorithm
         str = printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);        
-        str = System.stringAppendList({str," [",str2,"] ", "__", strrest});
+        str = stringAppendList({str," [",str2,"] ", "__", strrest});
       then
         str;
     
@@ -491,7 +491,7 @@ algorithm
         str = printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
-        str = System.stringAppendList({str," [",str2,"] ", ".", strrest});
+        str = stringAppendList({str," [",str2,"] ", ".", strrest});
       then
         str;
     
@@ -516,7 +516,7 @@ protected
 algorithm
   id1 := crefLastIdent(cr1);
   id2 := crefLastIdent(cr2);
-  equal := stringEqual(id1, id2);
+  equal := stringEq(id1, id2);
 end crefLastIdentEqual;
 
 public function crefFirstCrefEqual
@@ -554,7 +554,7 @@ public function crefSortFunc "A sorting function (greatherThan) for crefs"
   input DAE.ComponentRef cr2;
   output Boolean greaterThan;
 algorithm
-  greaterThan := System.strcmp(printComponentRefStr(cr1),printComponentRefStr(cr2)) > 0;
+  greaterThan := stringCompare(printComponentRefStr(cr1),printComponentRefStr(cr2)) > 0;
 end crefSortFunc;
 
 public function crefContainedIn
@@ -620,7 +620,7 @@ algorithm
     case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),
           DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         true = Expression.subscriptEqual(ss1, ss2);
         res = crefPrefixOf(cr1, cr2);
       then
@@ -631,7 +631,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         true;
     
@@ -639,7 +639,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         res = Expression.subscriptEqual(ss1, ss2);
       then
         res;
@@ -649,14 +649,14 @@ algorithm
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         true;
     
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         res = Expression.subscriptEqual(ss1, ss2);
       then
         res;    
@@ -717,19 +717,19 @@ algorithm
     // check for pointer equality first, if they point to the same thing, they are equal
     case (inComponentRef1,inComponentRef2)
       equation
-        true = System.refEqual(inComponentRef1,inComponentRef2);
+        true = referenceEq(inComponentRef1,inComponentRef2);
       then
         true;
       
     // simple identifiers
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
       then
         true;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx1 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
@@ -743,20 +743,20 @@ algorithm
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
         s1 = n2 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
-        true = stringEqual(s1,n1);
+        true = stringEq(s1,n1);
       then
         true;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       equation
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
         s1 = n1 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
-        true = stringEqual(s1,n2);
+        true = stringEq(s1,n2);
       then
         true;
     // qualified crefs
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         true = crefEqualStringCompare(cr1, cr2);
         true = Expression.subscriptEqual(idx1, idx2);
       then
@@ -774,10 +774,10 @@ algorithm
       equation
         s1 = printComponentRefStr(cr1);
         s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
+        true = stringEq(s1, s2);
         // debug_print("cr1", cr1);
         // debug_print("cr2", cr2);
-        // System.enableTrace();
+        // enableTrace();
       then
         true;
 	  */
@@ -788,7 +788,7 @@ algorithm
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
         s1 = printComponentRefStr(cr1);
         s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
+        true = stringEq(s1, s2);
       then
         true;
 	  // left cref is stringified!
@@ -797,7 +797,7 @@ algorithm
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
         s1 = printComponentRefStr(cr1);
         s2 = printComponentRefStr(cr2);
-        true = stringEqual(s1, s2);
+        true = stringEq(s1, s2);
       then
         true;
     // the crefs are not equal!
@@ -824,21 +824,21 @@ algorithm
     // check for pointer equality first, if they point to the same thing, they are equal
     case (inComponentRef1,inComponentRef2)
       equation
-        true = System.refEqual(inComponentRef1,inComponentRef2);
+        true = referenceEq(inComponentRef1,inComponentRef2);
       then
         true;
 
     // simple identifiers
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         true = Expression.subscriptEqual(idx1, idx2);
       then
         true;
     // qualified crefs
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         true = crefEqualNoStringCompare(cr1, cr2);
         true = Expression.subscriptEqual(idx1, idx2);
       then
@@ -1637,13 +1637,13 @@ algorithm
 	  
 	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_IDENT(id2,_,subs2))
 	    equation
-	      true = stringEqual(id1, id2);
+	      true = stringEq(id1, id2);
 	      true = Expression.subscriptEqual(subs1,subs2);
 	    then cr1;
 	  
 	  case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
 	    equation
-	      true = stringEqual(id1, id2);
+	      true = stringEq(id1, id2);
 	      true = Expression.subscriptEqual(subs1,subs2);
 	    then crefStripPrefix(cr1,cr2);
   end matchcontinue;

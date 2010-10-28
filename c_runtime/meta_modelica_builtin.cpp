@@ -439,6 +439,76 @@ stringInt_rettype stringInt(modelica_string_t str)
 
   return res;
 }
+/******************** String HASH Functions ********************/
+/*
+ * adrpo 2008-12-02
+ * http://www.cse.yorku.ca/~oz/hash.html
+ * hash functions which could be useful to replace System__hash:
+ */
+/*** djb2 hash ***/
+static inline unsigned long djb2_hash(const unsigned char *str)
+{
+  unsigned long hash = 5381;
+  int c;
+  while (c = *str++)  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  return hash;
+}
+
+/*** sdbm hash ***/
+static inline unsigned long sdbm_hash(const unsigned char* str)
+{
+  unsigned long hash = 0;
+  int c;
+  while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
+  return hash;
+}
+
+/* adrpo: really bad hash :) */
+stringInt_rettype stringHash(modelica_string_const str)
+{
+  long res = 0, i=0;
+  while (str[i]) { res += str[i]; i++; }
+  return res;
+}
+
+/* adrpo: see the comment above about djb2 hash */
+stringInt_rettype stringHashDjb2(modelica_string_const str)
+{
+  long res = djb2_hash((const unsigned char*)str);
+  return res;
+}
+
+/* adrpo: see the comment above about sdbm hash */
+stringInt_rettype stringHashSdbm(modelica_string_const str)
+{
+  long res = sdbm_hash((const unsigned char*)str);
+  return res;
+}
+
+/******************** BOXED String HASH Functions ********************/
+/* adrpo: really bad hash :) */
+modelica_metatype boxptr_stringHash(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHash(s));
+  return res;
+}
+
+/* adrpo: see the comment above about djb2 hash */
+modelica_metatype boxptr_stringHashDjb2(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHashDjb2(s));
+  return res;
+}
+
+/* adrpo: see the comment above about sdbm hash */
+modelica_metatype boxptr_stringHashSdmb(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHashSdbm(s));
+  return res;
+}
 
 stringListStringChar_rettype stringListStringChar(modelica_string_t str)
 {
@@ -540,7 +610,7 @@ stringCompare_rettype stringCompare(modelica_string_t str1, modelica_string_t st
   return 0;
 }
 
-stringEqual_rettype stringEqual(modelica_string_t str1, modelica_string_t str2)
+stringEq_rettype stringEq(modelica_string_t str1, modelica_string_t str2)
 {
   return 0 == strcmp(str1,str2) ? 1 : 0;
 }

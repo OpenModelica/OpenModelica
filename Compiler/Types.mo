@@ -905,7 +905,7 @@ algorithm outLst := matchcontinue(inLst,currComp)
     equation
       outLst = removeRedeclareMods(inLst,currComp);
       s1 = SCode.elementName(comp);
-      true = stringEqual(s1,currComp);
+      true = stringEq(s1,currComp);
     then
       outLst;
   case((comp,mod)::inLst,currComp)
@@ -933,7 +933,7 @@ algorithm outsubs := matchcontinue(insubs,componentName)
   case({},_) then {};
   case((sub as DAE.NAMEMOD(s1,m1))::insubs,componentName)
     equation
-      subs1 = Util.if_(stringEqual(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
+      subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
       subs2 = removeModInSubs(insubs,componentName) "check for multiple mod on same comp";
       outsubs = listAppend(subs1,subs2);
     then
@@ -1462,7 +1462,7 @@ algorithm
       local
         list<String> names1, names2;
       equation
-        res = Util.isPrefixListComp(names1, names2, stringEqual);
+        res = Util.isPrefixListComp(names1, names2, stringEq);
       then
         res;
     
@@ -1582,7 +1582,7 @@ algorithm
         /* Uncomment for debugging
         l1 = unparseType(t1);
         l2 = unparseType(t2);
-        l1 = System.stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
+        l1 = stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
         Debug.fprintln("failtrace", l1);
         */
       then false;
@@ -1655,7 +1655,7 @@ algorithm
     
     case (((v as DAE.TYPES_VAR(name = n)) :: _),name)
       equation
-        true = stringEqual(n, name);
+        true = stringEq(n, name);
       then
         v;
     
@@ -1821,7 +1821,7 @@ algorithm
     
     case (((v as DAE.TYPES_VAR(name = n)) :: _),m)
       equation
-        true = stringEqual(n, m);
+        true = stringEq(n, m);
       then
         v;
     
@@ -2081,9 +2081,9 @@ algorithm
       local String s2;
       equation
         s1 = Util.stringDelimitList(l, ", ");
-        s2 = System.stringAppendList(Util.listMap(vs, unparseVar));
+        s2 = stringAppendList(Util.listMap(vs, unparseVar));
         s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")");
-        str = System.stringAppendList({"enumeration(",s1,")"});
+        str = stringAppendList({"enumeration(",s1,")"});
       then
         str;
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
@@ -2091,7 +2091,7 @@ algorithm
         (ty,dimlst) = flattenArrayTypeOpt(t);
         tys = unparseType(ty);
         dims = printDimensionsStr(dimlst);
-        res = System.stringAppendList({tys,"[",dims,"]"});
+        res = stringAppendList({tys,"[",dims,"]"});
       then
         res;
     case (((t as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
@@ -2099,8 +2099,8 @@ algorithm
       equation
         name = Absyn.pathString(path);
         vars = Util.listMap(vs, unparseVar);
-        vstr = System.stringAppendList(vars);
-        res = System.stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
+        vstr = stringAppendList(vars);
+        res = stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
       then
         res;
     case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = SOME(bc_tp)),_))
@@ -2108,14 +2108,14 @@ algorithm
         res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
-        res = System.stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
+        res = stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
         res;
     case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE()),_))
       equation
         res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
-        res = System.stringAppendList({res," ",st_str});
+        res = stringAppendList({res," ",st_str});
       then
         res;
     case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),_))
@@ -2123,7 +2123,7 @@ algorithm
         paramstrs = Util.listMap(params, unparseParam);
         paramstr = Util.stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
-        res = System.stringAppendList({"function(",paramstr,") => ",restypestr});
+        res = stringAppendList({"function(",paramstr,") => ",restypestr});
       then
         res;
     case ((DAE.T_TUPLE(tupleType = tys),_))
@@ -2131,7 +2131,7 @@ algorithm
       equation
         tystrs = Util.listMap(tys, unparseType);
         tystr = Util.stringDelimitList(tystrs, ", ");
-        res = System.stringAppendList({"(",tystr,")"});
+        res = stringAppendList({"(",tystr,")"});
       then
         res;
 
@@ -2141,7 +2141,7 @@ algorithm
       equation
         tystrs = Util.listMap(tys, unparseType);
         tystr = Util.stringDelimitList(tystrs, ", ");
-        res = Util.stringAppendList({"tuple<",tystr,">"});
+        res = stringAppendList({"tuple<",tystr,">"});
       then
         res;
 
@@ -2149,21 +2149,21 @@ algorithm
     case ((DAE.T_LIST(listType = ty),_))
       equation
         tystr = unparseType(ty);
-        res = System.stringAppendList({"list<",tystr,">"});
+        res = stringAppendList({"list<",tystr,">"});
       then
         res;
 
     case ((DAE.T_META_ARRAY(ty),_))
       equation
         tystr = unparseType(ty);
-        res = System.stringAppendList({"array<",tystr,">"});
+        res = stringAppendList({"array<",tystr,">"});
       then
         res;
 
         /* MetaModelica list */
     case ((DAE.T_POLYMORPHIC(tystr),_))
       equation
-        res = System.stringAppendList({"polymorphic<",tystr,">"});
+        res = stringAppendList({"polymorphic<",tystr,">"});
       then
         res;
 
@@ -2181,8 +2181,8 @@ algorithm
       equation
         str = Absyn.pathString(p);
         vars = Util.listMap(vs, unparseVar);
-        vstr = System.stringAppendList(vars);
-        res = System.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
+        vstr = stringAppendList(vars);
+        res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
       then res;
 
         /* MetaModelica boxed type */
@@ -2198,7 +2198,7 @@ algorithm
     case ((DAE.T_METAOPTION(ty),_))
       equation
         tystr = unparseType(ty);
-        res = System.stringAppendList({"Option<",tystr,">"});
+        res = stringAppendList({"Option<",tystr,">"});
       then
         res;
 
@@ -2247,7 +2247,7 @@ algorithm
       equation
         strlist = Util.listMap(constlist, unparseTupleconst);
         res = Util.stringDelimitList(strlist, ", ");
-        res_1 = System.stringAppendList({"(",res,")"});
+        res_1 = stringAppendList({"(",res,")"});
       then
         res_1;
   end matchcontinue;
@@ -2274,35 +2274,35 @@ algorithm
     case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = System.stringAppendList({"Integer(",s1,")"});
+        str = stringAppendList({"Integer(",s1,")"});
       then
         str;
     
     case ((DAE.T_REAL(varLstReal = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = System.stringAppendList({"Real(",s1,")"});
+        str = stringAppendList({"Real(",s1,")"});
       then
         str;
     
     case ((DAE.T_STRING(varLstString = vars),_))
       equation
       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-      str = System.stringAppendList({"String(",s1,")"});
+      str = stringAppendList({"String(",s1,")"});
       then
         str;
     
     case ((DAE.T_BOOL(varLstBool = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = System.stringAppendList({"Boolean(",s1,")"});
+        str = stringAppendList({"Boolean(",s1,")"});
       then
        str;
     
     case ((DAE.T_ENUMERATION(names = l, literalVarLst = vars),_))
       equation
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       str = System.stringAppendList({"Enumeration(",s1,")"});
+       str = stringAppendList({"Enumeration(",s1,")"});
       then
         str;
     
@@ -2312,7 +2312,7 @@ algorithm
         compType = Util.stringDelimitList( Util.listMap(Util.genericOption(bc),printTypeStr), ", ");
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
        compType = Util.if_(stringLength(compType)>0, "::derived From::" +& compType,"");
-       str = System.stringAppendList({"composite(",s1,") ", compType});
+       str = stringAppendList({"composite(",s1,") ", compType});
       then
         str;
     
@@ -2320,7 +2320,7 @@ algorithm
       equation
         s1 = ExpressionDump.dimensionString(dim);
         s2 = printTypeStr(t);
-        str = System.stringAppendList({"array[", s1,", of type ",s2,"]"});
+        str = stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
         str;
     
@@ -2328,14 +2328,14 @@ algorithm
       equation
         s1 = printParamsStr(params);
         s2 = printTypeStr(restype);
-        str = System.stringAppendList({"function(", s1,") => ",s2});
+        str = stringAppendList({"function(", s1,") => ",s2});
       then
         str;
     
     case ((DAE.T_TUPLE(tupleType = tys),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
-         str = System.stringAppendList({"(",s1,")"});        
+         str = stringAppendList({"(",s1,")"});        
       then
         str;
 
@@ -2351,7 +2351,7 @@ algorithm
       local Type ty;
       equation
         s1 = printTypeStr(ty);
-         str = System.stringAppendList({"list<",s1,">"});
+         str = stringAppendList({"list<",s1,">"});
       then
         str;
 
@@ -2360,7 +2360,7 @@ algorithm
       local Type ty;
       equation
         s1 = printTypeStr(ty);
-         str = System.stringAppendList({"Option<",s1,">"});
+         str = stringAppendList({"Option<",s1,">"});
       then
         str;
     
@@ -2369,7 +2369,7 @@ algorithm
       local Type ty;
       equation
         s1 = printTypeStr(ty);
-         str = System.stringAppendList({"array<",s1,">"});
+         str = stringAppendList({"array<",s1,">"});
       then
         str;
     
@@ -2378,14 +2378,14 @@ algorithm
       local Type ty;
       equation
         s1 = printTypeStr(ty);
-         str = System.stringAppendList({"boxed<",s1,">"});
+         str = stringAppendList({"boxed<",s1,">"});
       then
         str;
     
     // MetaModelica polymorphic    
     case ((DAE.T_POLYMORPHIC(s1),_))
       equation
-         str = System.stringAppendList({"polymorphic<",s1,">"});
+         str = stringAppendList({"polymorphic<",s1,">"});
       then
         str;
     
@@ -2463,14 +2463,14 @@ algorithm
     case {(n,t)}
       equation
         s1 = printTypeStr(t);
-        str = System.stringAppendList({n," :: ",s1});
+        str = stringAppendList({n," :: ",s1});
       then
         str;
     case (((n,t) :: params))
       equation
         s1 = printTypeStr(t);
         s2 = printParamsStr(params);
-        str = System.stringAppendList({n," :: ",s1, " * ",s2});
+        str = stringAppendList({n," :: ",s1, " * ",s2});
       then
        str;
   end matchcontinue;
@@ -2495,13 +2495,13 @@ algorithm
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.EQBOUND(exp=e))
       equation
         bindStr = ExpressionDump.printExpStr(e);
-        res = System.stringAppendList({n,"=",bindStr});
+        res = stringAppendList({n,"=",bindStr});
       then
         res;
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.VALBOUND(valBound=value))
       equation
         valStr = ValuesUtil.valString(value);
-        res = System.stringAppendList({n,"=",valStr});
+        res = stringAppendList({n,"=",valStr});
       then
         res;
     case(_) then "";
@@ -2525,7 +2525,7 @@ algorithm
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = bind)
       equation
         t = unparseType(typ);
-        res = System.stringAppendList({t," ",n,";\n"});
+        res = stringAppendList({t," ",n,";\n"});
       then
         res;
   end matchcontinue;
@@ -2546,7 +2546,7 @@ algorithm
     case ((id,ty))
       equation
         tstr = unparseType(ty);
-        res = System.stringAppendList({id,":",tstr});
+        res = stringAppendList({id,":",tstr});
       then
         res;
   end matchcontinue;
@@ -2574,12 +2574,12 @@ algorithm
         s1 = printTypeStr(typ);
         vs = SCode.variabilityString(var);
         s2 = printBindingStr(bind);
-        str = System.stringAppendList({s1," ",n," ",vs," ",s2});
+        str = stringAppendList({s1," ",n," ",vs," ",s2});
       then
         str;
    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
       equation
-      str = System.stringAppendList({n});
+      str = stringAppendList({n});
       then
         str;
   end matchcontinue;
@@ -2607,7 +2607,7 @@ algorithm
         str = ExpressionDump.printExpStr(exp);
         str2 = unparseConst(f);
         str3 = DAEUtil.printBindingSourceStr(source);
-        res = System.stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
+        res = stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
         res;
     case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
@@ -2616,14 +2616,14 @@ algorithm
         str2 = unparseConst(f);
         v_str = ValuesUtil.valString(v);
         str3 = DAEUtil.printBindingSourceStr(source);
-        res = System.stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
+        res = stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
       then
         res;
     case DAE.VALBOUND(valBound = v, source = source)
       equation
         s = ValuesUtil.unparseValues({v});
         str3 = DAEUtil.printBindingSourceStr(source);
-        res = System.stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
+        res = stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
     case(_) then "";
@@ -2759,7 +2759,7 @@ algorithm
     case ((n,ty))
       equation
         s = unparseType(ty);
-        res = System.stringAppendList({s," ",n});
+        res = stringAppendList({s," ",n});
       then
         res;
   end matchcontinue;
@@ -3253,7 +3253,7 @@ algorithm
         dimstrs = Util.listMap(dims, intString);
         dimstr = Util.stringDelimitList(dimstrs, ", ");
         tystr = getTypeName(ty);
-        str = System.stringAppendList({tystr,"[",dimstr,"]"});
+        str = stringAppendList({tystr,"[",dimstr,"]"});
       then
         str;
 
@@ -4806,7 +4806,7 @@ algorithm
       equation
         ty_str = unparseType(ty);
         const_str = unparseConst(const);
-        res = System.stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
+        res = stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
       then
         res;
     case DAE.PROP_TUPLE(type_ = ty,tupleConst = const)
@@ -4814,7 +4814,7 @@ algorithm
       equation
         ty_str = unparseType(ty);
         const_str = unparseTupleconst(const);
-        res = System.stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
+        res = stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
   end matchcontinue;

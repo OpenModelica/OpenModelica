@@ -64,7 +64,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(System.hash,stringEqual,Util.id,Absyn.pathString));
+  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
 end emptyHashTable;
 
 public function emptyHashTableSized
@@ -75,7 +75,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(System.hash,stringEqual,Util.id,Absyn.pathString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
 end emptyHashTableSized;
 
 end HashTableStringToPath;

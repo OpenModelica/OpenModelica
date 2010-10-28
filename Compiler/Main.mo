@@ -177,7 +177,7 @@ algorithm
       equation
         true = RTOpts.debugFlag(flagstr);
         debugstr = Print.getString();
-        res_with_debug = System.stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+        res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     case (_,res) then res;
   end matchcontinue;
@@ -226,7 +226,7 @@ algorithm
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
         (p,msg) = Parser.parsestring(str);
-        true = stringEqual(msg, "Ok") "Always succeeds, check msg for errors" ;
+        true = stringEq(msg, "Ok") "Always succeeds, check msg for errors" ;
         Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
@@ -250,7 +250,7 @@ algorithm
         Debug.fprint("dump",
           "\nNot a class definition, trying expresion parser\n");
         (exp,msg) = Parser.parsestringexp(str);
-        true = stringEqual(msg, "Ok") "always succeeds, check msg for errors" ;
+        true = stringEq(msg, "Ok") "always succeeds, check msg for errors" ;
         (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
         Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
         Debug.fcall("dump", Dump.dumpIstmt, exp);
@@ -265,8 +265,8 @@ algorithm
         Debug.fcall0("failtrace", Print.clearBuf);
         (p,msg) = Parser.parsestring(str);
         (p,expmsg) = Parser.parsestringexp(str);
-        false = stringEqual(msg, "Ok");
-        false = stringEqual(expmsg, "Ok");
+        false = stringEq(msg, "Ok");
+        false = stringEq(expmsg, "Ok");
         Debug.fprint("failtrace", "\nBoth parser and expression parser failed: \n");
         Debug.fprintl("failtrace", {"parser: \n",msg,"\n"});
         Debug.fprintl("failtrace", {"expparser: \n",expmsg,"\n"});
@@ -323,7 +323,7 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         last :: _ = listReverse(lst);
-        true = stringEqual(last, "mo");
+        true = stringEq(last, "mo");
       then
         ();
     
@@ -331,7 +331,7 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         last :: _ = listReverse(lst);
-        true = stringEqual(last, "mof");
+        true = stringEq(last, "mof");
       then
         ();
   end matchcontinue;
@@ -346,7 +346,7 @@ protected function isFlatModelicaFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "mof");
+  true := stringEq(last, "mof");
 end isFlatModelicaFile;
 
 protected function isModelicaScriptFile
@@ -358,7 +358,7 @@ protected function isModelicaScriptFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "mos");
+  true := stringEq(last, "mos");
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
@@ -370,7 +370,7 @@ protected function isCodegenTemplateFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "tpl");
+  true := stringEq(last, "tpl");
 end isCodegenTemplateFile;
 
 protected function versionRequest
@@ -933,10 +933,10 @@ algorithm
         indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
-        //filename = System.stringAppendList({cname_str,".cpp"});
-        //funcfilename = System.stringAppendList({cname_str,"_functions.cpp"});
-        //init_filename = System.stringAppendList({cname_str,"_init.txt"});
-        //makefilename = System.stringAppendList({cname_str,".makefile"});
+        //filename = stringAppendList({cname_str,".cpp"});
+        //funcfilename = stringAppendList({cname_str,"_functions.cpp"});
+        //init_filename = stringAppendList({cname_str,"_init.txt"});
+        //makefilename = stringAppendList({cname_str,".makefile"});
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
@@ -1119,7 +1119,7 @@ algorithm
     case (file,inSymbolTable)
       equation
         true = System.regularFileExists(file);
-        str = System.stringAppendList({"runScript(\"",file,"\")"});
+        str = stringAppendList({"runScript(\"",file,"\")"});
         (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
       then
         outSymbolTable;
@@ -1217,7 +1217,7 @@ algorithm
         // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
-        newpath = System.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
+        newpath = stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
         _ = System.setEnv("PATH",newpath,true);
       then fail();
     

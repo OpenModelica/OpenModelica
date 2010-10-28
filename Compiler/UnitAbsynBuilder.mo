@@ -727,7 +727,7 @@ algorithm
 
     case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_),cr) equation
       unit = str2unit(unitStr,NONE());
-      unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
+      unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
        ht = BaseHashTable.add((cr,indx),ht);
     then UnitAbsyn.INSTSTORE(st,ht,res);
@@ -1128,7 +1128,7 @@ algorithm
     case((DAE.T_FUNCTION(_,functp,_),_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
       //print("Got unit='"+&unitStr+&"'\n");
-      unspec = 0 == System.strcmp(unitStr,"");
+      unspec = 0 == stringCompare(unitStr,"");
 
       unit = str2unit(unitStr,SOME(funcInstId));
       unit = Util.if_(unspec,UnitAbsyn.UNSPECIFIED(),unit);
@@ -1224,7 +1224,7 @@ algorithm
       unitStr = getUnitStr(tp);
 
       unit = str2unit(unitStr,SOME(funcInstId));
-      unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
+      unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (store,indx) = add(unit,store);
       (store,indxs) = buildFuncTypeStores2(fargs,funcInstId,store);
     then (store,indx::indxs);

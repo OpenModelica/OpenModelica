@@ -651,7 +651,7 @@ algorithm
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        res = System.stringAppendList({"extends ",str,";"});
+        res = stringAppendList({"extends ",str,";"});
       then
         res;
 
@@ -661,14 +661,14 @@ algorithm
         mod_str = SCode.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = SCode.unparseVariability(var);
-        res = System.stringAppendList({vs," ",s," ",n,mod_str,";"});
+        res = stringAppendList({vs," ",s," ",n,mod_str,";"});
       then
         res;
 
     case SCode.CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         //str = printClassStr(cl);
-        res = System.stringAppendList({"class ",n," ... end ",n,";"});
+        res = stringAppendList({"class ",n," ... end ",n,";"});
       then
         res;
 

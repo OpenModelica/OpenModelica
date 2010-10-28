@@ -114,7 +114,7 @@ algorithm
         ss = Util.listMap(dims, dimensionString);
         s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
         ts = typeString(t);
-        res = System.stringAppendList({"/tp:",ts,"[",s1,"]/"});
+        res = stringAppendList({"/tp:",ts,"[",s1,"]/"});
       then
         res;
     case(DAE.ET_COMPLEX(varLst=vars,complexClassType=ci))
@@ -237,28 +237,28 @@ algorithm
     case (DAE.ADD(ty = t))
       equation
         ts = typeString(t);
-        s = System.stringAppendList({" +<", ts, "> "});
+        s = stringAppendList({" +<", ts, "> "});
       then
         s;
     
     case (DAE.SUB(ty = t)) 
       equation
         ts = typeString(t);
-        s = System.stringAppendList({" -<", ts, "> "});
+        s = stringAppendList({" -<", ts, "> "});
       then
         s;
     
     case (DAE.MUL(ty = t)) 
       equation
         ts = typeString(t);
-        s = System.stringAppendList({" *<", ts, "> "});
+        s = stringAppendList({" *<", ts, "> "});
       then
         s;
     
     case (DAE.DIV(ty = t))
       equation
         ts = typeString(t);
-        s = System.stringAppendList({" /<", ts, "> "});
+        s = stringAppendList({" /<", ts, "> "});
       then
         s;
     
@@ -419,7 +419,7 @@ algorithm
       equation
         s = r(h);
         srest = printListStr(t, r, sep);
-        s = System.stringAppendList({s, sep, srest});
+        s = stringAppendList({s, sep, srest});
       then
         s;
   end matchcontinue;
@@ -488,7 +488,7 @@ public function printExpListStrNoSpace
 	input list<DAE.Exp> expl;
 	output String res;
 algorithm
-  res := System.stringAppendList(Util.listMap(expl,printExpStr));
+  res := stringAppendList(Util.listMap(expl,printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
@@ -570,7 +570,7 @@ algorithm
     
     case (DAE.SCONST(string = s), stringDelimiter, _, _)
       equation
-        s = System.stringAppendList({stringDelimiter, s, stringDelimiter});
+        s = stringAppendList({stringDelimiter, s, stringDelimiter});
       then
         s;
     
@@ -606,7 +606,7 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p2, p,true);
-        s = System.stringAppendList({s1_1, sym, s2_1});
+        s = stringAppendList({s1_1, sym, s2_1});
       then
         s;
     
@@ -631,7 +631,7 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p2, p,true);
-        s = System.stringAppendList({s1_1, sym, s2_1});
+        s = stringAppendList({s1_1, sym, s2_1});
       then
         s;
     
@@ -656,7 +656,7 @@ algorithm
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p,false);
         s2_1 = parenthesize(s2, p1, p,true);
-        s = System.stringAppendList({s1_1, sym, s2_1});
+        s = stringAppendList({s1_1, sym, s2_1});
       then
         s;
     
@@ -672,7 +672,7 @@ algorithm
         cs_1 = parenthesize(cs, pc, p,false);
         ts_1 = parenthesize(ts, pt, p,false);
         fs_1 = parenthesize(fs, pf, p,false);
-        str = System.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
+        str = stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
     
@@ -687,7 +687,7 @@ algorithm
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = System.stringAppendList({fs, "(", argstr, ")"});
+        s = stringAppendList({fs, "(", argstr, ")"});
       then
         s;
 
@@ -696,7 +696,7 @@ algorithm
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = System.stringAppendList({"function ", fs, "(", argstr, ")"});
+        s = stringAppendList({"function ", fs, "(", argstr, ")"});
       then
         s;
     
@@ -706,7 +706,7 @@ algorithm
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
           Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = System.stringAppendList({"{", s, "}"});
+        s = stringAppendList({"{", s, "}"});
       then
         s;
     
@@ -714,7 +714,7 @@ algorithm
       equation
         s = Util.stringDelimitList(
           Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
-        s = System.stringAppendList({"(", s, ")"});
+        s = stringAppendList({"(", s, ")"});
       then
         s;
     
@@ -725,7 +725,7 @@ algorithm
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
           Util.listMap1(es, printRowStr, stringDelimiter), "},{");
-        s = System.stringAppendList({"{{",s,"}}"});
+        s = stringAppendList({"{{",s,"}}"});
       then
         s;
     
@@ -738,7 +738,7 @@ algorithm
         pstop = expPriority(stop);
         s1_1 = parenthesize(s1, pstart, p,false);
         s3_1 = parenthesize(s3, pstop, p,false);
-        s = System.stringAppendList({s1_1, ":", s3_1});
+        s = stringAppendList({s1_1, ":", s3_1});
       then
         s;
     
@@ -754,7 +754,7 @@ algorithm
         s1_1 = parenthesize(s1, pstart, p,false);
         s3_1 = parenthesize(s3, pstop, p,false);
         s2_1 = parenthesize(s2, pstep, p,false);
-        s = System.stringAppendList({s1_1,":",s2_1,":",s3_1});
+        s = stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
     
@@ -778,7 +778,7 @@ algorithm
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _, _, _)
       equation
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = System.stringAppendList({"Real(",s,")"});
+        s_2 = stringAppendList({"Real(",s,")"});
       then
         s_2;
     
@@ -786,7 +786,7 @@ algorithm
       equation
         str = typeString(tp);
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        res = System.stringAppendList({"DAE.CAST(",str,", ",s,")"});
+        res = stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
         res;
     
@@ -807,14 +807,14 @@ algorithm
       equation
         crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
         dimstr = printExp2Str(dim, stringDelimiter, opcreffunc, opcallfunc);
-        str = System.stringAppendList({"size(",crstr,",",dimstr,")"});
+        str = stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
     
     case (DAE.SIZE(exp = cr,sz = NONE()), _, _, _)
       equation
         crstr = printExp2Str(cr, stringDelimiter, opcreffunc, opcallfunc);
-        str = System.stringAppendList({"size(",crstr,")"});
+        str = stringAppendList({"size(",crstr,")"});
       then
         str;
     
@@ -823,7 +823,7 @@ algorithm
         fs = Absyn.pathString(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
         iterstr = printExp2Str(iterexp, stringDelimiter, opcreffunc, opcallfunc);
-        str = System.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
+        str = stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
         str;
     
@@ -839,7 +839,7 @@ algorithm
       local list<DAE.Exp> es;
       equation
         s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = System.stringAppendList({"List(", s, ")"});
+        s = stringAppendList({"List(", s, ")"});
       then
         s;
 
@@ -848,7 +848,7 @@ algorithm
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s2 = printExp2Str(e2, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = System.stringAppendList({"listCons(", s1, ",", s2, ")"});
+        s_2 = stringAppendList({"listCons(", s1, ",", s2, ")"});
       then
         s_2;
 
@@ -857,7 +857,7 @@ algorithm
     case (DAE.META_OPTION(SOME(e1)), _, _, _)
       equation
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
-        s_1 = System.stringAppendList({"SOME(",s1,")"});
+        s_1 = stringAppendList({"SOME(",s1,")"});
       then
         s_1;
     
@@ -867,7 +867,7 @@ algorithm
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
           Util.listMap3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s = System.stringAppendList({fs, "(", argstr, ")"});
+        s = stringAppendList({fs, "(", argstr, ")"});
       then
         s;
     
@@ -1034,7 +1034,7 @@ algorithm
     
     case (DAE.SCONST(string = s))
       equation
-        s = System.stringAppendList({"\"", s, "\""});
+        s = stringAppendList({"\"", s, "\""});
       then
         Graphviz.LNODE("SCONST",{s},{},{});
     
@@ -1124,7 +1124,7 @@ algorithm
       local list<list<tuple<DAE.Exp, Boolean>>> es;
       equation
         s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
-        s = System.stringAppendList({"{{", s, "}}"});
+        s = stringAppendList({"{{", s, "}}"});
       then
         Graphviz.LNODE("MATRIX",{s},{},{});
     
@@ -1156,7 +1156,7 @@ algorithm
       equation
         ct = dumpExpGraphviz(e);
         istr = intString(i);
-        s = System.stringAppendList({"[",istr,"]"});
+        s = stringAppendList({"[",istr,"]"});
       then
         Graphviz.LNODE("ASUB",{s},{},{ct});
     
@@ -1207,7 +1207,7 @@ algorithm
     case (DAE.END(),level)
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = System.stringAppendList({gen_str,"END","\n"});
+        res_str = stringAppendList({gen_str,"END","\n"});
       then
         res_str;
     
@@ -1215,7 +1215,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         s = intString(x);
-        res_str = System.stringAppendList({gen_str,"ICONST ",s,"\n"});
+        res_str = stringAppendList({gen_str,"ICONST ",s,"\n"});
       then
         res_str;
     
@@ -1224,28 +1224,28 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         s = realString(x);
-        res_str = System.stringAppendList({gen_str,"RCONST ",s,"\n"});
+        res_str = stringAppendList({gen_str,"RCONST ",s,"\n"});
       then
         res_str;
     
     case (DAE.SCONST(string = s),level) /* Graphviz.LNODE(\"SCONST\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = System.stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
+        res_str = stringAppendList({gen_str,"SCONST ","\"", s,"\"\n"});
       then
         res_str;
     
     case (DAE.BCONST(bool = false),level) /* Graphviz.LNODE(\"BCONST\",{\"false\"},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = System.stringAppendList({gen_str,"BCONST ","false","\n"});
+        res_str = stringAppendList({gen_str,"BCONST ","false","\n"});
       then
         res_str;
     
     case (DAE.BCONST(bool = true),level) /* Graphviz.LNODE(\"BCONST\",{\"true\"},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = System.stringAppendList({gen_str,"BCONST ","true","\n"});
+        res_str = stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
     
@@ -1254,7 +1254,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         s = /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
         tpStr= typeString(ty);
-        res_str = System.stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
+        res_str = stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
     
@@ -1271,7 +1271,7 @@ algorithm
         str = typeString(tp);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = System.stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
+        res_str = stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
       then
         res_str;
     
@@ -1283,7 +1283,7 @@ algorithm
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
         str = "expType:"+&typeString(Expression.typeof(e))+&" optype:"+&typeString(Expression.typeofOp(op))+&"\n";
-        res_str = System.stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
+        res_str = stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
     
@@ -1295,7 +1295,7 @@ algorithm
         sym = lbinopSymbol(op);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = System.stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
+        res_str = stringAppendList({gen_str,"LBINARY ",sym,"\n",lt,rt,""});
       then
         res_str;
     
@@ -1305,7 +1305,7 @@ algorithm
         new_level1 = level + 1;
         sym = lunaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        res_str = System.stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
+        res_str = stringAppendList({gen_str,"LUNARY ",sym,"\n",ct,""});
       then
         res_str;
     
@@ -1317,7 +1317,7 @@ algorithm
         sym = relopSymbol(op);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = System.stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
+        res_str = stringAppendList({gen_str,"RELATION ",sym,"\n",lt,rt,""});
       then
         res_str;
     
@@ -1331,7 +1331,7 @@ algorithm
         ct = dumpExpStr(c, new_level1);
         tt = dumpExpStr(t, new_level2);
         ft = dumpExpStr(f, new_level3);
-        res_str = System.stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
+        res_str = stringAppendList({gen_str,"IFEXP ","\n",ct,tt,ft,""});
       then
         res_str;
     
@@ -1341,8 +1341,8 @@ algorithm
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
         argnodes = Util.listMap1(args, dumpExpStr, new_level1);
-        argnodes_1 = System.stringAppendList(argnodes);
-        res_str = System.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+        argnodes_1 = stringAppendList(argnodes);
+        res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
     
@@ -1352,8 +1352,8 @@ algorithm
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
         argnodes = Util.listMap1(args, dumpExpStr, new_level1);
-        argnodes_1 = System.stringAppendList(argnodes);
-        res_str = System.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+        argnodes_1 = stringAppendList(argnodes);
+        res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
     
@@ -1363,10 +1363,10 @@ algorithm
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
-        nodes_1 = System.stringAppendList(nodes);
+        nodes_1 = stringAppendList(nodes);
         s = Util.boolString(b);
         tpStr = typeString(tp);
-        res_str = System.stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
+        res_str = stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
     
@@ -1375,8 +1375,8 @@ algorithm
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
-        nodes_1 = System.stringAppendList(nodes);
-        res_str = System.stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
+        nodes_1 = stringAppendList(nodes);
+        res_str = stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
       then
         res_str;
     
@@ -1385,7 +1385,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         s = Util.stringDelimitList(Util.listMap1(es, printRowStr, "\""), "},{");
-        res_str = System.stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
+        res_str = stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
       then
         res_str;
     
@@ -1397,7 +1397,7 @@ algorithm
         t1 = dumpExpStr(start, new_level1);
         t2 = ":";
         t3 = dumpExpStr(stop, new_level2);
-        res_str = System.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+        res_str = stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
     
@@ -1410,7 +1410,7 @@ algorithm
         t1 = dumpExpStr(start, new_level1);
         t2 = dumpExpStr(step, new_level2);
         t3 = dumpExpStr(stop, new_level3);
-        res_str = System.stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
+        res_str = stringAppendList({gen_str,"RANGE ","\n",t1,t2,t3,""});
       then
         res_str;
     
@@ -1420,7 +1420,7 @@ algorithm
         new_level1 = level + 1;
         tystr = typeString(ty);
         ct = dumpExpStr(e, new_level1);
-        res_str = System.stringAppendList({gen_str,"CAST ","\n",ct,""});
+        res_str = stringAppendList({gen_str,"CAST ","\n",ct,""});
       then
         res_str;
     
@@ -1431,8 +1431,8 @@ algorithm
         new_level1 = level + 1;
         ct = dumpExpStr(e, new_level1);
         istr = intString(i);
-        s = System.stringAppendList({"[",istr,"]"});
-        res_str = System.stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
+        s = stringAppendList({"[",istr,"]"});
+        res_str = stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
       then
         res_str;
     
@@ -1443,7 +1443,7 @@ algorithm
         new_level2 = level + 1;
         crt = dumpExpStr(cr, new_level1);
         dimt = dumpExpStr(dim, new_level2);
-        res_str = System.stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
+        res_str = stringAppendList({gen_str,"SIZE ","\n",crt,dimt,""});
       then
         res_str;
     
@@ -1452,7 +1452,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         crt = dumpExpStr(cr, new_level1);
-        res_str = System.stringAppendList({gen_str,"SIZE ","\n",crt,""});
+        res_str = stringAppendList({gen_str,"SIZE ","\n",crt,""});
       then
         res_str;
     
@@ -1464,14 +1464,14 @@ algorithm
         fs = Absyn.pathString(fcn);
         expt = dumpExpStr(exp, new_level1);
         itert = dumpExpStr(iterexp, new_level2);
-        res_str = System.stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
+        res_str = stringAppendList({gen_str,"REDUCTION ","\n",expt,itert,""});
       then
         res_str;
     
     case (_,level) /* Graphviz.NODE(\"#UNKNOWN EXPRESSION# ----eeestr \",{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        res_str = System.stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});
+        res_str = stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});
       then
         res_str;
   end matchcontinue;
@@ -1535,7 +1535,7 @@ algorithm
       equation
       s = printArraySizes(lst);
       s2 = intString(x);
-      s = System.stringAppendList({s2, s});
+      s = stringAppendList({s2, s});
       then s;
     case(_ :: lst)
       equation
@@ -1591,7 +1591,7 @@ algorithm str := matchcontinue(inExp)
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation
-      s1 = "{" +& System.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
+      s1 = "{" +& stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
     then
       s1;
   case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
@@ -2154,14 +2154,14 @@ algorithm
     case (str,pparent,pexpr,rightOpParenthesis)
       equation
         (pparent > pexpr) = true;
-        str_1 = System.stringAppendList({"(",str,")"});
+        str_1 = stringAppendList({"(",str,")"});
       then str_1;
     
     // If priorites are equal and str is from right hand side, parenthesize to make left associative
     case (str,pparent,pexpr,true)
       equation
         (pparent == pexpr) = true;
-        str_1 = System.stringAppendList({"(",str,")"});
+        str_1 = stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_,_) then str;

@@ -65,7 +65,7 @@ protected function hashFunc
   String crstr;
 algorithm
   crstr := printKey(cr);
-  res := System.hash(crstr);
+  res := stringHashDjb2(crstr);
 end hashFunc;
 
 protected function keyEqual

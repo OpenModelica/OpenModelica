@@ -930,7 +930,7 @@ algorithm
       equation
         s1 = Dump.printExpStr(left);
         s2 = Dump.printExpStr(right);
-        s = System.stringAppendList({s1," = ",s2,";"});
+        s = stringAppendList({s1," = ",s2,";"});
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY,{s},info);
       then fail();
     case (left as Absyn.TUPLE(crs),right,info)
@@ -938,7 +938,7 @@ algorithm
         failure(Absyn.CALL(_,_) = right);
         s1 = Dump.printExpStr(left);
         s2 = Dump.printExpStr(right);
-        s = System.stringAppendList({s1," = ",s2,";"});
+        s = stringAppendList({s1," = ",s2,";"});
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
       then fail();
   end matchcontinue;
@@ -1276,8 +1276,8 @@ algorithm
         t1_str = Types.unparseType(t1);
         e2_str = ExpressionDump.printExpStr(e2);
         t2_str = Types.unparseType(t2);
-        s1 = System.stringAppendList({e1_str,"=",e2_str});
-        s2 = System.stringAppendList({t1_str,"=",t2_str});
+        s1 = stringAppendList({e1_str,"=",e2_str});
+        s2 = stringAppendList({t1_str,"=",t2_str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
         Debug.fprintln("failtrace", "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
@@ -1706,7 +1706,7 @@ algorithm
 			  false = OptManager.getOption("checkModel");
 				lhs_str = ExpressionDump.printExpStr(lhs);
 				rhs_str = ExpressionDump.printExpStr(rhs);
-				eq_str = System.stringAppendList({lhs_str, "=", rhs_str});
+				eq_str = stringAppendList({lhs_str, "=", rhs_str});
 				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
 			then 
 				fail();
@@ -4693,8 +4693,8 @@ algorithm
         t1_str = Types.unparseType(t1);
         c2_str = ComponentReference.printComponentRefStr(c2);
         t2_str = Types.unparseType(t2);
-        c1_str = System.stringAppendList({c1_str," and ",c2_str});
-        t1_str = System.stringAppendList({t1_str," and ",t2_str});
+        c1_str = stringAppendList({c1_str," and ",c2_str});
+        t1_str = stringAppendList({t1_str," and ",t2_str});
         Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,t1_str},info);
       then
         fail();

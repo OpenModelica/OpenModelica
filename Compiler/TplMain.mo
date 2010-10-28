@@ -61,7 +61,7 @@ algorithm
         print("\nProcessing file '" +& file +& "'\n");
         
         destFile = System.stringReplace(file +& "*", ".tpl*", ".mo");
-        false = stringEqual(file, destFile);
+        false = stringEq(file, destFile);
         
         //print(destFile);
         
@@ -115,7 +115,7 @@ algorithm
     
     case ( strRet, strShouldBe, printResult, printErrBuf, strLabel, notPassedCnt)
       equation
-        true = stringEqual(strRet, strShouldBe);
+        true = stringEq(strRet, strShouldBe);
         print("\n**************************************************\n" +& strLabel);
         
         strRes = Util.if_(printResult, "  returned <<\n" +& strRet +& ">>\n", "\n result not shown \n");
@@ -133,7 +133,7 @@ algorithm
     
     case ( strRet, strShouldBe, printResult,printErrBuf, strLabel, notPassedCnt)
       equation
-        false = stringEqual(strRet, strShouldBe);
+        false = stringEq(strRet, strShouldBe);
         print("\n##################################################\n" 
                 +& strLabel );
                 

@@ -588,13 +588,13 @@ algorithm
     // ident vs. ident 
     case (Absyn.IDENT(id1),Absyn.IDENT(id2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         true;
     // qual ident vs. qual ident 
     case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         true = pathEqual(path1, path2);
       then
         true;    

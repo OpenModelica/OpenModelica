@@ -2701,7 +2701,7 @@ algorithm
         list<String> str;
       equation
         str = Util.listMap(comp,intString);
-        Debug.fprintln("failtrace"," Failed to create Equation with:" +& System.stringAppendList(str));
+        Debug.fprintln("failtrace"," Failed to create Equation with:" +& stringAppendList(str));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
         fail();        
@@ -2762,7 +2762,7 @@ algorithm
         list<String> str;
       equation
         str = Util.listMap(comp,intString);
-        Debug.fprintln("failtrace"," Failed to create EquationLin with:" +& System.stringAppendList(str));
+        Debug.fprintln("failtrace"," Failed to create EquationLin with:" +& stringAppendList(str));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquationsLin failed"});
       then
         fail();        
@@ -2918,7 +2918,7 @@ algorithm
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
   end matchcontinue;
@@ -3034,7 +3034,7 @@ algorithm
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         alg = alg[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
   end matchcontinue;
@@ -4352,7 +4352,7 @@ algorithm
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
     case (_,_)
@@ -5678,7 +5678,7 @@ algorithm
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         helpInfo = (helpVarIndex,e,i);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
           " + localData->nZeroCrossing);\n"});
         helpVarIndex_1 = helpVarIndex + 1;
@@ -5691,7 +5691,7 @@ algorithm
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         helpInfo = (helpVarIndex,e,i);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
           " + localData->nZeroCrossing);\n"});
         helpVarIndex_1 = helpVarIndex + 1;
@@ -5967,7 +5967,7 @@ protected
 algorithm
 	crStr := ComponentReference.printComponentRefStr(cr);
 	indxStr := intString(indx);
-	str := System.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
+	str := stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
 
 protected function mixedCollectRelations "function: mixedCollectRelations
@@ -7978,7 +7978,7 @@ algorithm
     local DAE.Ident ident; Boolean b;
     case (DAE.CREF_QUAL(ident = ident))
       equation
-        b = stringEqual(ident,BackendDAE.derivativeNamePrefix);
+        b = stringEq(ident,BackendDAE.derivativeNamePrefix);
       then b;
     case (_) then false;
   end matchcontinue;
@@ -8116,7 +8116,7 @@ protected function hashFunc "
   String crstr;
 algorithm
   crstr := ComponentReference.printComponentRefStr(cr);
-  res := System.hash(crstr);
+  res := stringHashDjb2(crstr);
 end hashFunc;
 
 protected function keyEqual

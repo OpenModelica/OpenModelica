@@ -1052,7 +1052,7 @@ algorithm
     
     case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: tail),env,pre)
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.NAMEMOD(n1,m) :: tail);
@@ -1262,7 +1262,7 @@ algorithm
     // found our modification  
     case ((x  as DAE.NAMEMOD(ident = id1)) :: rest,id2)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         lst = lookupNamedModifications(rest, id2);
       then
         x :: lst;    
@@ -1270,7 +1270,7 @@ algorithm
     // a named modification that doesn't match, skip it 
     case ((x  as DAE.NAMEMOD(ident = id1)) :: rest,id2)
       equation
-        false = stringEqual(id1, id2);
+        false = stringEq(id1, id2);
         lst = lookupNamedModifications(rest, id2);
       then
         lst;
@@ -1680,7 +1680,7 @@ algorithm
       DAE.REDECL(finalPrefix = f2,tplSCodeElementModLst =
       {(SCode.COMPONENT(component = id2,modifications = m2,comment = comment2,cc=cc),_)}),env,pre)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         m1_1 = elabUntypedMod(m2, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
@@ -1785,7 +1785,7 @@ algorithm
     // named mods, modifications in the list take precedence
     case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: ss),env,pre)      
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.NAMEMOD(n1,m),ss);
@@ -1837,7 +1837,7 @@ algorithm
     // named mods, modifications in the list take precedence
     case ((DAE.NAMEMOD(ident = n1,mod = m1) :: ss),DAE.NAMEMOD(ident = n2,mod = m2),env,pre)
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (ss,DAE.NAMEMOD(n1,m));
@@ -1872,7 +1872,7 @@ algorithm
     
     case (DAE.NAMEMOD(ident = n1),DAE.NAMEMOD(ident = n2))
       equation 
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
       then false;
     
     case (DAE.IDXMOD(integerLst = i1),DAE.IDXMOD(integerLst = i2))
@@ -2038,7 +2038,7 @@ algorithm
     case ({},{}) then true;
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
-        true = stringEqual(id1,id2);
+        true = stringEq(id1,id2);
         b1 = modEqual(mod1,mod2);
         b2 = subModsEqual(subModLst1,subModLst2);
         equal = Util.boolAndList({b1,b2});
@@ -2100,7 +2100,7 @@ algorithm
     
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
-        true = stringEqual(id1,id2);
+        true = stringEq(id1,id2);
         b1 = modEqual(mod1,mod2);
         b2 = subModsEqual(subModLst1,subModLst2);
         equal = Util.boolAndList({b1,b2});
@@ -2198,7 +2198,7 @@ algorithm
         finalPrefixstr = Util.if_(finalPrefix, " final", "");
         str_lst = Util.listMap(elist_1, SCode.printElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
-        res = System.stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
+        res = stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
       then
         res;
     case DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = eq)
@@ -2208,7 +2208,7 @@ algorithm
         s1_1 = Util.stringDelimitList(s1, ",");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
-        str = System.stringAppendList({finalPrefixstr,s1_1,s2});
+        str = stringAppendList({finalPrefixstr,s1_1,s2});
       then
         str;
     case(_) equation print(" failure in printModStr \n"); then fail();
@@ -2404,7 +2404,7 @@ algorithm
         Print.printBuf("[");
         s = intString(x);
         str = printSubscripts2Str(xs);
-        res = System.stringAppendList({"[",s,str,"]"});
+        res = stringAppendList({"[",s,str,"]"});
       then
         res;
   end matchcontinue;
@@ -2426,7 +2426,7 @@ algorithm
         Print.printBuf(",");
         s = intString(x);
         str = printSubscripts2Str(xs);
-        res = System.stringAppendList({",",s,str});
+        res = stringAppendList({",",s,str});
       then
         res;
   end matchcontinue;
@@ -2450,14 +2450,14 @@ algorithm
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
         e_val_str = ValuesUtil.valString(e_val);
-        res = System.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
+        res = stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
     case SOME(DAE.TYPED(e,NONE(),prop,_))
       equation
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
-        res = System.stringAppendList({" = (typed)",str,str2});
+        res = stringAppendList({" = (typed)",str,str2});
       then
         res;
     case SOME(DAE.UNTYPED(e))
@@ -2543,7 +2543,7 @@ algorithm
       equation
         lst = getAllIndexesFromIdxMods(rest);
         // from an index list {1, 2} make a string such as 1.2 
-        str = System.stringAppendList(Util.listMap(il, intStringDot));
+        str = stringAppendList(Util.listMap(il, intStringDot));
       then
         (str,submod)::lst;
     // ignore named modifs

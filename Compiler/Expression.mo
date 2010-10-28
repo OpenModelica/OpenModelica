@@ -2960,7 +2960,7 @@ algorithm
         false = ComponentReference.crefHasScalarSubscripts(cr);
         name = ComponentReference.printComponentRefStr(cr);
         false = Util.stringContainsChar(name,"$");
-        id = System.stringAppendList({"$",id});
+        id = stringAppendList({"$",id});
         id = Util.stringReplaceChar(id,".","$p");
         cr_1 = ComponentReference.makeCrefIdent(id,t2,ssl);
       then
@@ -3953,7 +3953,7 @@ public function identEqual
   input Ident inIdent2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := stringEqual(inIdent1, inIdent2);
+  outBoolean := stringEq(inIdent1, inIdent2);
 end identEqual;
 
 public function isRange
@@ -4243,7 +4243,7 @@ algorithm
     case(DAE.COMPLEX_VAR(s1,t1)::vars1,DAE.COMPLEX_VAR(s2,t2)::vars2)
       equation
         //print(" verify subvars: " +& s1 +& " and " +& s2 +& " to go: " +& intString(listLength(vars1)) +& " , " +& intString(listLength(vars2))  +& "\n");
-        true = stringEqual(s1,s2);
+        true = stringEq(s1,s2);
         //print(" types: " +& ExpressionDump.typeString(t1) +& " and " +& ExpressionDump.typeString(t2) +& "\n");
         true = equalTypes(t1,t2);
         //print(s1 +& " and " +& s2 +& " EQUAL \n\n");
@@ -4974,7 +4974,7 @@ algorithm
     // check for pointer equality first, if they point to the same thing, they are equal
     case (inExp1,inExp2)
       equation
-        true = System.refEqual(inExp1,inExp2);
+        true = referenceEq(inExp1,inExp2);
       then
         true;    
     
@@ -4989,7 +4989,7 @@ algorithm
     case (DAE.SCONST(string = c1),DAE.SCONST(string = c2))
       local Ident c1,c2;
       equation
-        true = stringEqual(c1, c2);
+        true = stringEq(c1, c2);
       then
         true;
     // booleans
@@ -5165,7 +5165,7 @@ algorithm
         false;
     case (DAE.REDUCTION(path = path1,expr = e1,ident = id1,range = r1),DAE.REDUCTION(path = path2,expr = e2,ident = id2,range = r2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         b1 = ModUtil.pathEqual(path1, path2);
         b2 = expEqual(e1, e2);
         b3 = expEqual(r1, r2);
@@ -5319,7 +5319,7 @@ algorithm
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Expression.expContains failed\n");
         s = ExpressionDump.printExpStr(e);
-        str = System.stringAppendList({"exp = ",s,"\n"});
+        str = stringAppendList({"exp = ",s,"\n"});
         Debug.fprint("failtrace", str);
       then
         fail();

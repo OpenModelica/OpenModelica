@@ -552,7 +552,7 @@ algorithm
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
         s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
-        res = System.stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});        
+        res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});        
       then 
         res;
   end matchcontinue;
@@ -585,21 +585,21 @@ algorithm
         s2 = Util.stringDelimitList(tb_strs, "\n");
         s3 = Util.stringDelimitList(fb_strs, "\n");
         s4 = elseIfEquationStr(ifexp,tb);
-        res = System.stringAppendList({"if ",s1," then ",s2,s4,"else ",s3,"end if;"});
+        res = stringAppendList({"if ",s1," then ",s2,s4,"else ",s3,"end if;"});
       then
         res;
     case (EQ_EQUALS(expLeft = e1,expRight = e2))
       equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
-        res = System.stringAppendList({s1," = ",s2,";"});
+        res = stringAppendList({s1," = ",s2,";"});
       then
         res;
     case (EQ_CONNECT(crefLeft = cr1,crefRight = cr2))
       equation
         s1 = Dump.printComponentRefStr(cr1);
         s2 = Dump.printComponentRefStr(cr2);
-        res = System.stringAppendList({"connect(",s1,", ",s2,");"});
+        res = stringAppendList({"connect(",s1,", ",s2,");"});
       then
         res;
     case (EQ_FOR(index = id,range = exp,eEquationLst = eqn_lst))
@@ -607,7 +607,7 @@ algorithm
         s1 = Dump.printExpStr(exp);
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
-        res = System.stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
+        res = stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
       then
         res;
     case (EQ_WHEN(condition=exp, eEquationLst=eqn_lst, tplAbsynExpEEquationLstLst=tplAbsynExpEEquationLstLst))
@@ -616,21 +616,21 @@ algorithm
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
         s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
-        res = System.stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
+        res = stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
       then 
         res;
     case (EQ_ASSERT(condition = e1,message = e2))
       equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
-        res = System.stringAppendList({"assert(",s1,", ",s2,");"});
+        res = stringAppendList({"assert(",s1,", ",s2,");"});
       then
         res;
     case (EQ_REINIT(cref = cr,expReinit = e1))
       equation
         s1 = Dump.printComponentRefStr(cr);
         s2 = Dump.printExpStr(e1);
-        res = System.stringAppendList({"reinit(",s1,", ",s2,");"});
+        res = stringAppendList({"reinit(",s1,", ",s2,");"});
       then
         res;
     case(EQ_NORETCALL(functionName = cr, functionArgs = fargs))
@@ -778,20 +778,20 @@ algorithm
     
     case (id2,((comp as COMPONENT(component = id1)) :: _))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         comp;
     
     case (id2,(COMPONENT(component = id1) :: xs))
       equation
-        false = stringEqual(id1, id2);
+        false = stringEq(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
     
     case (id2,(CLASSDEF(name = id1) :: xs))
       equation
-        false = stringEqual(id1, id2);
+        false = stringEq(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
@@ -804,7 +804,7 @@ algorithm
     
     case (id2,((cdef as CLASSDEF(name = id1)) :: _))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         cdef;
     
@@ -851,7 +851,7 @@ algorithm
         finalPrefixstr = Util.if_(b, "final", "");
         strs = Util.listMap(elist, printElementStr);
         str = Util.stringDelimitList(strs, ",");
-        res = System.stringAppendList({"redeclare(",finalPrefixstr,str,")"});
+        res = stringAppendList({"redeclare(",finalPrefixstr,str,")"});
       then
         res;
     case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
@@ -860,7 +860,7 @@ algorithm
         each_str = Dump.unparseEachStr(each_);
         subs_str = printSubs1Str(subs);
         ass_str = printEqmodStr(ass);
-        res = System.stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
+        res = stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
       then
         res;
     case _
@@ -951,7 +951,7 @@ algorithm
       equation
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
-        res = System.stringAppendList({n, " ", mod_str, ", ", str});
+        res = stringAppendList({n, " ", mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}
@@ -966,7 +966,7 @@ algorithm
         str = Dump.printSubscriptsStr(ss);
         mod_str = printModStr(mod);
         sub_str = printSubsStr(subs);
-        res = System.stringAppendList({str,mod_str,", ",sub_str});
+        res = stringAppendList({str,mod_str,", ",sub_str});
       then
         res;
   end matchcontinue;
@@ -987,7 +987,7 @@ algorithm
     case l
       equation
         s = printSubsStr(l);
-        res = System.stringAppendList({"(",s,")"});
+        res = stringAppendList({"(",s,")"});
       then
         res;
   end matchcontinue;
@@ -1070,13 +1070,13 @@ algorithm
       equation
         str = Absyn.pathString(path);
         modStr = printModStr(mod);
-        res = System.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
+        res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         str = printClassStr(cl);
-        res = System.stringAppendList({"CLASSDEF(",n,",",str,")"});
+        res = stringAppendList({"CLASSDEF(",n,",",str,")"});
       then
         res;
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
@@ -1087,13 +1087,13 @@ algorithm
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
         str2 = innerouterString(io);
-        res = System.stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,")"});
+        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,")"});
       then
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         str = printClassStr(cl);
-        res = System.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
+        res = stringAppendList({"CLASSDEF(",n,",...,",str,")"});
       then
         res;
     case (IMPORT(imp = imp))
@@ -1125,7 +1125,7 @@ algorithm
     case EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        res = System.stringAppendList({"extends ",str,";"});
+        res = stringAppendList({"extends ",str,";"});
       then
         res;
 
@@ -1136,15 +1136,15 @@ algorithm
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
-        vs = Util.if_(stringEqual(vs, ""), "", vs +& " ");
-        res = System.stringAppendList({ioStr,vs,s," ",n," ",mod_str,";\n"});
+        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
+        res = stringAppendList({ioStr,vs,s," ",n," ",mod_str,";\n"});
       then
         res;
 
     case CLASSDEF(name = n,classDef = cl)
       equation
         str = printClassStr(cl);
-        res = System.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
+        res = stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
       then
         res;
 
@@ -1170,7 +1170,7 @@ algorithm
       equation
         s = printClassdefStr(def);
         re = restrString(rest);
-        res = System.stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
+        res = stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
       then
         res;
   end matchcontinue;
@@ -1206,7 +1206,7 @@ algorithm
       equation
         elts_str = Util.listMap(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
-        res = System.stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
+        res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
       then
         res;
     /* adrpo: handle also the case: model extends X end X; */
@@ -1221,33 +1221,33 @@ algorithm
       equation
         elts_str = Util.listMap(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
-        res = System.stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
+        res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
       then
         res;
     case (DERIVED(typeSpec = typeSpec,modifications = mod))
       equation
         s2 = Dump.unparseTypeSpec(typeSpec);
         s3 = printModStr(mod);
-        res = System.stringAppendList({"DERIVED(",s2,",",s3,")"});
+        res = stringAppendList({"DERIVED(",s2,",",s3,")"});
       then
         res;
     case (ENUMERATION(enumLst, _))
       equation
         s1 = Util.stringDelimitList(Util.listMap(enumLst, printEnumStr), ", ");
-        res = System.stringAppendList({"ENUMERATION(", s1, ")"});
+        res = stringAppendList({"ENUMERATION(", s1, ")"});
       then
         res;
     case (OVERLOAD(plst, _))
       equation
         s1 = Util.stringDelimitList(Util.listMap(plst, Absyn.pathString), ", ");
-        res = System.stringAppendList({"OVERLOAD(", s1, ")"});
+        res = stringAppendList({"OVERLOAD(", s1, ")"});
       then
         res;
     case (PDER(path, slst, _))
       equation
         s1 = Absyn.pathString(path);
         s2 = Util.stringDelimitList(slst, ", ");
-        res = System.stringAppendList({"PDER(", s1, ", ", s2, ")"});
+        res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
       then
         res;
     case (_)
@@ -1548,7 +1548,7 @@ public function elementEqual
       
      case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
        equation
-         b1 = stringEqual(name1,name2);
+         b1 = stringEq(name1,name2);
          b2 = Util.boolEqual(f1,f2);
          b3 = Util.boolEqual(r1,r2);
          b3 = classEqual(cl1,cl2);
@@ -1558,7 +1558,7 @@ public function elementEqual
        equation
          equality(cond1 = cond2);
          equality(cc1 = cc2); // TODO! FIXME! this might fail for different comments!
-         b1 = stringEqual(name1,name2);
+         b1 = stringEq(name1,name2);
          b1a = ModUtil.innerOuterEqual(io,io2);
          b2 = Util.boolEqual(f1,f2);
          b3 = Util.boolEqual(r1,r2);
@@ -1580,7 +1580,7 @@ public function elementEqual
        then equal;
      case (DEFINEUNIT(name1,os1,or1), DEFINEUNIT(name2,os2,or2))      
        equation
-         b1 = stringEqual(name1,name2);
+         b1 = stringEq(name1,name2);
          equality(os1 = os2);
          equality(or1 = or2);
        then b1;
@@ -1625,7 +1625,7 @@ algorithm
       Absyn.Info info1,info2;
     case (CLASS(name1,p1,e1,restr1,parts1,info1), CLASS(name2,p2,e2,restr2,parts2,info2))
         equation
-          b1 = stringEqual(name1,name2);
+          b1 = stringEq(name1,name2);
           b2 = Util.boolEqual(p1,p2);
           b3 = Util.boolEqual(e1,e2);
           b4 = restrictionEqual(restr1,restr2);
@@ -1675,7 +1675,7 @@ algorithm
 
     case (ENUM(s1,_), ENUM(s2,_))
       equation
-        b1 = stringEqual(s1, s2);
+        b1 = stringEq(s1, s2);
         // ignore comments here.
       then b1;
   end matchcontinue;
@@ -1744,7 +1744,7 @@ protected function classDefEqual
          blst3 = Util.listThreadMap(ieqns1,ieqns2,equationEqual);
          blst4 = Util.listThreadMap(algs1,algs2,algorithmEqual);
          blst5 = Util.listThreadMap(ialgs1,ialgs2,algorithmEqual);
-         b1 = stringEqual(bcName1,bcName2);
+         b1 = stringEq(bcName1,bcName2);
          b2 = modEqual(mod1,mod2);
          // adrpo: ignore annotations!
          // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
@@ -1755,7 +1755,7 @@ protected function classDefEqual
 
     case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
       equation
-         blst = Util.listThreadMap(ilst1,ilst2,stringEqual);
+         blst = Util.listThreadMap(ilst1,ilst2,stringEq);
          equal = Util.boolAndList(blst);
        then equal;
     // adrpo: TODO! FIXME! are these below really needed??!!
@@ -1936,7 +1936,7 @@ algorithm
       equation
         blst1 = Util.listThreadMap(eql1,eql2,equationEqual2);
         b1 = Absyn.expEqual(exp1,exp2);
-        b2 = stringEqual(id1,id2);
+        b2 = stringEq(id1,id2);
         equal = Util.boolAndList(b1::b2::blst1);
       then equal;
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
@@ -2043,7 +2043,7 @@ algorithm
     case ({},{}) then true;
     case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
         equation
-          b1 = stringEqual(id1,id2);
+          b1 = stringEq(id1,id2);
           b2 = modEqual(mod1,mod2);
           b3 = subModsEqual(subModLst1,subModLst2);
           equal = Util.boolAndList({b1,b2,b3});
@@ -2283,14 +2283,14 @@ algorithm
         then lst;
       case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
         equation
-          false = stringEqual(id, id_1);
+          false = stringEq(id, id_1);
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
         equation
-          true = stringEqual(id, id_1);
+          true = stringEq(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
       case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, tplAbsynExpEEquationLstLst = ew))

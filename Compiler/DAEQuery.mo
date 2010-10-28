@@ -73,7 +73,7 @@ algorithm
         strIMatrix = getIncidenceMatrix(m);
         strVariables = getVariables(dlow);
         strEquations = getEquations(dlow);
-        strIMatrix = System.stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
+        strIMatrix = stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
         System.writeFile(file, strIMatrix);
       then
         file;
@@ -126,21 +126,21 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        res = System.stringAppendList({"'", s1," = ",s2, ";'"});
+        res = stringAppendList({"'", s1," = ",s2, ";'"});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
         var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),", ");
-        res = System.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
+        res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
-        res = System.stringAppendList({"'",s1," = ",s2,";'"});
+        res = stringAppendList({"'",s1," = ",s2,";'"});
       then
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
@@ -149,19 +149,19 @@ algorithm
         s2 = ExpressionDump.printExpStr(e2);
         BackendDAE.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
         s3 = ExpressionDump.printExpStr(condition);
-        res = System.stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
+        res = stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),_)
       equation
         s1 = ExpressionDump.printExpStr(e);
-        res = System.stringAppendList({"'", s1,"= 0", ";'"});
+        res = stringAppendList({"'", s1,"= 0", ";'"});
       then
         res;
     case (BackendDAE.ALGORITHM(index = i),_)
       equation
         is = intString(i);
-        res = System.stringAppendList({"Algorithm no: ",is,"\n"});
+        res = stringAppendList({"Algorithm no: ",is,"\n"});
       then
         res;
   end matchcontinue;
@@ -181,7 +181,7 @@ algorithm
   mlen_str := intString(mlen);
   m_1 := arrayList(m);
   mstr := getIncidenceMatrix2(m_1,1);
-  strIMatrix := System.stringAppendList({"% Incidence Matrix\n",
+  strIMatrix := stringAppendList({"% Incidence Matrix\n",
     "% ====================================\n", "% number of rows: ", mlen_str, "\n",
     "IM={", mstr, "};"});
 end getIncidenceMatrix;
@@ -204,14 +204,14 @@ algorithm
     case ((row :: {}),rowIndex)
       equation
         str1 = getIncidenceRow(row);
-        str = System.stringAppendList({"{", str1, "}"});
+        str = stringAppendList({"{", str1, "}"});
       then
         str;
     case ((row :: rows),rowIndex)
       equation
         str1 = getIncidenceRow(row);
         str2 = getIncidenceMatrix2(rows,rowIndex+1);
-        str = System.stringAppendList({"{", str1, "},",  str2});
+        str = stringAppendList({"{", str1, "},",  str2});
       then
         str;
   end matchcontinue;
@@ -234,7 +234,7 @@ algorithm
     case ((x :: xs))
       equation
         s2 = getIncidenceRow(xs);
-        s = System.stringAppendList({x, ",", s2});
+        s = stringAppendList({x, ",", s2});
       then
         s;
   end matchcontinue;
@@ -413,7 +413,7 @@ algorithm
         print("fixed:");print(Util.boolString(varFixed(v)));
         print("\n");
         */
-        str = System.stringAppendList({"'", str1, "'"});
+        str = stringAppendList({"'", str1, "'"});
       then
         str;
 
@@ -452,7 +452,7 @@ algorithm
         */
         varno_1 = varno + 1;
         str2 = dumpVars2(xs, varno_1);
-        str = System.stringAppendList({"'", str1, "',", str2});
+        str = stringAppendList({"'", str1, "',", str2});
       then
         str;
   end matchcontinue;
@@ -784,7 +784,7 @@ algorithm
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
         // build the string now
-        ss = System.stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
         pStr;
@@ -801,7 +801,7 @@ algorithm
         ss2 = getIncidenceRow(s2);
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
-        ss = System.stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
         pStr;
@@ -816,7 +816,7 @@ algorithm
         opStr = printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
         //s = printExpStr(ee2);
-        sb = System.stringAppendList({"'true',","'=='"});
+        sb = stringAppendList({"'true',","'=='"});
         s1 = incidenceRowExp(e1, vars);
         ss1 = getIncidenceRow(s1);
         s2 = incidenceRowExp(e2, vars);
@@ -824,7 +824,7 @@ algorithm
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
         // build the string now
-        ss = System.stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
         pStr;
@@ -836,14 +836,14 @@ algorithm
       equation
         //sb = printExpStr(e1);
 
-        sb = System.stringAppendList({"'true',","'=='"});
+        sb = stringAppendList({"'true',","'=='"});
         s1 = incidenceRowExp(e1, vars);
         ss1 = getIncidenceRow(s1);
         s2 = incidenceRowExp(e2, vars);
         ss2 = getIncidenceRow(s2);
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
-        ss = System.stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
         pStr;
@@ -861,7 +861,7 @@ algorithm
         ss2 = getIncidenceRow(s2);
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
-        ss = System.stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
         pStr = {ss};
       then
         pStr;

@@ -1576,7 +1576,7 @@ algorithm
         labelFontSize = Util.if_(isBroken, "labelfontsize = 20.0, ", "");
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
-        strDaeEdge = System.stringAppendList({
+        strDaeEdge = stringAppendList({
           "\"", sc1, "\" -- \"", sc2, "\" [",
           "dir = \"none\", ",
           "style = ", style,  ", ",
@@ -1680,7 +1680,7 @@ algorithm
           "//   Final Roots:        ", nrFR, "\n",
           "//   Broken Connections: ", nrBC, "\n"
         };
-        infoNodeStr = System.stringAppendList(infoNode);
+        infoNodeStr = stringAppendList(infoNode);
         // replace \n with \\l (left align), replace \t with " "
         infoNodeStr = System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr = System.stringReplace(infoNodeStr, "\t", " ");
         // replace / with ""

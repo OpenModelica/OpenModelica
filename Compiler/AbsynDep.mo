@@ -349,7 +349,7 @@ algorithm
         /* Insert to right  */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -359,7 +359,7 @@ algorithm
         /* Insert to left subtree */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
          t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
@@ -620,7 +620,7 @@ algorithm
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
       local AvlTree right;
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         res = avlTreeGet(right, key);
       then
         res;
@@ -629,7 +629,7 @@ algorithm
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
       local AvlTree left;
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
         res = avlTreeGet(left, key);
       then
         res;

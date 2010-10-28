@@ -211,12 +211,12 @@ algorithm
    case(flag,{}) then "";
    case(flag,arg::{})
       equation
-        0 = System.strcmp(flag,arg);
+        0 = stringCompare(flag,arg);
       then
         "";
    case(flag,arg::value::args)
       equation
-        0 = System.strcmp(flag,arg);
+        0 = stringCompare(flag,arg);
       then
         value;
    case(flag,arg::args)
@@ -4134,8 +4134,8 @@ public function listIntersectionOnTrue "function: listIntersectionOnTrue
   It returns the intersection of the two lists, using the comparison function passed as
   argument to determine identity between two elements.
   Example:
-    given the function stringEqual(string,string) returning true if the strings are equal
-    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEqual) => {\"aa\"}"
+    given the function stringEq(string,string) returning true if the strings are equal
+    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEq) => {\"aa\"}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
@@ -4875,34 +4875,33 @@ algorithm
   end matchcontinue;
 end stringContainsChar;
 
+/* adrpo 2010-10-27 this function is now in MetaModelica/RML!
 public function stringAppendList "function stringAppendList
   Takes a list of strings and appends them.
   Example: stringAppendList({\"foo\", \" \", \"bar\"}) => \"foo bar\""
   input list<String> inStringLst;
   output String outString;
 algorithm
-  // adrpo: MetaModelica will contain this function!
-  //        for now the code is in System.
-  outString := System.stringAppendList(inStringLst);
+  // adrpo: MetaModelica now contains this function.
+  outString := RML.stringAppendList(inStringLst);
   // yet another alternative implementation
   // outString := stringAppendList_tail(inStringLst, "");
-  /* alternative implementation
-  outString:=
-  matchcontinue (inStringLst)
-    local
-      String f,r_1,str;
-      list<String> r;
-    case {} then "";
-    case {f} then f;
-    case (f :: r)
-      equation
-        r_1 = stringAppendList(r);
-        str = stringAppend(f, r_1);
-      then
-        str;
-  end matchcontinue;
-  */
+  // alternative implementation
+  // outString:= matchcontinue (inStringLst)
+  //   local
+  //     String f,r_1,str;
+  //     list<String> r;
+  //   case {} then "";
+  //   case {f} then f;
+  //   case (f :: r)
+  //     equation
+  //       r_1 = stringAppendList(r);
+  //       str = stringAppend(f, r_1);
+  //     then
+  //       str;
+  // end matchcontinue;
 end stringAppendList;
+*/
 
 public function stringAppendList_tail "
 @author adrpo
@@ -5106,14 +5105,14 @@ algorithm
     case ({},_,_) then {};
     case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
       equation
-        true = stringEqual(firstChar, fromChar);
+        true = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, "");
       then
         (res);
     
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        true = stringEqual(firstChar, fromChar);
+        true = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
         charList2 = stringListStringChar(toChar);
         res = listAppend(charList2,res);
@@ -5122,7 +5121,7 @@ algorithm
 
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        false = stringEqual(firstChar, fromChar);
+        false = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
       then
         (firstChar :: res);
@@ -5180,7 +5179,7 @@ algorithm
     
     case ((firstChar :: rest),chr,chr_rest)
       equation
-        true = stringEqual(firstChar, chr);
+        true = stringEq(firstChar, chr);
         chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
         res = stringCharListString(chrList);
         res_str = stringSplitAtChar2(rest, chr, {});
@@ -5189,7 +5188,7 @@ algorithm
     case ((firstChar :: rest),chr,chr_rest)
       local list<String> res;
       equation
-        false = stringEqual(firstChar, chr);
+        false = stringEq(firstChar, chr);
         res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
         res;
@@ -5384,15 +5383,15 @@ end boolEqual;
 
 /*
 adrpo - 2007-02-19 this function already exists in MMC/RML
-public function stringEqual "function: stringEqual
+public function stringEq "function: stringEq
   Takes two strings and returns true if the strings are equal
-  Example: stringEqual(\"a\",\"a\") => true"
+  Example: stringEq(\"a\",\"a\") => true"
   input String inString1;
   input String inString2;
   output Boolean outBoolean;
 algorithm
   outBoolean:= inString1 ==& intString2;
-end stringEqual;
+end stringEq;
 */
 
 public function listFilter
@@ -6048,7 +6047,7 @@ public function isEmptyString "function: isEmptyString
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := stringEqual(inString, "");
+  outBoolean := stringEq(inString, "");
 end isEmptyString;
 
 public function isNotEmptyString "function: isNotEmptyString
@@ -6056,7 +6055,7 @@ public function isNotEmptyString "function: isNotEmptyString
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := boolNot(stringEqual(inString, ""));
+  outBoolean := boolNot(stringEq(inString, ""));
 end isNotEmptyString;
 
 public function writeFileOrErrorMsg "function: writeFileOrErrorMsg
@@ -6120,11 +6119,11 @@ algorithm
       String a,b;
       Integer n1,n;
       list<String> l1,l2;
-    case ((a :: _),(b :: _),1) then stringEqual(a, b);
+    case ((a :: _),(b :: _),1) then stringEq(a, b);
     case ((a :: l1),(b :: l2),n)
       equation
         n1 = n - 1;
-        true = stringEqual(a, b);
+        true = stringEq(a, b);
         true = charListCompare(l1, l2, n1);
       then
         true;
@@ -6571,7 +6570,7 @@ public function strcmpBool "As strcmp, but has Boolean output as is expected by 
   input String s2;
   output Boolean b;
 algorithm
-  b := if_(System.strcmp(s1,s2) > 0, true, false);
+  b := if_(stringCompare(s1,s2) > 0, true, false);
 end strcmpBool;
 
 public function stringAppendReverse

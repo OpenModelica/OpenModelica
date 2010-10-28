@@ -422,7 +422,7 @@ algorithm
 				true = RTOpts.debugFlag("failtrace");
         s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
-        str = System.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
+        str = stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
         //print(str);
         Debug.fprint("failtrace", str);
       then

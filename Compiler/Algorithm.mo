@@ -345,7 +345,7 @@ algorithm
         DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -356,7 +356,7 @@ algorithm
         DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -387,7 +387,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
+        lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);

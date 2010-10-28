@@ -2270,11 +2270,11 @@ algorithm
       String id, id2;
     case (FULLYQUALIFIED(p), p2) then pathPrefixOf(p, p2);
     case (p, FULLYQUALIFIED(p2)) then pathPrefixOf(p, p2);
-    case (IDENT(id), IDENT(id2)) then stringEqual(id, id2);
-    case (IDENT(id), QUALIFIED(name = id2)) then stringEqual(id, id2);
+    case (IDENT(id), IDENT(id2)) then stringEq(id, id2);
+    case (IDENT(id), QUALIFIED(name = id2)) then stringEq(id, id2);
     case (QUALIFIED(id, p), QUALIFIED(id2, p2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         true = pathPrefixOf(p, p2);
       then
         true;
@@ -2316,13 +2316,13 @@ algorithm
     // qual
     case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) 
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then 
         removePrefix(p,p2);
     // ids
     case(IDENT(id1),QUALIFIED(name=id2,path=p2)) 
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then p2;
   end matchcontinue;
 end removePrefix;
@@ -2351,18 +2351,18 @@ algorithm
     // qual
     case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr)) 
       equation
-        true = stringEqual(prefixIdent, ident);
+        true = stringEq(prefixIdent, ident);
       then 
         crefRemovePrefix(prefixRestCr, restCr);
     // id vs. qual
     case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr)) 
       equation
-        true = stringEqual(prefixIdent, ident);
+        true = stringEq(prefixIdent, ident);
       then restCr;
     // id vs. id
     case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident)) 
       equation
-        true = stringEqual(prefixIdent, ident);
+        true = stringEq(prefixIdent, ident);
       then CREF_IDENT("", {});
   end matchcontinue;
 end crefRemovePrefix;
@@ -2378,10 +2378,10 @@ algorithm b := matchcontinue(p1,p2)
     Path qp;
     Boolean b1,b2;
   case(IDENT(str1),IDENT(str2))
-      then stringEqual(str1,str2);
+      then stringEq(str1,str2);
   case(QUALIFIED(str1,qp),(p2 as IDENT(str2)))
     equation
-      b1 = stringEqual(str1,str2);
+      b1 = stringEq(str1,str2);
       b2 = pathContains(qp,p2);
       b1 = boolOr(b1,b2);
       then
@@ -3635,13 +3635,13 @@ algorithm
       list<Subscript> ss1,ss2;
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         true = subscriptsEqual(ss1,ss2);
       then
         true;
     case (CREF_QUAL(name = id,subScripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subScripts = ss2, componentRef = cr2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         true = subscriptsEqual(ss1,ss2);
         true = crefEqual(cr1, cr2);
       then
@@ -3684,12 +3684,12 @@ algorithm
       Ident id,id2;
     case (CREF_IDENT(name = id),CREF_IDENT(name = id2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
       then
         true;
     case (CREF_QUAL(name = id,componentRef = cr1),CREF_QUAL(name = id2,componentRef = cr2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         true = crefEqualNoSubs(cr1, cr2);
       then
         true;
@@ -3767,7 +3767,7 @@ algorithm
         then crefEqual(cr1,cr2);
     case(STRING(s1),STRING(s2))
       local String s1,s2;
-        then stringEqual(s1,s2);
+        then stringEq(s1,s2);
     case (BOOL(b1),BOOL(b2))
       local Boolean b1,b2;
         then Util.boolEqual(b1,b2);
@@ -4015,7 +4015,7 @@ algorithm
       case (id,{}) then false;
       case (id,(id1,_)::rest)
         equation
-          true = stringEqual(id, id1);
+          true = stringEq(id, id1);
         then true;
       case (id,(id1,_)::rest)
         equation
@@ -4132,7 +4132,7 @@ algorithm
     case (_,{}) then (false,{});
     case (id,(id_1,_)::_)
       equation
-        true = stringEqual(id, id_1);
+        true = stringEq(id, id_1);
       then
         (true,{});
     case (id,(_,NONE())::rest)
@@ -4305,7 +4305,7 @@ algorithm
     case (_,{},_) then {};
     case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
       equation
-        true = stringEqual(id, name);
+        true = stringEq(id, name);
         n_1=n+1;
         lst=findIteratorInSubscripts(id,rest,n_1);
       then n::lst;
@@ -4453,7 +4453,7 @@ algorithm
       Path p1,p2;
     case (NAMED_IMPORT(name = id,path=p1),NAMED_IMPORT(name = id2,path=p2))
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         true = ModUtil.pathEqual(p1,p2);
       then
         true;

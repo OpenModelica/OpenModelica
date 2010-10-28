@@ -234,7 +234,7 @@ algorithm
         arr = Util.arrayCopy(arr1,arr);
         arr = MarkArray(rest,vars,arr);
         s = Util.listMap(arrayList(arr),intString);
-        str = Util.stringAppendList(s);
+        str = stringAppendList(s);
         Debug.fcall("markblocks",print,str);
         Debug.fcall("markblocks",print,"\n");
       then arr;        

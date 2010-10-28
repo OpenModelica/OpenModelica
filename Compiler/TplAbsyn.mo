@@ -638,7 +638,7 @@ algorithm
           {}, 
           MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts, genInfo) :: accMMDecls)
       equation
-        true = stringEqual(fidCalled, fidLast);
+        true = stringEq(fidCalled, fidLast);
         failure(GI_TEMPL_FUN() = genInfo); //we can inline only generated helper functions, not regular template functions 
         equality(iargs = iargsL);
         equality(oargs = oargsL);
@@ -2194,7 +2194,7 @@ algorithm
     // equals with no prefix ... internal only for defined tempates  
     case ((inid,itype), (outid,otype), TEMPL_PACKAGE(astDefs = astdefs))
       equation
-        true = stringEqual(inid, outid);
+        true = stringEq(inid, outid);
         TEXT_TYPE() = deAliasedType(itype, astdefs);
         TEXT_TYPE() = deAliasedType(otype, astdefs);
       then
@@ -3724,7 +3724,7 @@ algorithm
     // special case when no local statement where added to an empty text
     case ( ident, TEXT_TYPE(), locals)
       equation
-        true = stringEqual(ident, emptyTxt);
+        true = stringEq(ident, emptyTxt);
       then 
         locals;
     
@@ -4206,7 +4206,7 @@ algorithm
           scEnv as (LOCAL_SCOPE(ident = locId, idType = idtype) :: _), _)
       equation
         ident = encodeIdent(ident);
-        true = stringEqual(ident, locId);
+        true = stringEq(ident, locId);
       then
         (MM_IDENT(IDENT(ident)), idtype, scEnv);
     
@@ -4394,7 +4394,7 @@ algorithm
     
     case ( path, MM_IDENT(IDENT(txtIdent)), TEXT_TYPE(), intxt)
       equation
-        true = stringEqual(txtIdent, intxt);
+        true = stringEq(txtIdent, intxt);
         Debug.fprint("failtrace", "Error - trying to use '" +& pathIdentString(path) +& "' Text recursively during self evaluation. Use an additional Text variable if a self addition/duplication is needed, like  # b = a # a += 'pref<b>' ... \n");
       then
         false;
@@ -4569,7 +4569,7 @@ algorithm
     case (ident, _, 
           scEnv as (LOCAL_SCOPE(ident = locId, idType = idtype) :: _), _)
       equation
-        true = stringEqual(ident, locId);
+        true = stringEq(ident, locId);
       then
         (ident, idtype, scEnv);
     
@@ -4621,7 +4621,7 @@ algorithm
              extArgs = extargs,
              itName = itname) ::_ ), astdefs  )
       equation
-        true = stringEqual(ident, itname);
+        true = stringEq(ident, itname);
         (ident, idtype, scEnv) = resolveIt(scEnv);        
       then
         (ident, idtype, scEnv);
@@ -4712,7 +4712,7 @@ algorithm
           inmexp as BIND_AS_MATCH(
                       bindIdent = bid ), mtype, _ )
       equation
-        true = stringEqual(id, bid);
+        true = stringEq(id, bid);
       then 
         ( mtype, inmexp );
     
@@ -4721,7 +4721,7 @@ algorithm
              bindIdent = bid,
              matchingExp = mexp ), mtype, astDefs )
       equation
-        true = stringEqual(id, bid);
+        true = stringEq(id, bid);
         ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs); 
       then 
         ( valtype, BIND_AS_MATCH(bid, mexp) );
@@ -4741,7 +4741,7 @@ algorithm
           inmexp as BIND_MATCH(
                       bindIdent = bid ), mtype, _ )
       equation
-        true = stringEqual(id, bid);
+        true = stringEq(id, bid);
       then 
         ( mtype, inmexp );        
     
@@ -4749,7 +4749,7 @@ algorithm
            inmexp as BIND_MATCH(
              bindIdent = bid ), mtype, astDefs )
       equation
-        true = stringEqual(id, bid);
+        true = stringEq(id, bid);
         reason = "Unresolved path '" +& inid +& "' after first dot - only the first part '" +& id +& "' resolved as a bind match.";
         valtype = UNRESOLVED_TYPE(reason); 
       then 
@@ -4942,7 +4942,7 @@ algorithm
     
     case ( inid, fieldid,(ident, mexp) :: fms)
       equation
-        true = stringEqual(fieldid, ident);
+        true = stringEq(fieldid, ident);
         mexp = makeBindAs(inid, mexp); // cannot fail   
       then 
         ( (fieldid, mexp) :: fms );
@@ -4978,7 +4978,7 @@ algorithm
                              bindIdent = bid,
                              matchingExp = mexp ) )
       equation
-        true = stringEqual(inid, bid);
+        true = stringEq(inid, bid);
       then 
         inmexp;
     
@@ -4986,7 +4986,7 @@ algorithm
                    bindIdent = bid,
                    matchingExp = mexp ) )
       equation
-        // false = stringEqual(inid, bid);
+        // false = stringEq(inid, bid);
         mexp = makeBindAs(inid, mexp); //we should do this to handle multiple path ambiguity ... i.e. when mexpr is  (c as REC(fld = a as REC2(fld2 = b)))  and  c.fld.fl2, a.fld2 and b are used simultanosly, then we will get (c as REC(fld = a as REC2(fld2 = b as c_fld_fld2 as a_fld)))   
       then 
         BIND_AS_MATCH(bid, mexp);
@@ -4994,7 +4994,7 @@ algorithm
     case ( inid, inmexp as BIND_MATCH(
                              bindIdent = bid ) )
       equation
-        true = stringEqual(inid, bid);
+        true = stringEq(inid, bid);
       then 
         inmexp;
     
@@ -5049,14 +5049,14 @@ algorithm
     
     case ( inid, fieldid, path, (ident, mexp) :: fms, mtype, astDefs )
       equation
-        true = stringEqual(fieldid, ident);
+        true = stringEq(fieldid, ident);
         ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);        
       then 
         ( valtype, (ident, mexp) :: fms );
     
     case ( inid, fieldid, path, fm :: fms, mtype, astDefs )
       equation
-        // false = stringEqual(fieldid, ident) );
+        // false = stringEq(fieldid, ident) );
         ( valtype, fms ) = lookupUpdateMExpDotPathRecord(inid, fieldid, path, fms, mtype, astDefs);        
       then 
         ( valtype, fm :: fms );
@@ -5776,14 +5776,14 @@ algorithm
     
     case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
       equation
-        true = stringEqual(tagident, typeident);
+        true = stringEq(tagident, typeident);
       then 
         fields;
     
     case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
       equation
 				true = RTOpts.debugFlag("failtrace");
-        false = stringEqual(tagident, typeident);
+        false = stringEq(tagident, typeident);
         Debug.fprint("failtrace", "Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
       then 
         fail();
@@ -5821,7 +5821,7 @@ algorithm
     
     case ( tagident, TI_RECORD_TYPE(fields = _), typeident )
       equation
-        true = stringEqual(tagident, typeident);
+        true = stringEq(tagident, typeident);
       then ();
   end matchcontinue;
 end isRecordTag;
@@ -6438,7 +6438,7 @@ public function canBeOnOneLine
 algorithm 
   outCanBeOnOneLine := 
         (listLength(inStringList) <= 4) 
-        and stringLength(System.stringAppendList(inStringList)) <= 10;
+        and stringLength(stringAppendList(inStringList)) <= 10;
 end canBeOnOneLine;
 
 

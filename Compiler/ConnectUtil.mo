@@ -1019,7 +1019,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printStreamRefStr);
         str = Util.stringDelimitList(strs, ", ");
-        str = System.stringAppendList({"stream set: {",str,"}"});        
+        str = stringAppendList({"stream set: {",str,"}"});        
         print("Only one-to-one connections of streams are supported: unsupported connection set:" +& str);
       then DAEUtil.emptyDae;
   end matchcontinue;   
@@ -1278,7 +1278,7 @@ algorithm
     // pointer equality testing first.
     case (inSet1, inSet2)
       equation
-        true = System.refEqual(inSet1, inSet2);         
+        true = referenceEq(inSet1, inSet2);         
       then true;
 
     // deal with empty case
@@ -1560,7 +1560,7 @@ algorithm
         s2 = printSetCrsStr(crs);
         s3 = Util.stringDelimitList(Util.listMap(dc,ComponentReference.printComponentRefStr), ",");
         s4 = printOuterConnectsStr(outerConn);
-        res = System.stringAppendList({"Connect.SETS(\n\t",
+        res = stringAppendList({"Connect.SETS(\n\t",
           s1_1,", \n\t",
           s2,", \n\tdeleted comps: ",s3,", \n\touter connections:",s4,")\n"});
       then
@@ -1603,7 +1603,7 @@ algorithm
       equation
         strs = Util.listMap(Util.listMap(cs, Util.tuple21), ComponentReference.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tnon-flow set: {",s1,"}"});
+        res = stringAppendList({"\n\tnon-flow set: {",s1,"}"});
       then
         res;
     case Connect.FLOW(tplExpComponentRefFaceLst = cs)
@@ -1611,7 +1611,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tflow set: {",s1,"}"});
+        res = stringAppendList({"\n\tflow set: {",s1,"}"});
       then
         res;
     case Connect.STREAM(tplExpComponentRefFaceLst = cs)
@@ -1619,7 +1619,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printStreamRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tstream set: {",s1,"}"});
+        res = stringAppendList({"\n\tstream set: {",s1,"}"});
       then
         res;        
   end matchcontinue;
@@ -1681,7 +1681,7 @@ protected function printSetCrsStr
 algorithm
   c_strs := Util.listMap(crs, ComponentReference.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
-  res := System.stringAppendList({"connect crs: {",s,"}"});
+  res := stringAppendList({"connect crs: {",s,"}"});
 end printSetCrsStr;
 
 public function componentFace

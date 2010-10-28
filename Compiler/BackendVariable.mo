@@ -2429,7 +2429,7 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
         n_1 = vararrayLength(varr_1);
         name_str = ComponentReference.printComponentRefStr(cr);
-        hvalold = System.hash(name_str);
+        hvalold = stringHashDjb2(name_str);
         indxold = intMod(hvalold, bsize);
         indexexold = oldhashvec[indxold + 1];
         oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,

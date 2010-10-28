@@ -86,7 +86,7 @@ algorithm
         str = Absyn.pathString(funcpath);
         replacements = createReplacementRules(inArgs,elementList);
         ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
-        str = System.stringAppendList({"cevalfunc_",str});
+        str = stringAppendList({"cevalfunc_",str});
         env3 = Env.openScope(env, false, SOME(str), SOME(Env.FUNCTION_SCOPE));
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
@@ -115,7 +115,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable());
         str = Absyn.pathString(funcpath);
-        str = System.stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
+        str = stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
         Debug.fprint("failtrace", str);
         then
           fail();
@@ -126,7 +126,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable()));
         str = Absyn.pathString(funcpath);
-        str = System.stringAppendList({"- Cevalfunc.extendEnvWithInputArgs failed for function /* ",str," */"});
+        str = stringAppendList({"- Cevalfunc.extendEnvWithInputArgs failed for function /* ",str," */"});
         Debug.fprint("failtrace", str);
       then
         fail();
@@ -397,7 +397,7 @@ algorithm
     case(DAE.TYPES_VAR(varName3,a,p,t as (DAE.T_COMPLEX(complexVarLst = typeslst),_),b,constOfForIteratorRange),
          varName2::varNames, (val as Values.RECORD(fpath,vals,names,-1))::values)
       equation
-        true = stringEqual(varName3, varName2);
+        true = stringEq(varName3, varName2);
         lv2 = setValuesInRecord(typeslst,names,vals);
         ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 ,NONE(),NONE()),NONE());
         tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
@@ -405,7 +405,7 @@ algorithm
     
     case(DAE.TYPES_VAR(varName3,a,p,t,b,constOfForIteratorRange) ,varName2::varNames, val::values)
       equation
-        true = stringEqual(varName3, varName2);
+        true = stringEq(varName3, varName2);
         tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then tv;
     
@@ -1094,7 +1094,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       true = RTOpts.debugFlag("failtrace");
       //(Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
       dbgString = Dump.printComponentRefStr(dbgcr);
-      dbgString = System.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
+      dbgString = stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
       Debug.fprint("failtrace", dbgString);
     then fail();
 end matchcontinue;
@@ -1191,7 +1191,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr ,hashKey)
 
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval as Env.VAR(fv,c,i,varEnv))),h,oleft,oright), inVal, inCr as Absyn.CREF_QUAL(str,_,child) ,hashKey)
       equation
-        true = stringEqual(rkey, str);
+        true = stringEq(rkey, str);
         true = Absyn.crefIsIdent(child);
         varEnv2 = setValue(inVal,varEnv,Absyn.CREF(child));
       then
@@ -1200,21 +1200,21 @@ algorithm oenv := matchcontinue(env,inVal,inCr ,hashKey)
     /*
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval as Env.VAR(fv,c,i,varEnv))),h,oleft,oright), inVal, inCr as Absyn.CREF_QUAL(str,_,child) ,hashKey)
       equation
-        true = stringEqual(rkey, str);
+        true = stringEq(rkey, str);
         varEnv2 = setQualValue(varEnv,inVal,child);
       then
         Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,Env.VAR(fv,c,i,varEnv2))),h,oleft,oright);
     // Check right
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,oleft,SOME(right)), inVal, inCr ,hashKey)
       equation
-        true = System.strcmp(key,rkey) > 0;
+        true = stringCompare(key,rkey) > 0;
         right = setQualValue2(right,inVal,inCr,hashKey);
       then
         Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,oleft,SOME(right));
     // Check left
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,SOME(left),oright), inVal, inCr ,hashKey)
       equation
-        true = System.strcmp(key,rkey) 0;
+        true = stringCompare(key,rkey) 0;
         rhval = Env.myhash(rkey);
         (hashKey < rhval) = true;
         left = setQualValue2(left,inVal,inCr,hashKey);

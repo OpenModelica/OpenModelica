@@ -6167,7 +6167,7 @@ matchBinding_base:
 	  => LIST_MATCH(headMExp :: mrest)
 	|
 	stringConstant:strRevList 
-	  => STRING_MATCH(System.stringAppendList(listReverse(strRevList))
+	  => STRING_MATCH(stringAppendList(listReverse(strRevList))
 	|
 	literalConstant:(str,litType) 
 	  => LITERAL_MATCH(str,litType)
@@ -6243,7 +6243,7 @@ algorithm
    case (chars, linfo)
       equation
         (chars, linfo, strRevList) = stringConstant(chars, linfo);
-        str = System.stringAppendList(listReverse(strRevList));
+        str = stringAppendList(listReverse(strRevList));
       then (chars, linfo, TplAbsyn.STRING_MATCH(str));
 
    case (chars, linfo)

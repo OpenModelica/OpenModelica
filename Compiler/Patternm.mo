@@ -2215,7 +2215,7 @@ algorithm
       equation
         true = constantOrNot(first);
         constName = getConstantName(first);
-        true = stringEqual(constName,localMatchObj);
+        true = stringEq(constName,localMatchObj);
       then findMatches(localMatchObj,rest,listAppend(localAccIndList,{localPivot}),localPivot+1);
     case (localMatchObj,first :: rest,localAccIndList,localPivot)
       local
@@ -2223,7 +2223,7 @@ algorithm
       equation
         true = constructorOrNot(first);
         constructorName = getConstructorName(first);
-        true = stringEqual(constructorName,localMatchObj);
+        true = stringEq(constructorName,localMatchObj);
       then findMatches(localMatchObj,rest,listAppend(localAccIndList,{localPivot}),localPivot+1);
     case (localMatchObj,_ :: rest,localAccIndList,localPivot)
     then findMatches(localMatchObj,rest,localAccIndList,localPivot+1);
@@ -2281,7 +2281,7 @@ algorithm
     case (_,{}) then Absyn.CREF(Absyn.WILD());
     case (localFieldName,Absyn.NAMEDARG(aName,e) :: _)
       equation
-        true = stringEqual(localFieldName,aName);
+        true = stringEq(localFieldName,aName);
       then e;
     case (localFieldName,_ :: restNamedArgList)
       equation
@@ -2523,7 +2523,7 @@ algorithm
         Absyn.Ident firstName;
         Integer firstNum;
       equation
-        true = stringEqual(id,firstName);
+        true = stringEq(id,firstName);
       then firstNum;
     case (id,_ :: restList)
       local
@@ -2691,7 +2691,7 @@ algorithm
         Integer n;
       equation
         stateVar2 = DFA.extractPathVar(p);
-        true = stringEqual(stateVar,stateVar2);
+        true = stringEq(stateVar,stateVar2);
         n = matchArcs(localSavedStates,arcs1,arcs2);
       then n;
 
@@ -2725,7 +2725,7 @@ algorithm
         list<tuple<DFA.ArcName,DFA.Stamp>> rest2;
         Integer n;
       equation
-        true = stringEqual(patName1,patName2);
+        true = stringEq(patName1,patName2);
         true = (nextState1 == nextState2);
         n = matchArcs(localSavedStates,rest1,rest2);
       then n;
@@ -2741,7 +2741,7 @@ algorithm
         DFA.Stamp nextState;
         Integer n;
       equation
-        true = stringEqual(patName1,patName2);
+        true = stringEq(patName1,patName2);
         state2 = localSavedStates[nextState];
         n = matchStates(localSavedStates,state1,state2);
         false = (n == 0);

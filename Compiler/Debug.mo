@@ -127,7 +127,7 @@ algorithm
     case (flag,strlist)
       equation
         true = RTOpts.debugFlag(flag);
-        str = System.stringAppendList(strlist);
+        str = stringAppendList(strlist);
         Print.printErrorBuf(str);
       then
         ();

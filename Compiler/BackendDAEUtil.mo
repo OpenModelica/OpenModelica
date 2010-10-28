@@ -112,7 +112,7 @@ algorithm
           strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
           crefstring = Util.stringDelimitList(strcrefs,", ");
           expstr = ExpressionDump.printExpStr(e);
-          scopestr = System.stringAppendList({crefstring," from Expression: ",expstr});
+          scopestr = stringAppendList({crefstring," from Expression: ",expstr});
           Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"BackendDAE object"});
           printcheckBackendDAEWithErrorMsg(res);
         then
@@ -2414,14 +2414,14 @@ algorithm
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        0 = System.strcmp(rkeystr, keystr);
+        0 = stringCompare(rkeystr, keystr);
       then
         rval;
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),keystr)
       local BackendDAE.BinTree right;
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the right" ;
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = true;
         res = treeGet2(right, keystr);
       then
@@ -2430,7 +2430,7 @@ algorithm
       local BackendDAE.BinTree left;
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the left" ;
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = false;
         res = treeGet2(left, keystr);
       then
@@ -2490,14 +2490,14 @@ algorithm
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
         keystr = ComponentReference.printComponentRefStr(key);
-        0 = System.strcmp(rkeystr, keystr);
+        0 = stringCompare(rkeystr, keystr);
       then
         BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,value)),left,right);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,value)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree";
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeAdd(t, key, value);
       then
@@ -2506,7 +2506,7 @@ algorithm
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to right node";
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = true;
         right_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
       then
@@ -2515,7 +2515,7 @@ algorithm
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree";
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeAdd(t, key, value);
       then
@@ -2524,7 +2524,7 @@ algorithm
       equation
         keystr = ComponentReference.printComponentRefStr(key) "Insert to left node";
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = false;
         left_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
       then
@@ -2561,7 +2561,7 @@ algorithm
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when existing right node" ;
         keystr = ComponentReference.printComponentRefStr(key);
-        0 = System.strcmp(rkeystr, keystr);
+        0 = stringCompare(rkeystr, keystr);
         (rightmost,right_1) = treeDeleteRightmostValue(right);
         optright_1 = treePruneEmptyNodes(right_1);
       then
@@ -2570,14 +2570,14 @@ algorithm
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
         keystr = ComponentReference.printComponentRefStr(key);
-        0 = System.strcmp(rkeystr, keystr);
+        0 = stringCompare(rkeystr, keystr);
       then
         BackendDAE.TREENODE(leftval,lleft,lright);
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
         keystr = ComponentReference.printComponentRefStr(key);
-        0 = System.strcmp(rkeystr, keystr);
+        0 = stringCompare(rkeystr, keystr);
       then
         BackendDAE.TREENODE(NONE(),NONE(),NONE());
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key)
@@ -2585,7 +2585,7 @@ algorithm
       equation
         keystr = ComponentReference.printComponentRefStr(key) "delete in right subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = true;
         t_1 = treeDelete(t, key);
         topt_1 = treePruneEmptyNodes(t_1);
@@ -2596,7 +2596,7 @@ algorithm
       equation
         keystr = ComponentReference.printComponentRefStr(key) "delete in left subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = System.strcmp(rkeystr, keystr);
+        cmpval = stringCompare(rkeystr, keystr);
         (cmpval > 0) = false;
         t_1 = treeDelete(t, key);
         topt_1 = treePruneEmptyNodes(t_1);

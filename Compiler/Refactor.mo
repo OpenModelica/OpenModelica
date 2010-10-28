@@ -2785,7 +2785,7 @@ algorithm
       equation
         str1 = Absyn.pathLastIdent(ip1);
         str2 = Absyn.pathFirstIdent(ip2);
-        false = stringEqual(str1, str2);
+        false = stringEq(str1, str2);
         p1 = Absyn.stripLast(ip1);
         out = fixPaths(p1, ip2);
       then
@@ -2795,7 +2795,7 @@ algorithm
       equation
         str1 = Absyn.pathLastIdent(ip1);
         str2 = Absyn.pathFirstIdent(ip2);
-        true = stringEqual(str1, str2);
+        true = stringEq(str1, str2);
         p1 = Absyn.stripLast(ip1);
         out = Absyn.joinPaths(p1, ip2);
       then

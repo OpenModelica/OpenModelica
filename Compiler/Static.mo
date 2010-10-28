@@ -1828,7 +1828,7 @@ algorithm
         s4 = Types.unparseConst(const);
         s5 = Util.if_(impl, "impl", "expl");
         s6 = ExpressionDump.typeString(expty);
-        str = System.stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
+        str = stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
         Debug.fprintln("failtrace", str);
       then
         fail();
@@ -2342,7 +2342,7 @@ algorithm
         e_str = Dump.printExpStr(e);
         strs = Util.listMap(es, Dump.printExpStr);
         str = Util.stringDelimitList(strs, ",");
-        elt_str = System.stringAppendList({"[",str,"]"});
+        elt_str = stringAppendList({"[",str,"]"});
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
         Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
@@ -2852,7 +2852,7 @@ algorithm
         dim2_str = ExpressionDump.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
         el_str = ExpressionDump.printListStr(el, Dump.printExpStr, ", ");
-        el_str1 = System.stringAppendList({"[",el_str,"]"});
+        el_str1 = stringAppendList({"[",el_str,"]"});
         Error.addSourceMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str},info);
       then
         fail();
@@ -3260,7 +3260,7 @@ algorithm
         expstrs = Util.listMap(dims, Dump.printExpStr);
         expstr = Util.stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        str = System.stringAppendList({expstr," impl=",implstr,", in component: ",sp});
+        str = stringAppendList({expstr," impl=",implstr,", in component: ",sp});
         Debug.fprintln("failtrace", str);
       then
         fail();
@@ -3821,7 +3821,7 @@ algorithm
       equation
         el_str = ExpressionDump.printListStr(expl, Dump.printExpStr, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = System.stringAppendList({"pre(",el_str,")"});
+        s = stringAppendList({"pre(",el_str,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str}, info);
       then
         fail();
@@ -5677,7 +5677,7 @@ algorithm
         lst = Util.listMap(expl, Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        s = System.stringAppendList({"der(",s,")"});
+        s = stringAppendList({"der(",s,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,sp}, info);
       then fail();
   end matchcontinue;
@@ -5893,7 +5893,7 @@ algorithm
         lst = Util.listMap((dim_aexp :: matrices), Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
-        str = System.stringAppendList({"cat(",s,")"});
+        str = stringAppendList({"cat(",s,")"});
         Error.addSourceMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {str,sp}, info);
       then
         fail();
@@ -7061,7 +7061,7 @@ algorithm
         //print(" error, handler found for " +& name +& "\n");
         lst = Util.listMap(expl, Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
-        s = System.stringAppendList({name,"(",s,")'.\n"});
+        s = stringAppendList({name,"(",s,")'.\n"});
         ps = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,ps}, info);
       then
@@ -8083,7 +8083,7 @@ algorithm
       then {};
     case (name, (Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _))
       equation
-        true = stringEqual(name, argName);
+        true = stringEq(name, argName);
         daeExpList = absynExpListToDaeExpList(absynExpList);
       then daeExpList;
     case (name, _::rest)
@@ -8150,7 +8150,7 @@ algorithm
     case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = exp) :: xs),dexp,pre,info)
       local Absyn.Exp exp;
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
         (cache,exp_1,DAE.PROP(t,c1),_) = elabExp(cache,env, exp, impl, st,true,pre,info);
         (exp_2,_) = Types.matchType(exp_1, t, tp, true);
       then
@@ -8259,7 +8259,7 @@ algorithm
     case ("","",bt) then true; // rebuild all the time if the function has no file!
     case (newf,oldf,bt)
       equation
-        true = stringEqual(newf, oldf); // the files should be the same!
+        true = stringEq(newf, oldf); // the files should be the same!
         // the new file nf should have an older modification time than the last build
         SOME(nfmt) = System.getFileModificationTime(newf);
         true = realGt(bt, nfmt); // the file was not modified since last build
@@ -8461,7 +8461,7 @@ algorithm
          SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes, comment),info),
          classEnv, cn)
       equation
-        // System.enableTrace();
+        // enableTrace();
         // change the class name from gravityAcceleration to be world.gravityAcceleration
         name = componentName +& "." +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
@@ -8488,7 +8488,7 @@ algorithm
     case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as _, info),
          classEnv, cn)
       equation
-        // System.enableTrace();
+        // enableTrace();
         // change the class name from gravityAcceleration to be world.gravityAcceleration
         name = componentName +& "." +& name;
         // remove modifications as they are added via transformModificationsToNamedArguments
@@ -10149,7 +10149,7 @@ algorithm
         str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
         str_lst = Util.listMap(ds, ExpressionDump.dimensionString);
         s = Util.stringDelimitList(str_lst, ", ");
-        s1 = System.stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
+        s1 = stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
         res = stringAppend(s1, s2);
       then
@@ -10380,12 +10380,12 @@ algorithm
       list<tuple<Ident, DAE.Type>> ts;
     case (id,(id2,ty) :: ts)
       equation
-        true = stringEqual(id, id2);
+        true = stringEq(id, id2);
       then
         ty;
     case (id,(id2,_) :: ts)
       equation
-        false = stringEqual(id, id2);
+        false = stringEq(id, id2);
         ty = findNamedArgType(id, ts);
       then
         ty;
@@ -10420,21 +10420,21 @@ algorithm
     
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),slotFilled = false) :: xs),checkTypes as true,pre,info)
       equation
-        true = stringEqual(fa1, fa2);
+        true = stringEq(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
     
     // If not checking types, store actual type in slot so error message contains actual type 
     case ((fa1,b),exp,ds,(SLOT(an = (fa2,_),slotFilled = false) :: xs),checkTypes as false,pre,info)
       equation
-        true = stringEqual(fa1, fa2);
+        true = stringEq(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
     
     // fail if slot already filled
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),slotFilled = true) :: xs),checkTypes ,pre,info)
       equation
-        true = stringEqual(fa1, fa2);
+        true = stringEq(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.FUNCTION_SLOT_ALLREADY_FILLED, {fa2,ps}, info);
       then
@@ -10443,7 +10443,7 @@ algorithm
     // no equal, fill slot
     case ((farg as (fa1,_)),exp,ds,((s1 as SLOT(an = (fa2,_))) :: xs),checkTypes,pre,info)
       equation
-        false = stringEqual(fa1, fa2);
+        false = stringEq(fa1, fa2);
         newslots = fillSlot(farg, exp, ds, xs,checkTypes,pre,info);
       then
         (s1 :: newslots);
@@ -11988,7 +11988,7 @@ algorithm
         PrefixUtil.printPrefixStr(crefPrefix) +& " cr: " +&
           Dump.printComponentRefStr(acr) +& " env: " +&
           Env.printEnvPathStr(env));
-        // System.enableTrace();
+        // enableTrace();
       then
         fail();
   end matchcontinue;
@@ -12659,13 +12659,13 @@ algorithm
       DAE.ComponentRef c1,c2;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = s1),DAE.CREF_IDENT(ident = n2,subscriptLst = s2))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         eqSubscripts(s1, s2);
       then
         ();
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = s1,componentRef = c1),DAE.CREF_QUAL(ident = n2,subscriptLst = s2,componentRef = c2))
       equation
-        true = stringEqual(n1, n2);
+        true = stringEq(n1, n2);
         eqSubscripts(s1, s2);
         eqCref(c1, c2);
       then
@@ -12825,7 +12825,7 @@ algorithm
         tps_str = Util.listMap(tps, Types.unparseType);
         tpsstr = Util.stringDelimitList(tps_str, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = System.stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
+        s = stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
         Error.addMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str});
       then
         fail();

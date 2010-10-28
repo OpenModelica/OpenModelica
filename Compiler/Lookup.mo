@@ -714,7 +714,7 @@ algorithm
     /*case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
         id = Absyn.pathLastIdent(path) "If not package, error" ;
-        true = stringEqual(id, ident);
+        true = stringEq(id, ident);
         fr = Env.topFrame(env);
         (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
@@ -741,7 +741,7 @@ algorithm
     /* commented since MSL does not follow this rule, instead assertPackage gives warning */
     /*case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
       equation
-        true = stringEqual(id, ident) "Assert package for Named imports" ;
+        true = stringEq(id, ident) "Assert package for Named imports" ;
         fr = Env.topFrame(env);
         (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
@@ -2135,7 +2135,7 @@ algorithm
     
     case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),isEncapsulated = true)) :: fs)),id,prevFrames,inState,_)
       equation
-        true = stringEqual(id, sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
+        true = stringEq(id, sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (cache,c,env,prevFrames) = lookupClassInEnv(cache, fs, id, frame::prevFrames, inState, true);
         Util.setStatefulBoolean(inState,true);
       then

@@ -64,7 +64,7 @@ protected function hashFunc
   String crstr;
 algorithm
   crstr := Dump.printComponentRefStr(cr);
-  res := System.hash(crstr);
+  res := stringHashDjb2(crstr);
 end hashFunc;
 
 public function emptyHashTable

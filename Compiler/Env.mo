@@ -272,7 +272,7 @@ algorithm
     local String name;
     case(FRAME(optName = SOME(name))::_) 
       equation
-        true = stringEqual(name, forScopeName);
+        true = stringEq(name, forScopeName);
       then true;
     case(_) then false;
   end matchcontinue;
@@ -286,7 +286,7 @@ algorithm
     local String name;
     case(FRAME(optName = SOME(name))::_) 
       equation
-        true = stringEqual(name, forIterScopeName);
+        true = stringEq(name, forIterScopeName);
       then true;
     case(_) then false;
   end matchcontinue;
@@ -300,7 +300,7 @@ algorithm
     local String name;
     case(FRAME(optName = SOME(name))::env) 
       equation
-        true = stringEqual(name, forScopeName);
+        true = stringEq(name, forScopeName);
         env = stripForLoopScope(env);
       then env;
     case(env) then env;
@@ -994,7 +994,7 @@ algorithm
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
         encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
       then
@@ -1022,7 +1022,7 @@ algorithm
       equation
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
@@ -1031,7 +1031,7 @@ algorithm
       equation
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
@@ -1063,7 +1063,7 @@ algorithm
       equation
         s1 = printFrameElementStr(("",e));
         s2 = printImportsStr(rst);
-        res = System.stringAppendList({s1,", ",s2});
+        res = stringAppendList({s1,", ",s2});
       then
         res;
   end matchcontinue;
@@ -1099,7 +1099,7 @@ algorithm
         var_str = Types.unparseVar(tv);
         frame_str = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, binding:",bind_str});
       then
@@ -1110,32 +1110,32 @@ algorithm
         elt_str = SCode.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, compframe: []"});
       then
         res;
     case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE(),instStatus = i,env = env)))
       equation
-        res = System.stringAppendList({"v:",n,"\n"});
+        res = stringAppendList({"v:",n,"\n"});
       then
         res;
     case ((n,CLASS(class_ = _)))
       equation
-        res = System.stringAppendList({"c:",n,"\n"});
+        res = stringAppendList({"c:",n,"\n"});
       then
         res;
     case ((n,TYPE(list_ = lst)))
       equation
         len = listLength(lst);
         lenstr = intString(len);
-        res = System.stringAppendList({"t:",n," (",lenstr,")\n"});
+        res = stringAppendList({"t:",n," (",lenstr,")\n"});
       then
         res;
     case ((n,IMPORT(import_ = imp)))
       equation
         s = Dump.unparseImportStr(imp);
-        res = System.stringAppendList({"imp:",s,"\n"});
+        res = stringAppendList({"imp:",s,"\n"});
       then
         res;
   end matchcontinue;
@@ -1343,7 +1343,7 @@ algorithm
 	  //	Simple name found in children, search for model from this scope.
     case (Absyn.IDENT(id1),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         //print("found (1) ");print(id); print("\n");
         env = cacheGetEnv3(path,children2);
       then 
@@ -1360,7 +1360,7 @@ algorithm
     // for qualified name, found first matching identifier in child
      case (Absyn.QUALIFIED(id1,path2),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation
-         true = stringEqual(id1, id2);
+         true = stringEq(id1, id2);
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
@@ -1386,13 +1386,13 @@ algorithm
 		// found matching simple name
     case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::_)
       equation
-        true = stringEqual(id1, id2); 
+        true = stringEq(id1, id2); 
       then env;
     
     // found matching qualified name
     case (Absyn.QUALIFIED(id1,path),CACHETREE(id2,_,children)::_)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         env = cacheGetEnv3(path,children);
       then env;
 
@@ -1422,7 +1422,7 @@ algorithm
     case (Absyn.IDENT(id1),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env)
       equation
         // print(id);print(" already added\n");
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         // shouldn't we replace it?
         // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
       then tree;
@@ -1470,14 +1470,14 @@ algorithm
     // qualified name, found matching
     case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,env)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         children2 = cacheAddEnv2(path,children2,env);
       then CACHETREE(id2,env2,children2)::children;
 
 		// simple name, found matching
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,env)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
         //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
@@ -1524,7 +1524,7 @@ algorithm
       equation
         SOME(ENVCACHE(tree)) = arr[1];
         s = printCacheTreeStr(tree,1);
-        str = System.stringAppendList({"Cache:\n",s,"\n"});
+        str = stringAppendList({"Cache:\n",s,"\n"});
         s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
         str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
@@ -1547,8 +1547,8 @@ algorithm
     case (CACHETREE(id,_,children),indent)
       equation
         s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
-        s1 = System.stringAppendList(Util.listFill(" ",indent));
-        str = System.stringAppendList({s1,id,"\n",s});
+        s1 = stringAppendList(Util.listFill(" ",indent));
+        str = stringAppendList({s1,id,"\n",s});
 	    then str;
 	end matchcontinue;
 end printCacheTreeStr;
@@ -1679,7 +1679,7 @@ algorithm
 		// replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        0 = System.strcmp(key,rkey); // equal
+        0 = stringCompare(key,rkey); // equal
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
@@ -1689,7 +1689,7 @@ algorithm
     // insert to right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        1 = System.strcmp(key,rkey); // bigger
+        1 = stringCompare(key,rkey); // bigger
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -1699,13 +1699,13 @@ algorithm
     // insert to left subtree
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        -1 = System.strcmp(key,rkey); // smaller
+        -1 = stringCompare(key,rkey); // smaller
         t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
       then
         bt;
-      
+    
     case (_,_,_)
       equation
         print("avlTreeAdd failed\n");
@@ -2026,7 +2026,7 @@ algorithm
     // hash func Search to the right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
       equation
-        true = stringEqual(rkey, key);
+        0 = stringCompare(rkey, key);
       then
         rval;
     
@@ -2034,7 +2034,7 @@ algorithm
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
       local AvlTree right;
       equation
-        true = System.strcmp(key,rkey) > 0;
+        1 = stringCompare(key,rkey);
         res = avlTreeGet(right, key);
       then
         res;
@@ -2043,7 +2043,7 @@ algorithm
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
       local AvlTree left;
       equation
-        false = System.strcmp(key,rkey) > 0;
+        -1 = stringCompare(key,rkey);
         res = avlTreeGet(left, key);
       then
         res;

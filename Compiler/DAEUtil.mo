@@ -547,7 +547,7 @@ algorithm
   s2 := ComponentReference.printComponentRefStr(cr2);
   s1 := System.stringReplace(s1, DAE.UNIQUEIO, "");
   s2 := System.stringReplace(s2, DAE.UNIQUEIO, "");
-  equal := stringEqual(s1,s2);
+  equal := stringEq(s1,s2);
 end compareUniquedVarWithNonUnique;
 
 public function nameInnerouterUniqueCref "
@@ -979,7 +979,7 @@ protected function stringToString "function: stringToString
   output String str_1;
   String str_1;
 algorithm
-  str_1 := System.stringAppendList({"\"",str,"\""});
+  str_1 := stringAppendList({"\"",str,"\""});
 end stringToString;
 
 
@@ -4413,7 +4413,7 @@ algorithm
         /* Insert to right  */
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -4423,7 +4423,7 @@ algorithm
         /* Insert to left subtree */
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
          t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
@@ -4681,7 +4681,7 @@ algorithm
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
       local DAE.AvlTree right;
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         res = avlTreeGet(right, key);
       then
         res;
@@ -4690,7 +4690,7 @@ algorithm
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
       local DAE.AvlTree left;
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
         res = avlTreeGet(left, key);
       then
         res;

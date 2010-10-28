@@ -240,7 +240,7 @@ algorithm
         s1 = unparseDescription({v});
         s2 = unparseValueNumbers({v});
         s3 = unparseValues(vallst);
-        str = System.stringAppendList({s1,s2,"\n",s3});
+        str = stringAppendList({s1,s2,"\n",s3});
       then
         str;
     case ({}) then "";
@@ -537,7 +537,7 @@ algorithm
         s1 = unparseDescription(xs);
         slen = stringLength(sval);
         slenstr = intString(slen);
-        str = System.stringAppendList({"# s! 1 ",slenstr,"\n"});
+        str = stringAppendList({"# s! 1 ",slenstr,"\n"});
       then
         str;
     case ((Values.ARRAY(valueLst = vallst) :: xs))
@@ -1982,7 +1982,7 @@ algorithm
         ();
     case Values.STRING(string = s)
       equation
-        s_1 = System.stringAppendList({"\"",s,"\""});
+        s_1 = stringAppendList({"\"",s,"\""});
         Print.printBuf(s_1);
       then
         ();
@@ -2316,7 +2316,7 @@ protected function unparsePtolemySet "function: unparsePtolemySet
   input Value v2;
   input String varname;
 algorithm
-  Print.printBuf(System.stringAppendList({"DataSet: ",varname,"\n"}));
+  Print.printBuf(stringAppendList({"DataSet: ",varname,"\n"}));
   unparsePtolemySet2(v1, v2);
 end unparsePtolemySet;
 

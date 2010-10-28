@@ -391,68 +391,6 @@ public function platform
   external "C" annotation(Library = "omcruntime");
 end platform;
 
-public function realCeil
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end realCeil;
-
-
-public function asin
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end asin;
-
-public function acos
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end acos;
-
-public function atan
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end atan;
-
-public function atan2
-  input Real inReal1;
-  input Real inReal2;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end atan2;
-
-public function cosh
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end cosh;
-
-public function log
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end log;
-
-public function log10
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end log10;
-
-public function sinh
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end sinh;
-
-public function tanh
-  input Real inReal;
-  output Real outReal;
-  external "C" annotation(Library = "omcruntime");
-end tanh;
-
 public function getClassnamesForSimulation
   output String outString;
   external "C" annotation(Library = "omcruntime");
@@ -598,53 +536,6 @@ input Integer start;
   external "C" annotation(Library = "omcruntime");
 end tmpTickReset;
 
-public function listAppendUnsafe
-  replaceable type Type_a subtypeof Any;
-  input list<Type_a> firstList;
-  input list<Type_a> secondList;
-  output list<Type_a> appendedList;
-
-  external "C" annotation(Library = "omcruntime");
-end listAppendUnsafe;
-
-public function addToRoots
-"@author: adrpo
- this function binds a name to an external root.
- BEWARE! this is a side effect!
-         addToRoots(0, value) should match
-         value = getToRoots(0) and the type
-         of the value should be the same!"
-  replaceable type Type_a subtypeof Any;
-  input Integer index "index in the external hash, starting from 0";
-  input Type_a anyValue;
-  external "C" annotation(Library = "omcruntime");
-end addToRoots;
-
-public function getFromRoots
-"@author: adrpo
- this function returns an external root for a name
- BEWARE! this is a side effect!
-         addToRoots(0, value) should match
-         value = getToRoots(0) and the type
-         of the value should be the same!"
-  replaceable type Type_a subtypeof Any;
-  input Integer index "index in the external hash, starting from 0";
-  output Type_a anyValue;
-  external "C" annotation(Library = "omcruntime");
-end getFromRoots;
-
-public function enableTrace
-"@author: adrpo
- this function enables the stderr tracing"
-
-  external "C" annotation(Library = "omcruntime");
-end enableTrace;
-
-public function disableTrace
-"this function disables the stderr tracing"
-  external "C" annotation(Library = "omcruntime");
-end disableTrace;
-
 public function getSendDataLibs
 "Returns a string containing the compiler flags used for SENDDATALIBS"
   output String sendDataLibs;
@@ -766,41 +657,8 @@ function getTimerStackIndex
   external "C" annotation(Library = "omcruntime");
 end getTimerStackIndex;
 
-function stringAppendList
-"@autor: adrpo
-  This function will append all the strings in the given-as-input
-  list<String> into a new string. It does so by creating the new
-  string directly and thus avoiding a lot of stringAppend which
-  can generate a lot of garbage. This function will pe part of the
-  new MetaModelica/RML release, later on."
-  input list<String> listWithStrings;
-  output String appendedString;
-  
-  external "C" appendedString=stringAppendListExt(listWithStrings) annotation(Library = "omcruntime");
-end stringAppendList;
 
-function refEqual
-"@autor: adrpo
-  This function checks if two MetaModelica references point to the same structure"
-  replaceable type Type_a subtypeof Any;
-  input  Type_a ref1;
-  input  Type_a ref2;
-  output Boolean result;
-  external "C" result = System_refEqual(ref1,ref2) annotation(Library = "omcruntime");
-end refEqual;
-
-function refInteger
-"@autor: adrpo
-  This function returns the pointer of the given input parameter as integer"
-  replaceable type Type_a subtypeof Any;
-  input  Type_a reference;
-  output Integer result;
-  external "C" annotation(Library = "omcruntime");
-end refInteger;
-
-public function getUUIDStr "
-creates the Globally Unique IDentifier and return it as String
-"
+public function getUUIDStr "creates the Globally Unique IDentifier and return it as String"
   output String uuidStr;
   external "C" annotation(Library = "omcruntime");
 end getUUIDStr;

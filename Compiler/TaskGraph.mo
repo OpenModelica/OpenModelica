@@ -358,7 +358,7 @@ algorithm
         name = ComponentReference.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
-        //id = System.stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
+        //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
@@ -394,7 +394,7 @@ algorithm
         name = ComponentReference.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
-        //id = System.stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
+        //id = stringAppendList({BackendDAE.derivativeNamePrefix,c_name});
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
@@ -516,7 +516,7 @@ algorithm
     case (repl,(DAE.CREF(componentRef = cr) :: es),pos)
       equation
         pstr = intString(pos);
-        str = System.stringAppendList({"xloc[",pstr,"]"});
+        str = stringAppendList({"xloc[",pstr,"]"});
         cref_ = ComponentReference.makeCrefIdent(str,DAE.ET_REAL(),{});
         repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(cref_,DAE.ET_REAL()));
         pos_1 = pos + 1;
@@ -549,7 +549,7 @@ algorithm
         pos_1 = pos + 1;
         s2 = buildResidualCode2(es, pos_1, repl);
         pstr = intString(pos);
-        res = System.stringAppendList({"res[",pstr,"]=",s1,";\n",s2});
+        res = stringAppendList({"res[",pstr,"]=",s1,";\n",s2});
       then
         res;
     case (_,_,_)
@@ -876,7 +876,7 @@ algorithm
         (t1,s1) = buildExpression(e1) "special case for pow" ;
         ival = realInt(rval);
         istr = intString(ival);
-        ts = System.stringAppendList({"pow(%s,",istr,")"});
+        ts = stringAppendList({"pow(%s,",istr,")"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
@@ -887,7 +887,7 @@ algorithm
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = ExpressionDump.binopSymbol1(op);
-        ts = System.stringAppendList({"%s",ops,"%s"});
+        ts = stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
         TaskGraphExt.addEdge(t2, t, s2, 1);
@@ -899,7 +899,7 @@ algorithm
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = ExpressionDump.binopSymbol1(op);
-        ts = System.stringAppendList({"%s",ops,"%s"});
+        ts = stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
         TaskGraphExt.addEdge(t2, t, s2, 1);
@@ -910,7 +910,7 @@ algorithm
       equation
         (t1,s1) = buildExpression(e1);
         ops = ExpressionDump.unaryopSymbol(op);
-        ts = System.stringAppendList({ops,"%s"});
+        ts = stringAppendList({ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
@@ -920,7 +920,7 @@ algorithm
       equation
         (t1,s1) = buildExpression(e1);
         ops = ExpressionDump.lunaryopSymbol(op);
-        ts = System.stringAppendList({ops,"%s"});
+        ts = stringAppendList({ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
@@ -931,7 +931,7 @@ algorithm
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = ExpressionDump.relopSymbol(relop);
-        ts = System.stringAppendList({"%s",ops,"%s"});
+        ts = stringAppendList({"%s",ops,"%s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
         TaskGraphExt.addEdge(t2, t, s2, 1);
@@ -943,7 +943,7 @@ algorithm
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         (t3,s3) = buildExpression(e3);
-        ts = System.stringAppendList({"%s ? %s : %s"});
+        ts = stringAppendList({"%s ? %s : %s"});
         t = TaskGraphExt.newTask(ts);
         TaskGraphExt.addEdge(t1, t, s1, 0);
         TaskGraphExt.addEdge(t2, t, s2, 1);
@@ -1032,7 +1032,7 @@ protected function buildCallStr
 algorithm
   ns := Util.listFill("%s", n);
   ns_1 := Util.stringDelimitList(ns, ", ");
-  res := System.stringAppendList({str,"(",ns_1,")"});
+  res := stringAppendList({str,"(",ns_1,")"});
 end buildCallStr;
 
 protected function addPredecessors

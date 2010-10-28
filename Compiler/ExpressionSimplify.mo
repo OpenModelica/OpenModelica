@@ -515,7 +515,7 @@ algorithm
     case(DAE.CALL(path=path,expLst={e})) 
       equation
         Builtin.isLog(path);
-        r = System.log(Expression.getRealConst(e));
+        r = realLog(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
         

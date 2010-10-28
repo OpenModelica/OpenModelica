@@ -65,7 +65,7 @@ public function hashFunc
   String crstr;
 algorithm
   crstr := ComponentReference.printComponentRefStr(cr);
-  res := System.hash(crstr);
+  res := stringHashDjb2(crstr);
 end hashFunc;
 
 public function emptyHashTable

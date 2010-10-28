@@ -541,7 +541,7 @@ algorithm
     
     case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         (cr11,cr22) = stripCommonCrefPart(cr1,cr2);
       then 
         (cr11,cr22);
@@ -1978,7 +1978,7 @@ public function hashFunc
   input Key k;
   output Integer res;
 algorithm
-  res := System.hash(ComponentReference.printComponentRefStr(k));
+  res := stringHashDjb2(ComponentReference.printComponentRefStr(k));
 end hashFunc;
 
 public function keyEqual

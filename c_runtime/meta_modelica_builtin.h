@@ -187,6 +187,9 @@ intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
 typedef modelica_integer stringInt_rettype;
+typedef modelica_integer stringHash_rettype;
+typedef modelica_integer stringHashDjb2_rettype;
+typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
 typedef modelica_string_t listStringCharString_rettype;
 typedef modelica_string_t stringAppendList_rettype;
@@ -194,7 +197,7 @@ typedef modelica_string_const stringAppendListExt_rettype;
 typedef modelica_string_t stringAppend_rettype;
 typedef modelica_integer stringLength_rettype;
 typedef modelica_integer stringCompare_rettype;
-typedef modelica_boolean stringEqual_rettype;
+typedef modelica_boolean stringEq_rettype;
 typedef modelica_string_t stringGetStringChar_rettype;
 typedef modelica_string_t stringUpdateStringChar_rettype;
 typedef modelica_string_t stringCharListString_rettype;
@@ -207,12 +210,18 @@ stringAppendListExt_rettype stringAppendListExt(modelica_metatype);
 stringAppend_rettype stringAppend(modelica_string_const,modelica_string_const);
 stringLength_rettype stringLength(modelica_string_const);
 stringCompare_rettype stringCompare(modelica_string_t,modelica_string_t);
-stringEqual_rettype stringEqual(modelica_string_t,modelica_string_t);
+stringEq_rettype stringEq(modelica_string_t,modelica_string_t);
 stringGetStringChar_rettype stringGetStringChar(modelica_string_t,modelica_integer);
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t, modelica_string_t, modelica_integer);
 #define stringCharListString(X) stringAppendList(X)
+stringHash_rettype stringHash(modelica_string_const);
+stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
+stringHashSdbm_rettype stringHashSdbm(modelica_string_const);
 
 modelica_metatype boxptr_stringAppend(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_stringHash(modelica_metatype);
+modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
+modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
 
 /* List Operations */
 typedef modelica_metatype listReverse_rettype;
