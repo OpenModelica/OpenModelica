@@ -693,133 +693,19 @@ public function getAllExpsStmts "function: getAllExpsStmts
   input list<Statement> stmts;
   output list<DAE.Exp> exps;
   list<list<DAE.Exp>> expslist;
+  list<Statement> stms;
 algorithm
-  expslist := Util.listMap(stmts, getAllExpsStmt);
-  exps := Util.listFlatten(expslist);
+  (stms,exps) := DAEUtil.traverseDAEEquationsStmts(stmts,getAllExpsStmtsCollecter,{});
 end getAllExpsStmts;
 
-protected function getAllExpsStmt "function: getAllExpsStmt
-  Returns all expressions in a statement."
-  input Statement inStatement;
-  output list<DAE.Exp> outExpExpLst;
+function getAllExpsStmtsCollecter
+   input DAE.Exp exp;
+   input list<DAE.Exp> inExps; 
+   output DAE.Exp oexp; 
+   output list<DAE.Exp> outExps;
 algorithm
-  outExpExpLst:=
-  matchcontinue (inStatement)
-    local
-      DAE.Exp crexp,exp,e1,e2;
-      DAE.ExpType expty;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
-      list<Statement> stmts;
-      Else else_;
-      Boolean flag;
-      Ident id;
-      Statement elsew;
-      Absyn.Path fname;
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp)
-      equation
-        crexp = Expression.makeCrefExp(cr,expty);
-      then
-        {crexp,exp};
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp)
-      local list<DAE.Exp> ea2;
-      equation
-      then
-        {e2,exp};
-    case DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp)
-      equation
-        exps = listAppend(explist, {exp});
-      then
-        exps;
-    case DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
-      equation
-        crexp = Expression.makeCrefExp(cr,expty);
-      then
-        {crexp,exp};
-    case DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_)
-      equation
-        exps1 = getAllExpsStmts(stmts);
-        elseexps = getAllExpsElse(else_);
-        exps = listAppend(exps1, elseexps);
-      then
-        (exp :: exps);
-    case DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHILE(exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
-      equation
-				exps1 = getAllExpsStmt(elsew);
-        exps = list_append(getAllExpsStmts(stmts),exps1);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHEN(exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_ASSERT(cond = e1,msg= e2) then {e1,e2};
-    case DAE.STMT_BREAK(source = _) then {};
-    case DAE.STMT_RETURN(source = _) then {};
-    case DAE.STMT_FAILURE(body = stmts) then getAllExpsStmts(stmts);
-    case DAE.STMT_THROW(source = _) then {};
-    case DAE.STMT_TRY(tryBody = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-    case DAE.STMT_CATCH(catchBody = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-
-    case DAE.STMT_NORETCALL(exp = e1) then {e1};
-
-    case(DAE.STMT_REINIT(var = e1, value = e2)) then {e1,e2};
-
-    case(DAE.STMT_MATCHCASES(caseStmt = exps)) then exps;
-
-    case _
-      equation
-        Debug.fprintln("failtrace", "- Algorithm.getAllExpsStmt failed");
-      then
-        fail();
-  end matchcontinue;
-end getAllExpsStmt;
-
-protected function getAllExpsElse "function: getAllExpsElse
-  Helper function to getAllExpsStmt."
-  input Else inElse;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inElse)
-    local
-      list<DAE.Exp> exps1,elseexps,exps;
-      DAE.Exp exp;
-      list<Statement> stmts;
-      Else else_;
-    case DAE.NOELSE() then {};
-    case DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_)
-      equation
-        exps1 = getAllExpsStmts(stmts);
-        elseexps = getAllExpsElse(else_);
-        exps = listAppend(exps1, elseexps);
-      then
-        (exp :: exps);
-    case DAE.ELSE(statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-  end matchcontinue;
-end getAllExpsElse;
+  oexp:=exp;
+  outExps:=listAppend(inExps,{exp});
+end getAllExpsStmtsCollecter;
 
 end Algorithm;

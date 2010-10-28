@@ -1721,12 +1721,7 @@ algorithm
         inputs2 = BackendDAEUtil.statesAndVarsExp(e1,vars);
         inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
      then (inputs,{});
-    case(vars, DAE.STMT_TERMINATE(msg = e2))
-      equation
-        inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);
-      then
-        (inputs, {}); 
-    // TODO: is the reinit var a input or a output    
+    case(vars, DAE.STMT_TERMINATE(msg = _)) then ({}, {});
     case(vars, DAE.STMT_REINIT(var = e as DAE.CREF(componentRef = _), value = e2))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e2, vars);

@@ -3750,6 +3750,24 @@ algorithm
       (e_2 as DAE.CREF(cr_1,_), extraArg) = func(DAE.CREF(cr,tp), extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
+  case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),func,extraArg)
+    equation
+      (e_1, extraArg) = func(e, extraArg);
+      failure((DAE.CREF(_,_), _) = func(DAE.CREF(cr,tp), extraArg));
+      true = RTOpts.debugFlag("failtrace");
+      print(DAEDump.ppStatementStr(x));
+      print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");      
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
+
+  case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el, source = source)) :: xs),func,extraArg)
+    local Algorithm.Else el,el_1;
+    equation
+      (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
+      (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1,extraArg) = func(e, extraArg);
+      (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,extraArg);
 
   case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
     equation
@@ -3816,21 +3834,45 @@ algorithm
     equation
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (x :: xs_1,extraArg);
-
-  case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el, source = source)) :: xs),func,extraArg)
-    local Algorithm.Else el,el_1;
+    // MetaModelica extension. KS
+  case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),func,extraArg)
     equation
-      (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
-      (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
-      (e_1,extraArg) = func(e, extraArg);
-      (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,extraArg);
-
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_FAILURE(stmts2,source) :: xs_1,extraArg);
+  case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),func,extraArg)
+    equation
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_TRY(stmts2,source) :: xs_1,extraArg);
+  case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),func,extraArg)
+    equation
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_CATCH(stmts2,source) :: xs_1,extraArg);
+  case (((x as DAE.STMT_THROW(source = source)) :: xs),func,extraArg)
+    equation
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);
+  case (((x as DAE.STMT_GOTO(source = source)) :: xs),func,extraArg)
+    equation
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);
+  case (((x as DAE.STMT_LABEL(source = source)) :: xs),func,extraArg)
+    equation
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);
+  case (((x as DAE.STMT_MATCHCASES(matchType = matchType, inputExps = expl1,caseStmt=expl2, source = source)) :: xs),func,extraArg)
+    local Absyn.MatchType matchType;
+    equation
+      (expl1, extraArg) = traverseDAEExpList(expl1,func,extraArg);
+      (expl1, extraArg) = traverseDAEExpList(expl1,func,extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (DAE.STMT_MATCHCASES(matchType,expl1,expl2,source) :: xs_1,extraArg);
   case ((x :: xs),func,extraArg)
     equation
-      print("Warning, not implemented in replace_equations_stmts\n");
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (x :: xs_1,extraArg);
+    then (x :: xs_1,extraArg);      
 end matchcontinue;
 end traverseDAEEquationsStmts;
 
