@@ -515,7 +515,15 @@ algorithm
     case(DAE.CALL(path=path,expLst={e})) 
       equation
         Builtin.isLog(path);
-        r = realLog(Expression.getRealConst(e));
+        r = realLn(Expression.getRealConst(e));
+      then 
+        DAE.RCONST(r);
+        
+    // log10 function
+    case(DAE.CALL(path=path,expLst={e})) 
+      equation
+        Builtin.isLog10(path);
+        r = realLog10(Expression.getRealConst(e));
       then 
         DAE.RCONST(r);
         

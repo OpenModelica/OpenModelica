@@ -1609,7 +1609,7 @@ algorithm
         Values.REAL(rv_1);
     case ("log",SOME("log"),{Values.REAL(real = rv)},_)
       equation
-        rv_1 = realLog(rv);
+        rv_1 = realLn(rv);
       then
         Values.REAL(rv_1);
     case ("log10",SOME("log10"),{Values.REAL(real = rv)},_)
@@ -3379,7 +3379,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-        rv_1 = realLog(rv);
+        rv_1 = realLn(rv);
       then
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
