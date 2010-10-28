@@ -58,7 +58,6 @@ protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
-protected import ExpressionSimplify;
 protected import Derive;
 protected import Error;
 protected import RTOpts;

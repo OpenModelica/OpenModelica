@@ -168,7 +168,7 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
     case (exp,vars)
       equation
-        ((_,(_,crefs))) = Expression.traverseExpTopDown(exp,traversecheckBackendDAEExp,((vars,{})));
+        ((_,(_,crefs))) = Expression.traverseExp(exp,traversecheckBackendDAEExp,((vars,{})));
         lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
        then
         lstExpCrefs;
@@ -190,7 +190,7 @@ algorithm
 		case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
 		  then ((e, (vars,crefs)));
     /* Special Case for Records */
-    case ((e as DAE.CREF(componentRef = cr),(vars,crefs)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
       local 
         list<list<tuple<DAE.Exp,list<DAE.ComponentRef>>>> expcreflstlst;
         list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcreflst;
@@ -198,7 +198,6 @@ algorithm
         list<DAE.ComponentRef> crlst;
         list<DAE.ExpVar> varLst;
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         expcreflstlst = Util.listMap1(expl,checkBackendDAEExp,vars);
         expcreflst = Util.listFlatten(expcreflstlst);
@@ -233,7 +232,7 @@ algorithm
 		     failure((_,_) = BackendVariable.getVar(cr, vars));
 		  then
 		    ((e, (vars,cr::crefs)));
-		case (_) then inTuple;
+		case inTuple then inTuple;
 	end matchcontinue;
 end traversecheckBackendDAEExp;
 
@@ -1405,9 +1404,8 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> mexp;
       list<DAE.ExpVar> varLst;
     /* Special Case for Records */
-    case ((DAE.CREF(componentRef = cr)),vars)
+    case ((DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),vars)
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr);
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Expression.expEqual);
@@ -4514,7 +4512,7 @@ algorithm
         exps5 = traverseDAELowExpsEqns(ieqns,func,inTypeA);
         exps6 = traverseDAELowExpsArrayEqns(ae,func,inTypeA);
         alglst = arrayList(algs);
-        exps7 = Util.listMapFlat2(alglst, traverseExps,func,inTypeA);
+        exps7 = Util.listMapFlat2(alglst, traverseAlgorithmExps,func,inTypeA);
         exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6,exps7});
       then
         exps;
@@ -4837,7 +4835,7 @@ algorithm
   end matchcontinue;
 end traverseDAELowExpsArrayEqn;
 
-public function traverseExps "function: traverseExps
+public function traverseAlgorithmExps "function: traverseAlgorithmExps
 
   This function goes through the Algorithm structure and finds all the
   expressions and performs the function on them
@@ -4865,11 +4863,11 @@ algorithm
       then
         talst;
   end matchcontinue;
-end traverseExps;
+end traverseAlgorithmExps;
 
 protected function traverseExpsStmts "function: traverseExps
 
-  helper for traverseExps.
+  helper for traverseAlgorithmExps.
 "
   replaceable type Type_a subtypeof Any;  
   replaceable type Type_b subtypeof Any;

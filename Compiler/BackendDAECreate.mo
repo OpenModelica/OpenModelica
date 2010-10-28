@@ -2861,16 +2861,6 @@ algorithm
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars))))
       equation
       then ((e,((e :: zeroCrossings),(vars,knvars))));  /* All other functions generate zerocrossing. */
-    case (((e as DAE.ARRAY(array = {})),(zeroCrossings,(vars,knvars))))
-      equation
-      then ((e,(zeroCrossings,(vars,knvars))));
-    case ((e1 as DAE.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,(vars,knvars))))
-      equation
-        ((_,(zeroCrossings_1,(vars,knvars)))) = Expression.traverseExp(e, collectZeroCrossings, (zeroCrossings,(vars,knvars)));
-        ((e_1,(zeroCrossings_2,(vars,knvars)))) = collectZeroCrossings((DAE.ARRAY(tp,scalar,el),(zeroCrossings,(vars,knvars))));
-        zeroCrossings_3 = listAppend(zeroCrossings_1, zeroCrossings_2);
-      then
-        ((e1,(zeroCrossings_3,(vars,knvars))));
     case ((e,(zeroCrossings,(vars,knvars))))
       equation
       then ((e,(zeroCrossings,(vars,knvars))));
@@ -3057,10 +3047,9 @@ algorithm
     list<DAE.Exp> expLst;
     list<tuple<DAE.Exp,DAE.Exp>> exptpllst;
   // a=b
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
       e2lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
@@ -3079,11 +3068,10 @@ algorithm
     then
       ((complexEqs1,multiEqs2)); 
   // a=Record()
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);

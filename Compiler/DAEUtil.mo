@@ -3747,7 +3747,7 @@ algorithm
   case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
-      (e_2 as DAE.CREF(cr_1,_), extraArg) = func(DAE.CREF(cr,DAE.ET_OTHER()), extraArg);
+      (e_2 as DAE.CREF(cr_1,_), extraArg) = func(DAE.CREF(cr,tp), extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
 

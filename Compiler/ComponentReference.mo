@@ -881,14 +881,10 @@ algorithm
   b := matchcontinue(cr)
   local 
     DAE.ComponentRef comp;
-    Boolean b;
     case(DAE.CREF_IDENT(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
     /* this case is false because it is not the last ident.   
     case(DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;*/
-    case(DAE.CREF_QUAL(componentRef=comp))
-      equation
-         b = isRecord(comp);  
-      then b;
+    case(DAE.CREF_QUAL(componentRef=comp)) then isRecord(comp);
     case(_) then false;
   end matchcontinue;
 end isRecord;
