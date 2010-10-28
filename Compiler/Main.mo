@@ -46,6 +46,7 @@ protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDump;
@@ -790,14 +791,14 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (v1,v2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", BackendDump.dump, dlow_1);
         Debug.fcall("bltdump", BackendDump.dumpMatching, v1);
-        (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
+        (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
         /**
          * TODO: Activate this when we call it from a command like +d=...
          *

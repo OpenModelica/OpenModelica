@@ -70,6 +70,7 @@ public import Inline;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
@@ -834,10 +835,10 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
         indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
@@ -961,10 +962,10 @@ algorithm
         Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
         indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
@@ -3321,8 +3322,8 @@ algorithm
         m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAEOptimize.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-        (comps) = BackendDAEOptimize.strongComponents(m_2, mT_2, v1,v2);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -3692,8 +3693,8 @@ algorithm
         m = BackendDAEUtil.incidenceMatrix(d);
         m_1 = BackendDAEUtil.absIncidenceMatrix(m);
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAEOptimize.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-        (comps) = BackendDAEOptimize.strongComponents(m_2, mT_2, v1,v2);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;

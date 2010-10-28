@@ -89,6 +89,7 @@ public import RTOpts;
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -2693,8 +2694,8 @@ algorithm
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
-      (v1,v2,_,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
+      (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
@@ -2728,8 +2729,8 @@ algorithm
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
-      (v1,v2,_,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
+      (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);

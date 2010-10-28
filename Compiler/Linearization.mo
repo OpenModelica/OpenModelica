@@ -42,6 +42,7 @@ public import BackendDAE;
 
 protected import BackendDAEUtil;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -140,12 +141,12 @@ algorithm
         // figure out new matching and the strong components  
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (v1,v2,dlow,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
+        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("jacdump2", BackendDump.dump, dlow);
         Debug.fcall("jacdump2", BackendDump.dumpMatching, v1);
-        (comps1) = BackendDAEOptimize.strongComponents(m, mT, v1, v2);
+        (comps1) = BackendDAETransform.strongComponents(m, mT, v1, v2);
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
 
         // figure out wich comps are needed to evaluate all derivedVariables  

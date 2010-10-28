@@ -65,6 +65,7 @@ protected import BackendDAEUtil;
 protected import BackendDAECreate;
 protected import BackendVariable;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
@@ -3938,7 +3939,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (_,_,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
+        (_,_,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = System.stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
@@ -3980,8 +3981,8 @@ algorithm
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow);
         mT = BackendDAEUtil.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = BackendDAEOptimize.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
-        (comps) = BackendDAEOptimize.strongComponents(m, mT, ass1, ass2);
+        (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
+        (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = BackendDAEUtil.translateDae(dlow_1,NONE());
         indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
         xml_filename = System.stringAppendList({filenameprefix,".xml"});

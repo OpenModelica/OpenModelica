@@ -35,6 +35,7 @@ BackendDAE.mo \
 BackendDump.mo \
 BackendDAECreate.mo \
 BackendDAEOptimize.mo \
+BackendDAETransform.mo \
 BackendDAEUtil.mo \
 BackendEquation.mo \
 BackendVariable.mo \

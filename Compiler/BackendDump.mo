@@ -43,6 +43,7 @@ public import DAE;
 protected import Absyn;
 protected import Algorithm;
 protected import BackendDAEOptimize;
+protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendEquation;
@@ -1270,7 +1271,7 @@ algorithm
         list<String> strLst,slst;
         String str;
       equation
-        eqns = BackendDAEOptimize.reachableNodes(i, m, mT, ass1, ass2);
+        eqns = BackendDAETransform.reachableNodes(i, m, mT, ass1, ass2);
         llst = Util.listMap(eqns,Util.listCreate);
         llst = Util.listMap1(llst,Util.listCons,i);
         slst = Util.listMap(llst,intListStr);
