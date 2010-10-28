@@ -91,28 +91,28 @@ public function matchingAlgorithm
     - if the equation system is allowed to be under constrained or not
       which is used when generating code for initial equations.
   
-  inputs:  (DAELow,IncidenceMatrix, BackendDAE.IncidenceMatrixT, MatchingOptions)
+  inputs:  (BackendDAE,IncidenceMatrix, BackendDAE.IncidenceMatrixT, MatchingOptions)
   outputs: (int vector /* vector of equation indices */ ,
               int vector /* vector of variable indices */,
-              DAELow,IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.DAELow inDAELow;
+              BackendDAE,IncidenceMatrix, IncidenceMatrixT)"
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input BackendDAE.MatchingOptions inMatchingOptions;
   input DAE.FunctionTree inFunctions;
   output array<Integer> outIntegerArray1;
   output array<Integer> outIntegerArray2;
-  output BackendDAE.DAELow outDAELow3;
+  output BackendDAE.BackendDAE outBackendDAE3;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix4;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT5;
 algorithm
-  (outIntegerArray1,outIntegerArray2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5) :=
-  matchcontinue (inDAELow,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions,inFunctions)
+  (outIntegerArray1,outIntegerArray2,outBackendDAE3,outIncidenceMatrix4,outIncidenceMatrixT5) :=
+  matchcontinue (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions,inFunctions)
     local
       BackendDAE.Value nvars,neqns,memsize;
       String ns,ne;
       BackendDAE.Assignments assign1,assign2,ass1,ass2;
-      BackendDAE.DAELow dae,dae_1,dae_2;
+      BackendDAE.BackendDAE dae,dae_1,dae_2;
       BackendDAE.Variables v,kv,v_1,kv_1,vars,exv;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
@@ -131,7 +131,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<DAE.Algorithm> algs;
     /* fail case if daelow is empty */
-    case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,match_opts,inFunctions)
+    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,match_opts,inFunctions)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -141,7 +141,7 @@ algorithm
         vec2 = listArray({});
       then
         (vec1,vec2,dae,m,mt);
-    case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.REMOVE_SIMPLE_EQN())),inFunctions)
+    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.REMOVE_SIMPLE_EQN())),inFunctions)
       equation
         DAEEXT.clearDifferentiated();
         checkMatching(dae, match_opts);
@@ -154,7 +154,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,(dae as BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
+        (ass1,ass2,(dae as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
         /* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
         could potentially be removed after a index reduction has been done. However, removing equations here
         also require that e.g. zero crossings, array equations, etc. must be recalculated. */       
@@ -172,7 +172,7 @@ algorithm
         ie = BackendDAEUtil.listEquation(ie_lst);
         ae = listArray(ae_lst);    
         einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
-        dae_1 = BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc);   
+        dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc);   
         m_1 = BackendDAEUtil.incidenceMatrix(dae_1) "Rerun matching to get updated assignments and incidence matrices
                                     TODO: instead of rerunning: find out which equations are removed
                                     and remove those from assignments and incidence matrix." ;
@@ -188,7 +188,7 @@ algorithm
       then
         (vec1,vec2,dae_2,m,mt);
 
-    case ((dae as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.KEEP_SIMPLE_EQN())),inFunctions)
+    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.KEEP_SIMPLE_EQN())),inFunctions)
       equation
         checkMatching(dae, match_opts);
         nvars = arrayLength(m);
@@ -207,7 +207,7 @@ algorithm
         (vec1,vec2,dae,m,mt);
     case (_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "- DAELow.MatchingAlgorithm failed\n");
+        Debug.fprint("failtrace", "- BackendDAE.MatchingAlgorithm failed\n");
       then
         fail();        
   end matchcontinue;
@@ -222,22 +222,22 @@ public function checkMatching
   prints an error message.
   If matching options indicate that underconstrained systems are ok, no
   check is performed."
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.MatchingOptions inMatchingOptions;
 algorithm
-  _ := matchcontinue (inDAELow,inMatchingOptions)
+  _ := matchcontinue (inBackendDAE,inMatchingOptions)
     local
       BackendDAE.Value esize,vars_size;
       BackendDAE.EquationArray eqns;
       String esize_str,vsize_str;
     case (_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED(),_)) then ();
-    case (BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
       equation
         esize = BackendDAEUtil.equationSize(eqns);
         (esize == vars_size) = true;
       then
         ();
-    case (BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
       equation
         esize = BackendDAEUtil.equationSize(eqns);
         (esize < vars_size) = true;
@@ -248,7 +248,7 @@ algorithm
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
-    case (BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
+    case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = vars_size),orderedEqs = eqns),_)
       equation
         esize = BackendDAEUtil.equationSize(eqns);
         (esize > vars_size) = true;
@@ -261,7 +261,7 @@ algorithm
         fail();
     case (_,_)
       equation
-        Debug.fprint("failtrace", "- DAELow.checkMatching failed\n");
+        Debug.fprint("failtrace", "- BackendDAE.checkMatching failed\n");
       then
         fail();
   end matchcontinue;
@@ -288,7 +288,7 @@ algorithm
         vec;
     case (_)
       equation
-        print("- DAELow.assignmentsVector failed\n");
+        print("- BackendDAE.assignmentsVector failed\n");
       then
         fail();
   end matchcontinue;
@@ -365,7 +365,7 @@ algorithm
         ass_2;
     case (ass,_)
       equation
-        print("DAELow.assignmentsExpand: n should not be negative!");
+        print("BackendDAE.assignmentsExpand: n should not be negative!");
       then
         fail();
   end matchcontinue;
@@ -423,7 +423,7 @@ public function matchingAlgorithm2
   author: PA
   This is the outer loop of the matching algorithm
   The find_path algorithm is called for each equation/variable.
-  inputs:  (DAELow,IncidenceMatrix, IncidenceMatrixT
+  inputs:  (BackendDAE,IncidenceMatrix, IncidenceMatrixT
              ,int /* number of vars */
              ,int /* number of eqns */
              ,int /* current var */
@@ -432,8 +432,8 @@ public function matchingAlgorithm2
              ,MatchingOptions) /* options for matching alg. */
   outputs: (Assignments, /* assignments, array of equation indices */
               Assignments, /* assignments, list of variable indices */
-              DAELow, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.DAELow inDAELow1;
+              BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
+  input BackendDAE.BackendDAE inBackendDAE1;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix2;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
   input Integer inInteger4;
@@ -447,17 +447,17 @@ public function matchingAlgorithm2
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;
-  output BackendDAE.DAELow outDAELow3;
+  output BackendDAE.BackendDAE outBackendDAE3;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix4;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT5;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
 algorithm
-  (outAssignments1,outAssignments2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  (outAssignments1,outAssignments2,outBackendDAE3,outIncidenceMatrix4,outIncidenceMatrixT5,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value nv,nf,i,i_1,nv_1,nkv,nf_1,nvd;
       BackendDAE.MatchingOptions match_opts;
@@ -488,7 +488,7 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        ((dae as BackendDAE.DAELOW(BackendDAE.VARIABLES(_,_,_,_,nv_1),BackendDAE.VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
+        ((dae as BackendDAE.DAE(BackendDAE.VARIABLES(_,_,_,_,nv_1),BackendDAE.VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -1169,12 +1169,12 @@ protected function reduceIndexDummyDer
   reduce the index by differentiating the marked equations and
   replacing one of the variable with a dummy derivative, i.e. making
   it algebraic.
-  The new BackendDAE.DAELow is returned along with an updated incidence matrix.
+  The new BackendDAE.BackendDAE is returned along with an updated incidence matrix.
 
-  inputs: (DAELow, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT,
+  inputs: (BackendDAE, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT,
              int /* number of vars */, int /* number of eqns */, int /* i */)
-  outputs: (DAELow, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.DAELow inDAELow1;
+  outputs: (BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
+  input BackendDAE.BackendDAE inBackendDAE1;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix2;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
   input Integer inInteger4;
@@ -1183,18 +1183,18 @@ protected function reduceIndexDummyDer
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
 algorithm
-  (outDAELow,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<BackendDAE.Key> states;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value nv,nf,stateno,i;
       DAE.ComponentRef state,dummy_der;
@@ -1269,14 +1269,14 @@ protected function makeAlgebraic
   author: PA
   Make the variable a dummy derivative, i.e.
   change varkind from STATE to DUMMY_STATE.
-  inputs:  (DAELow, DAE.ComponentRef /* state */)
-  outputs: (DAELow) = "
-  input BackendDAE.DAELow inDAELow;
+  inputs:  (BackendDAE, DAE.ComponentRef /* state */)
+  outputs: (BackendDAE) = "
+  input BackendDAE.BackendDAE inBackendDAE;
   input DAE.ComponentRef inComponentRef;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outDAELow:=
-  matchcontinue (inDAELow,inComponentRef)
+  outBackendDAE:=
+  matchcontinue (inBackendDAE,inComponentRef)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -1299,18 +1299,18 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo wc;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.DAELow daelow, daelow_1;
+      BackendDAE.BackendDAE daelow, daelow_1;
 
-    case (BackendDAE.DAELOW(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
+    case (BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
       equation
         ((BackendDAE.VAR(cr,kind,d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = BackendVariable.getVar(cr, vars);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);        
       then
-        BackendDAE.DAELOW(vars_1,kv,ev,av,e,se,ie,ae,al,wc,eoc);
+        BackendDAE.DAE(vars_1,kv,ev,av,e,se,ie,ae,al,wc,eoc);
 
     case (_,_)
       equation
-        print("DAELow.makeAlgebraic failed\n");
+        print("BackendDAE.makeAlgebraic failed\n");
       then
         fail();
 
@@ -1333,13 +1333,13 @@ protected function propagateDummyFixedAttribute
   i.e. fixed should be false for the state s2 (which is set by the user),
   this fixed value has to be propagated to s1 when s2 becomes a dummy
   state."
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input list<Integer> inIntegerLst;
   input DAE.ComponentRef inComponentRef;
   input Integer inInteger;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outDAELow := matchcontinue (inDAELow,inIntegerLst,inComponentRef,inInteger)
+  outBackendDAE := matchcontinue (inBackendDAE,inIntegerLst,inComponentRef,inInteger)
     local
       list<BackendDAE.Value> eqns_1,eqns;
       list<BackendDAE.Equation> eqns_lst;
@@ -1350,7 +1350,7 @@ algorithm
       Boolean dummy_fixed;
       BackendDAE.Variables vars_1,vars,kv,ev;
       BackendDAE.AliasVariables av;      
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
@@ -1358,7 +1358,7 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
 
    /* eqns dummy state */
-    case ((dae as BackendDAE.DAELOW(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
+    case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
@@ -1371,10 +1371,10 @@ algorithm
         v_2 = BackendVariable.setVarFixed(v_1, dummy_fixed);
         vars_1 = BackendVariable.addVar(v_2, vars);
       then
-        BackendDAE.DAELOW(vars_1,kv,ev,av,e,se,ie,ae,al,ei,eoc);
+        BackendDAE.DAE(vars_1,kv,ev,av,e,se,ie,ae,al,ei,eoc);
 
     // Never propagate fixed=true
-    case ((dae as BackendDAE.DAELOW(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
+    case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
@@ -1433,28 +1433,28 @@ protected function replaceDummyDer
   replaces der(state) with the variable dummy der.
   inputs:   (DAE.ComponentRef, /* state */
              DAE.ComponentRef, /* dummy der name */
-             DAELow,
+             BackendDAE,
              IncidenceMatrix,
              IncidenceMatrixT,
              int list /* equations */)
-  outputs:  (DAELow,
+  outputs:  (BackendDAE,
              IncidenceMatrix,
              IncidenceMatrixT)"
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
-  input BackendDAE.DAELow inDAELow3;
+  input BackendDAE.BackendDAE inBackendDAE3;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix4;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT5;
   input list<Integer> inIntegerLst6;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outDAELow,outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inComponentRef1,inComponentRef2,inDAELow3,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT):=
+  matchcontinue (inComponentRef1,inComponentRef2,inBackendDAE3,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
     local
       DAE.ComponentRef state,dummy,dummyder;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn,eqn_1;
@@ -1470,7 +1470,7 @@ algorithm
 
     case (state,dummy,dae,m,mt,{}) then (dae,m,mt);
 
-    case (state,dummyder,BackendDAE.DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
+    case (state,dummyder,BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -1483,7 +1483,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, BackendDAE.DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae3,al3,wc,eoc), m, mt, rest);
+        (dae,m,mt) = replaceDummyDer(state, dummyder, BackendDAE.DAE(v_1,kv,ev,av,eqns_1,seqns,ie1,ae3,al3,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
 
@@ -1574,7 +1574,7 @@ algorithm
         (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae);
      case (_,_,_,_,_)
       equation
-        print("-DAELow.replaceDummyDer2 failed\n");
+        print("-BackendDAE.replaceDummyDer2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1766,7 +1766,7 @@ algorithm
       (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st);
   case (_,_,_)
     equation
-      print("-DAELow.replaceDummyDerAlgs1 failed\n");
+      print("-BackendDAE.replaceDummyDerAlgs1 failed\n");
     then
       fail();    
   end matchcontinue;      
@@ -1799,7 +1799,7 @@ algorithm
       DAE.ELSE(stlst1);
   case (_,_,_)
     equation
-      print("-DAELow.replaceDummyDerAlgs2 failed\n");
+      print("-BackendDAE.replaceDummyDerAlgs2 failed\n");
     then
       fail();    
   end matchcontinue;      
@@ -1921,7 +1921,7 @@ algorithm
 
     case (_,_,_,_)
       equation
-        print("-DAELow.replaceDummyDerOthers failed\n");
+        print("-BackendDAE.replaceDummyDerOthers failed\n");
       then
         fail();
   end matchcontinue;
@@ -2115,7 +2115,7 @@ algorithm
       (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st,vars1);
   case (_,_)
     equation
-      print("-DAELow.replaceDummyDerOthersAlgs1 failed\n");
+      print("-BackendDAE.replaceDummyDerOthersAlgs1 failed\n");
     then
       fail();    
   end matchcontinue;      
@@ -2149,7 +2149,7 @@ algorithm
       (DAE.ELSE(stlst1),vars);
   case (_,_)
     equation
-      print("-DAELow.replaceDummyDerOthersAlgs2 failed\n");
+      print("-BackendDAE.replaceDummyDerOthersAlgs2 failed\n");
     then
       fail();    
   end matchcontinue;      
@@ -2241,12 +2241,12 @@ protected function newDummyVar
   This function creates a new variable named
   der+<varname> and adds it to the dae."
   input DAE.ComponentRef inComponentRef;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output DAE.ComponentRef outComponentRef;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  (outComponentRef,outDAELow):=
-  matchcontinue (inComponentRef,inDAELow)
+  (outComponentRef,outBackendDAE):=
+  matchcontinue (inComponentRef,inBackendDAE)
     local
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
@@ -2270,7 +2270,7 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Var dummyvar;
 
-    case (var,BackendDAE.DAELOW(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc))
+    case (var,BackendDAE.DAE(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc))
       equation
         ((BackendDAE.VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(var);
@@ -2279,11 +2279,11 @@ algorithm
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addVar(dummyvar, vars);
       then
-        (dummyvar_cr,BackendDAE.DAELOW(vars_1,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc));
+        (dummyvar_cr,BackendDAE.DAE(vars_1,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc));
 
     case (_,_)
       equation
-        print("-DAELow.newDummyVar failed!\n");
+        print("-BackendDAE.newDummyVar failed!\n");
       then
         fail();
   end matchcontinue;
@@ -2297,20 +2297,20 @@ protected function selectDummyState
  (dummy derivative). It should in the future consider initial values, etc.
   inputs:  (DAE.ComponentRef list, /* variable names */
             int list, /* variable numbers */
-            DAELow,
+            BackendDAE,
             IncidenceMatrix,
             IncidenceMatrixT)
   outputs: (DAE.ComponentRef, int)"
   input list<DAE.ComponentRef> varCrefs;
   input list<Integer> varIndices;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   output DAE.ComponentRef outComponentRef;
   output Integer outInteger;
 algorithm
   (outComponentRef,outInteger):=
-  matchcontinue (varCrefs,varIndices,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (varCrefs,varIndices,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       DAE.ComponentRef s;
       BackendDAE.Value sn;
@@ -2320,7 +2320,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
 
-    case (varCrefs,varIndices,BackendDAE.DAELOW(orderedVars=vars,orderedEqs = eqns),m,mt)
+    case (varCrefs,varIndices,BackendDAE.DAE(orderedVars=vars,orderedEqs = eqns),m,mt)
       equation
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
         //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
@@ -2328,7 +2328,7 @@ algorithm
       then (s,sn);
 
     case ({},_,dae,_,_)
-      local BackendDAE.DAELow dae;
+      local BackendDAE.BackendDAE dae;
       equation
         print("Error, no state to select\nDAE:");
         //dump(dae);
@@ -2623,20 +2623,20 @@ protected function calculateDummyStatePriorities
   The heuristic parameters are summed to get the priority number."
   input list<DAE.ComponentRef> inExpComponentRefLst;
   input list<Integer> inIntegerLst;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   output list<tuple<DAE.ComponentRef, Integer, Integer>> outTplExpComponentRefIntegerIntegerLst;
 algorithm
   outTplExpComponentRefIntegerIntegerLst:=
-  matchcontinue (inExpComponentRefLst,inIntegerLst,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (inExpComponentRefLst,inIntegerLst,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       DAE.ComponentRef cr;
       BackendDAE.Value indx,prio;
       list<tuple<BackendDAE.Key, BackendDAE.Value, BackendDAE.Value>> res;
       list<BackendDAE.Key> crs;
       list<BackendDAE.Value> indxs;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
     case ({},{},_,_,_) then {};
     case ((cr :: crs),(indx :: indxs),dae,m,mt)
@@ -2651,7 +2651,7 @@ end calculateDummyStatePriorities;
 protected function calculateDummyStatePriority
   input DAE.ComponentRef inComponentRef;
   input Integer inInteger;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   output DAE.ComponentRef outComponentRef1;
@@ -2659,11 +2659,11 @@ protected function calculateDummyStatePriority
   output Integer outInteger3;
 algorithm
   (outComponentRef1,outInteger2,outInteger3):=
-  matchcontinue (inComponentRef,inInteger,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (inComponentRef,inInteger,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       DAE.ComponentRef cr;
       BackendDAE.Value indx;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
     case (cr,indx,dae,m,mt) then (cr,indx,0);
   end matchcontinue;
@@ -2675,20 +2675,20 @@ protected function statesInEqns
   Helper function to reduce_index_dummy_der.
   Returns all states in the equations given as equation index list.
   inputs:  (int list /* eqns */,
-              DAELow,
+              BackendDAE,
               IncidenceMatrix,
               IncidenceMatrixT)
   outputs: (DAE.ComponentRef list, /* name for each state */
               int list)  /* number for each state */"
   input list<Integer> inIntegerLst;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   output list<DAE.ComponentRef> outExpComponentRefLst;
   output list<Integer> outIntegerLst;
 algorithm
   (outExpComponentRefLst,outIntegerLst):=
-  matchcontinue (inIntegerLst,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (inIntegerLst,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       list<BackendDAE.Key> res1,res11,res1_1;
       list<BackendDAE.Value> res2,vars2,res22,res2_1,rest;
@@ -2698,9 +2698,9 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt;
-      BackendDAE.DAELow daelow;
+      BackendDAE.BackendDAE daelow;
     case ({},_,_,_) then ({},{});
-    case ((e :: rest),daelow as BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),m,mt)
+    case ((e :: rest),daelow as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),m,mt)
       equation
         (res1,res2) = statesInEqns(rest, daelow, m, mt);
         e_1 = e - 1;
@@ -2716,7 +2716,7 @@ algorithm
       local String se;
       equation
         se = intString(e);
-        print("-DAELow.statesInEqns failed for eqn: ");
+        print("-BackendDAE.statesInEqns failed for eqn: ");
         print(se);
         print("\n");
       then
@@ -2875,19 +2875,19 @@ protected function differentiateEqns
   The function updates the dae, the incidence matrix and returns
   a list of indices of the differentiated equations, they are added last in
   the dae.
-  inputs:  (DAELow,
+  inputs:  (BackendDAE,
             IncidenceMatrix,
             IncidenceMatrixT,
             int, /* number of vars */
             int, /* number of eqns */
             int list) /* equations */
-  outputs: (DAELow,
+  outputs: (BackendDAE,
             IncidenceMatrix,
             IncidenceMatrixT,
             int, /* number of vars */
             int, /* number of eqns */
             int list /* differentiated equations */)"
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix2;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT3;
   input Integer inInteger4;
@@ -2896,7 +2896,7 @@ protected function differentiateEqns
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
-  output BackendDAE.DAELow outDAELow1;
+  output BackendDAE.BackendDAE outBackendDAE1;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix2;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT3;
   output Integer outInteger4;
@@ -2905,10 +2905,10 @@ protected function differentiateEqns
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 algorithm
-  (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  (outBackendDAE1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value nv,nf,e_1,leneqns,e;
       BackendDAE.Equation eqn,eqn_1;
@@ -2924,7 +2924,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
     case (dae,m,mt,nv,nf,{},_,inDerivedAlgs,inDerivedMultiEqn) then (dae,m,mt,nv,nf,{},inDerivedAlgs,inDerivedMultiEqn);
-    case ((dae as BackendDAE.DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -2945,10 +2945,10 @@ algorithm
         eqns_1 = BackendEquation.equationAdd(eqns, eqn_1);
         leneqns = BackendDAEUtil.equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);
-    case ((dae as BackendDAE.DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -2968,7 +2968,7 @@ algorithm
         Debug.fprint("bltdump", "\n");
         leneqns = BackendDAEUtil.equationSize(eqns);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAELOW(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);        
     case (_,_,_,_,_,_,_,_,_)

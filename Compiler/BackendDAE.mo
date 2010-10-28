@@ -34,7 +34,7 @@ package BackendDAE
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.
 
-  RCS: $Id: DAELow.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
+  RCS: $Id: BackendDAE.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
 "
 
 public import Absyn;
@@ -47,7 +47,7 @@ public constant String derivativeNamePrefix="$DER";
 public constant String partialDerivativeNamePrefix="$pDER";
 
 public uniontype Type "
-Once we are in DAELow, the Type can be only basic types or enumeration.
+Once we are in BackendDAE, the Type can be only basic types or enumeration.
 We cannot do this in DAE because functions may contain many more types."
   record REAL end REAL;
   record INT end INT;
@@ -211,14 +211,14 @@ uniontype EventInfo "- EventInfo"
 end EventInfo;
 
 public
-uniontype DAELow "THE LOWERED DAE consist of variables and equations. The variables are split into
+uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The variables are split into
   two lists, one for unknown variables states and algebraic and one for known variables
   constants and parameters.
   The equations are also split into two lists, one with simple equations, a=b, a-b=0, etc., that
    are removed from  the set of equations to speed up calculations.
 
-  - DAELow"
-  record DAELOW
+  - BackendDAE"
+  record DAE
     Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
@@ -230,9 +230,9 @@ uniontype DAELow "THE LOWERED DAE consist of variables and equations. The variab
     array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-  end DAELOW;
+  end DAE;
 
-end DAELow;
+end BackendDAE;
 
 type ExternalObjectClasses = list<ExternalObjectClass> "classes of external objects stored in list";
 

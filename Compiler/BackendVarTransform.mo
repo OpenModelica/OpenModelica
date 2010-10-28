@@ -53,12 +53,12 @@ public function replaceEquations
   This function takes a list of equations ana a set of variable
   replacements and applies the replacements on all equations.
   The function returns the updated list of equations"
-  input list<BackendDAE.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inBackendDAEEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
-  output list<BackendDAE.Equation> outDAELowEquationLst;
+  output list<BackendDAE.Equation> outBackendDAEEquationLst;
 algorithm
-  outDAELowEquationLst:=
-  matchcontinue (inDAELowEquationLst,inVariableReplacements)
+  outBackendDAEEquationLst:=
+  matchcontinue (inBackendDAEEquationLst,inVariableReplacements)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
       list<BackendDAE.Equation> es_1,es;
@@ -179,12 +179,12 @@ public function replaceEquations "function: replaceEquations
   and applies the replacements on all equations.
   The function returns the updated list of equations
 "
-  input list<BackendDAE.Equation> inDAELowEquationLst;
+  input list<BackendDAE.Equation> inBackendDAEEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
-  output list<BackendDAE.Equation> outDAELowEquationLst;
+  output list<BackendDAE.Equation> outBackendDAEEquationLst;
 algorithm
-  outDAELowEquationLst:=
-  matchcontinue (inDAELowEquationLst,inVariableReplacements)
+  outBackendDAEEquationLst:=
+  matchcontinue (inBackendDAEEquationLst,inVariableReplacements)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
       list<BackendDAE.Equation> es_1,es;
@@ -348,12 +348,12 @@ public function replaceMultiDimEquations "function: replaceMultiDimEquations
   and applies the replacements on all array equations.
   The function returns the updated list of array equations
 "
-  input list<BackendDAE.MultiDimEquation> inDAELowEquationLst;
+  input list<BackendDAE.MultiDimEquation> inBackendDAEEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
-  output list<BackendDAE.MultiDimEquation> outDAELowEquationLst;
+  output list<BackendDAE.MultiDimEquation> outBackendDAEEquationLst;
 algorithm
-  outDAELowEquationLst:=
-  matchcontinue (inDAELowEquationLst,inVariableReplacements)
+  outBackendDAEEquationLst:=
+  matchcontinue (inBackendDAEEquationLst,inVariableReplacements)
     local
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
       list<BackendDAE.MultiDimEquation> es_1,es;

@@ -74,7 +74,7 @@ protected import VarTransform;
 public function removeSimpleEquations
 "function: removeSimpleEquations
   This function moves simple equations on the form a=b from equations 2nd
-  in BackendDAE.DAELow to simple equations 3rd in BackendDAE.DAELow to speed up assignment alg.
+  in BackendDAE.BackendDAE to simple equations 3rd in BackendDAE.BackendDAE to speed up assignment alg.
   inputs:  (vars: Variables,
               knownVars: Variables,
               eqns: BackendDAE.Equation list,
@@ -613,13 +613,13 @@ public function tearingSystem
   Pervormes tearing method on a system.
   This is just a funktion to check the flack tearing.
   All other will be done at tearingSystem1."
-  input BackendDAE.DAELow inDlow;
+  input BackendDAE.BackendDAE inDlow;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
   input list<list<Integer>> inComps;
-  output BackendDAE.DAELow outDlow;
+  output BackendDAE.BackendDAE outDlow;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
@@ -631,7 +631,7 @@ algorithm
   (outDlow,outM,outMT,outV1,outV2,outComps,outResEqn,outTearVar):=
   matchcontinue (inDlow,inM,inMT,inV1,inV2,inComps)
     local
-      BackendDAE.DAELow dlow,dlow_1,dlow1;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow1;
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       array<Integer> v1,v2,v1_1,v2_1;
@@ -667,8 +667,8 @@ protected function copyDaeLowforTearing
   autor: Frenkel TUD
   Copy the dae to avoid changes in
   vectors."
-  input BackendDAE.DAELow inDlow;
-  output BackendDAE.DAELow outDlow;
+  input BackendDAE.BackendDAE inDlow;
+  output BackendDAE.BackendDAE outDlow;
 algorithm
   outDlow:=
   matchcontinue (inDlow)
@@ -688,7 +688,7 @@ algorithm
       Integer bucketSize;
       Integer numberOfVars;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
-    case (BackendDAE.DAELOW(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+    case (BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
         BackendDAE.VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
         BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
@@ -704,7 +704,7 @@ algorithm
         arr_1 = Util.arrayCopy(arr, arr_1);
         eqns1 = BackendDAE.EQUATION_ARRAY(n,size,arr_1);
       then
-        BackendDAE.DAELOW(ordvars1,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
   end matchcontinue;
 end copyDaeLowforTearing;
 
@@ -713,8 +713,8 @@ protected function tearingSystem1
   autor: Frenkel TUD
   Main loop. Check all Comps and start tearing if
   strong connected components there"
-  input BackendDAE.DAELow inDlow;
-  input BackendDAE.DAELow inDlow1;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
@@ -722,8 +722,8 @@ protected function tearingSystem1
   input list<list<Integer>> inComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
-  output BackendDAE.DAELow outDlow;
-  output BackendDAE.DAELow outDlow1;
+  output BackendDAE.BackendDAE outDlow;
+  output BackendDAE.BackendDAE outDlow1;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
@@ -733,7 +733,7 @@ algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
     local
-      BackendDAE.DAELow dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3,m_4;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3,mT_4;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
@@ -813,7 +813,7 @@ protected function getTearingVars
   input array<BackendDAE.Value> inV1;
   input array<BackendDAE.Value> inV2;
   input list<BackendDAE.Value> inComp;
-  input BackendDAE.DAELow inDlow;
+  input BackendDAE.BackendDAE inDlow;
   output list<BackendDAE.Value> outVarLst;
   output list<DAE.ComponentRef> outCrLst;
 algorithm
@@ -824,13 +824,13 @@ algorithm
       array<BackendDAE.Value> v1,v2;
       BackendDAE.Value c,v;
       list<BackendDAE.Value> comp,varlst;
-      BackendDAE.DAELow dlow;
+      BackendDAE.BackendDAE dlow;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
       BackendDAE.Variables ordvars;
       BackendDAE.VariableArray varr;
     case (m,v1,v2,{},dlow) then ({},{});
-    case (m,v1,v2,c::comp,dlow as BackendDAE.DAELOW(orderedVars = ordvars as BackendDAE.VARIABLES(varArr=varr)))
+    case (m,v1,v2,c::comp,dlow as BackendDAE.DAE(orderedVars = ordvars as BackendDAE.VARIABLES(varArr=varr)))
       equation
         v = v2[c];
         BackendDAE.VAR(varName = cr) = BackendVariable.vararrayNth(varr, v-1);
@@ -846,8 +846,8 @@ protected function tearingSystem2
   select a residual equation.
   The equation with most connections to
   variables will be selected."
-  input BackendDAE.DAELow inDlow;
-  input BackendDAE.DAELow inDlow1;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
@@ -862,8 +862,8 @@ protected function tearingSystem2
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
-  output BackendDAE.DAELow outDlow;
-  output BackendDAE.DAELow outDlow1;
+  output BackendDAE.BackendDAE outDlow;
+  output BackendDAE.BackendDAE outDlow1;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
@@ -873,7 +873,7 @@ algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
-      BackendDAE.DAELow dlow,dlow_1,dlow1,dlow1_1;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow1,dlow1_1;
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       array<Integer> v1,v2,v1_1,v2_1;
@@ -924,8 +924,8 @@ protected function tearingSystem3
   a tearing variable. The variable with
   most connections to equations will be
   selected."
-  input BackendDAE.DAELow inDlow;
-  input BackendDAE.DAELow inDlow1;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
@@ -941,8 +941,8 @@ protected function tearingSystem3
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
-  output BackendDAE.DAELow outDlow;
-  output BackendDAE.DAELow outDlow1;
+  output BackendDAE.BackendDAE outDlow;
+  output BackendDAE.BackendDAE outDlow1;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
@@ -952,7 +952,7 @@ algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
-      BackendDAE.DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
@@ -990,9 +990,9 @@ algorithm
         Debug.fcall("tearingdump", print, str2);
         // copy dlow
         dlowc = copyDaeLowforTearing(dlow);
-        BackendDAE.DAELOW(ordvars as BackendDAE.VARIABLES(varArr=varr),knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlowc;
+        BackendDAE.DAE(ordvars as BackendDAE.VARIABLES(varArr=varr),knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlowc;
         dlowc1 = copyDaeLowforTearing(dlow1);
-        BackendDAE.DAELOW(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
+        BackendDAE.DAE(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
         // add Tearing Var
         BackendDAE.VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst )) = BackendVariable.vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend("tearingresidual_",ident);
@@ -1013,8 +1013,8 @@ algorithm
                           {},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.CREF(cr,DAE.ET_REAL()), DAE.emptyElementSource));
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
-        dlow_1 = BackendDAE.DAELOW(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-        dlow1_1 = BackendDAE.DAELOW(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
         m_1 = BackendDAEUtil.incidenceMatrix(dlow_1);
         mT_1 = BackendDAEUtil.transposeMatrix(m_1);
@@ -1052,7 +1052,7 @@ algorithm
         comp_2 = Util.listSelect1(cmops_flat,comp,Util.listContains);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
-    case (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
+    case (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -1063,7 +1063,7 @@ algorithm
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,_)
       equation
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -1081,8 +1081,8 @@ protected function tearingSystem4
   autor: Frenkel TUD
   Internal Main loop for additional
   tearing vars and residual eqns."
-  input BackendDAE.DAELow inDlow;
-  input BackendDAE.DAELow inDlow1;
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.BackendDAE inDlow1;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
@@ -1097,8 +1097,8 @@ protected function tearingSystem4
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
-  output BackendDAE.DAELow outDlow;
-  output BackendDAE.DAELow outDlow1;
+  output BackendDAE.BackendDAE outDlow;
+  output BackendDAE.BackendDAE outDlow1;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
@@ -1109,7 +1109,7 @@ algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp,outCompCount):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps,inResEqns,inTearVars,inTearEqns,inComp,inCompCount,inCrlst)
     local
-      BackendDAE.DAELow dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;

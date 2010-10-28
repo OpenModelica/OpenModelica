@@ -14770,7 +14770,7 @@ algorithm
       String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       BackendDAE.EquationArray eqns;
       Integer elimLevel;
-      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
     // check the balancing of the instantiated model
     // special case for no elements!
     case (classNameOpt, DAE.DAE({},_))
@@ -14787,7 +14787,7 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
-        (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
+        (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = BackendDAECreate.lower(dae, false, true);
         // Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.

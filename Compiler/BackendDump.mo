@@ -34,7 +34,7 @@ package BackendDump
   package:     BackendDump
   description: Unparsing the BackendDAE structure
 
-  RCS: $Id: DAELow.mo 6553 2010-10-24 15:58:01Z sjoelund.se $
+  RCS: $Id: BackendDAE.mo 6553 2010-10-24 15:58:01Z sjoelund.se $
 "
 
 public import BackendDAE;
@@ -173,14 +173,14 @@ end printPrioTuplesStr;
 
 public function printEquations
   input list<Integer> inIntegerLst;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inIntegerLst,inDAELow)
+  matchcontinue (inIntegerLst,inBackendDAE)
     local
       BackendDAE.Value n;
       list<BackendDAE.Value> rest;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
     case ({},_) then ();
     case ((n :: rest),dae)
       equation
@@ -197,15 +197,15 @@ protected function printEquationNo "function: printEquationNo
   Helper function to print_equations
 "
   input Integer inInteger;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inInteger,inDAELow)
+  matchcontinue (inInteger,inBackendDAE)
     local
       BackendDAE.Value eqno_1,eqno;
       BackendDAE.Equation eq;
       BackendDAE.EquationArray eqns;
-    case (eqno,BackendDAE.DAELOW(orderedEqs = eqns))
+    case (eqno,BackendDAE.DAE(orderedEqs = eqns))
       equation
         eqno_1 = eqno - 1;
         eq = BackendDAEUtil.equationNth(eqns, eqno_1);
@@ -349,21 +349,21 @@ algorithm
   end matchcontinue;
 end dumpTearing;
 
-public function dumpDAELowEqnList
-  input list<BackendDAE.Equation> inDAELowEqnList;
+public function dumpBackendDAEEqnList
+  input list<BackendDAE.Equation> inBackendDAEEqnList;
   input String header;
   input Boolean printExpTree;
 algorithm
    print(header);
-   dumpDAELowEqnList2(inDAELowEqnList,printExpTree);
+   dumpBackendDAEEqnList2(inBackendDAEEqnList,printExpTree);
    print("===================\n");
-end dumpDAELowEqnList;
+end dumpBackendDAEEqnList;
 
-protected function dumpDAELowEqnList2
-  input list<BackendDAE.Equation> inDAELowEqnList;
+protected function dumpBackendDAEEqnList2
+  input list<BackendDAE.Equation> inBackendDAEEqnList;
   input Boolean printExpTree;
 algorithm
-  _ := matchcontinue (inDAELowEqnList,printExpTree)
+  _ := matchcontinue (inBackendDAEEqnList,printExpTree)
     local
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e;
       String str;
@@ -376,7 +376,7 @@ algorithm
      case ({},_) then ();
      case (BackendDAE.EQUATION(e1,e2,source)::res,printExpTree) /* header */
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("EQUATION: ");
         str = ExpressionDump.printExpStr(e1);
         print(str);
@@ -389,7 +389,7 @@ algorithm
         ();
      case (BackendDAE.COMPLEX_EQUATION(i,e1,e2,source)::res,printExpTree) /* header */
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("COMPLEX_EQUATION: ");
         str = ExpressionDump.printExpStr(e1);
         print(str);
@@ -402,7 +402,7 @@ algorithm
         ();
     case (BackendDAE.SOLVED_EQUATION(_,e,source)::res,printExpTree)
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("SOLVED_EQUATION: ");
         str = ExpressionDump.printExpStr(e);
         print(str);
@@ -415,7 +415,7 @@ algorithm
         ();
     case (BackendDAE.RESIDUAL_EQUATION(e,source)::res,printExpTree)
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("RESIDUAL_EQUATION: ");
         str = ExpressionDump.printExpStr(e);
         print(str);
@@ -428,7 +428,7 @@ algorithm
         ();
     case (BackendDAE.ARRAY_EQUATION(_,expList,source)::res,printExpTree)
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("ARRAY_EQUATION: ");
         strList = Util.listMap(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
@@ -438,7 +438,7 @@ algorithm
         ();
      case (BackendDAE.ALGORITHM(_,expList,expList2,source)::res,printExpTree)
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("ALGORITHM: ");
         strList = Util.listMap(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
@@ -452,7 +452,7 @@ algorithm
         ();
      case (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(_,_,e,_/*TODO handle elsewhe also*/),source)::res,printExpTree)
       equation
-        dumpDAELowEqnList2(res,printExpTree);
+        dumpBackendDAEEqnList2(res,printExpTree);
         print("WHEN_EQUATION: ");
         str = ExpressionDump.printExpStr(e);
         print(str);
@@ -467,7 +467,7 @@ algorithm
       equation
       then ();
   end matchcontinue;
-end dumpDAELowEqnList2;
+end dumpBackendDAEEqnList2;
 
 protected function dumpZcStr
 "function: dumpZcStr
@@ -497,11 +497,11 @@ end dumpZcStr;
 
 public function dump
 "function: dump
-  This function dumps the BackendDAE.DAELow representaton to stdout."
-  input BackendDAE.DAELow inDAELow;
+  This function dumps the BackendDAE.BackendDAE representaton to stdout."
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (inDAELow)
+  matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
       BackendDAE.Value varlen,eqnlen;
@@ -516,7 +516,7 @@ algorithm
       array<DAE.Algorithm> algs;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAELOW(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
+    case (BackendDAE.DAE(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);
@@ -1177,20 +1177,20 @@ end dumpMatching2;
 
 public function dumpMarkedEqns
 "Dumps only the equations given as list of indexes to a string."
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
-  outString := matchcontinue (inDAELow,inIntegerLst)
+  outString := matchcontinue (inBackendDAE,inIntegerLst)
     local
       String s1,s2,res;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Value> es;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAELOW(orderedEqs = eqns)),(e :: es))
+    case ((dae as BackendDAE.DAE(orderedEqs = eqns)),(e :: es))
       equation
         s1 = dumpMarkedEqns(dae, es);
         e_1 = e - 1;
@@ -1204,21 +1204,21 @@ end dumpMarkedEqns;
 
 public function dumpMarkedVars
 "Dumps only the variable names given as list of indexes to a string."
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inDAELow,inIntegerLst)
+  matchcontinue (inBackendDAE,inIntegerLst)
     local
       String s1,s2,res,s3;
       BackendDAE.Value v_1,v;
       DAE.ComponentRef cr;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars;
       list<BackendDAE.Value> vs;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAELOW(orderedVars = vars)),(v :: vs))
+    case ((dae as BackendDAE.DAE(orderedVars = vars)),(v :: vs))
       equation
         s1 = dumpMarkedVars(dae, vs);
         BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);

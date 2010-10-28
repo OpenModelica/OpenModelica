@@ -32,7 +32,7 @@
 package Derive
 " file:	 Derive.mo
   package:      Derive
-  description: Differentiation of equations from BackendDAE.DAELow
+  description: Differentiation of equations from BackendDAE.BackendDAE
 
   RCS: $Id$
 

@@ -39,7 +39,7 @@ package TaskGraph
   This module is used in the modpar part of OpenModelica for bulding task graphs
   from the BLT decomposition for automatic parallelization.
   The exported function buildTaskgraph takes the lowered form of the DAE defined in
-  DAELow and two assignments vectors (which variable is solved in which equation) and
+  BackendDAE and two assignments vectors (which variable is solved in which equation) and
   the list of blocks given by the BLT decomposition.
 
   The package uses TaskGraphExt for the task graph datastructure itself, which
@@ -65,22 +65,22 @@ protected import VarTransform;
 protected import System;
 
 public function buildTaskgraph ""
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
-  _ := matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer starttask,endtask;
       list<BackendDAE.Var> vars,knvars;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       BackendDAE.VariableArray vararr,knvararr;
       array<Integer> ass1,ass2;
       list<list<Integer>> blocks;
       DAE.ComponentRef cref_;
 
-    case ((dae as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
+    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
       equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
@@ -115,13 +115,13 @@ protected function buildInits "function: buildInits
   This function traverses the DAE and calls external functions to build
   the initialization values for the DAE
   This is implemented in C++ as a set of vectors"
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
-  _ := matchcontinue (inDAELow)
+  _ := matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Var> vars,kvars;
       BackendDAE.VariableArray vararr,kvararr;
-    case (BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
+    case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
       equation
         vars = BackendDAEUtil.vararrayList(vararr);
         kvars = BackendDAEUtil.vararrayList(kvararr);
@@ -133,9 +133,9 @@ algorithm
 end buildInits;
 
 protected function buildInits2
-  input list<BackendDAE.Var> inDAELowVarLst;
+  input list<BackendDAE.Var> inBackendDAEVarLst;
 algorithm
-  _ := matchcontinue (inDAELowVarLst)
+  _ := matchcontinue (inBackendDAEVarLst)
     local
       String v,origname_str;
       DAE.Exp value;
@@ -247,11 +247,11 @@ algorithm
 end buildInits2;
 
 protected function addVariables
-  input list<BackendDAE.Var> inDAELowVarLst;
+  input list<BackendDAE.Var> inBackendDAEVarLst;
   input Integer inInteger;
 algorithm
   _:=
-  matchcontinue (inDAELowVarLst,inInteger)
+  matchcontinue (inBackendDAEVarLst,inInteger)
     local
       Integer start;
       BackendDAE.Var v;
@@ -267,15 +267,15 @@ algorithm
 end addVariables;
 
 protected function buildBlocks
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
   _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<Integer> ass1,ass2;
       list<Integer> block_;
       list<list<Integer>> blocks;
@@ -302,13 +302,13 @@ algorithm
 end buildBlocks;
 
 protected function buildEquation "Build task graph for a single equation."
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input Integer inInteger4;
 algorithm
   _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inInteger4)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
       Integer e_1,v_1,e,indx;
       DAE.Exp e1,e2,varexp,expr;
@@ -324,7 +324,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       array<Integer> ass1,ass2;
-    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
@@ -344,7 +344,7 @@ algorithm
 	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       local Integer v;
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
@@ -371,16 +371,16 @@ algorithm
 	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	int_sub(e,1) => e\' &
-	DAELow.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	int_sub(e,1) => e\' &
+	BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
 	int_sub(v,1) => v\' &
-	DAELow.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
+	BackendDAE.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
 	let varexp = DAE.CREF(cr,DAE.ET_REAL) &
 	not ExpressionSolve.solve(e1,e2,varexp) => _ &
 	print \"nonlinear equation not implemented yet\\n\"
 	--------------------------------
-	build_equation(BackendDAE.DAELOW(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
+	build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
  */
       local Integer v;
       equation
@@ -402,7 +402,7 @@ algorithm
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
-    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
@@ -669,18 +669,18 @@ algorithm
 end addEdgesFromVars;
 
 protected function buildSystem "Build task graph for a system of equations"
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<Integer> inIntegerLst4;
 algorithm
   _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLst4)
     local
       Integer tid;
       list<String> predtasks;
       list<Integer> predtaskids,system;
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<Integer> ass1,ass2;
     case (dae,ass1,ass2,system)
       equation
@@ -700,7 +700,7 @@ algorithm
 end buildSystem;
 
 protected function buildSystem2
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<Integer> inIntegerLst4;
@@ -708,9 +708,9 @@ protected function buildSystem2
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
     local
-      BackendDAE.DAELow dae;
+      BackendDAE.BackendDAE dae;
       array<Integer> ass1,ass2;
       Integer tid,e_1,v_1,e;
       DAE.Exp e1,e2;
@@ -727,7 +727,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<Integer> rest;
     case (dae,ass1,ass2,{},tid) then {};
-    case ((dae as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
+    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
       equation
         e_1 = e - 1;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);

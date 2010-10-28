@@ -65,10 +65,10 @@ public function inlineCalls
 	searches for calls where the inline flag is true, and inlines them"
 	input Option<DAE.FunctionTree> inFTree "functions";
 	input list<DAE.InlineType> inITLst;
-	input BackendDAE.DAELow inDAELow;
-  output BackendDAE.DAELow outDAELow;
+	input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outDAELow := matchcontinue(inFTree,inITLst,inDAELow)
+  outBackendDAE := matchcontinue(inFTree,inITLst,inBackendDAE)
     local
       Option<list<DAE.Element>> fns;
       Option<DAE.FunctionTree> ftree;
@@ -86,7 +86,7 @@ algorithm
       list<Algorithm.Algorithm> alglst;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
-    case(ftree,itlst,BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(ftree,itlst,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         orderedVars = inlineVariables(orderedVars,(ftree,itlst));
         knownVars = inlineVariables(knownVars,(ftree,itlst));
@@ -101,7 +101,7 @@ algorithm
         eventInfo = inlineEventInfo(eventInfo,(ftree,itlst));
         extObjClasses = inlineExtObjClasses(extObjClasses,(ftree,itlst));
       then
-        BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+        BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");

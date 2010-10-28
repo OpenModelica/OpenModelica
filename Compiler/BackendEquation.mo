@@ -103,17 +103,17 @@ end getWhenCondition;
 public function getZeroCrossingIndicesFromWhenClause "function: getZeroCrossingIndicesFromWhenClause
   Returns a list of indices of zerocrossings that a given when clause is dependent on.
 "
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input Integer inInteger;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
-  matchcontinue (inDAELow,inInteger)
+  matchcontinue (inBackendDAE,inInteger)
     local
       list<BackendDAE.Value> res;
       list<BackendDAE.ZeroCrossing> zcLst;
       BackendDAE.Value when_index;
-    case (BackendDAE.DAELOW(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)),when_index)
+    case (BackendDAE.DAE(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)),when_index)
       equation
         res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
       then
@@ -411,20 +411,20 @@ algorithm
     case (e)
       local BackendDAE.Equation e;
       equation
-        Debug.fprintln("failtrace", "- DAELow.equationToResidualForm failed");
+        Debug.fprintln("failtrace", "- BackendDAE.equationToResidualForm failed");
       then
         fail();
   end matchcontinue;
 end equationToResidualForm;
 
-public function equationInfo "Retrieve the line number information from a BackendDAE.DAELow equation"
+public function equationInfo "Retrieve the line number information from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
   output Absyn.Info info;
 algorithm
   info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
 end equationInfo;
 
-protected function equationSource "Retrieve the source from a BackendDAE.DAELow equation"
+protected function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
   output DAE.ElementSource source;
 algorithm

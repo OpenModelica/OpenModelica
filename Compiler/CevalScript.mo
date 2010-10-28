@@ -215,7 +215,7 @@ algorithm
       Absyn.Class class_;
       DAE.DAElist dae_1,dae;
       list<DAE.Element> dael;
-      BackendDAE.DAELow daelow;
+      BackendDAE.BackendDAE daelow;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
       BackendDAE.MultiDimEquation[:] ae;
@@ -345,8 +345,8 @@ algorithm
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1, path);
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
-        /*((daelow as BackendDAE.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = BackendDAE.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = BackendDAECreate.lower(dae, false, true) "no dummy state" ;*/
-        ((daelow as BackendDAE.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
+        /*((daelow as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqnarr,complexEqns = BackendDAE.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = BackendDAECreate.lower(dae, false, true) "no dummy state" ;*/
+        ((daelow as BackendDAE.DAE(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
         m = BackendDAEUtil.incidenceMatrix(daelow);
         mt = BackendDAEUtil.transposeMatrix(m);
         /* jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
@@ -2348,7 +2348,7 @@ algorithm
       list<Env.Frame> env;
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
-      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       list<Integer>[:] m,mT;
       Integer[:] ass1,ass2;
       list<list<Integer>> comps;
@@ -2405,17 +2405,17 @@ protected function translateModel "function translateModel
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outFileDir,resultValues):=
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
-      BackendDAE.DAELow indexed_dlow;
+      BackendDAE.BackendDAE indexed_dlow;
       Interactive.InteractiveSymbolTable st;
       list<String> libs;
       Ceval.Msg msg;
@@ -2444,17 +2444,17 @@ protected function translateModelFMU "function translateModelFMU
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outFileDir,resultValues):=
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
-      BackendDAE.DAELow indexed_dlow;
+      BackendDAE.BackendDAE indexed_dlow;
       Interactive.InteractiveSymbolTable st;
       list<String> libs;
       Ceval.Msg msg;
@@ -2490,7 +2490,7 @@ algorithm
       list<Env.Frame> env;
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
-      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       list<Integer>[:] m,mT;
       Integer[:] ass1,ass2;
       list<list<Integer>> comps;
@@ -2616,7 +2616,7 @@ algorithm
     local
       Values.Value ret_val;
       Interactive.InteractiveSymbolTable st,st_1,st2;
-      BackendDAE.DAELow indexed_dlow_1;
+      BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
       String prefix_str,file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,tolerance_str,options_str;
       Absyn.Path classname,w;
@@ -3432,7 +3432,7 @@ algorithm
       list<Env.Frame> env;
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
-      BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       list<Integer>[:] m,mT;
       Integer[:] ass1,ass2;
       list<list<Integer>> comps;
@@ -3510,7 +3510,7 @@ algorithm
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
-        (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
+        (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
@@ -3550,7 +3550,7 @@ algorithm
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
-        (dlow as BackendDAE.DAELOW(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
+        (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
@@ -3862,7 +3862,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.Path classname;
       Absyn.Program p;
-      BackendDAE.DAELow indexed_dlow_1;
+      BackendDAE.BackendDAE indexed_dlow_1;
       Env.Cache cache;
       DAE.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       DAE.ComponentRef cr;
@@ -3878,7 +3878,7 @@ algorithm
         Boolean x;
         Integer[:] ass1,ass2;
         DAE.DAElist dae_1,dae;
-        BackendDAE.DAELow dlow;
+        BackendDAE.BackendDAE dlow;
         list<Integer>[:] m,mT;
         list<DAE.Element> dael;
         list<Interactive.InstantiatedClass> ic_1,ic;
@@ -3902,7 +3902,7 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3916,7 +3916,7 @@ algorithm
       local
         Boolean x;
         DAE.DAElist dae_1,dae;
-        BackendDAE.DAELow dlow,dlow_1;
+        BackendDAE.BackendDAE dlow,dlow_1;
         list<Integer>[:] m,mT;
         list<DAE.Element> dael;
         list<Interactive.InstantiatedClass> ic_1,ic;
@@ -3943,7 +3943,7 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3957,7 +3957,7 @@ algorithm
         Boolean x;
         Integer[:] ass1,ass2;
         DAE.DAElist dae_1,dae;
-        BackendDAE.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+        BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
         list<Integer>[:] m,mT;
         list<DAE.Element> dael;
         list<Interactive.InstantiatedClass> ic_1,ic;
@@ -3988,7 +3988,7 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
-        XMLDump.dumpDAELow(indexed_dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(indexed_dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -4259,7 +4259,7 @@ algorithm
     local
       Values.Value ret_val;
       Interactive.InteractiveSymbolTable st,st_1,st2;
-      BackendDAE.DAELow indexed_dlow_1;
+      BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
       String prefix_str,file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,options_str,outputFormat_str;
       Absyn.Path classname,w;

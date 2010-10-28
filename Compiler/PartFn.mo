@@ -37,7 +37,7 @@ package PartFn
   RCS: $Id$
 
   This module contains data structures and functions for partially evaulated functions.
-  entry point: createPartEvalFunctions, partEvalDAELow, partEvalDAE
+  entry point: createPartEvalFunctions, partEvalBackendDAE, partEvalDAE
   "
 
 public import Absyn;
@@ -55,18 +55,18 @@ protected import Util;
 
 type Ident = String;
 
-public function partEvalDAELow
-"function: partEvalDAELow
-	handles partially evaluated function in DAELow format"
+public function partEvalBackendDAE
+"function: partEvalBackendDAE
+	handles partially evaluated function in BackendDAE format"
   input list<DAE.Function> inFunctions;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output list<DAE.Function> outFunctions;
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  (outFunctions,outDAELow) := matchcontinue(inFunctions,inDAELow)
+  (outFunctions,outBackendDAE) := matchcontinue(inFunctions,inBackendDAE)
     local
       list<DAE.Function> dae;
-      BackendDAE.DAELow dlow;
+      BackendDAE.BackendDAE dlow;
       BackendDAE.Variables orderedVars;
       BackendDAE.Variables knownVars;
       BackendDAE.Variables externalObjects;
@@ -83,7 +83,7 @@ algorithm
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case(dae,BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(dae,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -94,18 +94,18 @@ algorithm
         (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
         (algorithms,dae) = partEvalAlgs(algorithms,dae);
       then
-        (dae,BackendDAE.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
+        (dae,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalDAELow failed");
+        Debug.fprintln("failtrace","- PartFn.partEvalBackendDAE failed");
       then
         fail();
   end matchcontinue;
-end partEvalDAELow;
+end partEvalBackendDAE;
 
 protected function partEvalAlgs
 "function: partEvalAlgs
-	elabs an algorithm section in DAELow"
+	elabs an algorithm section in BackendDAE"
 	input DAE.Algorithm[:] inAlgorithms;
 	input list<DAE.Function> inElementList;
 	output DAE.Algorithm[:] outAlgorithms;
@@ -227,7 +227,7 @@ end partEvalVars;
 
 protected function partEvalVarLst
 "function: partEvalVarLst
-	evals partevalfuncs in a DAELow.var option list"
+	evals partevalfuncs in a BackendDAE.var option list"
 	input list<Option<BackendDAE.Var>> inVarList;
 	input list<DAE.Function> inElementList;
 	output list<Option<BackendDAE.Var>> outVarList;
@@ -384,7 +384,7 @@ end partEvalEqs;
 
 protected function partEvalWhenEq
 "function: partEvalWhenEq
-	elabs calls in a DAELow when equation"
+	elabs calls in a BackendDAE when equation"
 	input BackendDAE.WhenEquation inWhenEquation;
 	input list<DAE.Function> inElementList;
 	output BackendDAE.WhenEquation outWhenEquation;

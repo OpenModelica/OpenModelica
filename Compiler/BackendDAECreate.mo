@@ -67,8 +67,8 @@ protected import Values;
 public function lower
 "function: lower
   This function translates a DAE, which is the result from instantiating a
-  class, into a more precise form, called BackendDAE.DAELow defined in this module.
-  The BackendDAE.DAELow representation splits the DAE into equations and variables
+  class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
+  The BackendDAE.BackendDAE representation splits the DAE into equations and variables
   and further divides variables into known and unknown variables and the
   equations into simple and nonsimple equations.
   The variables are inserted into a hash table. This gives a lookup cost of
@@ -76,15 +76,15 @@ public function lower
   array. Where adding a new equation can be done in O(1) time if space
   is available.
   inputs:  daeList: DAE.DAElist, simplify: bool)
-  outputs: BackendDAE.DAELow"
+  outputs: BackendDAE.BackendDAE"
   input DAE.DAElist lst;
   input DAE.FunctionTree functionTree;
   input Boolean addDummyDerivativeIfNeeded;
   input Boolean simplify;
 //  input Boolean removeTrivEqs "temporal input, for legacy purposes; doesn't add trivial equations to removed equations";
-  output BackendDAE.DAELow outDAELow;
+  output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outDAELow := matchcontinue(lst, functionTree, addDummyDerivativeIfNeeded, simplify)
+  outBackendDAE := matchcontinue(lst, functionTree, addDummyDerivativeIfNeeded, simplify)
     local
       BackendDAE.BinTree s;
       BackendDAE.Variables vars,knvars,vars_1,extVars;
@@ -136,8 +136,8 @@ algorithm
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));
-        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
-      then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));
+      then BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 
     case(lst, functionTree, addDummyDerivativeIfNeeded, false) // do not simplify
       equation
@@ -172,8 +172,8 @@ algorithm
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
         einfo = Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,zero_crossings),(SOME(functionTree),{DAE.NORM_INLINE()}));        
-        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
-      then BackendDAE.DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
+        BackendDAEUtil.checkBackendDAEWithErrorMsg(BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls));        
+      then BackendDAE.DAE(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
   end matchcontinue;
 end lower;
 
@@ -634,7 +634,7 @@ end lower2;
 
 protected function lowerVar
 "function: lowerVar
-  Transforms a DAE variable to DAELOW variable.
+  Transforms a DAE variable to DAE variable.
   Includes changing the ComponentRef name to a simpler form
   \'a\'.\'b\'{2}\'c\'{5} becomes
   \'a.b{2}.c\' (as CREF_IDENT(\"a.b.c\",{2}) )
@@ -2230,7 +2230,7 @@ protected function expandDerOperator
 "function expandDerOperator
   expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
-  dependent variables, which is only available in DAELow."
+  dependent variables, which is only available in BackendDAE."
   input BackendDAE.Variables vars;
   input list<BackendDAE.Equation> eqns;
   input list<BackendDAE.Equation> ieqns;
@@ -2839,11 +2839,11 @@ end findZeroCrossings3;
 public function zeroCrossingsEquations
 "Returns a list of all equations (by their index) that contain a zero crossing
  Used e.g. to find out which discrete equations are not part of a zero crossing"
-  input BackendDAE.DAELow dae;
+  input BackendDAE.BackendDAE dae;
   output list<Integer> eqns;
 algorithm
   eqns := matchcontinue(dae)
-    case (BackendDAE.DAELOW(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst),orderedEqs=eqnArr)) local
+    case (BackendDAE.DAE(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst),orderedEqs=eqnArr)) local
       list<BackendDAE.ZeroCrossing> zcLst;
       list<list<Integer>> zcEqns;
       list<Integer> wcEqns;

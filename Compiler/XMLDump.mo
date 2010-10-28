@@ -260,7 +260,7 @@ protected import System;
   protected constant String HASH_TB_CREFS_LIST          = "hashTb";
   protected constant String HASH_TB_STRING_LIST_OLDVARS = "hashTbOldVars";
 
-  //All this constants below are used in the dumpDAELow method.
+  //All this constants below are used in the dumpBackendDAE method.
   protected constant String EQUATIONS          = "equations";
   protected constant String EQUATIONS_         = "Equations";
   protected constant String SIMPLE             = "simple";
@@ -965,9 +965,9 @@ algorithm
 end dumpDAEInstDims2;
 
 
-public function dumpDAELow "
+public function dumpBackendDAE "
 
-  This function dumps the DAELow representaton to stdout as XML format.
+  This function dumps the BackendDAE representaton to stdout as XML format.
   The output is like:
 
 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE DAE SYSTEM \"http://home.dei.polimi.it/Projects/AutoEdit/DAE.xsd\">
@@ -1003,18 +1003,18 @@ public function dumpDAELow "
   </ARRAY_OF_EQUATIONS>
 </DAE>
 
-The XML output could change depending on the content of the DAELow structure, in
+The XML output could change depending on the content of the BackendDAE structure, in
 particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input list<DAE.Function> functions;
   input DAE.Exp addOriginalIncidenceMatrix;
   input DAE.Exp addSolvingInfo;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
-  _ := matchcontinue (inDAELow,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
 
@@ -1063,7 +1063,7 @@ algorithm
       DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
-    case (BackendDAE.DAELOW(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
+    case (BackendDAE.DAE(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  _,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
@@ -1097,11 +1097,11 @@ algorithm
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
         dumpFunctions(inFunctions);
-        dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
+        dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
   end matchcontinue;
-end dumpDAELow;
+end dumpBackendDAE;
 
 
 public function dumpDAEVariableAttributes "
@@ -1309,7 +1309,7 @@ end dumpEqns2;
 public function dumpEquation "
 This function is necessary to print an equation element.
 Since in Modelica is possible to have different kind of
-equations, the DAELow representation of the OMC distinguish
+equations, the BackendDAE representation of the OMC distinguish
 between:
  - normal equations
  - array equations
@@ -2094,7 +2094,7 @@ end dumpFunctionNames2;
 
 function dumpFunctionsStr "
 This function returns the code of all the functions
-that are used in the DAELow model.
+that are used in the BackendDAE model.
 The functions are printed as Modelica code.
 "
   input list<DAE.Function> inL;
@@ -2678,11 +2678,11 @@ public function dumpSolvingInfo "
   "
   input DAE.Exp addOriginalIncidenceMatrix;
   input DAE.Exp addSolvingInfo;
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inDAELow)
-      local BackendDAE.DAELow dlow;
+  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
+      local BackendDAE.BackendDAE dlow;
   case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_)
     equation
     then ();
@@ -2768,7 +2768,7 @@ end dumpStrCloseTag;
 
 public function dumpStrFunctions "
 This function is used to print all the information of the functions
-are used in the DAELow model.
+are used in the BackendDAE model.
 The functions are printed using the inFunctions string containing the
 body of the functions.
 "
@@ -3564,7 +3564,7 @@ end relopSymbol;
 public function dumpResidual "
 This function is necessary to print an equation element as a residual.
 Since in Modelica is possible to have different kind of
-equations, the DAELow representation of the OMC distinguish
+equations, the BackendDAE representation of the OMC distinguish
 between:
  - normal equations
  - array equations

@@ -34,7 +34,7 @@ package DAEEXT
   package:      DAEEXT
 
   The DAEEXT module is an externally implemented module (in file runtime/daeext.cpp)
-  used for the BLT and index reduction algorithms in \'DAELow\'. The implementation
+  used for the BLT and index reduction algorithms in \'BackendDAE\'. The implementation
   mainly consists of several bitvectors implemented using std::vector<bool> since
   such functionality is not available in MetaModelica Compiler (MMC)."
 

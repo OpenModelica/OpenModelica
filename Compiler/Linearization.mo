@@ -64,21 +64,21 @@ public constant String partialDerivativeNamePrefix="$pDER";
 public function generateLinearMatrix
   // function: generateLinearMatrix
   // author: wbraun
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input DAE.FunctionTree functionTree;
   input list<DAE.ComponentRef> inComRef1; // eqnvars
   input list<DAE.ComponentRef> inComRef2; // vars to differentiate 
   input list<BackendDAE.Var> inAllVar;
-  output BackendDAE.DAELow outJacobian;
+  output BackendDAE.BackendDAE outJacobian;
   output array<Integer> outV1;
   output array<Integer> outV2;
   output list<list<Integer>> outComps1;
 algorithm 
   (outJacobian,outV1,outV2,outComps1) :=
-    matchcontinue (inDAELow,functionTree,inComRef1,inComRef2,inAllVar)
+    matchcontinue (inBackendDAE,functionTree,inComRef1,inComRef2,inAllVar)
     local
       DAE.DAElist dae;
-      BackendDAE.DAELow dlow;
+      BackendDAE.BackendDAE dlow;
       
       list<DAE.ComponentRef> eqvars,diffvars;
       list<BackendDAE.Var> varlst;
@@ -105,15 +105,15 @@ algorithm
       list<String> s;
       String str;
       
-      case(dlow as BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,{},_,_)
+      case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,{},_,_)
         equation
       v = BackendDAEUtil.listVar({});    
-      then (BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),listArray({}),listArray({}),{});
-      case(dlow as BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,_,{},_)
+      then (BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),listArray({}),listArray({}),{});
+      case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),_,_,{},_)
         equation
       v = BackendDAEUtil.listVar({});    
-      then (BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),listArray({}),listArray({}),{});
-      case(dlow as BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),functionTree,eqvars,diffvars,varlst)
+      then (BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),listArray({}),listArray({}),{});
+      case(dlow as BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc),functionTree,eqvars,diffvars,varlst)
         equation
 
         // prepare index for Matrix and variables for simpleEquations
@@ -136,7 +136,7 @@ algorithm
         ie = BackendDAEUtil.listEquation(ie_lst);
         ae = listArray(ae_lst);
         al = listArray(algs);
-        dlow = BackendDAE.DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
+        dlow = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
      
         // figure out new matching and the strong components  
         m = BackendDAEUtil.incidenceMatrix(dlow);
@@ -289,22 +289,22 @@ end checkIndex;
 public function generateSymbolicJacobian
   // function: generateSymbolicJacobian
   // author: lochel
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   input DAE.FunctionTree functions;
   input list<DAE.ComponentRef> inVars;
   input list<BackendDAE.Var> stateVars;
   input list<BackendDAE.Var> inputVars;
   input list<BackendDAE.Var> paramVars;
-  output BackendDAE.DAELow outJacobian;
+  output BackendDAE.BackendDAE outJacobian;
 algorithm
-  outJacobian := matchcontinue(inDAELow, functions, inVars, stateVars, inputVars, paramVars)
+  outJacobian := matchcontinue(inBackendDAE, functions, inVars, stateVars, inputVars, paramVars)
     local
-      BackendDAE.DAELow daeLow;
+      BackendDAE.BackendDAE daeLow;
       DAE.DAElist daeList;
       list<DAE.ComponentRef> vars;
-      BackendDAE.DAELow jacobian;
+      BackendDAE.BackendDAE jacobian;
       
-      // DAELOW
+      // DAE
       BackendDAE.Variables orderedVars, jacOrderedVars;
       BackendDAE.Variables knownVars, jacKnownVars;
       BackendDAE.Variables externalObjects, jacExternalObjects;
@@ -316,7 +316,7 @@ algorithm
       array<DAE.Algorithm> algorithms, jacAlgorithms;
       BackendDAE.EventInfo eventInfo, jacEventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses, jacExtObjClasses;
-      // end DAELOW
+      // end DAE
       
       list<BackendDAE.Var> allVars, inputVars, paramVars, stateVars, derivedVariables;
       list<BackendDAE.Equation> solvedEquations, derivedEquations, derivedEquations2;
@@ -336,10 +336,10 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAELOW(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
+      jacobian = BackendDAE.DAE(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
     then jacobian;
       
-    case(daeLow as BackendDAE.DAELOW(orderedVars=orderedVars, knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars, orderedEqs=orderedEqs, removedEqs=removedEqs, initialEqs=initialEqs, arrayEqs=arrayEqs, algorithms=algorithms, eventInfo=eventInfo, extObjClasses=extObjClasses), functions, vars, stateVars, inputVars, paramVars) equation
+    case(daeLow as BackendDAE.DAE(orderedVars=orderedVars, knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars, orderedEqs=orderedEqs, removedEqs=removedEqs, initialEqs=initialEqs, arrayEqs=arrayEqs, algorithms=algorithms, eventInfo=eventInfo, extObjClasses=extObjClasses), functions, vars, stateVars, inputVars, paramVars) equation
       Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
       Debug.fcall("jacdump", BackendDump.dump, daeLow);
       Debug.fcall("jacdump", print, "##################### daeLow-dump:    input #####################\n\n");
@@ -362,7 +362,7 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAELOW(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
+      jacobian = BackendDAE.DAE(jacOrderedVars, jacKnownVars, jacExternalObjects, jacAliasVars, jacOrderedEqs, jacRemovedEqs, jacInitialEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses);
       
       Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
       Debug.fcall("jacdump", BackendDump.dump, jacobian);
@@ -370,7 +370,7 @@ algorithm
     then jacobian;  
       
     case(_, _, _, _, _,_) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"DAELow.generateSymbolicJacobian failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAE.generateSymbolicJacobian failed"});
     then fail();
   end matchcontinue;
 end generateSymbolicJacobian;

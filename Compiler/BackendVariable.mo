@@ -2051,23 +2051,23 @@ end calculateIndexes2;
 
 
 public function daeVars
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.Variables vars;
 algorithm
-  vars := matchcontinue (inDAELow)
+  vars := matchcontinue (inBackendDAE)
     local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+    case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
       then vars1;
   end matchcontinue;
 end daeVars;
 
 public function daeKnVars
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.Variables vars;
 algorithm
-  vars := matchcontinue (inDAELow)
+  vars := matchcontinue (inBackendDAE)
     local BackendDAE.Variables vars1,vars2;
-    case (BackendDAE.DAELOW(orderedVars = vars1, knownVars = vars2))
+    case (BackendDAE.DAE(orderedVars = vars1, knownVars = vars2))
       then vars2;
   end matchcontinue;
 end daeKnVars;

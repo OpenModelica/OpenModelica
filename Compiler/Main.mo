@@ -766,7 +766,7 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
-      BackendDAE.DAELow dlow,dlow_1;
+      BackendDAE.BackendDAE dlow,dlow_1;
       list<Integer>[:] m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
@@ -804,8 +804,8 @@ algorithm
          *
          *
          * str = Absyn.pathString(classname);
-         * str = DAELow.unparseStr(dlow, comps, v1, v2, false,str);
-         * //Debug.fcall("flat", DAELow.unparseStr,dlow, comps, v1, v2, true);
+         * str = BackendDAE.unparseStr(dlow, comps, v1, v2, false,str);
+         * //Debug.fcall("flat", BackendDAE.unparseStr,dlow, comps, v1, v2, true);
         **/
         // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
         Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
@@ -832,16 +832,16 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
-  input BackendDAE.DAELow inDAELow1;
+  input BackendDAE.BackendDAE inBackendDAE1;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
   _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer n,nx,ny,np;
-      BackendDAE.DAELow indexed_dae,indexed_dae_1,dae;
+      BackendDAE.BackendDAE indexed_dae,indexed_dae_1,dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
       array<Integer> ass1,ass2;
@@ -897,7 +897,7 @@ protected function simcodegen
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
-  input BackendDAE.DAELow inDAELow5;
+  input BackendDAE.BackendDAE inBackendDAE5;
   input array<Integer> inIntegerArray6;
   input array<Integer> inIntegerArray7;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
@@ -905,9 +905,9 @@ protected function simcodegen
   input list<list<Integer>> inIntegerLstLst10;
 algorithm
   _:=
-  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
+  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inBackendDAE5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
-      BackendDAE.DAELow indexed_dlow,indexed_dlow_1,dlow;
+      BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1,dlow;
       String cname_str,filename,funcfilename,init_filename,makefilename,file_dir;
       Absyn.ComponentRef a_cref;
       list<String> libs;

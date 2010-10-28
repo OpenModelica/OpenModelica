@@ -57,7 +57,7 @@ import DAEDump;
 protected constant String matlabStringDelim = "'";
 
 public function writeIncidenceMatrix
-  input BackendDAE.DAELow dlow;
+  input BackendDAE.BackendDAE dlow;
   input String fileNamePrefix;
   input String flatModelicaStr;
   output String fileName;
@@ -84,11 +84,11 @@ public function getEquations
 "function: getEquations
  @author adrpo
   This function returns the equations"
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output String strEqs;
 algorithm
   strEqs:=
-  matchcontinue (inDAELow)
+  matchcontinue (inBackendDAE)
     local
       String s,s1;
       list<String> ls1;
@@ -96,7 +96,7 @@ algorithm
       list<String> ss;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wcLst;
-    case (BackendDAE.DAELOW(orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
+    case (BackendDAE.DAE(orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
@@ -243,16 +243,16 @@ end getIncidenceRow;
 public function getVariables "function: getVariables
   This function returns the variables
 "
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output String strVars;
 algorithm
   strVars:=
-  matchcontinue (inDAELow)
+  matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Var> vars;
       String s;
       BackendDAE.Variables vars1;
-    case (BackendDAE.DAELOW(orderedVars = vars1))
+    case (BackendDAE.DAE(orderedVars = vars1))
       equation
         vars = varList(vars1);
         s = dumpVars(vars);
@@ -463,18 +463,18 @@ public function incidenceMatrix
   author: PA
   Calculates the incidence matrix, i.e. which
   variables are present in each equation."
-  input BackendDAE.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
   output list<String>[:] outIncidenceMatrix;
 algorithm
   outIncidenceMatrix:=
-  matchcontinue (inDAELow)
+  matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Equation> eqnsl;
       list<list<String>> lstlst;
       list<String>[:] arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (BackendDAE.DAELOW(orderedVars = vars,orderedEqs = eqns))
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         lstlst = incidenceMatrix2(vars, eqnsl);

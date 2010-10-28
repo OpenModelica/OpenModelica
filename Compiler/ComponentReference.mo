@@ -736,7 +736,7 @@ algorithm
         // BZ 2009-12
         // For some reason in some examples we get crefs on different forms.
         // the compare can be crefEqual(CREF_IDENT("mycref",_,{1,2,3}),CREF_IDENT("mycref[1,2,3]",_,{}))
-        // I do belive this has something to do with variable replacement and DAELow.
+        // I do belive this has something to do with variable replacement and BackendDAE.
         // TODO: investigate reason, until then keep as is.
         // I do believe that this is the same bug as adrians qual-ident bug below.
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
