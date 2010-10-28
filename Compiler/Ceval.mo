@@ -1306,7 +1306,7 @@ algorithm
       then
         fail();
         
-    case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
+    /*case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
       local DAE.Function func;
       equation
         false = RTOpts.debugFlag("noevalfunc");
@@ -1328,8 +1328,9 @@ algorithm
           {});
         func = Env.getCachedInstFunc(cache, funcpath);
         newval = CevalFunction.evaluate(env, func, vallst);
+        print("CevalFunction worked!\n");
       then
-        (cache, newval, st);
+        (cache, newval, st);*/
         
     // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)

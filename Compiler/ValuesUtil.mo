@@ -2421,4 +2421,30 @@ algorithm
   end matchcontinue;
 end nthnthArrayelt;
 
+public function valueInteger
+  "Converts a value to an Integer, or fails if that is not possible."
+  input Values.Value inValue;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inValue)
+    local
+      Integer i;
+    case Values.INTEGER(integer = i) then i;
+    case Values.ENUM_LITERAL(index = i) then i;
+  end matchcontinue;
+end valueInteger;
+
+public function valueDimensions
+  "Returns the dimensions of a value."
+  input Values.Value inValue;
+  output list<Integer> outDimensions;
+algorithm
+  outDimensions := matchcontinue(inValue)
+    local
+      list<Integer> dims;
+    case Values.ARRAY(dimLst = dims) then dims;
+    else {};
+  end matchcontinue;
+end valueDimensions;
+
 end ValuesUtil;

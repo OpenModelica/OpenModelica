@@ -5841,6 +5841,38 @@ algorithm
   end matchcontinue;
 end listSplitOnBoolList;
 
+public function listSplitOnFirstMatch
+  "This function splits a list when the given function first finds a matching
+  element. Ex:
+    listSplitOnFirstMatch({1,2,3,4,5}, isThree) => ({1,2}, {3,4,5})"
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  output list<Type_a> outList1;
+  output list<Type_a> outList2;
+
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a inElement;
+  end FuncType;
+algorithm
+  (outList1, outList2) := matchcontinue(inList, inFunc)
+    local
+      Type_a e;
+      list<Type_a> el, l1, l2;
+    case ({}, _) then ({}, {});
+    case (e :: el, _)
+      equation
+        inFunc(e);
+      then
+        ({}, e :: el);
+    case (e :: el, _)
+      equation
+        (l1, l2) = listSplitOnFirstMatch(el, inFunc);
+      then
+        (e :: l1, l2);
+  end matchcontinue;
+end listSplitOnFirstMatch;
+
 public function listSplitEqualParts "function: listSplitEqualParts
   Takes a list of values and an position value.
   The function returns the list splitted into two lists at the position given as argument.
