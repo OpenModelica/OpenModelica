@@ -2964,6 +2964,7 @@ algorithm
         env = Env.extendFrameT(env, "realAtan", real2real);
         env = Env.extendFrameT(env, "realExp", real2real);
         env = Env.extendFrameT(env, "realLn", real2real);
+        env = Env.extendFrameT(env, "realLog10", real2real);
         env = Env.extendFrameT(env, "realFloor", real2real);
         env = Env.extendFrameT(env, "realSqrt", real2real);
 
@@ -3035,7 +3036,8 @@ algorithm
         env = Env.extendFrameT(env, "setGlobalRoot", intBoxedNoRetcall);
         env = Env.extendFrameT(env, "valueConstructor", boxed2int);
         env = Env.extendFrameT(env, "valueSlots", boxed2int);
-        env = Env.extendFrameT(env, "valueEq", AA2bool);        
+        env = Env.extendFrameT(env, "valueEq", AA2bool);
+        env = Env.extendFrameT(env, "referenceEq", AA2bool);
       then env;
     case env then env;
   end matchcontinue;

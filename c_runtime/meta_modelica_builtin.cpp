@@ -263,51 +263,6 @@ realMin_rettype realMin(modelica_real r1, modelica_real r2)
   return r1 < r2 ? r1 : r2;
 }
 
-realAbs_rettype realAbs(modelica_real r)
-{
-  return fabs(r);
-}
-
-realNeg_rettype realNeg(modelica_real r)
-{
-  return -r;
-}
-
-realCos_rettype realCos(modelica_real r)
-{
-  return cos(r);
-}
-
-realSin_rettype realSin(modelica_real r)
-{
-  return sin(r);
-}
-
-realAtan_rettype realAtan(modelica_real r)
-{
-  return atan(r);
-}
-
-realExp_rettype realExp(modelica_real r)
-{
-  return exp(r);
-}
-
-realLn_rettype realLn(modelica_real r)
-{
-  return log(r);
-}
-
-realFloor_rettype realFloor(modelica_real r)
-{
-  return floor(r);
-}
-
-realSqrt_rettype realSqrt(modelica_real r)
-{
-  return sqrt(r);
-}
-
 realLt_rettype realLt(modelica_real r1, modelica_real r2)
 {
   return r1 < r2;

@@ -145,18 +145,20 @@ typedef modelica_real realSin_rettype;
 typedef modelica_real realAtan_rettype;
 typedef modelica_real realExp_rettype;
 typedef modelica_real realLn_rettype;
+typedef modelica_real realLog10_rettype;
 typedef modelica_real realFloor_rettype;
 typedef modelica_real realSqrt_rettype;
 
-realAbs_rettype realAbs(modelica_real);
-realNeg_rettype realNeg(modelica_real);
-realCos_rettype realCos(modelica_real);
-realSin_rettype realSin(modelica_real);
-realAtan_rettype realAtan(modelica_real);
-realExp_rettype realExp(modelica_real);
-realLn_rettype realLn(modelica_real);
-realFloor_rettype realFloor(modelica_real);
-realSqrt_rettype realSqrt(modelica_real);
+#define realAbs(X) fabs(X)
+#define realNeg(X) (-(X))
+#define realCos(X) cos(X)
+#define realSin(X) sin(X)
+#define realAtan(X) atan(X)
+#define realExp(X) exp(X)
+#define realLn(X) log(X)
+#define realLog10(X) log10(X)
+#define realFloor(X) floor(X)
+#define realSqrt(X) sqrt(X)
 
 typedef modelica_boolean realLt_rettype;
 typedef modelica_boolean realLe_rettype;
@@ -283,6 +285,7 @@ void equality(modelica_metatype, modelica_metatype);
 /* Weird RML stuff */
 typedef modelica_metatype getGlobalRoot_rettype;
 typedef modelica_integer valueConstructor_rettype;
+typedef modelica_boolean referenceEq_rettype;
 
 getGlobalRoot_rettype getGlobalRoot(int ix);
 void setGlobalRoot(int ix, modelica_metatype val);
@@ -291,6 +294,7 @@ valueConstructor_rettype valueConstructor(modelica_metatype val);
 modelica_metatype boxptr_getGlobalRoot(modelica_metatype);
 void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);
 modelica_metatype boxptr_valueConstructor(modelica_metatype);
+#define referenceEq(X,Y) ((X) == (Y))
 
 #if defined(__cplusplus)
 }

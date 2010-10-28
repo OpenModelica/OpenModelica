@@ -46,38 +46,38 @@ public function args
   input list<String> inStringLst;
   output list<String> outStringLst;
 
-  external "C" outStringLst=RTOpts_args(inStringLst);
+  external "C" outStringLst=RTOpts_args(inStringLst) annotation(Library = "omcruntime");
 end args;
 
 public function typeinfo
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_typeinfo();
+  external "C" outBoolean = RTOpts_typeinfo() annotation(Library = "omcruntime");
 end typeinfo;
 
 public function splitArrays
   output Boolean outBoolean;
 
-  external "C" splitArrays = RTOpts_splitArrays();
+  external "C" splitArrays = RTOpts_splitArrays() annotation(Library = "omcruntime");
 end splitArrays;
 
 public function paramsStruct
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_paramsStruct();
+  external "C" outBoolean = RTOpts_paramsStruct() annotation(Library = "omcruntime");
 end paramsStruct;
 
 public function modelicaOutput
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_modelicaOutput();
+  external "C" outBoolean = RTOpts_modelicaOutput() annotation(Library = "omcruntime");
 end modelicaOutput;
 
 public function debugFlag
   input String inString;
   output Boolean outBoolean;
 
-  external "C" outBoolean=RTOpts_debugFlag(inString);
+  external "C" outBoolean=RTOpts_debugFlag(inString) annotation(Library = "omcruntime");
 end debugFlag;
 
 public function setDebugFlag
@@ -85,43 +85,43 @@ public function setDebugFlag
   input Integer value;
   output Boolean str;
 
-  external "C" str = RTOpts_setDebugFlag(inString,value);
+  external "C" str = RTOpts_setDebugFlag(inString,value) annotation(Library = "omcruntime");
 end setDebugFlag;
 
 public function noProc
   output Integer outInteger;
 
-  external "C" noProc = RTOpts_noProc();
+  external "C" noProc = RTOpts_noProc() annotation(Library = "omcruntime");
 end noProc;
 
 public function setEliminationLevel
   input Integer level;
 
-  external "C" ;
+  external "C" annotation(Library = "omcruntime");
 end setEliminationLevel;
 
 public function eliminationLevel
   output Integer level;
 
-  external "C" level = RTOpts_level();
+  external "C" level = RTOpts_level() annotation(Library = "omcruntime");
 end eliminationLevel;
 
 public function latency
   output Real outReal;
 
-  external "C" outReal = RTOpts_latency();
+  external "C" outReal = RTOpts_latency() annotation(Library = "omcruntime");
 end latency;
 
 public function bandwidth
   output Real outReal;
 
-  external "C" outReal = RTOpts_bandwidth();
+  external "C" outReal = RTOpts_bandwidth() annotation(Library = "omcruntime");
 end bandwidth;
 
 public function simulationCg
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_simulationCg();
+  external "C" outBoolean = RTOpts_simulationCg() annotation(Library = "omcruntime");
 end simulationCg;
 
 public function simulationCodeTarget
@@ -130,25 +130,25 @@ public function simulationCodeTarget
  usage: omc [+target=gcc|msvc], default to 'gcc'."
   output String outCodeTarget;
 
-  external "C" outCodeTarget = RTOpts_simulationCodeTarget();
+  external "C" outCodeTarget = RTOpts_simulationCodeTarget() annotation(Library = "omcruntime");
 end simulationCodeTarget;
 
 public function classToInstantiate
   output String modelName;
 
-  external "C" modelName = RTOpts_classToInstantiate();
+  external "C" modelName = RTOpts_classToInstantiate() annotation(Library = "omcruntime");
 end classToInstantiate;
 
 public function silent
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_silent();
+  external "C" outBoolean = RTOpts_silent() annotation(Library = "omcruntime");
 end silent;
 
 public function versionRequest
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_versionRequest();
+  external "C" outBoolean = RTOpts_versionRequest() annotation(Library = "omcruntime");
 end versionRequest;
 
 public function acceptMetaModelicaGrammar
@@ -157,7 +157,7 @@ public function acceptMetaModelicaGrammar
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_acceptMetaModelicaGrammar();
+  external "C" outBoolean = RTOpts_acceptMetaModelicaGrammar() annotation(Library = "omcruntime");
 end acceptMetaModelicaGrammar;
 
 public function getAnnotationVersion
@@ -168,7 +168,7 @@ public function getAnnotationVersion
      setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   output String annotationVersion;
-  external "C" annotationVersion = RTOpts_getAnnotationVersion();
+  external "C" annotationVersion = RTOpts_getAnnotationVersion() annotation(Library = "omcruntime");
 end getAnnotationVersion;
 
 public function setAnnotationVersion
@@ -176,7 +176,7 @@ public function setAnnotationVersion
    setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
-  external "C";
+  external "C" annotation(Library = "omcruntime");
 end setAnnotationVersion;
 
 public function getNoSimplify
@@ -186,7 +186,7 @@ public function getNoSimplify
    or via the API
      setNoSimplify(true|false);"
   output Boolean noSimplify;
-  external "C" noSimplify = RTOpts_getNoSimplify();
+  external "C" noSimplify = RTOpts_getNoSimplify() annotation(Library = "omcruntime");
 end getNoSimplify;
 
 public function setNoSimplify
@@ -194,35 +194,35 @@ public function setNoSimplify
    setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input Boolean noSimplify;
-  external "C";
+  external "C" annotation(Library = "omcruntime");
 end setNoSimplify;
 
 public function vectorizationLimit
   "Returns the vectorization limit that is used to determine how large an array
   can be before it no longer is expanded by Static.crefVectorize."
   output Integer limit;
-  external "C" limit = RTOpts_vectorizationLimit();
+  external "C" limit = RTOpts_vectorizationLimit() annotation(Library = "omcruntime");
 end vectorizationLimit;
 
 public function setVectorizationLimit
   "Sets the vectorization limit, see vectorizationLimit above."
   input Integer limit;
-  external "C";
+  external "C" annotation(Library = "omcruntime");
 end setVectorizationLimit;
 
 public function showAnnotations
   output Boolean show;
-  external "C" show = RTOpts_showAnnotations();
+  external "C" show = RTOpts_showAnnotations() annotation(Library = "omcruntime");
 end showAnnotations;
 
 public function setShowAnnotations
   input Boolean show;
-  external "C";
+  external "C" annotation(Library = "omcruntime");
 end setShowAnnotations;
 
 public function getRunningTestsuite
   output Boolean runningTestsuite;
-  external "C" runningTestsuite = RTOpts_getRunningTestsuite();
+  external "C" runningTestsuite = RTOpts_getRunningTestsuite() annotation(Library = "omcruntime");
 end getRunningTestsuite;
 
 end RTOpts;
