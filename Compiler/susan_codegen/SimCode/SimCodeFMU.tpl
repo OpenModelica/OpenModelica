@@ -193,46 +193,40 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   <ModelVariables>
   <%vars.stateVars |> var =>
-    ScalarVariable(var,"internal",0)
+    ScalarVariable(var,"internal",1)
   ;separator="\n"%>  
   <%vars.derivativeVars |> var =>
-    ScalarVariable(var,"internal",10000)
-  ;separator="\n"%>
-  <%vars.inputVars |> var =>
-    ScalarVariable(var,"input",100000)
-  ;separator="\n"%>
-  <%vars.outputVars |> var =>
-    ScalarVariable(var,"output",200000)
+    ScalarVariable(var,"internal",2)
   ;separator="\n"%>
   <%vars.algVars |> var =>
-    ScalarVariable(var,"internal",1000000)
+    ScalarVariable(var,"internal",3)
   ;separator="\n"%>
   <%vars.paramVars |> var =>
-    ScalarVariable(var,"internal",5000000)
+    ScalarVariable(var,"internal",4)
   ;separator="\n"%>
   <%vars.intAlgVars |> var =>
-	ScalarVariable(var,"internal",0)
+	ScalarVariable(var,"internal",1)
   ;separator="\n"%>
   <%vars.intParamVars |> var =>
-    ScalarVariable(var,"internal",1000000)
+    ScalarVariable(var,"internal",2)
   ;separator="\n"%>
   <%vars.boolAlgVars |> var =>
-    ScalarVariable(var,"internal",0)
+    ScalarVariable(var,"internal",1)
   ;separator="\n"%>
   <%vars.boolParamVars |> var =>
-    ScalarVariable(var,"internal",1000000)
+    ScalarVariable(var,"internal",2)
   ;separator="\n"%>  
   <%vars.stringAlgVars |> var =>
-    ScalarVariable(var,"internal",0)
+    ScalarVariable(var,"internal",1)
   ;separator="\n"%>
   <%vars.stringParamVars |> var =>
-    ScalarVariable(var,"internal",1000000)
+    ScalarVariable(var,"internal",2)
   ;separator="\n"%> 
   </ModelVariables>  
   >>
 end ModelVariables;
 
-template ScalarVariable(SimVar simVar, String causality, Integer offset)
+template ScalarVariable(SimVar simVar, String causality, String offset)
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
@@ -245,12 +239,12 @@ case SIMVAR(__) then
   >>
 end ScalarVariable;
 
-template ScalarVariableAttribute(SimVar simVar, String causality, Integer offset)
+template ScalarVariableAttribute(SimVar simVar, String causality, String offset)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
 match simVar
   case SIMVAR(__) then
-  let valueReference = intAdd(index,offset)
+  let valueReference = '<%offset%><%index%>'
   let variability = getVariablity(varKind)
   let description = if comment then 'description="<%comment%>"' 
   let alias = 'noAlias'  //TODO get the right information about alias {noAlias,alias,negatedAlias}
