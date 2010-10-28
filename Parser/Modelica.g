@@ -76,9 +76,6 @@ goto rule ## func ## Ex; }}
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
   #define make_redeclare_keywords(replaceable,redeclare) (replaceable && redeclare ? Absyn__REDECLARE_5fREPLACEABLE : replaceable ? Absyn__REPLACEABLE : redeclare ? Absyn__REDECLARE : NULL)
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
-#if 1 /* mk_bcon will be defined in RML later */
-  #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
-#endif
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mk_box_eat_all(int ix, ...);
