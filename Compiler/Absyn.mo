@@ -2952,11 +2952,11 @@ algorithm
       list<NamedArg> cdr;
       String s;
       Exp e;
+      list<String> slst;
+      list<Exp> elst;
+
     case ({})  then ({},{});
     case (NAMEDARG(argName=s,argValue=e) :: cdr)
-      local
-        list<String> slst;
-        list<Exp> elst;
       equation
         (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
       then
