@@ -310,10 +310,24 @@ realString_rettype realString(modelica_real r)
     init_modelica_string(&res, "inf");
   else if (isnan(r))
     init_modelica_string(&res, "NaN");
-  else if (snprintf(buffer, 32, "%.16g", r) <= 0)
-    throw 1;
-  else
+  else {
+    char* endptr;
+    int ix = snprintf(buffer, 32, "%.16g", r);
+    long ignore;
+    if (ix < 0)
+      throw 1;
+    errno = 0;
+    /* If it looks like an integer, we need to append .0 so it looks like real */
+    ignore = strtol(buffer,&endptr,10);
+    if (errno == 0 && *endptr == '\0') {
+      if (ix > 30)
+        throw 1;
+      buffer[ix++] = '.';
+      buffer[ix++] = '0';
+      buffer[ix] = '\0';
+    }
     init_modelica_string(&res, buffer);
+  }
   return res;
 }
 
@@ -405,7 +419,7 @@ static inline unsigned long djb2_hash(const unsigned char *str)
 {
   unsigned long hash = 5381;
   int c;
-  while (c = *str++)  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  while (0 != (c = *str++))  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
 }
 
@@ -414,7 +428,7 @@ static inline unsigned long sdbm_hash(const unsigned char* str)
 {
   unsigned long hash = 0;
   int c;
-  while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
+  while (0 != (c = *str++)) hash = c + (hash << 6) + (hash << 16) - hash;
   return hash;
 }
 
@@ -422,7 +436,7 @@ static inline unsigned long sdbm_hash(const unsigned char* str)
 stringInt_rettype stringHash(modelica_string_const str)
 {
   long res = 0, i=0;
-  while (str[i]) { res += str[i]; i++; }
+  while (0 != (str[i])) { res += str[i]; i++; }
   return res;
 }
 
