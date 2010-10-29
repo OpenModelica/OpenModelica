@@ -1272,35 +1272,39 @@ match_expression returns [void* ast] :
      T_END MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, es, cs, mk_some_or_none(cmt));
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, or_nil(es), cs, mk_some_or_none(cmt));
      }
   ;
 
 local_clause returns [void* ast] :
   (LOCAL el=element_list)?
     {
-      ast = or_nil(el);
+      ast = el;
     }
   ;
 
 cases returns [void* ast] :
   c=onecase cs=cases2
     {
-      ast = mk_cons(c,cs);
+      $ast = mk_cons(c.ast,cs.ast);
     }
   ;
 
 cases2 returns [void* ast] :
   ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression SEMICOLON)?
     {
+      if (es != NULL)
+        c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                             ModelicaParser_readonly, ModelicaParser_filename_C);
       if (exp)
-       ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
       else
-       ast = mk_nil();
+       $ast = mk_nil();
     }
   | c=onecase cs=cases2
     {
-      ast = mk_cons(c, cs);
+      $ast = mk_cons(c.ast, cs.ast);
     }
   )
   ;
@@ -1308,7 +1312,11 @@ cases2 returns [void* ast] :
 onecase returns [void* ast] :
   (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression SEMICOLON)
     {
-        ast = Absyn__CASE(pat.ast,pat.info,es,or_nil(eqs),exp,mk_some_or_none(cmt));
+        if (es != NULL)
+          c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+                               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                               ModelicaParser_readonly, ModelicaParser_filename_C);
+        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt));
     }
   ;
 
