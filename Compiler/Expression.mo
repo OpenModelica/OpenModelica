@@ -3158,6 +3158,7 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.Statement> statements;
       tuple<DAE.Exp,Type_a> res;
+      list<String> fieldNames;
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
         res = rel((e,ext_arg));
@@ -3171,6 +3172,10 @@ algorithm
         res = rel((e,ext_arg));
       then res;
     case ((e as DAE.BCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    case ((e as DAE.ENUM_LITERAL(index=_)),rel,ext_arg)
       equation
         res = rel((e,ext_arg));
       then res;
@@ -3314,14 +3319,14 @@ algorithm
 
     case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.LIST(tp,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.META_TUPLE(expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3336,6 +3341,13 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((e,ext_arg_2)) = rel((DAE.METARECORDCALL(fn,expl_1,fieldNames,i),ext_arg_1));
       then
         ((e,ext_arg_2));
         /* --------------------- */
