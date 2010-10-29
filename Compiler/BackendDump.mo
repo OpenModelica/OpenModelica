@@ -161,8 +161,8 @@ protected function printPrioTuplesStr
   output String str;
 algorithm
   str := matchcontinue(prioTuples)
+    local DAE.ComponentRef cr; Real prio; String s1,s2;
     case((cr,_,prio))
-      local DAE.ComponentRef cr; Real prio; String s1,s2;
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = realString(prio);
@@ -1241,8 +1241,8 @@ public function dumpComponentsGraphStr
   output String res;
 algorithm
   res := matchcontinue(n,m,mT,ass1,ass2)
+    local list<String> lst;  
     case(n,m,mT,ass1,ass2)
-      local list<String> lst;
       equation
         lst = dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
         res = Util.stringDelimitList(lst,",");
@@ -1261,15 +1261,15 @@ protected function dumpComponentsGraphStr2 "help function"
   output list<String> lst;
 algorithm
   lst := matchcontinue(i,n,m,mT,ass1,ass2)
+    local
+      list<list<Integer>> llst;
+      list<Integer> eqns;
+      list<String> strLst,slst;
+      String str;
     case(i,n,m,mT,ass1,ass2) equation
       true = (i > n);
       then {};
     case(i,n,m,mT,ass1,ass2)
-      local
-        list<list<Integer>> llst;
-        list<Integer> eqns;
-        list<String> strLst,slst;
-        String str;
       equation
         eqns = BackendDAETransform.reachableNodes(i, m, mT, ass1, ass2);
         llst = Util.listMap(eqns,Util.listCreate);
