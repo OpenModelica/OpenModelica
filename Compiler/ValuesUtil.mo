@@ -1559,49 +1559,45 @@ algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
-      list<Value> r1,r2,vals,rest;
+      list<Value> v1,v2,vals,rest;
       Value sval;
-      Integer v1,v2;
-      Real v2_1,v1_1;
+      Integer i1,i2;
+      Real r1,r2;
       list<Integer> dims;
     case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation
-        r1 = powArrayeltScalar(sval, vals);
-        r2 = powArrayeltScalar(sval, rest);
+        v1 = powArrayeltScalar(sval, vals);
+        v2 = powArrayeltScalar(sval, rest);
       then
-        (Values.ARRAY(r1,dims) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1;
+        (Values.ARRAY(v1,dims) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v1_1=intReal(v1);
-        v2_1=intReal(v2);
-        r1 = v2_1 ^. v1_1;
-        r2 = powArrayeltScalar(sval, rest);
+        r1=intReal(i1);
+        r2=intReal(i2);
+        r1 = r2 ^. r1;
+        v2 = powArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1,v1;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v2_1 = intReal(v2);
-        r1 = v2_1 ^. v1;
-        r2 = powArrayeltScalar(sval, rest);
+        r2 = intReal(i2);
+        r1 = r2 ^. r1;
+        v2 = powArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
-        v1_1 = intReal(v1);
-        r1 = v2 ^. v1_1;
-        r2 = powArrayeltScalar(sval, rest);
+        r1 = intReal(i1);
+        r1 = r2 ^. r1;
+        v2 = powArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = v2 ^. v1;
-        r2 = powArrayeltScalar(sval, rest);
+        r1 = r2 ^. r1;
+        v2 = powArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
+        (Values.REAL(r1) :: v2);
     case (_,{}) then {};
   end matchcontinue;
 end powArrayeltScalar;
@@ -1617,16 +1613,17 @@ algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
     local
-      Integer r1,r2,res,v1,v2,len,len2,dim;
+      Integer i1,i2,res,v1,v2,len,len2,dim;
       list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
       Value sres,v;
       String lenstr,len2str;
       list<Integer> dims;
-    case ((Values.INTEGER(integer = v1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = v2) :: (v2lst as (_ :: _))))
+      Real r1,r2,rres;
+    case ((Values.INTEGER(integer = i1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = i2) :: (v2lst as (_ :: _))))
       equation
-        r1 = v1*v2;
-        Values.INTEGER(r2) = multScalarProduct(v1lst, v2lst);
-        res = r1 + r2;
+        i1 = i1*i2;
+        Values.INTEGER(i2) = multScalarProduct(v1lst, v2lst);
+        res = i1 + i2;
       then
         Values.INTEGER(res);
     case ({Values.INTEGER(integer = v1)},{Values.INTEGER(integer = v2)})
@@ -1634,20 +1631,18 @@ algorithm
         res = v1*v2;
       then
         Values.INTEGER(res);
-    case ((Values.REAL(real = v1) :: (v1lst as (_ :: _))),(Values.REAL(real = v2) :: (v2lst as (_ :: _))))
-      local Real r1,r2,res,v1,v2;
+    case ((Values.REAL(real = r1) :: (v1lst as (_ :: _))),(Values.REAL(real = r2) :: (v2lst as (_ :: _))))
       equation
-        r1 = v1 *. v2;
+        r1 = r1 *. r2;
         Values.REAL(r2) = multScalarProduct(v1lst, v2lst);
-        res = r1 +. r2;
+        rres = r1 +. r2;
       then
-        Values.REAL(res);
-    case ({Values.REAL(real = v1)},{Values.REAL(real = v2)})
-      local Real res,v1,v2;
+        Values.REAL(rres);
+    case ({Values.REAL(real = r1)},{Values.REAL(real = r2)})
       equation
-        res = v1 *. v2;
+        rres = r1 *. r2;
       then
-        Values.REAL(res);
+        Values.REAL(rres);
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER(integer = _) :: _)))
       equation
         sres = multScalarProduct(v2lst, vlst);
@@ -1672,12 +1667,11 @@ algorithm
       then
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
-      local Integer v;
       equation
         (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
-        Values.INTEGER(v) = multScalarProduct(vlst, col);
+        Values.INTEGER(i1) = multScalarProduct(vlst, col);
       then
-        makeArray({Values.INTEGER(v)});
+        makeArray({Values.INTEGER(i1)});
     case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       equation
         (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
@@ -1687,12 +1681,11 @@ algorithm
       then
         Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
-      local Real v;
       equation
         (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
-        Values.REAL(v) = multScalarProduct(vlst, col);
+        Values.REAL(r1) = multScalarProduct(vlst, col);
       then
-        makeArray({Values.REAL(v)});
+        makeArray({Values.REAL(r1)});
     case (lst1,lst2)
       equation
         Debug.fprintln("failtrace", "Values.multScalarProduct failed");
