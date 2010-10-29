@@ -390,7 +390,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns2,algs,whenclauses_1,extObjCls,states);
     
     // array equations
-    case (((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
+    case (((e as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
       local 
         DAE.Exp e_11,e_21;
         list<DAE.Exp> ea1,ea2;
@@ -408,7 +408,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
     // array equations
-    case (((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
+    case (((e as DAE.ARRAY_EQUATION(dimension = _,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
       local 
         BackendDAE.MultiDimEquation e_1;
       equation
@@ -419,7 +419,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),iaeqns,algs,whenclauses_1,extObjCls,states);
         
     // initial array equations 
-    case (((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
+    case (((e as DAE.INITIAL_ARRAY_EQUATION(dimension = _,exp = e1,array = e2)) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
       local 
         DAE.Exp e_11,e_21;
         list<DAE.Exp> ea1,ea2;
@@ -437,7 +437,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);    
     
     // initial array equations
-    case (((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2)) :: xs), 
+    case (((e as DAE.INITIAL_ARRAY_EQUATION(dimension = _, exp = e1, array = e2)) :: xs), 
         functionTree, states, vars, knvars, extVars, whenclauses)
       local 
         BackendDAE.MultiDimEquation e_1;
@@ -988,9 +988,10 @@ algorithm
     local
       DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2,e1_3,e2_3;
       list<BackendDAE.Value> ds;
+      list<DAE.Dimension> dims;
       DAE.ElementSource source;
 
-    case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
+    case (DAE.ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = source),funcs)
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
@@ -998,10 +999,11 @@ algorithm
         ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
+        ds = Expression.dimensionsSizes(dims);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
 
-    case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
+    case (DAE.INITIAL_ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = source),funcs)
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
@@ -1009,6 +1011,7 @@ algorithm
         ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
+        ds = Expression.dimensionsSizes(dims);
       then
         BackendDAE.MULTIDIM_EQUATION(ds,e1_3,e2_3,source);
   end matchcontinue;

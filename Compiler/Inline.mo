@@ -564,7 +564,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      list<Integer> dimension;
+      list<DAE.Dimension> dimension;
       Algorithm.Algorithm alg,alg_1;
       Ident i;
       Absyn.Path p;

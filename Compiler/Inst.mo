@@ -464,7 +464,7 @@ algorithm
     list<list<DAE.Element>> tbs ;
     list<DAE.Element> fb;
     DAE.Algorithm al;
-    list<Integer> dims;
+    list<DAE.Dimension> dims;
     case({}) then {};
     case(DAE.DEFINE(cr,e1,s)::inElems)
       equation
@@ -2085,12 +2085,26 @@ algorithm
       InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae1_1;
       Absyn.Info info;
+      DAE.Type typ;
 
     /*  Real class */
     case (cache,env,ih,store,mods,pre,csets, ci_state, 
         (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
       equation
-        tys = instRealClass(cache,env,mods,pre);
+        true = RTOpts.splitArrays();
+        tys = instRealClass(cache,env,mods,pre,DAE.T_REAL_DEFAULT);
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
+      then
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
+
+    /*  Real class, non-expanded arrays. Similar cases are needed for other built-in classes as well,
+        I just want to make Reals work first */
+    case (cache,env,ih,store,mods,pre,csets, ci_state, 
+        (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)
+      equation
+        false = RTOpts.splitArrays();
+        typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, Util.listFirst(inst_dims));
+        tys = instRealClass(cache,env,mods,pre,typ);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
@@ -2247,67 +2261,91 @@ protected function instRealClass
   input Env.Env env;
   input DAE.Mod mods;
   input Prefix.Prefix pre;
+  input DAE.Type inType "expected variable type; used for start, min and max in the case of non-expanded arrays";
   output list<DAE.Var> varLst;
 algorithm
-  varLst := matchcontinue(cache,env,mods,pre)
+  varLst := matchcontinue(cache,env,mods,pre,inType)
     local
       Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
       DAE.Var v; DAE.Properties p;
       Option<Values.Value> optVal;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+      DAE.Type ty;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"unit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        true = RTOpts.splitArrays();
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    // min, the case of non-expanded arrays      
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        false = RTOpts.splitArrays();
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,ty,p);
+        then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+      equation
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    // max, the case of non-expanded arrays      
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        false = RTOpts.splitArrays();
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,ty,p);
+        then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+      equation
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    // start, the case of non-expanded arrays      
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        false = RTOpts.splitArrays();
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,ty,p);
+        then v::varLst;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+      equation
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,stateSelectType,p);
       then v::varLst;
-    case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre)
+    case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre,ty)
       local String s1; DAE.SubMod smod; DAE.Mod mym;
       equation
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case(cache,env,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
+    case(cache,env,DAE.NOMOD(),pre,ty) then {};
+    case(cache,env,DAE.REDECL(_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
 
@@ -2623,6 +2661,7 @@ algorithm
       list<DAE.Dimension> res;
       Integer i;
       list<DAE.Subscript> ss;
+      DAE.Exp e;
     case ({}) then {};
     case (DAE.INDEX(exp = DAE.ICONST(integer = i)) :: ss)
       equation
@@ -2635,6 +2674,13 @@ algorithm
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_UNKNOWN :: res;
+    // The case of non-expanded arrays. Possibly SLICE will have to be replaced by something else     
+    case (DAE.SLICE(exp=e) :: ss) 
+      equation
+        false = RTOpts.splitArrays();
+        res = instdimsIntOptList(ss);
+      then
+        DAE.DIM_EXP(e) :: res;
     case (DAE.INDEX(exp = _) :: ss)
       equation
         true = OptManager.getOption("checkModel");
@@ -7561,6 +7607,7 @@ algorithm
                      accesibility = acc,variability = vt,direction = dir),
           prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
+        true = RTOpts.splitArrays();
         idxs_1 = listReverse(idxs);
         pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         // prefix_str = PrefixUtil.printPrefixStr(pre_1);
@@ -7601,12 +7648,62 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets_1,ty,graph);
             
+    // Scalar Variables, the case of non-expanded arrays
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=ss1,restriction=r)),
+          SCode.ATTR(flowPrefix = flowPrefix, streamPrefix = streamPrefix,
+                     accesibility = acc,variability = vt,direction = dir),
+          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      equation
+        false = RTOpts.splitArrays();
+        idxs_1 = listReverse(idxs);
+        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
+        // prefix_str = PrefixUtil.printPrefixStr(pre_1);
+        // Debug.fprint("insttr", "ICLASS " +& ss1 +& " prefix: " +& prefix_str +& " ");
+        // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& ss1 +& " mods: " +& Mod.printModStr(mod));
+        (mod2) = extractEnumerationClassModifier(inMod,cl)
+        "remove Enumeration class modifier handled in instDaeVariableAttributes call";
+        //print("\n Inst class: " +& ss1 +& " for var : " +& n +& ", mods: " +& Mod.printModStr(mod2)+& "\n");
+        (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) =
+          instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
+        dae1_1 = propagateAttributes(dae1, dir,io,vt);
+        identType = makeCrefBaseType(ty,inst_dims);
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,identType,idxs_1));
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
+        // Attempt to set the correct type for array variable. Does not work correctly yet.
+        ty = Types.liftArraySubscriptList(ty, Util.listFirst(inst_dims) /*idxs*/);   
+
+        dae2 = instModEquation(cr, ty, mod, source, impl);
+        start = instStartBindingExp(mod, ty);
+        eOpt = makeVariableBinding(ty,mod,toConst(vt),pre,n,source);
+        dir = propagateAbSCDirection(dir,oDA);
+        // adrpo: we cannot check this here as:
+        //        we might have modifications on inner that we copy here
+        //        Dymola doesn't report modifications on outer as error!
+        //        instead we check here if the modification is not the same
+        //        as the one on inner
+        false = InnerOuter.modificationOnOuter(cache,env,ih,pre,n,cr,mod,io,impl);
+
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
+                          inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
+        dae3 = DAEUtil.addComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
+        dae2 = Util.if_(Types.isComplexType(ty), dae2, DAEUtil.emptyDae /*DAEUtil.extractFunctions(dae2)*/);
+        
+        dae3 = DAEUtil.joinDaes(dae2,dae3);
+        dae = DAEUtil.joinDaes(dae1_1, dae3);
+        store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+      then
+        (cache,env_1,ih,store,dae,csets_1,ty,graph);
+            
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
       ((dim as DAE.DIM_UNKNOWN) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       local
         Integer deduced_dim;
       equation
+        true = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = instWholeDimFromMod(dim, mod);
         dim = DAE.DIM_INTEGER(deduced_dim);
@@ -7617,9 +7714,29 @@ algorithm
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
+    // Array variables with unknown dimensions, non-expanding case 
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
+      ((dim as DAE.DIM_UNKNOWN) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      local
+        Integer deduced_dim;
+        DAE.Subscript dime2;
+      equation
+        false = RTOpts.splitArrays();
+        // Try to deduce the dimension from the modifier.
+        dime = instWholeDimFromMod(dim, mod);
+        dime2 = makeRangeSubscript(dime);
+        dim = Expression.subscriptDimension(dime);
+        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime2});
+        (cache,compenv,ih,store,dae,csets,ty,graph) =
+          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,dime2::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
+        ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
+      then
+        (cache,compenv,ih,store,dae,csets,ty_1,graph);
+
     // Array variables , e.g. Real x[3]
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
+        true = RTOpts.splitArrays();
         dime = instDimExp(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -7627,6 +7744,19 @@ algorithm
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
+
+    // Array variables , non-expanding case
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      equation
+        false = RTOpts.splitArrays();
+        dime = instDimExpNonSplit(dim, impl);
+        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        (cache,compenv,ih,store,dae,csets,ty,graph) =
+          instVar2(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,dime::idxs,inst_dims_1,impl,comment,io,finalPrefix,info,graph);
+        // Type lifting is done in the "scalar" case  
+        //ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
+      then
+        (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // failtrace 
     case (_,env,ih,_,_,mod,pre,_,n,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -8441,6 +8571,29 @@ algorithm
     case (DAE.DIM_EXP(exp = e), _) then DAE.INDEX(e);
   end matchcontinue;
 end instDimExp;
+
+protected function instDimExpNonSplit
+"function: instDimExpNonSplit
+  the vesrion of instDimExp for the case of non-expanded arrays"
+  input DAE.Dimension inDimension;
+  input Boolean inBoolean;
+  output DAE.Subscript outSubscript;
+algorithm
+  outSubscript := matchcontinue (inDimension,inBoolean)
+    local
+      Boolean impl;
+      String s;
+      DAE.Exp e;
+      Integer i;
+      DAE.Subscript eSubscr;
+
+    case (DAE.DIM_UNKNOWN,_) then DAE.WHOLEDIM();
+    case (DAE.DIM_INTEGER(integer = i),_) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
+    case (DAE.DIM_ENUM(size = i), _) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
+    case (DAE.DIM_EXP(exp = e as DAE.RANGE(exp = _)), _) then DAE.INDEX(e);
+    case (DAE.DIM_EXP(exp = e), _) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),e));
+  end matchcontinue;
+end instDimExpNonSplit;
 
 protected function instWholeDimFromMod
 	"Tries to determine the size of a WHOLEDIM dimension by looking at a variables
@@ -9412,6 +9565,17 @@ algorithm
         //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
       then
         (cache,DAE.DIM_INTEGER(i) :: l);
+    // When arrays are non-expanded, non-constant parametric dimensions are allowed
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
+      equation
+        //Debug.fprintln("insttr", "elab_arraydim_decl5");
+        //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
+        false = RTOpts.splitArrays();
+        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
+        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
+      then
+        (cache,DAE.DIM_EXP(e) :: l);
 
     // when not implicit instantiation, array dim. must be constant.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st,doVect,pre,info)
@@ -11586,9 +11750,17 @@ algorithm
         dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
 
-    /* Report an error */
+    /* Arrays with unknown dimension are allowed if not expanded */
+    case (vn,(DAE.T_ARRAY(arrayDim = _,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+      equation
+        false = RTOpts.splitArrays(); 
+        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
+      then dae;
+        
+    /* If arrays are expanded and dimension is unknown, report an error */
     case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
+        true = RTOpts.splitArrays(); 
         s = ComponentReference.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
@@ -15004,5 +15176,20 @@ algorithm
     case (_, _) then inConnectionSet;
   end matchcontinue;
 end addFlowVariable;
+
+protected function makeRangeSubscript
+  input DAE.Subscript inSubscript;
+  output DAE.Subscript outSubscript;
+algorithm
+  outSubscript := matchcontinue (inSubscript)
+  local 
+    DAE.Exp e;
+    DAE.Subscript subscript;
+    case DAE.INDEX(e)
+      then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),e));
+    case (subscript as DAE.SLICE(_))
+      then subscript;    
+  end matchcontinue;
+end makeRangeSubscript;
 
 end Inst;

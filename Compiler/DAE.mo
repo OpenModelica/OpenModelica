@@ -158,14 +158,14 @@ public uniontype Element
   end EQUEQUATION;
 
   record ARRAY_EQUATION " an array equation"
-    list<Integer> dimension "dimension sizes" ;
+    list<Dimension> dimension "dimension sizes" ;
     Exp exp;
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
 	record INITIAL_ARRAY_EQUATION "An initial array equation"
-		list<Integer> dimension "dimension sizes";
+		list<Dimension> dimension "dimension sizes";
 		Exp exp;
 		Exp array;
 		ElementSource source "the origin of the component/equation/algorithm";

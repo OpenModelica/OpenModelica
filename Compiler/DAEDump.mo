@@ -231,7 +231,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.ExternalDecl extdecl;
       DAE.FunctionTree funcs;
-      list<Integer> dl;
+      list<DAE.Dimension> dl;
       
     case DAE.DAE((DAE.VAR(componentRef = cr,
                                binding = SOME(e),
@@ -321,7 +321,7 @@ algorithm
       equation
         Print.printBuf("ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, intString), ", "));
+        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -334,7 +334,7 @@ algorithm
       equation
         Print.printBuf("INITIAL_ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, intString), ", "));
+        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");

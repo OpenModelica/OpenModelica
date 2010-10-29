@@ -1259,6 +1259,54 @@ algorithm oint := matchcontinue(insubs)
 end matchcontinue;
 end subscriptDimensions;
 
+public function subscriptDimension "Function: subscriptDimension
+Returns the dimensionality of the subscript expression
+"
+  input Subscript insub;
+  output DAE.Dimension oint;
+algorithm oint := matchcontinue(insub)
+  local
+    Subscript ss;
+    Integer x;
+    DAE.Exp e;
+
+     
+  case DAE.INDEX(DAE.ICONST(x)) 
+    then 
+      DAE.DIM_INTEGER(x);      
+    
+  case  DAE.WHOLEDIM
+    then
+      DAE.DIM_UNKNOWN();
+
+// Special cases for non-expanded arrays
+  case  DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(x)))
+    equation
+      false = RTOpts.splitArrays();
+    then
+      DAE.DIM_INTEGER(x);
+
+  case DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=e))
+    equation
+      false = RTOpts.splitArrays();
+    then
+      DAE.DIM_EXP(e);
+
+  case ss as DAE.INDEX(exp = e)
+    then
+      DAE.DIM_EXP(e);
+       
+  case ss 
+    local String sub_str;
+    equation
+      true = RTOpts.debugFlag("failtrace");
+      sub_str = ExpressionDump.subscriptString(ss);
+      Debug.fprintln("failtrace", "- Expression.subscriptDimension failed on " +& sub_str);
+    then
+      fail();
+end matchcontinue;
+end subscriptDimension;
+
 public function arrayEltType
 "function: arrayEltType
    Returns the element type of an array expression."
@@ -1314,6 +1362,27 @@ algorithm
     case DAE.DIM_ENUM(size = i) then i; 
   end matchcontinue;
 end dimensionSize;
+
+public function dimensionsSizes
+  "Extracts a list of integers from a list of array dimensions"
+  input list<DAE.Dimension> inDims;
+  output list<Integer> outValues;
+algorithm
+  outValues := matchcontinue(inDims)
+    local
+      DAE.Dimension dim;
+      list<DAE.Dimension> dims;
+      Integer i;
+      list<Integer> ii;
+    case {} then {};
+    case (dim::dims)
+      equation
+        i = dimensionSize(dim);
+        ii = dimensionsSizes(dims);
+      then
+        i::ii;   
+  end matchcontinue;
+end dimensionsSizes;
 
 public function typeof "
 function typeof

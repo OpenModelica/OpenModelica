@@ -186,7 +186,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
-      list<Integer> idims;
+      list<DAE.Dimension> idims;
       DAE.ExternalDecl extDecl;
       DAE.Ident id;
       Absyn.Path path;

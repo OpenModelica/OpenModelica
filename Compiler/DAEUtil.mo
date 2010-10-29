@@ -3506,7 +3506,7 @@ algorithm
     Option<SCode.Comment> cmt;
     Option<DAE.Exp> optExp;
     Absyn.InnerOuter io;
-    list<Integer> idims;
+    list<DAE.Dimension> idims;
     String id,str;
     Absyn.Path path;
     list<DAE.Statement> stmts,stmts2;

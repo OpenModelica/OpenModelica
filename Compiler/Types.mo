@@ -6196,4 +6196,51 @@ algorithm
   end matchcontinue;
 end boxVarLst;
 
+public function liftArraySubscript "function: liftArraySubscript
+
+Lifts a type to an array using DAE.Subscript for dimension in the case of non-expanded arrays"
+  input Type inType;
+  input DAE.Subscript inSubscript;
+  output Type outType;
+algorithm
+  outType:=
+  matchcontinue (inType,inSubscript)
+    local
+      Type ty;
+      Integer i;
+      DAE.Exp e;
+    // An array with an explicit dimension  
+    case (ty,DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(i))))   
+      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));   
+    case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range=DAE.ICONST(i))))   
+      then ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty),NONE()));
+    // An array with parametric dimension  
+    case (ty,DAE.SLICE(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
+      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));   
+    case (ty,DAE.INDEX(DAE.RANGE(exp=DAE.ICONST(1),expOption=NONE(),range = e)))   
+      then ((DAE.T_ARRAY(DAE.DIM_EXP(e),ty),NONE()));   
+    // All other kinds of subscripts denote an index, so the type stays the same
+    case (ty,_)
+      then ty;       
+  end matchcontinue;
+end liftArraySubscript;
+
+public function liftArraySubscriptList "
+  Lifts a type using list<DAE.Subscript> to determine dimensions in the case of non-expanded arrays
+"
+  input Type inType;
+  input list<DAE.Subscript> inSubscriptLst;
+  output Type outType;
+algorithm
+  outType:=
+  matchcontinue (inType,inSubscriptLst)
+    local
+      Type ty;
+      DAE.Subscript sub;
+      list<DAE.Subscript> rest;
+    case (ty,{}) then ty;
+    case (ty,sub::rest) then liftArraySubscript(liftArraySubscriptList(ty,rest),sub);
+  end matchcontinue;
+end liftArraySubscriptList;
+
 end Types;

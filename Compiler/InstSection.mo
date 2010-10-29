@@ -1609,7 +1609,7 @@ algorithm
 	dae := matchcontinue(lhs, rhs, tp, source, initial_)
 		local
 			Boolean b1, b2;
-			list<Integer> ds;
+			list<DAE.Dimension> ds;
 			DAE.FunctionTree funcs;
 			DAE.Dimension dim;
 			
@@ -1619,7 +1619,7 @@ algorithm
 				b1 = Expression.containVectorFunctioncall(lhs);
 				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
-				ds = Types.getDimensionSizes(tp);
+				ds = Types.getDimensions(tp);
 				lhs = ExpressionSimplify.simplify(lhs);
 				rhs = ExpressionSimplify.simplify(rhs);
 			then
@@ -1631,19 +1631,38 @@ algorithm
 				b1 = Expression.containVectorFunctioncall(lhs);
 				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
-				ds = Types.getDimensionSizes(tp);
+				ds = Types.getDimensions(tp);
 				lhs = ExpressionSimplify.simplify(lhs);
 				rhs = ExpressionSimplify.simplify(rhs);
 			then
 				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 				
-    // Array dimension of known size.
+    // Array equation of any size, non-expanding case
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       local
         DAE.Dimension lhs_dim, rhs_dim;
         list<DAE.Exp> lhs_idxs, rhs_idxs;
         DAE.Type t;
       equation
+        false = RTOpts.splitArrays();
+        // Expand along the first dimensions of the expressions, and generate an
+        // equation for each pair of elements.
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
+        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
+        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
+        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+      then
+        dae;
+				
+    // Array dimension of known size, expanding case.
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      local
+        DAE.Dimension lhs_dim, rhs_dim;
+        list<DAE.Exp> lhs_idxs, rhs_idxs;
+        DAE.Type t;
+      equation
+        true = RTOpts.splitArrays();
         failure(equality(dim = DAE.DIM_UNKNOWN())); // adrpo: make sure the dimensions are known!
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
@@ -1655,13 +1674,14 @@ algorithm
       then
         dae;
 				
-    // Array dimension of known size.
+    // Array dimension of unknown size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       local
         DAE.Dimension lhs_dim, rhs_dim;
         list<DAE.Exp> lhs_idxs, rhs_idxs;
         DAE.Type t;
       equation
+        true = RTOpts.splitArrays();
         equality(dim = DAE.DIM_UNKNOWN()); // adrpo: make sure the dimensions are known!
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
@@ -1675,34 +1695,39 @@ algorithm
       then
         dae;
 				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
 		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.INITIAL())
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
+        true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an initial array equation of dim 1
+			  // Now the dimension can be made DAE.DIM_UNKNOWN, I just don't want to break anything for now -- alleb
 			then 
-				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({1}, lhs, rhs, source)});
+				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)}); 
 
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
 		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
+         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an array equation of dim 1
+			  // Now the dimension can be made DAE.DIM_UNKNOWN, I just don't want to break anything for now -- alleb
 			then 
-				DAE.DAE({DAE.ARRAY_EQUATION({1}, lhs, rhs, source)});
+				DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
 		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
-        // It's ok with array equation of unknown size if checkModel is used.
+			  true = RTOpts.splitArrays();
+			  // It's ok with array equation of unknown size if checkModel is used.
 			  false = OptManager.getOption("checkModel");
 				lhs_str = ExpressionDump.printExpStr(lhs);
 				rhs_str = ExpressionDump.printExpStr(rhs);
@@ -4607,7 +4632,7 @@ algorithm
         // dae to be added in the case where the edge is broken.
         zeroVector = Expression.makeRealArrayOfZeros(dim1);
         breakDAEElements = 
-          {DAE.ARRAY_EQUATION({dim1}, zeroVector,
+          {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(dim1)}, zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
                                  false, false, DAE.ET_REAL(), inlineType1), // use the inline type
                         source // set the origin of the element

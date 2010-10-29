@@ -536,7 +536,7 @@ algorithm
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
       DAE.Type fullType;
-      list<Integer> ilst;
+      list<DAE.Dimension> ilst;
       Ident i;
       Absyn.Path p;
       Boolean pp;
@@ -753,7 +753,7 @@ algorithm
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
       DAE.Type fullType;
-      list<Integer> ilst;
+      list<DAE.Dimension> ilst;
       Ident i;
       Absyn.Path p;
       Boolean pp;
@@ -1423,7 +1423,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Statement> alg,alg_1;
-      list<Integer> ilst;
+      list<DAE.Dimension> ilst;
       DAE.ComponentRef componentRef " The variable name";
       DAE.VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
       DAE.VarDirection direction "input, output or bidir" ;
