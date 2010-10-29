@@ -2138,8 +2138,7 @@ algorithm
         list<DAE.Exp> expl;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        expl = Algorithm.getAllExps(algorithm_);
-        expl = getMatchingExpsList(expl, matchMetarecordCalls);
+        expl = BackendDAEUtil.traverseAlgorithmExps(algorithm_, matchMetarecordCalls, {});
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
         //TODO: ? what about rest ? , can be there something else after the ALGORITHM
         (accRecDecls,rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2);
@@ -7441,6 +7440,7 @@ algorithm
         e2 = Expression.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
       then
         ((e,e2::acc));
+    case itpl then itpl;
   end matchcontinue;
 end matchFnRefs;
 

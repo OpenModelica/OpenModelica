@@ -3433,7 +3433,7 @@ algorithm
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);
-        str = "Expression.traverseExp not implemented correctly: " +& str;
+        str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " +& str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
