@@ -437,16 +437,16 @@ on the value of the second input (the String content) prints:
   input String Content;
 algorithm
   _ := matchcontinue (absynPathLst,Content)
+    local
+      Integer len;
     case ({},_)
       then();
     case (absynPathLst,Content)
-      local Integer len;
       equation
         len = listLength(absynPathLst);
         len >= 1 = false;
       then ();
     case (absynPathLst,Content)
-      local Integer len;
       equation
         len = listLength(absynPathLst);
         len >= 1 = true;
@@ -491,15 +491,15 @@ is present the output is:
   input list<DAE.Algorithm> algs;
 algorithm
   _:= matchcontinue(algs)
+    local
+      Integer len;
     case {} then ();
     case algs
-      local Integer len;
       equation
         len = listLength(algs);
         len >= 1 = false;
     then();
     case algs
-      local Integer len;
       equation
         len = listLength(algs);
         len >= 1 = true;
@@ -528,17 +528,16 @@ algorithm
   _ := matchcontinue(algs,inAlgNo)
     local
       list<Algorithm.Statement> stmts;
-      Integer algNo;
+      Integer algNo,algNo_1;
     case({},_) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
-      local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
         Print.printBuf(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)}));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
-    then ();
+      then ();
   end matchcontinue;
 end dumpAlgorithms2;
 
@@ -560,15 +559,15 @@ the output is like:
 algorithm
   _:=
   matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
+    local
+      Integer len;
     case ({},_,_,_) then ();
     case (inMultiDimEquationLst,inContent,_,_)
-      local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = false;
       then();
     case (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
-      local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = true;
@@ -1241,16 +1240,16 @@ The output is:
 algorithm
   _:=
   matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
-      local DAE.Exp addMMLCode;
+    local
+      DAE.Exp addMMLCode;
+      Integer len;
     case ({},_,_,_) then ();
     case (eqns,inContent,_,_)
-      local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
     case (eqns,inContent,addMMLCode,dumpResiduals)
-      local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = true;
@@ -1550,6 +1549,7 @@ algorithm
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
+      list<list<tuple<DAE.Exp, Boolean>>> ebs;
     case (DAE.END())
     ////////////////////////////////////////////////
     //////    TO DO: ADD SUPPORT TO END     ////////
@@ -1561,10 +1561,9 @@ algorithm
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
       then ();
-    case (DAE.RCONST(real = x))
-      local Real x;
+    case (DAE.RCONST(real = rval))
       equation
-        dumpStrMathMLNumberAttr(realString(x),MathMLType,MathMLReal);
+        dumpStrMathMLNumberAttr(realString(rval),MathMLType,MathMLReal);
       then ();
     case (DAE.SCONST(string = s))
       equation
@@ -1722,7 +1721,6 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.ARRAY(array = es,ty=tp))//Array are dumped as vector
-      local DAE.ExpType tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
@@ -1744,14 +1742,12 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.MATRIX(scalar = es,ty=tp))
-      local list<list<tuple<DAE.Exp, Boolean>>> es;
-        DAE.ExpType tp; String s3;
+    case (DAE.MATRIX(scalar = ebs,ty=tp))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
-        dumpListSeparator(es, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
+        dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
@@ -1855,7 +1851,6 @@ algorithm
       then  ();
       // MetaModelica list
     case (DAE.LIST(_,es))
-      local list<DAE.Exp> es;
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -2073,11 +2068,9 @@ algorithm
     local
       Absyn.Path s;
       list<Absyn.Path> remaining;
+      String fn_name_str,s_path;
   case ({}) then ();
   case (s :: remaining)
-    local
-      String fn_name_str;
-      String s_path;
     equation
       s_path = Absyn.pathString(s);
       fn_name_str = ModUtil.pathStringReplaceDot(s, "_");
@@ -2235,6 +2228,7 @@ the kind of a variable, that could be:
 algorithm
   outString :=
   matchcontinue (inVarKind)
+    local Absyn.Path path;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
     case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
     case BackendDAE.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
@@ -2243,7 +2237,6 @@ algorithm
     case BackendDAE.PARAM()        then (VARIABILITY_PARAMETER);
     case BackendDAE.CONST()        then (VARIABILITY_CONSTANT);
     case BackendDAE.EXTOBJ(path)
-      local Absyn.Path path;
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathString(path))));
   end matchcontinue;
 end dumpKind;
@@ -2328,17 +2321,16 @@ the output is like:
 algorithm
   _:=
   matchcontinue (inLstExp,inContent,addMathMLCode)
+    local
+      Integer len;
+      String Lst;
     case ({},_,_) then ();
     case (inLstExp,inContent,_)
-      local
-        Integer len;equation
+      equation
         len = listLength(inLstExp);
         len >= 1 = false;
       then();
     case (inLstExp,inContent,addMathMLCode)
-      local
-        Integer len;
-        String Lst;
       equation
         len = listLength(inLstExp);
         len >= 1 = true;
@@ -2874,9 +2866,9 @@ algorithm
         BackendDAE.StringIndex stringIndex;
         String str_s;
         Integer index_s;
+        Boolean ver;
       case {} then ();
       case ((stringIndex as BackendDAE.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
-        local Boolean ver;
       equation
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_s));
         Print.printBuf(str_s);

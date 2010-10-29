@@ -1711,26 +1711,25 @@ public function crossProduct "
 algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
+    local
+      Integer ix1,ix2,ix3,iy1,iy2,iy3,iz1,iz2,iz3;
+      Real x1,x2,x3,y1,y2,y3,z1,z2,z3;
     case ({Values.REAL(x1),Values.REAL(x2),Values.REAL(x3)},
           {Values.REAL(y1),Values.REAL(y2),Values.REAL(y3)})
-      local
-        Real x1,x2,x3,y1,y2,y3,z1,z2,z3;
       equation
         z1 = realSub(realMul(x2,y3),realMul(x3,y2));
         z2 = realSub(realMul(x3,y1),realMul(x1,y3));
         z3 = realSub(realMul(x1,y2),realMul(x2,y1));
       then
         makeArray({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
-    case ({Values.INTEGER(x1),Values.INTEGER(x2),Values.INTEGER(x3)},
-          {Values.INTEGER(y1),Values.INTEGER(y2),Values.INTEGER(y3)})
-      local
-        Integer x1,x2,x3,y1,y2,y3,z1,z2,z3;
+    case ({Values.INTEGER(ix1),Values.INTEGER(ix2),Values.INTEGER(ix3)},
+          {Values.INTEGER(iy1),Values.INTEGER(iy2),Values.INTEGER(iy3)})
       equation
-        z1 = intSub(intMul(x2,y3),intMul(x3,y2));
-        z2 = intSub(intMul(x3,y1),intMul(x1,y3));
-        z3 = intSub(intMul(x1,y2),intMul(x2,y1));
+        iz1 = intSub(intMul(ix2,iy3),intMul(ix3,iy2));
+        iz2 = intSub(intMul(ix3,iy1),intMul(ix1,iy3));
+        iz3 = intSub(intMul(ix1,iy2),intMul(ix2,iy1));
       then
-        makeArray({Values.INTEGER(z1),Values.INTEGER(z2),Values.INTEGER(z3)});
+        makeArray({Values.INTEGER(iz1),Values.INTEGER(iz2),Values.INTEGER(iz3)});
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- ValuesUtil.crossProduct failed");
@@ -1775,9 +1774,9 @@ algorithm
     local
       String s2;
       Value sval;
-      Real v1,v2_1,v1_1;
+      Integer i1,i2;
+      Real v1,v2_1,v1_1,v2;
       list<Value> vlst,r1,r2,vals,rest;
-      Integer v2;
       list<Integer> dims;
     case ((sval as Values.REAL(real = v1)),vlst)
       equation
@@ -1786,10 +1785,9 @@ algorithm
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
       then
         fail();
-    case ((sval as Values.INTEGER(integer = v1)),vlst)
-      local Integer v1;
+    case ((sval as Values.INTEGER(integer = i1)),vlst)
       equation
-        true = intEq(v1, 0);
+        true = intEq(i1, 0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
@@ -1800,38 +1798,32 @@ algorithm
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.ARRAY(r1,dims) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Integer r1,v1;
+    case ((sval as Values.INTEGER(integer = i1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        r1 = v2/v1;
+        i1 = intDiv(i2,i1);
         r2 = divArrayeltScalar(sval, rest);
       then
-        (Values.INTEGER(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1;
+        (Values.INTEGER(i1) :: r2);
+    case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v2_1 = intReal(v2);
-        r1 = v2_1 /. v1;
+        v2_1 = intReal(i2);
+        v1 = v2_1 /. v1;
         r2 = divArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.REAL(real = v2) :: rest))
-      local
-        Real r1,v2;
-        Integer v1;
+        (Values.REAL(v1) :: r2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = v2) :: rest))
       equation
-        v1_1 = intReal(v1);
-        r1 = v2 /. v1_1;
+        v1_1 = intReal(i1);
+        v1 = v2 /. v1_1;
         r2 = divArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
+        (Values.REAL(v1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v2;
       equation
-        r1 = v2 /. v1;
+        v1 = v2 /. v1;
         r2 = divArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
+        (Values.REAL(v1) :: r2);
     case (_,{}) then {};
   end matchcontinue;
 end divArrayeltScalar;
@@ -1959,14 +1951,15 @@ algorithm
   _ :=
   matchcontinue (inValue)
     local
-      String s,s_1,s_2,res,res_1;
+      String s,s_1,s_2,res,res_1,recordName;
       Integer n;
       Real x;
-      list<Value> vs;
+      list<Value> xs,vs;
       Value r;
       Absyn.CodeNode c;
       DAE.ComponentRef cr;
-      Absyn.Path p;
+      Absyn.Path p, recordPath;
+      list<String> ids;
 
     case Values.INTEGER(integer = n)
       equation
@@ -2024,11 +2017,6 @@ algorithm
       then
         ();
     case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
-      local
-        Absyn.Path recordPath;
-        String recordName;
-        list<Value> xs;
-        list<String> ids;
       equation
         recordName = Absyn.pathString(recordPath);
         

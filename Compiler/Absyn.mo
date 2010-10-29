@@ -2815,10 +2815,9 @@ algorithm
   outAlgorithmItemList := matchcontinue (inClass)
     local
       Class cl;
+      list<AlgorithmItem> algs;
+      list<ClassPart> parts;
     case(cl)
-      local
-        list<AlgorithmItem> algs;
-        list<ClassPart> parts;
       equation
         parts = getClassParts(cl);
         algs = getAlgorithmItems2(parts);
@@ -2838,11 +2837,9 @@ algorithm
   outAlgorithmItemList := matchcontinue (inClassPartList)
     local
       list<ClassPart> cdr;
-      list<AlgorithmItem> algs;
+      list<AlgorithmItem> algs,algs2;
     case({}) then {};
     case(ALGORITHMS(contents=algs) :: cdr)
-      local
-        list<AlgorithmItem> algs2;
       equation
         algs2 = getAlgorithmItems2(cdr);
       then
@@ -2891,7 +2888,7 @@ algorithm
   outClassPartList := matchcontinue (inAlgorithmItemList,inClassPartList)
     local
       list<AlgorithmItem> algs,prev;
-      ClassPart part;
+      ClassPart part,part_1;
       list<ClassPart> cdr,cdr_1;
     case(_,{}) then {};
     case(algs,(part as PUBLIC(_)) :: cdr)
@@ -2919,8 +2916,6 @@ algorithm
         cdr_1 = setAlgorithmItems2(algs,cdr);
       then part :: cdr_1;
     case(algs,(part as ALGORITHMS(contents=prev)) :: cdr)
-      local
-        ClassPart part_1;
       equation
         part_1 = ALGORITHMS(algs);
         cdr_1 = setAlgorithmItems2(algs,cdr);
@@ -3843,16 +3838,19 @@ protected function functionArgsEqual "Returns true if two FunctionArgs are equal
   input FunctionArgs args2;
   output Boolean equal;
 algorithm
- equal := matchcontinue(args1,args2)
-   case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
-      local ComponentRef cref1,cref2; list<Exp> expl1,expl2; Boolean b1; list<Boolean> blst;
-        equation
+  equal := matchcontinue(args1,args2)
+    local
+      ComponentRef cref1,cref2;
+      list<Exp> expl1,expl2;
+      Boolean b1;
+      list<Boolean> blst;
+    case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
+      equation
         blst = Util.listThreadMap(expl1,expl2,expEqual);
         equal = Util.boolAndList(blst);
       then equal;
-
-   case(_,_) then false;
- end matchcontinue;
+    case(_,_) then false;
+  end matchcontinue;
 end functionArgsEqual;
 
 public function getClassName "function getClassName
