@@ -3297,20 +3297,20 @@ algorithm
     case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType = i)),rel,ext_arg)
       local Type tp,tp_1; DAE.InlineType  i;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       local Type tp;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3319,7 +3319,7 @@ algorithm
         list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
         Integer scalar_1,scalar;
       equation
-        (expl_1,ext_arg_1) = traverseExpMatrix(expl, traverseExp, rel, ext_arg);
+        (expl_1,ext_arg_1) = traverseExpMatrix(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.MATRIX(tp,scalar,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3340,7 +3340,7 @@ algorithm
         ((e,ext_arg_4));
     case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.TUPLE(expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3353,7 +3353,7 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl_1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((expl_1,ext_arg_2)) = traverseExpList(expl_1, traverseExp, rel, ext_arg_1);
+        ((expl_1,ext_arg_2)) = traverseExpList(expl_1, rel, ext_arg_1);
         ((e,ext_arg_2)) = rel((DAE.ASUB(e1_1,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3388,14 +3388,14 @@ algorithm
 
     case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.LIST(tp,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
 
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.META_TUPLE(expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3415,7 +3415,7 @@ algorithm
 
     case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl, traverseExp, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.METARECORDCALL(fn,expl_1,fieldNames,i),ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3446,7 +3446,6 @@ protected function traverseExpMatrix
    Helper function to traverseExp, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
-  input traversefuncType tfunc "use traverseExp ore traverseExpTopDown";
   input FuncExpType func;
   input Type_a inTypeA;
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
@@ -3455,30 +3454,20 @@ protected function traverseExpMatrix
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
     output tuple<DAE.Exp, Type_a> outTplExpTypeA;
     replaceable type Type_a subtypeof Any;
-  end FuncExpType;
-  partial function traversefuncType
-    input DAE.Exp inExp;
-    input funcType func;
-    input Type_a inTypeA;
-    output tuple<DAE.Exp, Type_a> outTpl;
-    partial function funcType
-      input tuple<DAE.Exp, Type_a> tpl1;
-      output tuple<DAE.Exp, Type_a> tpl2;
-    end funcType;    
-  end traversefuncType;    
+  end FuncExpType;  
 algorithm
   (outTplExpBooleanLstLst,outTypeA):=
-  matchcontinue (inTplExpBooleanLstLst,tfunc,func,inTypeA)
+  matchcontinue (inTplExpBooleanLstLst,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
       list<tuple<DAE.Exp, Boolean>> row_1,row;
       list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
-    case ({},_,_,e_arg) then ({},e_arg);
-    case ((row :: rows),tfunc,rel,e_arg)
+    case ({},_,e_arg) then ({},e_arg);
+    case ((row :: rows),rel,e_arg)
       equation
-        (row_1,e_arg_1) = traverseExpMatrix2(row, tfunc, rel, e_arg);
-        (rows_1,e_arg_2) = traverseExpMatrix(rows, tfunc, rel, e_arg_1);
+        (row_1,e_arg_1) = traverseExpMatrix2(row, rel, e_arg);
+        (rows_1,e_arg_2) = traverseExpMatrix(rows, rel, e_arg_1);
       then
         ((row_1 :: rows_1),e_arg_2);
   end matchcontinue;
@@ -3490,7 +3479,6 @@ protected function traverseExpMatrix2
   Helper function to traverseExpMatrix."
   replaceable type Type_a subtypeof Any;
   input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input traversefuncType tfunc "use traverseExp ore traverseExpTopDown";
   input FuncExpType func;
   input Type_a inTypeA;
   output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
@@ -3499,31 +3487,21 @@ protected function traverseExpMatrix2
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
     output tuple<DAE.Exp, Type_a> outTplExpTypeA;
     replaceable type Type_a subtypeof Any;
-  end FuncExpType;
-  partial function traversefuncType
-    input DAE.Exp inExp;
-    input funcType func;
-    input Type_a inTypeA;
-    output tuple<DAE.Exp, Type_a> outTpl;
-    partial function funcType
-      input tuple<DAE.Exp, Type_a> tpl1;
-      output tuple<DAE.Exp, Type_a> tpl2;
-    end funcType;    
-  end traversefuncType;   
+  end FuncExpType;  
 algorithm
   (outTplExpBooleanLst,outTypeA):=
-  matchcontinue (inTplExpBooleanLst,tfunc,func,inTypeA)
+  matchcontinue (inTplExpBooleanLst,func,inTypeA)
     local
       Type_a e_arg,e_arg_1,e_arg_2;
       DAE.Exp e_1,e;
       list<tuple<DAE.Exp, Boolean>> rest_1,rest;
       Boolean b;
       FuncExpType rel;
-    case ({},_,_,e_arg) then ({},e_arg);
-    case (((e,b) :: rest),tfunc,rel,e_arg)
+    case ({},_,e_arg) then ({},e_arg);
+    case (((e,b) :: rest),rel,e_arg)
       equation
-        ((e_1,e_arg_1)) = tfunc(e, rel, e_arg);
-        (rest_1,e_arg_2) = traverseExpMatrix2(rest, tfunc, rel, e_arg_1);
+        ((e_1,e_arg_1)) = traverseExp(e, rel, e_arg);
+        (rest_1,e_arg_2) = traverseExpMatrix2(rest, rel, e_arg_1);
       then
         (((e_1,b) :: rest_1),e_arg_2);
   end matchcontinue;
@@ -3535,31 +3513,20 @@ public function traverseExpList
  Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> expl;
-  input traversefuncType tfunc "use traverseExp ore traverseExpTopDown";
   input funcType rel;
   input Type_a ext_arg;
   output tuple<list<DAE.Exp>, Type_a> outTpl;
   partial function funcType
     input tuple<DAE.Exp, Type_a> tpl1;
     output tuple<DAE.Exp, Type_a> tpl2;
-  end funcType;
-  partial function traversefuncType
-    input DAE.Exp inExp;
-    input funcType func;
-    input Type_a inTypeA;
-    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
-    partial function funcType
-      input tuple<DAE.Exp, Type_a> tpl1;
-      output tuple<DAE.Exp, Type_a> tpl2;
-    end funcType;    
-  end traversefuncType;    
+  end funcType;   
 algorithm
-  outTpl := matchcontinue(expl,tfunc,rel,ext_arg)
+  outTpl := matchcontinue(expl,rel,ext_arg)
   local DAE.Exp e,e1; list<DAE.Exp> expl1;
-    case({},_,_,ext_arg) then (({},ext_arg));
-    case(e::expl,tfunc,rel,ext_arg) equation
-      ((e1,ext_arg)) = tfunc(e, rel, ext_arg);
-      ((expl1,ext_arg)) = traverseExpList(expl,tfunc,rel,ext_arg);
+    case({},_,ext_arg) then (({},ext_arg));
+    case(e::expl,rel,ext_arg) equation
+      ((e1,ext_arg)) = traverseExp(e, rel, ext_arg);
+      ((expl1,ext_arg)) = traverseExpList(expl,rel,ext_arg);
     then ((e1::expl1,ext_arg)); 
   end matchcontinue;
 end traverseExpList;
@@ -3577,15 +3544,28 @@ public function traverseExpTopDown
   input Type_a inTypeA;
   output tuple<DAE.Exp, Type_a> outTplExpTypeA;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTplExpBoolTypeA;
-    output tuple<DAE.Exp, Type_a> outTplExpBoolTypeA;
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Boolean, Type_a> outTplExpBoolTypeA;
   end FuncExpType;
-protected
-  DAE.Exp e;
-  Type_a ext_arg_1;
 algorithm
-  ((e,ext_arg_1)) := func((inExp,inTypeA));
-  outTplExpTypeA := traverseExpTopDown1(e,func,ext_arg_1);
+  outTplExpTypeA:=
+  matchcontinue (inExp,func,inTypeA)  
+   local
+     DAE.Exp e;
+     Type_a ext_arg_1,ext_arg_2;      
+   case (inExp,func,ext_arg_1) 
+     equation 
+       ((e,true,ext_arg_2)) = func((inExp,ext_arg_1));
+       outTplExpTypeA = traverseExpTopDown1(e,func,ext_arg_2);
+     then 
+       outTplExpTypeA;
+   case (inExp,func,inTypeA) 
+     equation 
+       ((e,false,ext_arg_1)) = func((inExp,inTypeA));
+       outTplExpTypeA = ((e,ext_arg_1));
+     then 
+       outTplExpTypeA;
+  end matchcontinue;       
 end traverseExpTopDown;
 
 protected function traverseExpTopDown1
@@ -3598,14 +3578,14 @@ protected function traverseExpTopDown1
   output tuple<DAE.Exp, Type_a> outTplExpTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
   outTplExpTypeA:=
   matchcontinue (inExp,func,inTypeA)
     local
       DAE.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
-      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
+      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3;
       Operator op_1,op;
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
@@ -3614,12 +3594,22 @@ algorithm
       Type tp_1,tp;
       Integer i_1,i;
       Ident id_1,id;
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> body;
+      list<String> fieldNames;
+      String str;
+    case ((e as DAE.ICONST(_)),rel,ext_arg) then ((e,ext_arg));    
+    case ((e as DAE.RCONST(_)),rel,ext_arg) then ((e,ext_arg));    
+    case ((e as DAE.SCONST(_)),rel,ext_arg) then ((e,ext_arg));    
+    case ((e as DAE.BCONST(_)),rel,ext_arg) then ((e,ext_arg));    
+    case ((e as DAE.ENUM_LITERAL(name=_)),rel,ext_arg) then ((e,ext_arg));    
+    case ((e as DAE.CREF(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     case ((e as DAE.UNARY(operator = op,exp = e1)),rel,ext_arg) /* unary */
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
       then
         ((DAE.UNARY(op,e1_1),ext_arg_1));
-    case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),rel,ext_arg) /* binary */
+   case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),rel,ext_arg) /* binary */
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
@@ -3652,18 +3642,18 @@ algorithm
     case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType = i)),rel,ext_arg)
       local Type tp,tp_1; DAE.InlineType  i;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       local Type tp;
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
     case ((e as DAE.ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
     case ((e as DAE.MATRIX(ty = tp,integer = scalar,scalar = expl)),rel,ext_arg)
@@ -3671,7 +3661,7 @@ algorithm
         list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl;
         Integer scalar_1,scalar;
       equation
-        (expl_1,ext_arg_1) = traverseExpMatrix(expl,traverseExpTopDown, rel, ext_arg);
+        (expl_1,ext_arg_1) = traverseExpMatrixTopDown(expl, rel, ext_arg);
       then
         ((DAE.MATRIX(tp,scalar,expl_1),ext_arg_1));
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
@@ -3689,7 +3679,7 @@ algorithm
         ((DAE.RANGE(tp,e1_1,SOME(e2_1),e3_1),ext_arg_3));
     case ((e as DAE.TUPLE(PR = expl)),rel,ext_arg)
       equation
-        ((expl_1,ext_arg_1)) = traverseExpList(expl,traverseExpTopDown, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.TUPLE(expl_1),ext_arg_1));
     case ((e as DAE.CAST(ty = tp,exp = e1)),rel,ext_arg)
@@ -3700,7 +3690,7 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl_1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
-        ((expl_1,ext_arg_2)) = traverseExpList(expl_1,traverseExpTopDown, rel, ext_arg_1);
+        ((expl_1,ext_arg_2)) = traverseExpListTopDown(expl_1, rel, ext_arg_1);
       then
         ((DAE.ASUB(e1_1,expl_1),ext_arg_1));
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
@@ -3714,12 +3704,20 @@ algorithm
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
       then
         ((DAE.SIZE(e1_1,SOME(e2_1)),ext_arg_2));
+    case ((e as DAE.CODE(ty=_)),rel,ext_arg) then ((e,ext_arg));    
     case ((e as DAE.REDUCTION(path = path,expr = e1,ident = id,range = e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExpTopDown(e2, rel, ext_arg_1);
       then
         ((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
+    case ((e as DAE.VALUEBLOCK(ty = tp,localDecls=localDecls,body=body,result = e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
+        /* TODO: maybe traverse also the statements */
+      then
+        ((DAE.VALUEBLOCK(tp,localDecls,body,e1_1),ext_arg_1));  
+          
             /* MetaModelica list */
     case ((e as DAE.CONS(tp,e1,e2)),rel,ext_arg)
       equation
@@ -3730,30 +3728,130 @@ algorithm
 
     case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.LIST(tp,expl_1),ext_arg_1));
 
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.META_TUPLE(expl_1),ext_arg_1));
 
     case ((e as DAE.META_OPTION(NONE())),rel,ext_arg)
       then
-        ((DAE.META_OPTION(NONE()),ext_arg));
+        ((e,ext_arg));
 
     case ((e as DAE.META_OPTION(SOME(e1))),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
       then
         ((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
+    case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
+      then
+        ((DAE.METARECORDCALL(fn,expl_1,fieldNames,i),ext_arg_1));
         /* --------------------- */
 
-    case (e,rel,ext_arg) then ((e,ext_arg));
-  end matchcontinue;
+    case (e,rel,ext_arg)
+      equation
+        str = ExpressionDump.printExpStr(e);
+        str = "Expression.traverseExpTopDown1 not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();          
+  end matchcontinue;       
 end traverseExpTopDown1;
+
+protected function traverseExpMatrixTopDown
+"function: traverseExpMatrixTopDown
+  author: PA
+   Helper function to traverseExpTopDown, traverses matrix expressions."
+  replaceable type Type_a subtypeof Any;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;   
+algorithm
+  (outTplExpBooleanLstLst,outTypeA):=
+  matchcontinue (inTplExpBooleanLstLst,func,inTypeA)
+    local
+      FuncExpType rel;
+      Type_a e_arg,e_arg_1,e_arg_2;
+      list<tuple<DAE.Exp, Boolean>> row_1,row;
+      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
+    case ({},_,e_arg) then ({},e_arg);
+    case ((row :: rows),rel,e_arg)
+      equation
+        (row_1,e_arg_1) = traverseExpMatrix2TopDown(row, rel, e_arg);
+        (rows_1,e_arg_2) = traverseExpMatrixTopDown(rows, rel, e_arg_1);
+      then
+        ((row_1 :: rows_1),e_arg_2);
+  end matchcontinue;
+end traverseExpMatrixTopDown;
+
+protected function traverseExpMatrix2TopDown
+"function: traverseExpMatrix2TopDown
+  author: PA
+  Helper function to traverseExpMatrixTopDown."
+  replaceable type Type_a subtypeof Any;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;  
+algorithm
+  (outTplExpBooleanLst,outTypeA):=
+  matchcontinue (inTplExpBooleanLst,func,inTypeA)
+    local
+      Type_a e_arg,e_arg_1,e_arg_2;
+      DAE.Exp e_1,e;
+      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
+      Boolean b;
+      FuncExpType rel;
+    case ({},_,e_arg) then ({},e_arg);
+    case (((e,b) :: rest),rel,e_arg)
+      equation
+        ((e_1,e_arg_1)) = traverseExpTopDown(e, rel, e_arg);
+        (rest_1,e_arg_2) = traverseExpMatrix2TopDown(rest, rel, e_arg_1);
+      then
+        (((e_1,b) :: rest_1),e_arg_2);
+  end matchcontinue;
+end traverseExpMatrix2TopDown;
+
+public function traverseExpListTopDown
+"function traverseExpList
+ author PA:
+ Calls traverseExp for each element of list."
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> expl;
+  input funcType rel;
+  input Type_a ext_arg;
+  output tuple<list<DAE.Exp>, Type_a> outTpl;
+  partial function funcType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end funcType;   
+algorithm
+  outTpl := matchcontinue(expl,rel,ext_arg)
+  local DAE.Exp e,e1; list<DAE.Exp> expl1;
+    case({},_,ext_arg) then (({},ext_arg));
+    case(e::expl,rel,ext_arg) equation
+      ((e1,ext_arg)) = traverseExpTopDown(e, rel, ext_arg);
+      ((expl1,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
+    then ((e1::expl1,ext_arg)); 
+  end matchcontinue;
+end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing for NONE"
   input Option<DAE.Exp> inExp;

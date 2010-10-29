@@ -1135,7 +1135,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         //fcallexps = getMatchingExpsList(explist, matchFnRefs);
-        fcallexps = BackendDAEUtil.traverseBackendDAEExps(dlow,true,getMatchingExps,matchFnRefs);
+        fcallexps = BackendDAEUtil.traverseBackendDAEExps(dlow,getMatchingExps,matchFnRefs);
         calledfuncs = Util.listMap(fcallexps, getCallPath);
         res = removeDuplicatePaths(calledfuncs);
       then res;

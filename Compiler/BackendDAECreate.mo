@@ -2924,8 +2924,43 @@ protected function findZeroCrossings3
   input BackendDAE.Variables knvars;
   output list<DAE.Exp> zeroCrossings;
 algorithm
-  ((_,(zeroCrossings,_))) := Expression.traverseExp(e, collectZeroCrossings, ({},(vars,knvars)));
+  ((_,(zeroCrossings,_))) := Expression.traverseExpTopDown(e, collectZeroCrossings, ({},(vars,knvars)));
 end findZeroCrossings3;
+
+
+protected function collectZeroCrossings "function: collectZeroCrossings
+
+  Collects zero crossings
+"
+  input tuple<DAE.Exp, tuple<list<DAE.Exp>, tuple<BackendDAE.Variables,BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;
+  output tuple<DAE.Exp, Boolean,tuple<list<DAE.Exp>, tuple<BackendDAE.Variables,BackendDAE.Variables>>> outTplExpExpTplExpExpLstVariables;
+algorithm
+  outTplExpExpTplExpExpLstVariables:=
+  matchcontinue (inTplExpExpTplExpExpLstVariables)
+    local
+      DAE.Exp e,e1,e2,e_1;
+      BackendDAE.Variables vars,knvars;
+      list<DAE.Exp> zeroCrossings,zeroCrossings_1,zeroCrossings_2,zeroCrossings_3,el;
+      DAE.Operator op;
+      DAE.ExpType tp;
+      Boolean scalar;
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,(vars,knvars))))
+       then ((e,false,(zeroCrossings,(vars,knvars))));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,(vars,knvars))))
+       then ((e,true,((e :: zeroCrossings),(vars,knvars))));
+    /* function with discrete expressions generate no zerocrossing */
+    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars)))) 
+      equation
+        true = BackendDAEUtil.isDiscreteExp(e1, vars,knvars);
+        true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
+      then
+        ((e,false,(zeroCrossings,(vars,knvars))));
+    /* All other functions generate zerocrossing. */        
+    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars))))
+      then ((e,true,((e :: zeroCrossings),(vars,knvars))));      
+    case ((e,(zeroCrossings,(vars,knvars)))) then ((e,true,(zeroCrossings,(vars,knvars))));
+  end matchcontinue;
+end collectZeroCrossings;
 
 public function zeroCrossingsEquations
 "Returns a list of all equations (by their index) that contain a zero crossing
@@ -2946,41 +2981,6 @@ algorithm
       then eqns;
   end matchcontinue;
 end zeroCrossingsEquations;
-
-
-protected function collectZeroCrossings "function: collectZeroCrossings
-
-  Collects zero crossings
-"
-  input tuple<DAE.Exp, tuple<list<DAE.Exp>, tuple<BackendDAE.Variables,BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;
-  output tuple<DAE.Exp, tuple<list<DAE.Exp>, tuple<BackendDAE.Variables,BackendDAE.Variables>>> outTplExpExpTplExpExpLstVariables;
-algorithm
-  outTplExpExpTplExpExpLstVariables:=
-  matchcontinue (inTplExpExpTplExpExpLstVariables)
-    local
-      DAE.Exp e,e1,e2,e_1;
-      BackendDAE.Variables vars,knvars;
-      list<DAE.Exp> zeroCrossings,zeroCrossings_1,zeroCrossings_2,zeroCrossings_3,el;
-      DAE.Operator op;
-      DAE.ExpType tp;
-      Boolean scalar;
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,(vars,knvars)))) then ((e,({},(vars,knvars))));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,(vars,knvars)))) then ((e,((e :: zeroCrossings),(vars,knvars))));
-
-    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars)))) /* function with discrete expressions generate no zerocrossing */
-      equation
-        true = BackendDAEUtil.isDiscreteExp(e1, vars,knvars);
-        true = BackendDAEUtil.isDiscreteExp(e2, vars,knvars);
-      then
-        ((e,(zeroCrossings,(vars,knvars))));
-    case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars))))
-      equation
-      then ((e,((e :: zeroCrossings),(vars,knvars))));  /* All other functions generate zerocrossing. */
-    case ((e,(zeroCrossings,(vars,knvars))))
-      equation
-      then ((e,(zeroCrossings,(vars,knvars))));
-  end matchcontinue;
-end collectZeroCrossings;
 
 protected function makeZeroCrossing
 "function: makeZeroCrossing

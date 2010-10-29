@@ -145,7 +145,7 @@ algorithm
         varlst2 = varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = listVar(allvarslst);
-        expcrefs = traverseBackendDAEExps(inBackendDAE,false,checkBackendDAEExp,allvars);
+        expcrefs = traverseBackendDAEExps(inBackendDAE,checkBackendDAEExp,allvars);
       then
         expcrefs;
     case (_)
@@ -4482,54 +4482,36 @@ public function traverseBackendDAEExps "function: traverseBackendDAEExps
   an extra argument passed through the function.
 "
   replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
   input BackendDAE.BackendDAE inBackendDAE;
-  input Boolean traverseAlgorithms "true if traverse also algorithms";
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeBLst:=
-  matchcontinue (inBackendDAE,traverseAlgorithms,func,inTypeA)
+  outTypeA:=
+  matchcontinue (inBackendDAE,func,inTypeA)
     local
-      list<Type_b> exps1,exps2,exps3,exps4,exps5,exps6,exps7,exps;
-      list<DAE.Algorithm> alglst;
       BackendDAE.Variables vars1,vars2;
       BackendDAE.EquationArray eqns,reqns,ieqns;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
-    case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
-          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),true,func,inTypeA)
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
+    case (dae as BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),func,inTypeA)
       equation
-        exps1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);
-        exps2 = traverseBackendDAEExpsVars(vars2,func,inTypeA);
-        exps3 = traverseBackendDAEExpsEqns(eqns,func,inTypeA);
-        exps4 = traverseBackendDAEExpsEqns(reqns,func,inTypeA);
-        exps5 = traverseBackendDAEExpsEqns(ieqns,func,inTypeA);
-        exps6 = traverseBackendDAEExpsArrayEqns(ae,func,inTypeA);
-        alglst = arrayList(algs);
-        exps7 = Util.listMapFlat2(alglst, traverseAlgorithmExps,func,inTypeA);
-        exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6,exps7});
+        ext_arg_1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);
+        ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
+        ext_arg_3 = traverseBackendDAEExpsEqns(eqns,func,ext_arg_2);
+        ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_3);
+        ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
+        ext_arg_6 = traverseBackendDAEExpsArrayNoCopy(ae,func,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),ext_arg_5);
+        ext_arg_7 = traverseBackendDAEExpsArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
       then
-        exps;
-    case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
-          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),false,func,inTypeA)
-      equation
-        exps1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);
-        exps2 = traverseBackendDAEExpsVars(vars2,func,inTypeA);
-        exps3 = traverseBackendDAEExpsEqns(eqns,func,inTypeA);
-        exps4 = traverseBackendDAEExpsEqns(reqns,func,inTypeA);
-        exps5 = traverseBackendDAEExpsEqns(ieqns,func,inTypeA);
-        exps6 = traverseBackendDAEExpsArrayEqns(ae,func,inTypeA);
-        exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6});
-      then
-        exps;        
-    case (_,_,_,_)
+        ext_arg_7;
+    case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExps failed");
       then
@@ -4545,32 +4527,22 @@ protected function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsV
   input BackendDAE.Variables inVariables;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any; 
 algorithm
-  outTypeBLst:=
+  outTypeA:=
   matchcontinue (inVariables,func,inTypeA)
     local
-      list<BackendDAE.Var> vars;
-      list<Type_b> talst;
-      array<list<BackendDAE.CrefIndex>> crefindex;
-      array<list<BackendDAE.StringIndex>> oldcrefindex;
-      BackendDAE.VariableArray vararray;
-      BackendDAE.Value bsize,nvars;
-    case (BackendDAE.VARIABLES(crefIdxLstArr = crefindex,strIdxLstArr = oldcrefindex,varArr = vararray,bucketSize = bsize,numberOfVars = nvars),func,inTypeA)
+      array<Option<BackendDAE.Var>> varOptArr;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
       equation
-        vars = vararrayList(vararray) "We can ignore crefs, they don\'t contain real expressions" ;
-        talst = Util.listMapFlat2(vars, traverseBackendDAEExpsVar,func,inTypeA);
+        ext_arg_1 = traverseBackendDAEExpsArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
       then
-        talst;
+        ext_arg_1;
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVars failed");
@@ -4579,47 +4551,85 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVars;
 
+protected function traverseBackendDAEExpsArrayNoCopy "
+ help function to traverseBackendDAEExps
+ author: Frenkel TUD"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  input array<Type_a> array;
+  input FuncType func;
+  input FuncArrayType arrayfunc;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+  partial function FuncArrayType
+    input Type_b inTypeB;
+    input FuncExpType func;
+    input Type_a inTypeA;
+    output Type_a outTypeA;
+  end FuncArrayType;    
+algorithm
+  outTypeA := matchcontinue(array,func,arrayfunc,pos,len,inTypeA)
+    local 
+      Type_a ext_arg_1,ext_arg_2    
+    case(_,_,_,pos,len,inTypeA) equation 
+      true = pos > len;
+    then inTypeA;
+    
+    case(array,func,arrayfunc,pos,len,inTypeA) equation
+      ext_arg_1 = arrayfunc(array[pos],func,inTypeA);
+      ext_arg_2 = traverseBackendDAEExpsArrayNoCopy(array,func,arrayfunc,pos+1,len,ext_arg_1);
+    then ext_arg_2;
+  end matchcontinue;
+end traverseBackendDAEExpsArrayNoCopy;
+
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
   DAE.ET_OTHER is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
-  input BackendDAE.Var inVar;
+  input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeBLst:=
+  outTypeA:=
   matchcontinue (inVar,func,inTypeA)
     local
-      list<DAE.Exp> e1;
-      Type_a ta;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
+      DAE.Exp e1;
       DAE.ComponentRef cref;
       Option<DAE.Exp> bndexp;
-      list<DAE.Subscript> instdims;
-    case (BackendDAE.VAR(varName = cref,
-             bindExp = bndexp,
+      list<DAE.Subscript> instdims,instdims1;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+    case (NONE(),,func,inTypeA) then inTypeA;
+    case (SOME(BackendDAE.VAR(varName = cref,
+             bindExp = SOME(e1),
              arryDim = instdims
-             ),func,inTypeA)
+             )),func,inTypeA)
       equation
-        e1 = Util.optionToList(bndexp);
-        talst = Util.listMapFlat1(e1,func,inTypeA);
-        talst1 = Util.listMapFlat2(instdims, traverseBackendDAEExpsSubscript,func,inTypeA);
-        talst2 = listAppend(talst,talst1);
-        talst3 = func(DAE.CREF(cref,DAE.ET_OTHER()),inTypeA);
-        talst4 = listAppend(talst2,talst3);
+        ((_,ext_arg_1)) = func((e1,inTypeA));
+        ext_arg_2 = traverseBackendDAEExpsSubscript(instdims,func,ext_arg_1);
+        ((_,ext_arg_3)) = func((DAE.CREF(cref,ComponentReference.crefLastType(cref)),ext_arg_2));
       then
-        talst4;
+        ext_arg_3;
+    case (SOME(BackendDAE.VAR(varName = cref,
+             bindExp = NONE(),
+             arryDim = instdims
+             )),func,inTypeA)
+      equation
+        ext_arg_2 = traverseBackendDAEExpsSubscript(instdims,func,inTypeA);
+        ((_,ext_arg_3)) = func((DAE.CREF(cref,ComponentReference.crefLastType(cref)),ext_arg_2));
+      then
+        ext_arg_3;        
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVar failed");
@@ -4631,34 +4641,30 @@ end traverseBackendDAEExpsVar;
 protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
   author: Frenkel TUD
   helper for traverseBackendDAEExpsSubscript"
+  replaceable type Type_a subtypeof Any;  
   input DAE.Subscript inSubscript;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeBLst:=
+  outTypeA:=
   matchcontinue (inSubscript,func,inTypeA)
     local
       DAE.Exp e;
-      list<Type_b> talst;      
-    case (DAE.WHOLEDIM(),_,inTypeA) then {};
+      Type_a ext_arg_1;     
+    case (DAE.WHOLEDIM(),_,inTypeA) then inTypeA;
     case (DAE.SLICE(exp = e),func,inTypeA)
       equation
-        talst = func(e,inTypeA);  
-      then talst;
+        ((_,ext_arg_1)) = func((e,inTypeA));  
+      then ext_arg_1;
     case (DAE.INDEX(exp = e),func,inTypeA)
       equation
-        talst = func(e,inTypeA);  
-      then talst;
+        ((_,ext_arg_1)) = func((e,inTypeA));  
+      then ext_arg_1;
   end matchcontinue;
 end traverseBackendDAEExpsSubscript;
 
@@ -4667,53 +4673,48 @@ protected function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsE
 
   Helper for traverseBackendDAEExpsEqns
 "
+  replaceable type Type_a subtypeof Any;  
   input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
 algorithm
   outTypeBLst:=
   matchcontinue (inEquationArray,func,inTypeA)
     local
-      list<BackendDAE.Equation> eqns;
-      list<Type_b> talst;
-      BackendDAE.EquationArray eqnarray;
-    case ((eqnarray as BackendDAE.EQUATION_ARRAY(numberOfElement = _)),func,inTypeA)
+      array<Option<Equation>> equOptArr
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
       equation
-        eqns = equationList(eqnarray);
-        talst = Util.listMapFlat2(eqns, traverseBackendDAEExpsEqn,func,inTypeA);
+        ext_arg_1 = traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsEqn,1,arrayLength(equOptArr),inTypeA);
       then
-        talst;
+        ext_arg_1;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
+      then
+        fail();          
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
 protected function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
   author: PA
   Helper for traverseBackendDAEExpsEqn."
-  input BackendDAE.Equation inEquation;
+  replaceable type Type_a subtypeof Any;  
+  input Option<BackendDAE.Equation> inEquation;
+  input FuncExpType func;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeBLst:=  matchcontinue (inEquation,func,inTypeA)
+  outTypeA:=  matchcontinue (inEquation,func,inTypeA)
     local
       DAE.Exp e1,e2,e;
       list<DAE.Exp> expl,exps;
@@ -4722,117 +4723,109 @@ algorithm
       BackendDAE.Value ind;
       BackendDAE.WhenEquation elsePart;
       DAE.ElementSource source;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),func,inTypeA)
+     Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+    case (NONE(),,func,inTypeA) then inTypeA;
+    case (SOME(BackendDAE.EQUATION(exp = e1,scalar = e2)),func,inTypeA)
       equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA); 
-        talst2 = listAppend(talst,talst1);
+        ((_,ext_arg_1)) = func((e1,inTypeA));
+        ((_,ext_arg_2)) = func((e1,ext_arg_1));
       then
-        talst2;
-    case (BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),func,inTypeA)
+        ext_arg_2;
+    case (SOME(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl)),func,inTypeA)
       equation
-        talst = Util.listMapFlat1(expl,func,inTypeA);
+        ext_arg_1 = traverseBackendDAEExps(expl,func,inTypeA);
       then
-        talst;
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),func,inTypeA)
-      equation
-        tp = Expression.typeof(e);
-        talst = func(DAE.CREF(cr,tp),inTypeA);
-        talst1 = func(e,inTypeA); 
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE())),func,inTypeA)
+        ext_arg_1;
+    case (SOME(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)),func,inTypeA)
       equation
         tp = Expression.typeof(e);
-        talst = func(DAE.CREF(cr,tp),inTypeA);
-        talst1 = func(e,inTypeA); 
-        talst2 = listAppend(talst,talst1);
+        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
+        ((_,ext_arg_2)) = func((e,ext_arg_1)); 
       then
-        talst2;
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr,e,SOME(elsePart)),source = source),func,inTypeA)
+        ext_arg_2;
+    case (SOME(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE()))),func,inTypeA)
       equation
         tp = Expression.typeof(e);
-        talst = func(DAE.CREF(cr,tp),inTypeA);
-        talst1 = func(e,inTypeA); 
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
+        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
+        ((_,ext_arg_2)) = func((e,ext_arg_1)); 
       then
-        talst4;
-    case (BackendDAE.ALGORITHM(index = ind,in_ = e1,out = e2),func,inTypeA)
-      local list<DAE.Exp> e1,e2;
+        ext_arg_2;
+    case (SOME(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr,e,SOME(elsePart)),source = source)),func,inTypeA)
       equation
-        expl = listAppend(e1, e2);
-        talst = Util.listMapFlat1(expl,func,inTypeA);
+        tp = Expression.typeof(e);
+        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
+        ((_,ext_arg_2)) = func((e,ext_arg_1));  
+        ext_arg_3 = traverseBackendDAEExpsEqn(SOME(BackendDAE.WHEN_EQUATION(elsePart,source)),func,ext_arg_2);
       then
-        talst;
-    case (BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2),func,inTypeA)
+        ext_arg_3;
+    case (SOME(BackendDAE.ALGORITHM(index = ind,in_ = expl,out = exps)),func,inTypeA)
       equation
-        talst = func(e1, inTypeA);
-        talst1 = func(e2, inTypeA);
-        talst2 = listAppend(talst, talst1);
+        ext_arg_1 = traverseBackendDAEExps(expl,func,inTypeA);
+        ext_arg_2 = traverseBackendDAEExps(exps,func,inTypeA);
       then
-        talst2;
+        ext_arg_2;
+    case (SOME(BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2)),func,inTypeA)
+      equation
+        ((_,ext_arg_1)) = func((e1,ext_arg_1)); 
+        ((_,ext_arg_2)) = func((e2,ext_arg_2)); 
+      then
+        ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEExpsEqn;
 
-protected function traverseBackendDAEExpsArrayEqns "function: traverseBackendDAEExpsArrayEqns
-  author: Frenkel TUD
-
-  helper for traverseBackendDAEExps
-"
-  input array<BackendDAE.MultiDimEquation> arr;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+public function traverseBackendDAEExps
+"function traverseBackendDAEExps
+ author Frenkel TUD:
+ Calls user function for each element of list."
+  replaceable type Type_a subtypeof Any;
+  input list<DAE.Exp> expl;
+  input funcType rel;
+  input Type_a ext_arg;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
-  end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
-  list<BackendDAE.MultiDimEquation> lst;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;  
 algorithm
-  lst := arrayList(arr);
-  outTypeBLst := Util.listMapFlat2(lst, traverseBackendDAEExpsArrayEqn,func,inTypeA);
-end traverseBackendDAEExpsArrayEqns;
+  outTypeA := matchcontinue(expl,rel,ext_arg)
+  local 
+      DAE.Exp e; 
+      list<DAE.Exp> expl1;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+    case({},_,ext_arg_1) then ext_arg_1;
+    case(e::expl1,rel,ext_arg_1) equation
+      ((_,ext_arg_2)) = rel((e, ext_arg_1));
+      ext_arg_3 = traverseBackendDAEExps(expl1,rel,ext_arg_2);
+    then ext_arg_3; 
+  end matchcontinue;
+end traverseBackendDAEExps;
 
 protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
   author: Frenkel TUD
 
-  Helper function to traverseBackendDAEExpsArrayEqns
+  Helper function to traverseBackendDAEExpsEqn
 "
+  replaceable type Type_b subtypeof Any;
   input BackendDAE.MultiDimEquation inMultiDimEquation;
   input FuncExpType func;  
   input Type_a inTypeA;
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeb;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
-  end FuncExpType;
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType; 
 algorithm
-  outTypeBLst:=
+  outTypeA:=
   matchcontinue (inMultiDimEquation,func,inTypeA)
     local 
       DAE.Exp e1,e2;
-      list<Type_b> talst,talst1,talst2;
+      Type_a ext_arg_1,ext_arg_2;
     case (BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2),func,inTypeA)
       equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA); 
-        talst2 = listAppend(talst,talst1);
+        ((_,ext_arg_1)) = func((e1,ext_arg_1)); 
+        ((_,ext_arg_2)) = func((e2,ext_arg_2)); 
       then
-        talst2;
+        ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEExpsArrayEqn;
 
@@ -4842,223 +4835,26 @@ public function traverseAlgorithmExps "function: traverseAlgorithmExps
   expressions and performs the function on them
 "
   replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
   input DAE.Algorithm inAlgorithm;
   input FuncExpType func;
   input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
+  output Type_a outTypeA;
   partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;  
 algorithm
   outTypeBLst:=
   matchcontinue (inAlgorithm,func,inTypeA)
     local
-      list<Type_b> talst;
       list<DAE.Statement> stmts;
+      Type_a ext_arg_1;
     case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
       equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
+        (,ext_arg_1) = Util.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
-        talst;
+        ext_arg_1;
   end matchcontinue;
 end traverseAlgorithmExps;
-
-protected function traverseExpsStmts "function: traverseExps
-
-  helper for traverseAlgorithmExps.
-"
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
-  input list<DAE.Statement> stmts;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType; 
-algorithm
-  outTypeBLst := Util.listMapFlat2(stmts, traverseExpsStmt, func, inTypeA);
-end traverseExpsStmts;
-
-protected function traverseExpsStmt "function: traverseExpsStmt
-  Helper for traverseExpsStmt."
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
-  input DAE.Statement inStatement;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;  
-algorithm
-  outTypeBLst:=
-  matchcontinue (inStatement,func,inTypeA)
-    local
-      DAE.Exp crexp,exp,e1,e2;
-      DAE.ExpType expty;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
-      list<DAE.Statement> stmts;
-      DAE.Else else_;
-      Boolean flag;
-      Absyn.Ident id;
-      DAE.Statement elsew;
-      Absyn.Path fname;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = e2,exp = exp),func,inTypeA)
-      equation
-        talst = func(e2,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2; 
-    case (DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp),func,inTypeA)
-      equation
-        exps = listAppend(explist, {exp});
-        talst = Util.listMapFlat1(exps,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp),func,inTypeA)
-      equation
-        crexp = Expression.makeCrefExp(cr,expty);
-        talst = func(crexp,inTypeA);
-        talst1 = func(exp,inTypeA); 
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;  
-    case (DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsElse(else_,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.STMT_FOR(type_ = expty,iterIsArray = flag,iter = id,range = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_WHILE(exp = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew)),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsStmt(elsew,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_ASSERT(cond = e1,msg= e2),func,inTypeA)
-      equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA); 
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;    
-    case (DAE.STMT_TERMINATE(msg= e1),func,inTypeA)
-      equation
-        talst = func(e1,inTypeA);
-      then
-        talst;  
-    case(DAE.STMT_REINIT(var = e1, value = e2),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;       
-    case (DAE.STMT_NORETCALL(exp = e1),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-      then talst;          
-    case (DAE.STMT_RETURN(source = _),_,_) then {};
-    case (DAE.STMT_BREAK(source = _),_,_) then {};
-    case (DAE.STMT_FAILURE(body = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then talst;
-    case (DAE.STMT_TRY(tryBody = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_CATCH(catchBody = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_THROW(source = _),_,_) then {};
-    case (DAE.STMT_GOTO(source = _),_,_) then {};
-    case (DAE.STMT_LABEL(source = _),_,_) then {};
-    case(DAE.STMT_MATCHCASES(caseStmt = exps),func,inTypeA)
-      equation
-        talst = Util.listMapFlat1(exps,func,inTypeA);
-      then
-        talst;
-    case (_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- BackendDAEUtil.traverseExpsStmt failed");
-      then
-        fail();
-  end matchcontinue;
-end traverseExpsStmt;
-
-protected function traverseExpsElse "function: traverseExpsElse
-  Helper function to traverseExpsStmt."
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
-  input DAE.Else inElse;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;   
-algorithm
-  outTypeBLst:=
-  matchcontinue (inElse,func,inTypeA)
-    local
-      DAE.Exp exp;
-      list<DAE.Statement> stmts;
-      DAE.Else else_;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (DAE.NOELSE(),_,_) then {};
-    case (DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsElse(else_,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.ELSE(statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-  end matchcontinue;
-end traverseExpsElse;
 
 end BackendDAEUtil;
