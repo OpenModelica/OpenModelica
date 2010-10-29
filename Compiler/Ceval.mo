@@ -1328,7 +1328,6 @@ algorithm
           {});
         func = Env.getCachedInstFunc(cache, funcpath);
         newval = CevalFunction.evaluate(env, func, vallst);
-        print("CevalFunction worked!\n");
       then
         (cache, newval, st);*/
         
@@ -1336,6 +1335,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
       local Env.Cache garbageCache;
       equation
+        //print("CevalFunction didn't work :(\n");
         false = RTOpts.debugFlag("noevalfunc");
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // make sure is NOT used for records !
