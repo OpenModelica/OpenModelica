@@ -426,7 +426,7 @@ algorithm
           false,
           ty,
           binding,
-          NONE);
+          NONE());
   end matchcontinue;
 end elementToVar;
         
