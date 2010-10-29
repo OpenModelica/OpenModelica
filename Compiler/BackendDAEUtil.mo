@@ -54,7 +54,6 @@ protected import Absyn;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import BackendVarTransform;
 protected import ComponentReference;
 protected import Ceval;
 protected import ClassInf;
@@ -70,7 +69,6 @@ protected import HashTable2;
 protected import OptManager;
 protected import RTOpts;
 protected import SCode;
-protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -137,18 +135,27 @@ algorithm
   matchcontinue (inBackendDAE)
     local
       BackendDAE.Variables vars1,vars2,allvars;
+      BackendDAE.EquationArray eqns,reqns,ieqns;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
       list<BackendDAE.Var> varlst1,varlst2,allvarslst;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs;
-    case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2))
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs6;
+    case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs))
       equation
         varlst1 = varList(vars1);
         varlst2 = varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = listVar(allvarslst);
-        // expcrefs = traverseBackendDAEExps(inBackendDAE,checkBackendDAEExp,allvars);
-        expcrefs = {}; // TODO: FIXME: Frenkel TUD
+        ((_,expcrefs)) = traverseBackendDAEExpsVars(vars1,checkBackendDAEExp,(allvars,{}));
+        ((_,expcrefs1)) = traverseBackendDAEExpsVars(vars2,checkBackendDAEExp,(allvars,expcrefs));
+        ((_,expcrefs2)) = traverseBackendDAEExpsEqns(eqns,checkBackendDAEExp,(allvars,expcrefs1));
+        ((_,expcrefs3)) = traverseBackendDAEExpsEqns(reqns,checkBackendDAEExp,(allvars,expcrefs2));
+        ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
+        ((_,expcrefs5)) = traverseBackendDAEExpsArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
+        //((_,expcrefs6)) = traverseBackendDAEExpsArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
       then
-        expcrefs;
+        expcrefs5;
     case (_)
       equation
         Debug.fprintln("failtrace", "- BackendDAEUtil.checkBackendDAE failed");
@@ -158,23 +165,23 @@ algorithm
 end checkBackendDAE;
 
 protected function checkBackendDAEExp
-  input DAE.Exp inExp;
-  input BackendDAE.Variables inVars;
-  output list<tuple<DAE.Exp,list<DAE.ComponentRef>>> outExpCrefs;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<tuple<DAE.Exp,list<DAE.ComponentRef>>>>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<tuple<DAE.Exp,list<DAE.ComponentRef>>>>> outTpl;
 algorithm
-  outExpCrefs :=
-  matchcontinue (inExp,inVars)
+  outTpl :=
+  matchcontinue inTpl
     local  
       DAE.Exp exp;
       BackendDAE.Variables vars;
       list<DAE.ComponentRef> crefs;
-      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs;
-    case (exp,vars)
+      list<tuple<DAE.Exp,list<DAE.ComponentRef>>> lstExpCrefs,lstExpCrefs1;
+    case ((exp,(vars,lstExpCrefs)))
       equation
-        ((_,(_,crefs))) = Expression.traverseExp(exp,traversecheckBackendDAEExp,((vars,{})));
-        lstExpCrefs = Util.if_(listLength(crefs)>0,{(exp,crefs)},{});
+        ((_,(_,crefs))) = Expression.traverseExp(exp,traversecheckBackendDAEExp,(vars,{}));
+        lstExpCrefs1 = Util.if_(listLength(crefs)>0,(exp,crefs)::lstExpCrefs,lstExpCrefs);
        then
-        lstExpCrefs;
+        ((exp,(vars,lstExpCrefs1)));
+    case inTpl then inTpl;
   end matchcontinue;      
 end checkBackendDAEExp;
 
@@ -185,29 +192,21 @@ algorithm
 	outTuple := matchcontinue(inTuple)
 		local
 			DAE.Exp e;
-			BackendDAE.Variables vars;
+			BackendDAE.Variables vars,vars1;
 			DAE.ComponentRef cr;
-			list<DAE.ComponentRef> crefs;
+			list<DAE.ComponentRef> crefs,crefs1;
 			list<DAE.Exp> expl;
+        list<DAE.ExpVar> varLst;
 		// special case for time, it is never part of the equation system	
 		case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(vars,crefs)))
 		  then ((e, (vars,crefs)));
     /* Special Case for Records */
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
-      local 
-        list<list<tuple<DAE.Exp,list<DAE.ComponentRef>>>> expcreflstlst;
-        list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcreflst;
-        list<list<DAE.ComponentRef>> creflstlst;
-        list<DAE.ComponentRef> crlst;
-        list<DAE.ExpVar> varLst;
       equation
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        expcreflstlst = Util.listMap1(expl,checkBackendDAEExp,vars);
-        expcreflst = Util.listFlatten(expcreflstlst);
-        creflstlst = Util.listMap(expcreflst,Util.tuple22);
-        crlst = Util.listFlatten(creflstlst);
+        ((_,(vars1,crefs1))) = Expression.traverseExpList(expl,traversecheckBackendDAEExp,(vars,crefs));
       then
-        ((e, (vars,listAppend(crlst,crefs))));  
+        ((e, (vars1,crefs1)));  
     /* case for Reductions  */    
 		case ((e as DAE.REDUCTION(ident = ident),(vars,crefs)))
 		  local 
