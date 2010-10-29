@@ -607,18 +607,17 @@ algorithm
     local
       AvlKey rkey,key;
       AvlValue rval,res;
-      Option<AvlTree> left,right;
+      AvlTree left,right;
       Integer rhval;
       /* hash func Search to the right */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
         true = ModUtil.pathEqual(rkey,key);
       then
         rval;
 
         /* Search to the right */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
-      local AvlTree right;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
         true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         res = avlTreeGet(right, key);
@@ -626,8 +625,7 @@ algorithm
         res;
 
         /* Search to the left */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
-      local AvlTree left;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
         /*true = stringCompare(key,rkey) < 0;*/
         res = avlTreeGet(left, key);

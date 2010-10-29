@@ -1475,6 +1475,10 @@ algorithm
       Boolean t_1,b_1,t,b,scalar_1,scalar;
       Integer i_1,i;
       Ident id_1,id;
+      list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
+      FunctionArgs fargs,fargs1,fargs2;
+      ComponentRef cfn,cfn_1; Exp e_temp;
+      list<list<Exp>> mexpl,mexpl1;
     case ((e as UNARY(op,e1)),rel,ext_arg) /* unary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
@@ -1510,7 +1514,6 @@ algorithm
         ((RELATION(e1_1,op_1,e2_1),ext_arg_3));
 
     case ((e as IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */
-      local list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
@@ -1521,7 +1524,6 @@ algorithm
         ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
 
     case ((e as CALL(cfn,fargs)),rel,ext_arg)
-      local FunctionArgs fargs,fargs1,fargs2; ComponentRef cfn,cfn_1; Exp e_temp;
       equation
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
         e_temp = CALL(cfn,fargs1);
@@ -1531,9 +1533,6 @@ algorithm
 
     //stefan
     case ((e as PARTEVALFUNCTION(cfn,fargs)),rel,ext_arg)
-      local
-        FunctionArgs fargs,fargs1;
-        ComponentRef cfn,cfn_1;
       equation
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs,rel,ext_arg);
         ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
@@ -1549,7 +1548,6 @@ algorithm
         ((ARRAY(expl_1),ext_arg_2));
 
     case ((e as MATRIX(mexpl)),rel,ext_arg)
-      local list<list<Exp>> mexpl,mexpl1;
       equation
         // Also traverse expressions within the matrix. Daniel Hedberg 2010-10.
         ((mexpl1,ext_arg_1)) = traverseExpListList(mexpl, rel, ext_arg);
@@ -2433,6 +2431,9 @@ pathContainedIn(B.C,A.B) => A.B.C"
   output Path completePath;
 algorithm
   completePath := matchcontinue(subPath,path)
+    local
+      Ident ident;
+      Path newPath,newSubPath;
     // A suffix, e.g. C.D in A.B.C.D
     case (subPath,path)
       equation
@@ -2440,7 +2441,6 @@ algorithm
       then path;
      // strip last ident of path and recursively check if suffix.
     case (subPath,path)
-      local Ident ident; Path newPath;
       equation
         ident = pathLastIdent(path);
         newPath = stripLast(path);
@@ -2449,7 +2449,6 @@ algorithm
 
         // strip last ident of subpath and recursively check if suffix.
     case (subPath,path)
-      local Ident ident; Path newSubPath;
       equation
         ident = pathLastIdent(subPath);
         newSubPath = stripLast(subPath);
@@ -2500,6 +2499,10 @@ algorithm
       list<list<ComponentRef>> res2;
       list<ComponentCondition> expl;
       list<list<ComponentCondition>> expll;
+      list<Subscript> subs;
+      list<list<ComponentRef>> res1;
+      list<list<list<ComponentRef>>> reslll;
+      list<list<ComponentRef>> crefll;
     case (INTEGER(value = _),checkSubs) then {};
     case (REAL(value = _),checkSubs) then {};
     case (STRING(value = _),checkSubs) then {};
@@ -2508,8 +2511,6 @@ algorithm
     case (CREF(componentRef = cr),false) then {cr};
 
     case (CREF(componentRef = (cr)),true)
-      local
-        list<Subscript> subs;
       equation
         subs = getSubsFromCref(cr);
         l1 = getCrefsFromSubs(subs);
@@ -2550,9 +2551,9 @@ algorithm
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
-        res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3,checkSubs);
-        res = listAppend(res1, l3) "TODO elseif\'s e4" ;
+        l1 = listAppend(l1, l2);
+        l2 = getCrefFromExp(e3,checkSubs);
+        res = listAppend(l1, l2) "TODO elseif\'s e4" ;
       then
         res;
     case (CALL(functionArgs = farg),checkSubs)
@@ -2566,27 +2567,23 @@ algorithm
       then
         res;
     case (ARRAY(arrayExp = expl),checkSubs)
-      local list<list<ComponentRef>> res1;
       equation
         res1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
         res = Util.listFlatten(res1);
       then
         res;
     case (MATRIX(matrix = expll),checkSubs)
-      local list<list<list<ComponentRef>>> res1;
       equation
-        res1 = Util.listListMap1(expll, getCrefFromExp,checkSubs);
-        res2 = Util.listFlatten(res1);
-        res = Util.listFlatten(res2);
+        res = Util.listFlatten(Util.listFlatten(Util.listListMap1(expll, getCrefFromExp,checkSubs)));
       then
         res;
     case (RANGE(start = e1,step = SOME(e3),stop = e2),checkSubs)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
-        res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3,checkSubs);
-        res = listAppend(res1, l3);
+        l2 = listAppend(l1, l2);
+        l2 = getCrefFromExp(e3,checkSubs);
+        res = listAppend(l1, l2);
       then
         res;
     case (RANGE(start = e1,step = NONE(),stop = e2),checkSubs)
@@ -2599,7 +2596,6 @@ algorithm
     case (END(),checkSubs) then {};
 
     case (TUPLE(expressions = expl),checkSubs)
-      local list<list<ComponentRef>> crefll;
       equation
         crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
         res = Util.listFlatten(crefll);
@@ -2620,8 +2616,6 @@ algorithm
         res;
 
     case (LIST(expl),checkSubs)
-      local
-        list<list<ComponentRef>> crefll;
       equation
         crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
         res = Util.listFlatten(crefll);

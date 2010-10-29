@@ -244,9 +244,12 @@ protected function makeAssignment2
   output Statement outStatement;
 algorithm
   outStatement := matchcontinue(lhs,lhprop,rhs,rhprop,source)
-    local DAE.ComponentRef c;
+    local
+      DAE.ComponentRef c;
       DAE.ExpType crt,t;
       DAE.Exp rhs_1,e3,e1;
+      DAE.Type ty;
+      list<DAE.Exp> ea2;
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
@@ -264,7 +267,6 @@ algorithm
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
-      local DAE.Type ty;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
@@ -274,7 +276,6 @@ algorithm
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
 
     case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop,source)
-      local list<DAE.Exp> ea2;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
@@ -294,18 +295,17 @@ public function makeAssignmentsList
   input DAE.ElementSource source;
   output list<Statement> assignments;
 algorithm
-  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps,
-      accessibility, initial_, source)
+  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps, accessibility, initial_, source)
+    local
+      DAE.Exp lhs, rhs;
+      list<DAE.Exp> rest_lhs, rest_rhs;
+      DAE.Properties lhs_prop, rhs_prop;
+      list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
+      DAE.Statement ass;
+      list<DAE.Statement> rest_ass;
     case ({}, {}, {}, {}, _, _, _) then {};
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
-      local
-        DAE.Exp lhs, rhs;
-        list<DAE.Exp> rest_lhs, rest_rhs;
-        DAE.Properties lhs_prop, rhs_prop;
-        list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
-        DAE.Statement ass;
-        list<DAE.Statement> rest_ass;
       equation
         ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source); 
         rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);

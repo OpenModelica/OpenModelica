@@ -2682,15 +2682,13 @@ public function dumpSolvingInfo "
 algorithm
   _:=
   matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
-      local BackendDAE.BackendDAE dlow;
-  case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_)
-    equation
-    then ();
-  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
     local
+      BackendDAE.BackendDAE dlow;
       list<Integer>[:] m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
+    case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_) then ();
+  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -2708,10 +2706,6 @@ algorithm
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
   case (DAE.BCONST(bool=true),DAE.BCONST(bool=false),dlow)
-    local
-      list<Integer>[:] m,mT;
-      array<Integer> v1,v2;
-      list<list<Integer>> comps;
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -2722,10 +2716,6 @@ algorithm
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
   case (DAE.BCONST(bool=false),DAE.BCONST(bool=true),dlow)
-    local
-      list<Integer>[:] m,mT;
-      array<Integer> v1,v2;
-      list<list<Integer>> comps;
     equation
       m = BackendDAEUtil.incidenceMatrix(dlow);
       mT = BackendDAEUtil.transposeMatrix(m);
@@ -3435,15 +3425,15 @@ the zero crossing list. The output is:
 algorithm
   _:=
   matchcontinue (zeroCross,inContent,addMathMLCode)
+    local
+      Integer len;
     case ({},_,_) then ();
     case (zeroCross,inContent,_)
-      local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = false;
       then();
     case (zeroCross,inContent,addMathMLCode)
-      local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = true;
