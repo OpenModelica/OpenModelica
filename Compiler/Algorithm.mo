@@ -687,25 +687,25 @@ end getAllExps;
 
 public function getAllExpsStmts "function: getAllExpsStmts
 
-  This function takes a list of statements and returns all expressions
+  This function takes a list of statements and returns all expressions and subexpressions
   in all statements.
 "
   input list<Statement> stmts;
   output list<DAE.Exp> exps;
-  list<list<DAE.Exp>> expslist;
-  list<Statement> stms;
 algorithm
-  (stms,exps) := DAEUtil.traverseDAEEquationsStmts(stmts,getAllExpsStmtsCollecter,{});
+  (_,exps) := DAEUtil.traverseDAEEquationsStmts(stmts,getAllExpsStmtsCollector,{});
 end getAllExpsStmts;
 
-function getAllExpsStmtsCollecter
-   input DAE.Exp exp;
-   input list<DAE.Exp> inExps; 
-   output DAE.Exp oexp; 
-   output list<DAE.Exp> outExps;
+function getAllExpsStmtsCollector
+  input tuple<DAE.Exp,list<DAE.Exp>> itpl;
+  output tuple<DAE.Exp,list<DAE.Exp>> otpl;
 algorithm
-  oexp:=exp;
-  outExps:=listAppend(inExps,{exp});
-end getAllExpsStmtsCollecter;
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> inExps;
+    case ((exp,inExps)) then Expression.traverseExp(exp,Expression.expressionCollector,inExps);
+  end matchcontinue;
+end getAllExpsStmtsCollector;
 
 end Algorithm;

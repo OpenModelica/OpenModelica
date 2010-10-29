@@ -1926,28 +1926,27 @@ end replaceLoopDependentCrefs;
 
 protected function replaceLoopDependentCrefInExp
   "Helper function for replaceLoopDependentCrefs."
-  input DAE.Exp inExpr;
-  input Absyn.ForIterators inForIterators;
-  output DAE.Exp outExpr;
-  output Absyn.ForIterators outForIterators;
+  input tuple<DAE.Exp,Absyn.ForIterators> itpl;
+  output tuple<DAE.Exp,Absyn.ForIterators> otpl;
 algorithm
-  (outExpr, outForIterators) := matchcontinue(inExpr, inForIterators)
-    case (cr_exp as DAE.CREF(componentRef = cr), _)
-      local
-        DAE.Exp cr_exp;
-        DAE.ComponentRef cr;
-        DAE.ExpType cr_type;
-        list<DAE.Subscript> cref_subs;
-        list<DAE.Exp> exp_subs;
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp cr_exp;
+      DAE.ComponentRef cr;
+      DAE.ExpType cr_type;
+      list<DAE.Subscript> cref_subs;
+      list<DAE.Exp> exp_subs;
+      Absyn.ForIterators fi;
+    case ((cr_exp as DAE.CREF(componentRef = cr), fi))
       equation
         cref_subs = ComponentReference.crefSubs(cr);
         exp_subs = Util.listMap(cref_subs, Expression.subscriptExp);
-        true = isSubsLoopDependent(exp_subs, inForIterators);
+        true = isSubsLoopDependent(exp_subs, fi);
         cr = ComponentReference.crefStripSubs(cr);
         cr_type = ComponentReference.crefLastType(cr);
       then
-        (DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), inForIterators);
-    case (_, _) then (inExpr, inForIterators);
+        ((DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), fi));
+    case itpl then itpl;
   end matchcontinue;
 end replaceLoopDependentCrefInExp;
 
@@ -4044,21 +4043,19 @@ protected function evalActualStream
 "@author: adrpo
  this function evaluates the builtin operator actualStream.
  See Modelica Specification 3.2, page 177"
-  input DAE.Exp inExp;
-  input Connect.Sets inSets;
-  output DAE.Exp outExp;
-  output Connect.Sets outSets;
+  input tuple<DAE.Exp,Connect.Sets> itpl;
+  output tuple<DAE.Exp,Connect.Sets> otpl;
 algorithm
-  (outExp,outSets) := matchcontinue(inExp,inSets)
+  otpl := matchcontinue itpl
     local
-      DAE.Exp exp;
+      DAE.Exp exp,inExp;
       Connect.Sets sets;
       DAE.ComponentRef cref;
       Boolean result;
 
     // deal with actualStream
-    case (DAE.CALL(path=Absyn.IDENT("actualStream"),
-          expLst={DAE.CREF(componentRef = cref)}), sets)
+    case ((inExp as DAE.CALL(path=Absyn.IDENT("actualStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets))
       equation
         // Modelica Specification 3.2, page 177, Section: 15.3 Stream Operator actualStream
         // actualStream(port.h_outflow) = if port.m_flow > 0 then inStream(port.h_outflow)
@@ -4066,10 +4063,10 @@ algorithm
         // we need to retrieve the flow variable associated with the stream variable here
         // so that we can build the expression
         exp = inExp;
-      then (exp, sets);
+      then ((exp, sets));
     // no replacement needed
-    case (exp, sets)
-      then (exp, sets);
+    case ((exp, sets))
+      then ((exp, sets));
   end matchcontinue;
 end evalActualStream;
 
@@ -4077,21 +4074,19 @@ protected function evalInStream
 "@author: adrpo
  this function evaluates the builtin operator inStream.
  See Modelica Specification 3.2, page 176"
-  input DAE.Exp inExp;
-  input Connect.Sets inSets;
-  output DAE.Exp outExp;
-  output Connect.Sets outSets;
+  input tuple<DAE.Exp,Connect.Sets> itpl;
+  output tuple<DAE.Exp,Connect.Sets> otpl;
 algorithm
-  (outExp,outSets) := matchcontinue(inExp,inSets)
+  otpl := matchcontinue itpl
     local
-      DAE.Exp exp;
+      DAE.Exp exp,inExp;
       Connect.Sets sets;
       DAE.ComponentRef cref;
       Boolean result;
 
     // deal with inStream
-    case (DAE.CALL(path=Absyn.IDENT("inStream"),
-          expLst={DAE.CREF(componentRef = cref)}), sets)
+    case ((inExp as DAE.CALL(path=Absyn.IDENT("inStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets))
       equation
         // Modelica Specification 3.2, page 176, Section: 15.2 Stream Operator inStream and Connection Equations
         // N = 1, M = 0: unconnected stream
@@ -4104,10 +4099,9 @@ algorithm
         // // Additional equation to be generated
         // c1.h_outflow = m1.c.h_outflow;        
         exp = inExp;
-      then (exp, sets);
+      then ((exp, sets));
     // no replacement needed
-    case (exp, sets)
-      then (exp, sets);
+    case ((exp, sets)) then ((exp, sets));
   end matchcontinue;
 end evalInStream;
 

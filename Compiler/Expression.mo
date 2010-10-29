@@ -60,6 +60,7 @@ public type Var = DAE.ExpVar;
 
 protected import ComponentReference;
 protected import ExpressionSimplify;
+protected import Error;
 protected import RTOpts;
 protected import Util;
 protected import ModUtil;
@@ -67,7 +68,6 @@ protected import Debug;
 protected import Static;
 protected import Env;
 protected import ExpressionDump;
-protected import System;
 protected import DAEUtil;
 protected import Algorithm;
 protected import Prefix;
@@ -3107,6 +3107,15 @@ algorithm
   end matchcontinue;
 end replaceExpMatrix2;
 
+public function expressionCollector
+   input tuple<DAE.Exp,list<DAE.Exp>> inExps;
+   output tuple<DAE.Exp,list<DAE.Exp>> outExps;
+   DAE.Exp exp;
+   list<DAE.Exp> acc;
+algorithm
+  (exp,acc) := inExps;
+  outExps := (exp,exp::acc);
+end expressionCollector;
 
 /***************************************************/
 /* traverse DAE.Exp */
@@ -3118,7 +3127,11 @@ public function traverseExp
   Takes a function and an extra argument passed through the traversal.
   The function can potentially change the expression. In such cases,
   the changes are made bottom-up, i.e. a subexpression is traversed
-  and changed before the complete expression is traversed."
+  and changed before the complete expression is traversed.
+
+  NOTE: The user-provided function is not allowed to fail! If you want to
+  detect a failure, return NONE() in your user-provided datatype.
+"
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input FuncExpType func;
@@ -3141,7 +3154,31 @@ algorithm
       Boolean t_1,b_1,t,b,scalar_1,scalar;
       Type tp_1,tp;
       Integer i_1,i;
-      Ident id_1,id;
+      Ident id_1,id,str;
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> statements;
+      tuple<DAE.Exp,Type_a> res;
+    case ((e as DAE.ICONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    case ((e as DAE.RCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    case ((e as DAE.SCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    case ((e as DAE.BCONST(_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+    case ((e as DAE.CREF(componentRef=_)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
     case ((e as DAE.UNARY(operator = op,exp = e1)),rel,ext_arg) /* unary */
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
@@ -3266,47 +3303,59 @@ algorithm
         ((e,ext_arg_3)) = rel((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
       then
         ((e,ext_arg_3));
-            /* MetaModelica list */
+      /* MetaModelica list */
     case ((e as DAE.CONS(tp,e1,e2)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((DAE.CONS(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
+        ((e,ext_arg_3)) = rel((DAE.CONS(tp,e1_1,e2_1),ext_arg_2));
       then
-        ((DAE.CONS(tp,e1_1,e2_1),ext_arg_3));
+        ((e,ext_arg_3));
 
     case ((e as DAE.LIST(tp,expl)),rel,ext_arg)
       equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+        ((e,ext_arg_2)) = rel((DAE.LIST(tp,expl_1),ext_arg_1));
       then
-        ((DAE.LIST(tp,expl_1),ext_arg_2));
+        ((e,ext_arg_2));
 
     case ((e as DAE.META_TUPLE(expl)),rel,ext_arg)
       equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+        ((e,ext_arg_2)) = rel((DAE.META_TUPLE(expl_1),ext_arg_1));
       then
-        ((DAE.META_TUPLE(expl_1),ext_arg_2));
+        ((e,ext_arg_2));
 
     case ((e as DAE.META_OPTION(NONE())),rel,ext_arg)
       equation
+        ((e,ext_arg_1)) = rel((e,ext_arg));
       then
-        ((DAE.META_OPTION(NONE()),ext_arg));
+        ((e,ext_arg_1));
 
     case ((e as DAE.META_OPTION(SOME(e1))),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+        ((e,ext_arg_2)) = rel((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
       then
-        ((DAE.META_OPTION(SOME(e1_1)),ext_arg_2));
+        ((e,ext_arg_2));
         /* --------------------- */
+
+    case ((e as DAE.VALUEBLOCK(ty = tp, localDecls = localDecls, body = statements, result = e1)),rel,ext_arg)
+      equation
+        // Don't traverse the local declarations; we don't store bindings there (yet)
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        (statements,ext_arg_2) = DAEUtil.traverseDAEEquationsStmts(statements,rel,ext_arg_1);
+        ((e,ext_arg_3)) = rel((DAE.VALUEBLOCK(tp,localDecls,statements,e1_1),ext_arg_2));
+      then
+        ((e,ext_arg_3));
 
     case (e,rel,ext_arg)
       equation
-        ((e_1,ext_arg_1)) = rel((e,ext_arg));
+        str = ExpressionDump.printExpStr(e);
+        str = "Expression.traverseExp not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
-        ((e_1,ext_arg_1));
+        fail();
   end matchcontinue;
 end traverseExp;
 

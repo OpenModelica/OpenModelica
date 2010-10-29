@@ -270,7 +270,7 @@ algorithm
         // check List
         failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
         // extend cr
-        (e1,_) = BackendDAEUtil.extendArrExp(DAE.CREF(sc,ty),NONE());
+        ((e1,_)) = BackendDAEUtil.extendArrExp((DAE.CREF(sc,ty),NONE()));
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
       then

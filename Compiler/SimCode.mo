@@ -6807,6 +6807,7 @@ algorithm
         funcelem = DAEUtil.getNamedFunction(path, funcs);
         funcelems = {funcelem};
         explist = DAEUtil.getAllExpsFunctions(funcelems);
+        // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
         fcallexps = getMatchingExpsList(explist, matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);

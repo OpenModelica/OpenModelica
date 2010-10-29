@@ -4392,28 +4392,6 @@ algorithm
   functionName := ModUtil.pathStringReplaceDot(functionPath, "_");
 end generateFunctionName;
 
-protected constant String constCfileHeader =
-"#include \"modelica.h\"
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-
-#if defined(_MSC_VER)
-  #define DLLExport   __declspec( dllexport )
-#else
-  #define DLLExport /* nothing */
-#endif
-
-#if !defined(MODELICA_ASSERT)
-  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }
-#endif
-#if !defined(MODELICA_TERMINATE)
-  #define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }
-#endif
-
-
-";
-
 public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
   input Env.Cache inCache;

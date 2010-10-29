@@ -1151,42 +1151,40 @@ end evalIsRoot;
 
 protected function evalIsRootHelper
 "Helper function for evalIsRoot."
-  input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inRoots;
-  output DAE.Exp outExp;
-  output list<DAE.ComponentRef> outRoots;
+  input tuple<DAE.Exp,list<DAE.ComponentRef>> inRoots;
+  output tuple<DAE.Exp,list<DAE.ComponentRef>> outRoots;
 algorithm
-  (outExp,outRoots) := matchcontinue(inExp,inRoots)
+  outRoots := matchcontinue inRoots
     local
-      DAE.Exp exp;
+      DAE.Exp inExp,exp;
       list<DAE.ComponentRef> roots;
       DAE.ComponentRef cref;
       Boolean result;
 
     // no roots, same exp
-    case (exp, {}) then (exp, {});
+    case ((exp, {})) then ((exp, {}));
     // deal with Connections.isRoot
-    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
-          expLst={DAE.CREF(componentRef = cref)}), roots)
+    case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
+          expLst={DAE.CREF(componentRef = cref)}), roots))
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
-      then (DAE.BCONST(result), roots);
+      then ((DAE.BCONST(result), roots));
     // deal with NOT Connections.isRoot
-    case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
-          expLst={DAE.CREF(componentRef = cref)})), roots)
+    case ((inExp as DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
+          expLst={DAE.CREF(componentRef = cref)})), roots))
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         result = boolNot(result);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
-      then (DAE.BCONST(result), roots);
+      then ((DAE.BCONST(result), roots));
     // no replacement needed
-    case (exp, roots)
+    case ((exp, roots))
       equation
         // Debug.fprintln("cgraph", ExpressionDump.printExpStr(exp) +& " not found in roots!");
-      then (exp, roots);
+      then ((exp, roots));
   end matchcontinue;
 end evalIsRootHelper;
 

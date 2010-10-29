@@ -1402,7 +1402,7 @@ algorithm
     /* Special Case for unextended arrays */
     case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),vars)
       equation
-        (e1,_) = extendArrExp(e,NONE());
+        ((e1,_)) = extendArrExp((e,NONE()));
         res = statesAndVarsExp(e1, vars);
       then
         res; 
@@ -2724,19 +2724,15 @@ end bintreeDepth;
 
 public function extendArrExp "
 Author: Frenkel TUD 2010-07"
-  input DAE.Exp inExp;
-  input Option<DAE.FunctionTree> infuncs;  
-  output DAE.Exp outExp;
-  output Option<DAE.FunctionTree> outfuncs;  
+  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
+  output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
 algorithm 
-  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
-    local DAE.Exp e;
-    case(inExp,infuncs)
-      equation
-        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingextendArrExp, infuncs);
-      then
-        (e,outfuncs);
-    case(inExp,infuncs) then (inExp,infuncs);        
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp e;
+      Option<DAE.FunctionTree> funcs;
+    case ((e,funcs)) then Expression.traverseExp(e, traversingextendArrExp, funcs);
+    case _ then itpl;
   end matchcontinue;
 end extendArrExp;
 
@@ -2888,19 +2884,15 @@ end collateAlgorithm;
 
 public function collateArrExp "
 Author: Frenkel TUD 2010-07"
-  input DAE.Exp inExp;
-  input Option<DAE.FunctionTree> infuncs;  
-  output DAE.Exp outExp;
-  output Option<DAE.FunctionTree> outfuncs;  
+  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
+  output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
 algorithm 
-  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
-    local DAE.Exp e;
-    case(inExp,infuncs)
-      equation
-        ((e,outfuncs)) = Expression.traverseExp(inExp, traversingcollateArrExp, infuncs);
-      then
-        (e,outfuncs);
-    case(inExp,infuncs) then (inExp,infuncs);        
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp e;
+      Option<DAE.FunctionTree> funcs;
+    case ((e,funcs)) then Expression.traverseExp(e, traversingcollateArrExp, funcs);
+    case itpl then itpl;
   end matchcontinue;
 end collateArrExp;  
   
@@ -2919,28 +2911,28 @@ algorithm outExp := matchcontinue(inExp)
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,_) = extendArrExp(e1_1,funcs);
+        ((e1_2,_)) = extendArrExp((e1_1,funcs));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
     case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,_) = extendArrExp(e1_1,funcs);
+        ((e1_2,_)) = extendArrExp((e1_1,funcs));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));        
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,_) = extendArrExp(e1_1,funcs);
+        ((e1_2,_)) = extendArrExp((e1_1,funcs));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));  
     case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
-        (e1_2,_) = extendArrExp(e1_1,funcs);
+        ((e1_2,_)) = extendArrExp((e1_1,funcs));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));               

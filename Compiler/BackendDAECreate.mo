@@ -994,8 +994,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        (e1_2,_) = BackendDAEUtil.extendArrExp(e1_1,SOME(funcs));
-        (e2_2,_) = BackendDAEUtil.extendArrExp(e2_1,SOME(funcs));
+        ((e1_2,_)) = BackendDAEUtil.extendArrExp((e1_1,SOME(funcs)));
+        ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
       then
@@ -1005,8 +1005,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        (e1_2,_) = BackendDAEUtil.extendArrExp(e1_1,SOME(funcs));
-        (e2_2,_) = BackendDAEUtil.extendArrExp(e2_1,SOME(funcs));
+        ((e1_2,_)) = BackendDAEUtil.extendArrExp((e1_1,SOME(funcs)));
+        ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
       then
@@ -1844,21 +1844,15 @@ end states;
 protected function statesExp
 "function: statesExp
   Helper function to states."
-  input DAE.Exp inExp;
-  input BackendDAE.BinTree inBinTree;
-  output DAE.Exp outExp;
-  output BackendDAE.BinTree outBinTree;
+  input tuple<DAE.Exp,BackendDAE.BinTree> itpl;
+  output tuple<DAE.Exp,BackendDAE.BinTree> otpl;
 algorithm
-  (outExp,outBinTree) := matchcontinue (inExp,inBinTree)
+  otpl := matchcontinue itpl
     local
       DAE.Exp e;
       BackendDAE.BinTree bt;
-    case (inExp,bt)
-      equation
-        ((e,bt)) = Expression.traverseExp(inExp,traversingstatesExpFinder,bt);
-      then
-        (e,bt);
-    case (e,bt) then (e,bt);
+    case ((e,bt)) then Expression.traverseExp(e,traversingstatesExpFinder,bt);
+    case ((e,bt)) then ((e,bt));
   end matchcontinue;
 end statesExp;
 
@@ -1901,12 +1895,13 @@ end processDelayExpressions;
 
 protected function transformDelayExpressions
 "Helper for processDelayExpressions()"
-  input DAE.Exp inExp;
-  input Integer inInteger;
-  output DAE.Exp outExp;
-  output Integer outInteger;
+  input tuple<DAE.Exp,Integer> itpl;
+  output tuple<DAE.Exp,Integer> otpl;
+  DAE.Exp e;
+  Integer i;
 algorithm
-  ((outExp, outInteger)) := Expression.traverseExp(inExp, transformDelayExpression, inInteger);
+  (e,i) := itpl;
+  otpl := Expression.traverseExp(e, transformDelayExpression, i);
 end transformDelayExpressions;
 
 protected function transformDelayExpression
@@ -2656,7 +2651,7 @@ algorithm
     case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs))) equation
       e1 = Derive.differentiateExpTime(e1,(vars,funcs));
       e1 = ExpressionSimplify.simplify(e1);
-      (_,bt) = statesExp(e1,BackendDAE.emptyBintree);
+      ((_,bt)) = statesExp((e1,BackendDAE.emptyBintree));
       (newStates,_) = BackendDAEUtil.bintreeToList(bt);
       vars = updateStatesVars(vars,newStates);
     then ((e1,(vars,funcs)));
@@ -3230,8 +3225,8 @@ algorithm
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
   equation 
-    (e1_1,_) = BackendDAEUtil.extendArrExp(e1,SOME(inFuncs));
-    (e2_1,_) = BackendDAEUtil.extendArrExp(e2,SOME(inFuncs));
+    ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
+    ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
     e2_2 = ExpressionSimplify.simplify(e2_1);
     ds = Util.listMap(ad, Expression.dimensionSize);
   then
@@ -3241,8 +3236,8 @@ algorithm
   equation 
     tp = Expression.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
-    (e1_1,_) = BackendDAEUtil.extendArrExp(e1,SOME(inFuncs));
-    (e2_1,_) = BackendDAEUtil.extendArrExp(e2,SOME(inFuncs));
+    ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
+    ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
     e2_2 = ExpressionSimplify.simplify(e2_1);
     eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
   then
