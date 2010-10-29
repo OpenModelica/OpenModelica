@@ -2409,6 +2409,11 @@ algorithm
       then
         str;
     
+    case ((DAE.T_NORETCALL(),_))
+      equation
+      then
+        "()";
+
     // All the other ones we don't handle
     case ((_,_)) then "printTypeStr failed";
     
