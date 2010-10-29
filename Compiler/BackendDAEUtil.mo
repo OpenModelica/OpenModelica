@@ -145,7 +145,8 @@ algorithm
         varlst2 = varList(vars2);
         allvarslst = listAppend(varlst1,varlst2);
         allvars = listVar(allvarslst);
-        expcrefs = traverseBackendDAEExps(inBackendDAE,checkBackendDAEExp,allvars);
+        // expcrefs = traverseBackendDAEExps(inBackendDAE,checkBackendDAEExp,allvars);
+        expcrefs = {}; // TODO: FIXME: Frenkel TUD
       then
         expcrefs;
     case (_)
@@ -4499,7 +4500,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
-    case (dae as BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
+    case (BackendDAE.DAE(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
           initialEqs = ieqns,arrayEqs = ae,algorithms = algs),func,inTypeA)
       equation
         ext_arg_1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);
@@ -4557,32 +4558,36 @@ protected function traverseBackendDAEExpsArrayNoCopy "
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   input array<Type_a> array;
-  input FuncType func;
+  input FuncExpType func;
   input FuncArrayType arrayfunc;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input Type_b inTypeB;
+  output Type_b outTypeB;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
+    input tuple<DAE.Exp, Type_b> inTpl;
+    output tuple<DAE.Exp, Type_b> outTpl;
   end FuncExpType;
   partial function FuncArrayType
-    input Type_b inTypeB;
+    input Type_a inTypeB;
     input FuncExpType func;
-    input Type_a inTypeA;
-    output Type_a outTypeA;
+    input Type_b inTypeA;
+    output Type_b outTypeA;
+    partial function FuncExpType
+     input tuple<DAE.Exp, Type_b> inTpl;
+      output tuple<DAE.Exp, Type_b> outTpl;
+    end FuncExpType;
   end FuncArrayType;    
 algorithm
-  outTypeA := matchcontinue(array,func,arrayfunc,pos,len,inTypeA)
+  outTypeB := matchcontinue(array,func,arrayfunc,pos,len,inTypeB)
     local 
-      Type_a ext_arg_1,ext_arg_2    
-    case(_,_,_,pos,len,inTypeA) equation 
+      Type_b ext_arg_1,ext_arg_2;
+    case(_,_,_,pos,len,inTypeB) equation 
       true = pos > len;
-    then inTypeA;
+    then inTypeB;
     
-    case(array,func,arrayfunc,pos,len,inTypeA) equation
-      ext_arg_1 = arrayfunc(array[pos],func,inTypeA);
+    case(array,func,arrayfunc,pos,len,inTypeB) equation
+      ext_arg_1 = arrayfunc(array[pos],func,inTypeB);
       ext_arg_2 = traverseBackendDAEExpsArrayNoCopy(array,func,arrayfunc,pos+1,len,ext_arg_1);
     then ext_arg_2;
   end matchcontinue;
@@ -4610,15 +4615,17 @@ algorithm
       Option<DAE.Exp> bndexp;
       list<DAE.Subscript> instdims,instdims1;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
-    case (NONE(),,func,inTypeA) then inTypeA;
+      DAE.ExpType tp;
+    case (NONE(),func,inTypeA) then inTypeA;
     case (SOME(BackendDAE.VAR(varName = cref,
              bindExp = SOME(e1),
              arryDim = instdims
              )),func,inTypeA)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
-        ext_arg_2 = traverseBackendDAEExpsSubscript(instdims,func,ext_arg_1);
-        ((_,ext_arg_3)) = func((DAE.CREF(cref,ComponentReference.crefLastType(cref)),ext_arg_2));
+        ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,ext_arg_1);
+        tp = ComponentReference.crefLastType(cref);
+        ((_,ext_arg_3)) = func((DAE.CREF(cref,tp),ext_arg_2));
       then
         ext_arg_3;
     case (SOME(BackendDAE.VAR(varName = cref,
@@ -4626,8 +4633,9 @@ algorithm
              arryDim = instdims
              )),func,inTypeA)
       equation
-        ext_arg_2 = traverseBackendDAEExpsSubscript(instdims,func,inTypeA);
-        ((_,ext_arg_3)) = func((DAE.CREF(cref,ComponentReference.crefLastType(cref)),ext_arg_2));
+        ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,inTypeA);
+        tp = ComponentReference.crefLastType(cref);
+        ((_,ext_arg_3)) = func((DAE.CREF(cref,tp),ext_arg_2));
       then
         ext_arg_3;        
     case (_,_,_)
@@ -4686,12 +4694,9 @@ algorithm
   outTypeBLst:=
   matchcontinue (inEquationArray,func,inTypeA)
     local
-      array<Option<Equation>> equOptArr
+      array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
-      equation
-        ext_arg_1 = traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsEqn,1,arrayLength(equOptArr),inTypeA);
-      then
-        ext_arg_1;
+      then traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
@@ -4705,7 +4710,6 @@ protected function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEq
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;  
   input Option<BackendDAE.Equation> inEquation;
-  input FuncExpType func;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -4724,7 +4728,7 @@ algorithm
       BackendDAE.WhenEquation elsePart;
       DAE.ElementSource source;
      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
-    case (NONE(),,func,inTypeA) then inTypeA;
+    case (NONE(),func,inTypeA) then inTypeA;
     case (SOME(BackendDAE.EQUATION(exp = e1,scalar = e2)),func,inTypeA)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
@@ -4733,7 +4737,7 @@ algorithm
         ext_arg_2;
     case (SOME(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl)),func,inTypeA)
       equation
-        ext_arg_1 = traverseBackendDAEExps(expl,func,inTypeA);
+        ext_arg_1 = traverseBackendDAEExpList(expl,func,inTypeA);
       then
         ext_arg_1;
     case (SOME(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)),func,inTypeA)
@@ -4760,26 +4764,26 @@ algorithm
         ext_arg_3;
     case (SOME(BackendDAE.ALGORITHM(index = ind,in_ = expl,out = exps)),func,inTypeA)
       equation
-        ext_arg_1 = traverseBackendDAEExps(expl,func,inTypeA);
-        ext_arg_2 = traverseBackendDAEExps(exps,func,inTypeA);
+        ext_arg_1 = traverseBackendDAEExpList(expl,func,inTypeA);
+        ext_arg_2 = traverseBackendDAEExpList(exps,func,inTypeA);
       then
         ext_arg_2;
     case (SOME(BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2)),func,inTypeA)
       equation
-        ((_,ext_arg_1)) = func((e1,ext_arg_1)); 
-        ((_,ext_arg_2)) = func((e2,ext_arg_2)); 
+        ((_,ext_arg_1)) = func((e1,inTypeA)); 
+        ((_,ext_arg_2)) = func((e2,ext_arg_1)); 
       then
         ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEExpsEqn;
 
-public function traverseBackendDAEExps
+public function traverseBackendDAEExpList
 "function traverseBackendDAEExps
  author Frenkel TUD:
  Calls user function for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> expl;
-  input funcType rel;
+  input FuncExpType rel;
   input Type_a ext_arg;
   output Type_a outTypeA;
   partial function FuncExpType
@@ -4795,10 +4799,10 @@ algorithm
     case({},_,ext_arg_1) then ext_arg_1;
     case(e::expl1,rel,ext_arg_1) equation
       ((_,ext_arg_2)) = rel((e, ext_arg_1));
-      ext_arg_3 = traverseBackendDAEExps(expl1,rel,ext_arg_2);
+      ext_arg_3 = traverseBackendDAEExpList(expl1,rel,ext_arg_2);
     then ext_arg_3; 
   end matchcontinue;
-end traverseBackendDAEExps;
+end traverseBackendDAEExpList;
 
 protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
   author: Frenkel TUD
@@ -4822,8 +4826,8 @@ algorithm
       Type_a ext_arg_1,ext_arg_2;
     case (BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2),func,inTypeA)
       equation
-        ((_,ext_arg_1)) = func((e1,ext_arg_1)); 
-        ((_,ext_arg_2)) = func((e2,ext_arg_2)); 
+        ((_,ext_arg_1)) = func((e1,inTypeA)); 
+        ((_,ext_arg_2)) = func((e2,ext_arg_1)); 
       then
         ext_arg_2;
   end matchcontinue;
@@ -4851,7 +4855,7 @@ algorithm
       Type_a ext_arg_1;
     case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
       equation
-        (,ext_arg_1) = Util.traverseDAEEquationsStmts(stmts,func,inTypeA);
+        (_,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
       then
         ext_arg_1;
   end matchcontinue;
