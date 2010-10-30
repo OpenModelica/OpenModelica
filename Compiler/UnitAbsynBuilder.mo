@@ -23,7 +23,6 @@ protected import Lookup;
 protected import OptManager;
 protected import SCode;
 protected import SCodeUtil;
-protected import System;
 protected import Types;
 protected import UnitParserExt;
 protected import Util;
@@ -944,17 +943,19 @@ protected function buildTermExp "help function to buildTerms, handles expression
   output UnitAbsyn.Store outStore;
 algorithm
   (ut,extraTerms,outStore) := matchcontinue(env,exp,divOrMul,ht,store)
-  local Real r; DAE.Operator op; Integer indx; UnitAbsyn.UnitTerm ut,ut1,ut2; String s1,crStr;
-    DAE.ComponentRef cr;
-    DAE.Exp e,e1,e2;
-    Absyn.Path path;
-    UnitAbsyn.UnitTerm ut;
-    list<list<tuple<DAE.Exp, Boolean>>> mexpl;
-    list<UnitAbsyn.UnitTerm> terms1,terms2,terms,uts;
-    list<DAE.Exp> expl;
-    UnitAbsyn.Unit u;
-    Integer i;
-    Real r;
+    local
+      Real r;
+      DAE.Operator op;
+      Integer indx,i;
+      UnitAbsyn.UnitTerm ut,ut1,ut2;
+      String s1,crStr;
+      DAE.ComponentRef cr;
+      DAE.Exp e,e1,e2;
+      Absyn.Path path;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+      list<UnitAbsyn.UnitTerm> terms1,terms2,terms,uts;
+      list<DAE.Exp> expl;
+      UnitAbsyn.Unit u;
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);

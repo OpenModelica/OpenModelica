@@ -164,7 +164,6 @@ algorithm
      local
        UnitAbsyn.Store st1,st2,st3,st4;
        UnitAbsyn.UnitCheckResult res1,res2,res3,res4;
-       UnitAbsyn.Store st1,st2,st3,st4;
        UnitAbsyn.UnitTerm ut1,ut2;
        UnitAbsyn.SpecUnit su1,su2,su3;
        MMath.Rational expo1;
