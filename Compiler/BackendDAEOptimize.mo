@@ -190,6 +190,7 @@ algorithm
       DAE.Exp e1,e2;
       DAE.ElementSource source "the element source";
       list<DAE.ComponentRef> extlst,extlst1;
+      BackendDAE.Equation eq1,eq2;      
       
     case ({},funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc) then ({},{},mvars,repl,extlst,replc);
 
@@ -226,7 +227,6 @@ algorithm
 
       // try next equation.
     case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc)
-      local BackendDAE.Equation eq1,eq2;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         {eq2} = BackendVarTransform.replaceEquations({eq1},replc);

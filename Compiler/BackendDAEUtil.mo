@@ -1038,6 +1038,7 @@ algorithm
       list<DAE.Exp> expl,expl_2;
       DAE.ExpType tp;
       list<tuple<DAE.Exp, Boolean>> expl_1;
+      list<list<tuple<DAE.Exp, Boolean>>> expll;
 
     case (DAE.ICONST(integer = _),vars,knvars) then true;
     case (DAE.RCONST(real = _),vars,knvars) then true;
@@ -1135,10 +1136,9 @@ algorithm
         res = Util.boolAndList(blst);
       then
         res;
-    case (DAE.MATRIX(ty = tp,scalar = expl),vars,knvars)
-      local list<list<tuple<DAE.Exp, Boolean>>> expl;
+    case (DAE.MATRIX(ty = tp,scalar = expll),vars,knvars)
       equation
-        expl_1 = Util.listFlatten(expl);
+        expl_1 = Util.listFlatten(expll);
         expl_2 = Util.listMap(expl_1, Util.tuple21);
         blst = Util.listMap2(expl_2, isDiscreteExp, vars,knvars);
         res = Util.boolAndList(blst);
@@ -2417,15 +2417,19 @@ algorithm
       String rkeystr,keystr;
       DAE.ComponentRef rkey;
       BackendDAE.Value rval,cmpval,res;
-      Option<BackendDAE.BinTree> left,right;
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),keystr)
+      Option<BackendDAE.BinTree> optLeft,optRight;
+      BackendDAE.BinTree right, left;
+      
+    // found it
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval))),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey);
         0 = stringCompare(rkeystr, keystr);
       then
         rval;
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),keystr)
-      local BackendDAE.BinTree right;
+    
+    // search right
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),rightSubTree = SOME(right)),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the right" ;
         cmpval = stringCompare(rkeystr, keystr);
@@ -2433,8 +2437,9 @@ algorithm
         res = treeGet2(right, keystr);
       then
         res;
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left),rightSubTree = right),keystr)
-      local BackendDAE.BinTree left;
+    
+    // search left
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left)),keystr)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "Search to the left" ;
         cmpval = stringCompare(rkeystr, keystr);
@@ -2546,40 +2551,42 @@ end treeAdd;
 
 protected function treeDelete "function: treeDelete
   author: PA
-
-  This function deletes an entry from the BinTree.
-"
+  This function deletes an entry from the BinTree."
   input BackendDAE.BinTree inBinTree;
   input BackendDAE.Key inKey;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  outBinTree:=
-  matchcontinue (inBinTree,inKey)
+  outBinTree := matchcontinue (inBinTree,inKey)
     local
-      BackendDAE.BinTree bt,right_1,right,t_1,t;
+      BackendDAE.BinTree bt,right,left,t;
       DAE.ComponentRef key,rkey;
       String rkeystr,keystr;
       BackendDAE.TreeValue rightmost;
-      Option<BackendDAE.BinTree> optright_1,left,lleft,lright,topt_1;
-      BackendDAE.Value rval,cmpval;
-      Option<BackendDAE.TreeValue> leftval;
-    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) then bt;
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = SOME(right)),key)
+      Option<BackendDAE.BinTree> optRight,optLeft,optTree;
+      BackendDAE.Value rval;
+      Option<BackendDAE.TreeValue> optVal;
+      
+    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) 
+      then bt;
+    
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),key)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when existing right node" ;
         keystr = ComponentReference.printComponentRefStr(key);
         0 = stringCompare(rkeystr, keystr);
-        (rightmost,right_1) = treeDeleteRightmostValue(right);
-        optright_1 = treePruneEmptyNodes(right_1);
+        (rightmost,right) = treeDeleteRightmostValue(right);
+        optRight = treePruneEmptyNodes(right);
       then
-        BackendDAE.TREENODE(SOME(rightmost),left,optright_1);
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(BackendDAE.TREENODE(leftval,lleft,lright)),rightSubTree = NONE()),key)
+        BackendDAE.TREENODE(SOME(rightmost),optLeft,optRight);
+    
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left as BackendDAE.TREENODE(value=_)),rightSubTree = NONE()),key)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
         keystr = ComponentReference.printComponentRefStr(key);
         0 = stringCompare(rkeystr, keystr);
       then
-        BackendDAE.TREENODE(leftval,lleft,lright);
+        left;
+    
     case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
       equation
         rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
@@ -2587,31 +2594,30 @@ algorithm
         0 = stringCompare(rkeystr, keystr);
       then
         BackendDAE.TREENODE(NONE(),NONE(),NONE());
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key)
-      local Option<BackendDAE.BinTree> right;
+    
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),key)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "delete in right subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeDelete(t, key);
-        topt_1 = treePruneEmptyNodes(t_1);
+        1 = stringCompare(rkeystr, keystr);
+        t = treeDelete(t, key);
+        optTree = treePruneEmptyNodes(t);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,topt_1);
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key)
-      local Option<BackendDAE.BinTree> right;
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),optLeft,optTree);
+    
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),key)
       equation
         keystr = ComponentReference.printComponentRefStr(key) "delete in left subtree" ;
         rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeDelete(t, key);
-        topt_1 = treePruneEmptyNodes(t_1);
+        -1 = stringCompare(rkeystr, keystr);
+        t = treeDelete(t, key);
+        optTree = treePruneEmptyNodes(t);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),topt_1,right);
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),optTree,optRight);
+    
     case (_,_)
       equation
-        print("tree_delete failed\n");
+        print("- BackendDAEUtil.treeDelete failed\n");
       then
         fail();
   end matchcontinue;
@@ -2619,11 +2625,9 @@ end treeDelete;
 
 protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
   author: PA
-
   This function takes a BackendDAE.BinTree and deletes the rightmost value of the tree.
   Tt returns this value and the updated BinTree. This function is used in
   the binary tree deletion function \'tree_delete\'.
-
   inputs:  (BinTree)
   outputs: (TreeValue, /* deleted value */
               BackendDAE.BinTree    /* updated bintree */)
@@ -2632,32 +2636,36 @@ protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
   output BackendDAE.TreeValue outTreeValue;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  (outTreeValue,outBinTree):=
-  matchcontinue (inBinTree)
+  (outTreeValue,outBinTree) := matchcontinue (inBinTree)
     local
-      BackendDAE.TreeValue treevalue,value;
-      BackendDAE.BinTree left,right_1,right,bt;
-      Option<BackendDAE.BinTree> rightopt_1;
-      Option<BackendDAE.TreeValue> treeval;
-    case (BackendDAE.TREENODE(value = SOME(treevalue),leftSubTree = NONE(),rightSubTree = NONE())) then (treevalue,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
-    case (BackendDAE.TREENODE(value = SOME(treevalue),leftSubTree = SOME(left),rightSubTree = NONE())) then (treevalue,left);
-    case (BackendDAE.TREENODE(value = treeval,leftSubTree = left,rightSubTree = SOME(right)))
-      local Option<BackendDAE.BinTree> left;
+      BackendDAE.TreeValue treeVal,value;
+      BackendDAE.BinTree left,right,bt;
+      Option<BackendDAE.BinTree> optRight, optLeft;
+      Option<BackendDAE.TreeValue> optTreeVal;
+    
+    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE())) 
+      then (treeVal,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
+    
+    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE())) 
+      then (treeVal,left);
+    
+    case (BackendDAE.TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
       equation
-        (value,right_1) = treeDeleteRightmostValue(right);
-        rightopt_1 = treePruneEmptyNodes(right_1);
+        (value,right) = treeDeleteRightmostValue(right);
+        optRight = treePruneEmptyNodes(right);
       then
-        (value,BackendDAE.TREENODE(treeval,left,rightopt_1));
-    case (BackendDAE.TREENODE(value = SOME(treeval),leftSubTree = NONE(),rightSubTree = SOME(right)))
-      local BackendDAE.TreeValue treeval;
+        (value,BackendDAE.TREENODE(optTreeVal,optLeft,optRight));
+    
+    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
       equation
         failure((_,_) = treeDeleteRightmostValue(right));
         print("right value was empty , left NONE\n");
       then
-        (treeval,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
+        (treeVal,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
+    
     case (bt)
       equation
-        print("-tree_delete_rightmost_value failed\n");
+        print("- Backend.treeDeleteRightmostValue failed\n");
       then
         fail();
   end matchcontinue;
@@ -3142,16 +3150,17 @@ public function incidenceRow
 algorithm
   outIntegerLst := matchcontinue (inVariables,inEquation,inWhenClause)
     local
-      list<BackendDAE.Value> lst1,lst2,res,res_1;
+      list<BackendDAE.Value> lst1,lst2,res;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e;
-      list<list<BackendDAE.Value>> lst3;
+      list<list<BackendDAE.Value>> lstlst1,lstlst2,lstlst3,lstres;
       list<DAE.Exp> expl,inputs,outputs;
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation we;
       BackendDAE.Value indx;
       list<BackendDAE.WhenClause> wc;
-      Integer wc_index;
+      Integer wc_index; 
+      
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_)
       equation
         lst1 = incidenceRowExp(e1, vars) "EQUATION" ;
@@ -3168,8 +3177,8 @@ algorithm
         res;
     case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_) /* ARRAY_EQUATION */
       equation
-        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        res = Util.listFlatten(lst3);
+        lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
+        res = Util.listFlatten(lstlst3);
       then
         res;
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_) /* SOLVED_EQUATION */
@@ -3189,8 +3198,8 @@ algorithm
         (cr,e2) = BackendEquation.getWhenEquationExpr(we);
         e1 = DAE.CREF(cr,DAE.ET_OTHER());
         expl = BackendEquation.getWhenCondition(wc,wc_index);
-        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        lst1 = Util.listFlatten(lst3);
+        lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
+        lst1 = Util.listFlatten(lstlst3);
         lst2 = incidenceRowExp(e1, vars);
         res = listAppend(lst1, lst2);
         lst1 = incidenceRowExp(e2, vars);
@@ -3204,14 +3213,13 @@ algorithm
          different variables than calculated, a non linear solver or
          analysis of algorithm itself needs to be implemented.
       */
-      local list<list<BackendDAE.Value>> lst1,lst2,res;
       equation
-        lst1 = Util.listMap1(inputs, incidenceRowExp, vars);
-        lst2 = Util.listMap1(outputs, incidenceRowExp, vars);
-        res = listAppend(lst1, lst2);
-        res_1 = Util.listFlatten(res);
+        lstlst1 = Util.listMap1(inputs, incidenceRowExp, vars);
+        lstlst2 = Util.listMap1(outputs, incidenceRowExp, vars);
+        lstres = listAppend(lstlst1, lstlst2);
+        res = Util.listFlatten(lstres);
       then
-        res_1;
+        res;
     case (vars,inEquation,_)
       local 
         String eqnstr;
@@ -3244,6 +3252,7 @@ algorithm
       BackendDAE.Variables vars;
       list<DAE.Exp> expl;
       DAE.Else else_;
+      list<list<BackendDAE.Value>> lstlst;
 
     case ({},_) then {};
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
@@ -3255,12 +3264,11 @@ algorithm
       then
         res;
     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
-      local list<list<BackendDAE.Value>> lst3;
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        lst3_1 = Util.listFlatten(lst3);
+        lstlst = Util.listMap1(expl, incidenceRowExp, vars);
+        lst3_1 = Util.listFlatten(lstlst);
         res = Util.listFlatten({lst1,lst2,lst3_1});
       then
         res;
@@ -3319,6 +3327,7 @@ algorithm
       list<list<BackendDAE.Value>> lst;
       list<DAE.Exp> expl;
       list<BackendDAE.Var> varslst;
+      list<list<tuple<DAE.Exp, Boolean>>> lstexpl;
 
     case (DAE.CREF(componentRef = cr),vars)
       equation
@@ -3391,10 +3400,9 @@ algorithm
         lst_1 = Util.listFlatten(lst);
       then
         lst_1;
-    case (DAE.MATRIX(scalar = expl),vars)
-      local list<list<tuple<DAE.Exp, Boolean>>> expl;
+    case (DAE.MATRIX(scalar = lstexpl),vars)
       equation
-        res = incidenceRowMatrixExp(expl, vars);
+        res = incidenceRowMatrixExp(lstexpl, vars);
       then
         res;
     case (DAE.TUPLE(PR = expl),vars)

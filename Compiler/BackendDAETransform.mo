@@ -864,15 +864,14 @@ algorithm
       array<BackendDAE.Value> a1,a2;
       BackendDAE.Value n,i,w,w_1,num;
       list<BackendDAE.Value> stack,stack_1,stack_2;
-      list<list<BackendDAE.Value>> comp,comps;
+      list<list<BackendDAE.Value>> comp, comps, comps2;
+      
     case (m,mt,a1,a2,n,i,w,stack,comp)
       equation
         (w > n) = true;
       then
         (i,stack,comp);
     case (m,mt,a1,a2,n,i,w,stack,comps)
-      local list<list<Integer>> comps2;
-
       equation
         0 = DAEEXT.getNumber(w);
         (i,stack_1,comps) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
@@ -1611,8 +1610,7 @@ protected function replaceDummyDerAlgs1
   input DAE.Exp inExp3;  
   output list<DAE.Statement> outStatementLst;  
 algorithm
-  outStatementLst:=
-  matchcontinue (inStatementLst,inExp2,inExp3)
+  outStatementLst := matchcontinue (inStatementLst,inExp2,inExp3)
     local  
       list<DAE.Statement> rest,st,stlst,stlst1;
       DAE.Statement s,s1;
@@ -1622,153 +1620,151 @@ algorithm
       DAE.ComponentRef cr,cr1;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
-      Absyn.MatchType matchType;
-  case ({},_,_) then {};
-  case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inExp2,inExp3)
-    equation
+      Absyn.MatchType matchType; 
+      Boolean b;
+      DAE.Ident id;
+      list<Integer> helpVarIndices;
+      String labelName;      
+           
+    case ({},_,_) then {};
+    case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_ASSIGN(t,e1,e_1,source)::st);
-  case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_ASSIGN(t,e1,e_1,source)::st);
+    case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         (elst1,_) = Expression.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1,source)::st);
-  case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1,source)::st);
+    case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         (DAE.CREF(componentRef = cr1),_) = Expression.replaceExp(DAE.CREF(cr,DAE.ET_REAL()),inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_ASSIGN_ARR(t,cr1,e1,source)::st);
-  case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_,source=source)::rest,inExp2,inExp3)
-    equation
-       (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
-       stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
-       else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
-       st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_IF(e1,stlst1,else_1,source)::st);
-  case (DAE.STMT_FOR(type_=t,iterIsArray=b,iter=id,range=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
-    local 
-      Boolean b;
-      DAE.Ident id;
-    equation
+      then
+        (DAE.STMT_ASSIGN_ARR(t,cr1,e1,source)::st);
+    case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_,source=source)::rest,inExp2,inExp3)
+      equation
+        (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+      then
+        (DAE.STMT_IF(e1,stlst1,else_1,source)::st);
+    case (DAE.STMT_FOR(type_=t,iterIsArray=b,iter=id,range=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_FOR(t,b,id,e1,stlst1,source)::st);
-  case (DAE.STMT_WHILE(exp=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_FOR(t,b,id,e1,stlst1,source)::st);
+    case (DAE.STMT_WHILE(exp=e,statementLst=stlst,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_WHILE(e1,stlst1,source)::st);
-  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
-    local list<Integer> helpVarIndices;
-    equation
+      then
+        (DAE.STMT_WHILE(e1,stlst1,source)::st);
+    case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         {s1} = replaceDummyDerAlgs1({s},inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_WHEN(e1,stlst1,SOME(s1),helpVarIndices,source)::st);
-  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
-    local list<Integer> helpVarIndices;
-    equation
+      then
+        (DAE.STMT_WHEN(e1,stlst1,SOME(s1),helpVarIndices,source)::st);
+    case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices,source)::st);
-  case (DAE.STMT_ASSERT(cond=e1,msg=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices,source)::st);
+    case (DAE.STMT_ASSERT(cond=e1,msg=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_ASSERT(e1,e_1,source)::st);
-  case (DAE.STMT_TERMINATE(msg=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_ASSERT(e1,e_1,source)::st);
+    case (DAE.STMT_TERMINATE(msg=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_TERMINATE(e1,source)::st);
-  case (DAE.STMT_REINIT(var=e1,value=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_TERMINATE(e1,source)::st);
+    case (DAE.STMT_REINIT(var=e1,value=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         (e_1,_) = Expression.replaceExp(e1,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_REINIT(e1,e_1,source)::st);
-  case (DAE.STMT_NORETCALL(exp=e,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_REINIT(e1,e_1,source)::st);
+    case (DAE.STMT_NORETCALL(exp=e,source=source)::rest,inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_NORETCALL(e1,source)::st);
-  case (DAE.STMT_RETURN(source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_NORETCALL(e1,source)::st);
+    case (DAE.STMT_RETURN(source)::rest,inExp2,inExp3)
+      equation
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_RETURN(source)::st);
-  case (DAE.STMT_BREAK(source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_RETURN(source)::st);
+    case (DAE.STMT_BREAK(source)::rest,inExp2,inExp3)
+      equation
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_BREAK(source)::st);
-  case (DAE.STMT_FAILURE(body=stlst,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_BREAK(source)::st);
+    case (DAE.STMT_FAILURE(body=stlst,source=source)::rest,inExp2,inExp3)
+      equation
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_FAILURE(stlst1,source)::st);
-  case (DAE.STMT_TRY(tryBody=stlst,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_FAILURE(stlst1,source)::st);
+    case (DAE.STMT_TRY(tryBody=stlst,source=source)::rest,inExp2,inExp3)
+      equation
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_TRY(stlst1,source)::st);
-  case (DAE.STMT_CATCH(catchBody=stlst,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_TRY(stlst1,source)::st);
+    case (DAE.STMT_CATCH(catchBody=stlst,source=source)::rest,inExp2,inExp3)
+      equation
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_CATCH(stlst1,source)::st);
-  case (DAE.STMT_THROW(source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_CATCH(stlst1,source)::st);
+    case (DAE.STMT_THROW(source=source)::rest,inExp2,inExp3)
+      equation
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_THROW(source)::st);
-  case (DAE.STMT_GOTO(labelName=labelName,source=source)::rest,inExp2,inExp3)
-    local String labelName;
-    equation
+      then
+        (DAE.STMT_THROW(source)::st);
+    case (DAE.STMT_GOTO(labelName=labelName,source=source)::rest,inExp2,inExp3)
+      equation
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_GOTO(labelName,source)::st);
-  case (DAE.STMT_LABEL(labelName=labelName,source=source)::rest,inExp2,inExp3)
-    local String labelName;
-    equation
+      then
+        (DAE.STMT_GOTO(labelName,source)::st);
+    case (DAE.STMT_LABEL(labelName=labelName,source=source)::rest,inExp2,inExp3)
+      equation
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_LABEL(labelName,source)::st);
-  case (DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=elst,source=source)::rest,inExp2,inExp3)
-    equation
+      then
+        (DAE.STMT_LABEL(labelName,source)::st);
+    case (DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=elst,source=source)::rest,inExp2,inExp3)
+      equation
         (elst1,_) = Expression.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
-    then
-      (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st);
-  case (_,_,_)
-    equation
-      print("-BackendDAE.replaceDummyDerAlgs1 failed\n");
-    then
-      fail();    
+      then
+        (DAE.STMT_MATCHCASES(matchType,inputExps,elst1,source)::st);
+    case (_,_,_)
+      equation
+        print("-BackendDAE.replaceDummyDerAlgs1 failed\n");
+      then
+        fail();    
   end matchcontinue;      
 end replaceDummyDerAlgs1;
 
@@ -1778,30 +1774,30 @@ protected function replaceDummyDerAlgs2
   input DAE.Exp inExp3;  
   output DAE.Else outElse;  
 algorithm
-  outElse:=
-  matchcontinue (inElse,inExp2,inExp3)
+  outElse := matchcontinue (inElse,inExp2,inExp3)
     local  
       DAE.Exp e,e1;
       list<DAE.Statement> stlst,stlst1;
       DAE.Else else_,else_1;
-  case (DAE.NOELSE(),_,_) then DAE.NOELSE();
-  case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inExp2,inExp3)
-    equation
+  
+    case (DAE.NOELSE(),_,_) then DAE.NOELSE();
+    case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inExp2,inExp3)
+      equation
         (e1,_) = Expression.replaceExp(e,inExp2,inExp3);
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
         else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
-    then
-      DAE.ELSEIF(e1,stlst1,else_1);
-  case (DAE.ELSE(statementLst=stlst),inExp2,inExp3)
-    equation
+      then
+        DAE.ELSEIF(e1,stlst1,else_1);
+    case (DAE.ELSE(statementLst=stlst),inExp2,inExp3)
+      equation
         stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
-    then
-      DAE.ELSE(stlst1);
-  case (_,_,_)
-    equation
-      print("-BackendDAE.replaceDummyDerAlgs2 failed\n");
-    then
-      fail();    
+      then
+        DAE.ELSE(stlst1);
+    case (_,_,_)
+      equation
+        print("-BackendDAE.replaceDummyDerAlgs2 failed\n");
+      then
+        fail();    
   end matchcontinue;      
 end replaceDummyDerAlgs2;
 
@@ -1971,7 +1967,12 @@ algorithm
       DAE.Else else_,else_1;
       BackendDAE.Variables vars,vars1,vars2,vars3;
       DAE.ElementSource source;
-      Absyn.MatchType matchType;
+      Absyn.MatchType matchType; 
+      Boolean b;
+      DAE.Ident id;
+      list<Integer> helpVarIndices;
+      String labelName;      
+
   case ({},inVariables) then ({},inVariables);
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inVariables)
     equation
@@ -2003,9 +2004,6 @@ algorithm
     then
       (DAE.STMT_IF(e1,stlst1,else_1,source)::st,vars3);
   case (DAE.STMT_FOR(type_=t,iterIsArray=b,iter=id,range=e,statementLst=stlst,source=source)::rest,inVariables)
-    local 
-      Boolean b;
-      DAE.Ident id;
     equation
         ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
@@ -2020,7 +2018,6 @@ algorithm
     then
       (DAE.STMT_WHILE(e1,stlst1,source)::st,vars2);
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices,source=source)::rest,inVariables)
-    local list<Integer> helpVarIndices;
     equation
         ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
@@ -2029,7 +2026,6 @@ algorithm
     then
       (DAE.STMT_WHEN(e1,stlst1,SOME(s1),helpVarIndices,source)::st,vars3);
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::rest,inVariables)
-    local list<Integer> helpVarIndices;
     equation
         ((e1,vars)) = Expression.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
@@ -2096,13 +2092,11 @@ algorithm
     then
       (DAE.STMT_THROW(source)::st,vars);
   case (DAE.STMT_GOTO(labelName=labelName,source=source)::rest,inVariables)
-    local String labelName;
     equation
         (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
     then
       (DAE.STMT_GOTO(labelName,source)::st,vars);
   case (DAE.STMT_LABEL(labelName=labelName,source=source)::rest,inVariables)
-    local String labelName;
     equation
         (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
     then
@@ -2201,32 +2195,30 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      list<DAE.Subscript> lstSubs;      
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),vars))
-      local list<DAE.Subscript> e;
       equation
-        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
-      local list<DAE.Subscript> e;
       equation
-        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
-      local list<DAE.Subscript> e;
       equation
-        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b,NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
         ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
@@ -2319,6 +2311,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
+      BackendDAE.BackendDAE dae;      
 
     case (varCrefs,varIndices,BackendDAE.DAE(orderedVars=vars,orderedEqs = eqns),m,mt)
       equation
@@ -2328,7 +2321,6 @@ algorithm
       then (s,sn);
 
     case ({},_,dae,_,_)
-      local BackendDAE.BackendDAE dae;
       equation
         print("Error, no state to select\nDAE:");
         //dump(dae);
@@ -2699,6 +2691,8 @@ algorithm
       BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.BackendDAE daelow;
+      String se;
+      
     case ({},_,_,_) then ({},{});
     case ((e :: rest),daelow as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),m,mt)
       equation
@@ -2713,7 +2707,6 @@ algorithm
       then
         (res1_1,res2_1);
     case ((e :: rest),_,_,_)
-      local String se;
       equation
         se = intString(e);
         print("-BackendDAE.statesInEqns failed for eqn: ");
@@ -2726,8 +2719,7 @@ end statesInEqns;
 
 protected function statesInEqn "function: statesInEqn
   author: PA
-  Helper function to states_in_eqns
-"
+  Helper function to states_in_eqns"
   input BackendDAE.Equation eqn;
   input BackendDAE.Variables vars;
   output list<Integer> res;
@@ -2741,8 +2733,7 @@ protected function statesAsAlgebraicVars "function: statesAsAlgebraicVars
   author: PA
 
   Return the subset of variables consisting of all states, but changed
-  varkind to variable.
-"
+  varkind to variable."
   input BackendDAE.Variables vars;
   output BackendDAE.Variables v1_1;
   list<BackendDAE.Var> varlst,varlst_1;
