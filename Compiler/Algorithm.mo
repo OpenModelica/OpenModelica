@@ -67,7 +67,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import RTOpts;
-protected import System;
 protected import Types;
 protected import Util;
 
