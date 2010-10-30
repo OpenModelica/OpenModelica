@@ -1445,49 +1445,45 @@ algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
-      list<Value> r1,r2,vals,rest;
+      list<Value> v1,v2,vals,rest;
       Value sval;
-      Integer v1,v2;
-      Real v2_1,v1_1;
+      Integer i1,i2;
+      Real r2,r1;
       list<Integer> dims;
     case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation
-        r1 = powScalarArrayelt(sval, vals);
-        r2 = powScalarArrayelt(sval, rest);
+        v1 = powScalarArrayelt(sval, vals);
+        v2 = powScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1,dims) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1;
+        (Values.ARRAY(v1,dims) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v1_1=intReal(v1);
-        v2_1=intReal(v2);
-        r1 = v1_1 ^. v2_1;
-        r2 = powScalarArrayelt(sval, rest);
+        r1=intReal(i1);
+        r2=intReal(i2);
+        r1 = r1 ^. r2;
+        v2 = powScalarArrayelt(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1,v1;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v2_1 = intReal(v2);
-        r1 = v1 ^. v2_1;
-        r2 = powScalarArrayelt(sval, rest);
+        r2 = intReal(i2);
+        r1 = r1 ^. r2;
+        v2 = powScalarArrayelt(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
-        v1_1 = intReal(v1);
-        r1 = v1_1 ^. v2;
-        r2 = powScalarArrayelt(sval, rest);
+        r1 = intReal(i1);
+        r1 = r1 ^. r2;
+        v2 = powScalarArrayelt(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = v1 ^. v2;
-        r2 = powScalarArrayelt(sval, rest);
+        r1 = r1 ^. r2;
+        v2 = powScalarArrayelt(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
+        (Values.REAL(r1) :: v2);
     case (_,{}) then {};
   end matchcontinue;
 end powScalarArrayelt;
@@ -1503,47 +1499,43 @@ algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
-      list<Value> r1,r2,vals,rest;
+      list<Value> v1,v2,vals,rest;
       Value sval;
-      Integer v1,v2;
-      Real v2_1,v1_1;
+      Integer i1,i2;
+      Real r1,r2;
       list<Integer> dims;
     case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation
-        r1 = subArrayeltScalar(sval, vals);
-        r2 = subArrayeltScalar(sval, rest);
+        v1 = subArrayeltScalar(sval, vals);
+        v2 = subArrayeltScalar(sval, rest);
       then
-        (Values.ARRAY(r1,dims) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Integer r1;
+        (Values.ARRAY(v1,dims) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        r1 = v2-v1;
-        r2 = subArrayeltScalar(sval, rest);
+        i1 = i2-i1;
+        v2 = subArrayeltScalar(sval, rest);
       then
-        (Values.INTEGER(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = v2) :: rest))
-      local Real r1,v1;
+        (Values.INTEGER(i1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
-        v2_1 = intReal(v2);
-        r1 = v2_1 -. v1;
-        r2 = subArrayeltScalar(sval, rest);
+        r2 = intReal(i2);
+        r1 = r2 -. r1;
+        v2 = subArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.INTEGER(integer = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
-        v1_1 = intReal(v1);
-        r1 = v2 -. v1_1;
-        r2 = subArrayeltScalar(sval, rest);
+        r1 = intReal(i1);
+        r1 = r2 -. r1;
+        v2 = subArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
-    case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v1,v2;
+        (Values.REAL(r1) :: v2);
+    case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = v2 -. v1;
-        r2 = subArrayeltScalar(sval, rest);
+        r1 = r2 -. r1;
+        v2 = subArrayeltScalar(sval, rest);
       then
-        (Values.REAL(r1) :: r2);
+        (Values.REAL(r1) :: v2);
     case (_,{}) then {};
   end matchcontinue;
 end subArrayeltScalar;

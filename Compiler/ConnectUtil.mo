@@ -64,7 +64,6 @@ protected import Debug;
 protected import Error;
 protected import Dump;
 protected import PrefixUtil;
-protected import System;
 
 public
 type Env     = Env.Env;

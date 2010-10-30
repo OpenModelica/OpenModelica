@@ -88,7 +88,6 @@ public import RTOpts;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
-protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendVariable;
 protected import ComponentReference;
@@ -101,7 +100,6 @@ protected import Print;
 protected import Util;
 protected import DAEDump;
 protected import ValuesUtil;
-protected import System;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
