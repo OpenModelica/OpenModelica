@@ -6797,7 +6797,13 @@ algorithm
       list<String> debugpathstrs;
       DAE.DAElist dae;
       list<DAE.Element> els;
+      String str;
       
+    case (path,acc,_)
+      equation
+        true = listMember(path,acc);
+      then acc;
+
     case (path,acc,funcs)
       local
         list<DAE.Element> varlist;
@@ -6809,7 +6815,12 @@ algorithm
         els = DAEUtil.getFunctionElements(funcelem);
         
         // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
-        (_,calledfuncs) = DAEUtil.traverseDAE2(els,matchNonBuiltinCallsAndFnRefPathsForAllExps,{});
+        (_,(_,calledfuncs)) = DAEUtil.traverseDAE2(els,Expression.traverseSubexpressionsHelper,(matchNonBuiltinCallsAndFnRefPaths,{}));
+
+        // Function reference variables are filtered out
+        varfuncs = Util.listFold(els, DAEUtil.collectFunctionRefVarPaths, {});
+        (_,(_,varfuncs)) = DAEUtil.traverseDAE2(Util.if_(RTOpts.acceptMetaModelicaGrammar(), els, {}),Expression.traverseSubexpressionsHelper,(DAEUtil.collectValueblockFunctionRefVars,varfuncs));
+        calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
 
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, funcs);
 
@@ -6825,25 +6836,16 @@ algorithm
       then
         res;
 
-    case (path,acc,funcs) /* Don\'t fail here, ceval will generate the function later */
+    case (path,acc,funcs)
       equation
         false = listMember(path,acc);
         failure(_ = DAEUtil.getNamedFunction(path, funcs));
         pathstr = Absyn.pathString(path);
-        Debug.fprintln("failtrace", "SimCode.getCalledFunctionsInFunction: Class " 
-          +& pathstr +& " not found in global scope.");
+        str = "SimCode.getCalledFunctionsInFunction: Class " +& pathstr +& " not found in global scope.";
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
-        path::acc;
+        fail();
 
-    case (path,acc,_)
-      equation
-        true = listMember(path,acc);
-      then acc;
-
-    case(_,_,_)
-      equation
-        Debug.fprint("failtrace", "SimCode.getCalledFunctionsInFunction failed\n");
-      then fail();
   end matchcontinue;
 end getCalledFunctionsInFunction;
 
@@ -6866,20 +6868,6 @@ algorithm
         path;
   end matchcontinue;
 end getCallPath;
-
-protected function getFunctionElementsList
-"function: getFunctionElementsList
-  Retrives the dAEList of function (or external function)"
-  input DAE.Function inElem;
-  output list<DAE.Element> out;
-algorithm
-  out := matchcontinue (inElem)
-    local Absyn.Path path;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(out)}) then out;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body=out)}) then out;
-    case DAE.RECORD_CONSTRUCTOR(path = _) then {};
-  end matchcontinue;
-end getFunctionElementsList;
 
 protected function removeDuplicatePaths
 "Remove duplicate Paths in a list of Paths."
@@ -7255,16 +7243,6 @@ public function getMatchingExpsList
 algorithm
   ((_,outExpLst)) := Expression.traverseExpList(inExps,inFn,{});
 end getMatchingExpsList;
-
-protected function matchNonBuiltinCallsAndFnRefPathsForAllExps
-  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
-  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
-  DAE.Exp exp;
-  list<Absyn.Path> paths;
-algorithm
-  (exp,paths) := itpl;
-  otpl := Expression.traverseExp(exp,matchNonBuiltinCallsAndFnRefPaths,paths);
-end matchNonBuiltinCallsAndFnRefPathsForAllExps;
 
 protected function matchNonBuiltinCallsAndFnRefPaths
   input tuple<DAE.Exp,list<Absyn.Path>> itpl;

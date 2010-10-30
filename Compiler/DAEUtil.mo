@@ -5200,18 +5200,19 @@ end printBindingSourceStr;
 
 public function collectValueblockFunctionRefVars
 "Collect the function names of variables in valueblock local sections"
-  input DAE.Exp exp;
-  input list<Absyn.Path> acc;
-  output list<Absyn.Path> outAcc;
+  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
+  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
 algorithm
-  outAcc := matchcontinue (exp,acc)
+  otpl := matchcontinue itpl
     local
       list<DAE.Element> decls;
-    case (DAE.VALUEBLOCK(localDecls = decls),acc)
+      DAE.Exp exp;
+      list<Absyn.Path> acc;
+    case ((exp as DAE.VALUEBLOCK(localDecls = decls),acc))
       equation
         acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
-      then acc;
-    case (_,acc) then acc;
+      then ((exp,acc));
+    case itpl then itpl;
   end matchcontinue;
 end collectValueblockFunctionRefVars;
 
@@ -5224,7 +5225,8 @@ algorithm
   outAcc := matchcontinue (inElem,acc)
     local
       Absyn.Path path;
-    case (DAE.VAR(ty = ((DAE.T_FUNCTION(funcArg=_)),SOME(path))),acc) then path::acc;
+    case (DAE.VAR(ty = ((DAE.T_FUNCTION(funcArg=_)),SOME(path))),acc)
+      then path::acc;
     case (_,acc) then acc;
   end matchcontinue;
 end collectFunctionRefVarPaths;
