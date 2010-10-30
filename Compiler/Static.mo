@@ -236,7 +236,7 @@ algorithm
       DAE.Properties prop,prop_1,prop1,prop2,prop3;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,fn;
-      DAE.Type t,t1,t2,arrtp,rtype,start_t,stop_t,step_t,t_1,t_2,tp;
+      DAE.Type t,t1,t2,arrtp,rtype,start_t,stop_t,step_t,t_1,t_2,tp,ty;
       DAE.Const c1,c2,c,c_start,c_stop,const,c_step;
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> ops;
       DAE.Operator op_1;
@@ -299,7 +299,6 @@ algorithm
     then (cache,DAE.END(),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
 
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info) // BoschRexroth specifics
-      local DAE.Type ty;
       equation
         false = OptManager.getOption("cevalEquation");
         (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
@@ -660,17 +659,16 @@ algorithm
       DAE.Properties prop;
       DAE.Const c;
       Prefix.Prefix pre;
+      list<Absyn.Exp> expList;
+      list<DAE.Exp> expExpList;
+      DAE.Type t;
+      list<Boolean> boolList;
+      list<DAE.Properties> propList;
+      list<DAE.Type> typeList;
+      DAE.ExpType t2;
     case (cache,env,{},prop,_,st,_,_,info)
       then (cache,DAE.LIST(DAE.ET_OTHER(),{}),prop,st);
     case (cache,env,expList,prop as DAE.PROP((DAE.T_LIST(t),_),c),impl,st,doVect,pre,info)
-      local
-        list<Absyn.Exp> expList;
-        list<DAE.Exp> expExpList;
-        DAE.Type t;
-        list<Boolean> boolList;
-        list<DAE.Properties> propList;
-        list<DAE.Type> typeList;
-        DAE.ExpType t2;
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect,pre,info);
         typeList = Util.listMap(propList, Types.getPropType);
@@ -1048,6 +1046,9 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
       Absyn.ForIterators iterators;
+      String reduction_op;
+      DAE.ExpType ty;
+      list<DAE.Exp> expl;
 
     case (cache, env, fn as Absyn.CREF_IDENT("array", {}), exp, iterators, 
         impl, st, doVect,pre,info)
@@ -1060,8 +1061,6 @@ algorithm
     // reduction with an empty vector as range expression.
     case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {(_, SOME(iterexp))}, 
         impl, st, doVect,pre,info)
-      local
-        String reduction_op;
       equation
         (cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _) = 
           elabExp(cache, env, iterexp, impl, st, doVect,pre,info);
@@ -1071,9 +1070,6 @@ algorithm
 
     // min, max, sum and product - try and expand the reduction,
     case (cache, env, fn, exp, iterators, impl, st, doVect, pre,info)
-      local
-        DAE.ExpType ty;
-        list<DAE.Exp> expl;
       equation
         (cache, DAE.ARRAY(array = expl), DAE.PROP(expty, const), st) = 
           elabCallReduction3(cache, env, exp, iterators, impl, st, doVect, pre, info);
@@ -1960,6 +1956,7 @@ algorithm
       DAE.Type t; DAE.Const c;
       DAE.DAElist dae;
       Prefix.Prefix pre;
+      Integer dim;
 
     case (cache,env,expl,impl,st,doVect,pre,info) /* impl array contains mixed Integer and Real types */
       equation
@@ -1968,7 +1965,6 @@ algorithm
       then
         (cache,expl_1,prop);
     case (cache,env,expl,impl,st,doVect,pre,info)
-      local Integer dim;
       equation
         (cache,expl_1,prop as DAE.PROP(t,c)) = elabArray2(cache,env, expl, impl, st,doVect,pre,info);
       then
@@ -2339,6 +2335,7 @@ algorithm
       list<Absyn.Exp> es;
       Env.Cache cache;
       Prefix.Prefix pre;
+      String envStr,str,preStr,expStr;
     case (cache,env,{e},impl,pre,info) /* impl */
       equation
         (cache,e_1,prop) = elabGraphicsExp(cache,env,e,impl,pre,info);
@@ -2352,7 +2349,6 @@ algorithm
       then
         (cache,(e_1 :: es_1),DAE.PROP(t1,c));
     case (cache,env,{},impl,pre,info)
-      local String envStr, str,preStr;
       equation
         envStr = Env.printEnvPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
@@ -2361,7 +2357,6 @@ algorithm
       then
         fail();
     case (cache,env,e::_,impl,pre,info)
-      local String envStr, expStr, str,preStr;
       equation 
         envStr = Env.printEnvPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
@@ -2489,6 +2484,7 @@ algorithm
     local
       DAE.Exp e,res,e1,e2;
       list<DAE.Exp> rest,expl;
+      DAE.ExpType tp;
     case ({e}) then e;
     case ({e1,e2})
       equation
@@ -2502,7 +2498,6 @@ algorithm
       then
         res;
     case (expl)
-      local DAE.ExpType tp;
       equation
         tp = Expression.typeof(Util.listFirst(expl));
         res = makeBuiltinCall("cat", DAE.ICONST(2) :: expl, tp);
@@ -2579,7 +2574,7 @@ algorithm
   matchcontinue (inExpExpLst)
     local
       DAE.Exp e;
-      DAE.ExpType a;
+      DAE.ExpType a,tp;
       Boolean at;
       list<DAE.Exp> expl,expl1,expl2,es;
     case ({(e as DAE.ARRAY(ty = a,scalar = at,array = expl))}) then e;
@@ -2594,8 +2589,7 @@ algorithm
         expl = listAppend(expl1, expl2);
       then
         DAE.ARRAY(a,at,expl);
-    case (expl) local
-      DAE.ExpType tp;
+    case (expl)
       equation
         tp = Expression.typeof(Util.listFirst(expl));
         e = makeBuiltinCall("cat", DAE.ICONST(1) :: expl, tp);
@@ -2703,10 +2697,10 @@ function promoteExpType "lifts the type using liftArrayRight n times"
   output DAE.ExpType outType;
 algorithm
   outType :=  matchcontinue(inType,n)
-
+    local
+      DAE.ExpType tp1,tp2;
     case(inType,0) then inType;
     case(inType,n)
-      local DAE.ExpType tp1,tp2;
       equation
       tp1=Expression.liftArrayRight(inType, DAE.DIM_INTEGER(1));
       tp2 = promoteExpType(tp1,n-1);
@@ -3169,6 +3163,7 @@ algorithm
       DAE.Const c1;
       Prefix.Prefix pre;
       Ceval.Msg msg;
+      DAE.ExpType exp_type;
 
     case (cache,env,(s :: dims),_,impl,pre,info) /* impl */
       equation
@@ -3185,8 +3180,6 @@ algorithm
      * dimensions. Create a function call to fill instead, and let the compiler
      * sort it out later. */
     case (cache, env, (s :: dims), _, impl,pre,info)
-      local
-        DAE.ExpType exp_type;
       equation
         c1 = unevaluatedFunctionVariability(env);
         (cache, s_1, prop, _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
@@ -3381,11 +3374,11 @@ protected function transposeExpType
   output DAE.ExpType outType;
 algorithm
   outType := matchcontinue(inType)
+    local
+      DAE.ExpType ty;
+      DAE.Dimension dim1, dim2;
+      list<DAE.Dimension> dim_rest;
     case (DAE.ET_ARRAY(ty = ty, arrayDimensions = dim1 :: dim2 :: dim_rest))
-      local
-        DAE.ExpType ty;
-        DAE.Dimension dim1, dim2;
-        list<DAE.Dimension> dim_rest;
       then
         DAE.ET_ARRAY(ty, dim2 :: dim1 :: dim_rest);
   end matchcontinue;
@@ -3505,7 +3498,7 @@ algorithm
     local
       DAE.Exp exp_1,exp_2;
       DAE.Dimension dim;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type t,tp;
       DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp arrexp;
@@ -3514,9 +3507,11 @@ algorithm
       DAE.Type ty,ty2;
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
+      String str_exp,str_pre;
+      DAE.ExpType etp;
+      list<Absyn.Exp> aexps;
 
     case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      local String str_exp,str_pre;
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
@@ -3526,7 +3521,6 @@ algorithm
       then
          (cache,exp_1,DAE.PROP(DAE.T_INTEGER_DEFAULT,c));
     case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      local String str_exp,str_pre;
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
@@ -3536,10 +3530,6 @@ algorithm
       then
          (cache,exp_1,DAE.PROP(DAE.T_REAL_DEFAULT,c));
     case (cache,env,aexps,_,impl,pre,info)
-      local
-        DAE.ExpType etp;
-        DAE.Type t;
-        list<Absyn.Exp> aexps;
       equation
         arrexp = Util.listFirst(aexps);
         (cache,exp_1,DAE.PROP(t,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
@@ -3599,7 +3589,7 @@ algorithm
     local
       DAE.Exp exp_1,exp_2;
       DAE.Dimension dim;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type t,tp;
       DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp arrexp;
@@ -3608,9 +3598,10 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
+      String str_exp,str_pre;
+      DAE.ExpType etp;
 
     case (cache,env,{arrexp},_,impl,pre,info)
-      local String str_exp,str_pre;
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
@@ -3620,7 +3611,6 @@ algorithm
       then
          (cache,exp_1,DAE.PROP(DAE.T_INTEGER_DEFAULT,c));
     case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      local String str_exp,str_pre;
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
@@ -3629,8 +3619,7 @@ algorithm
         Error.addSourceMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str_exp, str_pre}, info);
       then
          (cache,exp_1,DAE.PROP(DAE.T_REAL_DEFAULT,c));
-    case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      local DAE.ExpType etp; DAE.Type t;
+    case (cache,env,{arrexp},_,impl,pre,info)
       equation
         (cache,exp_1,DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
         tp = Types.arrayElementType(t);
@@ -3687,25 +3676,22 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp exp_1,exp_2, call;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp exp;
       DAE.Dimension dim;
-      Boolean impl;
-      Ident s,el_str,pre_str;
+      Boolean impl,sc;
+      Ident s,el_str,pre_str,str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
+      DAE.Type t,t2,tp;
+      DAE.ExpType etp,etp_org;
+      list<DAE.Exp> expl_1;
 
     /* an matrix? */
     case (cache,env,{exp},_,impl,pre,info) /* impl */
-      local
-        DAE.Type t,t2;
-        DAE.ExpType etp,etp_org;
-        list<DAE.Exp> expl_1;
-        Boolean sc;
       equation
         (cache,exp_1 as DAE.MATRIX(_, _, _),DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl,NONE(), true,pre,info);
 
@@ -3721,11 +3707,6 @@ algorithm
 
     /* an array? */
     case (cache,env,{exp},_,impl,pre,info)
-      local
-        DAE.Type t,t2;
-        DAE.ExpType etp,etp_org;
-        list<DAE.Exp> expl_1;
-        Boolean sc;
       equation
         (cache,exp_1,DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl,NONE(),true,pre,info);
 
@@ -3744,13 +3725,12 @@ algorithm
 
     /* a scalar? */
     case (cache,env,{exp},_,impl,pre,info) /* impl */
-      local DAE.ExpType t; String str;
       equation
         (cache,exp_1,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         (tp,_) = Types.flattenArrayType(tp);
         true = Types.basicType(tp);
-        t = Types.elabType(tp);
-        exp_2 = makeBuiltinCall("pre", {exp_1}, t);
+        etp = Types.elabType(tp);
+        exp_2 = makeBuiltinCall("pre", {exp_1}, etp);
       then
         (cache,exp_2,DAE.PROP(tp,c));
     case (cache,env,{exp},_,impl,pre,info)
@@ -3964,6 +3944,12 @@ algorithm
       Integer i;
       DAE.DAElist dae;
       Prefix.Prefix pre;
+      String fieldName, str, utStr;
+      Absyn.Path p, p2;
+      list<DAE.Var> fields;
+      DAE.Var var;
+      Integer fieldNum;
+      Absyn.ComponentRef cref;
     case (cache,env,{s1,Absyn.INTEGER(i)},{},impl,pre,info) /* Tuple */
       equation
         (cache,s1_1,DAE.PROP((DAE.T_METATUPLE(tys),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
@@ -3983,13 +3969,6 @@ algorithm
       then
         (cache,s1_1,DAE.PROP(ty,c));
     case (cache,env,{s1,Absyn.CREF(cref),Absyn.STRING(fieldName)},{},impl,pre,info) /* Uniontype */
-      local
-        String fieldName, str, utStr;
-        Absyn.Path p, p2;
-        list<DAE.Var> fields;
-        DAE.Var var;
-        Integer fieldNum;
-        Absyn.ComponentRef cref;
       equation
         (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),SOME(p)),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
         p2 = Absyn.crefToPath(cref);
@@ -4101,16 +4080,13 @@ protected function makePreLst
 algorithm
   (outExp):=
   matchcontinue (inExpLst,t)
-      local
-        DAE.Exp exp_1;
-        list<DAE.Exp> expl_1;
+    local
+      DAE.Exp exp_1,exp_2;
+      list<DAE.Exp> expl_1,expl_2;
+      DAE.ExpType ttt;
+      DAE.Type ttY;
 
     case((exp_1 :: expl_1),t)
-      local
-        DAE.Exp exp_2;
-        list<DAE.Exp> expl_2;
-        DAE.ExpType ttt;
-        DAE.Type ttY;
       equation
         ttt = Types.elabType(t);
         exp_2 = makeBuiltinCall("pre", {exp_1}, ttt);
@@ -4118,10 +4094,7 @@ algorithm
       then
         ((exp_2 :: expl_2));
 
-      case ({},t)
-        equation
-      then
-        ({});
+      case ({},t) then {};
   end matchcontinue;
 end makePreLst;
 
@@ -5545,7 +5518,7 @@ algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      DAE.Exp e,exp_1;
+      DAE.Exp e,exp_1,ee1;
       DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp exp;
@@ -5553,17 +5526,18 @@ algorithm
       Boolean impl;
       DAE.Const c;
       list<Ident> lst;
-      Ident s,sp;
+      Ident s,sp,es3;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       DAE.DAElist dae;
       Prefix.Prefix pre;
+      DAE.Type ety,restype,ty,elem_ty;
+      list<DAE.Dimension> dims;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist;
+      DAE.ExpType expty;
 
     // Replace der of constant Real, Integer or array of Real/Integer by zero(s) 
     case (cache,env,{exp},_,impl,pre,info)
-      local
-        DAE.Type ety,ty;
-        list<DAE.Dimension> dims;
       equation
         (_,_,DAE.PROP(ety,c),_) = elabExp(cache, env, exp, impl,NONE(),false,pre,info);
         failure(equality(c=DAE.C_VAR()));
@@ -5574,10 +5548,6 @@ algorithm
 
       /* use elab_call_args to also try vectorized calls */
     case (cache,env,{exp},_,impl,pre,info)
-      local
-        DAE.Type ety,restype,ty;
-        list<tuple<DAE.TType, Option<Absyn.Path>>> typelist;
-        DAE.Exp ee1;
       equation
         (_,ee1,DAE.PROP(ety,c),_) = elabExp(cache, env, exp, impl,NONE(),true,pre,info);
         true = Types.dimensionsKnown(ety);
@@ -5588,9 +5558,6 @@ algorithm
         (cache,e,prop);
 
     case (cache, env, {exp}, _, impl, pre,info)
-      local
-        DAE.Type ety, elem_ty;
-        DAE.ExpType expty;
       equation
         (cache, e, DAE.PROP(ety, c), _) = elabExp(cache, env, exp, impl,NONE(), false, pre, info);
         elem_ty = Types.arrayElementType(ety);
@@ -5601,9 +5568,6 @@ algorithm
         (cache, e, DAE.PROP(ety, c));
         
     case (cache,env,{exp},_,impl,pre,info)
-      local
-        DAE.Type ety;
-        String es3;
       equation
         (_,_,DAE.PROP(ety,_),_) = elabExp(cache,env, exp, impl,NONE(),false,pre,info);
         false = Types.isRealOrSubTypeReal(ety);
@@ -6466,14 +6430,13 @@ algorithm
     local
       Integer dims_larger_than_one;
       Prefix.Prefix pre;
+      String arg_str, scope_str, dim_str, pre_str;
     case (_, _, _,_)
       equation
         dims_larger_than_one = countDimsLargerThanOne(dimensions);
         (dims_larger_than_one > 1) = false;
       then ();
     case (_, _, _, pre)
-      local
-        String arg_str, scope_str, dim_str, pre_str;
       equation
         scope_str = Env.printEnvPathStr(env);
         arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
@@ -6543,11 +6506,9 @@ protected function dimensionListMaxOne "function: elabBuiltinVector2
 algorithm
   dimensions := matchcontinue (inIntegerLst)
     local
-      Integer dim;
+      Integer dim,x;
       list<Integer> dims;
-      case ({})
-        then
-          0;
+      case ({}) then 0;
       case ((dim :: dims))
         equation
           (dim > 1) = true;
@@ -6555,10 +6516,8 @@ algorithm
         then
           10;
       case((dim :: dims))
-        local
-         Integer x;
         equation
-        x = dimensionListMaxOne(dims);
+          x = dimensionListMaxOne(dims);
         then
           x;
   end matchcontinue;
