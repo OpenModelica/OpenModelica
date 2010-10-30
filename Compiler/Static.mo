@@ -550,7 +550,7 @@ algorithm
        //-------------------------------------
        // Part of the MetaModelica extension. KS
    case (cache,env,Absyn.ARRAY(es),impl,st,doVect,pre,info)
-     local equation
+     equation
        true = RTOpts.acceptMetaModelicaGrammar();
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST(es),impl,st,doVect,pre,info);
      then (cache,exp,prop,st);
