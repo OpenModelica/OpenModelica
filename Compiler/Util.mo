@@ -883,8 +883,8 @@ public function applyAndAppend
   end FuncTypeType_aToType_b;
 algorithm
   outLst := matchcontinue(element, f, accLst)
+    local Type_b result;
     case(element, f, accLst)
-      local Type_b result;
       equation
         result = f(element);
         accLst = listAppend(accLst, {result});
@@ -909,8 +909,8 @@ public function applyAndCons
   end FuncTypeType_aToType_b;
 algorithm
   outLst := matchcontinue(element, f, accLst)
+    local Type_b result;
     case(element, f, accLst)
-      local Type_b result;
       equation
         result = f(element);
       then result::accLst;
@@ -3380,17 +3380,16 @@ protected function listlistPos "helper function to listPosition"
 algorithm
   outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
     local
-      Type_a x,y,i;
+      Type_a x,y;
       list<Type_a> y1;
       list<list<Type_a>> ys;
-      Integer i_1,n;
+      Integer i,i_1,n;
     case (x,((y::{}):: ys),i)
       equation
         equality(x = y);
       then
         i;
     case (x,((y::{}) :: ys),i)
-      local Integer i;
       equation
         failure(equality(x = y));
         i_1 = i + 1;
@@ -3398,7 +3397,6 @@ algorithm
       then
         n;        
     case (x,((y1) :: ys),i)
-      local Integer i;
       equation
         //failure(equality(x = y1));
         //i_1 = i + 1;
@@ -3406,7 +3404,6 @@ algorithm
       then
         i;
     case (x,(y1 :: ys),i)
-      local Integer i;
       equation
         false = listPos2(x, y1);
         i_1 = i + 1;
@@ -4183,8 +4180,8 @@ public function listSetEqualOnTrue "function: listSetEqualOnTrue
   end CompareFunc;
 algorithm
    equal := matchcontinue(lst1,lst2,compare)
+     local list<Type_a> lst;
      case (lst1,lst2,compare)
-       local list<Type_a> lst;
        equation
        	lst = listIntersectionOnTrue(lst1,lst2,compare);
        	true = intEq(listLength(lst), listLength(lst1));
@@ -5082,12 +5079,11 @@ algorithm
         res = stringCharListString(resList);
       then
         res;
-    case (strList,_,_)
-      local String strList;
+    case (_,_,_)
       equation
         print("- Util.stringReplaceChar failed\n");
       then
-        strList;
+        fail();
   end matchcontinue;
 end stringReplaceChar;
 
@@ -5165,34 +5161,32 @@ protected function stringSplitAtChar2
 algorithm
   outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
     local
-      list<String> chr_rest_1,chr_rest,chrList,rest,strList;
-      String res;
+      list<String> chr_rest_1,chr_rest,chrList,rest,strList,res;
       list<String> res_str;
-      String firstChar,chr;
+      String firstChar,chr,str;
     
     case ({},_,chr_rest)
       equation
         chr_rest_1 = listReverse(chr_rest);
-        res = stringCharListString(chr_rest_1);
+        str = stringCharListString(chr_rest_1);
       then
-        {res};
+        {str};
     
     case ((firstChar :: rest),chr,chr_rest)
       equation
         true = stringEq(firstChar, chr);
         chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
-        res = stringCharListString(chrList);
-        res_str = stringSplitAtChar2(rest, chr, {});
+        str = stringCharListString(chrList);
+        res = stringSplitAtChar2(rest, chr, {});
       then
-        (res :: res_str);
+        (str :: res);
     case ((firstChar :: rest),chr,chr_rest)
-      local list<String> res;
       equation
         false = stringEq(firstChar, chr);
         res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
         res;
-    case (strList,_,_)
+    case (_,_,_)
       equation
         print("- Util.stringSplitAtChar2 failed\n");
       then
@@ -6003,19 +5997,19 @@ algorithm
   (outTypeALst1,outTypeALst2):=
   matchcontinue (inTypeALst1,inTypeALst2,inInteger3)
     local
-      list<Type_a> a,b,c,d,rest;
+      list<Type_a> la,lb,c,d,rest;
+      Type_a a;
       Integer index,new_index;
-    case (a,b,index)
+    case (la,lb,index)
       equation
         (index == 0) = true;
       then
-        (a,b);
-    case ((a :: rest),b,index)
-      local Type_a a;
+        (listReverse(la),lb);
+    case ((a :: la),lb,index)
       equation
         new_index = index - 1;
-        c = listAppend(b, {a});
-        (c,d) = listSplit2(rest, c, new_index);
+        c = a::lb;
+        (c,d) = listSplit2(la, c, new_index);
       then
         (c,d);
     case (_,_,_)
@@ -6226,20 +6220,19 @@ algorithm
   (outString1,outString2):=
   matchcontinue (inString)
     local
-      String file,pd,list_path,res,file_1,file_path,dir_path,current_dir,name;
+      String file,pd,path,res,file_1,file_path,dir_path,current_dir,name;
       String pd_chr;
-      list<String> list_path_1;
+      list<String> list_path_1,list_path;
     case (file_1)
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
         /* (pd_chr :: {}) = stringListStringChar(pd); */
-        (list_path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
+        (path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
         res = System.pwd();
       then
-        (res,list_path);
+        (res,path);
     case (file_1)
-      local list<String> list_path;
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
