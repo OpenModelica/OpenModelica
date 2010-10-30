@@ -6796,6 +6796,7 @@ algorithm
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
       DAE.DAElist dae;
+      list<DAE.Element> els;
       
     case (path,acc,funcs)
       local
@@ -6805,33 +6806,14 @@ algorithm
       equation
         false = listMember(path,acc);
         funcelem = DAEUtil.getNamedFunction(path, funcs);
-        funcelems = {funcelem};
-        explist = DAEUtil.getAllExpsFunctions(funcelems);
+        els = DAEUtil.getFunctionElements(funcelem);
+        
         // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
-        fcallexps = getMatchingExpsList(explist, matchCalls);
-        fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
-        calledfuncs = Util.listMap(fcallexps_1, getCallPath);
+        (_,calledfuncs) = DAEUtil.traverseDAE2(els,matchNonBuiltinCallsAndFnRefPathsForAllExps,{});
 
-        /*-- MetaModelica Partial Function --*/
-
-        // get all arguments of constant T_FUNCTION type and add to list
-        fnrefs = getMatchingExpsList(explist, matchFnRefs);
-        crefs = Util.listMap(fnrefs, getCrefFromExp);
-        reffuncs = Util.listMap(crefs, Absyn.crefToPath);
-
-        //fns = removeDuplicatePaths(fnpaths)s
-        calledfuncs = listAppend(reffuncs, calledfuncs);
-        calledfuncs = removeDuplicatePaths(calledfuncs);
-
-        varlistlist = Util.listMap(funcelems, getFunctionElementsList);
-        varlist = Util.listFlatten(varlistlist);
-        varfuncs = Util.listFold(varlist, DAEUtil.collectFunctionRefVarPaths, {});
-        varfuncs = Util.listFold(Util.if_(RTOpts.acceptMetaModelicaGrammar(), explist, {}), DAEUtil.collectValueblockFunctionRefVars, varfuncs);
-        calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
-        /*--                                           --*/
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, funcs);
 
-        Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
+        /*Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
         debugpathstrs = Util.listMap(varfuncs, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
@@ -6839,7 +6821,7 @@ algorithm
         Debug.fprint("info", "Found called functions: ") "debug" ;
         debugpathstrs = Util.listMap(res, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        Debug.fprintln("info", debugpathstr) "debug" ;
+        Debug.fprintln("info", debugpathstr) "debug" ;*/
       then
         res;
 
@@ -7273,6 +7255,34 @@ public function getMatchingExpsList
 algorithm
   ((_,outExpLst)) := Expression.traverseExpList(inExps,inFn,{});
 end getMatchingExpsList;
+
+protected function matchNonBuiltinCallsAndFnRefPathsForAllExps
+  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
+  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
+  DAE.Exp exp;
+  list<Absyn.Path> paths;
+algorithm
+  (exp,paths) := itpl;
+  otpl := Expression.traverseExp(exp,matchNonBuiltinCallsAndFnRefPaths,paths);
+end matchNonBuiltinCallsAndFnRefPathsForAllExps;
+
+protected function matchNonBuiltinCallsAndFnRefPaths
+  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
+  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
+algorithm
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp e;
+      Absyn.Path path;
+      list<Absyn.Path> acc;
+    case ((e as DAE.CALL(path = path, builtin = false),acc)) then ((e,path::acc));
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),acc))
+      equation
+        path = Absyn.crefToPath(getCrefFromExp(e));
+      then ((e,path::acc));
+    case itpl as (e,acc) then itpl;
+  end matchcontinue;
+end matchNonBuiltinCallsAndFnRefPaths;
 
 protected function matchCalls
 "Used together with getMatchingExps"

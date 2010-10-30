@@ -3425,7 +3425,7 @@ algorithm
       equation
         // Don't traverse the local declarations; we don't store bindings there (yet)
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        (statements,ext_arg_2) = DAEUtil.traverseDAEEquationsStmts(statements,rel,ext_arg_1);
+        (statements,(_,ext_arg_2)) = DAEUtil.traverseDAEEquationsStmts(statements,traverseSubexpressionsHelper,(rel,ext_arg_1));
         ((e,ext_arg_3)) = rel((DAE.VALUEBLOCK(tp,localDecls,statements,e1_1),ext_arg_2));
       then
         ((e,ext_arg_3));
@@ -3439,6 +3439,26 @@ algorithm
         fail();
   end matchcontinue;
 end traverseExp;
+
+public function traverseSubexpressionsHelper
+"This function is used as input to a traverse function that does not traverse all subexpressions.
+The extra argument is a tuple of the actul function to call on each subexpression and the extra argument.
+"
+  replaceable type Type_a subtypeof Any;
+  input tuple<DAE.Exp,tuple<FuncExpType,Type_a>> itpl;
+  output tuple<DAE.Exp,tuple<FuncExpType,Type_a>> otpl;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
+    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
+  end FuncExpType;
+  FuncExpType rel;
+  DAE.Exp exp;
+  Type_a ext_arg;
+algorithm
+  (exp,(rel,ext_arg)) := itpl;
+  ((exp,ext_arg)) := traverseExp(exp,rel,ext_arg);
+  otpl := (exp,(rel,ext_arg));
+end traverseSubexpressionsHelper;
 
 protected function traverseExpMatrix
 "function: traverseExpMatrix

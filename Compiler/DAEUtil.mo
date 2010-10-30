@@ -2162,7 +2162,7 @@ algorithm
   els := Util.listFlatten(elsList);
 end getFunctionsElements;
 
-protected function getFunctionElements
+public function getFunctionElements
   input DAE.Function fn;
   output list<DAE.Element> els;
 algorithm
