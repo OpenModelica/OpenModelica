@@ -4690,7 +4690,7 @@ protected function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsE
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeBLst:=
+  outTypeA :=
   matchcontinue (inEquationArray,func,inTypeA)
     local
       array<Option<BackendDAE.Equation>> equOptArr;
@@ -4847,7 +4847,7 @@ public function traverseAlgorithmExps "function: traverseAlgorithmExps
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;  
 algorithm
-  outTypeBLst:=
+  outTypeA :=
   matchcontinue (inAlgorithm,func,inTypeA)
     local
       list<DAE.Statement> stmts;

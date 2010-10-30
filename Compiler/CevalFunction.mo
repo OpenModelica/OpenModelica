@@ -1042,7 +1042,7 @@ protected function createDependency
   input list<DAE.ComponentRef> inDependencies;
   output Dependency outDependency;
 algorithm
-  outDependencies := matchcontinue(inVar, inDependencies)
+  outDependency := matchcontinue(inVar, inDependencies)
     local
       DAE.ComponentRef cr;
     case (DAE.VAR(componentRef = cr), _) then ((cr, inDependencies));
