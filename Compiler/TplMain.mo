@@ -1433,6 +1433,8 @@ algorithm
   matchcontinue(in_txt, in_items)
     local
       Tpl.Text txt;
+      list<Statement> rest;
+      Statement i_it;
 
     case ( txt,
            {} )
@@ -1440,9 +1442,6 @@ algorithm
 
     case ( txt,
            i_it :: rest )
-      local
-        list<Statement> rest;
-        Statement i_it;
       equation
         txt = statement(txt, i_it);
         txt = Tpl.nextIter(txt);
@@ -1451,8 +1450,6 @@ algorithm
 
     case ( txt,
            _ :: rest )
-      local
-        list<Statement> rest;
       equation
         txt = lm_1(txt, rest);
       then txt;
@@ -1469,12 +1466,13 @@ algorithm
   matchcontinue(in_txt, in_i_it)
     local
       Tpl.Text txt;
+      list<Statement> i_statements;
+      Exp i_condition;
+      Exp i_rhs;
+      Exp i_lhs;
 
     case ( txt,
            ASSIGN(lhs = i_lhs, rhs = i_rhs) )
-      local
-        Exp i_rhs;
-        Exp i_lhs;
       equation
         txt = exp(txt, i_lhs);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
@@ -1484,9 +1482,6 @@ algorithm
 
     case ( txt,
            WHILE(condition = i_condition, statements = i_statements) )
-      local
-        list<Statement> i_statements;
-        Exp i_condition;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("while("));
         txt = exp(txt, i_condition);
@@ -1516,29 +1511,26 @@ algorithm
   matchcontinue(in_txt, in_i_it)
     local
       Tpl.Text txt;
+      Integer i_value;
+      String i_name;
+      Exp i_rhs;
+      Operator i_op;
+      Exp i_lhs;
 
     case ( txt,
            ICONST(value = i_value) )
-      local
-        Integer i_value;
       equation
         txt = Tpl.writeStr(txt, intString(i_value));
       then txt;
 
     case ( txt,
            VARIABLE(name = i_name) )
-      local
-        String i_name;
       equation
         txt = Tpl.writeStr(txt, i_name);
       then txt;
 
     case ( txt,
            BINARY(lhs = i_lhs, op = i_op, rhs = i_rhs) )
-      local
-        Exp i_rhs;
-        Operator i_op;
-        Exp i_lhs;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
         txt = exp(txt, i_lhs);
@@ -1604,6 +1596,8 @@ algorithm
   matchcontinue(in_txt, in_items)
     local
       Tpl.Text txt;
+      list<Integer> rest;
+      Integer i_it;
 
     case ( txt,
            {} )
@@ -1611,9 +1605,6 @@ algorithm
 
     case ( txt,
            i_it :: rest )
-      local
-        list<Integer> rest;
-        Integer i_it;
       equation
         txt = Tpl.writeStr(txt, intString(i_it));
         txt = Tpl.nextIter(txt);
@@ -1622,8 +1613,6 @@ algorithm
 
     case ( txt,
            _ :: rest )
-      local
-        list<Integer> rest;
       equation
         txt = lm_54(txt, rest);
       then txt;
@@ -1640,6 +1629,8 @@ algorithm
   matchcontinue(in_txt, in_items)
     local
       Tpl.Text txt;
+      list<list<Integer>> rest;
+      list<Integer> i_intLst;
 
     case ( txt,
            {} )
@@ -1647,9 +1638,6 @@ algorithm
 
     case ( txt,
            i_intLst :: rest )
-      local
-        list<list<Integer>> rest;
-        list<Integer> i_intLst;
       equation
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_54(txt, i_intLst);
@@ -1660,8 +1648,6 @@ algorithm
 
     case ( txt,
            _ :: rest )
-      local
-        list<list<Integer>> rest;
       equation
         txt = lm_55(txt, rest);
       then txt;

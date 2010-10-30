@@ -3182,10 +3182,10 @@ function isAssignedText
   input list<Ident> inAssignedTexts;
 algorithm
   _:= matchcontinue(inArg, inAssignedTexts)
+    local 
+      Ident ident;
+      list<Ident> assignedTexts;
     case ( (ident , TEXT_TYPE()), assignedTexts )
-      local 
-        Ident ident;
-        list<Ident> assignedTexts;
       equation
         true = listMember(ident,assignedTexts); 
       then ();
