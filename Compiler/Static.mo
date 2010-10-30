@@ -1694,6 +1694,7 @@ algorithm
   matchcontinue (inCache,inEnv1,inExp2,inExpExpOption3,inExp4,inConst5,inType6,inBoolean7,inPrefix)
     local
       Integer startv,stopv,n,n_1,stepv,n_2,n_3,n_4;
+      Real rstartv,rstepv,rstopv,rn,rn_1,rn_2,rn_3;
       list<Env.Frame> env;
       DAE.Exp start,stop,step;
       DAE.Const const;
@@ -1704,6 +1705,8 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       Option<DAE.Exp> ostep;
+      list<String> names;
+      Absyn.Path p;
     case (cache,env,start,NONE(),stop,const,_,impl,pre) /* impl as false */
       equation
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
@@ -1726,7 +1729,6 @@ algorithm
           DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_INTEGER_DEFAULT),NONE()));
     /* enumeration has no step value */
     case (cache,env,start,NONE(),stop,const,_,impl,_) /* impl as false */
-      local list<String> names; Absyn.Path p;
       equation
         (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
         (cache,Values.ENUM_LITERAL(index = stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
@@ -1737,27 +1739,24 @@ algorithm
         (cache,(
           DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE(), p,{},{},{}),NONE())),NONE()));
     case (cache,env,start,NONE(),stop,const,_,impl,_) /* as false */
-      local Real startv,stopv,n,n_2;
       equation
-        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        n = stopv -. startv;
-        n_2 = realFloor(n);
-        n_3 = realInt(n_2);
+        (cache,Values.REAL(rstartv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
+        (cache,Values.REAL(rstopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
+        rn = rstopv -. rstartv;
+        rn_2 = realFloor(rn);
+        n_3 = realInt(rn_2);
         n_1 = n_3 + 1;
       then
-        (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE()));
+        (cache,(DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE()));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
-      local Real startv,stepv,stopv,n,n_1,n_3;
       equation
-        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(stepv),_) = Ceval.ceval(cache,env, step, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        n = stopv -. startv;
-        n_1 = n /. stepv;
-        n_3 = realFloor(n_1);
-        n_4 = realInt(n_3);
+        (cache,Values.REAL(rstartv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
+        (cache,Values.REAL(rstepv),_) = Ceval.ceval(cache,env, step, impl,NONE(), NONE(), Ceval.NO_MSG());
+        (cache,Values.REAL(rstopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
+        rn = rstopv -. rstartv;
+        rn_1 = rn /. rstepv;
+        rn_3 = realFloor(rn_1);
+        n_4 = realInt(rn_3);
         n_2 = n_4 + 1;
       then
         (cache,(
@@ -2663,34 +2662,31 @@ algorithm
       Integer n_1,n;
       tuple<DAE.TType, Option<Absyn.Path>> tp_1,tp,tp2;
       list<DAE.Exp> expl_1,expl;
-      DAE.ExpType a;
-      Boolean at;
+      DAE.ExpType a,at,etp,tp1;
+      Boolean sc;
       DAE.Exp e;
       Ident es;
-    case (DAE.ARRAY(ty = a,scalar = at,array = expl),(n,tp))
+    case (DAE.ARRAY(ty = a,scalar = sc,array = expl),(n,tp))
       equation
         n_1 = n - 1;
         tp_1 = Types.unliftArray(tp);
         a = Expression.liftArrayLeft(a, DAE.DIM_INTEGER(1));
         expl_1 = Util.listMap1(expl, promoteExp2, (n_1,tp_1));
       then
-        DAE.ARRAY(a,at,expl_1);
+        DAE.ARRAY(a,sc,expl_1);
     case (e,(_,tp)) /* scalars can be promoted from s to {s} */
-      local DAE.ExpType at;
       equation
         false = Types.isArray(tp);
         at = Expression.typeof(e);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
     case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = 1),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */
-      local DAE.ExpType at;
       equation
         at = Expression.typeof(e);
         false = Types.isArray(tp2);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
     case (e,(n,tp)) /* fallback, use \"builtin\" operator promote */
-      local DAE.ExpType etp,tp1;
       equation
         es = ExpressionDump.printExpStr(e);
         etp = Types.elabType(tp);
@@ -7037,20 +7033,22 @@ protected function elabCallInteractive "function: elabCallInteractive
       DAE.ComponentRef cr_1,cr2_1;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,cr2;
-      Boolean impl;
+      Boolean impl,enabled;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat,e1_1,e2_1;
+      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       tuple<DAE.TType, Option<Absyn.Path>> recordtype;
       list<Absyn.NamedArg> args;
-      list<DAE.Exp> vars_1;
+      list<DAE.Exp> vars_1,vars_2,vars_3,excludeList;
       DAE.Properties ptop,prop;
       Option<Interactive.InteractiveSymbolTable> st_1;
-      Integer size,var_len;
-      list<Absyn.Exp> vars;
-      Absyn.Exp size_absyn,exp,bool_exp,e1,e2,e3;
+      Integer size,var_len,port,excludeListSize,intervals;
+      list<Absyn.Exp> vars,strings;
+      Absyn.Exp size_absyn,exp,bool_exp,e1,e2,e3,stringArray;
       Env.Cache cache;
       Prefix.Prefix pre;
+      Absyn.Path className;
+      Real stepTime;
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st),_,_) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
           {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
@@ -7062,36 +7060,30 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("list"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
       then
         (cache,DAE.CALL(Absyn.IDENT("list"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
-      className = Absyn.crefToPath(cr);
-    then (cache,DAE.CALL(Absyn.IDENT("checkModel"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        className = Absyn.crefToPath(cr);
+      then (cache,DAE.CALL(Absyn.IDENT("checkModel"),
+            {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
-      className = Absyn.crefToPath(cr);
-    then (cache,DAE.CALL(Absyn.IDENT("checkAllModelsRecursive"),
+        className = Absyn.crefToPath(cr);
+      then (cache,DAE.CALL(Absyn.IDENT("checkAllModelsRecursive"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
-      className = Absyn.crefToPath(cr);
-    then (cache,DAE.CALL(Absyn.IDENT("translateGraphics"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        className = Absyn.crefToPath(cr);
+      then (cache,DAE.CALL(Absyn.IDENT("translateGraphics"),
+            {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7109,8 +7101,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7129,8 +7119,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7148,7 +7136,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),pre,_)
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
@@ -7159,10 +7146,6 @@ protected function elabCallInteractive "function: elabCallInteractive
     /* Special case for Parham Vaseles OpenModelica Interactive, where buildModel
        takes stepSize instead of startTime, stopTime and numberOfIntervals */
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
-        Real stepTime;
-        Integer intervals;
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -7188,7 +7171,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7209,7 +7191,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           (
           DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7230,7 +7211,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
@@ -7293,9 +7273,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //visualize(model)
   case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),_,_) /* Fill in rest of defaults here */
-    local Absyn.Path className;
-          DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
-//          String vars;
       equation
         className = Absyn.crefToPath(cr);
       then
@@ -7305,9 +7282,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plotAll(model)
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
-    local Absyn.Path className;
-          DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-
       equation
 //        vars_1 = elabVariablenames({cr2});
         className = Absyn.crefToPath(cr);
@@ -7342,9 +7316,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plotAll()
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
-    local Absyn.Path className;
-          DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-
       equation
 //        vars_1 = elabVariablenames({cr2});
 //        className = Absyn.crefToPath(cr);
@@ -7380,9 +7351,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plot2(model, x)
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), e2},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
-    local Absyn.Path className;
-          DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-
       equation
         vars_1 = elabVariablenames({e2});
         className = Absyn.crefToPath(cr);
@@ -7417,9 +7385,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plot2(model, {x,y})
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
-    local Absyn.Path className;
-        DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-
       equation
         vars_1 = elabVariablenames(vars);
         className = Absyn.crefToPath(cr);
@@ -7457,8 +7422,6 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plot2(x)
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{e1},args,impl,SOME(st),pre,_)
-      local
-        DAE.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
         vars_1 = elabVariablenames({e1});
 
@@ -7492,9 +7455,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 //plot2({x,y})
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st),pre,_)
-            local
-              DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-            equation
+      equation
         vars_1 = elabVariablenames(vars);
         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"),pre,info);
@@ -7546,9 +7507,6 @@ protected function elabCallInteractive "function: elabCallInteractive
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentRef = cr), e2 as Absyn.CREF(componentRef = _), e3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st),pre,_) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
-   local Absyn.Path className; list<DAE.Exp> vars_3;
-          DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-         list<DAE.Exp> vars_2;
       equation
         vars_1 = elabVariablenames({e2});
         vars_2 = elabVariablenames({e3});
@@ -7589,9 +7547,6 @@ protected function elabCallInteractive "function: elabCallInteractive
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{e2 as Absyn.CREF(componentRef = _), e3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st),pre,_) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
-   local Absyn.Path className; list<DAE.Exp> vars_3;
-     DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-     list<DAE.Exp> vars_2;
       equation
 
         vars_1 = elabVariablenames({e2});
@@ -7632,8 +7587,6 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),vars,args,impl,SOME(st),pre,_) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
-      local
-        DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
 
         vars_1 = elabVariablenames(vars);
@@ -7666,21 +7619,15 @@ protected function elabCallInteractive "function: elabCallInteractive
           vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "enableSendData"),{Absyn.BOOL(value = enabled)},{},impl,SOME(st),_,_)
-      local
-        Boolean enabled;
        then (cache, DAE.CALL(Absyn.IDENT("enableSendData"),{DAE.BCONST(enabled)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setDataPort"),{Absyn.INTEGER(value = port)},{},impl,SOME(st),_,_)
-      local
-        Integer port;
        then (cache, DAE.CALL(Absyn.IDENT("setDataPort"),{DAE.ICONST(port)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st),_,_)
-      local
-        list<Absyn.Exp> strings;
-        equation
-          vars_1 = elabVariablenames(strings);
-       then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
+      equation
+        vars_1 = elabVariablenames(strings);
+      then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st),pre,_)
@@ -7690,7 +7637,6 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("timing"),{exp_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
       then
@@ -7735,9 +7681,6 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("setDebugFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCommandLineOptions"),{stringArray},{},impl,SOME(st),pre,_)
-      local
-        Absyn.Exp stringArray;
-        DAE.Exp arr;
       equation
           (_,arr,_,_) = elabExp(Env.emptyCache(), {}, stringArray, false, NONE(), true,pre,info);
        then 
@@ -7771,7 +7714,6 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("runScript"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
       then
@@ -7783,7 +7725,6 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st),_,_) then (cache, DAE.CALL(Absyn.IDENT("loadFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
           className = Absyn.crefToPath(cr);
       then
@@ -7791,7 +7732,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
           className = Absyn.crefToPath(cr);
       then
@@ -7799,7 +7739,6 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
-      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
       then
@@ -7893,9 +7832,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then (cache,DAE.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre,_)
-      local
-        list<DAE.Exp> excludeList;
-        Integer excludeListSize;
       equation
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
@@ -7903,19 +7839,12 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
-      local
-        list<DAE.Exp> excludeList;
-        Integer excludeListSize;
       equation
         excludeList = getOptionalNamedArgExpList("exclude", args);
         excludeListSize = listLength(excludeList);
       then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
-        list<DAE.Exp> excludeList;
-        Integer excludeListSize;
       equation
         className = Absyn.crefToPath(cr);
         excludeList = getOptionalNamedArgExpList("exclude", args);
@@ -7923,10 +7852,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,impl,SOME(st),pre,_)
-      local
-        Absyn.Path className;
-        list<DAE.Exp> excludeList;
-        Integer excludeListSize;
       equation
         className = Absyn.crefToPath(cr);
         excludeList = getOptionalNamedArgExpList("exclude", args);
@@ -7934,9 +7859,6 @@ protected function elabCallInteractive "function: elabCallInteractive
       then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(),{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
      case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
-      local 
-        Absyn.Path className;
-        DAE.Exp translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -8492,7 +8414,7 @@ algorithm
       DAE.Properties prop,prop_1;
       SCode.Class cl,scodeClass,recordCl;
       Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath,fpath;
-      list<Absyn.Exp> args;
+      list<Absyn.Exp> args,t4;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin;
       DAE.InlineType inline;
@@ -8717,8 +8639,6 @@ algorithm
         (cache,NONE());
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
-      local
-        list<Absyn.Exp> t4;
       equation
         t4 = args;
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
@@ -8875,6 +8795,7 @@ algorithm
       SCode.Class cl;
       DAE.DAElist dae;
       String id,id2,pathStr,envStr;
+      DAE.ComponentRef cref;
     /* Builtin functions skipped*/
     case(cache,env,name,true,_,_,_) then (cache,Util.SUCCESS());
 
@@ -8917,8 +8838,6 @@ algorithm
 
     /* Call to function reference variable */
     case (cache,env,name,false,NONE(),_,_)
-      local
-        DAE.ComponentRef cref;
       equation
         cref = pathToComponentRef(name);
         (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
@@ -9849,6 +9768,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
+      String s;
 
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,pre,info)
@@ -9866,7 +9786,6 @@ algorithm
 
     // Fill slots with named arguments
     case (cache,env,{},narg as _::_,slots,checkTypes,impl,polymorphicBindings,pre,info)
-       local String s;
       equation
         farg = funcargLstFromSlots(slots);
         s = printSlotsStr(slots);
@@ -10516,13 +10435,13 @@ public function fixEnumerationType
   output DAE.Type outType;
 algorithm
   outType := matchcontinue(inType)
+    local
+      Absyn.Path p;
+      list<String> n;
+      list<DAE.Var> v, al;
+      Option<Absyn.Path> op;
     case ((DAE.T_ENUMERATION(index = SOME(_), path = p, names = n, 
         literalVarLst = v, attributeLst = al), op))
-      local
-        Absyn.Path p;
-        list<String> n;
-        list<DAE.Var> v, al;
-        Option<Absyn.Path> op;
       then
         ((DAE.T_ENUMERATION(NONE(), p, n, v, al), op));
     case _ then inType;
@@ -10603,13 +10522,13 @@ protected function makeASUBArrayAdressing
 algorithm
   outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
     local
-      DAE.Exp exp1, exp2, aexp1,aexp2;
+      DAE.Exp exp1,exp2,aexp1,aexp2,tmpExp;
       Absyn.ComponentRef cref, crefChild;
       list<Absyn.Subscript> assl;
       list<DAE.Subscript> essl;
       String id,id2;
-      DAE.ExpType ty,ty2;
-      DAE.ComponentRef cr,cref_;
+      DAE.ExpType ty,ty2,tty2;
+      DAE.ComponentRef cr,cref_,crr2;
       DAE.Const const;
       list<Env.Frame> env;
       Boolean impl;
@@ -10621,7 +10540,6 @@ algorithm
     case(inRef,cache,env,impl,inExp,splicedExpData,false,_,info) then inExp;      
     
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,pre,info)
-      local DAE.Exp tmpExp;
       equation
         (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exps = makeASUBArrayAdressing2(essl,pre);
@@ -10639,8 +10557,6 @@ algorithm
       then
         exp1;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,_,info)
-      local
-        DAE.ExpType tty2;
       equation
         tty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,tty2,essl);
@@ -10659,11 +10575,8 @@ algorithm
     // adrpo: return exp1 here instead of exp2
     //        returning exp2 generates x.y[{1,2,3}] for  x.Real[3].y;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), Lookup.SPLICEDEXPDATA(SOME(exp2 as DAE.CREF(cr,_)),idTp),doVect,_,info)
-      local
-        DAE.ComponentRef crr2;
-        DAE.ExpType tty2;
-        equation
-          //Debug.fprint("failtrace", "-Qualified asubs not yet implemented\n");
+      equation
+        //Debug.fprint("failtrace", "-Qualified asubs not yet implemented\n");
       then
         exp1; // adrpo why it was returning here exp2???
     case(_,_,_,_,exp1,_,doVect,_,info)
@@ -10886,9 +10799,11 @@ algorithm
       String s,str,scope,pre_str;
       DAE.Binding binding;
       Env.Cache cache;
-      Boolean doVect;
+      Boolean doVect,genWarning;
       DAE.ExpType expIdTy; 
       Prefix.Prefix pre;
+      Integer i;
+      Absyn.Path p;
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
@@ -10934,9 +10849,6 @@ algorithm
 
     // an enumeration literal -> simplify to a literal expression
     case (cache,env,cr,_,SCode.CONST(),_,_,(DAE.T_ENUMERATION(index = SOME(i), path = p), _),_,_,_,_,info)
-      local
-        Integer i;
-        Absyn.Path p;
       equation
         p = Absyn.joinPaths(p, ComponentReference.crefLastPath(cr));
       then
@@ -11090,7 +11002,6 @@ algorithm
 
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
-      local Boolean genWarning;
       equation
         s = ComponentReference.printComponentRefStr(cr);
         genWarning = not (Util.isSome(forIteratorConstOpt) or OptManager.getOption("checkModel"));
@@ -11142,6 +11053,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type t;
       DAE.Dimension d1, d2;
+      Integer ds, ds2;
 
     // no vectorization
     case(false, e, _, _,_,_) then e;
@@ -11177,8 +11089,6 @@ algorithm
     case (_, DAE.CREF(componentRef = cr, ty = exptp), 
         (DAE.T_ARRAY(arrayDim = d1, arrayType = t as (DAE.T_ARRAY(arrayDim = d2), _)), _),
         _, crefIdType, applyLimits)
-      local
-        Integer ds, ds2;
       equation 
         ds = Expression.dimensionSize(d1);
         ds2 = Expression.dimensionSize(d2);
@@ -11192,8 +11102,6 @@ algorithm
     /* vectorsizes > vectorization limit is not vectorized */ 
     case (_,DAE.CREF(componentRef = cr,ty = exptp),
         (DAE.T_ARRAY(arrayDim = d1,arrayType = t),_),_,crefIdType,applyLimits) 
-      local
-        Integer ds;
       equation 
         false = Types.isArray(t);
         ds = Expression.dimensionSize(d1);
@@ -11317,6 +11225,8 @@ algorithm
       DAE.Subscript ssl;
       String id;
       DAE.ExpType ety;
+      list<DAE.Dimension> iLst;
+      Boolean scalar;
     // a component reference
     case(exp1 as DAE.CREF(_,_),exp2,_)
       equation
@@ -11324,9 +11234,6 @@ algorithm
       then exp1;
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1),exp2,ety)
-      local
-        list<DAE.Dimension> iLst;
-        Boolean scalar;
       equation
         expl1 = Util.listMap2(expl1,mergeQualWithRest,exp2,ety);
 
@@ -11354,6 +11261,8 @@ algorithm
       DAE.ComponentRef cref,cref_2;
       String id;
       DAE.ExpType ety,ty2;
+      list<DAE.Dimension> iLst;
+      Boolean scalar;
     // a component reference
     case(exp1 as DAE.CREF(cref, ety),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       equation
@@ -11362,9 +11271,6 @@ algorithm
       then exp1;
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(id,_, ssl),ety))
-      local
-        list<DAE.Dimension> iLst;
-        Boolean scalar;
       equation
         expl1 = Util.listMap1(expl1,mergeQualWithRest2,exp2);
         exp1 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
