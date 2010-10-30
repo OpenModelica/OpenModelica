@@ -509,6 +509,7 @@ algorithm
       Absyn.Class cl,cl1;
       Boolean r;
       Env.Env env;
+      Option<Absyn.ArrayDim> z;
 
     case(Absyn.CLASSDEF(replaceable_ = r, class_ = cl),p,cPath,env)
 
@@ -520,7 +521,6 @@ algorithm
         Absyn.CLASSDEF(r,cl1);
 
     case(Absyn.COMPONENTS(at,Absyn.TPATH(path,z),firstComp :: restCompList),p,cPath,env)
-      local Option<Absyn.ArrayDim> z;
       equation
         resultComp = refactorGraphAnnInComponentItem(firstComp,cPath,path,p,env);
         Absyn.COMPONENTS(at,Absyn.TPATH(path,z),resCompList) =
