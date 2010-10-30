@@ -6814,14 +6814,15 @@ algorithm
         funcelem = DAEUtil.getNamedFunction(path, funcs);
         els = DAEUtil.getFunctionElements(funcelem);
         
-        // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
-        (_,(_,calledfuncs)) = DAEUtil.traverseDAE2(els,Expression.traverseSubexpressionsHelper,(matchNonBuiltinCallsAndFnRefPaths,{}));
-
         // Function reference variables are filtered out
         varfuncs = Util.listFold(els, DAEUtil.collectFunctionRefVarPaths, {});
         (_,(_,varfuncs)) = DAEUtil.traverseDAE2(Util.if_(RTOpts.acceptMetaModelicaGrammar(), els, {}),Expression.traverseSubexpressionsHelper,(DAEUtil.collectValueblockFunctionRefVars,varfuncs));
-        calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
 
+        //print("varfuncs: " +& Util.stringDelimitList(Util.listMap(varfuncs,Absyn.pathString),",") +& "\n");
+        // print("Got expressions in " +& Absyn.pathString(path) +& ": " +& ExpressionDump.printExpStr(DAE.TUPLE(explist)) +& "\n");
+        (_,(_,(calledfuncs,_))) = DAEUtil.traverseDAE2(els,Expression.traverseSubexpressionsHelper,(matchNonBuiltinCallsAndFnRefPaths,({},varfuncs)));
+
+        //print("calledfuncs: " +& Util.stringDelimitList(Util.listMap(calledfuncs,Absyn.pathString),",") +& "\n");
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, funcs);
 
         /*Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
@@ -7245,20 +7246,26 @@ algorithm
 end getMatchingExpsList;
 
 protected function matchNonBuiltinCallsAndFnRefPaths
-  input tuple<DAE.Exp,list<Absyn.Path>> itpl;
-  output tuple<DAE.Exp,list<Absyn.Path>> otpl;
+"The extra argument is a tuple<list,list>; the second list is the list of variable
+names to filter out (so we don't add function references variables)"
+  input tuple<DAE.Exp,tuple<list<Absyn.Path>,list<Absyn.Path>>> itpl;
+  output tuple<DAE.Exp,tuple<list<Absyn.Path>,list<Absyn.Path>>> otpl;
 algorithm
   otpl := matchcontinue itpl
     local
       DAE.Exp e;
       Absyn.Path path;
-      list<Absyn.Path> acc;
-    case ((e as DAE.CALL(path = path, builtin = false),acc)) then ((e,path::acc));
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),acc))
+      list<Absyn.Path> acc,filter;
+    case ((e as DAE.CALL(path = path, builtin = false),(acc,filter)))
+      equation
+        false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
+      then ((e,(path::acc,filter)));
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
       equation
         path = Absyn.crefToPath(getCrefFromExp(e));
-      then ((e,path::acc));
-    case itpl as (e,acc) then itpl;
+        false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
+      then ((e,(path::acc,filter)));
+    case itpl then itpl;
   end matchcontinue;
 end matchNonBuiltinCallsAndFnRefPaths;
 
