@@ -2023,7 +2023,7 @@ algorithm
     local
       Ident s1,s2,str,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
       list<Ident> l,vars,paramstrs,tystrs;
-      Type ty,t,bc_tp,restype;
+      Type ty,bc_tp,restype;
       list<DAE.Dimension> dimlst;
       list<Var> vs;
       Option<Type> bc;

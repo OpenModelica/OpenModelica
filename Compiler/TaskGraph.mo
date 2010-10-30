@@ -62,7 +62,6 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
-protected import System;
 
 public function buildTaskgraph ""
   input BackendDAE.BackendDAE inBackendDAE1;
@@ -138,7 +137,6 @@ algorithm
   _ := matchcontinue (inBackendDAEVarLst)
     local
       String v,origname_str;
-      DAE.Exp value;
       Integer indx;
       DAE.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -146,6 +144,7 @@ algorithm
       DAE.Flow flowPrefix;
       list<BackendDAE.Var> rest;
       DAE.Exp e;
+      Values.Value value;
     case ({}) then ();
     case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
@@ -212,7 +211,6 @@ algorithm
       then
         ();
     case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = SOME(value),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
-      local Values.Value value;
       equation
         v = ValuesUtil.valString(value);
         origname_str = ComponentReference.printComponentRefStr(origname);
@@ -228,7 +226,6 @@ algorithm
       then
         ();
     case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = SOME(value),index = indx,varName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
-      local Values.Value value;
       equation
         v = ValuesUtil.valString(value);
         origname_str = ComponentReference.printComponentRefStr(origname);
@@ -310,7 +307,7 @@ algorithm
   _:=
   matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
-      Integer e_1,v_1,e,indx;
+      Integer e_1,i,v_1,e,indx;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
       list<BackendDAE.Var> varlst;
@@ -345,12 +342,11 @@ algorithm
       then
         ();
     case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
-      local Integer v;
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass2[e_1 + 1];
-        v_1 = v - 1 "v == variable no solved in this equation" ;
+        i = ass2[e_1 + 1];
+        v_1 = i - 1 "i == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,comment,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx) "	print \"solving for state\\n\" &" ;
@@ -382,12 +378,11 @@ algorithm
 	--------------------------------
 	build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
  */
-      local Integer v;
       equation
         e_1 = e - 1 "state nonlinear" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass2[e_1 + 1];
-        v_1 = v - 1 "v == variable no solved in this equation" ;
+        i = ass2[e_1 + 1];
+        v_1 = i - 1 "i == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,_,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx);
