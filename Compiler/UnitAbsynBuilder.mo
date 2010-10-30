@@ -948,16 +948,20 @@ algorithm
     DAE.ComponentRef cr;
     DAE.Exp e,e1,e2;
     Absyn.Path path;
-    list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
+    UnitAbsyn.UnitTerm ut;
+    list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+    list<UnitAbsyn.UnitTerm> terms1,terms2,terms,uts;
     list<DAE.Exp> expl;
     UnitAbsyn.Unit u;
+    Integer i;
+    Real r;
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
       indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
-    case(env,e as DAE.ICONST(i),divOrMul,ht,store) local Integer i; equation
+    case(env,e as DAE.ICONST(i),divOrMul,ht,store) equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
@@ -981,7 +985,7 @@ algorithm
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* special case for pow */
-    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store) local Integer i;
+    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store)
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
         (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -989,7 +993,7 @@ algorithm
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
-    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store) local Integer i; Real r;
+    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store)
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
         (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -1041,7 +1045,6 @@ algorithm
     /* Array, all elements must be of same dimension, since an array with different units in different positions
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
     case(env,e as DAE.ARRAY(_,_,expl),divOrMul,ht,store)
-      local list<UnitAbsyn.UnitTerm> uts; list<DAE.Exp> expl; UnitAbsyn.UnitTerm ut;
       equation
         print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
@@ -1050,7 +1053,6 @@ algorithm
     then (ut,terms,store);
 
     case(env,e as DAE.MATRIX(_,_,mexpl),divOrMul,ht,store)
-      local  list<list<tuple<DAE.Exp, Boolean>>> mexpl; list<UnitAbsyn.UnitTerm> uts;
       equation
         print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
         expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));

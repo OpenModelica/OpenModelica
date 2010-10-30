@@ -87,7 +87,6 @@ protected import RTOpts;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import OptManager;
-protected import System;
 
 public function discreteType
 "function: discreteType
@@ -355,7 +354,18 @@ input DAE.ExpType inexp;
 output Type oType;
 algorithm
   oType := matchcontinue(inexp)
-  local Type ty,ty2;
+    local
+      Type ty,ty2;
+      TType tty;
+      Absyn.Path path;
+      DAE.ExpType at;
+      list<String> names;
+      list<DAE.ExpVar> evars;
+      list<Var> tvars;
+      list<DAE.Dimension> ad;
+      DAE.Dimension dim;
+      Integer ll,currDim;
+      ClassInf.State complexClassType;
     case(DAE.ET_INT())
       equation
         ty = DAE.T_INTEGER_DEFAULT;
@@ -373,50 +383,29 @@ algorithm
         ty = DAE.T_STRING_DEFAULT;
         then ty;
     case(DAE.ET_ENUMERATION(path,names,evars))
-      local
-        Absyn.Path path;
-        list<String> names;
-        list<DAE.ExpVar> evars;
-        list<Var> tvars;
       equation
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
         ty = (DAE.T_ENUMERATION(NONE(),path,names,tvars,{}),NONE());
         then ty;
     case(DAE.ET_ARRAY(at,dim::ad))
-      local DAE.ExpType at;
-        list<DAE.Dimension> ad;
-        DAE.Dimension dim;
-        Integer ll;
-        Integer currDim;
-        TType tty;
-        equation
-          ll = listLength(ad);
-          true = (ll == 0);
-          ty = expTypetoTypesType(at);
-          tty = DAE.T_ARRAY(dim,ty);
-          ty2 = (tty,NONE());
-          then
-            ty2;
+      equation
+        ll = listLength(ad);
+        true = (ll == 0);
+        ty = expTypetoTypesType(at);
+        tty = DAE.T_ARRAY(dim,ty);
+        ty2 = (tty,NONE());
+      then
+        ty2;
     case(DAE.ET_ARRAY(at,dim::ad))
-      local DAE.ExpType at;
-        list<DAE.Dimension> ad;
-        DAE.Dimension dim;
-        Integer ll;
-        Integer currDim;
-        TType tty;
-        equation
-          ll = listLength(ad);
-          true = (ll > 0);
-          ty = expTypetoTypesType(DAE.ET_ARRAY(at,ad));
-          tty = DAE.T_ARRAY(dim,ty);
-          ty2 = (tty,NONE());
-          then
-            ty2;
+      equation
+        ll = listLength(ad);
+        true = (ll > 0);
+        ty = expTypetoTypesType(DAE.ET_ARRAY(at,ad));
+        tty = DAE.T_ARRAY(dim,ty);
+        ty2 = (tty,NONE());
+      then
+        ty2;
     case(DAE.ET_COMPLEX(complexClassType = complexClassType, varLst = evars)) //record COMPLEX "Complex types, currently only used for records "
-      local
-        list<DAE.ExpVar> evars;
-        list<Var> tvars;
-        ClassInf.State complexClassType;
       equation
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
         ty = (DAE.T_COMPLEX(complexClassType,tvars,NONE(),NONE()),NONE());
@@ -424,13 +413,11 @@ algorithm
         ty;
     case(DAE.ET_UNIONTYPE()) then ((DAE.T_UNIONTYPE({}),NONE()));
     case(DAE.ET_BOXED(at))
-      local DAE.ExpType at;
       equation
         ty = expTypetoTypesType(at);
         ty2 = (DAE.T_BOXED(ty),NONE());
       then ty2;
     case(DAE.ET_LIST(at))
-      local DAE.ExpType at;
       equation
         ty = expTypetoTypesType(at);
         ty2 = (DAE.T_LIST(ty),NONE());
@@ -1210,23 +1197,21 @@ algorithm
   outType := matchcontinue (inValue)
     local
       Type tp;
-      Integer dim1;
+      Integer dim1,index;
       Values.Value w,v;
       list<Values.Value> vs,vl;
       list<Type> ts;
       list<Var> vars;
-      Ident cname_str;
-      Absyn.Path cname;
+      String cname_str,ident,str;
+      Absyn.Path cname,path,utPath;
       list<Ident> ids;
+      list<DAE.Exp> explist;
 
     case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT); 
     case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT); 
     case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT); 
     case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT); 
     case (Values.ENUM_LITERAL(name = path, index = index))
-      local
-        Integer index;
-        Absyn.Path path;
       equation
         path = Absyn.pathPrefix(path); 
       then
@@ -1254,7 +1239,6 @@ algorithm
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
-      local Integer index; String ident; Absyn.Path utPath;
       equation
         true = index >= 0;
         vars = valuesToVars(vl, ids);
@@ -1264,8 +1248,6 @@ algorithm
 
         // MetaModelica list type
     case Values.LIST(vl)
-      local
-        list<DAE.Exp> explist;
       equation
         explist = Util.listMap(vl, ValuesUtil.valueExp);
         ts = Util.listMap(vl, typeOfValue);
@@ -1289,12 +1271,11 @@ algorithm
         ((DAE.T_METATUPLE(ts),NONE()));
 
     case (v)
-      local Ident vs;
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Types.typeOfValue failed: ");
-        vs = ValuesUtil.valString(v);
-        Debug.fprintln("failtrace", vs);
+        str = ValuesUtil.valString(v);
+        Debug.fprintln("failtrace", str);
       then
         fail();
   end matchcontinue;
@@ -1445,7 +1426,10 @@ algorithm
       Integer i1,i2;
       ClassInf.State st1,st2;
       Option<Type> bc1,bc2;
-      list<Type> type_list1,type_list2;
+      list<Type> type_list1,type_list2,tList1,tList2;
+      list<String> names1, names2;
+      DAE.Dimension dim1,dim2;
+      list<FuncArg> farg1,farg2;
     
     case ((DAE.T_ANYTYPE(_),_),(_,_)) then true;
     case ((_,_),(DAE.T_ANYTYPE(_),_)) then true;
@@ -1459,8 +1443,6 @@ algorithm
       
     case ((DAE.T_ENUMERATION(names = names1),_),
           (DAE.T_ENUMERATION(names = names2),_))
-      local
-        list<String> names1, names2;
       equation
         res = Util.isPrefixListComp(names1, names2, stringEq);
       then
@@ -1494,7 +1476,6 @@ algorithm
     
     // Array
     case ((DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_))
-      local DAE.Dimension dim1, dim2;
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         true = subtype(t1, t2);
@@ -1533,8 +1514,6 @@ algorithm
     case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_)) then subtype(t1,t2);
     case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_)) then subtype(t1,t2);
     case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_))
-      local
-        list<Type> tList1,tList2;
       equation
         res = subtypeTypelist(tList1,tList2);
       then res;
@@ -1552,7 +1531,6 @@ algorithm
     
     // MM Function Reference. sjoelund
     case ((DAE.T_FUNCTION(farg1,t1,_),_),(DAE.T_FUNCTION(farg2,t2,_),_))
-      local list<FuncArg> farg1,farg2; list<Type> tList1,tList2;
       equation
         tList1 = Util.listMap(farg1, Util.tuple22);
         tList2 = Util.listMap(farg2, Util.tuple22);
@@ -1939,6 +1917,7 @@ algorithm
       ClassInf.State ci;
       list<Var> varlst;
       EqualityConstraint ec;
+      TType tty;
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),path),d)
       equation
         ty_1 = liftArrayRight(ty, d);
@@ -1948,10 +1927,9 @@ algorithm
       equation
         ty_1 = liftArrayRight(ty,d);
         then ((DAE.T_COMPLEX(ci,varlst,SOME(ty_1),ec),path));
-    case ((ty,path),d)
-      local TType ty;
+    case ((tty,path),d)
       then
-        ((DAE.T_ARRAY(d,(ty,NONE())),path));
+        ((DAE.T_ARRAY(d,(tty,NONE())),path));
   end matchcontinue;
 end liftArrayRight;
 
@@ -2043,7 +2021,7 @@ algorithm
   outString:=
   match (inType)
     local
-      Ident s1,s2,str,tys,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
+      Ident s1,s2,str,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
       list<Ident> l,vars,paramstrs,tystrs;
       Type ty,t,bc_tp,restype;
       list<DAE.Dimension> dimlst;
@@ -2051,6 +2029,9 @@ algorithm
       Option<Type> bc;
       ClassInf.State ci_state;
       list<FuncArg> params;
+      TType t;
+      Absyn.Path path,p;
+      list<Type> tys;
 
     case ((DAE.T_INTEGER(varLstInt = {}),_)) then "Integer";
     case ((DAE.T_REAL(varLstReal = {}),_)) then "Real";
@@ -2078,7 +2059,6 @@ algorithm
         s2 = "Boolean(" +& s1 +& ")";
       then s2;
     case ((DAE.T_ENUMERATION(names = l, literalVarLst=vs),_))
-      local String s2;
       equation
         s1 = Util.stringDelimitList(l, ", ");
         s2 = stringAppendList(Util.listMap(vs, unparseVar));
@@ -2086,16 +2066,15 @@ algorithm
         str = stringAppendList({"enumeration(",s1,")"});
       then
         str;
-    case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
+    case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
-        (ty,dimlst) = flattenArrayTypeOpt(t);
-        tys = unparseType(ty);
+        (ty,dimlst) = flattenArrayTypeOpt(ty);
+        tystr = unparseType(ty);
         dims = printDimensionsStr(dimlst);
-        res = stringAppendList({tys,"[",dims,"]"});
+        res = stringAppendList({tystr,"[",dims,"]"});
       then
         res;
     case (((t as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
-      local TType t; Absyn.Path path;
       equation
         name = Absyn.pathString(path);
         vars = Util.listMap(vs, unparseVar);
@@ -2127,7 +2106,6 @@ algorithm
       then
         res;
     case ((DAE.T_TUPLE(tupleType = tys),_))
-      local list<Type> tys;
       equation
         tystrs = Util.listMap(tys, unparseType);
         tystr = Util.stringDelimitList(tystrs, ", ");
@@ -2137,7 +2115,6 @@ algorithm
 
       /* MetaModelica tuple */
     case ((DAE.T_METATUPLE(types = tys),_))
-      local list<Type> tys;
       equation
         tystrs = Util.listMap(tys, unparseType);
         tystr = Util.stringDelimitList(tystrs, ", ");
@@ -2169,7 +2146,6 @@ algorithm
 
         /* MetaModelica uniontype */
     case ((DAE.T_UNIONTYPE(_),SOME(p)))
-      local Absyn.Path p;
       equation
         res = Absyn.pathString(p);
       then
@@ -2177,7 +2153,6 @@ algorithm
 
         /* MetaModelica uniontype (but we know which record in the UT it is) */
     case ((DAE.T_METARECORD(utPath=_, fields = vs),SOME(p)))
-      local Absyn.Path p;
       equation
         str = Absyn.pathString(p);
         vars = Util.listMap(vs, unparseVar);
@@ -2266,10 +2241,11 @@ algorithm
       ClassInf.State st;
       Option<Type> bc;
       DAE.Dimension dim;
-      Type t,restype;
+      Type t,ty,restype;
       list<FuncArg> params;
       list<Type> tys;
-      String s1,s2;
+      String s1,s2,compType;
+      Absyn.Path path;
     
     case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation
@@ -2307,7 +2283,6 @@ algorithm
         str;
     
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
-      local String compType;
       equation
         compType = Util.stringDelimitList( Util.listMap(Util.genericOption(bc),printTypeStr), ", ");
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
@@ -2348,7 +2323,6 @@ algorithm
     
     // MetaModelica list
     case ((DAE.T_LIST(listType = ty),_))
-      local Type ty;
       equation
         s1 = printTypeStr(ty);
          str = stringAppendList({"list<",s1,">"});
@@ -2357,7 +2331,6 @@ algorithm
 
     // MetaModelica Option
     case ((DAE.T_METAOPTION(optionType = ty),_))
-      local Type ty;
       equation
         s1 = printTypeStr(ty);
          str = stringAppendList({"Option<",s1,">"});
@@ -2366,7 +2339,6 @@ algorithm
     
     // MetaModelica Array
     case ((DAE.T_META_ARRAY(ty),_))
-      local Type ty;
       equation
         s1 = printTypeStr(ty);
          str = stringAppendList({"array<",s1,">"});
@@ -2375,7 +2347,6 @@ algorithm
     
     // MetaModelica Boxed
     case ((DAE.T_BOXED(ty),_))
-      local Type ty;
       equation
         s1 = printTypeStr(ty);
          str = stringAppendList({"boxed<",s1,">"});
@@ -2402,7 +2373,6 @@ algorithm
 
     // Uniontype, Metarecord
     case ((_,SOME(path)))
-      local Absyn.Path path;
       equation
          s1 = Absyn.pathString(path);
          str = "#" +& s1 +& "#";
@@ -2799,7 +2769,10 @@ public function getFixedVarAttribute "Returns the value of the fixed attribute o
   output Boolean fixed;
 algorithm
   fixed :=  matchcontinue(tp)
-  local list<Var> vars;
+    local
+      Type ty;
+      Boolean result;
+      list<Var> vars;
     case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_),_)) then fixed;
     case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
     case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_),_)) then fixed;
@@ -2822,9 +2795,6 @@ algorithm
     then fixed;
       
     case((DAE.T_ARRAY(arrayType = ty), _))
-      local
-        Type ty;
-        Boolean result;
       equation
         result = getFixedVarAttribute(ty);
       then 
@@ -3319,11 +3289,11 @@ algorithm
       Const constant_,res;
       Ident str;
       Properties prop;
+      TupleConst tconstant_;
     case DAE.PROP(constFlag = constant_) then constant_;
-    case DAE.PROP_TUPLE(tupleConst = constant_)
-      local TupleConst constant_;
+    case DAE.PROP_TUPLE(tupleConst = tconstant_)
       equation
-        res = propTupleAnyConst(constant_);
+        res = propTupleAnyConst(tconstant_);
       then
         res;
     case prop
@@ -3486,12 +3456,12 @@ public function propTuplePropList
   output list<Properties> prop_list;
 algorithm
   prop_list := matchcontinue(prop_tuple)
+    local
+      list<Properties> pl;
+      list<Type> tl;
+      list<TupleConst> cl;
     case (DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tl), _),
                          tupleConst = DAE.TUPLE_CONST(tupleConstLst = cl)))
-      local
-        list<Properties> pl;
-        list<Type> tl;
-        list<TupleConst> cl;
       equation
         pl = propTuplePropList2(tl, cl);
       then
@@ -3506,14 +3476,14 @@ protected function propTuplePropList2
   output list<Properties> pl;
 algorithm
   pl := matchcontinue(tl, cl)
+    local
+     Type t;
+      list<Type> t_rest;
+      Const c;
+      list<TupleConst> c_rest;
+      list<Properties> p_rest;
     case ({}, {}) then {};
     case (t :: t_rest, DAE.SINGLE_CONST(c) :: c_rest)
-      local
-        Type t;
-        list<Type> t_rest;
-        Const c;
-        list<TupleConst> c_rest;
-        list<Properties> p_rest;
       equation
         p_rest = propTuplePropList2(t_rest, c_rest);
       then
@@ -3661,6 +3631,13 @@ algorithm
       Type et,t;
       DAE.ExpType t_1;
       list<DAE.Dimension> dims;
+      Absyn.Path path,name;
+      list<String> names;
+      list<Var> varLst,tcvl;
+      ClassInf.State CIS;
+      list<DAE.ExpVar> ecvl;
+      list<DAE.ExpType> t_l2;
+      list<Type> t_l;
     
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
@@ -3670,11 +3647,6 @@ algorithm
     case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
     
     case ((DAE.T_ENUMERATION(path = path, names = names, literalVarLst = varLst),_))
-      local
-        Absyn.Path path;
-        list<String> names;
-        list<Var> varLst;
-        list<DAE.ExpVar> ecvl;
       equation
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
@@ -3689,9 +3661,6 @@ algorithm
         DAE.ET_ARRAY(t_1,dims);
 
     case ( (DAE.T_COMPLEX(CIS,{},SOME(t),_),_))
-      local
-        ClassInf.State CIS;
-        Absyn.Path name;
       equation
         // name = ClassInf.getStateName(CIS);
         // print("CS: " +& Absyn.pathString(name) +& "\n");
@@ -3699,11 +3668,6 @@ algorithm
         elabType(t);
 
     case ((DAE.T_COMPLEX(CIS,tcvl,NONE(),_),_))
-      local
-        list<Var> tcvl;
-        ClassInf.State CIS;
-        list<DAE.ExpVar> ecvl;
-        Absyn.Path name;
       equation
         name = ClassInf.getStateName(CIS);
         // print("CN: " +& Absyn.pathString(name) +& "\n");
@@ -3732,9 +3696,6 @@ algorithm
       then DAE.ET_METAOPTION(t_1);
 
     case ((DAE.T_METATUPLE(t_l),_))
-      local
-        list<DAE.ExpType> t_l2;
-        list<Type> t_l;
       equation
         t_l2 = Util.listMap(t_l,elabType);
       then DAE.ET_METATUPLE(t_l2);
@@ -3777,29 +3738,28 @@ algorithm
     local
       DAE.Exp e_1,e;
       Type t_1,gt,et;
-      Const c,c1,c2;
+      Const c,c1,c2,c_1;
+      TupleConst tc,tc1,tc2;
     case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),printFailtrace)
       equation
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constAnd(c1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
-    case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = c1),DAE.PROP_TUPLE(type_ = et,tupleConst = c2),printFailtrace)
-      local TupleConst c,c1,c2;
+    case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = tc1),DAE.PROP_TUPLE(type_ = et,tupleConst = tc2),printFailtrace)
       equation
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
-        c = constTupleAnd(c1, c2);
+        tc = constTupleAnd(tc1, tc2);
       then
-        (e_1,DAE.PROP_TUPLE(t_1,c));
+        (e_1,DAE.PROP_TUPLE(t_1,tc));
         
         /* The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
          * this case converts a TUPLE to META_TUPLE */
-    case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = c1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)
-      local TupleConst c1; Const c_1;
+    case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = tc1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
-        c_1 = propTupleAllConst(c1);
+        c_1 = propTupleAllConst(tc1);
         c = constAnd(c_1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
@@ -3976,18 +3936,25 @@ algorithm
       list<DAE.Exp> elist_1,elist;
       DAE.ExpType at,t;
       Boolean a,sc;
-      Integer nmax;
+      Integer nmax,oi;
       DAE.Dimension dim1, dim2, dim11, dim22;
       //Integer dim1,dim2,nmax,dim11,dim22;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
-      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
+      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell,melist;
+      list<list<DAE.Exp>> elist_big, elist_big_1;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v, al;
       String str,id,id1,id2;
-      Absyn.Path path;
+      Absyn.Path path,tp,path1,path2;
+      String name;
+      list<Absyn.Path> pathList;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefList;
+      list<DAE.ExpType> expTypes;
+      DAE.ExpType ety1;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
@@ -4020,8 +3987,6 @@ algorithm
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
-        local
-          DAE.ExpType ety1;
       equation
         true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
@@ -4129,10 +4094,6 @@ algorithm
               (DAE.T_INTEGER(_),_),
               (DAE.T_ENUMERATION(index=_, path=tp, names = l),p2),
               printFailtrace)
-      local        
-        Absyn.Path tp;
-        String name;
-        Integer oi;
       equation
         // TODO! FIXME! check boundaries if the integer literal is not outside the enum range
         // select from enum list:
@@ -4228,9 +4189,6 @@ algorithm
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
     case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,printFailtrace)
-      local
-        list<list<tuple<DAE.Exp,Boolean>>> melist;
-        list<list<DAE.Exp>> elist_big, elist_big_1;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         elist_big = Util.listListMap(melist, Util.tuple21);
@@ -4277,7 +4235,6 @@ algorithm
       then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE()),t2);
 
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
-      local Absyn.Path path1,path2;
       equation
         true = subtype(t1,t2);
         true = Absyn.pathEqual(path1, path2);
@@ -4295,12 +4252,6 @@ algorithm
       then fail();
 
     case (e as DAE.CREF(cref,_), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (DAE.T_BOXED(t2),_),printFailtrace)
-      local
-        Absyn.Path path;
-        list<Absyn.Path> pathList;
-        DAE.ComponentRef cref;
-        list<DAE.ComponentRef> crefList;
-        list<DAE.ExpType> expTypes;
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE());
@@ -4819,6 +4770,7 @@ algorithm
       Ident ty_str,const_str,res;
       Type ty;
       Const const;
+      TupleConst tconst;
     case DAE.PROP(type_ = ty,constFlag = const)
       equation
         ty_str = unparseType(ty);
@@ -4826,11 +4778,10 @@ algorithm
         res = stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
       then
         res;
-    case DAE.PROP_TUPLE(type_ = ty,tupleConst = const)
-      local TupleConst const;
+    case DAE.PROP_TUPLE(type_ = ty,tupleConst = tconst)
       equation
         ty_str = unparseType(ty);
-        const_str = unparseTupleconst(const);
+        const_str = unparseTupleconst(tconst);
         res = stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
@@ -4962,6 +4913,8 @@ algorithm
       list<Type> tys;
       list<list<DAE.Exp>> explists,explist;
       list<FuncArg> fargs;
+      TType tty;
+      String str;
     case DAE.T_INTEGER(varLstInt = vars)
       equation
         exps = getAllExpsVars(vars);
@@ -5042,9 +4995,6 @@ algorithm
     case(DAE.T_NORETCALL()) then {};
 
     case tty
-      local
-        TType tty;
-        String str;
       equation
         true = RTOpts.debugFlag("failtrace");
         str = unparseType((tty,NONE()));
@@ -5217,6 +5167,7 @@ algorithm
       list<DAE.Exp> erest;
       Type t;
       list<Type> trest;
+      String str;
     case ({},{},_,_) then {};
     case (e::erest, t::trest, superType, printFailtrace)
       equation
@@ -5224,7 +5175,6 @@ algorithm
         erest = listMatchSuperType2(erest,trest,superType,printFailtrace);
       then (e::erest);
     case (e::_,_,_,_)
-      local String str;
       equation
         true = RTOpts.debugFlag("failtrace");
         str = ExpressionDump.printExpStr(e);
@@ -5243,6 +5193,7 @@ algorithm
     local
       Type t1,t2,tp,tp2,tp1;
       list<Type> type_list1,type_list2;
+      Absyn.Path path1,path2;
     case ((DAE.T_ANYTYPE(_),_),t2) then t2;
     case (t1,(DAE.T_ANYTYPE(_),_)) then t1;
     case ((DAE.T_NOTYPE(),_),t2) then t2;
@@ -5280,8 +5231,6 @@ algorithm
       then ((DAE.T_META_ARRAY(tp),NONE()));
 
     case (t1 as (DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_METARECORD(utPath=path2),_))
-      local
-        Absyn.Path path1,path2;
       equation
         true = Absyn.pathEqual(path1,path2);
       then t1;
