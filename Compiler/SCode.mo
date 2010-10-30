@@ -30,7 +30,7 @@
  */
 
 package SCode
-" file:	       SCode.mo
+" file:         SCode.mo
   package:     SCode
   description: SCode intermediate form
 
@@ -528,7 +528,6 @@ protected import Dump;
 protected import ModUtil;
 protected import Print;
 protected import Error;
-protected import System;
 
 protected function elseWhenEquationStr
 "@author: adrpo
@@ -1063,7 +1062,6 @@ algorithm
       Option<Comment> comment;
       Attributes attr;
       String modStr;
-      Absyn.Path path;
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -1277,7 +1275,7 @@ public function attrVariability
 algorithm
   var := matchcontinue (attr)
     local Variability v;
-    case	ATTR(variability = v) then v;
+    case  ATTR(variability = v) then v;
   end matchcontinue;
 end attrVariability;
 
@@ -1591,10 +1589,10 @@ public function elementEqual
 // stefan
 public function annotationEqual
 "function: annotationEqual
-	returns true if 2 annotations are equal"
-	input Annotation annotation1;
-	input Annotation annotation2;
-	output Boolean equal;
+  returns true if 2 annotations are equal"
+  input Annotation annotation1;
+  input Annotation annotation2;
+  output Boolean equal;
 algorithm
   equal := matchcontinue(annotation1,annotation2)
     local
@@ -1704,7 +1702,6 @@ protected function classDefEqual
          Boolean b1,b2,b3;
          list<Enum> elst1,elst2;
          list<Ident> ilst1,ilst2;
-         list<Boolean> blst;
          String bcName1, bcName2;
 
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
@@ -1969,13 +1966,13 @@ protected function equationEqual22
   output list<Boolean> blist;
 algorithm
   blist := matchcontinue(tb1,tb2)
-    local list<Boolean> blist1,blist2;
+    local
+      list<Boolean> blist1,blist2;
+      list<EEquation> tb_1,tb_2;
     case({},{}) then {};
     case(_,{}) then {false};
     case({},_) then {false};
     case(tb_1::tb1,tb_2::tb2)
-      local
-        list<EEquation> tb_1,tb_2;
       equation
         blist1 = Util.listThreadMap(tb_1,tb_2,equationEqual2);
         blist2 = equationEqual22(tb1,tb2);
@@ -2086,27 +2083,28 @@ end subscriptsEqual;
 
 public function attributesEqual
 "function attributesEqual
-	Returns true if two Atributes are equal"
+  Returns true if two Atributes are equal"
    input Attributes attr1;
    input Attributes attr2;
    output Boolean equal;
 algorithm
   equal:= matchcontinue(attr1,attr2)
+    local
+      Accessibility acc1,acc2;
+      Variability var1,var2;
+      Boolean fl1,fl2,st1,st2,b1,b2,b3,b4,b5,b6;
+      Absyn.ArrayDim ad1,ad2;
+      Absyn.Direction dir1,dir2;
     case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
-      local Accessibility acc1,acc2;
-        Variability var1,var2;
-        Boolean fl1,fl2,st1,st2,b1,b2,b3,b4,b5,b6;
-        Absyn.ArrayDim ad1,ad2;
-        Absyn.Direction dir1,dir2;
       equation
-        	b1 = arrayDimEqual(ad1,ad2);
-        	b2 = Util.boolEqual(fl1,fl2);
-        	b3 = accessibilityEqual(acc1,acc2);
-        	b4 = variabilityEqual(var1,var2);
-        	b5 = directionEqual(dir1,dir2);
-          b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
-        	equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
-        then equal;
+        b1 = arrayDimEqual(ad1,ad2);
+        b2 = Util.boolEqual(fl1,fl2);
+        b3 = accessibilityEqual(acc1,acc2);
+        b4 = variabilityEqual(var1,var2);
+        b5 = directionEqual(dir1,dir2);
+        b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
+        equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
+      then equal;
   end matchcontinue;
 end attributesEqual;
 
@@ -2164,13 +2162,14 @@ protected function arrayDimEqual
  output Boolean equal;
  algorithm
    equal := matchcontinue(ad1,ad2)
-      local Boolean b1; Absyn.Exp e1,e2;
+     local
+       Absyn.Exp e1,e2;
+       Boolean b1,b2;
      case({},{}) then true;
      case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2) equation
        equal = arrayDimEqual(ad1,ad2);
        then equal;
      case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
-       local Absyn.Exp e1,e2; Boolean b1,b2;
        equation
          b1 = Absyn.expEqual(e1,e2);
          b2 =  arrayDimEqual(ad1,ad2);
@@ -2461,7 +2460,7 @@ public function makeEnumType
 algorithm
   enum_type := matchcontinue(enum, info)
     local
-      String literal;
+      String literal,info_str;
       Option<Comment> comment;
     case (ENUM(literal = literal, comment = comment), _)
       equation
@@ -2473,8 +2472,6 @@ algorithm
           Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()), 
           NOMOD(), comment,NONE(), NONE(),NONE());
     case (ENUM(literal = literal), _)
-      local
-        String info_str;
       equation
         info_str = Error.infoStr(info);
         Error.addMessage(Error.INVALID_ENUM_LITERAL, {info_str, literal});
