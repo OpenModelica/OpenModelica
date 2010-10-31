@@ -1,17 +1,46 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
+ * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 package Cevalfunc
-"Copyright (C) MathCore Engineering AB, 2007
-
- Author: Bjorn Zachrisson
-
-  file:   Cevalfunc.mo
-  module:      MATHCORE
+" file:        Cevalfunc.mo
+  package:     Cevalfunc
+  author:      Bjorn Zachrisson (MathCore)
   description: This module constant evaluates userdefined functions, speeds up instantination process.
-  It includes Constant evaluations of function and algorithm statements.
+               It includes Constant evaluations of function and algorithm statements.
+
   RCS: $Id$
   
-  TODO: implement ALG_RETURN and ALG_BREAK when evaluating statements
+  TODO: implement ALG_RETURN and ALG_BREAK when evaluating statements"
 
-  "
+// public imports
 public import Env;
 public import Values;
 public import Absyn;
@@ -24,6 +53,7 @@ public import ConnectionGraph;
 public import RTOpts;
 public import HashTable2;
 
+// protected imports
 protected import BaseHashTable;
 protected import Ceval;
 protected import Util;
@@ -41,13 +71,11 @@ protected import ValuesUtil;
 protected import ErrorExt;
 protected import OptManager;
 protected import Dump;
-protected import System;
 protected import ComponentReference;
 
-public function cevalUserFunc "Function: cevalUserFunc
+public function cevalUserFunc "function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
 evaluate it. This is to prevent multiple compilation of c files.
-
 NOTE: this function operates on Absyn and not DAE therefore static elaboration on expressions is done twice"
   input Env.Env env "enviroment for the user-function";
   input DAE.Exp callExp "DAE.CALL(userFunc)";
@@ -170,15 +198,18 @@ algorithm
       list<DAE.Var> typeslst;
       Option<DAE.Type> cto; // for complex env construction, to here
       Option<Absyn.ArrayDim> optAD;
+      Absyn.Import imp;
 
     // nothing to do
     case(env,{},_,_, ht2) then env;
+    
     // handle extends
     case(env, (ele1 as SCode.EXTENDS(_,_,_))::eles1, vals1,restExps, ht2)
       equation
         env1 = extendEnvWithInputArgs(env,eles1,vals1,restExps, ht2);
         then
           env1;
+    
     // handle imports
     /*
     case (env, (ele1 as SCode.IMPORT(imp = imp as Absyn.NAMED_IMPORT(name =
@@ -196,6 +227,7 @@ algorithm
       then
         env1;
 		*/
+    
     // TODO: Use this case instead of the two cases above to be more general.
     // The current solution will only add SI-import to the environment, because
     // for some unknown reason it's much slower to constant evaluate the
@@ -203,8 +235,6 @@ algorithm
     // imports to the environment than failing and using the dynamic loading
     // instead.
     case (env, (ele1 as SCode.IMPORT(imp = imp)) :: eles1, vals1, restExps, ht2)
-      local
-        Absyn.Import imp;
       equation
         env1 = Env.extendFrameI(env, imp);
         env1 = extendEnvWithInputArgs(env1, eles1, vals1, restExps, ht2);
@@ -229,6 +259,7 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
+    
     // handle an input component definition        
     case(env, ((ele1 as SCode.COMPONENT(component = varName, 
                                         typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ,arrayDims=adim) ))::eles1), 
@@ -241,12 +272,14 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
+    
     // failed to handle an input component 
     case(_, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::_), _,_, ht2)
       equation
         Debug.fprint("failtrace", "- Cevalfunc.extendEnvWithInputArgs with input variable failed\n");
       then
         fail();
+    
     //******************* INPUT ARGS ENDS **********************
     //***********************************************************
     //*************** FUNCTION VARIABLE BEGINS ******************
@@ -263,6 +296,7 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
+    
     // any other variables (might be output) 
     case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), 
                       typeSpec = Absyn.TPATH(path = apath,arrayDim = _), modifications = mod1)) ::eles1), 
@@ -280,6 +314,7 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
+    
     // failure
     case(env, (_::eles1), (vals1),restExps, ht2)
       equation
@@ -436,6 +471,7 @@ algorithm oenv := matchcontinue(env, tvars)
     DAE.Var tv;
     Env.Env env1,env2,complexEnv;
     Option<DAE.Const> constOfForIteratorRange;
+    DAE.Type ty_flat;    
 
   // handle nothing  
   case(env,{}) then env;
@@ -456,7 +492,6 @@ algorithm oenv := matchcontinue(env, tvars)
   //   Type arrayType "arrayType"; 
   // end T_ARRAY;
   case(env, (tv as DAE.TYPES_VAR(name,attr,prot,ty as (DAE.T_ARRAY(_,_),_),bind,constOfForIteratorRange))::vars)
-    local DAE.Type ty_flat;
     equation
       //print(" array :: fail " +& name +& ", " +& Types.printTypeStr(ty) +& "\n");
       ((ty_flat as (DAE.T_COMPLEX(_,typeslst,_,_),_)),_)=Types.flattenArrayType(ty);
@@ -676,15 +711,12 @@ algorithm
       list<Values.Value> values;
       list<DAE.Type> types;
       DAE.Properties prop;
-      list<SCode.Statement> algitemlst;
       Boolean b;
-      String varName;
-      String estr; 
+      String varName, estr; 
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifexpitemlist,trueBranch,elseBranch,branches1,branches2;
-      tuple<Absyn.Exp, list<SCode.Statement>> trueBranch;
-      list<SCode.Statement> algitemlist,elseitemlist;
-      DAE.Properties prop;
-
+      tuple<Absyn.Exp, list<SCode.Statement>> trueBranchTpl;
+      list<SCode.Statement> algitemlst,algitemlist,elseitemlist;
+    
     // algorithm assign      
     case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
@@ -694,6 +726,7 @@ algorithm
         env1 = setValue(value, env, ae1);
       then
         env1;
+    
     // assign, tuple assign
     case(env, SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
@@ -704,6 +737,7 @@ algorithm
         env1 = setValues(crefexps,types,values,env);
       then
         env1;
+    
     //while case
     case(env, SCode.ALG_WHILE(boolExpr = ae1,whileBody = algitemlst),ht2)
       equation
@@ -711,6 +745,7 @@ algorithm
         env1  = evaluateConditionalStatement(value, ae1, algitemlst,env,ht2);
       then
         env1;
+    
     // for loop with a range without step
     case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE(), stop=ae2)))},forBody = algitemlst),ht2)
       equation 
@@ -722,6 +757,7 @@ algorithm
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
       then
         env2;
+    
     // for loop with a range with step
     case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
       equation
@@ -733,6 +769,7 @@ algorithm
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
       then
         env2;
+    
     // some other expression for range, such as an array!
     case(env, SCode.ALG_FOR({(varName, SOME(ae1))},forBody = algitemlst),ht2)
       equation
@@ -743,6 +780,7 @@ algorithm
         env2 = evaluateForLoopArray(env1, varName, values, algitemlst, ht2);
       then
         env2;
+    
     // error for unknown range
     case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
@@ -751,15 +789,17 @@ algorithm
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
         fail();
+    
     // if-case
     case(env, SCode.ALG_IF(boolExpr = ae1, trueBranch = algitemlst, elseIfBranch = elseifexpitemlist, elseBranch = elseitemlist),ht2)
       equation
-        trueBranch = (ae1,algitemlst);
-        branches1 = (trueBranch :: elseifexpitemlist);
+        trueBranchTpl = (ae1,algitemlst);
+        branches1 = (trueBranchTpl :: elseifexpitemlist);
         branches2 = listAppend(branches1, {(Absyn.BOOL(true),elseitemlist)});
         env1 = evaluateIfStatementLst(branches2, env,ht2);
       then
         env1;
+    
     // assert(true, ...) gives nothing!
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
@@ -768,6 +808,7 @@ algorithm
         (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true,NONE(), NONE(), Ceval.MSG());
       then
         env;
+    
     // assert(false, ...) gives error!
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
@@ -1379,76 +1420,78 @@ end instFunctionArray2;
 protected function typeOfValue ""
 input DAE.Type inType;
 output Values.Value oval;
-algorithm oval := matchcontinue(inType)
-  local     Absyn.Path path;
-  case((DAE.T_INTEGER(_),_)) then Values.INTEGER(0);
-  case((DAE.T_REAL(_),_)) then Values.REAL(0.0);
-  case((DAE.T_STRING(_),_)) then Values.STRING("");
-  case((DAE.T_BOOL(_),_)) then Values.BOOL(false);
-  case((DAE.T_ENUMERATION(index = _),_)) then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
-  case((DAE.T_METATUPLE(types = _), _)) then Values.META_TUPLE({});
-  case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_))
+algorithm 
+  oval := matchcontinue(inType)
     local
+      Absyn.Path path;
       list<DAE.Var> typesVar;
-    equation
-
-      then
-        Values.RECORD(path,{},{},-1) ;
-  case(_)
-    equation
-      Debug.fprint("failtrace", "- Cevalfunc.typeOfValue failed might not be complete implemented\n");
+    
+    case((DAE.T_INTEGER(_),_)) then Values.INTEGER(0);
+    case((DAE.T_REAL(_),_)) then Values.REAL(0.0);
+    case((DAE.T_STRING(_),_)) then Values.STRING("");
+    case((DAE.T_BOOL(_),_)) then Values.BOOL(false);
+    case((DAE.T_ENUMERATION(index = _),_)) then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
+    case((DAE.T_METATUPLE(types = _), _)) then Values.META_TUPLE({});
+    case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_)) then Values.RECORD(path,{},{},-1) ;
+    
+    // failure
+    case(_)
+      equation
+        Debug.fprint("failtrace", "- Cevalfunc.typeOfValue failed might not be complete implemented\n");
       then fail();
-  /*
-  record TUPLE
-    list<Value> valueLst;
-  end TUPLE;
-
-  record RECORD
-    Absyn.Path record_ "record name" ;
-    list<Value> orderd "orderd set of values" ;
-    list<DAE.Ident> comp "comp names for each value" ;
-  end RECORD;
-  */
-end matchcontinue;
+  end matchcontinue;
 end typeOfValue;
 
 protected function getTypeFromName "function: getTypeFromName
-  Returns the type specified by the path.
-"
+  Returns the type specified by the path."
   input Absyn.Path inPath;
   input Env.Env env;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inPath,env)
+  outType := matchcontinue (inPath,env)
     local
       DAE.Type ty;
-      list<Integer> dims;
       String typeName,className;
       Absyn.Path rest,p;
       SCode.Class typeClass;
       Env.Env env1,env2;
-      list<DAE.Dimension> dims;
+      list<DAE.Dimension> daeDims;
 
     case (Absyn.IDENT(typeName),env)
       equation
         ty = getBuiltInTypeFromName(typeName);
         then
           ty;
+    
     case(Absyn.FULLYQUALIFIED(p),env)
       equation
         ty = getTypeFromName(p,env);
       then
         ty;
+    
     case(p ,env)
       equation        
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
-        (_,dims,typeClass,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
-        (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
-        ty = Inst.makeArrayType(dims, ty);
+        (_,daeDims,typeClass,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
+        (_,env2,_,_,_,_,ty,_,_,_) = 
+          Inst.instClass(
+            Env.emptyCache(),
+            env1,
+            InnerOuter.emptyInstHierarchy,
+            UnitAbsyn.noStore,
+            DAE.NOMOD(),
+            Prefix.NOPRE(),
+            Connect.emptySet,
+            typeClass,
+            {}, 
+            true, 
+            Inst.INNER_CALL, 
+            ConnectionGraph.EMPTY);
+        ty = Inst.makeArrayType(daeDims, ty);
       then
         ty;
+    
+    // failure
     case (_,_)
       equation
         Debug.fprint("failtrace", "- Cevalfunc.getTypeFromName failed, unmatched type\n");
@@ -1756,45 +1799,48 @@ end createReplacementRulesRecord2;
 
 protected function createReplacementRulesRecordArray "
 Author BZ
-Helper function for createReplacementRules
-"
-input list<Values.Value> inVals;
-input list<DAE.Subscript> subs;
-input DAE.ComponentRef inCref;
-input Integer offset;
+Helper function for createReplacementRules"
+  input list<Values.Value> inVals;
+  input list<DAE.Subscript> subs;
+  input DAE.ComponentRef inCref;
+  input Integer offset;
   output list<tuple<DAE.ComponentRef, DAE.Exp>> res;
-algorithm res := matchcontinue(inVals,subs,inCref,offset)
-  local
-    list<Values.Value> vals1,vals2;
-    Values.Value v;
-    list<String> comps;
-    list<tuple<DAE.ComponentRef, DAE.Exp>> res1,res2;
-    DAE.ComponentRef cref;
-  case({},_,_,_) then {};
-  case(Values.ARRAY(valueLst = {})::{},_,_,_) then {};
-  case((v as Values.ARRAY(valueLst = vals2))::vals1,subs,inCref,offset)
-    equation
-      offset=offset+1;
-      res2 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);
-      subs = listAppend(subs,{DAE.INDEX(DAE.ICONST(offset))});
-      res1 = createReplacementRulesRecordArray(vals2,subs,inCref,0); // next dim
-      res = listAppend(res1,res2);
-    then
-      res;
-  case(v::vals1,subs,inCref,offset)
+algorithm 
+  res := matchcontinue(inVals,subs,inCref,offset)
     local
+      list<Values.Value> vals1,vals2;
+      Values.Value v;
+      list<String> comps;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> res1,res2;
+      DAE.ComponentRef cref;
       String subsString;
-    equation
-      offset=offset+1;
-      res1 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);
-      false = ValuesUtil.isArray(v);
-      subs = listAppend(subs,{DAE.INDEX(DAE.ICONST(offset))});
-      inCref = ComponentReference.subscriptCref(inCref,subs);
-      res2 = createReplacementRulesRecord2(v,inCref);
-      res = listAppend(res1,res2);
-    then
-      res;
-end matchcontinue;
+    
+    case({},_,_,_) then {};
+    
+    case(Values.ARRAY(valueLst = {})::{},_,_,_) then {};
+    
+    case((v as Values.ARRAY(valueLst = vals2))::vals1,subs,inCref,offset)
+      equation
+        offset=offset+1;
+        res2 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);
+        subs = listAppend(subs,{DAE.INDEX(DAE.ICONST(offset))});
+        res1 = createReplacementRulesRecordArray(vals2,subs,inCref,0); // next dim
+        res = listAppend(res1,res2);
+      then
+        res;
+    
+    case(v::vals1,subs,inCref,offset)
+      equation
+        offset=offset+1;
+        res1 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);
+        false = ValuesUtil.isArray(v);
+        subs = listAppend(subs,{DAE.INDEX(DAE.ICONST(offset))});
+        inCref = ComponentReference.subscriptCref(inCref,subs);
+        res2 = createReplacementRulesRecord2(v,inCref);
+        res = listAppend(res1,res2);
+      then
+        res;
+  end matchcontinue;
 end createReplacementRulesRecordArray;
 
 end Cevalfunc;

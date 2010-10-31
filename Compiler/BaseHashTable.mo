@@ -33,6 +33,7 @@ encapsulated package BaseHashTable
 " 
   file:        BaseHashTable.mo
   package:     BaseHashTable
+  author:      Peter Aronsson (MathCore)  
   description: BaseHashTable is a generic implementation of hashtables.
                See HashTable*.mo to see how to use it.
   

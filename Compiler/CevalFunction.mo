@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -33,15 +33,19 @@ package CevalFunction
 " file:         CevalFunction.mo
   package:      CevalFunction
   description:  This module constant evaluates DAE.Function objects, i.e.
-  modelica functions defined by the user.
-  "
+                modelica functions defined by the user.
 
+  RCS: $Id: CevalFunction.mo 6676 2010-10-28 09:26:48Z adrpo $
+"
+
+// public imports
 public import Absyn;
 public import DAE;
 public import Env;
 public import SCode;
 public import Values;
 
+// protected imports
 protected import Ceval;
 protected import ComponentReference;
 protected import DAEDump;
@@ -99,13 +103,14 @@ protected function evaluateFunction
   output Values.Value outResult;
 algorithm
   outResult := matchcontinue(inEnv, inFuncName, inFunc, inFuncType, inFuncArgs)
+    local
+      list<DAE.Element> body;
+      list<DAE.Element> vars, output_vars;
+      Env.Env env;
+      list<Values.Value> return_values;
+      Values.Value return_value;
+    
     case (_, _, DAE.FUNCTION_DEF(body = body), _, _)
-      local
-        list<DAE.Element> body;
-        list<DAE.Element> vars, output_vars;
-        Env.Env env;
-        list<Values.Value> return_values;
-        Values.Value return_value;
       equation
         (vars, body) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
         vars = sortFunctionVarsByDependency(vars);
@@ -116,6 +121,7 @@ algorithm
         return_value = boxReturnValue(return_values);
       then
         return_value;
+    
     case (_, _, _, _, _)
       equation
         Debug.fprintln("failtrace", "- CevalFunction.evaluateFunction failed.\n");
@@ -133,77 +139,92 @@ algorithm
     local
       Env.Env env;
       list<DAE.Statement> sl;
+    
     case (DAE.DEFINE(componentRef = _), _)
       equation
         print("DEFINE\n");
       then
         fail();
+    
     case (DAE.INITIALDEFINE(componentRef = _), _)
       equation
         print("INITIAL DEFINE\n");
       then
         fail();
+    
     case (DAE.EQUATION(exp = _), _)
       equation
         print("EQUATION\n");
       then
         fail();
+    
     case (DAE.EQUEQUATION(cr1 = _), _)
       equation
         print("EQUEQUATION\n");
       then
         fail();
+    
     case (DAE.ARRAY_EQUATION(dimension = _), _)
       equation
         print("ARRAY_EQUATION\n");
       then
         fail();
+    
     case (DAE.INITIAL_ARRAY_EQUATION(dimension = _), _)
       equation
         print("INITIAL_ARRAY_EQUATION\n");
       then
         fail();
+    
     case (DAE.COMPLEX_EQUATION(lhs = _), _)
       equation
         print("COMPLEX_EQUATION\n");
       then
         fail();
+    
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _), _)
       equation
         print("INITIAL_COMPLEX_EQUATION\n");
       then
         fail();
+    
     case (DAE.WHEN_EQUATION(condition = _), _)
       equation
         print("WHEN_EQUATION\n");
       then
         fail();
+    
     case (DAE.IF_EQUATION(condition1 = _), _)
       equation
         print("IF_EQUATION\n");
       then
         fail();
+    
     case (DAE.INITIAL_IF_EQUATION(condition1 = _), _)
       equation
         print("INITIAL_IF_EQUATION\n");
       then
         fail();
+    
     case (DAE.INITIALEQUATION(exp1 = _), _)
       equation
         print("INITIALEQUATION\n");
       then
         fail();
+    
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _)
       equation
         (sl, env) = DAEUtil.traverseDAEEquationsStmts(sl, optimizeExp, inEnv);
         env = Util.listFold(sl, evaluateStatement, env);
       then
         env;
+    
     case (DAE.INITIALALGORITHM(algorithm_ = _), _)
       equation
         print("INITIALALGORITHM\n");
       then
         fail();
+    
     case (DAE.COMP(ident = _), _)
       equation
         print("COMP\n");
@@ -506,10 +527,11 @@ protected function getFunctionReturnValue
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue(inOutputVar, inEnv)
+    local 
+      DAE.ComponentRef cr;
+      Values.Value val;
+          
     case (DAE.VAR(componentRef = cr), _)
-      local 
-        DAE.ComponentRef cr;
-        Values.Value val;
       equation
         (_, DAE.VALBOUND(valBound = val)) = getVariableTypeAndBinding(cr, inEnv);
       then
@@ -524,6 +546,7 @@ algorithm
   outValue := matchcontinue(inReturnValues)
     local
       Values.Value val;
+    
     case ({}) then Values.NORETCALL();
     case ({val}) then val;
     case (_ :: _) then Values.TUPLE(inReturnValues);
@@ -555,28 +578,32 @@ algorithm
       list<Values.Value> rest_vals;
       Env.Env env;
       DAE.Var var;
+      DAE.Exp binding_exp;
+    
     case (_, {}, {}) then inEnv;
+    
     case (env, (e as DAE.VAR(direction = DAE.INPUT())) :: el, val :: rest_vals)
       equation
         var = elementToVar(e, SOME(val), env);
         env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
       then
         extendEnvWithFunctionVars(env, el, rest_vals);
+    
     case (env, (e as DAE.VAR(direction = _, binding = SOME(binding_exp))) :: el, _)
-      local
-        DAE.Exp binding_exp;
       equation
         val = cevalExp(binding_exp, inEnv);
         var = elementToVar(e, SOME(val), env);
         env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
       then
         extendEnvWithFunctionVars(env, el, inFuncArgs);
+    
     case (env, (e as DAE.VAR(direction = _)) :: el, _)
       equation
         var = elementToVar(e, NONE(), env);
         env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
       then
         extendEnvWithFunctionVars(env, el, inFuncArgs);
+    
     case (env, e :: _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -594,14 +621,15 @@ protected function elementToVar
   output DAE.Var outVar;
 algorithm
   outVar := matchcontinue(inElement, inBindingValue, inEnv)
+    local
+      DAE.ComponentRef cr;
+      String var_name;
+      DAE.Type ty;
+      DAE.Binding binding;
+      DAE.InstDims dims;
+      list<Integer> binding_dims;
+    
     case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _)
-      local
-        DAE.ComponentRef cr;
-        String var_name;
-        DAE.Type ty;
-        DAE.Binding binding;
-        DAE.InstDims dims;
-        list<Integer> binding_dims;
       equation
         binding = getBinding(inBindingValue);
         var_name = ComponentReference.crefStr(cr);
@@ -611,13 +639,7 @@ algorithm
       then
         DAE.TYPES_VAR(
           var_name,
-          DAE.ATTR(
-            false,
-            false,
-            SCode.RW(),
-            SCode.VAR(),
-            Absyn.BIDIR(),
-            Absyn.UNSPECIFIED()),
+          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,
           ty,
           binding,
@@ -892,7 +914,10 @@ algorithm
       DAE.Dimension dim;
       DAE.Type ty;
       list<Integer> bind_dims;
+      DAE.Subscript sub;
+    
     case (ty, {}, _, _) then ty;
+    
     case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _)
       equation
         dim_val = cevalExp(dim_exp, inEnv);
@@ -902,15 +927,15 @@ algorithm
         ty = appendDimensions(ty, rest_dims, bind_dims, inEnv);
       then
         ((DAE.T_ARRAY(dim, ty), NONE()));
+    
     case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _)
       equation
         dim = Expression.intDimension(dim_int);
         ty = appendDimensions(ty, rest_dims, bind_dims, inEnv);
       then
         ((DAE.T_ARRAY(dim, ty), NONE()));
+    
     case (_, sub :: _, _, _)
-      local
-        DAE.Subscript sub;
       equation
         Debug.fprintln("failtrace", "- CevalFunction.appendDimensions failed");
       then
@@ -921,7 +946,7 @@ end appendDimensions;
 protected function sortFunctionVarsByDependency
   input list<DAE.Element> inFuncVars;
   output list<DAE.Element> outFuncVars;
-
+protected
   list<Dependency> dependencies;
 algorithm
   dependencies := Util.listMap(inFuncVars, buildDependencyList);
@@ -939,7 +964,9 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.Element> rest_elems, dep_elems;
       list<DAE.ComponentRef> deps;
+    
     case ({}, _) then {};
+    
     case ((elem as DAE.VAR(componentRef = cref)) :: rest_elems, _)
       equation
         deps = findDependencies(cref, inDependencies);
