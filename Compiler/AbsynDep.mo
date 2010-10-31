@@ -1,5 +1,42 @@
-package AbsynDep "Copyright MathCore Engineering AB 2007
-  author Peter Aronsson
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2010, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
+ * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+package AbsynDep 
+" 
+  file:        AbsynDep.mo
+  package:     AbsynDep
+  description: AbsynDep builds dependencies based on a start class (program slicing)
+  author:      Peter Aronsson
+
+  RCS: $Id$
 
   This package contains a data structure and functions for maintaining dependency information between
   Absyn classes.
@@ -16,8 +53,7 @@ package AbsynDep "Copyright MathCore Engineering AB 2007
   getUsesTransitive(depends,class) -> avltree of used classes under transitive closure
 
   getUsedBy(depends,class) => avltree of classes that uses the class (e.g as component)
-
-  "
+"
 
   public uniontype Depends " dependency information (uses/usedBy) for classes"
     record DEPENDS
@@ -29,11 +65,10 @@ package AbsynDep "Copyright MathCore Engineering AB 2007
  end Depends;
 
 
- public import Absyn;
+public import Absyn;
 
- protected import Util;
- protected import System;
- protected import ModUtil;
+protected import Util;
+protected import ModUtil;
 
 public function dumpDepends "prints dependency information to stdout"
   input Depends depends;

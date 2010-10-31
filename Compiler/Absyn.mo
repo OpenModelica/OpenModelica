@@ -31,7 +31,7 @@
 
 package Absyn
 "
-  file:         Absyn.mo
+  file:        Absyn.mo
   package:     Absyn
   description: Abstract syntax
 
