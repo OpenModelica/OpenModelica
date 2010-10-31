@@ -423,7 +423,13 @@ algorithm
       DAE.ElementSource source;
       String str;
       Absyn.MatchType matchType;
+      DAE.ComponentRef cr; 
+      Boolean iterIsArray;
+      DAE.Ident ident;
+      list<Integer> helpVarIndices;
+          
     case ({},_) then {};
+    
     case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -433,6 +439,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_ASSIGN(type_,e1_2,e2_2,source):: es_1);
+    
     case ((DAE.STMT_TUPLE_ASSIGN(type_=type_,expExpLst=expExpLst,exp=e2,source=source)::es),repl)
       equation
         expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl,NONE());
@@ -441,14 +448,15 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source):: es_1);
+    
     case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e1,source=source)::es),repl)
-      local DAE.ComponentRef cr;
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
         e1_2 = ExpressionSimplify.simplify(e1_1);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source):: es_1);        
+    
     case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
@@ -458,10 +466,8 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1);
+    
     case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,range=e1,statementLst=statementLst,source=source)::es),repl)
-      local 
-        Boolean iterIsArray;
-        DAE.Ident ident;
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -469,6 +475,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source):: es_1);        
+    
     case ((DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
@@ -477,8 +484,8 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_WHILE(e1_2,statementLst_1,source):: es_1);
+    
     case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::es),repl)
-      local list<Integer> helpVarIndices;
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -486,8 +493,8 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_WHEN(e1_2,statementLst_1,NONE(),helpVarIndices,source):: es_1);
+    
     case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=SOME(statement),helpVarIndices=helpVarIndices,source=source)::es),repl)
-      local list<Integer> helpVarIndices;
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         statement_1::{} = replaceStatementLst({statement}, repl);
@@ -496,6 +503,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_WHEN(e1_2,statementLst_1,SOME(statement_1),helpVarIndices,source):: es_1);
+    
     case ((DAE.STMT_ASSERT(cond=e1,msg=e2,source=source)::es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -505,6 +513,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_ASSERT(e1_2,e2_2,source):: es_1);
+    
     case ((DAE.STMT_TERMINATE(msg=e1,source=source)::es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -512,6 +521,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TERMINATE(e1_2,source):: es_1);
+    
     case ((DAE.STMT_REINIT(var=e1,value=e2,source=source)::es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -521,6 +531,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_REINIT(e1_2,e2_2,source):: es_1);
+    
     case ((DAE.STMT_NORETCALL(exp=e1,source=source)::es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl,NONE());
@@ -528,50 +539,59 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_NORETCALL(e1_2,source):: es_1);
+    
     case ((DAE.STMT_RETURN(source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_RETURN(source):: es_1);      
+    
     case ((DAE.STMT_BREAK(source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_BREAK(source):: es_1);      
-  // MetaModelica extension. KS
+    
+    // MetaModelica extension. KS
     case ((DAE.STMT_FAILURE(body=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_FAILURE(statementLst_1,source):: es_1);
+    
     case ((DAE.STMT_TRY(tryBody=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_TRY(statementLst_1,source):: es_1);
+    
     case ((DAE.STMT_CATCH(catchBody=statementLst,source=source)::es),repl)
       equation
         statementLst_1 = replaceStatementLst(statementLst, repl);
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_CATCH(statementLst_1,source):: es_1);
+    
     case ((DAE.STMT_THROW(source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_THROW(source):: es_1); 
+    
     case ((DAE.STMT_GOTO(labelName=str,source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_GOTO(str,source):: es_1); 
+    
     case ((DAE.STMT_LABEL(labelName=str,source=source)::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_LABEL(str,source):: es_1); 
+    
     case ((DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=expExpLst,source=source)::es),repl)
       equation
         inputExps = Util.listMap2(inputExps,VarTransform.replaceExp,repl,NONE());
@@ -579,6 +599,7 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_MATCHCASES(matchType,inputExps,expExpLst_1,source):: es_1);
+    
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);
