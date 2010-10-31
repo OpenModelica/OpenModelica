@@ -2,14 +2,14 @@
 
 top_builddir = .
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib/omc
+builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include/omc
 builddir_doc=$(top_builddir)/build/share/doc
 builddir_share=$(top_builddir)/build/share/
 builddir_java=$(top_builddir)/build/share/omc/java/
 
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
-INSTALL_LIBDIR     = ${DESTDIR}${libdir}/omc
+INSTALL_LIBDIR     = ${DESTDIR}${libdir}/
 INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
 INSTALL_DATADIR    = ${DESTDIR}${datadir}
 INSTALL_DOCDIR     = ${DESTDIR}${docdir}/omc
@@ -20,7 +20,7 @@ INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
 mkbuilddirs:
 	mkdir -p $(builddir_bin)
-	mkdir -p $(builddir_lib)
+	mkdir -p $(builddir_lib)/omc
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts
@@ -79,7 +79,8 @@ sustst:
 susgen:
 	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
-
+omlibrary:
+	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 -D {} ../build/lib/omlibrary/{} \;)
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
@@ -122,7 +123,7 @@ install: install-dirs
 	# Binaries
 	cp -rp ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
-	cp -p ${builddir_lib}/* ${INSTALL_LIBDIR}
+	cp -rp ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
 	cp -p ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
 	# Documents
