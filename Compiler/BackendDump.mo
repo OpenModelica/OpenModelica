@@ -42,7 +42,6 @@ public import DAE;
 
 protected import Absyn;
 protected import Algorithm;
-protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
