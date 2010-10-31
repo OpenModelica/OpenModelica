@@ -30,20 +30,18 @@
  */
 
 package Builtin
-" file:	 Builtin.mo
-  package:      Builtin
+" file:	       Builtin.mo
+  package:     Builtin
   description: Builting tyepes and variables
 
   RCS: $Id$
 
   This module defines the builtin types, variables and functions in
-  Modelica.  The only exported functions are `initial_env\' and
-  simple_initial_env.
+  Modelica.  The only exported functions are Builtin.initialEnv and
+  Builtin.simpleInitialEnv.
 
-  There are several builtin attributes defined in the builtin types, such as
-  unit, start, etc.
-
-"
+  There are several builtin attributes defined in the builtin types, 
+  such as unit, start, etc."
 
 public import Absyn;
 public import SCode;
@@ -51,7 +49,7 @@ public import Env;
 public import RTOpts;
 public import DAE;
 
-/* protected imports */
+// protected imports
 protected import ClassInf;
 protected import Values;
 
