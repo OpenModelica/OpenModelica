@@ -80,9 +80,8 @@ algorithm
     local
       DAE.Exp localE1,localE2;
       DAE.ExpType tLocal;
+      list<DAE.Exp> expList,expList2;
     case (tLocal,localE1,DAE.LIST(_,expList))
-      local
-        list<DAE.Exp> expList,expList2;
       equation
         expList2 = localE1::expList;
       then DAE.LIST(tLocal,expList2);
@@ -105,19 +104,18 @@ public function fixListConstructorsInArgs "function: fixListConstructorsInArgs
   output list<Absyn.Exp> outArgs;
   output list<Absyn.NamedArg> outNamedArgs;
 algorithm
-  (outCache,outEnv,outArgs,outNamedArgs) :=
-  matchcontinue (inCache,inEnv,funcName,inArgs,inNamedArgs)
+  (outCache,outEnv,outArgs,outNamedArgs) := matchcontinue (inCache,inEnv,funcName,inArgs,inNamedArgs)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Absyn.ComponentRef fn;
+      Absyn.Path fn2;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<SCode.Element> elemList;
+      list<DAE.Type> typeList1;
+      list<DAE.FuncArg> typeList2;
     case (cache,env,fn,args,nargs)
-      local
-        Env.Cache cache;
-        Env.Env env;
-        Absyn.ComponentRef fn;
-        Absyn.Path fn2;
-        list<Absyn.Exp> args;
-        list<Absyn.NamedArg> nargs;
-        list<SCode.Element> elemList;
-        list<DAE.Type> typeList1;
-        list<DAE.FuncArg> typeList2;
       equation
         fn2 = Absyn.crefToPath(fn);
 
@@ -142,14 +140,11 @@ public function extractFuncTypes "function: extractNameAndType
   input list<DAE.Type> inElem;
   output list<DAE.FuncArg> outList;
 algorithm
-  outList :=
-  matchcontinue(inElem)
+  outList := matchcontinue(inElem)
+    local
+      list<DAE.FuncArg> typeList;
     case ({}) then {};
-    case ((DAE.T_FUNCTION(typeList,_,_),_) :: {})
-      local
-        list<DAE.FuncArg> typeList;
-      equation
-      then typeList;
+    case ((DAE.T_FUNCTION(typeList,_,_),_) :: {}) then typeList;
     case (_) then {}; // If a function has more than one definition we do not
                       // bother. SHOULD BE FIXED
   end matchcontinue;
@@ -165,15 +160,11 @@ public function fixListConstructorsInArgs2 "function: fixListConstructorsInArgs2
 algorithm
   outArgs :=
   matchcontinue (inTypes,inArgs,accList)
-    case ({},localInArgs,_)
-      local
-        list<Absyn.Exp> localInArgs;
-      equation
-      then localInArgs;
+    local
+      list<DAE.FuncArg> localInTypes;
+      list<Absyn.Exp> localInArgs,localAccList;
+    case ({},localInArgs,_) then localInArgs;
     case (localInTypes,localInArgs,localAccList)
-      local
-        list<DAE.FuncArg> localInTypes;
-        list<Absyn.Exp> localInArgs,localAccList;
       equation
         localInArgs = fixListConstructorsInArgs2Helper(localInTypes,localInArgs,localAccList);
       then localInArgs;
@@ -192,26 +183,21 @@ algorithm
   outArgs :=
   matchcontinue (inTypes,inArgs,accList)
     local
-      list<Absyn.Exp> localAccList;
+      list<Absyn.Exp> localAccList,expList,restArgs;
+      list<DAE.FuncArg> restTypes;
+      Absyn.Exp firstArg;
     case (_,{},localAccList) then localAccList;
     case ({},_,localAccList)
       equation
         Debug.fprint("failtrace", "- wrong number of arguments in function call?.");
       then fail();
     case ((_,(DAE.T_LIST(_),_)) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList)
-      local
-        list<Absyn.Exp> expList,restArgs;
-        list<DAE.FuncArg> restTypes;
       equation
         expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.LIST(expList)});
         localAccList = fixListConstructorsInArgs2Helper(restTypes,restArgs,localAccList);
       then localAccList;
     case (_ :: restTypes,firstArg :: restArgs,localAccList)
-      local
-        Absyn.Exp firstArg;
-        list<Absyn.Exp> restArgs;
-        list<DAE.FuncArg> restTypes;
       equation
         localAccList = listAppend(localAccList,{firstArg});
         localAccList = fixListConstructorsInArgs2Helper(restTypes,restArgs,localAccList);
@@ -228,17 +214,12 @@ author: KS
   input list<Absyn.NamedArg> accList;
   output list<Absyn.NamedArg> outArgs;
 algorithm
-  outArgs :=
-  matchcontinue (inTypes,inNamedArgs,accList)
-    case ({},localInArgs,_)
-      local
-        list<Absyn.NamedArg> localInArgs;
-      equation
-      then localInArgs;
+  outArgs := matchcontinue (inTypes,inNamedArgs,accList)
+    local
+      list<DAE.FuncArg> localInTypes;
+      list<Absyn.NamedArg> localInArgs,localAccList;
+    case ({},localInArgs,_) then localInArgs;
     case (localInTypes,localInArgs,localAccList)
-      local
-        list<DAE.FuncArg> localInTypes;
-        list<Absyn.NamedArg> localInArgs,localAccList;
       equation
         localInArgs = fixListConstructorsInArgs3Helper(localInTypes,localInArgs,localAccList);
       then localInArgs;
@@ -258,14 +239,13 @@ algorithm
   outArgs :=
   matchcontinue (inTypes,inNamedArgs,accList)
     local
-       list<Absyn.NamedArg> localAccList;
+      list<Absyn.NamedArg> localAccList,restArgs;
+      list<Absyn.Exp> expList;
+      Absyn.Ident id;
+      list<DAE.FuncArg> argTypes;
+      Absyn.NamedArg firstArg;
     case (_,{},localAccList) then localAccList;
     case (argTypes,Absyn.NAMEDARG(id,Absyn.ARRAY(expList)) :: restArgs,localAccList)
-      local
-        list<Absyn.Exp> expList;
-        Absyn.Ident id;
-        list<DAE.FuncArg> argTypes;
-        list<Absyn.NamedArg> restArgs;
       equation
         ((DAE.T_LIST(_),_)) = findArgType(id,argTypes);
         expList = transformArrayNodesToListNodes(expList,{});
@@ -273,10 +253,6 @@ algorithm
         localAccList = fixListConstructorsInArgs3Helper(argTypes,restArgs,localAccList);
       then localAccList;
     case (argTypes,firstArg :: restArgs,localAccList)
-      local
-        Absyn.NamedArg firstArg;
-        list<DAE.FuncArg> argTypes;
-        list<Absyn.NamedArg> restArgs;
       equation
         localAccList = listAppend(localAccList,{firstArg});
         localAccList = fixListConstructorsInArgs3Helper(argTypes,restArgs,localAccList);
@@ -296,19 +272,15 @@ algorithm
   outType :=
   matchcontinue (id,argTypes)
     local
-      Absyn.Ident localId;
+      Absyn.Ident localId,localId2;
+      DAE.Type t;
+      list<DAE.FuncArg> restList;
     case (localId,{}) then DAE.T_INTEGER_DEFAULT; // Return DUMMIE (this case should not happend)
     case (localId,(localId2,t) :: _)
-      local
-        DAE.Type t;
-        Absyn.Ident localId2;
       equation
         true = (localId ==& localId2);
       then t;
     case (localId,_ :: restList)
-      local
-        list<DAE.FuncArg> restList;
-        DAE.Type t;
       equation
         t = findArgType(localId,restList);
       then t;
@@ -323,27 +295,21 @@ algorithm
   outList :=
   matchcontinue (inList,accList)
     local
-      list<Absyn.Exp> localAccList;
+      list<Absyn.Exp> localAccList,es,restList;
+      Absyn.Exp firstExp;
     case ({},localAccList) then localAccList;
     case (Absyn.ARRAY({}) :: restList,localAccList)
-      local
-        list<Absyn.Exp> restList;
       equation
         localAccList = listAppend(localAccList,{Absyn.LIST({})});
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (Absyn.ARRAY(es) :: restList,localAccList)
-      local
-        list<Absyn.Exp> es,restList;
       equation
         es = transformArrayNodesToListNodes(es,{});
         localAccList = listAppend(localAccList,{Absyn.LIST(es)});
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
       then localAccList;
     case (firstExp :: restList,localAccList)
-      local
-        list<Absyn.Exp> restList;
-        Absyn.Exp firstExp;
       equation
         localAccList = listAppend(localAccList,{firstExp});
         localAccList = transformArrayNodesToListNodes(restList,localAccList);
@@ -360,11 +326,10 @@ algorithm
   matchcontinue (inType,numLists)
     local
       DAE.Type localT;
+      Integer n;
+      DAE.Type t;
     case (localT,0) then localT;
     case (localT,n)
-      local
-        Integer n;
-        DAE.Type t;
       equation
         t = (DAE.T_LIST(localT),NONE());
         t = createListType(t,n-1);
@@ -380,8 +345,9 @@ public function getTypeFromProp "function: getTypeFromProp"
 algorithm
   outType :=
   matchcontinue (inProp)
-    case (DAE.PROP(t,_))
-      local DAE.Type t; equation then t;
+    local
+      DAE.Type t;
+    case (DAE.PROP(t,_)) equation then t;
   end matchcontinue;
 end getTypeFromProp;
 
@@ -1056,6 +1022,13 @@ public function typeConvert "function: typeConvert"
 algorithm
   outType :=
   matchcontinue (t)
+    local
+      Absyn.TypeSpec tSpec;
+      list<Absyn.TypeSpec> tSpecList;
+      String id,str;
+      DAE.Type t;
+      list<DAE.Type> tList;
+      Absyn.Path p;
     case ((DAE.T_INTEGER(_),_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
     case ((DAE.T_BOOL(_),_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
     case ((DAE.T_STRING(_),_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
@@ -1065,52 +1038,31 @@ algorithm
       equation
       then Absyn.TPATH(Absyn.IDENT(s),NONE()); */
     case ((DAE.T_LIST(t),_))
-      local
-        Absyn.TypeSpec tSpec;
-        list<Absyn.TypeSpec> tSpecList;
       equation
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecList,NONE());
     case ((DAE.T_METAOPTION(t),_))
-      local
-        Absyn.TypeSpec tSpec;
-        DAE.Type t;
-        list<Absyn.TypeSpec> tSpecList;
       equation
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecList,NONE());
     case ((DAE.T_METATUPLE(tList),_))
-      local
-        Absyn.TypeSpec tSpec;
-        list<DAE.Type> tList;
-        list<Absyn.TypeSpec> tSpecList;
       equation
         tSpecList = Util.listMap(tList,typeConvert);
       then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
 
-    case ((DAE.T_POLYMORPHIC(id),_))
-      local
-        String id;
-      then Absyn.TPATH(Absyn.IDENT(id),NONE());
+    case ((DAE.T_POLYMORPHIC(id),_)) then Absyn.TPATH(Absyn.IDENT(id),NONE());
 
     case ((DAE.T_META_ARRAY(t),_))
-      local
-        Absyn.TypeSpec tSpec;
-        DAE.Type t;
-        list<Absyn.TypeSpec> tSpecList;
       equation
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecList,NONE());
 
     case ((_,SOME(p)))
-      local
-        Absyn.Path p;
       then Absyn.TPATH(p,NONE());
     case t
-      local String str;
       equation
         true = RTOpts.debugFlag("matchcase");
         str = Types.unparseType(t);
@@ -1192,10 +1144,12 @@ public function createLhsExp "function: createLhsExp"
   input list<Absyn.Exp> inList;
   output Absyn.Exp outExp;
 algorithm
-  outExp :=
-  matchcontinue (inList)
-    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
-    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
+  outExp := matchcontinue (inList)
+    local
+      list<Absyn.Exp> lst;
+      Absyn.Exp firstExp;
+    case (firstExp :: {}) then firstExp;
+    case (lst) then Absyn.TUPLE(lst);
   end matchcontinue;
 end createLhsExp;
 
