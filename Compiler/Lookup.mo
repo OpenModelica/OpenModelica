@@ -183,6 +183,11 @@ algorithm
       SCode.Restriction restr;
       Env.Cache cache;
       list<DAE.Var> varlst;
+      SCode.Restriction r;
+      list<Types.Var> types;
+      list<String> names;
+      ClassInf.State ci_state;
+      Boolean encflag;
 
     // Record constructors
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
@@ -193,12 +198,6 @@ algorithm
 
     // lookup of an enumeration type
     case (cache,env_1,path,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
-      local
-        SCode.Restriction r;
-        list<Types.Var> types;
-        list<String> names;
-        ClassInf.State ci_state;
-        Boolean encflag;
       equation
         env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
@@ -351,6 +350,7 @@ algorithm
       list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs,prevFrames;
       Absyn.Path path,ep,packp,p,scope,restPath;
       String sid,id,s,name,pack;
+      Option<Env.Frame> optFrame;
 
     // First look in cache for environment. If found look up class in that environment.
     case (cache,env,path,prevFrames,inState,msg)
@@ -377,8 +377,6 @@ algorithm
 
     // Qualified names are handled in a special function in order to avoid infinite recursion.
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),prevFrames,inState,msg)
-      local
-        Option<Env.Frame> optFrame;
       equation
         (optFrame,prevFrames) = lookupPrevFrames(pack,prevFrames);
         (cache,c,env_2,prevFrames) = lookupClassQualified(cache,env,pack,path,optFrame,prevFrames,inState,msg);
@@ -580,7 +578,6 @@ algorithm
       SCode.Restriction restr;
       list<Env.Frame> env_1,env2,env,prevFrames;
       ClassInf.State ci_state;
-      Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache; 
       DAE.ComponentRef cr,cref;
@@ -639,7 +636,6 @@ algorithm
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding bind;
-      Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache; 
       Absyn.Path path,scope;
@@ -1167,14 +1163,13 @@ algorithm
       DAE.Attributes attr;
       DAE.Type ty;
       DAE.Binding bind;
-      DAE.ComponentRef id2,cref,cr;
+      DAE.ComponentRef id2,cref,cr,cr1,cr2;
       list<DAE.Subscript> sb;
       Option<String> sid;
       list<Env.Item> items;
       Env.Frame f;
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
-      DAE.ComponentRef cr,cr1,cr2;
       Absyn.Path path,scope,ep,p,packp;
       Option<DAE.ComponentRef> filterCref;
       Env.Env dbgEnv;
@@ -1754,6 +1749,8 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Var> varlst;
       Env.Cache cache;
+      SCode.Restriction restr;
+      Env.Cache garbageCache;
 
     case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
     case (cache,Env.VAR(_,_,_,_),env,id)
@@ -1776,7 +1773,6 @@ algorithm
 
         /* Found function */
     case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
-      local SCode.Restriction restr; Env.Cache garbageCache;
       equation
         true = SCode.isFunctionOrExtFunction(restr);
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
@@ -1807,7 +1803,7 @@ algorithm
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1,env_3;
-      String id,n;
+      String id,n,s;
       SCode.Class cdef;
       list<DAE.Var> varlst;
       Absyn.Path fpath;
@@ -1815,6 +1811,7 @@ algorithm
       DAE.TType tty;
       Env.Cache cache;
       DAE.DAElist dae;
+      SCode.Restriction restr;
 
     case (cache,ht,httypes,env,id) /* Classes and vars Types */
       equation
@@ -1844,7 +1841,7 @@ algorithm
         (cache,{ftype});
 
     /* Found class that is function, instantiate to get type*/
-    case (cache,ht,httypes,env,id) local SCode.Restriction restr;
+    case (cache,ht,httypes,env,id)
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
@@ -1858,7 +1855,6 @@ algorithm
 
      /* Found class that is is external object*/
      case (cache,ht,httypes,env,id)
-        local String s;
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
           true = Inst.classIsExternalObject(cdef);
@@ -2011,7 +2007,6 @@ algorithm
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
-      SCode.Mod mod;
       Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond;
@@ -2152,9 +2147,7 @@ algorithm
       then
         fail();
 
-    case (cache,(Env.FRAME(optName = sid,isEncapsulated = true) :: fs),id,prevFrames,inState,msgflag) /* lookup stops at encapsulated classes, except for builtin scope */
-      local
-        Option<String> sid;
+    case (cache,(Env.FRAME(isEncapsulated = true) :: fs),id,prevFrames,inState,msgflag) /* lookup stops at encapsulated classes, except for builtin scope */
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,i_env, id, {}, inState, msgflag);
@@ -2199,6 +2192,7 @@ algorithm
       list<Env.Item> items;
       Env.Cache cache;
       Env.Item item;
+      Boolean unique;
 
       /* Check this scope for class */
     case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,name,prevFrames,inState,_)
@@ -2216,7 +2210,6 @@ algorithm
 
         /* Search among the unqualified imports, e.g. import A.B.*; */
     case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,inState,_)
-      local Boolean unique;
       equation
         (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,items,totenv,name) "unique";
         Util.setStatefulBoolean(inState,true);
@@ -2324,8 +2317,9 @@ algorithm
       DAE.Dimension dim;
       Option<Absyn.Path> p;
       list<DAE.Subscript> ys,s;
-      Integer sz,ind;
+      Integer sz,ind,dim_int;
       list<DAE.Exp> se;
+      DAE.Exp e;
     case (t,{}) then t;
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(DAE.WHOLEDIM() :: ys))
       equation
@@ -2334,7 +2328,6 @@ algorithm
         ((DAE.T_ARRAY(dim,t_1),p));
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
-      local Integer dim_int;
       equation
         sz = Expression.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
@@ -2355,7 +2348,6 @@ algorithm
     /* HJ: Subscripts needn't be constant. No range-checking can be done */
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
           (DAE.INDEX(exp = e) :: ys)) 
-      local DAE.Exp e;
       equation
         true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
@@ -2391,7 +2383,6 @@ algorithm
     // => resulting ARRAY type has no specified dimension size.
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
           (DAE.SLICE(exp = e) :: ys))
-      local DAE.Exp e;
       equation
         5 = Expression.dimensionSize(dim);
         false = Expression.isArray(e);
@@ -2443,13 +2434,12 @@ algorithm
       list<DAE.Exp> expl;
       Integer x,dims;
       Boolean res;
+      String str1,str2;
     case(expl,dims)
       equation
         res = checkSubscriptsRange2(expl,dims);
       then res;
     case(expl,dims)
-      local
-        String str1,str2;
       equation
         str2 = intString(dims);
         exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
@@ -2536,11 +2526,8 @@ algorithm
       DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
-      DAE.ExpType eType;
-      DAE.Exp splicedExp;
-      DAE.ExpType tty;
+      DAE.ExpType eType,tty;
       Option<DAE.Const> cnstForRange;
-      
 
     // Simple identifier
     case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) )
@@ -2558,7 +2545,6 @@ algorithm
 
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
-      local Types.Type idTp;
       equation 
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(_,_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         // outer variables are not local!
@@ -2642,6 +2628,8 @@ algorithm
     local
       Integer sz;
       list<DAE.Exp> expl;  
+      Absyn.Path enum_name;
+      list<String> l;
     // Special case when addressing array[0].
     case DAE.DIM_INTEGER(integer = 0)
       then
@@ -2654,9 +2642,6 @@ algorithm
         DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, expl));
     // Array with enumeration dimension.
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
-      local
-        Absyn.Path enum_name;
-        list<String> l;
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
@@ -2672,14 +2657,14 @@ protected function makeEnumLiteralIndices
   output list<DAE.Exp> enumIndices;
 algorithm
   enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex)
+    local
+      String l;
+      list<String> ls;
+      DAE.Exp e;
+      list<DAE.Exp> expl;
+      Absyn.Path enum_type_name;
     case (_, {}, _) then {};
     case (_, l :: ls, _)
-      local
-        String l;
-        list<String> ls;
-        DAE.Exp e;
-        list<DAE.Exp> expl;
-        Absyn.Path enum_type_name;
       equation
         enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
@@ -2739,19 +2724,15 @@ ex. Real A[2,3] ==> A[{{1,2}{1,2,3}}]
   output list<DAE.Subscript> oExp;
 
 algorithm
-   oExp :=
-  matchcontinue(inInt)
-    case({})
-    then
-      {};
+  oExp := matchcontinue(inInt)
+    local
+      Integer i;
+      list<Integer> iLst;
+      list<DAE.Subscript > expsl;
+      DAE.Subscript exps;
+      DAE.Exp tmpArray;
+    case({}) then {};
     case((i :: iLst))
-      local
-        Integer i;
-        list<Integer> iLst;
-        list<DAE.Subscript > expsl;
-        DAE.Subscript exps;
-        DAE.Exp tmpArray;
-
       equation
         expsl = makeExpIntegerArray(iLst);
         exps = makeExpIntegerArray2(i,1);
@@ -2772,27 +2753,25 @@ There is a special case when we are declaring a dim[0] subscript.
   output list<DAE.Exp> out;
 
 algorithm
-   out :=
-   matchcontinue (inInt,inIntCurr)
-     local
-       Integer iMax,iCur,iTmp;
-     case(iMax,iCur) // the case when we are adressing a[0] , a[1,3,4,0] ...
-       equation
-         true = (iMax < iCur);
-       then
-         {DAE.ICONST(iMax)};
-     case(iMax,iCur)
-       equation
-         true = (iMax == iCur);
-       then
-         {DAE.ICONST(iCur)};
-     case(iMax,iCur)
-       local
-         list<DAE.Exp> expli;
-       equation
-         expli = makeExpIntegerArray2(iMax, iCur+1);
-       then
-         (DAE.ICONST(iCur) :: expli);
+  out := matchcontinue (inInt,inIntCurr)
+    local
+      Integer iMax,iCur,iTmp;
+      list<DAE.Exp> expli;
+    case(iMax,iCur) // the case when we are adressing a[0] , a[1,3,4,0] ...
+      equation
+        true = (iMax < iCur);
+      then
+        {DAE.ICONST(iMax)};
+    case(iMax,iCur)
+      equation
+        true = (iMax == iCur);
+      then
+        {DAE.ICONST(iCur)};
+    case(iMax,iCur)
+      equation
+        expli = makeExpIntegerArray2(iMax, iCur+1);
+      then
+        (DAE.ICONST(iCur) :: expli);
   end matchcontinue;
 end makeExpIntegerArray2;
 
@@ -2806,15 +2785,14 @@ Lifts an type to spcified dimension by type2
   output DAE.Type outType;
 
 algorithm
-   outType :=
-  matchcontinue (inTypeD,inTypeL)
+  outType := matchcontinue (inTypeD,inTypeL)
+    local
+      DAE.Type t,tOrg;
+      list<Integer> dimensions;
+      list<DAE.Dimension> dim2;
+      DAE.TType tty;
+      String str;
     case(t, tOrg)
-      local
-        DAE.Type t,tOrg;
-        list<Integer> dimensions;
-        list<DAE.Dimension> dim2;
-        DAE.TType tty;
-        String str;
       equation
         dimensions = Types.getDimensionSizes(t);
         dim2 = Util.listMap(dimensions, Expression.intDimension); 
