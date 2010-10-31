@@ -45,10 +45,8 @@ protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
-protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
-protected import BackendVariable;
 protected import BackendDump;
 protected import Dump;
 protected import DumpGraphviz;
@@ -259,12 +257,11 @@ algorithm
       then
         (true,res,newisymb);
     case (str,isymb)
-      local Interactive.InteractiveStmts p;
       equation
         //debug_print("Command: fail", str);
         Debug.fcall0("failtrace", Print.clearBuf);
-        (p,msg) = Parser.parsestring(str);
-        (p,expmsg) = Parser.parsestringexp(str);
+        (_,msg) = Parser.parsestring(str);
+        (_,expmsg) = Parser.parsestringexp(str);
         false = stringEq(msg, "Ok");
         false = stringEq(expmsg, "Ok");
         Debug.fprint("failtrace", "\nBoth parser and expression parser failed: \n");
@@ -530,6 +527,9 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
+      AbsynDep.Depends dep;
+      list<Absyn.Class> cls;
+      Integer r;
 
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
@@ -541,10 +541,6 @@ algorithm
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (f :: libs)
-      local
-        String s;
-        AbsynDep.Depends dep;
-        list<Absyn.Class> cls;
       equation
         //print("Class to instantiate: " +& RTOpts.classToInstantiate() +& "\n");
         Debug.fcall("execstat", print, "*** Main -> entering at time: " +& realString(clock()) +& "\n");
@@ -647,7 +643,6 @@ algorithm
 
     // deal with problems
     case (f::_)
-      local Integer r;
       equation
         false = System.regularFileExists(f);
         print("File does not exist: "); print(f); print("\n");
@@ -657,7 +652,6 @@ algorithm
         fail();
 
     case (f::_)
-      local Integer r;
       equation
         true = System.regularFileExists(f);
         print("Error processing file: "); print(f); print("\n");
@@ -778,8 +772,8 @@ algorithm
       Env.Env env;
       list<Integer> reseqn,tearvar;
       DAE.FunctionTree funcs;
+      String str,strtearing;
     case (cache,env,p,ap,dae,daeimpl,classname)
-      local String str,strtearing;
       equation
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
@@ -1116,6 +1110,7 @@ algorithm
       String file;
       Interactive.InteractiveSymbolTable inSymbolTable, outSymbolTable;
       String str;
+      Integer rest;
     case (file,inSymbolTable)
       equation
         true = System.regularFileExists(file);
@@ -1124,7 +1119,6 @@ algorithm
       then
         outSymbolTable;
     case (file,inSymbolTable)
-       local Integer rest;
       equation
         false = System.regularFileExists(file);
       then
@@ -1208,7 +1202,6 @@ algorithm
       Boolean ismode,icmode,imode,imode_1;
       String s,str,omhome,oldpath,newpath;
       Interactive.InteractiveSymbolTable symbolTable;
-      String omhome;
       
       // Setup mingw path only once.
     case _
