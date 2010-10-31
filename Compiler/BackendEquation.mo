@@ -35,30 +35,19 @@ package BackendEquation
   description: BackendEquation contains functions that do something with
                BackendDAEEquation datatype.
 
-
+  RCS: $Id: BackendEquation.mo 6553 2010-10-24 15:58:01Z sjoelund.se $  
 "
 
 public import Absyn;
 public import BackendDAE;
 public import DAE;
 
-protected import Algorithm;
-protected import BackendDump;
-protected import BackendDAECreate;
-protected import BackendDAEUtil;
-protected import BackendVarTransform;
-protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
-protected import Derive;
-protected import Error;
 protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Util;
-
 
 public function getWhenEquationExpr
 "function: getWhenEquationExpr
@@ -67,11 +56,8 @@ public function getWhenEquationExpr
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
 algorithm
-  (outComponentRef,outExp):=
-  matchcontinue (inWhenEquation)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e;
+  (outComponentRef,outExp) := matchcontinue (inWhenEquation)
+    local DAE.ComponentRef cr; DAE.Exp e;
     case (BackendDAE.WHEN_EQ(left = cr,right = e)) then (cr,e);
   end matchcontinue;
 end getWhenEquationExpr;
@@ -152,7 +138,7 @@ algorithm
         resx;
     case (_,_,_)
       equation
-        print("-get_zero_crossing_indices_from_when_clause2 failed\n");
+        print("- BackendEquation.getZeroCrossingIndicesFromWhenClause2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -177,6 +163,7 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation weq;
       DAE.ElementSource source "the element source";
+      list<list<DAE.ComponentRef>> lstcrs2,lstcrs3;
 
     case ({}) then {};
 
@@ -206,23 +193,21 @@ algorithm
         (cr :: crs);
 
     case ((BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: es))
-      local list<list<DAE.ComponentRef>> crs2;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl, Expression.extractCrefsFromExp);
-        crs2_1 = Util.listFlatten(crs2);
+        lstcrs2 = Util.listMap(expl, Expression.extractCrefsFromExp);
+        crs2_1 = Util.listFlatten(lstcrs2);
         crs = listAppend(crs1, crs2_1);
       then
         crs;
 
     case ((BackendDAE.ALGORITHM(index = indx,in_ = expl1,out = expl2) :: es))
-      local list<list<DAE.ComponentRef>> crs2,crs3;
       equation
         crs1 = equationsCrefs(es);
-        crs2 = Util.listMap(expl1, Expression.extractCrefsFromExp);
-        crs3 = Util.listMap(expl2, Expression.extractCrefsFromExp);
-        crs2_1 = Util.listFlatten(crs2);
-        crs3_1 = Util.listFlatten(crs3);
+        lstcrs2 = Util.listMap(expl1, Expression.extractCrefsFromExp);
+        lstcrs3 = Util.listMap(expl2, Expression.extractCrefsFromExp);
+        crs2_1 = Util.listFlatten(lstcrs2);
+        crs3_1 = Util.listFlatten(lstcrs3);
         crs = Util.listFlatten({crs1,crs2_1,crs3_1});
       then
         crs;
@@ -328,7 +313,7 @@ algorithm
         BackendDAE.EQUATION_ARRAY(n_1,newsize,arr_2);
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr),e)
       equation
-        print("-equation_add failed\n");
+        print("- BackendEquation.equationAdd failed\n");
       then
         fail();
   end matchcontinue;
@@ -336,16 +321,13 @@ end equationAdd;
 
 public function equationSetnth "function: equationSetnth
   author: PA
-
-  Sets the nth array element of an EquationArray.
-"
+  Sets the nth array element of an EquationArray."
   input BackendDAE.EquationArray inEquationArray;
   input Integer inInteger;
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
-  outEquationArray:=
-  matchcontinue (inEquationArray,inInteger,inEquation)
+  outEquationArray := matchcontinue (inEquationArray,inInteger,inEquation)
     local
       array<Option<BackendDAE.Equation>> arr_1,arr;
       BackendDAE.Value n,size,pos;
@@ -373,7 +355,8 @@ algorithm
       DAE.ElementSource source "origin of the element";
       DAE.Operator op;
       Boolean b;
-
+      BackendDAE.Equation backendEq;
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
          //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
@@ -383,33 +366,26 @@ algorithm
         e = ExpressionSimplify.simplify(DAE.BINARY(e1,op,e2));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
       equation
-         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
+        //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
         tp = Expression.typeof(exp);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
         e = ExpressionSimplify.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
-    case ((e as BackendDAE.RESIDUAL_EQUATION(exp = _,source = source)))
-      local BackendDAE.Equation e;
-      then
-        e;
-    case ((e as BackendDAE.ALGORITHM(index = _)))
-      local BackendDAE.Equation e;
-      then
-        e;
-    case ((e as BackendDAE.ARRAY_EQUATION(index = _)))
-      local BackendDAE.Equation e;
-      then
-        e;
-    case ((e as BackendDAE.WHEN_EQUATION(whenEquation = _)))
-      local BackendDAE.Equation e;
-      then
-        e;
-    case (e)
-      local BackendDAE.Equation e;
+    
+    case (backendEq as BackendDAE.RESIDUAL_EQUATION(exp = _,source = source)) then backendEq;
+    
+    case (backendEq as BackendDAE.ALGORITHM(index = _)) then backendEq;
+    
+    case (backendEq as BackendDAE.ARRAY_EQUATION(index = _)) then backendEq;
+    
+    case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation = _)) then backendEq;
+    
+    case (backendEq)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.equationToResidualForm failed");
       then
