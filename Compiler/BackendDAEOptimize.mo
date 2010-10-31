@@ -39,12 +39,14 @@ package BackendDAEOptimize
                - Linearization
                - Inline Integration
                - and so on ... 
-
+               
+  RCS: $Id: BackendDAEOptimize.mo 6732 2010-10-30 17:10:39Z adrpo $
 "
 
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAETransform;
@@ -53,17 +55,13 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import ComponentReference;
-protected import DAEEXT;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSolve;
-protected import Derive;
 protected import Error;
 protected import RTOpts;
-protected import SCode;
 protected import Util;
-protected import Values;
 protected import VarTransform;
 
 
@@ -952,7 +950,7 @@ algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
-      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
+      BackendDAE.BackendDAE dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;

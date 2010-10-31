@@ -34,6 +34,9 @@ package BackendDAECreate
   package:     BackendDAECreate
   description:  This file contains all functions for transforming the DAE structure 
                 to the BackendDAE. 
+  
+  RCS: $Id: BackendDAECreate.mo 6732 2010-10-30 17:10:39Z adrpo $
+
 "
 
 public import Absyn;
