@@ -34,7 +34,8 @@ package BackendVariable
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
 							 BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
-
+  
+  RCS: $Id: BackendVariable.mo 6553 2010-10-24 15:58:01Z sjoelund.se $
 "
 
 public import BackendDAE;
@@ -42,14 +43,12 @@ public import DAE;
 
 protected import Absyn;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import HashTable2;
 protected import SCode;
-protected import System;
 protected import RTOpts;
 protected import Values;
 protected import Util;
@@ -63,17 +62,14 @@ protected import Util;
 
 public function isVarKnown "function: isVarKnown
   author: PA
-
   Returns true if the the variable is present in the variable list.
   This is done by traversing the list, searching for a matching variable
-  name.
-"
+  name."
   input list<BackendDAE.Var> inVarLst;
   input DAE.ComponentRef inComponentRef;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVarLst,inComponentRef)
+  outBoolean := matchcontinue (inVarLst,inComponentRef)
     local
       DAE.ComponentRef var_name,cr;
       BackendDAE.Var variable;
@@ -1081,7 +1077,7 @@ algorithm
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
     case (_,_)
       equation
-        print("-vararray_add failed\n");
+        print("- BackendVariable.vararrayAdd failed\n");
       then
         fail();
   end matchcontinue;
@@ -1113,7 +1109,7 @@ algorithm
 
     case (_,_,_)
       equation
-        print("-vararray_setnth failed\n");
+        print("- BackendVariable.vararraySetnth failed\n");
       then
         fail();
   end matchcontinue;
@@ -1145,7 +1141,7 @@ algorithm
       equation
         (pos < n) = true;
         NONE() = arr[pos + 1];
-        print("vararray_nth has NONE!!!\n");
+        print("- BackendVariable.vararrayNth has NONE!!!\n");
       then
         fail();
   end matchcontinue;
@@ -1216,7 +1212,7 @@ algorithm
         (vars_2,knvars_2,extvars_2);
     case (_,_,_)
       equation
-        print("-calculate_indexes failed\n");
+        print("- BackendVariable.calculateIndexes failed\n");
       then
         fail();
   end matchcontinue;
@@ -1334,7 +1330,7 @@ algorithm
       Type_a out_item;
     case ({},_)
       equation
-        print("-sortList1 failed\n");
+        print("- BackendVariable.sortList1 failed\n");
       then
         fail();
     case ((item,itemplace)::rest,place)
@@ -1381,7 +1377,7 @@ algorithm
         (noScalarlst2,scalarlst2);
     case (_)
       equation
-        print("getNoScalarVars fails\n");
+        print("- BackendVariable.getNoScalarVars fails\n");
       then
         fail();
   end matchcontinue;
@@ -1503,15 +1499,14 @@ protected function listAppendTyp
   output list<Type_a > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outlist):=
-  matchcontinue (append,invar,inlist)
+  (outlist) := matchcontinue (append,invar,inlist)
     local
-      list<Type_a > var_lst;
+      list<Type_a> var_lst, out_lst;
       Type_a var;
+
     case (false,_,var_lst) then var_lst;
+    
     case (true,var,var_lst)
-      local
-       list<Type_a > out_lst;
       equation
         out_lst = var::var_lst;
       then
@@ -1528,14 +1523,15 @@ protected function sortNoScalarList1
   output list<tuple<BackendDAE.Var,Integer,Integer> > outlist;
   output Boolean insert;
 algorithm
-  (outlist,insert):=
-  matchcontinue (invar,inlist)
+  (outlist,insert) := matchcontinue (invar,inlist)
     local
       list<tuple<BackendDAE.Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2;
       BackendDAE.Var var,var1;
       Boolean ins,ins1,ins2;
       Integer typ,typ1,place,place1;
+    
     case (_,{}) then ({},false);
+    
     case ((var,typ,place),(var1,typ1,place1)::rest)
       equation
         (var_lst,ins) = sortNoScalarList1((var,typ,place),rest);
@@ -1678,7 +1674,7 @@ algorithm
         value1;
      case (_,_)
       equation
-        print("-calcPlace failed\n");
+        print("- BackendVariable.calcPlace failed\n");
       then
         fail();
   end matchcontinue;
@@ -1759,6 +1755,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Integer typ,place;
+      Absyn.Path path;
     
     case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
@@ -2036,7 +2033,6 @@ algorithm
                comment = comment,
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
-      local Absyn.Path path;
       equation
         ext_1 = ext+1;
         (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
@@ -2365,7 +2361,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
         failure((_) = vararrayNth(varr, indx));
-        print("could not found variable, cr:");
+        print("- BackendVariable.existsVar could not found variable, cr:");
         str = ComponentReference.printComponentRefStr(cr);
         print(str);
         print("\n");
@@ -2375,13 +2371,9 @@ algorithm
   end matchcontinue;
 end existsVar;
 
-
-
 public function addVars "function: addVars
   author: PA
-
-  Adds a list of \'Var\' to \'Variables\'
-"
+  Adds a list of BackendDAE.Var to BackendDAE.Variables"
   input list<BackendDAE.Var> varlst;
   input BackendDAE.Variables vars;
   output BackendDAE.Variables vars_1;
@@ -2447,7 +2439,7 @@ algorithm
 
     case (_,_)
       equation
-        print("-add_var failed\n");
+        print("- BackendVariable.addVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -2572,26 +2564,27 @@ algorithm
       DAE.ComponentRef cr,cr2;
       BackendDAE.Value v,res;
       list<BackendDAE.CrefIndex> vs;
+      BackendDAE.CrefIndex idx;
+      
     case (cr,{})
       equation
-        //Debug.fprint("failtrace", "-getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
+        //Debug.fprint("failtrace", "- BackendVariable.getVar3 failed on:" +& ComponentReference.printComponentRefStr(cr) +& "\n");
       then
         fail();
+    
     case (cr,(BackendDAE.CREFINDEX(cref = cr2,index = v) :: _))
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         v;
-    case (cr,(v :: vs))
-      local BackendDAE.CrefIndex v;
+    
+    case (cr,(idx :: vs))
       equation
         res = getVar3(cr, vs);
       then
         res;
   end matchcontinue;
 end getVar3;
-
-
 
 protected function getArrayVar
 "function: getArrayVar
@@ -2738,7 +2731,7 @@ algorithm
         vars1_1;
     case (_,_)
       equation
-        print("-merge_variables failed\n");
+        print("- BackendVariable.mergeVariables failed\n");
       then
         fail();
   end matchcontinue;
