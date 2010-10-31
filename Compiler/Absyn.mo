@@ -2487,8 +2487,7 @@ public function getCrefFromExp "
   input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst:=
-  matchcontinue (inExp,checkSubs)
+  outComponentRefLst := matchcontinue (inExp,checkSubs)
     local
       ComponentRef cr;
       list<ComponentRef> l1,l2,res,res1,l3;
@@ -2500,9 +2499,10 @@ algorithm
       list<ComponentCondition> expl;
       list<list<ComponentCondition>> expll;
       list<Subscript> subs;
-      list<list<ComponentRef>> res1;
+      list<list<ComponentRef>> lstres1;
       list<list<list<ComponentRef>>> reslll;
       list<list<ComponentRef>> crefll;
+    
     case (INTEGER(value = _),checkSubs) then {};
     case (REAL(value = _),checkSubs) then {};
     case (STRING(value = _),checkSubs) then {};
@@ -2568,8 +2568,8 @@ algorithm
         res;
     case (ARRAY(arrayExp = expl),checkSubs)
       equation
-        res1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
-        res = Util.listFlatten(res1);
+        lstres1 = Util.listMap1(expl, getCrefFromExp, checkSubs);
+        res = Util.listFlatten(lstres1);
       then
         res;
     case (MATRIX(matrix = expll),checkSubs)
