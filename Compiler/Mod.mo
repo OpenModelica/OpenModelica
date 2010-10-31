@@ -251,19 +251,18 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<Absyn.Info> oinfo;
       Option<Absyn.ConstrainClass> cc;
-      Option<SCode.Comment> cmt;
       Absyn.Info i;
       DAE.DAElist dae,dae1,dae2;
       InstanceHierarchy ih;
+      Absyn.ElementAttributes attr1;
+      list<SCode.Enum> enumLst;
+      Option<SCode.Comment> comment;
 
       /* the empty case */
       case(cache,env,_,pre,f,{},_,_) then ({});
 
          // Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
       case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl,info)
-        local
-          Absyn.ElementAttributes attr1;
-          Option<Absyn.ConstrainClass> cc;
         equation
          (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
          (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
@@ -272,10 +271,6 @@ algorithm
 
    // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
       case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl,info)
-        local
-          list<SCode.Enum> enumLst;
-        Option<SCode.Comment> comment;
-          Option<Absyn.ConstrainClass> cc;
         equation
          (modElts) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
         then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts);
@@ -324,14 +319,13 @@ protected function elabModValue
   output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
-  (outCache,outValuesValueOption) :=
-  matchcontinue (inCache,inEnv,inExp,inProp)
+  (outCache,outValuesValueOption) := matchcontinue (inCache,inEnv,inExp,inProp)
+    local
+      Values.Value v;
+      Ceval.Msg msg;
+      Env.Cache cache;
+      DAE.Const c;
     case (_,_,_,_)
-      local
-        Values.Value v;
-        Ceval.Msg msg;
-        Env.Cache cache;
-        DAE.Const c;
       equation
         c = Types.propAllConst(inProp);
         // Don't ceval variables.
@@ -365,6 +359,7 @@ algorithm
       DAE.Properties p;
       list<SCode.Element> elist_1;
       list<tuple<SCode.Element, DAE.Mod>> elist;
+      DAE.Exp dexp;
       
     case (DAE.NOMOD()) then SCode.NOMOD();
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = NONE())))
@@ -379,8 +374,7 @@ algorithm
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false))); // Default type checking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,
-                        eqModOption = SOME(DAE.TYPED(e,_,p,SOME(absynExp))))))
-      local DAE.Exp e;
+                        eqModOption = SOME(DAE.TYPED(_,_,p,SOME(absynExp))))))
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
@@ -389,12 +383,11 @@ algorithm
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,
-                        eqModOption = SOME(DAE.TYPED(e,_,p,NONE())))))
-      local DAE.Exp e;
+                        eqModOption = SOME(DAE.TYPED(dexp,_,p,NONE())))))
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
-        e_1 = Expression.unelabExp(e);
+        e_1 = Expression.unelabExp(dexp);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
 
@@ -512,7 +505,7 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
       InstanceHierarchy ih;
-
+      String str;
     case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
 
     case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),impl,info) then (cache,m);
@@ -542,7 +535,6 @@ algorithm
         (cache,DAE.MOD(f,each_,subs_1,NONE()));
 
     case (cache,env,ih,pre,m,impl,info)
-      local String str;
       equation
                 true = RTOpts.debugFlag("failtrace");
         str = printModStr(m);
@@ -835,6 +827,7 @@ algorithm
       DAE.Mod m;
       list<DAE.SubMod> mods,mods_1;
       list<DAE.Subscript> xs;
+      list<DAE.Exp> slice;
     
     // last mod
     case ({DAE.INDEX(exp = DAE.ICONST(integer = x))},m) then {DAE.IDXMOD({x},m)};
@@ -846,7 +839,6 @@ algorithm
       then
         mods_1;
     case ((DAE.SLICE(exp = DAE.ARRAY(array = slice)) :: xs),m)
-      local list<DAE.Exp> slice;
       equation
         mods = expandSlice(slice, xs, 1, m);
       then
@@ -1409,6 +1401,8 @@ algorithm
       Option<DAE.EqMod> eq;
       list<Integer> xs;
       Ident name;
+      DAE.SubMod sm;
+      list<DAE.SubMod> sms;
     
     case ({},_) then (DAE.NOMOD(),{});
     
@@ -1447,14 +1441,11 @@ algorithm
       then
         (mod_1,(DAE.NAMEMOD(name,nmod_1) :: subs_1));
     
-    case ((x :: xs),idx)
-      local
-        DAE.SubMod x;
-        list<DAE.SubMod> xs;
+    case ((sm :: sms),idx)
       equation
-        (mod,xs_1) = lookupIdxModification2(xs,idx);
+        (mod,xs_1) = lookupIdxModification2(sms,idx);
       then
-        (mod,(x :: xs_1));
+        (mod,(sm :: xs_1));
     
     case (_,_)
       equation
@@ -1517,6 +1508,7 @@ algorithm
       list<Integer> xs;
       DAE.EqMod eq;
       Absyn.Exp absynExp;
+      String exp_str;
 
     case (NONE(),_) then NONE();
     case (e,{}) then e;
@@ -1546,8 +1538,6 @@ algorithm
         e;
 
     case (e as SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
-      local
-        String exp_str;
       equation
                 /* Trying to apply a non-array modifier to an array, which isn't
                  * really allowed but working anyway. Some standard Modelica libraries
@@ -1653,7 +1643,7 @@ protected function doMerge "function: merge
 algorithm
   outMod := matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
     local
-      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_,mm1,mm2,mm3;
+      DAE.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_,mm1,mm2,mm3,cm,icm;
       Boolean f1,f,r,p,f2,finalPrefix;
       Absyn.InnerOuter io;
       Ident id1,id2;
@@ -1670,6 +1660,7 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<Absyn.ConstrainClass> cc;
       Option<Absyn.Info> info;
+      SCode.Element celm,elementOne;
     
     case (m,DAE.NOMOD(),_,_) then m;
     
@@ -1691,9 +1682,6 @@ algorithm
     case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;
     
     case ((icm as DAE.MOD(subModLst = subs)),DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(component = id1)),cm)})),env,pre)
-      local
-        DAE.Mod cm,icm;
-        SCode.Element celm;
       equation
         cm = merge(cm,icm,env,pre);
       then
@@ -1720,13 +1708,11 @@ algorithm
      * see testcase mofiles/Modification14.mo
      */
     case (mm1 as DAE.MOD(subModLst = subs), mm2 as DAE.REDECL(finalPrefix = false,tplSCodeElementModLst = (els as {((elementOne as SCode.CLASSDEF(name = id1)),mm3)})),env,pre)
-      local SCode.Element elementOne;
       equation
         mm1 = merge(mm1,mm3,env,pre );
       then DAE.REDECL(false,{(elementOne,mm1)});
 
     case (mm2 as DAE.REDECL(finalPrefix = false,tplSCodeElementModLst = (els as {((elementOne as SCode.CLASSDEF(name = id1)),mm3)})),mm1 as DAE.MOD(subModLst = subs),env,pre)
-      local SCode.Element elementOne;
       equation
         mm1 = merge(mm3,mm1,env,pre );
       then DAE.REDECL(false,{(elementOne,mm1)});
@@ -1829,7 +1815,6 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
-      DAE.Mod m;
     
     // empty list
     case ({},sm,_,_) then ({},sm);
@@ -2236,6 +2221,7 @@ algorithm str := matchcontinue(m,depth)
     list<DAE.SubMod> subs;
     String s1,s2;
     Boolean fp;
+    DAE.EqMod eq;
 
   case(DAE.MOD(subModLst = subs, eqModOption=NONE()),depth) // 0 since we are only interested in this scopes modifier.
     equation
@@ -2245,8 +2231,6 @@ algorithm str := matchcontinue(m,depth)
   case(DAE.MOD(subModLst = subs, eqModOption=NONE()),depth) then "";
 
   case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),depth)
-    local
-      DAE.EqMod eq;
     equation
       str = Util.if_(fp,"final ","") +& Types.unparseEqMod(eq);
     then
@@ -2444,6 +2428,7 @@ algorithm
       DAE.Exp e;
       Values.Value e_val;
       DAE.Properties prop;
+      Absyn.Exp ae;
     case NONE() then "";
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       equation
@@ -2460,10 +2445,9 @@ algorithm
         res = stringAppendList({" = (typed)",str,str2});
       then
         res;
-    case SOME(DAE.UNTYPED(e))
-      local Absyn.Exp e;
+    case SOME(DAE.UNTYPED(ae))
       equation
-        str = Dump.printExpStr(e);
+        str = Dump.printExpStr(ae);
         res = stringAppend(" =(untyped) ", str);
       then
         res;
