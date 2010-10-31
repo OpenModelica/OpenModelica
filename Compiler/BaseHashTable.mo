@@ -1,34 +1,59 @@
-encapsulated package BaseHashTable "
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
+ * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+encapsulated package BaseHashTable 
+" 
+  file:        BaseHashTable.mo
+  package:     BaseHashTable
+  description: BaseHashTable is a generic implementation of hashtables.
+               See HashTable*.mo to see how to use it.
+  
+  RCS: $Id: BaseHashTable.mo 6570 2010-10-25 11:32:51Z Frenkel TUD $
+
 	This file is an extension to OpenModelica.
-
-  Copyright (c) 2007 MathCore Engineering AB
-
-  All rights reserved.
-
 
   Based on HashTable.mo but
   Key 		= DAE.ComponentRef
-  Value 	= DAE.Exp
+  Value 	= DAE.Exp"
 
-  Not used by OpenModelica!
 
-  RCS: $Id: HashTable2.mo 6570 2010-10-25 11:32:51Z Frenkel TUD $
-
-  "
-  
-/* Below is the instance specific code. For each hashtable the user must define:
-
-Key 			- The key used to uniquely define elements in a hashtable
-Value 		- The data to associate with each key
-hashFunc 	- A function that maps a key to a positive integer.
-keyEqual 	- A comparison function between two keys, returns true if equal.
-*/
-
-/* HashTable instance specific code */
+// Below is the instance specific code. For each hashtable the user must define:
+// Key      - The key used to uniquely define elements in a hashtable
+// Value    - The data to associate with each key
+// hashFunc - A function that maps a key to a positive integer.
+// keyEqual - A comparison function between two keys, returns true if equal.
 
 protected import Util;
 
-/* Generic hashtable code below!! */
+// Generic hashtable code below
 
 public function emptyHashTableWork
   input Integer szBucket;
@@ -100,7 +125,7 @@ algorithm
         n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
-      /* adding when already present => Updating value */
+    // adding when already present => Updating value
     case ((newv as (key,value)),(hashTable as (hashvec,varr,bsize,n,fntpl)))
       equation
         (_,indx) = get1(key, hashTable);
@@ -108,6 +133,7 @@ algorithm
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
       then ((hashvec,varr_1,bsize,n,fntpl));
+    
     case (_,_)
       equation
         print("- BaseHashTable.add failed\n");
@@ -148,7 +174,8 @@ algorithm
       Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-      /* Adding when not existing previously */
+    
+    // Adding when not existing previously
     case ((v as (key,value)),(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_)))
       equation
         hval = hashFunc(key);
@@ -159,7 +186,8 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
-          case (_,_)
+    
+    case (_,_)
       equation
         print("- BaseHashTable.addNoUpdCheck failed\n");
       then
