@@ -130,7 +130,7 @@ algorithm
         vars_1 = detectImplicitDiscreteAlgs(vars_1, algs_1);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
-        (zero_crossings) = findZeroCrossings(vars_1,knvars,listAppend(eqns_1,reqns),aeqns1,whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
         eqnarr = BackendDAEUtil.listEquation(eqns_1);
         reqnarr = BackendDAEUtil.listEquation(reqns);
         ieqnarr = BackendDAEUtil.listEquation(ieqns);
@@ -168,7 +168,7 @@ algorithm
         vars_1 = detectImplicitDiscreteAlgs(vars_1, algs);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
-        (zero_crossings) = findZeroCrossings(vars_1,knvars,listAppend(eqns_1,reqns),aeqns,whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
         eqnarr = BackendDAEUtil.listEquation(eqns_1);
         reqnarr = BackendDAEUtil.listEquation(reqns);
         ieqnarr = BackendDAEUtil.listEquation(ieqns);

@@ -50,22 +50,17 @@ protected import BackendDAECreate;
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendEquation;
-protected import BackendVarTransform;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import DAEEXT;
-protected import DAEUtil;
 protected import Debug;
 protected import Expression;
-protected import ExpressionSolve;
-protected import ExpressionSimplify;
 protected import Derive;
 protected import Error;
 protected import RTOpts;
 protected import SCode;
 protected import Util;
 protected import Values;
-protected import VarTransform;
 
 
 /******************************************
@@ -126,7 +121,6 @@ algorithm
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.BinTree s;
       list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<DAE.Algorithm> algs;
@@ -166,7 +160,7 @@ algorithm
         algs = arrayList(al);
         (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = BackendDAEOptimize.removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
          BackendDAE.EVENT_INFO(whenClauseLst=whenclauses) = ev;
-        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,listAppend(e_lst,re_lst),ae_lst,whenclauses,algs);
+        (zero_crossings) = BackendDAECreate.findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
         e = BackendDAEUtil.listEquation(e_lst);
         re = BackendDAEUtil.listEquation(re_lst);
         ie = BackendDAEUtil.listEquation(ie_lst);

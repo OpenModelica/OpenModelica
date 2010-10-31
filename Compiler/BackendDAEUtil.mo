@@ -1367,8 +1367,75 @@ algorithm
   end matchcontinue;
 end statesEqns;
 */
+/*
+public function statesAndVarsExp
+"function: statesAndVarsExp
+  This function investigates an expression and returns as subexpressions
+  that are variable names or derivatives of state names or states
+  inputs:  (DAE.Exp, BackendDAE.Variables)
+  outputs: DAE.Exp list"
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVariables;
+  output list<DAE.Exp> outExpExpLst;
+algorithm
+  outExpExpLst := 
+  matchcontinue(inExp,inVariables)
+    local list<DAE.Exp> exps;
+  case(inExp,inVariables)
+    equation
+      ((_,(_,exps))) = Expression.traverseExpTopDown(inExp, traversingstatesAndVarsExpFinder, (inVariables,{}));
+      then
+        exps;
+  end matchcontinue;
+end statesAndVarsExp;
 
-
+public function traversingstatesAndVarsExpFinder "
+Author: Frenkel TUD 2010-10
+Helper for statesAndVarsExp"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.Exp>>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.Exp>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+    list<ComponentRef> crefs;
+    ComponentRef cr;
+    Type ty;
+    list<DAE.Exp> expl;
+    DAE.Exp e;
+    // Special Case for Records 
+    case (((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
+      equation
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        lst = Util.listMap1(expl, statesAndVarsExp, vars);
+        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
+      then
+        ((e,true,(vars,res)));  
+    // Special Case for unextended arrays
+    case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),(vars,expl)))
+      equation
+        ((e1,_)) = extendArrExp((e,NONE()));
+        res = statesAndVarsExp(e1, vars);
+      then
+        ((e,true,(vars,res)));  
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(vars,expl)))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+      then
+        ((e,true,(vars,e::res)));  
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),(vars,expl)))
+      equation
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+      then
+        ((e,false,(vars,e::res)));
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,expl)))
+      equation
+        (_,p) = BackendVariable.getVar(cr, vars);
+      then
+        ((e,false,(vars,res)));
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingstatesAndVarsExpFinder;
+*/
 public function statesAndVarsExp
 "function: statesAndVarsExp
   This function investigates an expression and returns as subexpressions
