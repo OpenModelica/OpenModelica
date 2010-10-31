@@ -116,11 +116,13 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> el_1,el;
       Absyn.Path p;
-      Boolean b,bi,a;
+      Boolean b,bi;
       DAE.InlineType inl;
       list<list<Boolean>> bl;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
-      Integer i;
+      Integer i,a;
+      list<list<DAE.Exp>> es,es_1;
+      DAE.ExpType tp;
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation
         r(cr, rarg);
@@ -168,25 +170,21 @@ algorithm
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
     case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inlineType = inl))
-      local DAE.ExpType tp;
       equation
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
         DAE.CALL(p,el_1,b,bi,tp,inl);
-    case (str,r,rarg,DAE.ARRAY(ty = t,scalar = a,array = el))
+    case (str,r,rarg,DAE.ARRAY(ty = t,scalar = b,array = el))
       equation
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
-        DAE.ARRAY(t,a,el_1);
+        DAE.ARRAY(t,b,el_1);
     case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = ell))
-      local
-        list<list<DAE.Exp>> el,el_1;
-        Integer a;
       equation
-        el = Util.listListMap(ell, Util.tuple21);
+        es = Util.listListMap(ell, Util.tuple21);
         bl = Util.listListMap(ell, Util.tuple22);
-        el_1 = stringPrefixComponentRefsList(str, r, rarg, el);
-        ell_1 = Util.listListThreadTuple(el_1, bl);
+        es_1 = stringPrefixComponentRefsList(str, r, rarg, es);
+        ell_1 = Util.listListThreadTuple(es_1, bl);
       then
         DAE.MATRIX(t,a,ell_1);
     case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e2))
@@ -399,6 +397,7 @@ algorithm
       Option<DAE.Exp> e;
       list<DAE.Element> rest;
       DAE.VarKind vk;
+      DAE.Element el;
     case (cr,(DAE.VAR(componentRef = crv,
                       kind = DAE.PARAM(),
                       direction = vd,
@@ -415,8 +414,7 @@ algorithm
         true = ComponentReference.crefEqual(cr, crv);
       then
         fail();
-    case (cr,(e :: rest))
-      local DAE.Element e;
+    case (cr,(el :: rest))
       equation
         isParameterDaelist(cr, rest);
       then
