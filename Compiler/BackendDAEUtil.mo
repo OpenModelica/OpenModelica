@@ -4917,7 +4917,7 @@ algorithm
     case (SOME(BackendDAE.EQUATION(exp = e1,scalar = e2)),func,inTypeA)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
-        ((_,ext_arg_2)) = func((e1,ext_arg_1));
+        ((_,ext_arg_2)) = func((e2,ext_arg_1));
       then
         ext_arg_2;
     case (SOME(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl)),func,inTypeA)
