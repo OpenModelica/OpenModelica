@@ -111,7 +111,6 @@ algorithm
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
-      ClassInf.State new_ci_state;
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
       Integer tmp;
@@ -392,7 +391,7 @@ protected function instClassExtendsList2
 algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
-      SCode.Element elt,compelt,classExtendsElt,compelt;
+      SCode.Element elt,compelt,classExtendsElt;
       SCode.Class cl,classExtendsClass;
       SCode.ClassDef classDef,classExtendsCdef;
       Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1;
@@ -1256,16 +1255,16 @@ algorithm
     local
       SCode.Mod mod;
       list<SCode.SubMod> rest_mods;
+      Absyn.Ident ident;
+      list<SCode.Subscript> subs;
     case (_, _, {}, _) then (cache, {});
     case (_, _, SCode.NAMEMOD(ident = ident, A = mod) :: rest_mods, _)
-      local Absyn.Ident ident;
       equation
         (cache, mod) = fixModifications(cache, env, mod, ht);
         (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
       then
         (cache, SCode.NAMEMOD(ident, mod) :: rest_mods);
     case (_, _, SCode.IDXMOD(subscriptLst = subs, an = mod) :: rest_mods, _)
-      local list<SCode.Subscript> subs;
       equation
         (cache, mod) = fixModifications(cache, env, mod, ht);
         (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
