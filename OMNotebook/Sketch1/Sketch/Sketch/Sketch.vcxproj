@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{08EEF36D-18EB-4240-9318-AA77D5F3C464}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Sketch</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;QT_DEBUG;SOQT_DLL;COIN_DLL;UNICODE;QT_LARGEFILE_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(COINDIR)\include;$(QTHOME)\mkspecs\win32-msvc2010;$(QTHOME)\include\QTCore;$(QTHOME)\include\QTGui;$(QTHOME)\include;$(OMDEV)\include;$(OMDEV)\include\mico-win32-msvc;C:\Users\RJhansiR\Develop\OpenModelica\OMNotebook\OMNotebookQT4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>qtmaind.lib;QtCored4.lib;QtGuid4.lib;QtNetworkd4.lib;QtXmld4.lib;antlrd.lib;mico2313.lib;coin3d.lib;soqt1d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(COINDIR)\lib\;$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;$(QTHOME)\lib;$(COINDIR)\lib;$(SolutionDir)\Debug\;$(OMDEV)\lib\mico-win32-msvc\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(OMDEV)\include\mico-win32-msvc;$(OMDEV)\include;$(QTHOME)\include;$(QTHOME)\include\QTGui;$(QTHOME)\include\QTCore;$(QTHOME)\mkspecs\win32-msvc2010;$(COINDIR)\include;C:\Users\RJhansiR\Develop\OpenModelica\OMNotebook\OMNotebookQT4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>qtmain.lib;QtGui4.lib;QtNetwork4.lib;QtXml4.lib;mico2313.lib;QtCore4.lib;QtOpenGL4.lib;ws2_32.lib;imm32.lib;winmm.lib;coin3.lib;soqt1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;$(QTHOME)\lib;$(OMDEV)\lib\mico-win32-msvc\;$(COINDIR)\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="basic.h" />
+    <ClInclude Include="Draw_Arc.h" />
+    <ClInclude Include="Draw_ellipse.h" />
+    <ClInclude Include="Draw_Line.h" />
+    <ClInclude Include="Draw_polygon.h" />
+    <ClInclude Include="Draw_rect.h" />
+    <ClInclude Include="Draw_RoundRect.h" />
+    <ClInclude Include="Graph_Scene.h" />
+    <ClInclude Include="Scene_Objects.h" />
+    <ClInclude Include="Tools.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Draw_Arc.cpp" />
+    <ClCompile Include="Draw_ellep.cpp" />
+    <ClCompile Include="Draw_line.cpp" />
+    <ClCompile Include="Draw_polygon.cpp" />
+    <ClCompile Include="Draw_rect.cpp" />
+    <ClCompile Include="Draw_RoundRect.cpp" />
+    <ClCompile Include="Graph_Scene.cpp" />
+    <ClCompile Include="moc_Graph_Scene.cpp" />
+    <ClCompile Include="moc_Tools.cpp" />
+    <ClCompile Include="Scene_Objects.cpp" />
+    <ClCompile Include="Tools.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
