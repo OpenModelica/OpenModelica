@@ -1587,7 +1587,8 @@ public function lowerAlgorithmInputsOutputs
   This function finds the inputs and the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the
-  variables that are assigned a value in the algorithm."
+  variables that are assigned a value in the algorithm. If a variable is an 
+  input and an output it will be treated as an output."
   input BackendDAE.Variables inVariables;
   input DAE.Algorithm inAlgorithm;
   output tuple<list<DAE.Exp>,list<DAE.Exp>> outTplExpExpLst;
@@ -1605,6 +1606,7 @@ algorithm
         ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
         inputs = Util.listUnionOnTrue(inputs1, inputs2, Expression.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
+        inputs = Util.listFold1(outputs,Util.listRemoveOnTrue,Expression.expEqual,inputs);
       then
         ((inputs,outputs));
   end matchcontinue;
