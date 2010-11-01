@@ -30,7 +30,7 @@
  */
 
 package DAEUtil
-" file:	 DAEUtil.mo
+" file:        DAEUtil.mo
   package:     DAE
   description: DAE management and output
 
@@ -100,8 +100,7 @@ algorithm
 end expTypeComplex;
 
 public function expTypeArray "returns true if type is array type
-Alternative names: isArrayType, isExpTypeArray
-"
+Alternative names: isArrayType, isExpTypeArray"
   input DAE.ExpType tp;
   output Boolean isArray;
 algorithm
@@ -141,52 +140,61 @@ public function getDerivativePaths " collects all paths representing derivative 
   output list<Absyn.Path> paths;
 algorithm
   paths := matchcontinue(funcDefs)
-  local list<Absyn.Path> pLst1,pLst2;
-    Absyn.Path p1,p2;
+    local 
+      list<Absyn.Path> pLst1,pLst2;
+      Absyn.Path p1,p2;
+    
     case({}) then {};
-    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=SOME(p2),lowerOrderDerivatives=pLst1)::funcDefs) equation
-      pLst2 = getDerivativePaths(funcDefs);
-      paths = Util.listUnion(p1::p2::pLst1,pLst2);
-    then paths;
-    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE(),lowerOrderDerivatives=pLst1)::funcDefs) equation
-      pLst2 = getDerivativePaths(funcDefs);
-      paths = Util.listUnion(p1::pLst1,pLst2);
-    then paths;
+    
+    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=SOME(p2),lowerOrderDerivatives=pLst1)::funcDefs)
+      equation
+        pLst2 = getDerivativePaths(funcDefs);
+        paths = Util.listUnion(p1::p2::pLst1,pLst2);
+      then 
+        paths;
+    
+    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE(),lowerOrderDerivatives=pLst1)::funcDefs)
+      equation
+        pLst2 = getDerivativePaths(funcDefs);
+        paths = Util.listUnion(p1::pLst1,pLst2);
+      then 
+        paths;
+    
     case(_::funcDefs) then getDerivativePaths(funcDefs);
   end matchcontinue;
 end getDerivativePaths;
 
 public function addEquationBoundString "
-Set the optional equationBound value
-"
+Set the optional equationBound value"
   input DAE.Exp bindExp;
   input Option<DAE.VariableAttributes> attr;
   output Option<DAE.VariableAttributes> oattr;
-algorithm oattr :=
-matchcontinue (bindExp,attr)
+algorithm 
+  oattr := matchcontinue (bindExp,attr)
     local
      	Option<DAE.Exp> e1,e2,e3,e4,e5,e6;
     	tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.StateSelect> sSelectOption,sSelectOption2;
       Option<Boolean> ip,fn;
       String s;
-  case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,_,ip,fn)))
-  then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,SOME(bindExp),ip,fn)));
+  
+    case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,_,ip,fn)))
+    then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,SOME(bindExp),ip,fn)));
     
-  case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,_,ip,fn)))
-  then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,SOME(bindExp),ip,fn));
+    case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,_,ip,fn)))
+    then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,SOME(bindExp),ip,fn));
     
-  case (bindExp,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn)))
-  then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
+    case (bindExp,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn)))
+    then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
     
-  case (bindExp,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn)))
-  then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn));
+    case (bindExp,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn)))
+    then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn));
        
-  case (bindExp,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn)))
-  then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,SOME(bindExp),ip,fn));
+    case (bindExp,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn)))
+    then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,SOME(bindExp),ip,fn));
       
-  case(_,_) equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
-   end matchcontinue;
+    case(_,_) equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
+  end matchcontinue;
 end addEquationBoundString;
 
 public function getClassList "get list of classes from Var"
@@ -200,17 +208,17 @@ algorithm
 end getClassList;
 
 public function getBoundStartEquation "
-Returned bound equation
-"
-input DAE.VariableAttributes attr;
-output DAE.Exp oe;
-algorithm oe := matchcontinue(attr)
-  local DAE.Exp beq;
-  case (DAE.VAR_ATTR_REAL(equationBound = SOME(beq))) then beq;
-  case (DAE.VAR_ATTR_INT(equationBound = SOME(beq))) then beq;
-  case (DAE.VAR_ATTR_BOOL(equationBound = SOME(beq))) then beq;
-  case (DAE.VAR_ATTR_ENUMERATION(equationBound = SOME(beq))) then beq;
-end matchcontinue;
+Returned bound equation"
+  input DAE.VariableAttributes attr;
+  output DAE.Exp oe;
+algorithm 
+  oe := matchcontinue(attr)
+    local DAE.Exp beq;
+    case (DAE.VAR_ATTR_REAL(equationBound = SOME(beq))) then beq;
+    case (DAE.VAR_ATTR_INT(equationBound = SOME(beq))) then beq;
+    case (DAE.VAR_ATTR_BOOL(equationBound = SOME(beq))) then beq;
+    case (DAE.VAR_ATTR_ENUMERATION(equationBound = SOME(beq))) then beq;
+  end matchcontinue;
 end getBoundStartEquation;
 
 protected import Algorithm;
@@ -244,7 +252,7 @@ algorithm
 	    list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
 	    String  id;
 	    DAE.ElementSource source "the origin of the element";
-            Option<SCode.Comment> cmt;
+	    Option<SCode.Comment> cmt;
 
 	  case(DAE.DAE({})) then  (DAE.DAE({}),DAE.DAE({}));
 
@@ -5257,8 +5265,7 @@ end addDaeFunction;
 
 public function addDaeExtFunction "add extermal functions present in the element list to the function tree
 Note: normal functions are skipped.
-See also addDaeFunction
-"
+See also addDaeFunction"
   input list<DAE.Function> funcs;
   input DAE.FunctionTree tree;
   output DAE.FunctionTree outTree;
