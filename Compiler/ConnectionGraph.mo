@@ -30,8 +30,8 @@
  */
 
 package ConnectionGraph
-" file:	 ConnectionGraph.mo
-  package:      ConnectionGraph
+" file:        ConnectionGraph.mo
+  package:     ConnectionGraph
   description: Constant propagation of expressions
 
   RCS: $Id$
@@ -79,13 +79,13 @@ public type PotentialRoots = list<tuple<DAE.ComponentRef,Real>> "potential roots
 
 public 
 uniontype ConnectionGraph "Input structure for connection breaking algorithm. It is collected during instantiation phase."
-    record GRAPH
-      Boolean updateGraph;
-      DefiniteRoots definiteRoots "Roots defined with Connection.root";
-      PotentialRoots potentialRoots "Roots defined with Connection.potentialRoot";
-      Edges branches "Edges defined with Connection.branch";
-      DaeEdges connections "Edges defined with connect statement";
-    end GRAPH;
+  record GRAPH
+    Boolean updateGraph;
+    DefiniteRoots definiteRoots "Roots defined with Connection.root";
+    PotentialRoots potentialRoots "Roots defined with Connection.potentialRoot";
+    Edges branches "Edges defined with Connection.branch";
+    DaeEdges connections "Edges defined with connect statement";
+  end GRAPH;
 end ConnectionGraph;
 
 public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} ) "Initial connection graph with no edges in it.";
@@ -97,10 +97,10 @@ public function handleOverconstrainedConnections
  this function gets the connection graph and adds the
  new connections to the DAE given as input and returns
  a new DAE"
- input ConnectionGraph inGraph;
- input DAE.DAElist inDAE;
- input String modelNameQualified;
- output DAE.DAElist outDAE;
+  input ConnectionGraph inGraph;
+  input DAE.DAElist inDAE;
+  input String modelNameQualified;
+  output DAE.DAElist outDAE;
 algorithm
   outDAE := matchcontinue(inGraph, inDAE, modelNameQualified)
     local
@@ -148,11 +148,11 @@ public function handleOverconstrainedConnectionsInSets
  this function gets the connection graph and adds the
  new connections to the DAE given as input and returns
  a new DAE"
- input ConnectionGraph inGraph;
- input Connect.Sets inSets;
- input Boolean isTopScope;
- output Connect.Sets outSets;
- output list<DAE.Element> outDAEElements;
+  input ConnectionGraph inGraph;
+  input Connect.Sets inSets;
+  input Boolean isTopScope;
+  output Connect.Sets outSets;
+  output list<DAE.Element> outDAEElements;
 algorithm
   (outSets,outDAEElements) := matchcontinue(inGraph, inSets, isTopScope)
     local
@@ -505,7 +505,8 @@ algorithm
     local
       list<DAE.Element> rest, elements;
       DAE.Element el;
-      DAE.ComponentRef cr1, cr2;
+      DAE.ComponentRef cr1, cr2; 
+      String str1, str2, str3;
     
     // handle the empty case
     case ({}, cr1, cr2) then {};
@@ -525,8 +526,6 @@ algorithm
         
     // if this element DID NOT came from this connect, let it be! 
     case (el::rest, cr1, cr2)
-      local 
-        String str1, str2, str3;
       equation
         false = originInConnect(el, cr1, cr2);
         elements = removeEquationsWithOrigin(rest, cr1, cr2);

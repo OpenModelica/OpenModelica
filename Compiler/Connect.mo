@@ -30,8 +30,8 @@
  */
 
 package Connect
-" file:	 Connect.mo
-  package:      Connect
+" file:        Connect.mo
+  package:     Connect
   description: Connection set management
 
   RCS: $Id$
@@ -44,7 +44,6 @@ package Connect
   Connect.mo is called from Inst.mo and is responsible for
   creation of all connect-equations later passed to the DAE module
   in DAE.mo."
-
 
 public import DAE;
 public import Prefix;
