@@ -10059,7 +10059,18 @@ algorithm
         res_str = System.stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
-    
+    case (DAE.ENUM_LITERAL(name = name, index = index), level)
+      local 
+        Absyn.Path name;
+        Integer index;
+        String indexStr;
+      equation
+        gen_str = genStringNTime("   |", level);
+        s = Absyn.pathString(name);
+        indexStr = intString(index);
+        res_str = System.stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", indexStr, "]", "\n"});
+      then
+        res_str;  
     case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
@@ -10705,6 +10716,7 @@ algorithm
     case (DAE.RCONST(real = _),cr) then false;
     case (DAE.SCONST(string = _),cr) then false;
     case (DAE.BCONST(bool = _),cr) then false;
+    case (DAE.ENUM_LITERAL(_, _), cr) then false;
     case (DAE.ARRAY(array = explist),cr)
       equation
         reslist = Util.listMap1(explist, expContains, cr);
