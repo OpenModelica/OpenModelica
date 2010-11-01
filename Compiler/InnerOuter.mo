@@ -699,7 +699,7 @@ algorithm
       DAE.ComponentRef cr1,cr2,cr1Outer,cr2Outer,crefPrefix;
       Absyn.InnerOuter io1,io2;
       Connect.OuterConnect oc;
-      Boolean keepInOuter,inner1,inner2,outer1,outer2,added,b1Outer,b2Outer;
+      Boolean keepInOuter,inner1,inner2,outer1,outer2,added,b1Outer,b2Outer,b1,b2,b3,b4;
       Connect.Face f1,f2;
       Prefix.Prefix scope;
       InstHierarchy ih;
@@ -753,7 +753,6 @@ algorithm
     
     // this case is for innerouter declarations, since we do not have them in environment we need to treat them in a special way 
     case(cache,env,ih,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source as DAE.SOURCE(info = info)))::outerConnects,setLst,crs,true)
-      local Boolean b1,b2,b3,b4;
       equation
         (b1,b3) = innerOuterBooleans(io1);
         (b2,b4) = innerOuterBooleans(io2);
@@ -1065,7 +1064,6 @@ algorithm
         failExceptForCheck();
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
-      local Absyn.InnerOuter io;
       equation
         crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr, isInnerOuterMatch);
@@ -1115,10 +1113,10 @@ input Absyn.InnerOuter io2;
 output Boolean prefix1;
 output Boolean prefix2;
 algorithm (prefix1,prefix2) := matchcontinue(io1,io2)
+  local Boolean b1,b2;
   case(Absyn.INNEROUTER(),Absyn.UNSPECIFIED()) then (true,false);
   case(Absyn.INNEROUTER(),Absyn.OUTER()) then (false,true);
   case(io1,io2)
-    local Boolean b1,b2;
       equation
         (_,b1) = innerOuterBooleans(io1);
         (_,b2) = innerOuterBooleans(io2);
@@ -1553,7 +1551,6 @@ algorithm
       Boolean protected_ "protected";
       DAE.Type type_ "type";
       DAE.Binding binding "binding ; equation modification";
-      DAE.Var instantiated "instantiated component";
       Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
       Env.InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
       Env.Env env "The environment of the instantiated component. Contains e.g. all sub components";
