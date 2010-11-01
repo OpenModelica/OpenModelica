@@ -81,6 +81,7 @@ package Env
   (packages and classes) are combined into the same data structure, enabling a
   uniform lookup mechanism "
 
+// public imports
 public import Absyn;
 public import ClassInf;
 public import DAE;
@@ -174,6 +175,7 @@ uniontype Item
 
 end Item;
 
+// protected imports
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
@@ -184,7 +186,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Print;
 protected import Util;
-protected import System;
 protected import Types;
 protected import OptManager;
 protected import RTOpts;
@@ -237,13 +238,13 @@ end newFrame;
 public function isTyped "
 Author BZ 2008-06
 This function checks wheter an InstStatus is typed or not.
-Currently used by Inst->update_components_in_env.
-"
-input InstStatus is;
-output Boolean b;
-algorithm b := matchcontinue(is)
-  case(VAR_UNTYPED()) then false;
-  case(_) then true;
+Currently used by Inst.updateComponentsInEnv."
+  input InstStatus is;
+  output Boolean b;
+algorithm 
+  b := matchcontinue(is)
+    case(VAR_UNTYPED()) then false;
+    case(_) then true;
   end matchcontinue;
 end isTyped;
 
@@ -257,7 +258,7 @@ public function openScope "function: openScope
   input Option<Ident> inIdentOption;
   input Option<ScopeType> inTypeOption;
   output Env outEnv;
-
+protected
   Frame f;
 algorithm
   f := newFrame(inBoolean, inIdentOption, inTypeOption);
@@ -270,10 +271,12 @@ public function inForLoopScope "returns true if environment has a frame that is 
 algorithm
   res := matchcontinue(env)
     local String name;
+    
     case(FRAME(optName = SOME(name))::_) 
       equation
         true = stringEq(name, forScopeName);
       then true;
+    
     case(_) then false;
   end matchcontinue;
 end inForLoopScope;
@@ -284,10 +287,12 @@ public function inForIterLoopScope "returns true if environment has a frame that
 algorithm
   res := matchcontinue(env)
     local String name;
+    
     case(FRAME(optName = SOME(name))::_) 
       equation
         true = stringEq(name, forIterScopeName);
       then true;
+    
     case(_) then false;
   end matchcontinue;
 end inForIterLoopScope;
@@ -2015,24 +2020,23 @@ public function avlTreeGet "  Get a value from the binary tree given a key.
   input AvlKey inKey;
   output AvlValue outValue;
 algorithm
-  outValue:=
-  matchcontinue (inAvlTree,inKey)
+  outValue := matchcontinue (inAvlTree,inKey)
     local
       AvlKey rkey,key;
       AvlValue rval,res;
-      Option<AvlTree> left,right;
+      Option<AvlTree> optLeft,optRight;
+      AvlTree left,right;
       Integer rhval;
     
     // hash func Search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
         0 = stringCompare(rkey, key);
       then
         rval;
     
     // search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
-      local AvlTree right;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
         1 = stringCompare(key,rkey);
         res = avlTreeGet(right, key);
@@ -2040,8 +2044,7 @@ algorithm
         res;
 
     // search to the left
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
-      local AvlTree left;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
         -1 = stringCompare(key,rkey);
         res = avlTreeGet(left, key);
