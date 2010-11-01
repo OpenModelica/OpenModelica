@@ -22,7 +22,6 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 public import Absyn;
 public import BaseHashTable;
 protected import Dump;
-protected import System;
 
 public type Key = Absyn.ComponentRef;
 public type Value = Integer;

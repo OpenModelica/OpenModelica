@@ -59,7 +59,6 @@ protected import Debug;
 protected import Dump;
 protected import Util;
 protected import RTOpts;
-protected import System;
 
 public
 type InstanceHierarchy = list<Instance> "an instance hierarchy is a list of instances";
