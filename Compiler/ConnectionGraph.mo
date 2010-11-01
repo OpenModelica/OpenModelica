@@ -826,9 +826,23 @@ protected function ord
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inEl1, inEl2)
-    local Real r1, r2;
-    case((_,r1), (_,r2))
-    then r1 >. r2;
+    local 
+      Real r1, r2;
+      DAE.ComponentRef c1, c2;
+      String s1, s2;
+      Boolean b;
+    
+    case((c1,r1), (c2,r2)) // if equal order by cref
+      equation
+        true = realEq(r1, r2);
+        s1 = ComponentReference.printComponentRefStr(c1);
+        s2 = ComponentReference.printComponentRefStr(c2);
+        1 = stringCompare(s1, s2);
+      then 
+        true;
+    
+    case((c1,r1), (c2,r2)) 
+      then r1 >. r2;
   end matchcontinue;
 end ord;
 
