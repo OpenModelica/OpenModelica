@@ -37,13 +37,14 @@ package ComponentReference
 
   RCS: $Id: Expression.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
 
-  This file contains the module `ComponentReference\', which contains functions
-  for ComponentRef.
-"
+  This file contains the module ComponentReference, 
+  which contains functions for ComponentRef."
 
+// public imports
 public import Absyn;
 public import DAE;
 
+// protected imports
 protected import ClassInf;
 protected import Debug;
 protected import Dump;
@@ -96,13 +97,14 @@ public function crefToPath
   input DAE.ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm
-  outPath:=
-  matchcontinue (inComponentRef)
+  outPath := matchcontinue (inComponentRef)
     local
       DAE.Ident i;
       Absyn.Path p;
       DAE.ComponentRef c;
+    
     case DAE.CREF_IDENT(ident = i,subscriptLst = {}) then Absyn.IDENT(i);
+    
     case DAE.CREF_QUAL(ident = i,subscriptLst = {},componentRef = c)
       equation
         p = crefToPath(c);
@@ -117,14 +119,16 @@ public function pathToCref
   input Absyn.Path inPath;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef:=
-  matchcontinue (inPath)
+  outComponentRef := matchcontinue (inPath)
     local
       DAE.Ident i;
       DAE.ComponentRef c;
       Absyn.Path p;
+    
     case Absyn.IDENT(name = i) then DAE.CREF_IDENT(i,DAE.ET_OTHER(),{});
+    
     case (Absyn.FULLYQUALIFIED(p)) then pathToCref(p);
+    
     case Absyn.QUALIFIED(name = i,path = p)
       equation
         c = pathToCref(p);        
@@ -1001,15 +1005,13 @@ algorithm
   end matchcontinue;
 end containWholeDim;
 
-protected function containWholeDim2 " A function to check if a cref contains a [:] wholedim element in the subscriptlist.
-"
+protected function containWholeDim2 "
+  A function to check if a cref contains a [:] wholedim element in the subscriptlist."
   input list<DAE.Subscript> inRef;
   input DAE.ExpType inType;
   output Boolean wholedim;
-
 algorithm
-  wholedim :=
-  matchcontinue(inRef,inType)
+  wholedim := matchcontinue(inRef,inType)
     local
       DAE.Subscript ss;
       list<DAE.Subscript> ssl;
@@ -1017,21 +1019,25 @@ algorithm
       Boolean b;
       DAE.ExpType tty;
       list<DAE.Dimension> ad;
+      DAE.Exp es1;      
+    
     case({},_) then false;
-    case((ss as DAE.WHOLEDIM())::ssl,DAE.ET_ARRAY(tty,ad))
-    then
-      true;
+    
+    case((ss as DAE.WHOLEDIM())::ssl,DAE.ET_ARRAY(tty,ad)) then true;
+    
     case((ss as DAE.SLICE(es1))::ssl, DAE.ET_ARRAY(tty,ad))
-      local DAE.Exp es1;
       equation
         true = containWholeDim3(es1,ad);
       then
         true;
+    
     case(_::ssl,DAE.ET_ARRAY(tty,ad))
       equation
         ad = Util.listStripFirst(ad);
         b = containWholeDim2(ssl,DAE.ET_ARRAY(tty,ad));
-      then b;
+      then 
+        b;
+    
     case(_::ssl,inType)
       equation
         wholedim = containWholeDim2(ssl,inType);
@@ -1040,33 +1046,33 @@ algorithm
   end matchcontinue;
 end containWholeDim2;
 
-protected function containWholeDim3 "Function: containWholeDim3
+protected function containWholeDim3 "function: containWholeDim3
 Verify that a slice adresses all dimensions"
-input DAE.Exp inExp;
-input list<DAE.Dimension> ad;
-output Boolean ob;
-algorithm ob := matchcontinue(inExp,ad)
-  local
-    list<DAE.Exp> expl;
-    Integer x1,x2;
-    DAE.Dimension d;
-  case(DAE.ARRAY(array=expl), d :: _)
-    equation
-      x1 = listLength(expl);
-      x2 = Expression.dimensionSize(d);
-      true = intEq(x1, x2);
-    then
-      true;
-  case(_,_)
-    then false;
+  input DAE.Exp inExp;
+  input list<DAE.Dimension> ad;
+  output Boolean ob;
+algorithm 
+  ob := matchcontinue(inExp,ad)
+    local
+      list<DAE.Exp> expl;
+      Integer x1,x2;
+      DAE.Dimension d;
+  
+    case(DAE.ARRAY(array=expl), d :: _)
+      equation
+        x1 = listLength(expl);
+        x2 = Expression.dimensionSize(d);
+        true = intEq(x1, x2);
+      then
+        true;
+    
+    case(_,_) then false;
   end matchcontinue;
 end containWholeDim3;
 
 /***************************************************/
 /* Getter  */
 /***************************************************/
-
-
 public function crefLastPath
   "Returns the last identifier of a cref as an Absyn.IDENT."
   input DAE.ComponentRef inComponentRef;
@@ -1088,12 +1094,13 @@ public function crefLastIdent
   input DAE.ComponentRef inComponentRef;
   output DAE.Ident outIdent;
 algorithm
-  outIdent:=
-  matchcontinue (inComponentRef)
+  outIdent := matchcontinue (inComponentRef)
     local
       DAE.Ident id,res;
       DAE.ComponentRef cr;
+    
     case (DAE.CREF_IDENT(ident = id)) then id;
+    
     case (DAE.CREF_QUAL(componentRef = cr))
       equation
         res = crefLastIdent(cr);
@@ -1107,12 +1114,13 @@ public function crefLastCref "
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm 
-  outComponentRef:= 
-  matchcontinue (inComponentRef)
+  outComponentRef := matchcontinue (inComponentRef)
     local
       DAE.Ident id;
       DAE.ComponentRef res,cr;
+    
     case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
+    
     case (DAE.CREF_QUAL(componentRef = cr))
       equation
         res = crefLastCref(cr);
@@ -1121,49 +1129,44 @@ algorithm
   end matchcontinue;
 end crefLastCref;
 
-public function crefType "Function: crefType 
-Function for extracting the type out of the first cref of a componentReference. 
-"
+public function crefType "function: crefType 
+Function for extracting the type out of the first cref of a componentReference. "
   input DAE.ComponentRef inRef;
   output DAE.ExpType res;
 algorithm
-  res :=
-  matchcontinue (inRef)
+  res := matchcontinue (inRef)
     local
       DAE.ExpType t2;
-      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
-      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
-      case(inRef)
-        local String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
-          s = printComponentRefStr(inRef);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
+      String s;
+    
+    case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+    
+    case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
+    
+    case(inRef)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
+        s = printComponentRefStr(inRef);
+        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", "\n");
+      then
+        fail();
   end matchcontinue;
 end crefType;
 
 public function crefLastType "returns the 'last' type of a cref.
-
-For instance, for the cref 'a.b' it returns the type in identifier 'b'
-"
+For instance, for the cref 'a.b' it returns the type in identifier 'b'"
   input DAE.ComponentRef inRef;
   output DAE.ExpType res;
 algorithm
-  res :=
-  matchcontinue (inRef)
+  res := matchcontinue (inRef)
     local
       DAE.ExpType t2; 
       DAE.ComponentRef cr;
-      case(inRef as DAE.CREF_IDENT(_,t2,_))
-        then
-          t2;
-      case(inRef as DAE.CREF_QUAL(_,_,_,cr))
-        then
-          crefLastType(cr);
+    
+    case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+    case(inRef as DAE.CREF_QUAL(_,_,_,cr)) then crefLastType(cr);
   end matchcontinue;
 end crefLastType;
 
@@ -1173,14 +1176,14 @@ function: crefSubs
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst:=
-  matchcontinue (inComponentRef)
+  outSubscriptLst := matchcontinue (inComponentRef)
     local
       DAE.Ident id;
       list<DAE.Subscript> subs,res;
       DAE.ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
-      then subs;
+    
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
+    
     case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
       equation
         res = crefSubs(cr);
@@ -1253,25 +1256,23 @@ algorithm
     local
       DAE.ExpType t2;
       DAE.Ident name;
-      case(inRef as DAE.CREF_IDENT(name,t2,_))
-        then
-          (name,t2);
-      case(inRef as DAE.CREF_QUAL(name,t2,_,_))
-        then
-          (name,t2);
-      case(inRef)
-        local String s;
-        equation
-					true = RTOpts.debugFlag("failtrace");
-          Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
-          s = printComponentRefStr(inRef);
-          Debug.fprint("failtrace", s);
-          Debug.fprint("failtrace", "\n");
-        then
-          fail();
+      String s;      
+    
+    case(inRef as DAE.CREF_IDENT(name,t2,_)) then (name,t2);
+    
+    case(inRef as DAE.CREF_QUAL(name,t2,_,_)) then (name,t2);
+    
+    case(inRef)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
+        s = printComponentRefStr(inRef);
+        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", "\n");
+      then
+        fail();
   end matchcontinue;
 end crefNameType;
-
 
 /***************************************************/
 /* Change  */
