@@ -223,7 +223,6 @@ algorithm
 
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,path,c)
-      local
       equation
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(

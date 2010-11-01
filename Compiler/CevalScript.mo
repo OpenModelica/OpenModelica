@@ -3415,7 +3415,7 @@ algorithm
         (cache,Values.STRING(retStr),st);
 
     // errors
-    case (cache,env,className,st,_) local
+    case (cache,env,className,st,_)
       equation
       classNameStr = Absyn.pathString(className);
       errorMsg = Error.printMessagesStr();
