@@ -30,18 +30,20 @@
  */
 
 package Convert
-" file:	 Convert.mo
-  package:      Convert
+" file:        Convert.mo
+  package:     Convert
   description: This file is part of a work-around implemented for the
-  valueblock construct in order to avoid ciruclar file dependencies.
-  It converts uniontypes located in Exp to similiar uniontypes located in DAE
-  and vise versa.
+               valueblock construct in order to avoid ciruclar file dependencies.
+               It converts uniontypes located in Exp to similiar uniontypes located 
+               in DAE and vice-versa.
 
   RCS: $Id$"
 
+// public imports
 public import Absyn;
 public import DAE;
 
+// protected imports
 protected import ComponentReference;
 protected import Expression;
 
@@ -74,12 +76,14 @@ algorithm
       list<Absyn.AlgorithmItem> localAccList1;
       list<DAE.Element> restLd,localAccList2;
       DAE.FunctionTree funcs;
+      Absyn.AlgorithmItem stmt;
+      DAE.Exp exp1,exp2;
+      Absyn.Exp left,right;
+      DAE.Element firstLd;
+    
     case ({},localAccList1,localAccList2) then (listReverse(localAccList1),listReverse(localAccList2));
+    
     case (DAE.EQUATION(exp1,exp2,_) :: restLd,localAccList1,localAccList2)
-      local
-        Absyn.AlgorithmItem stmt;
-        DAE.Exp exp1,exp2;
-        Absyn.Exp left,right;
       equation
         left = fromExpExpToAbsynExp(exp1);
         right = fromExpExpToAbsynExp(exp2);
@@ -87,9 +91,8 @@ algorithm
         localAccList1 = stmt::localAccList1;
         (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
+    
     case (firstLd :: restLd,localAccList1,localAccList2)
-      local
-        DAE.Element firstLd;
       equation
         localAccList2 = firstLd::localAccList2;
         (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
@@ -113,8 +116,3 @@ algorithm
 end fromExpCrefToAbsynCref;
 
 end Convert;
-
-
-
-
-
