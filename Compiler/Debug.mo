@@ -30,9 +30,9 @@
  */
 
 package Debug
-" file:	 Debug.mo
-  package:      Debug
-  description: debug printing
+" file:        Debug.mo
+  package:     Debug
+  description: Debug printing
 
   RCS: $Id$
 
@@ -44,9 +44,9 @@ package Debug
   fprint(\"inst\", \"Starting instantiation...\"). See runtime/rtopts.c for
   implementation of flag checking."
 
+// protected imports
 protected import RTOpts;
 protected import Print;
-protected import System;
 
 public function print
 "function: print
@@ -154,6 +154,7 @@ algorithm
       Type_a arg1;
       Type_b arg2;
       String flag;
+    
     case (flag,func,arg1,arg2)
       equation
         true = RTOpts.debugFlag(flag);
