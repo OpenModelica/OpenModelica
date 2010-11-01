@@ -31,7 +31,7 @@
 
 package Corba
 " file:        Corba.mo
-  package:      Corba
+  package:     Corba
   description: Modelica Corba communication module
 
   RCS: $Id$
@@ -72,5 +72,6 @@ public function close
 
   external "C" ;
 end close;
+
 end Corba;
 

@@ -30,7 +30,7 @@
  */
 
 package DAE
-" file:	 DAE.mo
+" file:        DAE.mo
   package:     DAE
   description: DAE management and output
 
@@ -41,6 +41,7 @@ package DAE
   containing only flat modelica, i.e. equations, algorithms, variables and
   functions."
 
+// public imports
 public import Absyn;
 public import ClassInf;
 public import SCode;
@@ -57,50 +58,35 @@ public constant String UNIQUEIO = "$unique$outer$";
 public constant String derivativeNamePrefix="$DER";
 
 
-
 public uniontype VarKind
-  record VARIABLE end VARIABLE;
-
-  record DISCRETE end DISCRETE;
-
-  record PARAM end PARAM;
-
-  record CONST end CONST;
-
+  record VARIABLE "variable" end VARIABLE;
+  record DISCRETE "discrete" end DISCRETE;
+  record PARAM "parameter"   end PARAM;
+  record CONST "constant"    end CONST;
 end VarKind;
 
 public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
    it is not a connector variable at all."
   record FLOW end FLOW;
-
   record NON_FLOW end NON_FLOW;
-
   record NON_CONNECTOR end NON_CONNECTOR;
-
 end Flow;
 
 public uniontype Stream "The Stream of a variable indicates if it is a Stream variable or not, or if
    it is not a connector variable at all."
   record STREAM end STREAM;
-
   record NON_STREAM end NON_STREAM;
-
   record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
-
 end Stream;
 
-
 public uniontype VarDirection
-  record INPUT end INPUT;
-
-  record OUTPUT end OUTPUT;
-
-  record BIDIR end BIDIR;
-
+  record INPUT  "input"                   end INPUT;
+  record OUTPUT "output"                  end OUTPUT;
+  record BIDIR  "neither input or output" end BIDIR;
 end VarDirection;
 
 public uniontype VarProtection
-  record PUBLIC "public variables" end PUBLIC;
+  record PUBLIC "public variables"       end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
 end VarProtection;
 
