@@ -34,12 +34,14 @@ package Graphviz
   file:	       Graphviz.mo
   package:     Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
-  representation. This module generates the textual input to graphviz from a
-  tree defined using the data structures defined here, e.g. Node for tree
-  nodes. See http://www.research.att.com/sw/tools/graphviz/ .
-
+               representation. This module generates the textual input 
+               to graphviz from a tree defined using the data structures 
+               defined here, e.g. Node for tree  nodes. 
+               See 
+                  http://www.research.att.com/sw/tools/graphviz/.
+  
   RCS: $Id$
-
+  
   Input: The tree constructed from data structures in Graphviz
   Output: Textual input to graphviz, written to stdout."
 
@@ -56,8 +58,7 @@ public
 uniontype Node "A graphviz Node is a node of the graph.
 	  It has a type and attributes and children.
 	  It can also have a list of labels, provided by the LNODE
-	  constructor.
-	"
+	  constructor."
   record NODE
     Type type_;
     Attributes attributes;
@@ -92,9 +93,7 @@ public constant Attribute box=ATTR("shape","box");
 
 public function dump "Relations
   function: dump
-
-  Dumps a Graphviz Node on stdout.
-"
+  Dumps a Graphviz Node on stdout."
   input Node node;
   Label nm;
 algorithm
@@ -104,19 +103,17 @@ algorithm
 end dump;
 
 protected function dumpNode "function dumpNode
-
-  Dumps a node to a string.
-"
+  Dumps a node to a string."
   input Node inNode;
   output Ident outIdent;
 algorithm
-  outIdent:=
-  matchcontinue (inNode)
+  outIdent := matchcontinue (inNode)
     local
       Label nm,typlbl,out,typ,lblstr;
       Attributes newattr,attr;
       Children children;
       list<Label> lbl_1,lbl;
+    
     case (NODE(type_ = typ,attributes = attr,children = children))
       equation
         nm = nodename(typ);
@@ -127,6 +124,7 @@ algorithm
         dumpChildren(nm, children);
       then
         nm;
+    
     case (LNODE(type_ = typ,labelLst = lbl,attributes = attr,children = children))
       equation
         nm = nodename(typ);
@@ -142,9 +140,7 @@ algorithm
 end dumpNode;
 
 protected function makeLabel "function: makeLabel
-
-  Creates a label from a list of strings.
-"
+  Creates a label from a list of strings."
   input list<String> sl;
   output String s2;
   Label s0,s1;
@@ -155,24 +151,24 @@ algorithm
 end makeLabel;
 
 protected function makeLabelReq "function: makeLabelReq
-
-  Helper function to make_label
-"
+  Helper function to makeLabel"
   input list<String> inStringLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inStringLst)
+  outString := matchcontinue (inStringLst)
     local
       Label s,res,s1,s2,old;
       list<Label> rest;
+    
     case {s} then s;
+    
     case {s1,s2}
       equation
         s = stringAppend(s1, "\\n");
         res = stringAppend(s, s2);
       then
         res;
+    
     case (s1 :: rest)
       equation
         old = makeLabelReq(rest);
@@ -184,19 +180,18 @@ algorithm
 end makeLabelReq;
 
 protected function dumpChildren "function: dumpChildren
-
-  Helper function to dump_node
-"
+  Helper function to dumpNode"
   input Ident inIdent;
   input Children inChildren;
 algorithm
-  _:=
-  matchcontinue (inIdent,inChildren)
+  _ := matchcontinue (inIdent,inChildren)
     local
       Label nm,parent;
       Node node;
       Children rest;
+    
     case (_,{}) then ();
+    
     case (parent,(node :: rest))
       equation
         nm = dumpNode(node);
@@ -208,10 +203,8 @@ algorithm
 end dumpChildren;
 
 protected function nodename "function: nodename
-
   Creates a unique node name,
-  changed use of str as part of nodename, since it may contain spaces
-"
+  changed use of str as part of nodename, since it may contain spaces"
   input String str;
   output String s;
   Integer i;
@@ -223,9 +216,7 @@ algorithm
 end nodename;
 
 protected function printEdge "function: printEdge
-
-  Prints an edge between two nodes.
-"
+  Prints an edge between two nodes."
   input Ident n1;
   input Ident n2;
   Label str;
@@ -236,9 +227,7 @@ algorithm
 end printEdge;
 
 protected function makeEdge "function: makeEdge
-
-  Creates a string representing an edge between two nodes.
-"
+  Creates a string representing an edge between two nodes."
   input Ident n1;
   input Ident n2;
   output String str;
@@ -249,9 +238,7 @@ algorithm
 end makeEdge;
 
 protected function makeNode "function: makeNode
-
-  Creates string from a node.
-"
+  Creates string from a node."
   input Ident nm;
   input Attributes attr;
   output String str;
@@ -263,9 +250,7 @@ algorithm
 end makeNode;
 
 protected function makeAttr "function: makeAttr
-
-  Creates a string from an Attribute list.
-"
+  Creates a string from an Attribute list."
   input list<Attribute> l;
   output String str;
   Label res,s;
@@ -276,23 +261,22 @@ algorithm
 end makeAttr;
 
 protected function makeAttrReq "function: makeAttrReq
-
-  Helper function to make_attr_req.
-"
+  Helper function to makeAttrReq."
   input list<Attribute> inAttributeLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAttributeLst)
+  outString := matchcontinue (inAttributeLst)
     local
       Label s,str,name,v,old,s_1,s_2;
       list<Attribute> rest;
+    
     case {ATTR(name = name,value = v)}
       equation
         s = stringAppend(name, "=");
         str = stringAppend(s, v);
       then
         str;
+    
     case ((ATTR(name = name,value = v) :: rest))
       equation
         old = makeAttrReq(rest);
@@ -304,5 +288,6 @@ algorithm
         str;
   end matchcontinue;
 end makeAttrReq;
+
 end Graphviz;
 
