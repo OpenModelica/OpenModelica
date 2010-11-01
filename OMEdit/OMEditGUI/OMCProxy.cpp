@@ -354,16 +354,21 @@ QString OMCProxy::getVersion()
 
 bool OMCProxy::setAnnotationVersion(int version)
 {
+    QString installationDir;
+    // Ask OpenModelica about where it is installed
+    sendCommand("getInstallationDirectoryPath()");
+    installationDir = getResult();
+    installationDir = installationDir.remove(installationDir.count()-1,1).remove(0,1);
     if (version == OMCProxy::ANNOTATION_VERSION2X)
     {
         mAnnotationVersion = OMCProxy::ANNOTATION_VERSION2X;
-        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl221"));
+        setEnvironmentVar("OPENMODELICALIBRARY", installationDir.append("/lib/omlibrary/msl221"));
         sendCommand("setAnnotationVersion(\"2.x\")");
     }
     else if (version == OMCProxy::ANNOTATION_VERSION3X)
     {
         mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
-        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl31"));
+        setEnvironmentVar("OPENMODELICALIBRARY", installationDir.append("/lib/omlibrary/msl31"));
         sendCommand("setAnnotationVersion(\"3.x\")");
     }
 
