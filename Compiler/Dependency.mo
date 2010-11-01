@@ -39,12 +39,14 @@ package Dependency
 
   This package builds a dependency list starting from a class."
 
+// public imports
 public import Absyn;
 public import AbsynDep;
 public import SCode;
 public import Env;
 public import Interactive;
 
+// protected imports
 protected import BaseHashTable;
 protected import HashTable2;
 protected import ComponentReference;
@@ -655,65 +657,87 @@ protected function buildClassDependsinEqns "Build class dependencies from equati
   output AbsynDep.Depends outDep;
 algorithm
  outDep := matchcontinue(eqns,optPath,cname,dep)
-   local  AbsynDep.Depends d; Absyn.Program p; Env.Env env;HashTable2.HashTable ht;
+   local  
+     AbsynDep.Depends d; 
+     Absyn.Program p; 
+     Env.Env env;     
      Absyn.Exp e,e1,e2;
      list<Absyn.EquationItem> teqns,feqns,whenEqns;
      list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifeqns,elseWhenEqns;
-     Absyn.FunctionArgs fargs; Absyn.ComponentRef cr;
+     Absyn.FunctionArgs fargs; 
+     Absyn.ComponentRef cr;
      Absyn.Path path,usesName,cname2;
      HashTable2.HashTable ht;
      Absyn.ForIterators forIter;
+   
    case({},optPath,cname,(d,p,env,ht)) then d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_IF(e,teqns,elseifeqns,feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinElseIfEqns(elseifeqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(teqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-   then d;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_IF(e,teqns,elseifeqns,feqns))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsinElseIfEqns(elseifeqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(teqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_EQUALS(e1,e2))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsInExp(e2,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_EQUALS(e1,e2))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsInExp(e2,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(_,_))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(_,_))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,SOME(e))},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,SOME(e))},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   /* adrpo: TODO! add the full ForIterators support */
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE())},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
+   // adrpo: TODO! FIXME! add the full ForIterators support
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE())},feqns))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_WHEN_E(e,whenEqns,elseWhenEqns))::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(whenEqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinElseIfEqns(elseWhenEqns,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_WHEN_E(e,whenEqns,elseWhenEqns))::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(whenEqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinElseIfEqns(elseWhenEqns,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(cr,fargs))::eqns,optPath as SOME(cname2),cname,(d,p,env,ht)) equation
-     d = buildClassDependsInFuncargs(fargs,optPath,cname,(d,p,env,ht));
-     path = Absyn.crefToPath(cr);
-     usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
-     cname = addPathScope(cname,optPath);
-     d = AbsynDep.addDependency(d,cname2,usesName);
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
-   case(_::eqns,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
-   then d;
- end matchcontinue;
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(cr,fargs))::eqns,optPath as SOME(cname2),cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsInFuncargs(fargs,optPath,cname,(d,p,env,ht));
+       path = Absyn.crefToPath(cr);
+       usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
+       cname = addPathScope(cname,optPath);
+       d = AbsynDep.addDependency(d,cname2,usesName);
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
+   
+   case(_::eqns,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
+     then 
+       d;
+  end matchcontinue;
 end buildClassDependsinEqns;
 
 protected function buildClassDependsinElseIfEqns ""
@@ -790,33 +814,40 @@ protected function buildClassDependsInExpVisitor "visitor function fo building c
   output tuple<Absyn.Exp,tuple<Option<Absyn.Path>,Absyn.Path,tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable>>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
-  local Option<Absyn.Path> optPath;
-    Absyn.Path cname,path,usesName,cname2;
-    AbsynDep.Depends d;
-    Absyn.Program p;
-    Env.Env env;
-    Absyn.Exp e;
-    Absyn.ComponentRef cr;
-    HashTable2.HashTable ht;
-    case((e as Absyn.CALL(cr,_),(optPath as SOME(cname2),cname,(d,p,env,ht)))) equation
-      path = Absyn.crefToPath(cr);
-      usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
-      d = AbsynDep.addDependency(d,cname2,usesName);
-    then ((e,(optPath,cname,(d,p,env,ht))));
-
-    /* constants */
-    case((e as Absyn.CREF(cr),(optPath as SOME(cname2),cname,(d,p,env,ht))))
-      local String compString;
-        list<DAE.Exp> dbgList;
+    local 
+      Option<Absyn.Path> optPath;
+      Absyn.Path cname,path,usesName,cname2;
+      AbsynDep.Depends d;
+      Absyn.Program p;
+      Env.Env env;
+      Absyn.Exp e;
+      Absyn.ComponentRef cr;
+      HashTable2.HashTable ht;
+      String compString;
+      list<DAE.Exp> dbgList;
+    
+    // calls
+    case((e as Absyn.CALL(cr,_),(optPath as SOME(cname2),cname,(d,p,env,ht)))) 
       equation
-      compString = Absyn.printComponentRefStr(cr);
-      cr = Absyn.crefStripLastSubs(cr);
-      path = Absyn.crefToPath(cr);
-      failure(_ = BaseHashTable.get(ComponentReference.makeCrefIdent(compString, DAE.ET_OTHER(),{}),ht)) "do not add local variables to depndencies";
-      (usesName as Absyn.FULLYQUALIFIED(_)) = absynMakeFullyQualified(path,optPath,cname,env,p);
-      d = AbsynDep.addDependency(d,cname2,usesName);
-    then ((e,(optPath,cname,(d,p,env,ht))));
+        path = Absyn.crefToPath(cr);
+        usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
+        d = AbsynDep.addDependency(d,cname2,usesName);
+      then 
+        ((e,(optPath,cname,(d,p,env,ht))));
 
+    // constants
+    case((e as Absyn.CREF(cr),(optPath as SOME(cname2),cname,(d,p,env,ht))))
+      equation
+        compString = Absyn.printComponentRefStr(cr);
+        cr = Absyn.crefStripLastSubs(cr);
+        path = Absyn.crefToPath(cr);
+        failure(_ = BaseHashTable.get(ComponentReference.makeCrefIdent(compString, DAE.ET_OTHER(),{}),ht)) "do not add local variables to depndencies";
+        (usesName as Absyn.FULLYQUALIFIED(_)) = absynMakeFullyQualified(path,optPath,cname,env,p);
+        d = AbsynDep.addDependency(d,cname2,usesName);
+      then 
+        ((e,(optPath,cname,(d,p,env,ht))));
+
+    // any other case
     case(tpl) then tpl;
   end matchcontinue;
 end buildClassDependsInExpVisitor;
@@ -828,13 +859,21 @@ protected function buildClassDependsinArrayDimOpt " help function to e.g buildCl
   input tuple<AbsynDep.Depends,Absyn.Program,Env.Env,HashTable2.HashTable> dep;
   output AbsynDep.Depends outDep;
 algorithm
- outDep := matchcontinue(adOpt,optPath,cname,dep)
-   local AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;HashTable2.HashTable ht;
-   case(NONE(),optPath,cname,(d,p,env,ht)) then d;
-   case(SOME(ad),optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
-   then d;
- end matchcontinue;
+  outDep := matchcontinue(adOpt,optPath,cname,dep)
+    local 
+      AbsynDep.Depends d; 
+      Absyn.Program p; 
+      Env.Env env; 
+      Absyn.ArrayDim ad;
+      HashTable2.HashTable ht;
+   
+    case(NONE(),optPath,cname,(d,p,env,ht)) then d;
+    
+    case(SOME(ad),optPath,cname,(d,p,env,ht)) 
+      equation
+        d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
+      then d;
+  end matchcontinue;
 end buildClassDependsinArrayDimOpt;
 
 protected function buildClassDependsInExpList "build class dependencies from exp list"
@@ -849,15 +888,16 @@ algorithm
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       Absyn.Exp e;
       HashTable2.HashTable ht;
-      case({},optPath,cname,(d,p,env,ht)) then d;
-
-      case(e::expl,optPath,cname,(d,p,env,ht)) equation
+    
+    case({},optPath,cname,(d,p,env,ht)) then d;
+          
+    case(e::expl,optPath,cname,(d,p,env,ht)) 
+      equation
         d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
         d = buildClassDependsInExpList(expl,optPath,cname,(d,p,env,ht));
       then d;
   end matchcontinue;
 end buildClassDependsInExpList;
-
 
 protected function buildClassDependsinElts "help function to buildClassDependsinParts"
   input list<Absyn.ElementItem> elts;
@@ -867,17 +907,25 @@ protected function buildClassDependsinElts "help function to buildClassDependsin
   output AbsynDep.Depends outDep;
 algorithm
  outDep := matchcontinue(elts,optPath,cname,dep)
- local Absyn.ElementSpec eltSpec;
-   AbsynDep.Depends d; Absyn.Program p; Env.Env env;HashTable2.HashTable ht;
+   local 
+     Absyn.ElementSpec eltSpec;
+     AbsynDep.Depends d; 
+     Absyn.Program p; 
+     Env.Env env;
+     HashTable2.HashTable ht;
+   
    case({},optPath,cname,(d,p,env,ht)) then d;
-
-   case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=eltSpec))::elts,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsInEltSpec(false,eltSpec,optPath,cname,(d,p,env,ht));
-     d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));
-   then d;
-   case(_::elts,optPath,cname,(d,p,env,ht)) equation
-     d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));
-   then d;
+   
+   case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=eltSpec))::elts,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsInEltSpec(false,eltSpec,optPath,cname,(d,p,env,ht));
+       d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));
+     then d;
+   
+   case(_::elts,optPath,cname,(d,p,env,ht)) 
+     equation
+       d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));
+     then d;
  end matchcontinue;
 end buildClassDependsinElts;
 
@@ -889,10 +937,16 @@ protected function buildClassDependsInExp "build class dependencies from Absyn.E
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(e,optPath,cname,dep)
-  local AbsynDep.Depends d; Absyn.Program p; Env.Env env; HashTable2.HashTable ht;
-    case(e,optPath,cname,(d,p,env,ht)) equation
-      ((_,(_,_,(outDep,_,_,_)))) = Absyn.traverseExp(e,buildClassDependsInExpVisitor,(optPath,cname,(d,p,env,ht)));
-     then outDep;
+    local 
+      AbsynDep.Depends d; 
+      Absyn.Program p; 
+      Env.Env env; 
+      HashTable2.HashTable ht;
+    
+    case(e,optPath,cname,(d,p,env,ht)) 
+      equation
+        ((_,(_,_,(outDep,_,_,_)))) = Absyn.traverseExp(e,buildClassDependsInExpVisitor,(optPath,cname,(d,p,env,ht)));
+      then outDep;
   end matchcontinue;
 end buildClassDependsInExp;
 
@@ -904,34 +958,42 @@ protected function buildClassDependsInClassDef "help function to buildClassDepen
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(cdef,optPath,cname,dep)
-  local Absyn.TypeSpec typeSpec;
-    Absyn.Program prg; AbsynDep.Depends d; Env.Env env;
-    list<Absyn.ClassPart> parts; Absyn.ElementAttributes attr;
-    HashTable2.HashTable ht;
-    case (Absyn.DERIVED(typeSpec=typeSpec,attributes=attr),optPath,cname,(d,prg,env,ht)) equation
-      d = buildClassDependsInTypeSpec(typeSpec,optPath,cname,(d,prg,env,ht));
-      d = buildClassDependsInElementAttr(attr,optPath,cname,(d,prg,env,ht));
-    then d;
+    local 
+      Absyn.TypeSpec typeSpec;
+      Absyn.Program prg; 
+      AbsynDep.Depends d; 
+      Env.Env env;
+      list<Absyn.ClassPart> parts; 
+      Absyn.ElementAttributes attr;
+      HashTable2.HashTable ht;
+    
+    case (Absyn.DERIVED(typeSpec=typeSpec,attributes=attr),optPath,cname,(d,prg,env,ht)) 
+      equation
+        d = buildClassDependsInTypeSpec(typeSpec,optPath,cname,(d,prg,env,ht));
+        d = buildClassDependsInElementAttr(attr,optPath,cname,(d,prg,env,ht));
+      then d;
 
-    case (Absyn.PARTS(classParts=parts),optPath,cname,(d,prg,env,ht)) equation
-      ht = createLocalVariableStruct(parts,ht);
-      d = buildClassDependsinParts(parts,optPath,cname,(d,prg,env,ht));
-    then d;
+    case (Absyn.PARTS(classParts=parts),optPath,cname,(d,prg,env,ht)) 
+      equation
+        ht = createLocalVariableStruct(parts,ht);
+        d = buildClassDependsinParts(parts,optPath,cname,(d,prg,env,ht));
+      then d;
 
-    case(Absyn.CLASS_EXTENDS(parts=parts),optPath,cname,(d,prg,env,ht)) equation
-      ht = createLocalVariableStruct(parts,ht);
-      d = buildClassDependsinParts(parts,optPath,cname,(d,prg,env,ht));
-    then d;
+    case(Absyn.CLASS_EXTENDS(parts=parts),optPath,cname,(d,prg,env,ht)) 
+      equation
+        ht = createLocalVariableStruct(parts,ht);
+        d = buildClassDependsinParts(parts,optPath,cname,(d,prg,env,ht));
+      then d;
 
     case(Absyn.ENUMERATION(enumLiterals=_),_,_,(d,_,_,_)) then d;
 
-   /* case(_,_,_,_) equation
-      print("buildClassDependsInClassDef failed\n");
-    then fail();*/
-
+   // case(_,_,_,_) 
+   //   equation
+   //     print("buildClassDependsInClassDef failed\n");
+   //   then 
+   //     fail();
   end matchcontinue;
 end buildClassDependsInClassDef;
-
 
 protected function buildClassDependsInTypeSpec "help function to e.g. buildClassDependsInClassDef"
   input Absyn.TypeSpec typeSpec;
@@ -941,13 +1003,17 @@ protected function buildClassDependsInTypeSpec "help function to e.g. buildClass
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(typeSpec,optPath,cname,dep)
-  local Absyn.Path path,usesName,cname2;
-    AbsynDep.Depends d; Absyn.Program p; Env.Env env; Option<Absyn.ArrayDim> adOpt;HashTable2.HashTable ht;
-    case(Absyn.TPATH(path = path,arrayDim=adOpt),optPath as SOME(cname2),cname,(d,p,env,ht)) equation
-      d = buildClassDependsinArrayDimOpt(adOpt,optPath,cname,(d,p,env,ht));
-      usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
-      d = AbsynDep.addDependency(d,cname2,usesName);
-    then d;
+    local 
+      Absyn.Path path,usesName,cname2;
+      AbsynDep.Depends d; Absyn.Program p; Env.Env env; 
+      Option<Absyn.ArrayDim> adOpt;HashTable2.HashTable ht;
+    
+    case(Absyn.TPATH(path = path,arrayDim=adOpt),optPath as SOME(cname2),cname,(d,p,env,ht)) 
+      equation
+        d = buildClassDependsinArrayDimOpt(adOpt,optPath,cname,(d,p,env,ht));
+        usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
+        d = AbsynDep.addDependency(d,cname2,usesName);
+      then d;
   end matchcontinue;
 end buildClassDependsInTypeSpec;
 
@@ -959,12 +1025,15 @@ protected function buildClassDependsInElementAttr "help function to buildClassDe
   output AbsynDep.Depends outDep;
 algorithm
   outDep := matchcontinue(eltAttr,optPath,cname,dep)
-  local Absyn.Path path,usesName,cname2;
-    AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;
-    HashTable2.HashTable ht;
-    case(Absyn.ATTR(arrayDim=ad),optPath,cname,(d,p,env,ht)) equation
-      d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
-    then d;
+    local 
+      Absyn.Path path,usesName,cname2;
+      AbsynDep.Depends d; Absyn.Program p; Env.Env env; Absyn.ArrayDim ad;
+      HashTable2.HashTable ht;
+    
+    case(Absyn.ATTR(arrayDim=ad),optPath,cname,(d,p,env,ht)) 
+      equation
+        d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
+      then d;
   end matchcontinue;
 end buildClassDependsInElementAttr;
 
@@ -1257,14 +1326,24 @@ protected function extractProgramVisitor "Visitor function to extractProgram"
   input tuple<Absyn.Class, Option<Absyn.Path>,tuple<AbsynDep.AvlTree,list<Absyn.Class>,list<Option<Absyn.Path>>>> inTpl;
   output tuple<Absyn.Class, Option<Absyn.Path>,tuple<AbsynDep.AvlTree,list<Absyn.Class>,list<Option<Absyn.Path>>>> outTpl;
 algorithm
- outTpl := matchcontinue(inTpl)
- local Absyn.Path path; Absyn.Class cl; String id; AbsynDep.AvlTree tree; list<Absyn.Class> cls; list<Option<Absyn.Path>> pts;
-   case((cl as Absyn.CLASS(name=id),NONE(),(tree,cls,pts))) equation
-     _ = AbsynDep.avlTreeGet(tree,Absyn.IDENT(id));
-    then ((cl,NONE(),(tree,cl::cls,NONE()::pts)));
-   case((cl as Absyn.CLASS(name=id),SOME(path),(tree,cls,pts))) equation
-     _ = AbsynDep.avlTreeGet(tree,Absyn.joinPaths(path,Absyn.IDENT(id)));
-   then ((cl,SOME(path),(tree,cl::cls,SOME(path)::pts)));
+  outTpl := matchcontinue(inTpl)
+    local 
+      Absyn.Path path; Absyn.Class cl; 
+      String id; AbsynDep.AvlTree tree; 
+      list<Absyn.Class> cls; 
+      list<Option<Absyn.Path>> pts;
+    
+    case((cl as Absyn.CLASS(name=id),NONE(),(tree,cls,pts))) 
+      equation
+        _ = AbsynDep.avlTreeGet(tree,Absyn.IDENT(id));
+      then 
+        ((cl,NONE(),(tree,cl::cls,NONE()::pts)));
+   
+    case((cl as Absyn.CLASS(name=id),SOME(path),(tree,cls,pts))) 
+      equation
+        _ = AbsynDep.avlTreeGet(tree,Absyn.joinPaths(path,Absyn.IDENT(id)));
+      then 
+        ((cl,SOME(path),(tree,cl::cls,SOME(path)::pts)));
  end matchcontinue;
 end extractProgramVisitor;
 
@@ -1272,7 +1351,7 @@ protected function createTopLevelTotalClass "Creates a top level total class"
   input Absyn.Path modelName;
   output Absyn.Class cl;
 protected
-String classStr,classStr2; Absyn.Info info; Absyn.ElementSpec elementspec;
+  String classStr,classStr2; Absyn.Info info; Absyn.ElementSpec elementspec;
 algorithm
   classStr:= Absyn.pathString(modelName);
   classStr2 := System.stringReplace(classStr,".","_");
