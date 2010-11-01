@@ -1252,6 +1252,15 @@ algorithm
         res_str = stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
+
+    case (DAE.ENUM_LITERAL(name = fcn, index = i), level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        s = Absyn.pathString(fcn);
+        istr = intString(i);
+        res_str = stringAppendList({gen_str, "ENUM_LITERAL ", s, " [", istr, "]", "\n"});
+      then
+        res_str;  
     
     case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation

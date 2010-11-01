@@ -5738,7 +5738,7 @@ algorithm
     case (DAE.RCONST(real = _),cr) then false;
     case (DAE.SCONST(string = _),cr) then false;
     case (DAE.BCONST(bool = _),cr) then false;
-    
+    case (DAE.ENUM_LITERAL(name=_), cr) then false;
     case (DAE.ARRAY(array = explist),cr)
       equation
         reslist = Util.listMap1(explist, expContains, cr);
