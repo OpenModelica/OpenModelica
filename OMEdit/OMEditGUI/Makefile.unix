@@ -6,4 +6,4 @@ OMEdit: build
 build:
 	ln -sf ../OMNotebook/3Dpkg ../
 	ln -sf ../OMNotebook/Pltpkg2 ../
-	qmake && make -f Makefile
+	qmake && $(MAKE) -f Makefile
