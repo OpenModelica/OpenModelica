@@ -34,7 +34,7 @@ package InnerOuter
   package:     InnerOuter
   description: Instance hierarchy and functionality to deal with Inner/Outer definitions
 
-  RCS: $Id: InnerOuter.mo 4847 2010-01-21 22:45:09Z adrpo $"
+  RCS: $Id$"
 
 import Absyn;
 import DAE;

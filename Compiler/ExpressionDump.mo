@@ -35,7 +35,7 @@ package ExpressionDump
   package:     ExpressionDump
   description: ExpressionDump
 
-  RCS: $Id: Expression.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
+  RCS: $Id$
 
   This file contains the module ExpressionDump, which contains functions
   to dump and print DAE.Expression."

@@ -35,7 +35,7 @@ package CevalFunction
   description:  This module constant evaluates DAE.Function objects, i.e.
                 modelica functions defined by the user.
 
-  RCS: $Id: CevalFunction.mo 6676 2010-10-28 09:26:48Z adrpo $
+  RCS: $Id$
 "
 
 // public imports

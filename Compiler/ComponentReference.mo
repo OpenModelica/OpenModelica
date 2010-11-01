@@ -35,7 +35,7 @@ package ComponentReference
   package:     ComponentReference
   description: All stuff for ComponentRef datatypes
 
-  RCS: $Id: Expression.mo 6540 2010-10-22 21:07:52Z sjoelund.se $
+  RCS: $Id$
 
   This file contains the module ComponentReference, 
   which contains functions for ComponentRef."

@@ -34,7 +34,7 @@ package PrefixUtil
   package:     PrefixUtil
   description: PrefixUtil management
 
-  RCS: $Id: PrefixUtil.mo 4847 2010-01-21 22:45:09Z adrpo $
+  RCS: $Id$
 
   When instantiating an expression, there is a prefix that
   has to be added to each variable name to be able to use it in the

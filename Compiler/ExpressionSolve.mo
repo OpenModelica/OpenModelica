@@ -35,7 +35,7 @@ package ExpressionSolve
   package:     ExpressionSolve
   description: ExpressionSolve
 
-  RCS: $Id: ExpressionSolve.mo 6615 2010-10-26 14:21:30Z Frenkel TUD $
+  RCS: $Id$
 
   This file contains the module ExpressionSolve, which contains functions
   to solve a DAE.Exp for a DAE.Exp"

@@ -35,7 +35,7 @@ package Dependency
   description: This module contains functionality for dependency
                analysis of models used for saveTotalProgram.
 
-  $Id: Dependency.mo 5160 2010-03-17 14:33:27Z petar $
+  $Id$
 
   This package builds a dependency list starting from a class."
 

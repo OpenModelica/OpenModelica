@@ -34,7 +34,7 @@ package BackendDump
   package:     BackendDump
   description: Unparsing the BackendDAE structure
 
-  RCS: $Id: BackendDAE.mo 6553 2010-10-24 15:58:01Z sjoelund.se $
+  RCS: $Id$
 "
 
 public import BackendDAE;

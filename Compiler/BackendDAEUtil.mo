@@ -34,7 +34,7 @@ package BackendDAEUtil
   package:     BackendDAEUtil 
   description: BackendDAEUtil comprised functions for BackendDAE data types.
 
-  RCS: $Id: BackendDAEUtil.mo 6426 2010-10-19 08:01:48Z adrpo $
+  RCS: $Id$
 
   This module is a lowered form of a DAE including equations
   and simple equations in

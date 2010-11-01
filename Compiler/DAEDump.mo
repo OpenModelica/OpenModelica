@@ -34,7 +34,7 @@ package DAEDump
   package:     DAEDump
   description: DAEDump output
 
-  RCS: $Id: DAEDump.mo 5537 2010-05-18 02:24:52Z adrpo $
+  RCS: $Id$
 
   This module implements functions to print the DAE AST."
 

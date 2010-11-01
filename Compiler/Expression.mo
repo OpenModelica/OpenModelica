@@ -35,7 +35,7 @@ package Expression
   package:     Expression
   description: Expressions
 
-  RCS: $Id: Expression.mo 6623 2010-10-26 18:26:41Z Frenkel TUD $
+  RCS: $Id$
 
   This file contains the module `Expression\', which contains data types for
   describing expressions, after they have been examined by the

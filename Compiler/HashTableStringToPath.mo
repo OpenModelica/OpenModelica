@@ -5,7 +5,7 @@ encapsulated package HashTableStringToPath "
 
   All rights reserved.
 
-  RCS: $Id: HashTable2.mo 6613 2010-10-26 12:50:18Z sjoelund.se $
+  RCS: $Id$
 
   "
   

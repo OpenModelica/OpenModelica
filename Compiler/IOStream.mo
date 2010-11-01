@@ -37,7 +37,7 @@ package IOStream
  @author:     Adrian Pop [adrpo@ida.liu.se]
  @date:       2010-05-19
  
- RCS: $Id: IOStream.mo 5482 2010-05-10 05:56:23Z adrpo $
+ RCS: $Id$
 
  This package implement these stream types:
  - file streams   (stream as file)

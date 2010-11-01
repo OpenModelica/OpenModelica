@@ -40,7 +40,7 @@ package BackendDAETransform
                - Inline Integration
                - and so on ... 
   
-  RCS: $Id: BackendDAEOptimize.mo 6732 2010-10-30 17:10:39Z adrpo $
+  RCS: $Id$
 "
 
 public import Absyn;
