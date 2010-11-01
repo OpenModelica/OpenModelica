@@ -154,12 +154,12 @@ protected function loadClassFromMp
 algorithm
   outProgram := matchcontinue (inIdent,inString)
     local
-      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
+      String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile,s;
       Absyn.Program p;
       Absyn.TimeStamp ts;
+      Real t1, t2;
 
     case (class_,mp_1)
-      local Real t1, t2; String s;
       equation
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
