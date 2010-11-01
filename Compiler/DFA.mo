@@ -40,6 +40,7 @@ package DFA
   DFA (Deterministic Finite Automaton) provides the datatypes and functions for working with states.
   It is used in the pattern matching algorithm from Patternm.mo"
 
+// public imports
 public import Absyn;
 public import Env;
 public import DAE;
@@ -53,10 +54,10 @@ type Stamp = Integer;
 type ArcName = Absyn.Ident;
 type SimpleStateArray = SimpleState[:];
 
+// protected imports
 protected import Dump;
 protected import Lookup;
 protected import Util;
-protected import System;
 
 public uniontype Dfa
   record DFArec
@@ -96,31 +97,29 @@ public uniontype Arc
     State state;
     ArcName arcName;
     Option<RenamedPat> pat;
-    list<Integer> matchCaseNumbers; // The numbers of the righthand sides
-                                    // that this arc leads to.
+    list<Integer> matchCaseNumbers "The numbers of the righthand sides that this arc leads to.";
   end ARC;
 end Arc;
 
-// This data structure is used in the optimization phase in Patternm.
-// A list/array of SimpleStates is used as a "light" version of
-// the DFA.
 public uniontype SimpleState
+"This data structure is used in the optimization phase in Patternm.
+ A list/array of SimpleStates is used as a *light* version of
+ the DFA."
   record SIMPLESTATE
     Stamp stamp;
-    list<tuple<ArcName,Stamp>> outgoingArcs; // Name of arc and the number of the state that the arc leads to
-    Integer caseNum; // This one is zero if it's not a final state
-    Option<Absyn.Ident> varName; // The state variable
+    list<tuple<ArcName,Stamp>> outgoingArcs "Name of arc and the number of the state that the arc leads to";
+    Integer caseNum "This one is zero if it's not a final state";
+    Option<Absyn.Ident> varName "The state variable";
   end SIMPLESTATE;
 
-  record SIMPLEDUMMIE
+  record SIMPLEDUMMIE "a dummy state"
   end SIMPLEDUMMIE;
 end SimpleState;
 
 
 public function addNewArc "function: addNewArc
 	author: KS
-	A function that adds a new arc to a states arc-list
-"
+	A function that adds a new arc to a states arc-list"
   input State firstState;
   input ArcName arcName;
   input State newState;
@@ -128,8 +127,7 @@ public function addNewArc "function: addNewArc
   input list<Integer> caseNumbers;
   output State outState;
 algorithm
-  outState :=
-  matchcontinue (firstState,arcName,newState,pat,caseNumbers)
+  outState := matchcontinue (firstState,arcName,newState,pat,caseNumbers)
     local
       State localFirstState;
       ArcName localArcName;
@@ -141,12 +139,14 @@ algorithm
       Arc newArc;
       Option<RenamedPat> localPat;
       list<Integer> localCaseNumbers;
+    
     case (SWITCHSTATE(localOutArcs),localArcName,localNewState,localPat,localCaseNumbers)
       equation
         newArc = ARC(localNewState,localArcName,localPat,localCaseNumbers);
         localOutArcs = listAppend(localOutArcs,(newArc :: {}));
         localFirstState = SWITCHSTATE(localOutArcs);
       then localFirstState;
+    
     case (STATE(localStamp,localRefCount,localOutArcs,localRhSide),
         localArcName,localNewState,localPat,localCaseNumbers)
       equation
@@ -154,6 +154,7 @@ algorithm
         localOutArcs = listAppend(localOutArcs,(newArc :: {}));
         localFirstState = STATE(localStamp,localRefCount,localOutArcs,localRhSide);
       then localFirstState;
+    
     case (_, _, _, _, _)
       equation
         Debug.fprintln("matchcase", "- DFA.addNewArc failed");
@@ -171,14 +172,15 @@ expression.
   input Absyn.Info info;
   output list<Absyn.AlgorithmItem> outList;
 algorithm
-  outList :=
-  matchcontinue(stamp,lightVs,info)
-
+  outList := matchcontinue(stamp,lightVs,info)
+    local
+      list<Absyn.AlgorithmItem> lst;
+      String stateName; 
+      Integer localStamp;
+    
     case (_,true,_) then {};
+    
     case (localStamp,false,info)
-      local
-        list<Absyn.AlgorithmItem> lst;
-        String stateName; Integer localStamp;
       equation
         stateName = stringAppend("state",intString(localStamp));
         lst = {Absyn.ALGORITHMITEM(Absyn.ALG_LABEL(stateName), NONE(), info)};
@@ -193,8 +195,7 @@ protected function createLastAssignments "function: createLastAssignments
 	the final values.
 	(v1,v2...vN) := matchcontinue (x,y,...)
                 case (...) then (1,2,...,N);
-	Here v1,v2,...,vN should be assigned the values 1,2,...N.
-"
+	Here v1,v2,...,vN should be assigned the values 1,2,...N."
   input list<Absyn.Exp> lhsList;
   input list<Absyn.Exp> rhsList;
   input Absyn.Info info;
@@ -203,6 +204,7 @@ algorithm
   outList := matchcontinue (lhsList,rhsList,info)
     local
       String lhsLength, rhsLength, lhs, rhs;
+    
     case (lhsList,rhsList,info)
       then listReverse(createLastAssignments2(lhsList,rhsList,{},info));
 
@@ -224,42 +226,43 @@ protected function createLastAssignments2 "function: createLastAssignments
 	the final values.
 	(v1,v2...vN) := matchcontinue (x,y,...)
                 case (...) then (1,2,...,N);
-	Here v1,v2,...,vN should be assigned the values 1,2,...N.
-"
+	Here v1,v2,...,vN should be assigned the values 1,2,...N."
   input list<Absyn.Exp> lhsList;
   input list<Absyn.Exp> rhsList;
   input list<Absyn.AlgorithmItem> accList;
   input Absyn.Info info;
   output list<Absyn.AlgorithmItem> outList;
 algorithm
-  outList :=
-  matchcontinue (lhsList,rhsList,accList,info)
+  outList := matchcontinue (lhsList,rhsList,accList,info)
     local
       list<Absyn.AlgorithmItem> localAccList;
       Absyn.Exp firstLhs,firstRhs;
       list<Absyn.Exp> restLhs,restRhs;
       Absyn.AlgorithmItem elem;
       String str;
+    
+    // empty
     case ({},{},localAccList,info) then localAccList;
-
-    /* then fail(); */
+    
+    // then fail();
     case(_,Absyn.CALL(Absyn.CREF_IDENT("fail",_),_) :: {},_,info)
       equation
         localAccList = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(), NONE(), info)};
       then localAccList;
     
-    /* then (); */
+    // then ();
     case ({},Absyn.TUPLE({}) :: _,_,_) then {};
-    /* _ := ... then ..., not fail() */
+    
+    // _ := ... then ..., not fail()
     case ({Absyn.CREF(Absyn.WILD)},_,_,_) then {};
-
+    
     case (firstLhs :: restLhs,firstRhs :: restRhs,localAccList,info)
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(firstLhs,firstRhs), NONE(), info);
         localAccList = elem :: localAccList;
         localAccList = createLastAssignments2(restLhs,restRhs,localAccList,info);
       then localAccList;
-
+    
   end matchcontinue;
 end createLastAssignments2;
 
@@ -275,12 +278,14 @@ algorithm
       list<Absyn.Ident> fNameList;
       list<Absyn.TypeSpec> fTypes;
       list<SCode.Element> elemList;
+    
     case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elemList)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);
       then (fNameList,fTypes);
-    /* adrpo: handle also the case model extends X end X; */
+    
+    // adrpo: handle also the case model extends X end X;
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elemList)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
@@ -326,13 +331,15 @@ protected function createPathVarDeclarations
 algorithm
   elemList := matchcontinue (pathVars,recTypes,accElemList,info)
     local
-      list<Absyn.ElementItem> localAccElemList,elem;
+      list<Absyn.ElementItem> localAccElemList;
       Absyn.ElementItem elem;
       Absyn.Ident localRecName,firstPathVar;
       list<Absyn.Ident> restPathVars;
       Absyn.TypeSpec firstType;
       list<Absyn.TypeSpec> restTypes;
+    
     case ({},{},localAccElemList,info) then listReverse(localAccElemList);
+    
     case (firstPathVar :: restPathVars, firstType :: restTypes,localAccElemList,info)
       equation
         elem = Absyn.ELEMENTITEM(Absyn.ELEMENT(
@@ -563,27 +570,23 @@ algorithm
   outExp := matchcontinue (inList,inExp,lightVs)
     local
       Absyn.Exp localInExp;
-
+      Integer firstNum;
+      list<Integer> restNum;
+    
     case (_,_,true) then Absyn.BOOL(true);
-
+    
     case ({},localInExp,false) then localInExp;
-
+    
     // First time
     case (firstNum :: restNum,Absyn.BOOL(true),false)
-      local
-        Integer firstNum;
-        list<Integer> restNum;
       equation
         localInExp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(firstNum))})),
           Absyn.EQUAL(),Absyn.INTEGER(1));
         localInExp = generateBranchCheck(restNum,localInExp,false);
       then localInExp;
     //----------------
-
+    
     case (firstNum :: restNum,localInExp,false)
-      local
-        Integer firstNum;
-        list<Integer> restNum;
       equation
         localInExp = Absyn.LBINARY(localInExp,Absyn.OR(),
           Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(firstNum))})),
@@ -608,38 +611,49 @@ algorithm
       Boolean b;
       Absyn.Exp exp;
       Absyn.Ident localStateVar;
+    
     case (Absyn.INTEGER(i),localStateVar)
       equation
-      exp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),
-        Absyn.EQUAL(),Absyn.INTEGER(i));
-      then exp;
+        exp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),
+          Absyn.EQUAL(),Absyn.INTEGER(i));
+      then 
+        exp;
+    
     case (Absyn.REAL(r),localStateVar)
       equation
         exp = Absyn.RELATION(Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("String",{})),
           Absyn.FUNCTIONARGS({Absyn.REAL(r),Absyn.INTEGER(5)},{})),
-            Absyn.EQUAL(),Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("String",{})),
-          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),Absyn.INTEGER(5)},{})));
-      then exp;
+          Absyn.EQUAL(),Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("String",{})),
+            Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),Absyn.INTEGER(5)},{})));
+      then 
+        exp;
+    
     case (Absyn.STRING(s),localStateVar)
       equation
         exp = Absyn.RELATION(Absyn.STRING(s),Absyn.EQUAL(),Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})));
-      then exp;
+      then 
+        exp;
+    
     case (Absyn.BOOL(b),localStateVar)
       equation
         exp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),
           Absyn.EQUAL(),Absyn.BOOL(b));
-      then exp;
+      then 
+        exp;
+    
     case (Absyn.LIST({}),localStateVar)
       equation
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listEmpty",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
-      then exp;
+      then 
+        exp;
+    
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),localStateVar)
       equation
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("optionNone",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
       then exp;
- end matchcontinue;
+  end matchcontinue;
 end createConstCompareExp;
 
 protected function createListFromExpression "function: createListFromExpression"
@@ -670,28 +684,17 @@ protected function getConstantValue "function: getConstantValue"
   output Absyn.Exp val;
 algorithm
   val := matchcontinue (pat)
-    case (RP_INTEGER(_,val))
-      local
-        Integer val;
-      equation
-      then Absyn.INTEGER(val);
-    case (RP_STRING(_,val))
-      local
-        String val;
-      equation
-      then Absyn.STRING(val);
-    case (RP_BOOL(_,val))
-      local
-        Boolean val;
-      equation
-      then Absyn.BOOL(val);
-    case (RP_REAL(_,val))
-      local
-        Real val;
-      equation
-      then Absyn.REAL(val);
-    case (RP_EMPTYLIST(_))
-      then Absyn.LIST({});
+    local
+      Integer i;
+      String s;
+      Boolean b;
+      Real r;
+
+    case (RP_INTEGER(_,i)) then Absyn.INTEGER(i);
+    case (RP_STRING(_,s)) then Absyn.STRING(s);
+    case (RP_BOOL(_,b)) then Absyn.BOOL(b);
+    case (RP_REAL(_,r)) then Absyn.REAL(r);
+    case (RP_EMPTYLIST(_)) then Absyn.LIST({});
     case (RP_NONE(_)) then Absyn.CREF(Absyn.CREF_IDENT("NONE",{}));
   end matchcontinue;
 end getConstantValue;
@@ -703,6 +706,7 @@ algorithm
   pathVar := matchcontinue (pat)
     local
       Absyn.Ident localPathVar;
+    
     case (RP_INTEGER(localPathVar,_)) equation then localPathVar;
     case (RP_REAL(localPathVar,_)) equation then localPathVar;
     case (RP_BOOL(localPathVar,_)) equation then localPathVar;
@@ -715,6 +719,7 @@ algorithm
     case (RP_NONE(localPathVar)) equation then localPathVar;
     case (RP_SOME(localPathVar,_)) equation then localPathVar;
     case _ equation Debug.fprintln("matchcase", "- DFA.extractPathVar failed"); then fail();
+
   end matchcontinue;
 end extractPathVar;
 
@@ -736,22 +741,20 @@ protected function lookupTypeOfVar "function: lookupTypeOfVar"
   input Absyn.Ident id;
   output Absyn.TypeSpec outTypeSpec;
 algorithm
-  outTypeSpec :=
-  matchcontinue (dfaEnv,id)
+  outTypeSpec := matchcontinue (dfaEnv,id)
+    local
+      Absyn.TypeSpec t,t2;
+      list<tuple<Absyn.Ident,Absyn.TypeSpec>> restTups;
+      Absyn.Ident localId,localId2;
+          
     case ({},_) then fail();
+
     case ((localId2,t2) :: restTups,localId)
-      local
-        Absyn.TypeSpec t2;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> restTups;
-        Absyn.Ident localId,localId2;
       equation
         true = (localId ==& localId2);
       then t2;
+
     case (_ :: restTups,localId)
-      local
-        Absyn.TypeSpec t;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> restTups;
-        Absyn.Ident localId;
       equation
         t = lookupTypeOfVar(restTups,localId);
       then t;
@@ -766,21 +769,22 @@ protected function mergeLists "function: mergeLists"
 algorithm
   outList := matchcontinue (idList,tList,accList)
     local
-      list<tuple<Absyn.Ident,Absyn.TypeSpec>> localAccList;
+      list<tuple<Absyn.Ident,Absyn.TypeSpec>> localAccList,tup;
+      Absyn.Ident id;
+      list<Absyn.Ident> restIds;
+      list<Absyn.TypeSpec> restSpecs;
+      Absyn.TypeSpec tSpec;
+    
     case ({},_,localAccList) then localAccList;
     case (_,{},localAccList) then localAccList;
+    
     case (id :: restIds,tSpec :: restSpecs,localAccList)
-      local
-        Absyn.Ident id;
-        list<Absyn.Ident> restIds;
-        list<Absyn.TypeSpec> restSpecs;
-        Absyn.TypeSpec tSpec;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> tup;
       equation
         tup = {(id,tSpec)};
         localAccList = listAppend(localAccList,tup);
         localAccList = mergeLists(restIds,restSpecs,localAccList);
-      then localAccList;
+      then 
+        localAccList;
   end matchcontinue;
 end mergeLists;
 
@@ -818,14 +822,17 @@ algorithm
       DAE.Type t;
       Absyn.TypeSpec t2;
       tuple<Absyn.Ident,Absyn.TypeSpec> dfaEnvElem;
+    
     case ({},localDfaEnv,localCache,_,_)
       equation
         localDfaEnv = listReverse(localDfaEnv);
       then (SOME(localDfaEnv),localCache);
+    
     case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv,info)
       equation
         (res,localCache) = addVarsToDfaEnv2(restExps,localDfaEnv,localCache,localEnv,info);
       then (res,localCache);
+    
     case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{})) :: restExps,localDfaEnv,localCache,localEnv,info)
       equation
         (localCache,DAE.TYPES_VAR(_,_,_,t,_,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
@@ -834,17 +841,20 @@ algorithm
         localDfaEnv = dfaEnvElem::localDfaEnv;
         (res,localCache) = addVarsToDfaEnv2(restExps,localDfaEnv,localCache,localEnv,info);
       then (res,localCache);
+    
     case (e::_,_,_,_,info)
       equation
         true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed " +& str);
       then fail();
+    
     case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{}))::_,_,_,env,info)
       equation
         str = Env.printEnvPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {firstId,str}, info);
       then (NONE(),cache);
+    
     case (e::_,_,_,_,info)
       equation
         str = Dump.printExpStr(e);
@@ -858,15 +868,14 @@ protected function createListOfTrue "function: createListOfTrue"
   input list<Absyn.Exp> accList;
   output list<Absyn.Exp> outList;
 algorithm
-  outList :=
-  matchcontinue (nStates,accList)
+  outList := matchcontinue (nStates,accList)
     local
-      list<Absyn.Exp> localAccList;
+      list<Absyn.Exp> localAccList,e;
+      Integer n;
+    
     case (0,localAccList) then localAccList;
+    
     case (n,localAccList)
-      local
-        Integer n;
-        list<Absyn.Exp> e;
       equation
         e = {Absyn.INTEGER(1)};
         localAccList = listAppend(localAccList,e);
@@ -881,26 +890,22 @@ public function addNewSimpleState "function: addNewSimpleState"
   input SimpleState state;
   output list<SimpleState> outList;
 algorithm
-  outList :=
-  matchcontinue (stateList,stateNum,state)
+  outList := matchcontinue (stateList,stateNum,state)
+    local
+      SimpleStateArray localStateArray;
+      Integer localStateNum,n;
+      SimpleState localState;
+      list<SimpleState> localStateList;
+    
     case (localStateList,localStateNum,localState)
-      local
-        SimpleStateArray localStateArray;
-        Integer localStateNum;
-        SimpleState localState;
-        list<SimpleState> localStateList;
       equation
         false = (localStateNum > listLength(localStateList));
         localStateArray = listArray(localStateList);
         localStateArray = arrayUpdate(localStateArray,localStateNum,localState);
         localStateList = arrayList(localStateArray);
       then localStateList;
+    
     case (localStateList,localStateNum,localState)
-      local
-        Integer n;
-        Integer localStateNum;
-        SimpleState localState;
-        list<SimpleState> localStateList;
       equation
         n = listLength(localStateList);
         localStateList = increaseListSize(localStateList,localStateNum - n);
@@ -914,14 +919,14 @@ protected function increaseListSize "function: increaseListSize"
   input Integer size;
   output list<SimpleState> outList;
 algorithm
-  outList :=
-  matchcontinue (inList,size)
+  outList := matchcontinue (inList,size)
     local
       list<SimpleState> localInList;
+      Integer n;
+    
     case (localInList,0) then localInList;
+    
     case (localInList,n)
-      local
-        Integer n;
       equation
         localInList = listAppend(localInList,{SIMPLEDUMMIE()});
         localInList = increaseListSize(localInList,n-1);
@@ -930,28 +935,28 @@ algorithm
 end increaseListSize;
 
 public function simplifyState "function: simplifyState
-Transform a normal state into a simple, 'light' state.
-"
+Transform a normal state into a simple, 'light' state."
   input State normalState;
   output SimpleState simpleState;
 algorithm
-  simpleState :=
-  matchcontinue (normalState)
+  simpleState := matchcontinue (normalState)
+    local
+      Integer n;
+      list<Arc> arcs;
+      Absyn.Ident varName;
+      RenamedPat p;
+      list<tuple<ArcName,Stamp>> simpleArcs;
+      SimpleState sState;
+          
     case (STATE(n,_,arcs as (ARC(_,_,SOME(p),_) :: _),NONE()))
-      local
-        Integer n;
-        list<Arc> arcs;
-        Absyn.Ident varName;
-        RenamedPat p;
-        list<tuple<ArcName,Stamp>> simpleArcs;
-        SimpleState sState;
       equation
         varName = extractPathVar(p);
         simpleArcs = simplifyArcs(arcs,{});
         sState = SIMPLESTATE(n,simpleArcs,0,SOME(varName));
       then sState;
-    case (_)
-    then fail();
+    
+    case (_) then fail();
+
   end matchcontinue;
 end simplifyState;
 
@@ -960,26 +965,24 @@ public function simplifyArcs "function: simplifyArcs"
   input  list<tuple<ArcName,Stamp>> accArcs;
   output  list<tuple<ArcName,Stamp>> outArcs;
 algorithm
-  outArcs :=
-  matchcontinue (inArcs,accArcs)
+  outArcs := matchcontinue (inArcs,accArcs)
     local
       list<tuple<ArcName,Stamp>> localAccArcs;
+      Integer n;
+      ArcName aName;
+      list<Arc> restArcs;
+    
     case ({},localAccArcs) then localAccArcs;
+    
     case (ARC(DUMMIESTATE(),_,_,_) :: _,localAccArcs) then localAccArcs;
+    
     case (ARC(GOTOSTATE(_,n),aName,_,_) :: restArcs,localAccArcs)
-      local
-        Integer n;
-        ArcName aName;
-        list<Arc> restArcs;
       equation
         localAccArcs = listAppend(localAccArcs,{(aName,n)});
         localAccArcs = simplifyArcs(restArcs,localAccArcs);
       then localAccArcs;
+    
     case (ARC(STATE(n,_,_,_),aName,_,_) :: restArcs,localAccArcs)
-      local
-        Integer n;
-        ArcName aName;
-        list<Arc> restArcs;
       equation
         localAccArcs = listAppend(localAccArcs,{(aName,n)});
         localAccArcs = simplifyArcs(restArcs,localAccArcs);
@@ -989,49 +992,48 @@ end simplifyArcs;
 
 // Data structure for a pattern of the form path=pattern
 public
-uniontype RenamedPat "The `RenamedPat\' datatype"
+uniontype RenamedPat "The RenamedPat datatype"
   record RP_INTEGER
-    Absyn.Ident var;
-    Integer value "value" ;
+    Absyn.Ident var "variable";
+    Integer value "integer value";
   end RP_INTEGER;
 
   record RP_REAL
-    Absyn.Ident var;
-    Real value "value" ;
+    Absyn.Ident var "variable";
+    Real value "real value";
   end RP_REAL;
 
   record RP_CREF
-    Absyn.Ident var;
-    Absyn.Ident compRef;
-    //  Absyn.ComponentRef componentReg "componentReg" ;
+    Absyn.Ident var "variable";
+    Absyn.Ident compRef "cref";
   end RP_CREF;
 
   record RP_STRING
-    Absyn.Ident var;
-    String value "value" ;
+    Absyn.Ident var "variable";
+    String value "string value";
   end RP_STRING;
 
   record RP_BOOL
-    Absyn.Ident var;
-    Boolean value "value Binary operations, e.g. ab" ;
+    Absyn.Ident var "variable";
+    Boolean value "boolean value";
   end RP_BOOL;
 
   record RP_CALL
-    Absyn.Ident var;
+    Absyn.Ident var "variable";
     Absyn.ComponentRef function_ "function" ;
     RenamedPatList functionArgs "functionArgs Array construction using \'{\',\'}\' or \'array\'" ;
   end RP_CALL;
 
   record RP_TUPLE
-    Absyn.Ident var;
+    Absyn.Ident var "variable";
     list<RenamedPat> expressions "expressions array access operator for last element, e.g. a{end}:=1;" ;
   end RP_TUPLE;
 
   // MetaModelica expression follows!
   record RP_CONS
-    Absyn.Ident var;
-    RenamedPat head " head of the list ";
-    RenamedPat rest " rest of the list ";
+    Absyn.Ident var "variable";
+    RenamedPat head "head of the list ";
+    RenamedPat rest "rest of the list ";
   end RP_CONS;
 
   record RP_WILDCARD
@@ -1055,20 +1057,17 @@ end RenamedPat;
 
 type RenamedPatList = list<RenamedPat>;
 
-// Datastructure for the righthand sides in a matchcontinue expression
 public
-uniontype RightHandSide
+uniontype RightHandSide "Datastructure for the righthand sides in a matchcontinue expression"
 
-  record RIGHTHANDSIDE
+  record RIGHTHANDSIDE "right hand site in match"
     list<Absyn.ElementItem> localDecls;
     list<Absyn.EquationItem> equations;
     Absyn.Exp result;
     Integer numberOfCase;
   end RIGHTHANDSIDE;
 
-  // We use this one in the pattern matching so that we do not have
-  // to carry around a lot of code all the time
-  record RIGHTHANDLIGHT
+  record RIGHTHANDLIGHT "We use this one in the pattern matching so that we do not have to carry around a lot of code all the time"    
     Integer numberOfCase;
   end RIGHTHANDLIGHT;
 end RightHandSide;
@@ -1084,8 +1083,7 @@ type RightHandList = list<RightHandSide>;
 // Functions for the handling of matrices
 public function patternsFromCol "function: patternsFromCol
 	author: KS
-	Selects patterns from a column according to the indices in the index vector
-"
+	Selects patterns from a column according to the indices in the index vector"
   input RenamedPatMatrix patMat;
   input IndexVector indices;
   input Integer colNum;
@@ -1097,39 +1095,36 @@ end patternsFromCol;
 
 public function patternsFromColHelper "function: patternsFromColHelper
 	author: KS
-	Recursive helper function to patternsFromCol
-"
+	Recursive helper function to patternsFromCol"
   input RenamedPatList patList;
   input IndexVector indices;
   input RenamedPatList accPatList;
   output RenamedPatList outPatVec;
 algorithm
-  outPatVec :=
-  matchcontinue (patList,indices,accPatList)
+  outPatVec := matchcontinue (patList,indices,accPatList)
     local
       RenamedPatList localAccPatList;
       Integer first;
       IndexVector rest;
       RenamedPatList localPatList;
-    case (_,{},localAccPatList)
-      equation then localAccPatList;
+      RenamedPat[:] temp;
+      RenamedPat temp2;
+    
+    case (_,{},localAccPatList) then localAccPatList;
+    
     case (localPatList,first :: rest,localAccPatList)
-      local
-        RenamedPat[:] temp;
-        RenamedPat temp2;
       equation
         temp = listArray(localPatList);
         temp2 = temp[first];
-      then patternsFromColHelper(localPatList,rest,listAppend(localAccPatList,temp2 :: {}));
+      then 
+        patternsFromColHelper(localPatList,rest,listAppend(localAccPatList,temp2 :: {}));
   end matchcontinue;
 end patternsFromColHelper;
-
 
 public function patternsFromOtherCol "function: patternsFromOtherCol
 	author: KS
 	Selects patterns from all columns except one according to
-	the indices in the index vector
-"
+	the indices in the index vector"
   input RenamedPatMatrix patMat;
   input IndexVector indices;
   input Integer colNum;
@@ -1138,11 +1133,9 @@ algorithm
   outPatMat := patternsFromOtherColHelper(1,colNum,indices,patMat,{});
 end patternsFromOtherCol;
 
-
 public function patternsFromOtherColHelper "function: patternsFromOtherColHelper
 	author: KS
-	Recursive helper function to patternsFromOtherCol
-"
+	Recursive helper function to patternsFromOtherCol"
   input Integer pivot;
   input Integer colNum;
   input IndexVector indices;
@@ -1150,37 +1143,39 @@ public function patternsFromOtherColHelper "function: patternsFromOtherColHelper
   input list<RenamedPatList> accPatMat;
   output RenamedPatMatrix patList;
 algorithm
-  patList :=
-  matchcontinue (pivot,colNum,indices,patMat,accPatMat)
+  patList := matchcontinue (pivot,colNum,indices,patMat,accPatMat)
     local
       Integer localPivot;
       Integer localColNum;
       IndexVector localIndices;
       RenamedPatMatrix localPatMat;
       list<RenamedPatList> localAccPatMat;
+      RenamedPatList patternsFromThisCol;
+    
     case (localPivot,_,_,localPatMat,localAccPatMat)
       equation
         true = (localPivot > arrayLength(localPatMat));
-      then listArray(localAccPatMat);
+      then 
+        listArray(localAccPatMat);
+    
     case (localPivot,localColNum,localIndices,localPatMat,localAccPatMat)
       equation
         true = (localPivot == localColNum);
-      then patternsFromOtherColHelper(localPivot+1,localColNum,localIndices,localPatMat,localAccPatMat);
+      then 
+        patternsFromOtherColHelper(localPivot+1,localColNum,localIndices,localPatMat,localAccPatMat);
+    
     case (localPivot,localColNum,localIndices,localPatMat,localAccPatMat)
-      local
-        RenamedPatList patternsFromThisCol;
       equation
         patternsFromThisCol = patternsFromColHelper(localPatMat[localPivot],localIndices,{});
-      then patternsFromOtherColHelper(localPivot+1,localColNum,localIndices,localPatMat,
-        listAppend(localAccPatMat,cons(patternsFromThisCol,{})));
+      then 
+        patternsFromOtherColHelper(localPivot+1,localColNum,localIndices,localPatMat,
+          listAppend(localAccPatMat,cons(patternsFromThisCol,{})));
   end matchcontinue;
 end patternsFromOtherColHelper;
 
-
 public function appendMatrices "function: appendMatrices
 	author: KS
-	Appends two matrices with the same number of rows
-"
+	Appends two matrices with the same number of rows"
   input RenamedPatMatrix2 patMat1;
   input RenamedPatMatrix2 patMat2;
   output RenamedPatMatrix2 outPatMat;
@@ -1190,78 +1185,72 @@ end appendMatrices;
 
 public function firstRow "function: firstRow
 	author: KS
-	Selects the first row of a RenamedPat matrix and returns it as a list.
-"
+	Selects the first row of a RenamedPat matrix and returns it as a list."
   input RenamedPatMatrix2 patMat;
   input RenamedPatList accList;
   output RenamedPatList outList;
 algorithm
-  outList :=
-  matchcontinue (patMat,accList)
+  outList := matchcontinue (patMat,accList)
     local
-      RenamedPatList localAccList;
+      RenamedPatList localAccList,patList;
+      RenamedPat first;
+      list<RenamedPatList> rest;
+    
     case ({},localAccList) equation then localAccList;
+    
     case ((first :: _) :: rest,localAccList)
-      local
-        RenamedPat first;
-        list<RenamedPatList> rest;
-        RenamedPatList patList;
       equation
         patList = firstRow(rest,listAppend(localAccList,Util.listCreate(first)));
-      then patList;
+      then 
+        patList;
   end matchcontinue;
 end firstRow;
-
 
 public function removeFirstRow "function: removeFirstRow
 	author: KS
 	Removes the first row from a matrix and returns the matrix with
-	the first row removed
-"
+	the first row removed"
   input RenamedPatMatrix2 patMat;
   input RenamedPatMatrix2 accPatMat;
   output RenamedPatMatrix2 outPatMat;
 algorithm
-  outPatMat :=
-  matchcontinue (patMat,accPatMat)
+  outPatMat := matchcontinue (patMat,accPatMat)
     local
-      list<RenamedPatList> localAccPatMat;
+      RenamedPatMatrix2 localPatMat,temp;
+      list<RenamedPat> listTemp;
+      list<RenamedPatList> localAccPatMat,rest;
+      RenamedPatList restFirst;
+    
     case (localPatMat,{})
-      local
-        RenamedPatMatrix2 localPatMat;
-        list<RenamedPat> listTemp;
       equation
         listTemp = Util.listFirst(localPatMat);
         true = (listLength(listTemp) == 1);
       then {};
-    case ({},localAccPatMat)
-      equation
-      then localAccPatMat;
+    
+    case ({},localAccPatMat) then localAccPatMat;
+    
     case ((_ :: restFirst) :: rest,localAccPatMat)
-      local
-        list<RenamedPatList> rest;
-        RenamedPatList restFirst;
-        RenamedPatMatrix2 temp;
       equation
         localAccPatMat = listAppend(localAccPatMat,restFirst :: {});
         temp = removeFirstRow(rest,localAccPatMat);
-      then temp;
+      then 
+        temp;
   end matchcontinue;
 end removeFirstRow;
 
 /*
 public function printMatrix "function: printMatrix
-	author: KS
-"
+	author: KS"
   input RenamedPatMatrix2 patMat;
 algorithm
-  _ :=
-  matchcontinue (patMat)
+  _ := matchcontinue (patMat)
+    local
+      RenamedPatList first;
+      RenamedPatMatrix2 rest;
+    
     case ({}) equation then ();
+    
     case (first :: rest)
-      local
-        RenamedPatList first;
-        RenamedPatMatrix2 rest;
       equation
         printList(first);
         printMatrix(rest);
@@ -1271,19 +1260,20 @@ end printMatrix;
 */
 
 public function matrixFix "function: matrixFix
-	author: KS
-"
+	author: KS"
   input RenamedPatMatrix2 inMat;
   output RenamedPatMatrix2 outAccMat;
 algorithm
-  outAccMat :=
-  matchcontinue(inMat)
+  outAccMat := matchcontinue(inMat)
+    local
+      RenamedPatList first;
+      RenamedPatMatrix2 rest,temp;
+        
     case ({}) equation then {};
+    
     case ({} :: {}) equation then {};
+    
     case (first :: rest)
-      local
-        RenamedPatList first;
-        RenamedPatMatrix2 rest,temp;
       equation
         temp = matrixFix(rest);
         temp = first :: temp;
@@ -1293,17 +1283,17 @@ end matrixFix;
 
 /*
 public function printList "function: printList
-	author: KS
-"
+	author: KS"
   input RenamedPatList inList;
 algorithm
-  _ :=
-  matchcontinue (inList)
+  _ := matchcontinue (inList)
+    local
+      RenamedPat first;
+      RenamedPatList rest;    
+    
     case ({}) equation then ();
+    
     case (first :: rest)
-      local
-        RenamedPat first;
-        RenamedPatList rest;
       equation
         printPattern(first);
         print("\n");
@@ -1316,46 +1306,49 @@ public function printPatternStr
   input RenamedPat inPat;
   output String out;
 algorithm
-  out :=
-  matchcontinue (inPat)
+  out := matchcontinue (inPat)
     local
-      String var, str;
-    case(RP_INTEGER(var,value))
-      local
-        Integer value;
+      String var, str, valStr, headStr, restStr;
+      Integer valInt;
+      Boolean valBool;
+      RenamedPat head, rest;
+    
+    case(RP_INTEGER(var,valInt))
       equation
-        str = intString(value);
-        str = stringAppendList({"Pathvar:", var, " :",str,"\n"});
+        str = intString(valInt);
+        str = stringAppendList({"Pathvar:", var, " : ",str,"\n"});
       then str;
-    case(RP_BOOL(var,_))
+    
+    case(RP_BOOL(var,valBool))
       equation
-        str = stringAppendList({"Pathvar:", var, " BOOL","\n"});
+        str = Util.boolString(valBool);
+        str = stringAppendList({"Pathvar:", var, " : ",str,"\n"});
       then str;
-    case(RP_STRING(var,value))
-      local
-        String value;
+    
+    case(RP_STRING(var,valStr))
       equation
-        str = stringAppendList({"Pathvar:", var, ":",value,"\n"});
+        str = stringAppendList({"Pathvar:", var, " : ",valStr,"\n"});
       then str;
+    
     case(RP_CONS(var,head,rest))
-      local
-        RenamedPat head; String headStr;
-        RenamedPat rest; String restStr;
       equation
         headStr = printPatternStr(head);
         restStr = printPatternStr(rest);
         str = stringAppendList({"Pathvar:", var, " CONS: ",headStr,",",restStr,"\n"});
       then str;
+    
     case(RP_WILDCARD(var))
       equation
         str = stringAppendList({"Pathvar:", var, " WILDCARD","\n"});
       then str;
+    
     case(RP_EMPTYLIST(var))
       equation
         str = stringAppendList({"Pathvar:", var, " EMPTY LIST","\n"});
       then str;
+    
     case (_)
-      then "Printing of pattern not implemented";
+      then "- DAA.printPatternStr: Printing of pattern not implemented";
   end matchcontinue;
 end printPatternStr;
 
@@ -1364,15 +1357,15 @@ public function getRightHandSideNumbers "function: getRightHandSideNumbers"
   input list<Integer> accList;
   output list<Integer> outList;
 algorithm
-  outList :=
-  matchcontinue (inList,accList)
+  outList := matchcontinue (inList,accList)
     local
       list<Integer> localAccList;
+      Integer n;
+      RightHandList rest;
+    
     case ({},localAccList) then localAccList;
+    
     case (RIGHTHANDLIGHT(n) :: rest,localAccList)
-      local
-        Integer n;
-        RightHandList rest;
       equation
         localAccList = listAppend(localAccList,{n});
         localAccList = getRightHandSideNumbers(rest,localAccList);
@@ -1380,25 +1373,26 @@ algorithm
   end matchcontinue;
 end getRightHandSideNumbers;
 
-
 public function printDFASimple
   input SimpleStateArray inArr;
   input Integer pivot;
   output Integer y;
 algorithm
-  y :=
-  matchcontinue (inArr,pivot)
+  y := matchcontinue (inArr,pivot)
+    local
+      SimpleStateArray localInArr;
+      SimpleState st;
+      Integer localPivot,i;
+       
     case (_,0) then 0;
+    
     case (localInArr,localPivot)
-      local
-        SimpleStateArray localInArr;
-        SimpleState st;
-        Integer localPivot,i;
       equation
         st = localInArr[localPivot];
         i = printStateSimple(st);
         i = printDFASimple(localInArr,localPivot-1);
-      then 0;
+      then 
+        0;
   end matchcontinue;
 end printDFASimple;
 
@@ -1406,13 +1400,15 @@ public function printStateSimple
   input SimpleState inS;
   output Integer y;
 algorithm
-  y :=
-  matchcontinue (inS)
+  y := matchcontinue (inS)
+    local
+      Integer st,cN,i;
+      list<tuple<ArcName,Stamp>> oArcs;
+      Absyn.Ident id;
+    
     case (SIMPLEDUMMIE()) then 0;
+    
     case (SIMPLESTATE(st,oArcs,cN,NONE()))
-      local
-        Integer st,cN,i;
-        list<tuple<ArcName,Stamp>> oArcs;
       equation
         print("State, ");
         print(intString(st));
@@ -1424,11 +1420,8 @@ algorithm
         print(intString(st));
         print("\n");
       then 0;
+
     case (SIMPLESTATE(st,oArcs,cN,SOME(id)))
-      local
-        Integer st,cN,i;
-        list<tuple<ArcName,Stamp>> oArcs;
-        Absyn.Ident id;
       equation
         print("State, ");
         print(intString(st));
@@ -1449,15 +1442,16 @@ public function printSimpleArcs
   input list<tuple<ArcName,Stamp>> inList;
   output Integer y;
 algorithm
-  y :=
-  matchcontinue(inList)
+  y := matchcontinue(inList)
+    local
+      Stamp st;
+      Absyn.Ident id;
+      list<tuple<ArcName,Stamp>> rList;
+      Integer i;
+    
     case ({}) then 0;
+    
     case ((id,st) :: rList)
-      local
-        Stamp st;
-        Absyn.Ident id;
-        list<tuple<ArcName,Stamp>> rList;
-        Integer i;
       equation
         print(", Arc to ");
         print(intString(st));
@@ -1529,7 +1523,9 @@ algorithm
       tuple<Integer,list<Absyn.AlgorithmItem>> res;
       list<list<Absyn.AlgorithmItem>> caseAlgs;
       list<String> dfaEnvIdents;
+    
     case ({}, {}, _, _, {}, NONE(), localCache, _, _, _, _) then (localCache, {});
+    
     case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _, info)
       equation
         checkShadowing(firstDecls,invalidDecls);
@@ -1539,6 +1535,7 @@ algorithm
         els = firstDecls;
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
       then (localCache, {expr});
+    
     case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info)
       equation
         dfaEnv = initialDfaEnv;
@@ -1553,6 +1550,7 @@ algorithm
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
         (cache, exp2) = matchContinueToSwitch2(restCase, restDecls, inputVarList, resVarList, restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info);
       then (cache, expr :: exp2);
+    
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("matchcase", "- DFA.matchContinueToSwitch2 failed");
@@ -1590,7 +1588,9 @@ algorithm
       list<Boolean> boolList;
       Absyn.Info info;
       Absyn.ElementSpec spec;
+    
     case ({}, _) then ();
+    
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec)) :: elItems, invalidDecls)
       equation
         elIdents = getElementSpecComponentNames(spec);
@@ -1608,7 +1608,9 @@ algorithm
   _ := matchcontinue (info, elIdents, invalidDecls)
     local
       String elIdent;
+    
     case (_, {}, _) then ();
+    
     case (info, elIdent::elIdents, invalidDecls)
       equation
         checkShadowing3(info,elIdent,invalidDecls);
@@ -1623,10 +1625,12 @@ protected function checkShadowing3
   input list<String> invalidDecls;
 algorithm
   _ := matchcontinue (info, elIdent, invalidDecls)
+    
     case (_, elIdent, invalidDecls)
       equation
         false = listMember(elIdent, invalidDecls);
       then ();
+    
     case (info, elIdent, _)
       equation
         Error.addSourceMessage(Error.MATCH_SHADOWING, {elIdent}, info);
@@ -1642,10 +1646,12 @@ algorithm
     local
       list<String> strs;
       list<Absyn.ComponentItem> comps;
+    
     case Absyn.COMPONENTS(components = comps)
       equation
         strs = Util.listMap(comps, getComponentName);
       then strs;
+    
     case _
       equation
         Debug.fprintln("matchcase", "- DFA.getElementName failed");
@@ -1684,7 +1690,10 @@ algorithm
       RenamedPat pat;
       list<Absyn.Exp> varList;
       Absyn.Exp var;
+      String str;      
+    
     case ({},{},cache,env,dfaEnv,info) then (cache,dfaEnv,{},{});
+    
     case (pat :: rest, var :: varList, cache, env, dfaEnv,info)
       equation
         (cache,dfaEnv,matchDecls,matchAlgs) = generatePathVarDeclarationsNew(pat, cache, env, dfaEnv,info);
@@ -1692,14 +1701,15 @@ algorithm
         outAlgs = listAppend(matchAlgs, outAlgs);
         outEls = listAppend(matchDecls, outEls);
       then (cache,dfaEnv,outEls,outAlgs);
+    
     case (pat :: rest, var :: varList, cache, env, dfaEnv,info)
       equation
         outAlgs1 = getPatternComp(pat, var, true, info);
         (cache,dfaEnv,outEls,outAlgs2) = generatePathVarDeclarationsList(rest,varList,cache,env,dfaEnv,info);
         outAlgs = listAppend(outAlgs1, outAlgs2);
       then (cache,dfaEnv,outEls,outAlgs);
+    
     case (pat :: _,_,_,_,_,_)
-      local String str;
       equation
 				true = RTOpts.debugFlag("matchcase");
         str = printPatternStr(pat);
@@ -1713,28 +1723,17 @@ protected function getPatternExp "function: getPatternExp"
   output Absyn.Exp val;
 algorithm
   val := matchcontinue (pat)
-    case (RP_INTEGER(_,val))
-      local
-        Integer val;
-      equation
-      then Absyn.INTEGER(val);
-    case (RP_STRING(_,val))
-      local
-        String val;
-      equation
-      then Absyn.STRING(val);
-    case (RP_BOOL(_,val))
-      local
-        Boolean val;
-      equation
-      then Absyn.BOOL(val);
-    case (RP_REAL(_,val))
-      local
-        Real val;
-      equation
-      then Absyn.REAL(val);
-    case (RP_EMPTYLIST(_))
-      then Absyn.LIST({});
+    local
+      Integer i;
+      Real r;
+      String s;
+      Boolean b;
+      
+    case (RP_INTEGER(_,i)) then Absyn.INTEGER(i);
+    case (RP_STRING(_,s))  then Absyn.STRING(s);
+    case (RP_BOOL(_,b))    then Absyn.BOOL(b);
+    case (RP_REAL(_,r))    then Absyn.REAL(r);
+    case (RP_EMPTYLIST(_)) then Absyn.LIST({});
     case (RP_NONE(_)) then Absyn.CREF(Absyn.CREF_IDENT("NONE",{}));
   end matchcontinue;
 end getPatternExp;
@@ -1751,6 +1750,7 @@ algorithm
       Absyn.Exp exp;
       Absyn.AlgorithmItem alg;
       Absyn.Operator op;
+    
     case (RP_EMPTYLIST(_), var, nequal,info) // Optimizes comparison with emptylist by not creating an empty list to compare with
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
@@ -1758,6 +1758,7 @@ algorithm
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
+    
     case (RP_NONE(_), var, nequal,info) // Optimizes comparison with NONE() by not creating an empty option to compare with
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
@@ -1765,6 +1766,7 @@ algorithm
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
+    
     case (pat, var, nequal,info)
       equation
         op = Util.if_(nequal, Absyn.NEQUAL, Absyn.EQUAL);
@@ -1772,7 +1774,9 @@ algorithm
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.RELATION(var,op,exp), {alg}, {}, {}), NONE(), info);
       then {alg};
+    
     case (_, _, _, _) then {};
+
   end matchcontinue;
 end getPatternComp;
 
@@ -1789,6 +1793,7 @@ algorithm
       Absyn.AlgorithmItem alg;
       Absyn.Exp exp;
       Absyn.FunctionArgs fargs;
+    
     case (pathVar,(DAE.T_METARECORD(index=i),_),numFields,info)
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
@@ -1797,6 +1802,7 @@ algorithm
         exp = Absyn.LUNARY(Absyn.NOT(), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
       then {alg};
+    
     case (_,_,_,_) then {};
   end matchcontinue;
 end uniontypeComp;
@@ -1804,8 +1810,7 @@ end uniontypeComp;
 protected function generatePathVarDeclarationsNew "function: generatePathVarDeclerations
 	author: KS
 	Used when we have a record constructor call in a pattern and we need to
-	create path variables of the subpatterns of the record constructor.
-"
+	create path variables of the subpatterns of the record constructor."
   input RenamedPat pat;
   input Env.Cache cache;
   input Env.Env env;
@@ -1816,24 +1821,33 @@ protected function generatePathVarDeclarationsNew "function: generatePathVarDecl
   output list<Absyn.ElementItem> outDecl;
   output list<Absyn.AlgorithmItem> outAssigns;
 algorithm
-  (outCache,outDfaEnv,outDecl,outAssigns) :=
-  matchcontinue (pat,cache,env,dfaEnv,info)
+  (outCache,outDfaEnv,outDecl,outAssigns) := matchcontinue (pat,cache,env,dfaEnv,info)
     local
       Env.Cache localCache;
       Env.Env localEnv;
-      list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
+      list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv,dfaEnvElem,dfaEnvElem1,dfaEnvElem2;
       Absyn.Exp firstCref, secondCref, cref, cref2;
       list<Absyn.AlgorithmItem> algs, algs1, algs2, algs3;
       list<Absyn.ElementItem> elem,elem1,elem2;
       list<Absyn.Exp> crefs;
+      Absyn.Ident pathVar,pathVar2,recName,className,classPathStr,firstPathVar,secondPathVar;
+      RenamedPat arg;
+      list<Absyn.TypeSpec> fieldTypes,fieldTypeSpecs;
+      list<Absyn.Ident> pathVarList,fieldNameList;
+      list<RenamedPat> argList;
+      SCode.Class sClass;
+      Absyn.Path pathName, classPath;
+      Absyn.ComponentRef cRef;
+      SCode.Restriction restriction;
+      Integer numFields;
+      DAE.Type ty;
+      String tyStr;
+      RenamedPat first,second;
+      Absyn.TypeSpec t;
+      Absyn.AlgorithmItem assign1,assign2;
+      list<DAE.Type> lstType;
+    
     case (RP_CONS(pathVar,first,second),localCache,localEnv,localDfaEnv,info)
-      local
-        Absyn.Ident pathVar;
-        RenamedPat first,second;
-        Absyn.Ident firstPathVar,secondPathVar;
-        Absyn.TypeSpec t;
-        Absyn.AlgorithmItem assign1,assign2;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem1,dfaEnvElem2;
       equation
         //Example:
         // if (x == CONS)    -- (This comparison will not occure)
@@ -1890,22 +1904,10 @@ algorithm
         elem = listAppend(elem, elem2);
         algs = listAppend(assign1::algs1,assign2::algs2);
         // algs = listAppend(algs3, algs);
-      then (localCache,localDfaEnv,elem,algs);
+      then 
+        (localCache,localDfaEnv,elem,algs);
+    
     case (RP_CALL(pathVar,cRef,argList),localCache,localEnv,localDfaEnv,info)
-      local
-        Absyn.Ident pathVar,recName,className,classPathStr;
-        list<Absyn.Ident> pathVarList,fieldNameList;
-        list<RenamedPat> argList;
-        SCode.Class sClass;
-        list<Absyn.TypeSpec> fieldTypeSpecs;
-        list<DAE.Type> fieldTypes;
-        Absyn.Path pathName, classPath;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
-        Absyn.ComponentRef cRef;
-        SCode.Restriction restriction;
-        Integer numFields;
-        DAE.Type ty;
-        String tyStr;
       equation
         pathName = Absyn.crefToPath(cRef);
         recName = Absyn.pathString(pathName);
@@ -1924,8 +1926,8 @@ algorithm
         (localCache,ty,_) = Lookup.lookupType(localCache,localEnv,pathName,SOME(info));
         //tyStr = Types.unparseType(ty);
         //Debug.fprintln("matchcase", "- Looked up record cons. func: " +& tyStr);
-        (fieldNameList,fieldTypes) = MetaUtil.constructorCallTypeToNamesAndTypes(ty);
-        fieldTypeSpecs = Util.listMap(fieldTypes, MetaUtil.typeConvert);
+        (fieldNameList,lstType) = MetaUtil.constructorCallTypeToNamesAndTypes(ty);
+        fieldTypeSpecs = Util.listMap(lstType, MetaUtil.typeConvert);
 
         dfaEnvElem = mergeLists(pathVarList,fieldTypeSpecs,{});
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
@@ -1941,14 +1943,10 @@ algorithm
         numFields = listLength(argList);
         algs2 = uniontypeComp(pathVar, ty, numFields, info);
         algs = listAppend(algs2,algs);
-      then (localCache,localDfaEnv,elem,algs);
+      then 
+        (localCache,localDfaEnv,elem,algs);
+    
     case (RP_TUPLE(pathVar,argList),localCache,localEnv,localDfaEnv,info)
-      local
-        Absyn.Ident pathVar;
-        list<RenamedPat> argList;
-        list<Absyn.TypeSpec> fieldTypes;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
-        list<Absyn.Ident> pathVarList;
       equation
         //Example:
         // if (x == TUPLE)    -- (This comparison will not occur)
@@ -1973,15 +1971,10 @@ algorithm
         (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv, info);
         elem = listAppend(elem1, elem2);
         algs = listAppend(algs1,algs2);
-      then (localCache,localDfaEnv,elem,algs);
-
+      then 
+        (localCache,localDfaEnv,elem,algs);
+    
     case (RP_SOME(pathVar,arg),localCache,localEnv,localDfaEnv,info)
-      local
-        Absyn.Ident pathVar,pathVar2;
-        RenamedPat arg;
-        list<Absyn.TypeSpec> fieldTypes;
-        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
-        list<Absyn.Ident> pathVarList;
       equation
         //Example:
         // if (x != NONE())    -- Or we get segfaults
@@ -2007,7 +2000,8 @@ algorithm
         algs = listAppend(algs1, algs2);
         algs = listAppend(algs3, algs);
         elem = listAppend(elem1, elem2);
-      then (localCache,localDfaEnv,elem,algs);
+      then 
+        (localCache,localDfaEnv,elem,algs);
   end matchcontinue;
 end generatePathVarDeclarationsNew;
 
@@ -2038,9 +2032,11 @@ algorithm
       Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
       list<Absyn.Ident> restVar,restFieldNames;
       Absyn.AlgorithmItem elem;
-      list<Absyn.Ident> restVar;
       Integer n;
+    
+    // empty case
     case (_,{},{},localAccList,_,_) then listReverse(localAccList);
+    
     // This case is for tuples when we simply call metaMGetField(x,num)
     case (localRecVarName,firstPathVar :: restVar,_,localAccList,n,info)
       equation
@@ -2075,15 +2071,15 @@ algorithm
       Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
       list<Absyn.Ident> restVar,restFieldNames;
       Absyn.AlgorithmItem elem;
-      list<Absyn.Ident> restVar;
-      Integer n;
+      Integer n,utIndex;
+      Absyn.Path utPath;
+      Absyn.Exp utCref;
+    
+    // empty case
     case (_,{},{},localAccList,_,_,_) then listReverse(localAccList);
+    
     // We should use fieldNames to create assignments.
     case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,(DAE.T_METARECORD(utPath=_),_),cref,info)
-      local
-        Absyn.Path utPath;
-        Absyn.Exp utCref;
-        Integer utIndex;
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
@@ -2092,6 +2088,7 @@ algorithm
         localAccList = elem::localAccList;
         localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
       then localAccList;
+    
     case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,_,cref,info)
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
@@ -2101,6 +2098,7 @@ algorithm
         localAccList = elem::localAccList;
         localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref,info);
       then localAccList;
+    
     case (_,_,_,_,_,_,_)
       equation
         Debug.fprintln("matchcase", "- createPathVarAssignmentsCall failed");
