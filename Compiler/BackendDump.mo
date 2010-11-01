@@ -941,7 +941,7 @@ algorithm
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
-        print(" fixed:");print(Util.boolString(BackendVariable.varFixed(v)));
+        print(" fixed:");print(boolString(BackendVariable.varFixed(v)));
         print("\n");
         dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
       then
@@ -981,7 +981,7 @@ algorithm
         print(ComponentReference.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
-        print(" fixed:");print(Util.boolString(BackendVariable.varFixed(v)));
+        print(" fixed:");print(boolString(BackendVariable.varFixed(v)));
         print("\n");
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);

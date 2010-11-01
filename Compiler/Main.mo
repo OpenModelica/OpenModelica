@@ -1195,7 +1195,7 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm
-  _:= matchcontinue (inStringLst)
+  _ := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;

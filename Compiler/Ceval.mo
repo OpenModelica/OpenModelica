@@ -2309,7 +2309,7 @@ algorithm
     case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
-				str = Util.boolString(b);
+				str = boolString(b);
         (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);

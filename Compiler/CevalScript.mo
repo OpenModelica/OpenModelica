@@ -1609,7 +1609,7 @@ algorithm
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         //        print("enableSendData\n");
-        //        print(Util.boolString(b));
+        //        print(boolString(b));
         //        print("\n");
         System.enableSendData(b);
       then

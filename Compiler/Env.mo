@@ -998,7 +998,7 @@ algorithm
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        encflag_str = Util.boolString(encflag);
+        encflag_str = boolString(encflag);
         res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
@@ -1026,7 +1026,7 @@ algorithm
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = Util.boolString(encflag);
+        encflag_str = boolString(encflag);
         res = stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
@@ -1035,7 +1035,7 @@ algorithm
     case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = Util.boolString(encflag);
+        encflag_str = boolString(encflag);
         res = stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});

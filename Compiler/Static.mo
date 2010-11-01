@@ -968,7 +968,7 @@ algorithm
       equation
         tp = Expression.typeof(e);
         scalar = Expression.typeBuiltin(tp);
-        s = Util.boolString(scalar);
+        s = boolString(scalar);
         es_1 = elabMatrixToMatrixExp3(es);
       then
         ((e,scalar) :: es_1);
@@ -3197,7 +3197,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace",
           "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
-        implstr = Util.boolString(impl);
+        implstr = boolString(impl);
         expstrs = Util.listMap(dims, Dump.printExpStr);
         expstr = Util.stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);

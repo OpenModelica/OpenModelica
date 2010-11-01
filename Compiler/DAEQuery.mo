@@ -417,7 +417,7 @@ algorithm
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
-        print("fixed:");print(Util.boolString(varFixed(v)));
+        print("fixed:");print(boolString(varFixed(v)));
         print("\n");
         */
         str = stringAppendList({"'", str1, "'"});
@@ -454,7 +454,7 @@ algorithm
         print(" indx = ");
         print(indx_str);
 
-        print("fixed:");print(Util.boolString(varFixed(v)));
+        print("fixed:");print(boolString(varFixed(v)));
         print("\n");
         */
         varno_1 = varno + 1;

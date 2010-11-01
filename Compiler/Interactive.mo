@@ -1773,7 +1773,7 @@ algorithm
         matchApiFunction(istmts, "getShowAnnotations");
         {} = getApiFunctionArgs(istmts);
         show = RTOpts.showAnnotations();
-        resstr = Util.boolString(show);
+        resstr = boolString(show);
       then
         (resstr, st); 
 
@@ -2451,7 +2451,7 @@ algorithm
         matchApiFunction(istmts, "isPrimitive");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isPrimitive(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2460,7 +2460,7 @@ algorithm
         matchApiFunction(istmts, "isType");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isType(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2469,7 +2469,7 @@ algorithm
         matchApiFunction(istmts, "isConnector");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isConnector(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2478,7 +2478,7 @@ algorithm
         matchApiFunction(istmts, "isModel");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isModel(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2487,7 +2487,7 @@ algorithm
         matchApiFunction(istmts, "isRecord");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isRecord(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2496,7 +2496,7 @@ algorithm
         matchApiFunction(istmts, "isBlock");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isBlock(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2505,7 +2505,7 @@ algorithm
         matchApiFunction(istmts, "isFunction");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isFunction(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2514,7 +2514,7 @@ algorithm
         matchApiFunction(istmts, "isPackage");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isPackage(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2523,7 +2523,7 @@ algorithm
         matchApiFunction(istmts, "isClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isClass(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2533,7 +2533,7 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
           getApiFunctionArgs(istmts);
         b1 = isParameter(cr, class_, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2543,7 +2543,7 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
           getApiFunctionArgs(istmts);
         b1 = isProtected(cr, class_, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2553,7 +2553,7 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
           getApiFunctionArgs(istmts);
         b1 = isConstant(cr, class_, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2562,7 +2562,7 @@ algorithm
         matchApiFunction(istmts, "existClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = existClass(cr, p);
-        resstr = Util.boolString(b1);
+        resstr = boolString(b1);
       then
         (resstr,st);
 
@@ -2573,7 +2573,7 @@ algorithm
         b1 = existClass(cr, p);
         b2 = isModel(cr, p);
         b = boolAnd(b1, b2);
-        resstr = Util.boolString(b);
+        resstr = boolString(b);
       then
         (resstr,st);
 
@@ -2584,7 +2584,7 @@ algorithm
         b1 = existClass(cr, p);
         b2 = isPackage(cr, p);
         b = boolAnd(b1, b2);
-        resstr = Util.boolString(b);
+        resstr = boolString(b);
       then
         (resstr,st);
 
@@ -5668,9 +5668,9 @@ algorithm
       Absyn.Info info;
     case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = fi,encapsulatedPrefix = e,restriction = restr,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))))) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       equation
-        finalPrefix = Util.boolString(f);
+        finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
+        repl = boolString(r_1);
         inout_str = innerOuterStr(inout);
         str_restriction = Absyn.restrString(restr) "compile the classdef string" ;
         element_str = stringAppendList(
@@ -5690,9 +5690,9 @@ algorithm
         str;
     case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = id,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))) /* if is not a classdef, just follow the normal stuff */
       equation
-        finalPrefix = Util.boolString(f);
+        finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
+        repl = boolString(r_1);
         inout_str = innerOuterStr(inout);
         element_str = getElementType(elementSpec);
         sline_str = intString(sline);
@@ -8486,9 +8486,9 @@ protected function getClassInformation
 algorithm
   path := Absyn.crefToPath(cr);
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
-  strPartial := Util.boolString(partialPrefix) "handling boolean attributes of the class" ;
-  strFinal := Util.boolString(finalPrefix);
-  strEncapsulated := Util.boolString(encapsulatedPrefix);
+  strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
+  strFinal := boolString(finalPrefix);
+  strEncapsulated := boolString(encapsulatedPrefix);
   res := Dump.unparseRestrictionStr(restr) "handling restriction" ;
   cmt := getClassComment(cdef) "handling class comment from the definition" ;
   str_readonly := selectString(isReadOnly, "readonly", "writable") "handling positional information" ;
@@ -8541,9 +8541,9 @@ protected function getClassAttributes
 algorithm
   path := Absyn.crefToPath(cr);
   Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
-  strPartial := Util.boolString(partialPrefix) "handling boolean attributes of the class" ;
-  strFinal := Util.boolString(finalPrefix);
-  strEncapsulated := Util.boolString(encapsulatedPrefix);
+  strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
+  strFinal := boolString(finalPrefix);
+  strEncapsulated := boolString(encapsulatedPrefix);
   res := Absyn.restrString(restr) "handling restriction" ;
   cmt := getClassComment(cdef) "handling class comment from the definition" ;
   str_readonly := selectString(isReadOnly, "readonly", "writable") "handling positional information" ;
@@ -14708,9 +14708,9 @@ algorithm
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
-        finalPrefix = Util.boolString(f);
+        finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
+        repl = boolString(r_1);
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
         streamPrefixstr = attrStreamStr(attr);
@@ -14731,9 +14731,9 @@ algorithm
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
-        finalPrefix = Util.boolString(f);
+        finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
+        repl = boolString(r_1);
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
         streamPrefixstr = attrStreamStr(attr);
@@ -14941,7 +14941,7 @@ algorithm
       Boolean f;
     case (Absyn.ATTR(flowPrefix = f))
       equation
-        res = Util.boolString(f);
+        res = boolString(f);
       then
         res;
   end matchcontinue;
@@ -14961,7 +14961,7 @@ algorithm
       Boolean s;
     case (Absyn.ATTR(streamPrefix = s))
       equation
-        res = Util.boolString(s);
+        res = boolString(s);
       then
         res;
   end matchcontinue;

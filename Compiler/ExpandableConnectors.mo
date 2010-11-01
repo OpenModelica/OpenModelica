@@ -64,7 +64,6 @@ PHASE_5
 public import SCode;
 public import InstanceHierarchy;
 
-protected import Absyn;
 protected import Debug;
 
 public function elaborateExpandableConnectors

@@ -1321,7 +1321,7 @@ algorithm
     
     case(RP_BOOL(var,valBool))
       equation
-        str = Util.boolString(valBool);
+        str = boolString(valBool);
         str = stringAppendList({"Pathvar:", var, " : ",str,"\n"});
       then str;
     
