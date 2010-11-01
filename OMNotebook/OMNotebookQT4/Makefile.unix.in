@@ -21,7 +21,7 @@ omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
 
 $(NAME)$(EXE): Makefile omc_communication.cc
-	make -f Makefile
+	$(MAKE) -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
 	cp -p $</Contents/MacOS/$(NAME) $@
