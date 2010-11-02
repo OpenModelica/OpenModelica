@@ -342,17 +342,16 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
   
   // define variable data for model
-  <%vars.stateVars |> var => DefineStateVariables(var) ;separator="\n"%>
-  <%vars.inputVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.outputVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
+  <%vars.stateVars |> var => DefineVariables(var,"1") ;separator="\n"%>
+  <%vars.derivativeVars |> var => DefineDerivativeVariables(var,"2") ;separator="\n"%>
+  <%vars.algVars |> var => DefineVariables(var,"3") ;separator="\n"%>
+  <%vars.paramVars |> var => DefineVariables(var,"4") ;separator="\n"%>
+  <%vars.intAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
+  <%vars.intParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
+  <%vars.boolAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
+  <%vars.boolParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
+  <%vars.stringAlgVars |> var => DefineVariables(var,"1") ;separator="\n"%>
+  <%vars.stringParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
   
   // define initial state vector as vector of value references
   #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
@@ -360,24 +359,31 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   >>
 end ModelDefineData;
 
-template DefineStateVariables(SimVar simVar)
+template DefineDerivativeVariables(SimVar simVar, String prefix)
  "Generates code for defining variables in c file for FMU target.  "
 ::=
 match simVar
   case SIMVAR(__) then
   <<
-  #define <%crefStr(name)%>_
-  #define der_<%crefStr(name)%>_
+  #define <%dervativeNameCStyle(name)%> <%prefix%><%index%>
   >>
-end DefineStateVariables;
+end DefineDerivativeVariables;
 
-template DefineVariables(SimVar simVar)
+template dervativeNameCStyle(ComponentRef cr)
+ "Generates the name of a dervative in c style, replaces ( with _"
+::=
+  match cr
+  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
+end dervativeNameCStyle;
+
+template DefineVariables(SimVar simVar, String prefix)
  "Generates code for defining variables in c file for FMU target. "
 ::=
 match simVar
   case SIMVAR(__) then
+  let description = if comment then '// "<%comment%>"'
   <<
-  #define <%crefStr(name)%>_ 
+  #define <%crefStr(name)%>_ <%prefix%><%index%> <%description%>
   >>
 end DefineVariables;
 
@@ -408,7 +414,7 @@ case SIMCODE(__) then
 end initializeFunction;
 
 template eventUpdateFunction(SimCode simCode)
- "Generates eventupdate function for c file."
+ "Generates event update function for c file."
 ::=
 match simCode
 case SIMCODE(__) then
