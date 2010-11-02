@@ -946,14 +946,16 @@ algorithm
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        e1 = Expression.crefExp(cr1);
+        e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
 
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        e1 = Expression.crefExp(cr1);
+        e1 = ExpressionSimplify.simplify(e1);
         e2 = ExpressionSimplify.simplify(e2);
       then
         BackendDAE.EQUATION(e1,e2,source);
