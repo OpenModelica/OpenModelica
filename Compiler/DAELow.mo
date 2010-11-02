@@ -6110,6 +6110,7 @@ algorithm
     local DAE.Exp e1,e2;
           DAE.ComponentRef cr1,cr2;
           DAE.ElementSource source "the element source";
+          Exp.Type tp;
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
@@ -6134,14 +6135,16 @@ algorithm
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        tp = Exp.typeof(e2);
+        e1 = Exp.simplify(DAE.CREF(cr1,tp));
         e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
 
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source))
       equation
-        e1 = Exp.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
+        tp = Exp.typeof(e2);
+        e1 = Exp.simplify(DAE.CREF(cr1, tp));
         e2 = Exp.simplify(e2);
       then
         EQUATION(e1,e2,source);
@@ -14511,7 +14514,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) =
            calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,p,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,ext,source,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
   end matchcontinue;
 end calculateIndexes2;
