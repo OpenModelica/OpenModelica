@@ -1971,6 +1971,9 @@ protected constant DAE.Type list2boolean=(
 protected constant DAE.Type AlistA2boolean=(
           DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
 
+protected constant DAE.Type AlistA2listA=(
+          DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE()))},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
+
 protected constant DAE.Type boxed2int=(
           DAE.T_FUNCTION({("x",typeBoxedAny)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
 
@@ -3006,6 +3009,7 @@ algorithm
         env = Env.extendFrameT(env, "listRest", listA2listA);
         env = Env.extendFrameT(env, "listDelete", listAint2listA);
         env = Env.extendFrameT(env, "listEmpty", list2boolean);
+        env = Env.extendFrameT(env, "cons", AlistA2listA);
 
         // Array Operations
         env = Env.extendFrameT(env, "arrayLength", marrayAny2int);

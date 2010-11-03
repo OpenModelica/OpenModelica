@@ -235,6 +235,7 @@ typedef modelica_metatype listNth_rettype;
 typedef modelica_metatype listRest_rettype;
 typedef modelica_integer listEmpty_rettype;
 typedef modelica_metatype listDelete_rettype;
+typedef modelica_metatype cons_rettype;
 
 listReverse_rettype listReverse(modelica_metatype);
 listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
@@ -245,6 +246,9 @@ listNth_rettype listNth(modelica_metatype, modelica_integer);
 listRest_rettype listRest(modelica_metatype);
 listEmpty_rettype listEmpty(modelica_metatype);
 listDelete_rettype listDelete(modelica_metatype, modelica_integer);
+
+#define cons(X,XS) mmc_mk_cons(X,XS)
+#define boxptr_cons(X,XS) mmc_mk_cons(X,XS)
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
