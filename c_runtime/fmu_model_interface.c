@@ -79,7 +79,8 @@ DllExport fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callE
 DllExport fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiReal    value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -87,7 +88,8 @@ DllExport fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], siz
 DllExport fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiInteger value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -95,7 +97,8 @@ DllExport fmiStatus fmiSetInteger(fmiComponent c, const fmiValueReference vr[], 
 DllExport fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiBoolean value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -103,7 +106,8 @@ DllExport fmiStatus fmiSetBoolean(fmiComponent c, const fmiValueReference vr[], 
 DllExport fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, const fmiString  value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -140,7 +144,8 @@ DllExport fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicator
 DllExport fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiReal    value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized|modelTerminated)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -148,7 +153,8 @@ DllExport fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], siz
 DllExport fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiInteger value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized|modelTerminated)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -156,7 +162,8 @@ DllExport fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], 
 DllExport fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiBoolean value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized|modelTerminated)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -164,7 +171,8 @@ DllExport fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], 
 DllExport fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr, fmiString  value[])
 /******************************************************************************/
 {
-  return fmiError;
+	if(checkInvalidState(model, "fmiGetString", modelInstantiated|modelInitialized|modelTerminated)
+		return fmiError;
 };
 /******************************************************************************/
 
@@ -207,4 +215,20 @@ DllExport fmiStatus fmiTerminate(fmiComponent c)
 {
   return fmiError;
 };
+/******************************************************************************/
+
+
+fmiBoolean checkInvalidState((ModelData* model, const char* f, int safeStates)
+/******************************************************************************/
+{
+	if(!model)
+		return fmiTrue;
+	else if(!(model->state & sateStates)
+	{
+		model->state = modelError;
+		return fmiTrue;
+	}
+	else
+		return fmiFalse;
+}
 /******************************************************************************/
