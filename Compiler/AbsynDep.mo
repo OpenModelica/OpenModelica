@@ -52,6 +52,20 @@ algorithm
    end matchcontinue;
 end dumpDepends;
 
+public function dumpAvlTreeKeys "prints all keys in an Avltree to stdout"
+  input AvlTree used;
+algorithm
+  _ := matchcontinue(used)
+  local AvlTree used, usedBy;
+    list<tuple<AvlKey,AvlValue>> usedLst;
+    case(used) equation
+      usedLst = avlTreeToList(used);
+      print(Util.stringDelimitList(Util.listMap(usedLst, printKeyValueTupleStr),"\n"));
+    then ();
+   end matchcontinue;
+end dumpAvlTreeKeys;
+
+
 protected function printKeyValueTupleStr "print key/value tuple as key -> value to string"
   input tuple<AvlKey,AvlValue> tpl;
   output String str;
@@ -175,13 +189,15 @@ algorithm
     then uses;
 
     case(DEPENDS(treeUses,_),cl as Absyn.IDENT(_),uses) equation
-      v = avlTreeGet(treeUses,cl);
+      // get the classes used by cl. If no one uses this should anyway succed, hence using avlTreeGetOrEmpty
+      v = avlTreeGetOrEmpty(treeUses,cl);      
       outUses = avlAddUses(uses,{cl});
       outUses = getUsesTransitive2Lst(depends,v,outUses);
     then outUses;
 
     case(depends as DEPENDS(treeUses,_),cl as Absyn.QUALIFIED(_,_),uses) equation
-      v = avlTreeGet(treeUses,cl);
+      // get the classes used by cl. If no one uses this should anyway succed, hence using avlTreeGetOrEmpty
+      v = avlTreeGetOrEmpty(treeUses,cl);
       outUses = avlAddUses(uses,{cl});
       outUses = getUsesTransitive2Lst(depends,v,outUses);
       cl = Absyn.stripLast(cl);
@@ -591,6 +607,19 @@ algorithm
     then lh - rh;
   end matchcontinue;
 end differenceInHeight;
+
+public function avlTreeGetOrEmpty "  Get a value from the binary tree given a key, if value not found remturn empty list"
+  input AvlTree tree;
+  input AvlKey key;
+  output AvlValue val "or empty list if not in tree";
+algorithm
+  val := matchcontinue(tree,key)
+    case(tree,key) equation
+      val = avlTreeGet(tree,key);
+    then val;
+    case(tree,key) then {};            
+  end matchcontinue;
+end avlTreeGetOrEmpty;
 
 public function avlTreeGet "  Get a value from the binary tree given a key.
 "

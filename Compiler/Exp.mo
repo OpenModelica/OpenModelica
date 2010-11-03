@@ -4572,6 +4572,7 @@ algorithm
    case ((e as DAE.ICONST(integer = _))) then {e};
    case ((e as DAE.RCONST(real = _))) then {e};
    case ((e as DAE.SCONST(string = _))) then {e};
+   case ((e as DAE.ENUM_LITERAL(name = _))) then {e};
    case ((e as DAE.UNARY(operator = _))) then {e};
    case ((e as DAE.IFEXP(expCond = _))) then {e};
    case ((e as DAE.CALL(path = _))) then {e};
@@ -4633,7 +4634,6 @@ algorithm
   end matchcontinue;
 end isSub;
 
-
 public function terms "
 function: terms
   author: PA
@@ -4662,7 +4662,7 @@ algorithm
         f2_1 = Util.listMap(f2, negate);
         res = listAppend(f1, f2_1);
       then
-        res;
+        res;                 
     case ((e as DAE.BINARY(operator = DAE.MUL(ty = _)))) then {e};
     case ((e as DAE.BINARY(operator = DAE.DIV(ty = _)))) then {e};
     case ((e as DAE.BINARY(operator = DAE.POW(ty = _)))) then {e};
@@ -4670,6 +4670,7 @@ algorithm
     case ((e as DAE.ICONST(integer = _))) then {e};
     case ((e as DAE.RCONST(real = _))) then {e};
     case ((e as DAE.SCONST(string = _))) then {e};
+    case ((e as DAE.ENUM_LITERAL(name = _))) then {e};
     case ((e as DAE.UNARY(operator = _))) then {e};
     case ((e as DAE.IFEXP(expCond = _))) then {e};
     case ((e as DAE.CALL(path = _))) then {e};
@@ -4810,6 +4811,15 @@ public function makeProduct
 algorithm
   product := makeProductLst({e1,e2});
 end makeProduct;
+
+public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
+{e1*v1,e1*v2,...,e1*vn}"
+  input Exp e1;
+  input list<Exp> v;
+  output list<Exp> res;
+algorithm
+  res := Util.listMap1(v,makeProduct,e1);
+end makeProductVector;
 
 public function makeProductLst
 "function: makeProductLst
@@ -12492,6 +12502,15 @@ algorithm
     then DAE.IFEXP(c,tbExp,ifExp);
   end matchcontinue;
 end makeNestedIf;
+
+public function makeDivVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
+{v1/e1,v2/e1,...,vn/e1}"
+  input list<Exp> v;
+  input Exp e1;
+  output list<Exp> res;
+algorithm
+  res := Util.listMap1(v,makeDiv,e1);
+end makeDivVector;
 
 public function makeDiv "Takes two expressions and create a division"
   input Exp e1;
