@@ -1763,6 +1763,7 @@ algorithm
     case (e as DAE.ICONST(integer = _)) then {e};
     case (e as DAE.RCONST(real = _)) then {e};
     case (e as DAE.SCONST(string = _)) then {e};
+    case ((e as DAE.ENUM_LITERAL(name = _))) then {e};
     case (e as DAE.UNARY(operator = _)) then {e};
     case (e as DAE.IFEXP(expCond = _)) then {e};
     case (e as DAE.CALL(path = _)) then {e};
@@ -1816,6 +1817,7 @@ algorithm
     case ((e as DAE.ICONST(integer = _))) then {e};
     case ((e as DAE.RCONST(real = _))) then {e};
     case ((e as DAE.SCONST(string = _))) then {e};
+    case ((e as DAE.ENUM_LITERAL(name = _))) then {e};
     case ((e as DAE.UNARY(operator = _))) then {e};
     case ((e as DAE.IFEXP(expCond = _))) then {e};
     case ((e as DAE.CALL(path = _))) then {e};
@@ -2456,6 +2458,15 @@ algorithm
   outExp := DAE.BINARY(e1,op,e2);
 end expMul;
 
+public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
+{e1*v1,e1*v2,...,e1*vn}"
+  input DAE.Exp e1;
+  input list<DAE.Exp> v;
+  output list<DAE.Exp> res;
+algorithm
+  res := Util.listMap1(v,makeProduct,e1);
+end makeProductVector;
+
 public function makeProduct
 "Makes a product of two expressions"
   input DAE.Exp e1;
@@ -2606,6 +2617,15 @@ algorithm
     case(e1,e2) then expDiv(e1,e2);
   end matchcontinue;
 end makeDiv;
+
+public function makeDivVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
+{v1/e1,v2/e1,...,vn/e1}"
+  input list<DAE.Exp> v;
+  input DAE.Exp e1;
+  output list<DAE.Exp> res;
+algorithm
+  res := Util.listMap1(v,makeDiv,e1);
+end makeDivVector;
 
 public function makeAsub "creates an ASUB given an expression and an index"
   input DAE.Exp e;
