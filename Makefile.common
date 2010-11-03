@@ -79,7 +79,8 @@ susgen:
 	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
 omlibrary:
-	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 -D {} ../build/lib/omlibrary/{} \;)
+	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
+	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
