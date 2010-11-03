@@ -321,10 +321,6 @@ public function lookupClass "Tries to find a specified class in an environment"
   output Env.Cache outCache;
   output SCode.Class outClass;
   output Env.Env outEnv;
-protected
-  Real t1,t2,time;
-  Boolean b;
-  String s,s2;
 algorithm
   (outCache,outClass,outEnv,_) := lookupClass2(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
 end lookupClass;

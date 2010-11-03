@@ -3134,6 +3134,43 @@ algorithm
   end matchcontinue;
 end listListThreadTuple;
 
+public function listThreadFold
+  "This is a combination of listThread and listFold that applies a function to
+  the heads of two lists with an extra argument that is updated and passed on."
+  input list<Type_a> inList_a;
+  input list<Type_b> inList_b;
+  input FuncType inFunc;
+  input Type_c inFoldValue;
+  output Type_c outFoldValue;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inA;
+    input Type_b inB;
+    input Type_c inC;
+    output Type_c outC;
+  end FuncType;
+algorithm
+  outFoldValue := matchcontinue(inList_a, inList_b, inFunc, inFoldValue)
+    local
+      Type_a a;
+      Type_b b;
+      Type_c c;
+      list<Type_a> rest_a;
+      list<Type_b> rest_b;
+    case ({}, {}, _, _) then inFoldValue;
+    case (a :: rest_a, b :: rest_b, _, _)
+      equation
+        c = inFunc(a, b, inFoldValue);
+        c = listThreadFold(rest_a, rest_b, inFunc, c);
+      then
+        c;
+  end matchcontinue;
+end listThreadFold;
+
 public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
 If all strings a empty or empty list return empty string.
 "
@@ -6004,7 +6041,7 @@ algorithm
       equation
         (index == 0) = true;
       then
-        (listReverse(la),lb);
+        (la,lb);
     case ((a :: la),lb,index)
       equation
         new_index = index - 1;

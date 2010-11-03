@@ -3938,7 +3938,7 @@ algorithm
       Boolean a,sc;
       Integer nmax,oi;
       DAE.Dimension dim1, dim2, dim11, dim22;
-      //Integer dim1,dim2,nmax,dim11,dim22;
+      list<DAE.Dimension> dims;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
@@ -3990,13 +3990,13 @@ algorithm
       equation
         true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
-        ety1 = elabType(ty2);
-        at = elabType(ty0);
+        ety1 = elabType(ty1);
+        dims = Expression.arrayDimension(ety1);
         a = isArray(ty2);
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(ety1,{dim1}),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2));
+        (DAE.ARRAY(DAE.ET_ARRAY(ety1,dim1 :: dims),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2));
         //(DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2));
 
         /* Range expressions, e.g. 1:2:10 */

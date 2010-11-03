@@ -1258,23 +1258,26 @@ protected function expandArray
   input DAE.Exp expr;
   input list<list<Values.Value>> valLists;
   input list<Ident> iteratorNames;
-  input Boolean isArray;
   input DAE.ExpType arrayType;
   output DAE.Exp expandedExp;
 algorithm
-  expandedExp := matchcontinue(expr, valLists, iteratorNames, isArray, arrayType)
+  expandedExp := matchcontinue(expr, valLists, iteratorNames, arrayType)
     local
       list<Values.Value> values;
       list<list<Values.Value>> rest_values;
       Ident iterator_name;
       list<Ident> rest_iterators;
       list<DAE.Exp> new_expl, expanded_expl;
-    case (_, {}, {}, _, _) then expr;
-    case (_, values :: rest_values, iterator_name :: rest_iterators, _, _)
+      Boolean is_scalar;
+      DAE.ExpType element_type;
+    case (_, {}, {}, _) then expr;
+    case (_, values :: rest_values, iterator_name :: rest_iterators, _)
       equation
         expanded_expl = elabCallReduction2(expr, values, iterator_name);
-        new_expl = Util.listMap4(expanded_expl, expandArray, rest_values, rest_iterators, isArray, arrayType);
-      then DAE.ARRAY(arrayType, isArray, new_expl);
+        element_type = Expression.unliftArray(arrayType);
+        new_expl = Util.listMap3(expanded_expl, expandArray, rest_values, rest_iterators, element_type);
+        is_scalar = not Expression.isArrayType(element_type);
+      then DAE.ARRAY(arrayType, is_scalar, new_expl);
     end matchcontinue;
 end expandArray;
 
@@ -1340,7 +1343,6 @@ protected function elabCallReduction3
   DAE.ExpType etp;
   DAE.DAElist dae1, dae2;
   DAE.Exp exp;
-  Boolean b;
   Option<Interactive.InteractiveSymbolTable> st;
 algorithm
   (cache, env, iterconsts, vals, iter_names, array_type) :=
@@ -1349,12 +1351,11 @@ algorithm
   env := updateIteratorConst(env, iter_names, iterconsts);
   (cache, exp, DAE.PROP(exp_type, exp_const), st) :=
     elabExp(cache, env, reductionExp, impl, inST, doVect, prefix, info);
-  b := not Types.isArray(exp_type);
   ty := constructArrayType(array_type, exp_type);
   etp := Types.elabType(ty);
   const := Types.constAnd(exp_const, iterconst);
   outCache := cache;
-  outExp := expandArray(exp, vals, iter_names, b, etp);
+  outExp := expandArray(exp, vals, iter_names, etp);
   outProperties := DAE.PROP(ty, const);
   outST := st;
 end elabCallReduction3;

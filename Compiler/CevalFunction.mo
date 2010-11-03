@@ -36,7 +36,26 @@ package CevalFunction
                 modelica functions defined by the user.
 
   RCS: $Id$
+
+  TODO:
+    * Implement evaluation of MetaModelica statements.
+    * Enable NORETCALL (see comment in evaluateStatement).
+    * Implement terminate and assert(false, ...).
+    * Arrays of records probably doesn't work yet.
+    * Implement record assignment (r := record(...)).
+    * Implement record lookup in assignVariable better.
+    * Use the step value when assigning slices.
+    * Traverse expression in optimizeExp.
+    * The cache should probably be sent in and used here.
 "
+
+// Jump table for CevalFunction:
+// [TYPE]  Types.
+// [EVAL]  Constant evaluation functions.
+// [EENV]  Environment extension functions (add variables).
+// [MENV]  Environment manipulation functions (set and get variables).
+// [DEPS]  Function variable dependency handling.
+// [EOPT]  Expression optimization functions.
 
 // public imports
 public import Absyn;
@@ -47,6 +66,7 @@ public import Values;
 
 // protected imports
 protected import Ceval;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
@@ -59,9 +79,26 @@ protected import Types;
 protected import Util;
 protected import ValuesUtil;
 
+// [TYPE]  Types
+
+// This type represents a list of dependencies for a variable, where the first
+// component reference is the variable itself.
 protected type Dependency = tuple<DAE.ComponentRef, list<DAE.ComponentRef>>;
 
+// LoopControl is used to control the functions behaviour in different
+// situations. All evaluation functions returns a LoopControl variable that
+// tells the caller whether it should continue evaluating or not.
+protected uniontype LoopControl
+  record NEXT "Continue to the next statement." end NEXT;
+  record BREAK "Exit the current loop." end BREAK;
+  record RETURN "Exit the function." end RETURN;
+end LoopControl;
+
+// [EVAL]  Constant evaluation functions.
+
 public function evaluate
+  "This is the entry point of CevalFunction. This function constant evaluates a
+  function given an instantiated function and a list of function arguments."
   input Env.Env inEnv;
   input DAE.Function inFunction;
   input list<Values.Value> inFunctionArguments;
@@ -74,6 +111,10 @@ algorithm
       DAE.Type ty;
       Values.Value result;
       String func_name;
+
+    // The DAE.FUNCTION structure might contain an optional function derivative
+    // mapping which is why functions below is a list. We only evaluate the
+    // first function, which is hopefully the one we want.
     case (_, DAE.FUNCTION(
         path = p,
         functions = func :: _,
@@ -81,20 +122,23 @@ algorithm
         partialPrefix = false), _)
       equation
         func_name = Absyn.pathString(p);
-        result = evaluateFunction(inEnv, func_name, func, ty, inFunctionArguments);
+        result = evaluateFunctionDefinition(inEnv, func_name, func, ty,
+            inFunctionArguments); 
       then
         result;
-    case (_, _, _)
+
+    else
       equation
         true = RTOpts.debugFlag("failtrace");
-        print("- CevalFunction.evaluate failed for:\n");
-        print(DAEDump.dumpFunctionStr(inFunction));
+        Debug.traceln("- CevalFunction.evaluate failed for function ");
+        Debug.traceln(DAEDump.dumpFunctionStr(inFunction));
       then
         fail();
   end matchcontinue;
 end evaluate;
 
-protected function evaluateFunction
+protected function evaluateFunctionDefinition
+  "This function constant evaluates a function definition."
   input Env.Env inEnv;
   input String inFuncName;
   input DAE.FunctionDefinition inFunc;
@@ -112,12 +156,19 @@ algorithm
     
     case (_, _, DAE.FUNCTION_DEF(body = body), _, _)
       equation
+        // Split the definition into function variables and statements.
         (vars, body) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
-        vars = sortFunctionVarsByDependency(vars);
+        // Save the output variables, so that we can return their values when
+        // we're done.
         output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
+        vars = sortFunctionVarsByDependency(vars);
+        // Create an environment for the function and add all function variables.
         env = setupFunctionEnvironment(inEnv, inFuncName, vars, inFuncArgs);
-        env = Util.listFold(body, evaluateElement, env);
+        // Evaluate the body of the function.
+        (env, _) = evaluateElements(body, env, NEXT());
+        // Fetch the values of the output variables.
         return_values = Util.listMap1(output_vars, getFunctionReturnValue, env);
+        // If we have several output variables they should be boxed into a tuple.
         return_value = boxReturnValue(return_values);
       then
         return_value;
@@ -128,240 +179,140 @@ algorithm
       then
         fail();
   end matchcontinue;
-end evaluateFunction;
+end evaluateFunctionDefinition;
+
+protected function evaluateElements
+  "This function evaluates a list of elements."
+  input list<DAE.Element> inElements;
+  input Env.Env inEnv;
+  input LoopControl inLoopControl;
+  output Env.Env outEnv;
+  output LoopControl outLoopControl;
+algorithm
+  (outEnv, outLoopControl) := match(inElements, inEnv, inLoopControl)
+    local
+      DAE.Element elem;
+      list<DAE.Element> rest_elems;
+      Env.Env env;
+      LoopControl loop_ctrl;
+    case (_, _, RETURN()) then (inEnv, inLoopControl);
+    case ({}, _, _) then (inEnv, NEXT());
+    case (elem :: rest_elems, _, _)
+      equation
+        (env, loop_ctrl) = evaluateElement(elem, inEnv);
+        (env, loop_ctrl) = evaluateElements(rest_elems, env, loop_ctrl);
+      then
+        (env, loop_ctrl);
+  end match;
+end evaluateElements;
 
 protected function evaluateElement
+  "This function evaluates a single element, which should be an algorithm."
   input DAE.Element inElement;
   input Env.Env inEnv;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
   outEnv := matchcontinue(inElement, inEnv)
     local
       Env.Env env;
+      LoopControl loop_ctrl;
       list<DAE.Statement> sl;
-    
-    case (DAE.DEFINE(componentRef = _), _)
-      equation
-        print("DEFINE\n");
-      then
-        fail();
-    
-    case (DAE.INITIALDEFINE(componentRef = _), _)
-      equation
-        print("INITIAL DEFINE\n");
-      then
-        fail();
-    
-    case (DAE.EQUATION(exp = _), _)
-      equation
-        print("EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.EQUEQUATION(cr1 = _), _)
-      equation
-        print("EQUEQUATION\n");
-      then
-        fail();
-    
-    case (DAE.ARRAY_EQUATION(dimension = _), _)
-      equation
-        print("ARRAY_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.INITIAL_ARRAY_EQUATION(dimension = _), _)
-      equation
-        print("INITIAL_ARRAY_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.COMPLEX_EQUATION(lhs = _), _)
-      equation
-        print("COMPLEX_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _), _)
-      equation
-        print("INITIAL_COMPLEX_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.WHEN_EQUATION(condition = _), _)
-      equation
-        print("WHEN_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.IF_EQUATION(condition1 = _), _)
-      equation
-        print("IF_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.INITIAL_IF_EQUATION(condition1 = _), _)
-      equation
-        print("INITIAL_IF_EQUATION\n");
-      then
-        fail();
-    
-    case (DAE.INITIALEQUATION(exp1 = _), _)
-      equation
-        print("INITIALEQUATION\n");
-      then
-        fail();
-    
+
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = sl)), _)
       equation
         (sl, env) = DAEUtil.traverseDAEEquationsStmts(sl, optimizeExp, inEnv);
-        env = Util.listFold(sl, evaluateStatement, env);
+        (env, loop_ctrl) = evaluateStatements(sl, env);
       then
-        env;
-    
-    case (DAE.INITIALALGORITHM(algorithm_ = _), _)
-      equation
-        print("INITIALALGORITHM\n");
-      then
-        fail();
-    
-    case (DAE.COMP(ident = _), _)
-      equation
-        print("COMP\n");
-      then
-        fail();
-    case (DAE.EXTOBJECTCLASS(path = _), _)
-      equation
-        print("EXTOBJECTCLASS\n");
-      then
-        fail();
-    case (DAE.ASSERT(condition = _), _)
-      equation
-        print("ASSERT\n");
-      then
-        fail();
-    case (DAE.TERMINATE(message = _), _)
-      equation
-        print("TERMINATE\n");
-      then
-        fail();
-    case (DAE.REINIT(componentRef = _), _)
-      equation
-        print("REINIT\n");
-      then
-        fail();
-    case (DAE.NORETCALL(functionName = _), _)
-      equation
-        print("NORETCALL\n");
-      then
-        fail();
-  end matchcontinue;
+        (env, loop_ctrl);
+   end matchcontinue;
 end evaluateElement;
 
-protected function optimizeExp
-  input tuple<DAE.Exp, Env.Env> inTuple;
-  output tuple<DAE.Exp, Env.Env> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.ComponentRef cref;
-      DAE.ExpType ety;
-      list<DAE.Exp> sub_exps;
-      list<DAE.Subscript> subs;
-      Env.Env env;
-    case ((DAE.ASUB(
-        exp = DAE.CREF(componentRef = cref, ty = ety), 
-        sub = sub_exps), env))
-      equation
-        subs = Util.listMap(sub_exps, Expression.makeIndexSubscript);
-        cref = ComponentReference.subscriptCref(cref, subs);
-      then
-        ((DAE.CREF(cref, ety), env));
-    else then inTuple;
-  end matchcontinue;
-end optimizeExp;
-        
-
 protected function evaluateStatement
+  "This function evaluates a statement."
   input DAE.Statement inStatement;
   input Env.Env inEnv;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inStatement, inEnv)
+  (outEnv, outLoopControl) := matchcontinue(inStatement, inEnv)
     local
       Env.Env env;
       DAE.Exp lhs, rhs, condition;
       DAE.ComponentRef lhs_cref;
       Values.Value rhs_val;
       list<DAE.Statement> statements;
+      list<DAE.Exp> expl;
+      Absyn.Path fn_name;
+      LoopControl loop_ctrl;
+
     case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), env)
       equation
         rhs_val = cevalExp(rhs, env);
         lhs_cref = extractLhsComponentRef(lhs);
-        env = assignVariable(lhs_cref, inEnv, rhs_val);
+        env = assignVariable(lhs_cref, rhs_val, env);
       then
-        env;
-    case (DAE.STMT_TUPLE_ASSIGN(type_ = _), _)
+        (env, NEXT());
+
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = _), _)
       equation
-        print("STMT_TUPLE_ASSIGN\n");
+        env = evaluateTupleAssignStatement(inStatement, inEnv); 
       then
-        fail();
+        (env, NEXT());
+
     case (DAE.STMT_ASSIGN_ARR(componentRef = lhs_cref, exp = rhs), env)
       equation
         rhs_val = cevalExp(rhs, env);
-        env = assignVariable(lhs_cref, inEnv, rhs_val);
+        env = assignVariable(lhs_cref, rhs_val, env);
       then
-        env;
+        (env, NEXT());
+
     case (DAE.STMT_IF(exp = _), _)
       equation
-        env = evaluateIfStatement(inStatement, inEnv);
+        (env, loop_ctrl) = evaluateIfStatement(inStatement, inEnv);
       then
-        env;
+        (env, loop_ctrl);
+
     case (DAE.STMT_FOR(type_ = _), _)
       equation
-        env = evaluateForStatement(inStatement, inEnv);
+        (env, loop_ctrl) = evaluateForStatement(inStatement, inEnv);
       then
-        env;
+        (env, loop_ctrl);
+
     case (DAE.STMT_WHILE(exp = condition, statementLst = statements), _)
       equation
-        env = evaluateWhileStatement(condition, statements, inEnv);
+        (env, loop_ctrl) = evaluateWhileStatement(condition, statements, inEnv, NEXT());
       then
-        env;
-    case (DAE.STMT_WHEN(exp = _), _)
+        (env, loop_ctrl);
+
+    // If the condition is true in the assert, do nothing. If the condition
+    // is false we should stop the instantiation (depending on the assertion
+    // level), but we can't really do much about that here. So right now we just
+    // fail.
+    case (DAE.STMT_ASSERT(cond = condition), _)
       equation
-        print("STMT_WHEN\n");
+        Values.BOOL(boolean = true) = cevalExp(condition, inEnv);
       then
-        fail();
-    case (DAE.STMT_ASSERT(cond = _), _)
+        (inEnv, NEXT());
+
+    // Non-returning function calls should probably be constant evaluated, but
+    // causes problem when we call functions with side-effects (such as in the
+    // test case mosfiles/Random.mos). Enable this code when functions with
+    // side-effects are no longer constant evaluated.
+    /*case (DAE.STMT_NORETCALL(exp = rhs), _)
       equation
-        print("STMT_ASSERT\n");
+        _ = cevalExp(rhs, inEnv);
       then
-        fail();
-    case (DAE.STMT_TERMINATE(msg = _), _)
-      equation
-        print("STMT_TERMINATE\n");
-      then
-        fail();
-    case (DAE.STMT_REINIT(var = _), _)
-      equation
-        print("STMT_REINIT\n");
-      then
-        fail();
-    case (DAE.STMT_NORETCALL(exp = _), _)
-      equation
-        print("STMT_NORETCALL\n");
-      then
-        fail();
+        (inEnv, NEXT());*/
+
     case (DAE.STMT_RETURN(source = _), _)
-      equation
-        print("STMT_RETURN\n");
       then
-        fail();
+        (inEnv, RETURN());
+
     case (DAE.STMT_BREAK(source = _), _)
-      equation
-        print("STMT_BREAK\n");
       then
-        fail();
+        (inEnv, BREAK());
+
     case (_, _)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -372,98 +323,229 @@ algorithm
   end matchcontinue;
 end evaluateStatement;
 
-protected function evaluateIfStatement
+protected function evaluateStatements
+  "This function evaluates a list of statements. This is just a wrapper for
+  evaluateStatements2."
+  input list<DAE.Statement> inStatement;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+  output LoopControl outLoopControl;
+algorithm
+  (outEnv, outLoopControl) := evaluateStatements2(inStatement, inEnv, NEXT());
+end evaluateStatements;
+
+protected function evaluateStatements2
+  "This is a helper function to evaluateStatements that evaluates a list of
+  statements."
+  input list<DAE.Statement> inStatement;
+  input Env.Env inEnv;
+  input LoopControl inLoopControl;
+  output Env.Env outEnv;
+  output LoopControl outLoopControl;
+algorithm
+  (outEnv, outLoopControl) := matchcontinue(inStatement, inEnv, inLoopControl)
+    local
+      DAE.Statement stmt;
+      list<DAE.Statement> rest_stmts;
+      Env.Env env;
+      LoopControl loop_ctrl;
+    case (_, _, BREAK()) then (inEnv, inLoopControl);
+    case (_, _, RETURN()) then (inEnv, inLoopControl);
+    case ({}, _, _) then (inEnv, inLoopControl);
+    case (stmt :: rest_stmts, _, NEXT())
+      equation
+        (env, loop_ctrl) = evaluateStatement(stmt, inEnv);
+        (env, loop_ctrl) = evaluateStatements2(rest_stmts, env, loop_ctrl);
+      then
+        (env, loop_ctrl);
+  end matchcontinue;
+end evaluateStatements2;
+
+protected function evaluateTupleAssignStatement
+  "This function evaluates tuple assignment statements, i.e. assignment
+  statements where the right hand side expression is a tuple. Ex:
+    (x, y, z) := fun(...)"
   input DAE.Statement inStatement;
   input Env.Env inEnv;
   output Env.Env outEnv;
 algorithm
-  outEnv := matchcontinue(inStatement, inEnv)
+  outEnv := match(inStatement, inEnv)
+    local
+      list<DAE.Exp> lhs_expl;
+      DAE.Exp rhs;
+      list<Values.Value> rhs_vals;
+      list<DAE.ComponentRef> lhs_crefs;
+      Env.Env env;
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = lhs_expl, exp = rhs), env)
+      equation
+        Values.TUPLE(valueLst = rhs_vals) = cevalExp(rhs, env);
+        lhs_crefs = Util.listMap(lhs_expl, extractLhsComponentRef);
+        env = assignTuple(lhs_crefs, rhs_vals, env);
+      then
+        env;
+  end match;
+end evaluateTupleAssignStatement;
+
+protected function evaluateIfStatement
+  "This function evaluates an if statement."
+  input DAE.Statement inStatement;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+  output LoopControl outLoopControl;
+algorithm
+  (outEnv, outLoopControl) := matchcontinue(inStatement, inEnv)
     local
       DAE.Exp cond;
       list<DAE.Statement> stmts;
       DAE.Else else_branch;
       Env.Env env;
       Boolean bool_cond;
+      LoopControl loop_ctrl;
     case (DAE.STMT_IF(exp = cond, statementLst = stmts, else_ = else_branch), _)
       equation
         Values.BOOL(boolean = bool_cond) = cevalExp(cond, inEnv);
-        env = evaluateIfStatement2(bool_cond, stmts, else_branch, inEnv);
+        (env, loop_ctrl) = evaluateIfStatement2(bool_cond, stmts, else_branch, inEnv);
       then
-        env;
+        (env, loop_ctrl);
   end matchcontinue;
 end evaluateIfStatement;
 
 protected function evaluateIfStatement2
+  "Helper function to evaluateIfStatement."
   input Boolean inCondition;
   input list<DAE.Statement> inStatements;
   input DAE.Else inElse;
   input Env.Env inEnv;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inCondition, inStatements, inElse, inEnv)
+  (outEnv, outLoopControl) := matchcontinue(inCondition, inStatements, inElse, inEnv)
     local
       Env.Env env;
       list<DAE.Statement> statements;
       DAE.Exp condition;
       Boolean bool_condition;
       DAE.Else else_branch;
+      LoopControl loop_ctrl;
+    // If the condition is true, evaluate the statements in the if branch.
     case (true, statements, _, env)
       equation
-        env = Util.listFold(statements, evaluateStatement, env);
+        (env, loop_ctrl) = evaluateStatements(statements, env);
       then
-        env;
+        (env, loop_ctrl);
+    // If the condition is false and we have an else, evaluate the statements in
+    // the else branch.
     case (false, _, DAE.ELSE(statementLst = statements), env)
       equation
-        env = Util.listFold(statements, evaluateStatement, env);
+        (env, loop_ctrl) = evaluateStatements(statements, env);
       then
-        env;
+        (env, loop_ctrl);
+    // If the condition is false and we have an else if, call this function
+    // again recursively.
     case (false, _, DAE.ELSEIF(exp = condition, statementLst = statements, 
         else_ = else_branch), env)
       equation
         Values.BOOL(boolean = bool_condition) = cevalExp(condition, env);
-        env = evaluateIfStatement2(bool_condition, statements, else_branch, env);
+        (env, loop_ctrl) = evaluateIfStatement2(bool_condition, statements, else_branch, env);
       then
-        env;
-     case (false, _, DAE.NOELSE(), _) then inEnv;
+        (env, loop_ctrl);
+     // If the condition is false and we have no else branch, just continue.
+     case (false, _, DAE.NOELSE(), _) then (inEnv, NEXT());
   end matchcontinue;
 end evaluateIfStatement2;
   
 protected function evaluateForStatement
+  "This function evaluates for statements."
   input DAE.Statement inStatement;
   input Env.Env inEnv;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inStatement, inEnv)
+  (outEnv, outLoopControl) := matchcontinue(inStatement, inEnv)
     local
       DAE.ExpType ety;
       DAE.Type ty;
       String iter_name;
-      DAE.Exp start, stop, step;
+      DAE.Exp start, stop, step, range;
       Option<DAE.Exp> opt_step;
       list<DAE.Statement> statements;
       Values.Value start_val, stop_val, step_val;
+      list<Values.Value> range_vals;
       Env.Env env;
       DAE.ComponentRef iter_cr;
+      LoopControl loop_ctrl;
+
+    // The case where the range is an array.
+    case (DAE.STMT_FOR(type_ = ety, iter = iter_name,
+        range = range, statementLst = statements), env)
+      equation
+        Values.ARRAY(valueLst = range_vals) = cevalExp(range, env);
+        (env, ty, iter_cr) = extendEnvWithForScope(iter_name, ety, env);
+        (env, loop_ctrl) = evaluateForLoopArray(env, iter_cr, ty, range_vals,
+          statements, NEXT());
+      then
+        (env, loop_ctrl);
+
+    // The case where the range is a range on the form start:step:stop.
     case (DAE.STMT_FOR(type_ = ety, iter = iter_name, 
         range = DAE.RANGE(exp = start, expOption = opt_step, range = stop),
         statementLst = statements), env)
       equation
-        ty = Types.expTypetoTypesType(ety);
         step = Util.getOptionOrDefault(opt_step, DAE.ICONST(1));
-        start_val = cevalExp(start, inEnv);
-        step_val = cevalExp(step, inEnv);
-        stop_val = cevalExp(stop, inEnv);
-        iter_cr = ComponentReference.makeCrefIdent(iter_name, ety, {});
-        env = Env.extendFrameForIterator(env, iter_name, ty, DAE.UNBOUND(),
-          SCode.CONST(), SOME(DAE.C_CONST())); 
-        env = evaluateForLoopRange(env, iter_cr, ty, start_val, step_val,
-          stop_val, statements);
+        start_val = cevalExp(start, env);
+        step_val = cevalExp(step, env);
+        stop_val = cevalExp(stop, env);
+        (env, ty, iter_cr) = extendEnvWithForScope(iter_name, ety, env);
+        (env, loop_ctrl) = evaluateForLoopRange(env, iter_cr, ty, start_val,
+          step_val, stop_val, statements, NEXT());
       then
-        env;
+        (env, loop_ctrl);
+
+    case (DAE.STMT_FOR(range = range), _)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- evaluateForStatement not implemented for:");
+        Debug.traceln(ExpressionDump.printExpStr(range));
+      then
+        fail();
   end matchcontinue;
 end evaluateForStatement;
 
+protected function evaluateForLoopArray
+  "This function evaluates a for loop where the range is an array."
+  input Env.Env inEnv;
+  input DAE.ComponentRef inIter;
+  input DAE.Type inIterType;
+  input list<Values.Value> inValues;
+  input list<DAE.Statement> inStatements;
+  input LoopControl inLoopControl;
+  output Env.Env outEnv;
+  output LoopControl outLoopControl;
+algorithm
+  (outEnv, outLoopControl) := matchcontinue(inEnv, inIter, inIterType, inValues,
+      inStatements, inLoopControl)
+    local
+      Values.Value value;
+      list<Values.Value> rest_vals;
+      Env.Env env;
+      LoopControl loop_ctrl;
+    case (_, _, _, _, _, BREAK()) then (inEnv, NEXT());
+    case (_, _, _, _, _, RETURN()) then (inEnv, inLoopControl);
+    case (_, _, _, {}, _, _) then (inEnv, inLoopControl);
+    case (env, _, _, value :: rest_vals, _, NEXT())
+      equation
+        env = updateVariableBinding(inIter, env, inIterType, value);
+        (env, loop_ctrl) = evaluateStatements(inStatements, env);
+        (env, loop_ctrl) = evaluateForLoopArray(env, inIter, inIterType,
+          rest_vals, inStatements, loop_ctrl);
+      then
+        (env, loop_ctrl);
+  end matchcontinue;
+end evaluateForLoopArray;
+
 protected function evaluateForLoopRange
+  "This function evaluates a for loop where the range is on the form
+  start:step:stop."
   input Env.Env inEnv;
   input DAE.ComponentRef inIter;
   input DAE.Type inIterType;
@@ -471,89 +553,101 @@ protected function evaluateForLoopRange
   input Values.Value inStepValue;
   input Values.Value inStopValue;
   input list<DAE.Statement> inStatements;
+  input LoopControl inLoopControl;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inEnv, inIter, inIterType, inStartValue, inStepValue,
-      inStopValue, inStatements)
+  (outEnv, outLoopControl) := matchcontinue(inEnv, inIter, inIterType,
+      inStartValue, inStepValue, inStopValue, inStatements, inLoopControl)
     local
       Env.Env env;
       Values.Value next_val;
-    case (env, _, _, _, _, _, _)
+      LoopControl loop_ctrl;
+    case (_, _, _, _, _, _, _, BREAK()) then (inEnv, NEXT());
+    case (_, _, _, _, _, _, _, RETURN()) then (inEnv, inLoopControl);
+    case (env, _, _, _, _, _, _, NEXT())
       equation
         true = ValuesUtil.safeLessEq(inStartValue, inStopValue);
         env = updateVariableBinding(inIter, env, inIterType, inStartValue);
-        env = Util.listFold(inStatements, evaluateStatement, env);
+        (env, loop_ctrl) = evaluateStatements(inStatements, env);
         next_val = ValuesUtil.safeIntRealOp(inStartValue, inStepValue, 
           Values.ADDOP);
-        env = evaluateForLoopRange(env, inIter, inIterType, next_val,
-        inStepValue, inStopValue, inStatements);
+        (env, loop_ctrl) = evaluateForLoopRange(env, inIter, inIterType,
+          next_val, inStepValue, inStopValue, inStatements, loop_ctrl);
       then
-        env;
-    case (_, _, _, _, _, _, _)
+        (env, loop_ctrl);
+    else
       equation
         false = ValuesUtil.safeLessEq(inStartValue, inStopValue);
       then
-        inEnv;
+        (inEnv, NEXT());
   end matchcontinue;
 end evaluateForLoopRange;
 
 protected function evaluateWhileStatement
+  "This function evaluates a while statement."
   input DAE.Exp inCondition;
   input list<DAE.Statement> inStatements;
   input Env.Env inEnv;
+  input LoopControl inLoopControl;
   output Env.Env outEnv;
+  output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inCondition, inStatements, inEnv)
+  (outEnv, outLoopControl) := matchcontinue(inCondition, inStatements, inEnv, inLoopControl)
     local
       Env.Env env;
-    case (_, _, _)
+      LoopControl loop_ctrl;
+    case (_, _, _, BREAK()) then (inEnv, NEXT());
+    case (_, _, _, RETURN()) then (inEnv, inLoopControl);
+    case (_, _, _, _)
       equation
         Values.BOOL(boolean = true) = cevalExp(inCondition, inEnv);
-        env = Util.listFold(inStatements, evaluateStatement, inEnv);
-        env = evaluateWhileStatement(inCondition, inStatements, env);
+        (env, loop_ctrl) = evaluateStatements(inStatements, inEnv);
+        (env, loop_ctrl) = evaluateWhileStatement(inCondition, inStatements, env, loop_ctrl);
       then
-        env;
-    case (_, _, _)
+        (env, loop_ctrl);
+    else
       equation
         Values.BOOL(boolean = false) = cevalExp(inCondition, inEnv);
       then
-        inEnv;
+        (inEnv, NEXT());
   end matchcontinue;
 end evaluateWhileStatement;
 
-protected function getFunctionReturnValue
-  input DAE.Element inOutputVar;
+protected function extractLhsComponentRef
+  "This function extracts a component reference from an expression. It's used to
+  get the left hand side component reference in simple assignments."
+  input DAE.Exp inExp;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inExp)
+    local
+      DAE.ComponentRef cref;
+      DAE.Exp asub_exp;
+    case DAE.CREF(componentRef = cref) then cref;
+    else
+      equation
+        print("- CevalFunction.extractLhsComponentRef failed on " +&
+          ExpressionDump.printExpStr(inExp) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end extractLhsComponentRef;
+
+protected function cevalExp
+  "A wrapper for Ceval with most of the arguments filled in."
+  input DAE.Exp inExp;
   input Env.Env inEnv;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inOutputVar, inEnv)
-    local 
-      DAE.ComponentRef cr;
-      Values.Value val;
-          
-    case (DAE.VAR(componentRef = cr), _)
-      equation
-        (_, DAE.VALBOUND(valBound = val)) = getVariableTypeAndBinding(cr, inEnv);
-      then
-        val;
-  end matchcontinue;
-end getFunctionReturnValue;
-  
-protected function boxReturnValue
-  input list<Values.Value> inReturnValues;
-  output Values.Value outValue;
-algorithm
-  outValue := matchcontinue(inReturnValues)
-    local
-      Values.Value val;
-    
-    case ({}) then Values.NORETCALL();
-    case ({val}) then val;
-    case (_ :: _) then Values.TUPLE(inReturnValues);
-  end matchcontinue;
-end boxReturnValue;
+  (_, outValue, _) := Ceval.ceval(Env.emptyCache(), inEnv, inExp, true, NONE(), 
+    NONE(), Ceval.NO_MSG());
+end cevalExp;
+
+// [EENV]  Environment extension functions (add variables).
 
 protected function setupFunctionEnvironment
+  "Opens up a new scope for the functions and adds all function variables to it."
   input Env.Env inEnv;
   input String inFuncName;
   input list<DAE.Element> inFuncVars;
@@ -565,6 +659,8 @@ algorithm
 end setupFunctionEnvironment;
 
 protected function extendEnvWithFunctionVars
+  "Extends the environment with a list of variables. The list of values is the
+  input arguments to the function."
   input Env.Env inEnv;
   input list<DAE.Element> inFuncVars;
   input list<Values.Value> inFuncArgs;
@@ -582,25 +678,27 @@ algorithm
     
     case (_, {}, {}) then inEnv;
     
+    // For an input arguments we take the first value in the list of input
+    // values, and assigns the value to the variable that we create.
     case (env, (e as DAE.VAR(direction = DAE.INPUT())) :: el, val :: rest_vals)
       equation
-        var = elementToVar(e, SOME(val), env);
-        env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
+        env = extendEnvWithElement(e, SOME(val), env);
       then
         extendEnvWithFunctionVars(env, el, rest_vals);
     
+    // Non-input arguments might have a default binding, so we use that if it's
+    // available.
     case (env, (e as DAE.VAR(direction = _, binding = SOME(binding_exp))) :: el, _)
       equation
         val = cevalExp(binding_exp, inEnv);
-        var = elementToVar(e, SOME(val), env);
-        env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
+        env = extendEnvWithElement(e, SOME(val), env);
       then
         extendEnvWithFunctionVars(env, el, inFuncArgs);
     
+    // Otherwise, just add the variable to the environment.
     case (env, (e as DAE.VAR(direction = _)) :: el, _)
       equation
-        var = elementToVar(e, NONE(), env);
-        env = Env.extendFrameV(env, var, NONE(), Env.VAR_TYPED(), {});
+        env = extendEnvWithElement(e, NONE(), env);
       then
         extendEnvWithFunctionVars(env, el, inFuncArgs);
     
@@ -614,40 +712,89 @@ algorithm
   end matchcontinue;
 end extendEnvWithFunctionVars;
 
-protected function elementToVar 
+protected function extendEnvWithElement
+  "This function extracts the necessary data from a variable element, and calls
+  extendEnvWithVar to add a new variable to the environment."
   input DAE.Element inElement;
   input Option<Values.Value> inBindingValue;
   input Env.Env inEnv;
-  output DAE.Var outVar;
+  output Env.Env outEnv;
 algorithm
   outVar := matchcontinue(inElement, inBindingValue, inEnv)
     local
       DAE.ComponentRef cr;
-      String var_name;
+      String name;
       DAE.Type ty;
-      DAE.Binding binding;
       DAE.InstDims dims;
-      list<Integer> binding_dims;
-    
+      Env.Env env;
     case (DAE.VAR(componentRef = cr, ty = ty, dims = dims), _, _)
       equation
-        binding = getBinding(inBindingValue);
-        var_name = ComponentReference.crefStr(cr);
-        binding_dims = ValuesUtil.valueDimensions(
-          Util.getOptionOrDefault(inBindingValue, Values.INTEGER(0)));
-        ty = appendDimensions(ty, dims, binding_dims, inEnv);
+        name = ComponentReference.crefStr(cr);
+        env = extendEnvWithVar(name, ty, inBindingValue, dims, inEnv);
       then
-        DAE.TYPES_VAR(
-          var_name,
-          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,
-          ty,
-          binding,
-          NONE());
+        env;
   end matchcontinue;
-end elementToVar;
+end extendEnvWithElement;
         
+protected function extendEnvWithVar
+  "This function does the actual work of extending the environment with a
+  variable."
+  input String inName;
+  input DAE.Type inType;
+  input Option<Values.Value> inOptValue;
+  input DAE.InstDims inDims;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inName, inType, inOptValue, inDims, inEnv)
+    local
+      DAE.Type ty;
+      DAE.Var var;
+      DAE.Binding binding;
+      Env.Env env, record_env;
+
+    // Records are special, since they have their own environment with their
+    // components in them. A record variable is thus always unbound, and their
+    // values are instead determined by their components values.
+    case (_, _, _, _, _)
+      equation
+        true = Types.isRecord(inType);
+        ty = appendDimensions(inType, inOptValue, inDims, inEnv);
+        var = makeFunctionVariable(inName, ty, DAE.UNBOUND());
+        record_env = makeRecordEnvironment(inType, inOptValue);
+        env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), record_env);
+      then
+        env;
+
+    // Normal variables.
+    else
+      equation
+        binding = getBinding(inOptValue);
+        ty = appendDimensions(inType, inOptValue, inDims, inEnv);
+        var = makeFunctionVariable(inName, ty, binding);
+        env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), {});
+      then
+        env;
+  end matchcontinue;
+end extendEnvWithVar;
+
+protected function makeFunctionVariable
+  "This function creates a new variable ready to be added to an environment
+  given a name, type and binding."
+  input String inName;
+  input DAE.Type inType;
+  input DAE.Binding inBinding;
+  output DAE.Var outVar;
+algorithm
+  outVar := DAE.TYPES_VAR(
+    inName,
+    DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+    false, inType, inBinding, NONE());
+end makeFunctionVariable;
+
 protected function getBinding
+  "Creates a binding from an optional value. If some value is given we return a
+  value bound binding, otherwise an unbound binding."
   input Option<Values.Value> inBindingValue;
   output DAE.Binding outBinding;
 algorithm
@@ -658,56 +805,255 @@ algorithm
   end matchcontinue;
 end getBinding;
   
-protected function cevalExp
-  input DAE.Exp inExp;
-  input Env.Env inEnv;
-  output Values.Value outValue;
+protected function makeRecordEnvironment
+  "This function creates an environment for a record variable by creating a new
+  environment and adding the records components to it. If an optional value is
+  supplied it also gives the components a value binding."
+  input DAE.Type inRecordType;
+  input Option<Values.Value> inOptValue;
+  output Env.Env outRecordEnv;
 algorithm
-  (_, outValue, _) := Ceval.ceval(Env.emptyCache(), inEnv, inExp, true, NONE(), 
-    NONE(), Ceval.NO_MSG());
-end cevalExp;
+  outRecordEnv := match(inRecordType, inOptValue)
+    local
+      list<DAE.Var> var_lst;
+      list<Option<Values.Value>> vals;
+      Env.Env env;
+    case ((DAE.T_COMPLEX(
+        complexClassType = ClassInf.RECORD(path = _),
+        complexVarLst = var_lst), _), _)
+      equation
+        env = Env.newEnvironment();
+        vals = getRecordValues(inOptValue, inRecordType);
+        env = Util.listThreadFold(var_lst, vals, extendEnvWithRecordVar, env);
+      then
+        env;
+    else then Env.emptyEnv;
+  end match;
+end makeRecordEnvironment;
+  
+protected function getRecordValues
+  "This function returns a list of optional values that will be assigned to a
+  records components. If some record value is given it returns the list of
+  values inside it, made into options, otherwise it returns a list of as many
+  NONE as there are components in the record."
+  input Option<Values.Value> inOptValue;
+  input DAE.Type inRecordType;
+  output list<Option<Values.Value>> outValues;
+algorithm
+  outValues := match(inOptValue, inRecordType)
+    local
+      list<Values.Value> vals;
+      list<Option<Values.Value>> opt_vals;
+      list<DAE.Var> vars;
+      Integer n;
+    case (SOME(Values.RECORD(orderd = vals)), _)
+      equation
+        opt_vals = Util.listMap(vals, Util.makeOption);
+      then
+        opt_vals;
+    case (NONE(), (DAE.T_COMPLEX(complexVarLst = vars), _))
+      equation
+        n = listLength(vars);
+        opt_vals = Util.listFill(NONE(), n);
+      then
+        opt_vals;
+  end match;
+end getRecordValues;
 
-protected function assignVariable
-  input DAE.ComponentRef inVariableCref;
+protected function extendEnvWithRecordVar
+  "This function extends an environment with a record component."
+  input DAE.Var inVar;
+  input Option<Values.Value> inOptValue;
   input Env.Env inEnv;
-  input Values.Value inNewValue;
   output Env.Env outEnv;
 algorithm
-  outEnv := matchcontinue(inVariableCref, inEnv, inNewValue)
+  outEnv := matchcontinue(inVar, inOptValue, inEnv)
     local
-      DAE.ComponentRef cr;
+      String name;
+      DAE.Type ty;
+      Env.Env env;
+    case (DAE.TYPES_VAR(name = name, type_ = ty), _, _)
+      equation
+        env = extendEnvWithVar(name, ty, inOptValue, {}, inEnv);
+      then
+        env;
+  end matchcontinue;
+end extendEnvWithRecordVar;
+
+protected function extendEnvWithForScope
+  "This function opens a new for loop scope in the environment by opening a new
+  scope and adding the given iterator to it. For convenience it also returns the
+  type and component reference of the iterator."
+  input String inIterName;
+  input DAE.ExpType inIterType;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+  output DAE.Type outIterType;
+  output DAE.ComponentRef outIterCref;
+
+  DAE.ComponentRef iter_cr;
+algorithm
+  outIterType := Types.expTypetoTypesType(inIterType);
+  outEnv := Env.extendFrameForIterator(inEnv, inIterName, outIterType,
+    DAE.UNBOUND(), SCode.CONST(), SOME(DAE.C_CONST()));
+  outIterCref := ComponentReference.makeCrefIdent(inIterName, inIterType, {});
+end extendEnvWithForScope;
+
+protected function appendDimensions
+  "This function appends dimensions to a type. This is needed because DAE.VAR
+  separates the type and dimensions, while DAE.TYPES_VAR keeps the dimension
+  information in the type itself. The dimensions can come from two sources:
+  either they are specified in the variable itself as DAE.InstDims, or if the
+  variable is declared with unknown dimensions they can be determined from the
+  variables binding (i.e. input argument to the function)."
+  input DAE.Type inType;
+  input Option<Values.Value> inOptBinding;
+  input DAE.InstDims inDims;
+  input Env.Env inEnv;
+  output DAE.Type outType;
+
+  list<Integer> binding_dims;
+algorithm
+  binding_dims := ValuesUtil.valueDimensions(
+    Util.getOptionOrDefault(inOptBinding, Values.INTEGER(0)));
+  outType := appendDimensions2(inType, inDims, binding_dims, inEnv);
+end appendDimensions;
+        
+protected function appendDimensions2
+  "Helper function to appendDimensions. Appends dimensions to a type. inDims is
+  the declared dimensions of the variable while inBindingDims is the dimensions
+  of the variables binding (empty list if it doesn't have a binding)."
+  input DAE.Type inType;
+  input DAE.InstDims inDims;
+  input list<Integer> inBindingDims;
+  input Env.Env inEnv;
+  output DAE.Type outType;
+algorithm
+  outType := matchcontinue(inType, inDims, inBindingDims, inEnv)
+    local
+      DAE.InstDims rest_dims;
+      DAE.Exp dim_exp;
+      Values.Value dim_val;
+      Integer dim_int;
+      DAE.Dimension dim;
+      DAE.Type ty;
+      list<Integer> bind_dims;
+      DAE.Subscript sub;
+    
+    case (ty, {}, _, _) then ty;
+    
+    // Use the given dimension if the dimension has been declared. The list of
+    // dimensions might be empty in this case, so listRestOrEmpty is used
+    // instead of matching.
+    case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _)
+      equation
+        dim_val = cevalExp(dim_exp, inEnv);
+        dim_int = ValuesUtil.valueInteger(dim_val);
+        dim = Expression.intDimension(dim_int);
+        bind_dims = Util.listRestOrEmpty(bind_dims);
+        ty = appendDimensions2(ty, rest_dims, bind_dims, inEnv);
+      then
+        ((DAE.T_ARRAY(dim, ty), NONE()));
+    
+    // Otherwise, take the dimension from the binding.
+    case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _)
+      equation
+        dim = Expression.intDimension(dim_int);
+        ty = appendDimensions2(ty, rest_dims, bind_dims, inEnv);
+      then
+        ((DAE.T_ARRAY(dim, ty), NONE()));
+    
+    case (_, sub :: _, _, _)
+      equation
+        Debug.fprintln("failtrace", "- CevalFunction.appendDimensions2 failed");
+      then
+        fail();
+  end matchcontinue;
+end appendDimensions2;
+
+// [MENV]  Environment manipulation functions (set and get variables).
+
+protected function assignVariable
+  "This function assigns a variable in the environment a new value."
+  input DAE.ComponentRef inVariableCref;
+  input Values.Value inNewValue;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inVariableCref, inNewValue, inEnv)
+    local
+      DAE.ComponentRef cr, cr_rest;
       Env.Env env;
       list<DAE.Subscript> subs;
       DAE.Type ty;
+      DAE.ExpType ety;
+      DAE.Binding binding;
       Values.Value val;
-    case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, val)
+      DAE.Var var;
+      Env.InstStatus inst_status;
+      String id;
+
+    // If we get a scalar we just update the value.
+    case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _)
       equation
         (ty, _) = getVariableTypeAndBinding(cr, inEnv);
-        env = updateVariableBinding(cr, inEnv, ty, val);
+        env = updateVariableBinding(cr, inEnv, ty, inNewValue);
       then
         env;
+
+    // If we get a vector we first get the old value and update the relevant
+    // part of it, and then updates the variables value.
     case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _)
       equation
         cr = ComponentReference.crefStripSubs(cr);
-        (ty, DAE.VALBOUND(valBound = val)) =
-          getVariableTypeAndBinding(cr, inEnv); 
+        (ty, val) = getVariableTypeAndValue(cr, inEnv); 
         val = assignVector(inNewValue, val, subs, inEnv);
         env = updateVariableBinding(cr, inEnv, ty, val);
       then
         env;
-    case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _)
+
+    // A qualified component reference is a record component, so first lookup
+    // the records environment, and then assign the variable in that environment.
+    case (cr as DAE.CREF_QUAL(ident = id, subscriptLst = {},
+        componentRef = cr_rest), _, _)
       equation
-        cr = ComponentReference.crefStripSubs(cr);
-        (ty, _) = getVariableTypeAndBinding(cr, inEnv);
-        val = generateDefaultBinding(ty);
-        val = assignVector(inNewValue, val, subs, inEnv);
-        env = updateVariableBinding(cr, inEnv, ty, val);
+        (_, var, _, inst_status, env) =
+          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+        env = assignVariable(cr_rest, inNewValue, env);
+        env = Env.updateFrameV(inEnv, var, inst_status, env);
       then
         env;
   end matchcontinue;
 end assignVariable;
 
+protected function assignTuple
+  "This function assign a tuple by calling assignVariable for each tuple
+  component."
+  input list<DAE.ComponentRef> inLhsCrefs;
+  input list<Values.Value> inRhsValues;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := match(inLhsCrefs, inRhsValues, inEnv)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> rest_crefs;
+      Values.Value value;
+      list<Values.Value> rest_vals;
+      Env.Env env;
+    case ({}, _, env) then env;
+    case (cr :: rest_crefs, value :: rest_vals, env)
+      equation
+        env = assignVariable(cr, value, env);
+        env = assignTuple(rest_crefs, rest_vals, env);
+      then
+        env;
+  end match;
+end assignTuple;
+
 protected function assignVector
+  "This function assigns a part of a vector by replacing the parts indicated by
+  the subscripts in the old value with the new value."
   input Values.Value inNewValue;
   input Values.Value inOldValue;
   input list<DAE.Subscript> inSubscripts;
@@ -724,7 +1070,13 @@ algorithm
       Integer i;
       DAE.Subscript sub;
       list<DAE.Subscript> rest_subs;
+
+    // No subscripts, we have either reached the end of the recursion or the
+    // whole vector was assigned.
     case (_, _, {}, _) then inNewValue;
+
+    // An index subscript. Extract the indicated vector element and update it
+    // with assignVector, and then put it back in the list of old values.
     case (_, Values.ARRAY(valueLst = values, dimLst = dims), 
         DAE.INDEX(exp = e) :: rest_subs, _)
       equation
@@ -735,17 +1087,25 @@ algorithm
         values = Util.listReplaceAt(val, i, values);
       then
         Values.ARRAY(values, dims);
+
+    // A slice.
     case (Values.ARRAY(valueLst = values),
         Values.ARRAY(valueLst = old_values, dimLst = dims),
         DAE.SLICE(exp = e) :: rest_subs, _)
       equation
+        // Evaluate the slice range to a list of values.
         Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _))) = 
           cevalExp(e, inEnv);
+        // Split the list of old values at the first slice index.
         (old_values, old_values2) = Util.listSplit(old_values, i - 1);
+        // Update the rest of the old value with assignSlice.
         values2 = assignSlice(values, old_values2, indices, rest_subs, inEnv);
+        // Assemble the list of values again.
         values = listAppend(old_values, values2);
       then
         Values.ARRAY(values, dims);
+
+    // A : (whole dimension).
     case (Values.ARRAY(valueLst = values), 
           Values.ARRAY(valueLst = values2, dimLst = dims),
         DAE.WHOLEDIM() :: rest_subs, _)
@@ -753,6 +1113,7 @@ algorithm
         values = assignWholeDim(values, values2, rest_subs, inEnv);
       then
         Values.ARRAY(values, dims);
+
     case (_, _, sub :: _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -764,6 +1125,8 @@ algorithm
 end assignVector;
 
 protected function assignSlice
+  "This function assigns a slice of a vector given a list of new and old values
+  and a list of indices."
   input list<Values.Value> inNewValues;
   input list<Values.Value> inOldValues;
   input list<Values.Value> inIndices;
@@ -786,6 +1149,7 @@ algorithm
 end assignSlice;
 
 protected function assignWholeDim
+  "This function assigns a whole dimension of a vector."
   input list<Values.Value> inNewValues;
   input list<Values.Value> inOldValues;
   input list<DAE.Subscript> inSubscripts;
@@ -807,6 +1171,7 @@ algorithm
 end assignWholeDim;
 
 protected function updateVariableBinding
+  "This function updates a variables binding in the environment."
   input DAE.ComponentRef inVariableCref;
   input Env.Env inEnv;
   input DAE.Type inType;
@@ -814,47 +1179,17 @@ protected function updateVariableBinding
   output Env.Env outEnv;
 
   String var_name;
+  DAE.Var var;
 algorithm
   var_name := ComponentReference.crefStr(inVariableCref);
-  outEnv := Env.updateFrameV(
-    inEnv, 
-    DAE.TYPES_VAR(
-      var_name,
-      DAE.ATTR(
-        false,
-        false,
-        SCode.RW(),
-        SCode.VAR(),
-        Absyn.BIDIR(),
-        Absyn.UNSPECIFIED()),
-      false,
-      inType,
-      DAE.VALBOUND(inNewValue, DAE.BINDING_FROM_DEFAULT_VALUE()),
-      NONE()),
-    Env.VAR_TYPED(),
-    {});
+  var := makeFunctionVariable(var_name, inType, 
+    DAE.VALBOUND(inNewValue, DAE.BINDING_FROM_DEFAULT_VALUE()));
+  outEnv := Env.updateFrameV(inEnv, var, Env.VAR_TYPED(), {});
 end updateVariableBinding;
 
-protected function extractLhsComponentRef
-  input DAE.Exp inExp;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inExp)
-    local
-      DAE.ComponentRef cref;
-      DAE.Exp asub_exp;
-    case DAE.CREF(componentRef = cref) then cref;
-    case DAE.ASUB(exp = asub_exp) then extractLhsComponentRef(asub_exp);
-    else
-      equation
-        print("- CevalFunction.extractLhsComponentRef failed on " +&
-          ExpressionDump.printExpStr(inExp) +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end extractLhsComponentRef;
-
 protected function getVariableTypeAndBinding
+  "This function looks a variable up in the environment, and returns it's type
+  and binding."
   input DAE.ComponentRef inCref;
   input Env.Env inEnv;
   output DAE.Type outType;
@@ -864,7 +1199,39 @@ algorithm
     Lookup.lookupVar(Env.emptyCache(), inEnv, inCref);
 end getVariableTypeAndBinding;
 
+protected function getVariableTypeAndValue
+  "This function looks a variable up in the environment, and returns it's type
+  and value. If it doesn't have a value, then a default value will be returned."
+  input DAE.ComponentRef inCref;
+  input Env.Env inEnv;
+  output DAE.Type outType;
+  output Values.Value outValue;
+
+  DAE.Binding binding;
+algorithm
+  (outType, binding) := getVariableTypeAndBinding(inCref, inEnv);
+  outValue := getBindingOrDefault(binding, outType);
+end getVariableTypeAndValue;
+
+protected function getBindingOrDefault
+  "Returns the value in a binding, or a default value if binding isn't a value
+  binding."
+  input DAE.Binding inBinding;
+  input DAE.Type inType;
+  output Values.Value outValue;
+algorithm
+  outValue := match(inBinding, inType)
+    local
+      Values.Value val;
+    case (DAE.VALBOUND(valBound = val), _) then val;
+    else then generateDefaultBinding(inType);
+  end match;
+end getBindingOrDefault;
+
 protected function generateDefaultBinding
+  "This function generates a default value for a type. This is needed when
+  assigning parts of an array, since we can only assign parts of an already
+  existing array. The value will be the types equivalence to zero."
   input DAE.Type inType;
   output Values.Value outValue;
 algorithm
@@ -876,6 +1243,9 @@ algorithm
       DAE.Type ty;
       list<Values.Value> values;
       Values.Value value;
+      Absyn.Path p;
+      list<DAE.Var> vars;
+      list<String> names;
     case ((DAE.T_INTEGER(varLstInt = _), _)) then Values.INTEGER(0);
     case ((DAE.T_REAL(varLstReal = _), _)) then Values.REAL(0.0);
     case ((DAE.T_STRING(varLstString = _), _)) then Values.STRING("");
@@ -897,63 +1267,159 @@ algorithm
         fail();
   end matchcontinue;
 end generateDefaultBinding;
-
-protected function appendDimensions
-  input DAE.Type inType;
-  input DAE.InstDims inDims;
-  input list<Integer> inBindingDims;
+     
+protected function getFunctionReturnValue
+  "This function fetches one return value for the function, given an output
+  variable and an environment."
+  input DAE.Element inOutputVar;
   input Env.Env inEnv;
-  output DAE.Type outType;
+  output Values.Value outValue;
 algorithm
-  outType := matchcontinue(inType, inDims, inBindingDims, inEnv)
+  outValue := matchcontinue(inOutputVar, inEnv)
     local
-      DAE.InstDims rest_dims;
-      DAE.Exp dim_exp;
-      Values.Value dim_val;
-      Integer dim_int;
-      DAE.Dimension dim;
+      DAE.ComponentRef cr;
       DAE.Type ty;
-      list<Integer> bind_dims;
-      DAE.Subscript sub;
-    
-    case (ty, {}, _, _) then ty;
-    
-    case (ty, DAE.INDEX(exp = dim_exp) :: rest_dims, bind_dims, _)
+      Values.Value val;
+    case (DAE.VAR(componentRef = cr, ty = ty), _)
       equation
-        dim_val = cevalExp(dim_exp, inEnv);
-        dim_int = ValuesUtil.valueInteger(dim_val);
-        dim = Expression.intDimension(dim_int);
-        bind_dims = Util.listRestOrEmpty(bind_dims);
-        ty = appendDimensions(ty, rest_dims, bind_dims, inEnv);
+        val = getVariableValue(cr, ty, inEnv);
       then
-        ((DAE.T_ARRAY(dim, ty), NONE()));
-    
-    case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _)
-      equation
-        dim = Expression.intDimension(dim_int);
-        ty = appendDimensions(ty, rest_dims, bind_dims, inEnv);
-      then
-        ((DAE.T_ARRAY(dim, ty), NONE()));
-    
-    case (_, sub :: _, _, _)
-      equation
-        Debug.fprintln("failtrace", "- CevalFunction.appendDimensions failed");
-      then
-        fail();
+        val;
   end matchcontinue;
-end appendDimensions;
+end getFunctionReturnValue;
+
+protected function getVariableValue
+  "Helper function to getFunctionReturnValue. Fetches a variables value from the
+  environment."
+  input DAE.ComponentRef inCref;
+  input DAE.Type inType;
+  input Env.Env inEnv;
+  output Values.Value outValue;
+algorithm
+  outValue := matchcontinue(inCref, inType, inEnv)
+    local
+      Values.Value val;
+      Absyn.Path p;
+
+    // A record doesn't have a value, but an environment with it's components.
+    // So we need to assemble the records value.
+    case (_, (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _), _)
+      equation
+        p = ComponentReference.crefToPath(inCref);
+        val = getRecordValue(p, inType, inEnv);
+      then
+        val;
+
+    // All other variables we can just look up in the environment.
+    case (_, _, _)
+      equation
+        (_, val) = getVariableTypeAndValue(inCref, inEnv);
+      then
+        val;
+  end matchcontinue;
+end getVariableValue;
+
+protected function getRecordValue
+  "Looks up the value of a record by looking up the record components in the
+  records environment and assembling a record value."
+  input Absyn.Path inRecordName;
+  input DAE.Type inType;
+  input Env.Env inEnv;
+  output Values.Value outValue;
+algorithm
+  outValue := matchcontinue(inRecordName, inType, inEnv)
+    local
+      list<DAE.Var> vars;
+      list<Values.Value> vals;
+      list<String> var_names;
+      String id;
+      Absyn.Path p;
+      Env.Env env;
+    case (Absyn.IDENT(name = id), 
+          (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
+                         complexVarLst = vars), _), _)
+      equation
+        (_, _, _, _, env) =
+          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+        vals = Util.listMap1(vars, getRecordComponentValue, env);
+        var_names = Util.listMap(vars, Types.getVarName);
+      then
+        Values.RECORD(p, vals, var_names, -1);
+  end matchcontinue;
+end getRecordValue;
+  
+protected function getRecordComponentValue
+  "Looks up the value for a record component."
+  input DAE.Var inVars;
+  input Env.Env inEnv;
+  output Values.Value outValues;
+algorithm
+  outValues := match(inVars, inEnv)
+    local
+      Values.Value val;
+      String id;
+      DAE.Type ty;
+
+    // The component is a record itself.
+    case (DAE.TYPES_VAR(
+        name = id, 
+        type_ = ty as (DAE.T_COMPLEX(
+          complexClassType = ClassInf.RECORD(path = _)), _)), _)
+      equation
+        val = getRecordValue(Absyn.IDENT(id), ty, inEnv);
+      then
+        val;
+
+    // A non-record variable.
+    case (DAE.TYPES_VAR(name = id), _)
+      equation
+        (_, DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound = val)), _, _, _) =
+          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+      then
+        val;
+  end match;
+end getRecordComponentValue;
+
+protected function boxReturnValue
+  "This function takes a list of return values, and return either a NORETCALL, a
+  single value or a tuple with the values depending on how many return variables
+  there are."
+  input list<Values.Value> inReturnValues;
+  output Values.Value outValue;
+algorithm
+  outValue := matchcontinue(inReturnValues)
+    local
+      Values.Value val;
+    
+    case ({}) then Values.NORETCALL();
+    case ({val}) then val;
+    case (_ :: _) then Values.TUPLE(inReturnValues);
+  end matchcontinue;
+end boxReturnValue;
+
+// [DEPS]  Function variable dependency handling.
 
 protected function sortFunctionVarsByDependency
+  "A functions variables might depend on each other, for example by defining
+  dimensions that depend on the size of another variable. This function sorts
+  the list of variables so that any dependencies to a variable will be before
+  the variable in resulting list."
   input list<DAE.Element> inFuncVars;
   output list<DAE.Element> outFuncVars;
 protected
   list<Dependency> dependencies;
 algorithm
+  // Build a dependency list that shows which variable depends on which. Using a
+  // list for this is not the most efficient way to do it, but if this becomes
+  // an issue then someone uses more function variables than is sane.
   dependencies := Util.listMap(inFuncVars, buildDependencyList);
+  // Use the dependency list to sort the variables.
   outFuncVars := sortFunctionVarsByDependency2(inFuncVars, dependencies);
 end sortFunctionVarsByDependency;
 
 protected function sortFunctionVarsByDependency2
+  "Helper function to sortFunctionVarsByDependency. Sorts a list of variables
+  given a list of dependencies."
   input list<DAE.Element> inFuncVars;
   input list<Dependency> inDependencies;
   output list<DAE.Element> outFuncVars;
@@ -969,10 +1435,17 @@ algorithm
     
     case ((elem as DAE.VAR(componentRef = cref)) :: rest_elems, _)
       equation
+        // Look up which variables this variable depends on.
         deps = findDependencies(cref, inDependencies);
+        // Split the rest of the variables based on if this variable depends on
+        // them or not.
         (dep_elems, rest_elems) = extractDependencies(deps, rest_elems);
+        // Sort the dependencies.
         dep_elems = sortFunctionVarsByDependency2(dep_elems, inDependencies); 
+        // Sort the non-dependencies.
         rest_elems = sortFunctionVarsByDependency2(rest_elems, inDependencies);
+        // Assemble the variable list with dependencies before this variable,
+        // and all other variables after.
         rest_elems = elem :: rest_elems;
         rest_elems = listAppend(dep_elems, rest_elems);
       then
@@ -981,6 +1454,8 @@ algorithm
 end sortFunctionVarsByDependency2;
 
 protected function extractDependencies
+  "Given a list of dependencies this function splits a list of variables into
+  variables that are dependencies and variable that are not."
   input list<DAE.ComponentRef> inDependencies;
   input list<DAE.Element> inFuncVars;
   output list<DAE.Element> outDepVars;
@@ -1003,6 +1478,9 @@ algorithm
 end extractDependencies;
         
 protected function extractDependency
+  "Helper function to extractDependencies. Tries to find a certain variable in
+  the list of variables, and if found it returns ({found variable}, {rest of
+  variables}), otherwise ({}, {all variables})."
   input DAE.ComponentRef inCref;
   input list<DAE.Element> inFuncVars;
   output list<DAE.Element> outDependency;
@@ -1013,12 +1491,18 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Element e;
       list<DAE.Element> el, el2;
+
+    // No variable found.
     case (_, {}) then ({}, {});
+
+    // A match was found.
     case (_, (e as DAE.VAR(componentRef = cr)) :: el)
       equation
         true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
       then
         ({e}, el);
+
+    // No match, keep searching.
     case (_, e :: el)
       equation
         (el, el2) = extractDependency(inCref, el);
@@ -1028,6 +1512,9 @@ algorithm
 end extractDependency;
 
 protected function findDependencies
+  "Find the dependencies of a variable in a list of dependencies. This function
+  is recursive, so it will also find the dependencies of the dependencies, and
+  so on."
   input DAE.ComponentRef inCref;
   input list<Dependency> inDependencies;
   output list<DAE.ComponentRef> outDependencies;
@@ -1041,6 +1528,9 @@ algorithm
 end findDependencies;
 
 protected function findDependency
+  "Helper function to findDependencies. Finds the correct entry for the variable
+  in the list of dependencies, and returns the list of variables that the
+  variable directly depends on."
   input DAE.ComponentRef inCref;
   input list<Dependency> inDependencies;
   output list<DAE.ComponentRef> outDependencies;
@@ -1065,6 +1555,7 @@ algorithm
 end findDependency;
 
 protected function createDependency
+  "A constructor for the Depedency type."
   input DAE.Element inVar;
   input list<DAE.ComponentRef> inDependencies;
   output Dependency outDependency;
@@ -1077,6 +1568,8 @@ algorithm
 end createDependency;
 
 protected function buildDependencyList
+  "This function build dependency information about a variable, i.e. which
+  variables a certain variable directly depends on."
   input DAE.Element inVar;
   output Dependency outDependencies;
 algorithm
@@ -1086,7 +1579,9 @@ algorithm
       DAE.InstDims dims;
       list<DAE.ComponentRef> cl, cl2;
       list<list<DAE.ComponentRef>> subs_crefs;
-    // A variable with a binding.
+
+    // A variable with a binding. Both the variables dimensions and binding
+    // might contain dependencies.
     case DAE.VAR(binding = SOME(bind_exp), dims = dims)
       equation
         cl = Expression.extractCrefsFromExp(bind_exp);
@@ -1095,7 +1590,9 @@ algorithm
         cl = listAppend(cl, cl2);
       then
         createDependency(inVar, cl);
-    // A variable without a binding.
+
+    // A variable without a binding. Only the variables dimensions might contain
+    // dependencies.
     case DAE.VAR(binding = NONE(), dims = dims)
       equation
         subs_crefs = Util.listMap(dims, extractCrefsFromSubscript);
@@ -1106,6 +1603,7 @@ algorithm
 end buildDependencyList;
 
 protected function extractCrefsFromSubscript
+  "Extracts all component references from a subscript."
   input DAE.Subscript inSubscript;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
@@ -1117,5 +1615,34 @@ algorithm
     else then {};
   end matchcontinue;
 end extractCrefsFromSubscript;
-      
+
+// [EOPT]  Expression optimization functions.
+
+protected function optimizeExp
+  "This function optimizes expressions in a function. So far this is only used
+  to transform ASUB expressions to CREFs so that this doesn't need to be done
+  while evaluating the function. But it's possible that more forms of
+  optimization can be done too."
+  input tuple<DAE.Exp, Env.Env> inTuple;
+  output tuple<DAE.Exp, Env.Env> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.ComponentRef cref;
+      DAE.ExpType ety;
+      list<DAE.Exp> sub_exps;
+      list<DAE.Subscript> subs;
+      Env.Env env;
+    case ((DAE.ASUB(
+        exp = DAE.CREF(componentRef = cref, ty = ety), 
+        sub = sub_exps), env))
+      equation
+        subs = Util.listMap(sub_exps, Expression.makeIndexSubscript);
+        cref = ComponentReference.subscriptCref(cref, subs);
+      then
+        ((DAE.CREF(cref, ety), env));
+    else then inTuple;
+  end matchcontinue;
+end optimizeExp;
+
 end CevalFunction;

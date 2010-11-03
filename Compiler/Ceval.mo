@@ -67,6 +67,7 @@ uniontype Msg
 end Msg;
 
 // protected imports
+protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
@@ -89,7 +90,6 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
-protected import Cevalfunc;
 protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
@@ -1071,6 +1071,7 @@ algorithm
     case "Integer" then cevalBuiltinIntegerEnumeration;
     case "rooted" then cevalBuiltinRooted; //
     case "cross" then cevalBuiltinCross;
+    case "fill" then cevalBuiltinFill;
     case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
@@ -1168,6 +1169,7 @@ algorithm
       String error_Str;
       CevalHashTable cevalHashTable;
       Env.Cache garbageCache;
+      DAE.Function func;
     
     // Try cevalFunction first
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,_,msg)
@@ -1192,8 +1194,7 @@ algorithm
       then
         fail();
         
-    /*case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
-      local DAE.Function func;
+    case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
       equation
         false = RTOpts.debugFlag("noevalfunc");
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
@@ -1215,32 +1216,8 @@ algorithm
         func = Env.getCachedInstFunc(cache, funcpath);
         newval = CevalFunction.evaluate(env, func, vallst);
       then
-        (cache, newval, st);*/
-        
-    // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
-      equation
-        //print("CevalFunction didn't work :(\n");
-        false = RTOpts.debugFlag("noevalfunc");
-        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        // make sure is NOT used for records !
-        (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef,_),env1) =
-        Lookup.lookupClass(cache,env,funcpath,true);
-        (garbageCache,env1,_) =
-        Inst.implicitFunctionInstantiation(
-          cache,
-          env1,
-          InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(),
-          Prefix.NOPRE(),
-          Connect.emptySet,
-          sc,
-          {}) ;
-        newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc);
-        //print("ret value(/s): "); print(ValuesUtil.printValStr(newval));print("\n");
-      then
-        (cache,newval,st);
-
+        (cache, newval, st);
+       
     // Record constructors
     case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,
          impl,st,dim,msg)
@@ -4443,6 +4420,76 @@ algorithm
         (cache,v,st);
   end matchcontinue;
 end cevalBuiltinSizeMatrix;
+
+protected function cevalBuiltinFill
+  "This function constant evaluates calls to the fill function."
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input list<DAE.Exp> inExpl;
+  input Boolean inImpl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outST;
+algorithm
+  (outCache, outValue, outST) :=
+  match (inCache, inEnv, inExpl, inImpl, inST, inMsg)
+    local
+      DAE.Exp fill_exp;
+      list<DAE.Exp> dims;
+      Values.Value fill_val;
+      Env.Cache cache;
+      Option<Interactive.InteractiveSymbolTable> st;
+    case (cache, _, fill_exp :: dims, _, st, _)
+      equation
+        (cache, fill_val, st) = ceval(cache, inEnv, fill_exp, inImpl, st, NONE(), inMsg);
+        (cache, fill_val, st) = cevalBuiltinFill2(cache, inEnv, fill_val, dims,
+          inImpl, inST, inMsg);
+      then
+        (cache, fill_val, st);
+  end match;
+end cevalBuiltinFill;
+
+protected function cevalBuiltinFill2
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Values.Value inFillValue;
+  input list<DAE.Exp> inDims;
+  input Boolean inImpl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outST;
+algorithm
+  (outCache, outValue, outST) := 
+  match (inCache, inEnv, inFillValue, inDims, inImpl, inST, inMsg)
+    local
+      DAE.Exp dim;
+      list<DAE.Exp> rest_dims;
+      Integer int_dim;
+      list<Integer> array_dims;
+      Values.Value fill_value;
+      list<Values.Value> fill_vals;
+      Env.Cache cache;
+      Option<Interactive.InteractiveSymbolTable> st;
+
+    case (cache, _, _, {}, _, st, _) then (cache, inFillValue, st);
+
+    case (cache, _, _, dim :: rest_dims, _, st, _)
+      equation
+        (cache, fill_value, st) = cevalBuiltinFill2(cache, inEnv, inFillValue,
+          rest_dims, inImpl, inST, inMsg);
+        (cache, Values.INTEGER(int_dim), st) = 
+          ceval(cache, inEnv, dim, inImpl, st, NONE(), inMsg);
+        fill_vals = Util.listFill(fill_value, int_dim);
+        array_dims = ValuesUtil.valueDimensions(fill_value);
+        array_dims = int_dim :: array_dims;
+      then
+        (cache, Values.ARRAY(fill_vals, array_dims), st);
+  end match;
+end cevalBuiltinFill2;
 
 protected function cevalRelation
   "Performs the arithmetic relation check and gives a boolean result."

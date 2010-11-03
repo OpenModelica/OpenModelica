@@ -60,6 +60,7 @@ public type Subscript = DAE.Subscript;
 public type Var = DAE.ExpVar;
 
 // protected imports
+protected import ClassInf;
 protected import ComponentReference;
 protected import ExpressionSimplify;
 protected import Error;
@@ -6020,6 +6021,17 @@ algorithm
     case _ then false;
   end matchcontinue;
 end isArrayType;
+
+public function isRecordType
+  "Return true if the type is a record type."
+  input Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _)) then true;
+    else false;
+  end match;
+end isRecordType;
 
 public function dimensionsEqual
   "Returns whether two dimensions are equal or not."

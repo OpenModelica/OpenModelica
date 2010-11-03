@@ -2445,56 +2445,7 @@ algorithm
         stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
       then 
         (cache,{stmt});
-    //-----------------------------------------//
-
-    /* v := array(for-iterator); */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c),
-      // Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         value = Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,rangeList)),info=info),source,initial_,impl,unrollForLoops)
-      equation
-        // rangeList = {(id,e2)};
-        (tempLoopVarNames,tempLoopVars,tempLoopVarsInit) = createTempLoopVars(rangeList,{},{},{},1);
-
-        //Transform this function call into a number of nested for-loops
-        (vb_body) = createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,c);
-
-        vb_body = listAppend(tempLoopVarsInit,vb_body);
-        vb = Absyn.VALUEBLOCK(tempLoopVars,Absyn.VALUEBLOCKALGORITHMS(vb_body),Absyn.BOOL(true));
-        (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE(),true,pre,info);
-
-        // _ := { ... }, this will be handled in Codegen.algorithmStatement
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_ASSIGN(DAE.ET_BOOL(),
-                                DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                                vb2,source);
-      then
-        (cache,{stmt});
-
-    /* v := Function(for-iterator); */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c1),
-      // Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         value = Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,rangeList)),comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      equation
-        // rangeList = {(id,e2)};
-        (tempLoopVarNames,tempLoopVars,tempLoopVarsInit) = createTempLoopVars(rangeList,{},{},{},1);
-
-        // Create temporary array to store the result from the for-iterator construct
-        (cache,declList) = createForIteratorArray(cache,env,e1,rangeList,impl,pre,info);
-
-        declList = listAppend(declList,tempLoopVars);
-
-        // Create for-statements
-        vb_body = createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,Absyn.CREF_IDENT("VEC__",{}));
-
-        vb_body = listAppend(tempLoopVarsInit,vb_body);
-        vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
-        Absyn.CALL(c2,Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT("VEC__",{}))},{})));
-        absynStmt = SCode.ALG_ASSIGN(Absyn.CREF(c1),vb,comment,info);
-
-        (cache,stmts) = instStatement(cache,env,ih,pre,absynStmt,source,initial_,impl,unrollForLoops);
-      then
-        (cache,stmts);
-
+   
     /* v := expr; */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e,info = info),source,initial_,impl,unrollForLoops) 
       equation     
