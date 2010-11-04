@@ -1646,7 +1646,7 @@ algorithm
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       equation
         true = RTOpts.splitArrays();
-        failure(equality(dim = DAE.DIM_UNKNOWN())); // adrpo: make sure the dimensions are known!
+        true = Expression.dimensionKnown(dim);
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
         DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
@@ -1657,11 +1657,22 @@ algorithm
       then
         dae;
 				
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      equation
+        true = RTOpts.splitArrays();
+        true = Expression.dimensionKnown(dim);
+        true = Expression.isRange(lhs) or Expression.isRange(rhs);
+        ds = Types.getDimensions(tp);
+        lhs = ExpressionSimplify.simplify(lhs);
+        rhs = ExpressionSimplify.simplify(rhs);
+      then
+        DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
+
     // Array dimension of unknown size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
       equation
         true = RTOpts.splitArrays();
-        equality(dim = DAE.DIM_UNKNOWN()); // adrpo: make sure the dimensions are known!
+        false = Expression.dimensionKnown(dim);
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
         // Expand along the first dimensions of the expressions, and generate an
