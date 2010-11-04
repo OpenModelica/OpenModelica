@@ -1215,7 +1215,7 @@ algorithm
           sc,
           {});
         func = Env.getCachedInstFunc(cache, funcpath);
-        newval = CevalFunction.evaluate(env, func, vallst);
+        (cache, newval) = CevalFunction.evaluate(cache, env, func, vallst);
       then
         (cache, newval, st);
        
