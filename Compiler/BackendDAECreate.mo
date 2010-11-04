@@ -2192,11 +2192,7 @@ algorithm
   end matchcontinue;
 end extractAlgebraicAndDifferentialEqn;
 
-
-/* NEED to be rewriten by using traversingExp */
-protected function isAlgebraic "function: isAlgebraic
-  author: PA
-
+public function isAlgebraic "function: isDiscreteExp
   This function returns true if an expression is purely algebraic, i.e. not
   containing any derivatives
   Otherwise it returns false.
@@ -2204,97 +2200,34 @@ protected function isAlgebraic "function: isAlgebraic
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExp)
-    local
-      BackendDAE.Value ival;
-      String id;
-      DAE.Exp e1,e2,e21,e22,e,t,f,stop,start,step,cr,dim,exp,iterexp;
-      DAE.Operator op;
-      DAE.ExpType ty,ty2,REAL;
-      list<DAE.Exp> args,es,sub;
-      Absyn.Path fcn;
-      DAE.Exp c;
-      
-    case (DAE.END()) then true;
-    case (DAE.ICONST(integer = _)) then true;
-    case (DAE.RCONST(real = _)) then true;
-    case (DAE.SCONST(string = _)) then true;
-    case (DAE.BCONST(bool = false)) then true;
-    case (DAE.BCONST(bool = true)) then true;
-    case (DAE.ENUM_LITERAL(name = _)) then true;
-
-    case (DAE.CREF(componentRef = _)) then true;
-    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.SUB(ty = ty)),exp2 = (e2 as DAE.BINARY(exp1 = e21,operator = DAE.SUB(ty = ty2),exp2 = e22))))
-      equation
-        true = isAlgebraic(e1);
-        true = isAlgebraic(e2);
+  outBoolean := 
+  matchcontinue(inExp)
+    local 
+      Boolean b;
+      list<Boolean> blst;
+  case(inExp)
+    equation
+      ((_,b)) = Expression.traverseExpTopDown(inExp, traversingisAlgebraicFinder, true);
       then
-        true;
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        true = isAlgebraic(e1);
-        true = isAlgebraic(e2);
-      then
-        true;
-    case (DAE.UNARY(operator = op,exp = e))
-      equation
-        true = isAlgebraic(e);
-      then
-        true;
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        true = isAlgebraic(e1);
-        true = isAlgebraic(e2);
-      then
-        true;
-    case (DAE.LUNARY(operator = op,exp = e))
-      equation
-        true = isAlgebraic(e);
-      then
-        true;
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
-      equation
-        true = isAlgebraic(e1);
-        true = isAlgebraic(e2);
-      then
-        true;
-    case (DAE.IFEXP(expCond = c,expThen = t,expElse = f))
-      equation
-        true = isAlgebraic(c);
-        true = isAlgebraic(t);
-        true = isAlgebraic(f);
-      then
-        true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = args)) then false;
-    case (DAE.CALL(path = fcn,expLst = args)) then true;
-    case (DAE.ARRAY(array = es)) then true;
-    case (DAE.TUPLE(PR = es)) then true;
-    case (DAE.MATRIX(scalar = _)) then true;
-    case (DAE.RANGE(exp = start,expOption = NONE(),range = stop))
-      equation
-        true = isAlgebraic(start);
-        true = isAlgebraic(stop);
-      then
-        true;
-    case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop))
-      equation
-        true = isAlgebraic(start);
-        true = isAlgebraic(step);
-        true = isAlgebraic(stop);
-      then
-        true;
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e)) then true;
-    case (DAE.ASUB(exp = e,sub = sub))
-      equation
-        true = isAlgebraic(e);
-      then
-        true;
-    case (DAE.SIZE(exp = cr)) then true;
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp)) then true;
-    case (_) then true;
+        b;
   end matchcontinue;
 end isAlgebraic;
+
+protected function traversingisAlgebraicFinder "function: traversingisAlgebraicFinder
+Author: Frenkel TUD 2010-11
+Helper for isAlgebraic"
+  input tuple<DAE.Exp, Boolean> inTpl;
+  output tuple<DAE.Exp, Boolean, Boolean> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      DAE.Exp e;
+      Boolean b;
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der")),_)) then ((e,false,false));
+    case ((e,b)) then ((e,b,b));
+  end matchcontinue;
+end traversingisAlgebraicFinder;
 
 protected function expandDerOperator
 "function expandDerOperator
