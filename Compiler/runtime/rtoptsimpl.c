@@ -315,7 +315,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     else if (strlen(arg) >= strLen_ANNNOTATION_VERSION && strcmp(&arg[strLen_ANNNOTATION_VERSION], "=3.x") == 0)
       annotation_version = "3.x";
     else {
-      fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '2.x'.\n");
+      fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '3.x'.\n");
       return ARG_FAILURE;
     }
   } else if(strncmp(arg,SHOW_ERROR_MESSAGES,strLen_SHOW_ERROR_MESSAGES) == 0) {
