@@ -1352,6 +1352,7 @@ algorithm
       DAE.Var fv;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       Env.InstStatus i;
+      Env.Frame f;
       list<Env.Frame> env,fs,componentEnv;
       Option<String> sid;
       Env.AvlTree ht;
@@ -1361,6 +1362,14 @@ algorithm
     case (cache,env as (Env.FRAME(optName = sid, clsAndVars = ht) :: fs),id) /* component environment */
       equation
         (cache,fv,c,i,componentEnv) = lookupVar2(cache, ht, id);
+      then
+        (cache,fv,c,i,componentEnv);
+
+    // Look in the next frame, if the current frame is a for loop scope.
+    case (cache, f :: fs, id)
+      equation
+        true = frameIsImplAddedScope(f);
+        (cache,fv,c,i,componentEnv) = lookupIdentLocal(cache, fs, id);
       then
         (cache,fv,c,i,componentEnv);
 

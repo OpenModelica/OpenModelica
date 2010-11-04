@@ -42,8 +42,6 @@ package CevalFunction
     * Enable NORETCALL (see comment in evaluateStatement).
     * Implement terminate and assert(false, ...).
     * Arrays of records probably doesn't work yet.
-    * Implement record assignment (r := record(...)).
-    * Implement record lookup in assignVariable better.
     * Use the step value when assigning slices.
     * Traverse expression in optimizeExp.
     * The cache should probably be sent in and used here.
@@ -993,6 +991,17 @@ algorithm
       Env.InstStatus inst_status;
       String id;
 
+    // A record assignment.
+    case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
+        DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _)
+      equation
+        (_, var, _, inst_status, env) =
+          Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+        env = assignRecord(ety, inNewValue, env);
+        env = Env.updateFrameV(inEnv, var, inst_status, env);
+      then
+        env;
+
     // If we get a scalar we just update the value.
     case (cr as DAE.CREF_IDENT(subscriptLst = {}), _, _)
       equation
@@ -1002,7 +1011,7 @@ algorithm
         env;
 
     // If we get a vector we first get the old value and update the relevant
-    // part of it, and then updates the variables value.
+    // part of it, and then update the variables value.
     case (cr as DAE.CREF_IDENT(subscriptLst = subs), _, _)
       equation
         cr = ComponentReference.crefStripSubs(cr);
@@ -1050,6 +1059,39 @@ algorithm
         env;
   end match;
 end assignTuple;
+
+protected function makeCrefIdentNoSubs
+  input DAE.Ident ident;
+  input DAE.ExpType identType;
+  output DAE.ComponentRef outCrefIdent;
+algorithm
+  outCrefIdent := ComponentReference.makeCrefIdent(ident, identType, {});
+end makeCrefIdentNoSubs;
+
+protected function assignRecord
+  input DAE.ExpType inType;
+  input Values.Value inValue;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inType, inValue, inEnv)
+    local
+      list<Values.Value> values;
+      list<String> names;
+      list<DAE.ExpVar> vars;
+      list<DAE.ComponentRef> crefs;
+      list<DAE.ExpType> types;
+      Env.Env env;
+    case (DAE.ET_COMPLEX(varLst = vars),
+          Values.RECORD(orderd = values, comp = names), _)
+      equation
+        types = Util.listMap(vars, Expression.varType);
+        crefs = Util.listThreadMap(names, types, makeCrefIdentNoSubs);
+        env = Util.listThreadFold(crefs, values, assignVariable, inEnv);
+      then
+        env;
+  end matchcontinue;
+end assignRecord;
 
 protected function assignVector
   "This function assigns a part of a vector by replacing the parts indicated by
