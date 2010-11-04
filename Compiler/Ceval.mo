@@ -1051,6 +1051,7 @@ algorithm
     case "arccos" then cevalBuiltinAcos;
     case "arctan" then cevalBuiltinAtan;
     case "integer" then cevalBuiltinInteger;
+    case "boolean" then cevalBuiltinBoolean;
     case "mod" then cevalBuiltinMod;
     case "max" then cevalBuiltinMax;
     case "min" then cevalBuiltinMin;
@@ -4043,6 +4044,57 @@ algorithm
         (cache,Values.INTEGER(ri),st);
   end matchcontinue;
 end cevalBuiltinInteger;
+
+protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
+ @author: adrpo
+  Evaluates the builtin boolean operator"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv;
+      Integer iv;
+      Boolean bv;
+      list<Env.Frame> env;
+      DAE.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    
+    // real -> bool
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+        bv = Util.if_(realEq(rv, 0.0), false, true);
+      then
+        (cache,Values.BOOL(bv),st);
+    
+    // integer -> bool
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.INTEGER(iv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+        bv = Util.if_(intEq(iv, 0), false, true);
+      then
+        (cache,Values.BOOL(bv),st);
+    
+    // bool -> bool
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.BOOL(bv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+      then
+        (cache,Values.BOOL(bv),st);
+  end matchcontinue;
+end cevalBuiltinBoolean;
 
 protected function cevalBuiltinRooted
 "function cevalBuiltinRooted

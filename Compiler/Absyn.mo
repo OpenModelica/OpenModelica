@@ -4479,4 +4479,85 @@ algorithm
   end matchcontinue;
 end canonIfExp;
 
+public function onlyLiteralsInAnnotationMod
+"@author: adrpo
+  This function checks if a modification only contains literal expressions"
+  input list<ElementArg> inMod;
+  output Boolean onlyLiterals;
+algorithm
+  onlyLiterals := matchcontinue(inMod)
+    local
+      Modification mod;
+      list<ElementArg> dive, rest;
+      Option<Exp> expOpt;
+      Boolean b1, b2, b3, b;
+
+    case ({}) then true;
+    
+    // search inside, some(exp)
+    case (MODIFICATION(modification = SOME(CLASSMOD(dive, expOpt))) :: rest)
+      equation
+         b1 = onlyLiteralsInExpOpt(expOpt);
+         b2 = onlyLiteralsInAnnotationMod(dive);
+         b3 = onlyLiteralsInAnnotationMod(rest);
+         b = boolAnd(b1, boolAnd(b2, b3));
+      then 
+        b;
+        
+    case (_ :: rest)
+      equation
+         b = onlyLiteralsInAnnotationMod(rest);
+      then 
+        b;
+    
+    // failed above, return false
+    case (_) then false;
+
+  end matchcontinue;
+end onlyLiteralsInAnnotationMod;
+  
+protected function onlyLiteralsInExpOpt  
+"@author: adrpo
+  This function checks if an optional expression only contains literal expressions"
+  input Option<Exp> inExpOpt;
+  output Boolean onlyLiterals;
+algorithm
+  onlyLiterals := matchcontinue(inExpOpt)
+    local
+      Exp exp;
+      Boolean b;
+
+    case (NONE()) then true;
+    
+    // search inside, some(exp)
+    case (SOME(exp))
+      equation
+         ((_, b)) = traverseExp(exp, onlyLiteralsInExp, true);
+      then
+        b;
+  end matchcontinue;        
+end onlyLiteralsInExpOpt;
+
+protected function onlyLiteralsInExp 
+"@author: adrpo 
+ Visitor function for checking if Absyn.Exp contains only literals, NO CREFS!"
+  input tuple<Exp, Boolean> tpl;
+  output tuple<Exp, Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local 
+      Option<Path> optPath;
+      Path cname,path,usesName,cname2;
+      Exp e;
+      ComponentRef cr;
+      Boolean b;
+
+    // crefs, return false
+    case((e as CREF(cr), _)) then ((e,false));
+    // anything else, return the same!
+    case(tpl) then tpl;
+
+  end matchcontinue;
+end onlyLiteralsInExp;
+
 end Absyn;

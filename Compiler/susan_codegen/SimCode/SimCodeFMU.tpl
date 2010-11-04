@@ -317,7 +317,7 @@ case SIMCODE(__) then
   
   <%ModelDefineData(modelInfo)%>
   <%setStartValues(simCode)%>
-  <%initializeFunction(simCode)%>
+  <%initializeFunction(initialEquations)%>
   <%eventUpdateFunction(simCode)%>
   
   >>
@@ -400,18 +400,29 @@ case SIMCODE(__) then
   >>
 end setStartValues;
 
-template initializeFunction(SimCode simCode)
- "Generates initialize function for c file."
-::= 
-match simCode
-case SIMCODE(__) then
+template initializeFunction(list<SimEqSystem> initialEquations)
+  "Generates initialize function for c file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFC*/)
+    ;separator="\n")
   <<
   // Used to set the first time event, if any.
-  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) { 
-  }
+  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
+  {
+    <%varDecls%>
   
+    <%eqPart%>
+  
+    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
+    ;separator="\n"%>
+  
+  }
   >>
 end initializeFunction;
+
 
 template eventUpdateFunction(SimCode simCode)
  "Generates event update function for c file."

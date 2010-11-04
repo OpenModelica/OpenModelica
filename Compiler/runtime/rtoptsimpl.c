@@ -78,7 +78,9 @@ static int noSimplify = 0;
 /* Flag to to disable output that is computer-dependent,
  * such as total runtime of a simulation. */
 int running_testsuite = 0;
-
+/* This variable tells us if we should evaluate model parameters in annotations
+ */
+int evaluateParametersInAnnotations = 0;
 /*
  * @author adrpo
  * @date 2007-02-08
@@ -91,7 +93,7 @@ extern const char* corbaSessionName;
  * adrpo 2008-11-28
  * flag for accepting different version of Modelica annotations
  */
-static const char* annotation_version = "2.x";
+static const char* annotation_version = "3.x";
 
 /*
  * adrpo 2008-12-15

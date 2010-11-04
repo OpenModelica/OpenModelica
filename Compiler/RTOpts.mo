@@ -225,5 +225,19 @@ public function getRunningTestsuite
   external "C" runningTestsuite = RTOpts_getRunningTestsuite() annotation(Library = "omcruntime");
 end getRunningTestsuite;
 
+public function getEvaluateParametersInAnnotations
+"@author: adrpo
+ flag to tell us if we should evaluate parameters in annotations"
+ output Boolean shouldEvaluate; 
+ external "C";
+end getEvaluateParametersInAnnotations;
+
+public function setEvaluateParametersInAnnotations
+"@author: adrpo
+ flag to tell us if we should evaluate parameters in annotations"
+ input Boolean shouldEvaluate; 
+ external "C";
+end setEvaluateParametersInAnnotations;
+
 end RTOpts;
 

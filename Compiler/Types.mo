@@ -545,8 +545,7 @@ end isReal;
 
 public function isRealOrSubTypeReal "
 Author BZ 2008-05
-This function verifies if it is some kind of a Real type we are working with.
-"
+This function verifies if it is some kind of a Real type we are working with."
   input Type inType;
   output Boolean b;
 algorithm b := matchcontinue(inType)
@@ -564,8 +563,7 @@ end isRealOrSubTypeReal;
 
 public function isIntegerOrSubTypeInteger "
 Author BZ 2009-02
-This function verifies if it is some kind of a Integer type we are working with.
-"
+This function verifies if it is some kind of a Integer type we are working with."
   input Type inType;
   output Boolean b;
 algorithm b := matchcontinue(inType)
@@ -582,6 +580,24 @@ algorithm b := matchcontinue(inType)
 end matchcontinue;
 end isIntegerOrSubTypeInteger;
 
+public function isBooleanOrSubTypeBoolean 
+"@author: adrpo
+ This function verifies if it is some kind of a Boolean type we are working with."
+  input Type inType;
+  output Boolean b;
+algorithm b := matchcontinue(inType)
+  local Type ty; Boolean lb1,lb2,lb3;
+  case(ty)
+    equation
+      lb1 = isBoolean(ty);
+      lb2 = subtype(ty, DAE.T_BOOL_DEFAULT);
+      lb3 = subtype(DAE.T_BOOL_DEFAULT,ty);
+      lb1 = boolOr(lb1,boolAnd(lb2,lb3));
+    then lb1;
+  case(_) then false;
+end matchcontinue;
+end isBooleanOrSubTypeBoolean;
+
 public function isIntegerOrRealOrSubTypeOfEither
   "Checks if a type is either some Integer or Real type."
   input Type t;
@@ -593,6 +609,19 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end isIntegerOrRealOrSubTypeOfEither;
+
+public function isIntegerOrRealOrBooleanOrSubTypeOfEither
+  "Checks if a type is either some Integer or Real type."
+  input Type t;
+  output Boolean b;
+algorithm
+  b := matchcontinue(t)
+    case(_) equation true = isRealOrSubTypeReal(t); then true;
+    case(_) equation true = isIntegerOrSubTypeInteger(t); then true;
+    case(_) equation true = isBooleanOrSubTypeBoolean(t); then true;      
+    case(_) then false;
+  end matchcontinue;
+end isIntegerOrRealOrBooleanOrSubTypeOfEither;
 
 public function isInteger "Returns true if type is Integer"
 input Type tp;

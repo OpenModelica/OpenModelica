@@ -105,7 +105,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
 {
-	long level = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+	long level = (long)RML_UNTAGFIXNUM(rmlA0);
 	elimination_level = level;
 	RML_TAILCALLK(rmlSC);
 }
@@ -115,7 +115,7 @@ RML_BEGIN_LABEL(RTOpts__setDebugFlag)
 {
   void *str = rmlA0;
   //int level = 1;
-  long level = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  long level = (long)RML_UNTAGFIXNUM(rmlA1);
   char *strdata = RML_STRINGDATA(str);
   level = set_debug_flag(strdata,level);
   rmlA0 = RML_PRIM_MKBOOL(level);
@@ -266,7 +266,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__setVectorizationLimit)
 {
-  long limit = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  long limit = (long)RML_UNTAGFIXNUM(rmlA0);
   set_vectorization_limit(limit);
 	RML_TAILCALLK(rmlSC);
 }
@@ -282,6 +282,20 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__setShowAnnotations)
 {
   showAnnotations = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setEvaluateParametersInAnnotations)
+{
+  evaluateParametersInAnnotations = RML_UNTAGFIXNUM(rmlA0) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getEvaluateParametersInAnnotations)
+{
+  rmlA0 = evaluateParametersInAnnotations ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

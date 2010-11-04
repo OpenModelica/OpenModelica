@@ -173,22 +173,22 @@ public constant String annotationsModelica_3_x = "
 
 package GraphicalAnnotationsProgram____ end     GraphicalAnnotationsProgram____;
 
-// type DrawingUnit = Real(final unit=\"mm\");
+// type DrawingUnit = Real/*(final unit=\"mm\")*/;
 // type Point = DrawingUnit[2] \"{x, y}\";
 // type Extent = Point[2] \"Defines a rectangular area {{x1, y1}, {x2, y2}}\";
 
 //partial
 record GraphicItem
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
 end GraphicItem;
 
 record CoordinateSystem
-  Real extent[2,2](each final unit=\"mm\");
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
   Boolean preserveAspectRatio=true;
   Real initialScale = 0.1;
-  Real grid[2](each final unit=\"mm\") = {1.0, 1.0};
+  Real grid[2]/*(each final unit=\"mm\")*/ = {1.0, 1.0};
 end CoordinateSystem;
 
 // example
@@ -226,9 +226,9 @@ record FilledShape \"Style attributes for filled shapes\"
 end FilledShape;
 
 record Transformation
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real extent[2,2](each final unit=\"mm\");
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/=0;
 end Transformation;
 
 record Placement
@@ -238,36 +238,36 @@ record Placement
 end Placement;
 
 record IconMap
-  Real extent[2,2](each final unit=\"mm\") = {{0, 0}, {0, 0}};
+  Real extent[2,2]/*(each final unit=\"mm\")*/ = {{0, 0}, {0, 0}};
   Boolean primitivesVisible = true;
 end IconMap;
 
 record DiagramMap
-  Real extent[2,2](each final unit=\"mm\") = {{0, 0}, {0, 0}};
+  Real extent[2,2]/*(each final unit=\"mm\")*/ = {{0, 0}, {0, 0}};
   Boolean primitivesVisible = true;
 end DiagramMap;
 
 record Line
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   // end GraphicItem
 
-  Real points[2,:](each final unit=\"mm\");
+  Real points[2,:]/*(each final unit=\"mm\")*/;
   Integer color[3] = {0, 0, 0};
   LinePattern pattern = LinePattern.Solid;
-  Real thickness(final unit=\"mm\") = 0.25;
+  Real thickness/*(final unit=\"mm\")*/ = 0.25;
   Arrow arrow[2] = {Arrow.None, Arrow.None} \"{start arrow, end arrow}\";
-  Real arrowSize(final unit=\"mm\")=3;
+  Real arrowSize/*(final unit=\"mm\")*/ = 3;
   Smooth smooth = Smooth.None \"Spline\";
 end Line;
 
 record Polygon
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   // end GraphicItem
 
   //extends FilledShape;
@@ -278,15 +278,15 @@ record Polygon
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
 
-  Real points[2,:](each final unit=\"mm\");
+  Real points[2,:]/*(each final unit=\"mm\")*/;
   Smooth smooth = Smooth.None \"Spline outline\";
 end Polygon;
 
 record Rectangle
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   // end GraphicItem
 
   //extends FilledShape;
@@ -298,15 +298,15 @@ record Rectangle
   // end FilledShape
 
   BorderPattern borderPattern = BorderPattern.None;
-  Real extent[2,2](each final unit=\"mm\");
-  Real radius(final unit=\"mm\") = 0 \"Corner radius\";
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
+  Real radius/*(final unit=\"mm\")*/ = 0 \"Corner radius\";
 end Rectangle;
 
 record Ellipse
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/=0;
   // end GraphicItem
 
   //extends FilledShape;
@@ -317,16 +317,16 @@ record Ellipse
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
 
-  Real extent[2,2](each final unit=\"mm\");
-  Real startAngle(quantity=\"angle\", unit=\"deg\")=0;
-  Real endAngle(quantity=\"angle\", unit=\"deg\")=360;
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
+  Real startAngle/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
+  Real endAngle/*(quantity=\"angle\", unit=\"deg\")*/ = 360;
 end Ellipse;
 
 record Text
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   // end GraphicItem
 
   //extends FilledShape;
@@ -337,7 +337,7 @@ record Text
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
 
-  Real extent[2,2](each final unit=\"mm\");
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
   String textString;
   Real fontSize = 0 \"unit pt\";
   String fontName;
@@ -348,11 +348,11 @@ end Text;
 record Bitmap
   //extends GraphicItem;
   Boolean visible = true;
-  Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/=0;
   // end GraphicItem
 
-  Real extent[2,2](each final unit=\"mm\");
+  Real extent[2,2]/*(each final unit=\"mm\")*/;
   String fileName \"Name of bitmap file\";
   String imageSource \"Base64 representation of bitmap\";
 end Bitmap;

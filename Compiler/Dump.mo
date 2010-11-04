@@ -2197,15 +2197,12 @@ algorithm
   end matchcontinue;
 end unparseComponentStr;
 
-protected function unparseComponentitemStr "function: unparseComponentitemStr
-
-  Prettyprints a ComponentItem to a string.
-"
+public function unparseComponentitemStr "function: unparseComponentitemStr
+  Prettyprints a ComponentItem to a string."
   input Absyn.ComponentItem inComponentItem;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentItem)
+  outString := matchcontinue (inComponentItem)
     local
       Ident s1,s3,s2,str;
       Absyn.Component c;
