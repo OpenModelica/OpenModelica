@@ -488,7 +488,7 @@ algorithm
         wc_s_list = Util.listMap(wc, intString);
         wc_s = Util.stringDelimitList(wc_s_list, ",");
         str = ExpressionDump.printExpStr(e);
-        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
+        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
       then
         str2;
   end matchcontinue;
@@ -526,7 +526,7 @@ algorithm
         print("=========\n");
         dumpVars(vars);
         print("\n");
-        print("Known BackendDAE.Variables (constants) (");
+        print("Known Variables (constants) (");
         knvars = BackendDAEUtil.varList(vars2);
         varlen = listLength(knvars);
         varlen_str = intString(varlen);

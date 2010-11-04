@@ -1021,7 +1021,6 @@ algorithm
   end matchcontinue;
 end isDiscreteEquation;
 
-
 public function isDiscreteExp "function: isDiscreteExp
  Returns true if expression is a discrete expression."
   input DAE.Exp inExp;
@@ -1029,196 +1028,87 @@ public function isDiscreteExp "function: isDiscreteExp
   input BackendDAE.Variables knvars;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp,inVariables,knvars)
+  outBoolean := 
+  matchcontinue(inExp,inVariables,knvars)
+    local 
+      Boolean b;
+      list<Boolean> blst;
+  case(inExp,inVariables,knvars)
+    equation
+      ((_,(_,_,blst))) = Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (inVariables,knvars,{}));
+      b = Util.boolAndList(blst);
+      then
+        b;
+  end matchcontinue;
+end isDiscreteExp;
+
+
+public function traversingisDiscreteExpFinder "
+Author: Frenkel TUD 2010-11
+Helper for isDiscreteExp"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,list<Boolean>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,BackendDAE.Variables,list<Boolean>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
-      Boolean res,b1,b2,b3;
-      DAE.Exp e1,e2,e,e3;
-      DAE.Operator op;
+      DAE.Exp e;
       list<Boolean> blst;
-      list<DAE.Exp> expl,expl_2;
-      DAE.ExpType tp;
-      list<tuple<DAE.Exp, Boolean>> expl_1;
-      list<list<tuple<DAE.Exp, Boolean>>> expll;
+      Boolean res;
       BackendDAE.Var backendVar;
 
-    case (DAE.ICONST(integer = _),vars,knvars) then true;
-    case (DAE.RCONST(real = _),vars,knvars) then true;
-    case (DAE.SCONST(string = _),vars,knvars) then true;
-    case (DAE.BCONST(bool = _),vars,knvars) then true;
-    case (DAE.ENUM_LITERAL(name = _),vars,knvars) then true;
-
-    case (DAE.CREF(componentRef = cr),vars,knvars)
+    case (((e as DAE.ICONST(integer = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.RCONST(real = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.SCONST(string = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.BCONST(bool = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.ENUM_LITERAL(name = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, vars);
         res = isKindDiscrete(kind);
       then
-        res;
-    
+        ((e,false,(vars,knvars,res::blst)));
     // builtin variable time is not discrete
-    case (DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),vars,knvars)
-      then false;
-
+    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,false::blst)));
     // Known variables that are input are continous
-    case (DAE.CREF(componentRef = cr),vars,knvars)
+    case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         (backendVar::_,_) = BackendVariable.getVar(cr,knvars);
         true = isInput(backendVar);
       then
-        false;
+        ((e,false,(vars,knvars,false::blst)));
 
     // parameters & constants
-    case (DAE.CREF(componentRef = cr),vars,knvars)
+    case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, knvars);
         res = isKindDiscrete(kind);
       then
-        res;
+        ((e,false,(vars,knvars,res::blst)));
     
-    // enumerations
-    //case (DAE.CREF(DAE.CREF_IDENT(identType = DAE.ET_ENUMERATION(path = _)),_),vars,knvars) then true;
+    case (((e as DAE.RELATION(exp1 = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
 
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        res = boolAnd(b1, b2);
-      then
-        res;
-    
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        res = boolAnd(b1, b2);
-      then
-        res;
-    
-    case (DAE.UNARY(operator = op,exp = e),vars,knvars)
-      equation
-        res = isDiscreteExp(e, vars,knvars);
-      then
-        res;
-    
-    case (DAE.LUNARY(operator = op,exp = e),vars,knvars)
-      equation
-        res = isDiscreteExp(e, vars,knvars);
-      then
-        res;
-    
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),vars,knvars) then true;
-    
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        b3 = isDiscreteExp(e3, vars,knvars);
-        res = Util.boolAndList({b1,b2,b3});
-      then
-        res;
-    
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "edge")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "change")),vars,knvars) then true;
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "ceil")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "floor")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "div")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "mod")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "rem")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "abs")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sign")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "ceil")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "floor")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "div")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "mod")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "rem")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "abs")),vars,knvars) then true;
-    case (DAE.CALL(path = Absyn.IDENT(name = "sign")),vars,knvars) then true;
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,false::blst)));
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "noEvent")),vars,knvars) then false;
-
-    case (DAE.CALL(expLst = expl),vars,knvars)
-      equation
-        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
-        res = Util.boolAndList(blst);
-      then
-        res;
-    
-    case (DAE.ARRAY(ty = tp,array = expl),vars,knvars)
-      equation
-        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
-        res = Util.boolAndList(blst);
-      then
-        res;
-    
-    case (DAE.MATRIX(ty = tp,scalar = expll),vars,knvars)
-      equation
-        expl_1 = Util.listFlatten(expll);
-        expl_2 = Util.listMap(expl_1, Util.tuple21);
-        blst = Util.listMap2(expl_2, isDiscreteExp, vars,knvars);
-        res = Util.boolAndList(blst);
-      then
-        res;
-    
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        b3 = isDiscreteExp(e3, vars,knvars);
-        res = Util.boolAndList({b1,b2,b3});
-      then
-        res;
-    
-    case (DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        res = boolAnd(b1, b2);
-      then
-        res;
-    
-    case (DAE.TUPLE(PR = expl),vars,knvars)
-      equation
-        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
-        res = Util.boolAndList(blst);
-      then
-        res;
-    
-    case (DAE.CAST(ty = tp,exp = e1),vars,knvars)
-      equation
-        res = isDiscreteExp(e1, vars,knvars);
-      then
-        res;
-    
-    case (DAE.ASUB(exp = e),vars,knvars)
-      equation
-        res = isDiscreteExp(e, vars,knvars);
-      then
-        res;
-    
-    case (DAE.SIZE(exp = e1,sz = SOME(e2)),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        res = boolAnd(b1, b2);
-      then
-        res;
-    
-    case (DAE.SIZE(exp = e1,sz = NONE()),vars,knvars)
-      equation
-        res = isDiscreteExp(e1, vars,knvars);
-      then
-        res;
-    
-    case (DAE.REDUCTION(expr = e1,range = e2),vars,knvars)
-      equation
-        b1 = isDiscreteExp(e1, vars,knvars);
-        b2 = isDiscreteExp(e2, vars,knvars);
-        res = boolAnd(b1, b2);
-      then
-        res;
-    
-    case (_,vars,knvars) then false;
+    case((e,(vars,knvars,blst))) then ((e,true,(vars,knvars,blst)));
   end matchcontinue;
-end isDiscreteExp;
+end traversingisDiscreteExpFinder;
 
 
 public function isVarDiscrete "returns true if variable is discrete"
@@ -1334,58 +1224,6 @@ algorithm
   end matchcontinue;
 end bintreeToListOpt;
 
-/* NOT USED
-protected function statesEqns "function: statesEqns
-  author: PA
-  Takes a list of equations and an (empty) BackendDAE.BinTree and
-  fills the tree with the state variables present in the 
-  equations"
-  input list<BackendDAE.Equation> inEquationLst;
-  input BackendDAE.BinTree inBinTree;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inEquationLst,inBinTree)
-    local
-      BackendDAE.BinTree bt;
-      DAE.Exp e1,e2;
-      list<BackendDAE.Equation> es;
-      BackendDAE.Value ds,indx;
-      list<DAE.Exp> expl,expl1,expl2;
-    case ({},bt) then bt;
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: es),bt)
-      equation
-        bt = statesEqns(es, bt);
-        bt = statesExp(e1, bt);
-        bt = statesExp(e2, bt);
-      then
-        bt;
-    case ((BackendDAE.ARRAY_EQUATION(index = ds,crefOrDerCref = expl) :: es),bt)
-      equation
-        bt = statesEqns(es, bt);
-        bt = Util.listFold(expl, statesExp, bt);
-      then
-        bt;
-    case ((BackendDAE.ALGORITHM(index = indx,in_ = expl1,out = expl2) :: es),bt)
-      equation
-        bt = Util.listFold(expl1, statesExp, bt);
-        bt = Util.listFold(expl2, statesExp, bt);
-        bt = statesEqns(es, bt);
-      then
-        bt;
-    case ((BackendDAE.WHEN_EQUATION(whenEquation = _) :: es),bt)
-      equation
-        bt = statesEqns(es, bt);
-      then
-        bt;
-    case (_,_)
-      equation
-        print("- BackendDAEUtil.statesEqns failed\n");
-      then
-        fail();
-  end matchcontinue;
-end statesEqns;
-*/
-/*
 public function statesAndVarsExp
 "function: statesAndVarsExp
   This function investigates an expression and returns as subexpressions
@@ -1411,15 +1249,18 @@ public function traversingstatesAndVarsExpFinder "
 Author: Frenkel TUD 2010-10
 Helper for statesAndVarsExp"
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.Exp>>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<DAE.Exp>>> outTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<DAE.Exp>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-    list<ComponentRef> crefs;
-    ComponentRef cr;
-    Type ty;
-    list<DAE.Exp> expl;
-    DAE.Exp e;
+    list<DAE.ComponentRef> crefs;
+    DAE.ComponentRef cr;
+    DAE.ExpType ty;
+    list<DAE.Exp> expl,res;
+    DAE.Exp e,e1;
+    list<list<DAE.Exp>> lst;
+    list<DAE.ExpVar> varLst;
+    BackendDAE.Variables vars;
     // Special Case for Records 
     case (((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
       equation
@@ -1429,230 +1270,31 @@ algorithm
       then
         ((e,true,(vars,res)));  
     // Special Case for unextended arrays
-    case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),(vars,expl)))
+    case (((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),(vars,expl)))
       equation
         ((e1,_)) = extendArrExp((e,NONE()));
         res = statesAndVarsExp(e1, vars);
       then
         ((e,true,(vars,res)));  
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(vars,expl)))
+    case (((e as DAE.CREF(componentRef = cr)),(vars,expl)))
       equation
         (_,_) = BackendVariable.getVar(cr, vars);
       then
-        ((e,true,(vars,e::res)));  
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),(vars,expl)))
+        ((e,false,(vars,e::expl)));  
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),(vars,expl)))
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
       then
-        ((e,false,(vars,e::res)));
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,expl)))
+        ((e,false,(vars,e::expl)));
+    // is this case right?    
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,expl))))
       equation
-        (_,p) = BackendVariable.getVar(cr, vars);
+        (_,_) = BackendVariable.getVar(cr, vars);
       then
-        ((e,false,(vars,res)));
-  case(inExp) then inExp;
+        ((e,false,(vars,expl)));
+  case((e,(vars,expl))) then ((e,true,(vars,expl)));
 end matchcontinue;
 end traversingstatesAndVarsExpFinder;
-*/
-
-public function statesAndVarsExp
-"function: statesAndVarsExp
-  This function investigates an expression and returns as subexpressions
-  that are variable names or derivatives of state names or states
-  inputs:  (DAE.Exp, BackendDAE.Variables /* vars */)
-  outputs: DAE.Exp list"
-  input DAE.Exp inExp;
-  input BackendDAE.Variables inVariables;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst := matchcontinue (inExp,inVariables)
-    local
-      DAE.Exp e,e1,e2,e3;
-      DAE.ComponentRef cr;
-      DAE.ExpType tp;
-      BackendDAE.Variables vars;
-      list<DAE.Exp> s1,s2,res,s3,expl;
-      DAE.Flow flowPrefix;
-      list<BackendDAE.Value> p;
-      list<list<DAE.Exp>> lst;
-      list<list<tuple<DAE.Exp, Boolean>>> mexp;
-      list<DAE.ExpVar> varLst;
-    
-    // Special Case for Records
-    case ((DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),vars)
-      equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
-      then
-        res;  
-    
-    // Special Case for unextended arrays
-    case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),vars)
-      equation
-        ((e1,_)) = extendArrExp((e,NONE()));
-        res = statesAndVarsExp(e1, vars);
-      then
-        res; 
-    
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
-      equation
-        (_,_) = BackendVariable.getVar(cr, vars);
-      then
-        {e};
-    
-    case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = statesAndVarsExp(e1, vars);
-        s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.UNARY(exp = e),vars)
-      equation
-        res = statesAndVarsExp(e, vars);
-      then
-        res;
-    
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = statesAndVarsExp(e1, vars);
-        s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.LUNARY(exp = e),vars)
-      equation
-        res = statesAndVarsExp(e, vars);
-      then
-        res;
-    
-    case (DAE.RELATION(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = statesAndVarsExp(e1, vars);
-        s2 = statesAndVarsExp(e2, vars);
-        res = listAppend(s1, s2);
-      then
-        res;
-    
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
-      equation
-        s1 = statesAndVarsExp(e1, vars);
-        s2 = statesAndVarsExp(e2, vars);
-        s3 = statesAndVarsExp(e3, vars);
-        res = Util.listListUnionOnTrue({s1,s2,s3}, Expression.expEqual);
-      then
-        res;
-    
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),vars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
-      then
-        {e};
-    
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
-      equation
-        (_,p) = BackendVariable.getVar(cr, vars);
-      then
-        {};
-    
-    case (DAE.CALL(expLst = expl),vars)
-      equation
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.PARTEVALFUNCTION(expList = expl),vars)
-      equation
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.ARRAY(array = expl),vars)
-      equation
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.MATRIX(scalar = mexp),vars)
-      equation
-        res = statesAndVarsMatrixExp(mexp, vars);
-      then
-        res;
-    
-    case (DAE.TUPLE(PR = expl),vars)
-      equation
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
-      then
-        res;
-    
-    case (DAE.CAST(exp = e),vars)
-      equation
-        res = statesAndVarsExp(e, vars);
-      then
-        res;
-    
-    case (DAE.ASUB(exp = e),vars)
-      equation
-        res = statesAndVarsExp(e, vars);
-      then
-        res;
-    
-    case (DAE.REDUCTION(expr = e1,range = e2),vars)
-      equation
-        s1 = statesAndVarsExp(e1, vars);
-        s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionOnTrue(s1, s2, Expression.expEqual);
-      then
-        res;
-    
-    // ignore constants!
-    case (DAE.ICONST(_),_) then {};
-    case (DAE.RCONST(_),_) then {};
-    case (DAE.BCONST(_),_) then {};
-    case (DAE.SCONST(_),_) then {};
-    case (DAE.ENUM_LITERAL(name = _),_) then {};
-
-    // deal with possible failure
-    case (e,vars)
-      equation
-        // adrpo: TODO! FIXME! this function fails for some of the expressions: cr.cr.cr[{1,2,3}] for example.
-        // Debug.fprintln("daelow", "- BackendDAE.statesAndVarsExp failed to extract states or vars from expression: " +& ExpressionDump.dumpExpStr(e,0));
-      then {};
-  end matchcontinue;
-end statesAndVarsExp;
-
-protected function statesAndVarsMatrixExp
-"function: statesAndVarsMatrixExp"
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
-  input BackendDAE.Variables inVariables;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inTplExpExpBooleanLstLst,inVariables)
-    local
-      list<DAE.Exp> expl_1,ms_1,res;
-      list<list<DAE.Exp>> lst;
-      list<tuple<DAE.Exp, Boolean>> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> ms;
-      BackendDAE.Variables vars;
-    case ({},_) then {};
-    case ((expl :: ms),vars)
-      equation
-        expl_1 = Util.listMap(expl, Util.tuple21);
-        lst = Util.listMap1(expl_1, statesAndVarsExp, vars);
-        ms_1 = statesAndVarsMatrixExp(ms, vars);
-        res = Util.listListUnionOnTrue((ms_1 :: lst), Expression.expEqual);
-      then
-        res;
-  end matchcontinue;
-end statesAndVarsMatrixExp;
 
 public function isLoopDependent
   "Checks if an expression is a variable that depends on a loop iterator,
@@ -3287,7 +2929,7 @@ algorithm
       equation
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
       then
         res;
     
@@ -3296,7 +2938,7 @@ algorithm
       equation
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);
-        res = listAppend(lst1, lst2);
+        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
       then
         res;
     
@@ -3304,7 +2946,7 @@ algorithm
     case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),_)
       equation
         lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        res = Util.listFlatten(lstlst3);
+        res = Util.listListUnionOnTrue(lstlst3,intEq);
       then
         res;
     
@@ -3313,7 +2955,7 @@ algorithm
       equation
         lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
-        res = listAppend(lst1, lst2);
+        res = Util.listListUnionOnTrue({lst1, lst2},intEq);
       then
         res;
     
@@ -3327,15 +2969,14 @@ algorithm
     // WHEN_EQUATION
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(index=wc_index)),wc)
       equation
-        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
-        e1 = DAE.CREF(cr,DAE.ET_OTHER());
         expl = BackendEquation.getWhenCondition(wc,wc_index);
         lstlst3 = Util.listMap1(expl, incidenceRowExp, vars);
         lst1 = Util.listFlatten(lstlst3);
+        (cr,e2) = BackendEquation.getWhenEquationExpr(we);
+        e1 = Expression.crefExp(cr);
         lst2 = incidenceRowExp(e1, vars);
-        res = listAppend(lst1, lst2);
-        lst1 = incidenceRowExp(e2, vars);
-        res = listAppend(res, lst1);
+        res = incidenceRowExp(e2, vars);
+        res = Util.listListUnionOnTrue({lst1, lst2, res},intEq);
       then
         res;
     
@@ -3349,7 +2990,7 @@ algorithm
         lstlst1 = Util.listMap1(inputs, incidenceRowExp, vars);
         lstlst2 = Util.listMap1(outputs, incidenceRowExp, vars);
         lstres = listAppend(lstlst1, lstlst2);
-        res = Util.listFlatten(lstres);
+        res = Util.listListUnionOnTrue(lstres,intEq);
       then
         res;
     
@@ -3364,89 +3005,6 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
-protected function incidenceRowStmts
-"function: incidenceRowStmts
-  author: PA
-  Helper function to incidenceRow, investigates statements for
-  variables, returning variable indexes."
-  input list<DAE.Statement> inAlgorithmStatementLst;
-  input BackendDAE.Variables inVariables;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue (inAlgorithmStatementLst,inVariables)
-    local
-      list<BackendDAE.Value> lst1,lst2,lst3,res,lst3_1;
-      DAE.ExpType tp;
-      DAE.ComponentRef cr;
-      DAE.Exp e,e1;
-      list<DAE.Statement> rest,stmts;
-      BackendDAE.Variables vars;
-      list<DAE.Exp> expl;
-      DAE.Else else_;
-      list<list<BackendDAE.Value>> lstlst;
-
-    case ({},_) then {};
-    
-    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(e1, vars);
-        res = Util.listFlatten({lst1,lst2,lst3});
-      then
-        res;
-    
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lstlst = Util.listMap1(expl, incidenceRowExp, vars);
-        lst3_1 = Util.listFlatten(lstlst);
-        res = Util.listFlatten({lst1,lst2,lst3_1});
-      then
-        res;
-    
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(DAE.CREF(cr,DAE.ET_OTHER()), vars);
-        res = Util.listFlatten({lst1,lst2,lst3});
-      then
-        res;
-    
-    case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
-      equation
-        print("- BackendDAEUtil.incidenceRowStmts on IF not implemented\n");
-      then
-        {};
-    
-    case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
-      equation
-        print("- BackendDAEUtil.incidenceRowStmts on FOR not implemented\n");
-      then
-        {};
-    
-    case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
-      equation
-        print("- BackendDAEUtil.incidenceRowStmts on WHILE not implemented\n");
-      then
-        {};
-    
-    case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
-      equation
-        print("- BackendDAEUtil.incidenceRowStmts on WHEN not implemented\n");
-      then
-        {};
-    
-    case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
-      equation
-        print("- BackendDAEUtil.incidenceRowStmts on ASSERT not implemented\n");
-      then
-        {};
-  end matchcontinue;
-end incidenceRowStmts;
-
 protected function incidenceRowExp
 "function: incidenceRowExp
   author: PA
@@ -3454,141 +3012,63 @@ protected function incidenceRowExp
   variables, returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  output list<Integer> outIntegerLst;
+  output list<BackendDAE.Value> outIntegerLst;
 algorithm
   outIntegerLst := matchcontinue (inExp,inVariables)
     local
-      list<BackendDAE.Value> p,p_1,s1,s2,res,s3,lst_1;
+      list<BackendDAE.Value> vallst;
+  case(inExp,inVariables)      
+    equation
+      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,{}));
+      then
+        vallst;
+  end matchcontinue;
+end incidenceRowExp;
+
+public function traversingincidenceRowExpFinder "
+Author: Frenkel TUD 2010-11
+Helper for statesAndVarsExp"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+      list<BackendDAE.Value> p,p_1,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e1,e2,e,e3;
-      list<list<BackendDAE.Value>> lst;
-      list<DAE.Exp> expl;
+      DAE.Exp e;
       list<BackendDAE.Var> varslst;
-      list<list<tuple<DAE.Exp, Boolean>>> lstexpl;
     
-    case (DAE.CREF(componentRef = cr),vars)
+    case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         p_1 = incidenceRowExp1(varslst,p,true);
+        res = Util.listListUnionOnTrue({pa,p_1},intEq);
       then
-        p_1;
+        ((e,false,(vars,res)));
     
-    case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        res = listAppend(s1, s2);
-      then
-        res;
-    
-    case (DAE.UNARY(exp = e),vars)
-      equation
-        res = incidenceRowExp(e, vars);
-      then
-        res;
-    
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        res = listAppend(s1, s2);
-      then
-        res;
-    
-    case (DAE.LUNARY(exp = e),vars)
-      equation
-        res = incidenceRowExp(e, vars);
-      then
-        res;
-    
-    case (DAE.RELATION(exp1 = e1,exp2 = e2),vars)
-      equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        res = listAppend(s1, s2);
-      then
-        res;
-    
-    // if expressions.
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) 
-      equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        s3 = incidenceRowExp(e3, vars);
-        res = Util.listFlatten({s1,s2,s3});
-      then
-        res;
-    
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         p_1 = incidenceRowExp1(varslst,p,false);
+        res = Util.listListUnionOnTrue({pa,p_1},intEq);        
       then
-        p_1;        
+        ((e,false,(vars,res)));       
     
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
       equation
         cr = ComponentReference.makeCrefQual("$DER", DAE.ET_REAL(), {}, cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
         p_1 = incidenceRowExp1(varslst,p,false);
+        res = Util.listListUnionOnTrue({pa,p_1},intEq);
       then
-        p_1;
+        ((e,false,(vars,res)));
+    /* pre(v) is considered a known variable */
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));  
     
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) then {};  /* pre(v) is considered a known variable */
-    
-    case (DAE.CALL(expLst = expl),vars)
-      equation
-        lst = Util.listMap1(expl, incidenceRowExp, vars);
-        res = Util.listFlatten(lst);
-      then
-        res;
-    
-    case (DAE.ARRAY(array = expl),vars)
-      equation
-        lst = Util.listMap1(expl, incidenceRowExp, vars);
-        lst_1 = Util.listFlatten(lst);
-      then
-        lst_1;
-    
-    case (DAE.MATRIX(scalar = lstexpl),vars)
-      equation
-        res = incidenceRowMatrixExp(lstexpl, vars);
-      then
-        res;
-    
-    case (DAE.TUPLE(PR = expl),vars)
-      equation
-        lst = Util.listMap1(expl, incidenceRowExp, vars);
-        lst_1 = Util.listFlatten(lst);
-        //print("incidence_row_exp TUPLE not impl. yet.");
-      then
-        lst_1;
-    
-    case (DAE.CAST(exp = e),vars)
-      equation
-        res = incidenceRowExp(e, vars);
-      then
-        res;
-    
-    case (DAE.ASUB(exp = e),vars)
-      equation
-        res = incidenceRowExp(e, vars);
-      then
-        res;
-    
-    case (DAE.REDUCTION(expr = e1,range = e2),vars)
-      equation
-        s1 = incidenceRowExp(e1, vars);
-        s2 = incidenceRowExp(e2, vars);
-        res = listAppend(s1, s2);
-      then
-        res;
-    
-    case (_,_) then {};
-    
+    case ((e,(vars,pa))) then ((e,true,(vars,pa)));
   end matchcontinue;
-end incidenceRowExp;
+end traversingincidenceRowExpFinder;
 
 protected function incidenceRowExp1
   input list<BackendDAE.Var> inVarLst;
@@ -3638,35 +3118,6 @@ algorithm
       then res;
   end matchcontinue;      
 end incidenceRowExp1;
-
-protected function incidenceRowMatrixExp
-"function: incidenceRowMatrixExp
-  author: PA
-  Traverses matrix expressions for building incidence matrix."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
-  input BackendDAE.Variables inVariables;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue (inTplExpExpBooleanLstLst,inVariables)
-    local
-      list<DAE.Exp> expl_1;
-      list<list<BackendDAE.Value>> res1;
-      list<BackendDAE.Value> res2,res1_1,res;
-      list<tuple<DAE.Exp, Boolean>> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> es;
-      BackendDAE.Variables vars;
-    case ({},_) then {};
-    case ((expl :: es),vars)
-      equation
-        expl_1 = Util.listMap(expl, Util.tuple21);
-        res1 = Util.listMap1(expl_1, incidenceRowExp, vars);
-        res2 = incidenceRowMatrixExp(es, vars);
-        res1_1 = Util.listFlatten(res1);
-        res = listAppend(res1_1, res2);
-      then
-        res;
-  end matchcontinue;
-end incidenceRowMatrixExp;
 
 public function transposeMatrix
 "function: transposeMatrix
