@@ -211,7 +211,7 @@ protected function evaluateElement
   output Env.Env outEnv;
   output LoopControl outLoopControl;
 algorithm
-  outEnv := matchcontinue(inElement, inEnv)
+  (outEnv, outLoopControl) := matchcontinue(inElement, inEnv)
     local
       Env.Env env;
       LoopControl loop_ctrl;
@@ -718,7 +718,7 @@ protected function extendEnvWithElement
   input Env.Env inEnv;
   output Env.Env outEnv;
 algorithm
-  outVar := matchcontinue(inElement, inBindingValue, inEnv)
+  outEnv := matchcontinue(inElement, inBindingValue, inEnv)
     local
       DAE.ComponentRef cr;
       String name;

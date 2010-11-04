@@ -637,7 +637,7 @@ algorithm
 
     /* for-statement, optimized case, e.g.: for i in 1:1000 loop */
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE, stop=stope)))},
+        Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE(), stop=stope)))},
         forBody = algItemList)),st)
       equation
         (startv,st_1) = evaluateExpr(starte, st,info);
@@ -661,8 +661,6 @@ algorithm
     /* for-statement, general case */
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_FOR(iterators = {(iter, SOME(exp))},forBody = algItemList)),st)
-      local
-        input list<Values.Value> valList;
       equation
         (Values.ARRAY(valueLst = valList),st_1) = evaluateExpr(exp, st,info);
         st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
@@ -5016,7 +5014,6 @@ algorithm
       Absyn.Path tp;
     case (p,p_class) // Special case for derived classes. When instantiating a derived class, the environment
                      // of the derived class is returned, which can be a totally different scope.
-      local Absyn.Path tp;
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
@@ -6769,8 +6766,8 @@ algorithm
       Absyn.Exp e;
       Absyn.ElementArg m;
     
-    case ({},cref,Absyn.CLASSMOD({},NONE)) then {}; // Empty modification.
-    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};
+    case ({},cref,Absyn.CLASSMOD({},NONE())) then {}; // Empty modification.
+    case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
     
     case ({},cref,Absyn.CLASSMOD({},NONE())) then {}; // Empty modification.
     case ({},cref,mod) then {Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE())};
@@ -9970,10 +9967,10 @@ protected function getDefaultReplaceable "helper function to getDefaultPrefixes"
   input String str;
   output Option<Absyn.RedeclareKeywords> repl;
 algorithm
-    io := matchcontinue(str)
+    repl := matchcontinue(str)
       case(str) equation
         -1 = System.stringFind(str,"replaceable");
-      then NONE;
+      then NONE();
       case(str) equation
        failure(-1 = System.stringFind(str,"replaceable"));
       then SOME(Absyn.REPLACEABLE());
@@ -9984,7 +9981,7 @@ protected function getDefaultAttr "helper function to getDefaultPrefixes"
   input String str;
   output Absyn.ElementAttributes attr;
 algorithm
-    io := matchcontinue(str)
+    attr := matchcontinue(str)
       case(str) equation
         failure(-1 = System.stringFind(str,"parameter"));
       then Absyn.ATTR(false,false,Absyn.PARAM(),Absyn.BIDIR(),{});
@@ -12753,7 +12750,7 @@ protected function isAnnotationType
   input String annotationStr;
   input AnnotationType annotationType;
 algorithm
-  res := matchcontinue(annotationStr, annotationType)
+  _ := matchcontinue(annotationStr, annotationType)
     case ("Icon", ICON_ANNOTATION) then ();
     case ("Diagram", DIAGRAM_ANNOTATION) then ();
   end matchcontinue;
@@ -13245,7 +13242,6 @@ algorithm
 
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(expOption=SOME(exp))))::xs)
-      local String s; list<String> ss;
       equation
           s = Dump.printExpStr(exp);
           ss = getDocumentationAnnotationString2(xs);
@@ -13253,14 +13249,12 @@ algorithm
 
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(expOption=SOME(exp))))::xs)
-      local String s; list<String> ss;
       equation
           s = Dump.printExpStr(exp);
           ss = getDocumentationAnnotationString2(xs);
       then s::ss;
 
     case (_::xs)
-      local list<String> ss;
       equation
           ss = getDocumentationAnnotationString2(xs);
       then ss;
@@ -13626,9 +13620,8 @@ algorithm
       Absyn.Program lineProgram;
 
     case (Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(connector1 = _),
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)})),_))),
+      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE())),_)})),_))),
       inClass, inFullProgram, inModelPath)
-      local Absyn.Program lineProgram;
       equation
         lineProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(elts);
@@ -13641,7 +13634,7 @@ algorithm
       then
         gexpstr;
     
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE),
+    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE()),
           inClass, inFullProgram, inModelPath) 
       then 
         fail();
@@ -14009,13 +14002,13 @@ algorithm
       then
         (gexpstr_1 :: res);
 
-    case ((Absyn.COMPONENTITEM(comment = NONE) :: (rest as (_ :: _))),env, inClass,inFullProgram,inModelPath)
+    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),env, inClass,inFullProgram,inModelPath)
       equation
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
       then
         ("{}" :: res);
     
-    case ({Absyn.COMPONENTITEM(comment = NONE)},env,inClass,inFullProgram,inModelPath) 
+    case ({Absyn.COMPONENTITEM(comment = NONE())},env,inClass,inFullProgram,inModelPath) 
       then 
         {"{}"};
 
@@ -14039,7 +14032,7 @@ algorithm
       String str;
       list<Absyn.ComponentItem> lst;
     
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE),
+    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE()),
           inClass,inFullProgram,inModelPath)
       equation
         str = getComponentitemsAnnotation(lst, inClass,inFullProgram,inModelPath);
@@ -14110,21 +14103,21 @@ algorithm
         res = stringAppendList({"{", s1, "}"});
       then
         res;
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE,_))) :: (rest as (_ :: _))),
+    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE(),_))) :: (rest as (_ :: _))),
       inClass,inFullProgram,inModelPath)
       equation
         str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
         res = stringAppend("{nada},", str);
       then
         res;
-    case ((Absyn.COMPONENTITEM(comment = NONE) :: (rest as (_ :: _))),
+    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),
       inClass,inFullProgram,inModelPath)
       equation
         str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
         res = stringAppend("{},", str);
       then
         res;
-    case ({Absyn.COMPONENTITEM(comment = NONE)},inClass,inFullProgram,inModelPath)
+    case ({Absyn.COMPONENTITEM(comment = NONE())},inClass,inFullProgram,inModelPath)
       equation
         res = "{}";
       then
@@ -14210,7 +14203,8 @@ protected function buildEnvForGraphicProgram
   output Env.Env outEnv;
   output Absyn.Program outGraphicProgram;
 algorithm
-  (outCache, outEnv) := matchcontinue(inFullProgram, inModelPath, inAnnotationMod, inAnnotationClass)
+  (outCache, outEnv, outGraphicProgram) := 
+  matchcontinue(inFullProgram, inModelPath, inAnnotationMod, inAnnotationClass)
     local
       Env.Cache cache;
       Env.Env env;

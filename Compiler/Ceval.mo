@@ -4074,7 +4074,7 @@ algorithm
     // real -> bool
     case (cache,env,{exp},impl,st,msg)
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+        (cache,Values.REAL(rv),_) = ceval(cache, env, exp, impl, st, NONE(), msg);
         bv = Util.if_(realEq(rv, 0.0), false, true);
       then
         (cache,Values.BOOL(bv),st);
@@ -4082,7 +4082,7 @@ algorithm
     // integer -> bool
     case (cache,env,{exp},impl,st,msg)
       equation
-        (cache,Values.INTEGER(iv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+        (cache,Values.INTEGER(iv),_) = ceval(cache, env, exp, impl, st, NONE(), msg);
         bv = Util.if_(intEq(iv, 0), false, true);
       then
         (cache,Values.BOOL(bv),st);
@@ -4090,7 +4090,7 @@ algorithm
     // bool -> bool
     case (cache,env,{exp},impl,st,msg)
       equation
-        (cache,Values.BOOL(bv),_) = ceval(cache, env, exp, impl, st, NONE, msg);
+        (cache,Values.BOOL(bv),_) = ceval(cache, env, exp, impl, st, NONE(), msg);
       then
         (cache,Values.BOOL(bv),st);
   end matchcontinue;

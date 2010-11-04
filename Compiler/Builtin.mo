@@ -388,11 +388,11 @@ protected constant DAE.Type int2int=(
 
 protected constant tuple<DAE.TType, Option<Type_a>> int2bool=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
+          DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> enumeration2int=(
-          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}),NONE))},
-          DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}),NONE()))},
+          DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE());
 
 protected constant DAE.Type intInt2int=(
           DAE.T_FUNCTION(
