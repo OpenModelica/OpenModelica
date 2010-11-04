@@ -129,7 +129,7 @@ void RTOpts_5finit(void)
   version_request = 0;
   corbaSessionName = 0;
   acceptedGrammar = GRAMMAR_MODELICA;
-  annotation_version = "2.x";
+  annotation_version = "3.x";
   showErrorMessages = 0;
   noSimplify = 0;
   vectorization_limit = 20;
