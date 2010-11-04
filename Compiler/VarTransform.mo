@@ -114,7 +114,6 @@ protected import ComponentReference;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
-protected import System;
 protected import Util;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
