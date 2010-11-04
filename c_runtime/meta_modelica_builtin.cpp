@@ -45,21 +45,6 @@
 extern "C" {
 
 /* Boolean Operations */
-boolAnd_rettype boolAnd(modelica_boolean b1, modelica_boolean b2)
-{
-  return ((b1 != 0) && (b2 != 0) ? 1 : 0);
-}
-
-boolOr_rettype boolOr(modelica_boolean b1, modelica_boolean b2)
-{
-  return ((b1 != 0) || (b2 != 0) ? 1 : 0);
-}
-
-boolNot_rettype boolNot(modelica_boolean b)
-{
-  return (b == 0 ? 1 : 0);
-}
-
 modelica_metatype boxptr_boolAnd(modelica_metatype b1, modelica_metatype b2)
 {
   return ((b1 != 0) && (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
@@ -70,9 +55,19 @@ modelica_metatype boxptr_boolOr(modelica_metatype b1, modelica_metatype b2)
   return ((b1 != 0) || (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
 }
 
+modelica_metatype boxptr_boolEq(modelica_metatype b1, modelica_metatype b2)
+{
+  return mmc_mk_icon(b1 == b2);
+}
+
 modelica_metatype boxptr_boolNot(modelica_metatype b)
 {
   return (b == 0 ? mmc_mk_icon(1) : mmc_mk_icon(0));
+}
+
+modelica_metatype boxptr_boolString(modelica_metatype b)
+{
+  return mmc_mk_scon(boolString(b));
 }
 
 /* Integer Operations */

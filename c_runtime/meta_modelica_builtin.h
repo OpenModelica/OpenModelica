@@ -47,14 +47,20 @@ extern "C" {
 typedef modelica_boolean boolAnd_rettype;
 typedef modelica_boolean boolOr_rettype;
 typedef modelica_boolean boolNot_rettype;
+typedef modelica_boolean boolEq_rettype;
+typedef modelica_string_t boolString_rettype;
 
-boolAnd_rettype boolAnd(modelica_boolean,modelica_boolean);
-boolOr_rettype boolOr(modelica_boolean,modelica_boolean);
-boolNot_rettype boolNot(modelica_boolean);
+#define boolAnd(X,Y) ((X) && (Y))
+#define boolOr(X,Y) ((X) || (Y))
+#define boolEq(X,Y) ((X) == (Y))
+#define boolNot(X) (!(X))
+#define boolString(X) ((char*)((X) ? "true" : "false"))
 
 modelica_metatype boxptr_boolAnd(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_boolOr(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolEq(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_boolNot(modelica_metatype);
+modelica_metatype boxptr_boolString(modelica_metatype);
 
 /* Integer Operations */
 typedef modelica_integer intAdd_rettype;

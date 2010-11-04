@@ -2925,6 +2925,8 @@ algorithm
         env = Env.extendFrameT(env, "boolAnd", boolBool2bool);
         env = Env.extendFrameT(env, "boolOr", boolBool2bool);
         env = Env.extendFrameT(env, "boolNot", bool2bool);
+        env = Env.extendFrameT(env, "boolEq", boolBool2bool);
+        env = Env.extendFrameT(env, "boolString", bool2string);
 
         // Integer Operations
         env = Env.extendFrameT(env, "intAdd", intInt2int);
