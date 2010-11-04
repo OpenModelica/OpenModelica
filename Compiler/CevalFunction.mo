@@ -1141,7 +1141,7 @@ algorithm
         // Split the list of old values at the first slice index.
         (old_values, old_values2) = Util.listSplit(old_values, i - 1);
         // Update the rest of the old value with assignSlice.
-        values2 = assignSlice(values, old_values2, indices, rest_subs, inEnv);
+        values2 = assignSlice(values, old_values2, indices, rest_subs, i, inEnv);
         // Assemble the list of values again.
         values = listAppend(old_values, values2);
       then
@@ -1173,18 +1173,30 @@ protected function assignSlice
   input list<Values.Value> inOldValues;
   input list<Values.Value> inIndices;
   input list<DAE.Subscript> inSubscripts;
+  input Integer inIndex;
   input Env.Env inEnv;
   output list<Values.Value> outResult;
 algorithm
-  outResult := matchcontinue(inNewValues, inOldValues, inIndices, inSubscripts, inEnv)
+  outResult := matchcontinue(inNewValues, inOldValues, inIndices, inSubscripts,
+      inIndex, inEnv)
     local
-      Values.Value v1, v2;
+      Values.Value v1, v2, index;
       list<Values.Value> vl1, vl2, rest_indices;
-    case (_, _, {}, _, _) then inOldValues;
-    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _)
+
+    case (_, _, {}, _, _, _) then inOldValues;
+
+    // Skip indices that are smaller than the next index in the slice.
+    case (vl1, v2 :: vl2, index :: rest_indices, _, _, _)
+      equation
+        true = (inIndex < ValuesUtil.valueInteger(index));
+        vl1 = assignSlice(vl1, vl2, inIndices, inSubscripts, inIndex + 1, inEnv);
+      then
+        v2 :: vl1;
+        
+    case (v1 :: vl1, v2 :: vl2, _ :: rest_indices, _, _, _)
       equation
         v1 = assignVector(v1, v2, inSubscripts, inEnv);
-        vl1 = assignSlice(vl1, vl2, rest_indices, inSubscripts, inEnv);
+        vl1 = assignSlice(vl1, vl2, rest_indices, inSubscripts, inIndex + 1, inEnv);
       then
         v1 :: vl1;
   end matchcontinue;
