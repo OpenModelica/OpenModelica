@@ -1032,11 +1032,11 @@ algorithm
   matchcontinue(inExp,inVariables,knvars)
     local 
       Boolean b;
-      list<Boolean> blst;
+      Option<Boolean> obool;
   case(inExp,inVariables,knvars)
     equation
-      ((_,(_,_,blst))) = Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (inVariables,knvars,{}));
-      b = Util.boolAndList(blst);
+      ((_,(_,_,obool))) = Expression.traverseExpTopDown(inExp, traversingisDiscreteExpFinder, (inVariables,knvars,NONE()));
+      b = Util.getOptionOrDefault(obool,false);
       then
         b;
   end matchcontinue;
@@ -1046,8 +1046,8 @@ end isDiscreteExp;
 public function traversingisDiscreteExpFinder "
 Author: Frenkel TUD 2010-11
 Helper for isDiscreteExp"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,list<Boolean>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,BackendDAE.Variables,list<Boolean>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
@@ -1055,23 +1055,40 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.Exp e;
-      list<Boolean> blst;
+      Option<Boolean> blst;
+      Boolean b;
       Boolean res;
       BackendDAE.Var backendVar;
 
-    case (((e as DAE.ICONST(integer = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.RCONST(real = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.SCONST(string = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.BCONST(bool = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.ENUM_LITERAL(name = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.ICONST(integer = _),(vars,knvars,blst))))
+      equation
+        b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));
+    case (((e as DAE.RCONST(real = _),(vars,knvars,blst))))
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.SCONST(string = _),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.BCONST(bool = _),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.ENUM_LITERAL(name = _),(vars,knvars,blst))))
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, vars);
         res = isKindDiscrete(kind);
+        b = Util.getOptionOrDefault(blst,res);
       then
-        ((e,false,(vars,knvars,res::blst)));
+        ((e,false,(vars,knvars,SOME(b))));
     // builtin variable time is not discrete
-    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,false::blst)));
+    case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
     // Known variables that are input are continous
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
@@ -1079,7 +1096,7 @@ algorithm
         (backendVar::_,_) = BackendVariable.getVar(cr,knvars);
         true = isInput(backendVar);
       then
-        ((e,false,(vars,knvars,false::blst)));
+        ((e,false,(vars,knvars,SOME(false))));
 
     // parameters & constants
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
@@ -1087,26 +1104,58 @@ algorithm
         failure((_,_) = BackendVariable.getVar(cr, vars));
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, knvars);
         res = isKindDiscrete(kind);
+        b = Util.getOptionOrDefault(blst,res);
       then
-        ((e,false,(vars,knvars,res::blst)));
+        ((e,false,(vars,knvars,SOME(b))));
     
-    case (((e as DAE.RELATION(exp1 = _),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
+    case (((e as DAE.RELATION(exp1 = _),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));           
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "ceil")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "floor")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "div")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "mod")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "rem")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "abs")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sign")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));       
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
 
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "ceil")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "floor")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "div")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "mod")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "rem")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "abs")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sign")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,true::blst)));
-
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,false::blst)));
-
-    case((e,(vars,knvars,blst))) then ((e,true,(vars,knvars,blst)));
+    case((e,(vars,knvars,NONE()))) then ((e,true,(vars,knvars,NONE())));
+    case((e,(vars,knvars,SOME(b)))) then ((e,b,(vars,knvars,SOME(b))));
   end matchcontinue;
 end traversingisDiscreteExpFinder;
 
