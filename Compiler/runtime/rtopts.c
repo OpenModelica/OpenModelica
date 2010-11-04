@@ -92,7 +92,7 @@ extern char* corbaSessionName;
  * adrpo 2008-11-28
  * flag for accepting different version of Modelica annotations
  */
-char* annotation_version = "2.x";
+char* annotation_version = "3.x";
 
 /*
  * adrpo 2008-12-15
@@ -103,6 +103,15 @@ int showErrorMessages = 0;
 /* flag +showAnnotation for printing annotations when dumping the DAE as flat
  * modelica */
 int showAnnotations = 0;
+
+/*
+ * @author adrpo
+ * @date 2010-11-04
+ * This variable tells us if we should evaluate model parameters in annotations
+ */
+int evaluateParametersInAnnotations = 0;
+
+
 
 void RTOpts_5finit(void)
 {
@@ -125,6 +134,7 @@ void RTOpts_5finit(void)
   noSimplify = 0;
   vectorization_limit = 20;
   running_testsuite = 0;
+  evaluateParametersInAnnotations = 0;
 }
 
 /*
@@ -564,7 +574,7 @@ RML_BEGIN_LABEL(RTOpts__setDebugFlag)
 {
   void *str = rmlA0;
   //int level = 1;
-  long level = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  long level = (long)RML_UNTAGFIXNUM(rmlA1);
   char *strdata = RML_STRINGDATA(str);
   level = set_debug_flag(strdata,level);
   rmlA0 = RML_PRIM_MKBOOL(level);
@@ -756,6 +766,21 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__setShowAnnotations)
 {
   showAnnotations = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(RTOpts__setEvaluateParametersInAnnotations)
+{
+  evaluateParametersInAnnotations = RML_UNTAGFIXNUM(rmlA0) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getEvaluateParametersInAnnotations)
+{
+  rmlA0 = evaluateParametersInAnnotations ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

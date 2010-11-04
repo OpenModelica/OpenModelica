@@ -73,6 +73,7 @@ public import RTOpts;
 public import SCode;
 public import SCodeUtil;
 public import Values;
+public import Prefix;
 
 public type Ident = String;
 
@@ -101,7 +102,6 @@ protected import Lookup;
 protected import Mod;
 protected import ModUtil;
 protected import OptManager;
-public import Prefix;
 protected import Print;
 protected import System;
 protected import Types;
@@ -1545,6 +1545,14 @@ algorithm
       local Boolean x;
       then
         (cache,DAE.BCONST(x),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
+    // adrpo, if we have useHeatPort, return false.
+    // this is a workaround for handling Modelica.Electrical.Analog.Basic.Resistor
+    case (cache,env,Absyn.CREF(componentRef = cr as Absyn.CREF_IDENT("useHeatPort", _)),impl,pre)
+      equation
+        exp  = DAE.BCONST(false);
+        prop = DAE.PROP(DAE.T_BOOL_DEFAULT(), DAE.C_CONST());
+      then
+        (cache,exp,prop);
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre)
       equation
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
@@ -5221,6 +5229,50 @@ algorithm
   end matchcontinue;
 end elabBuiltinInteger;
 
+protected function elabBuiltinBoolean
+"function: elabBuiltinBoolean
+  This function elaborates on the builtin operator boolean, which extracts
+  the boolean value of a Real, Integer or Boolean value."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix inPrefix;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output DAE.DAElist outDae "contain functions";
+algorithm
+  (outCache,outExp,outProperties,outDae):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
+    local
+      DAE.Exp s1_1;
+      DAE.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1;
+      Boolean impl;
+      Env.Cache cache;
+      DAE.Properties prop;
+      DAE.DAElist dae;
+      DAE.Type ty;
+			String exp_str;
+      Prefix pre;
+    case (cache,env,{s1},_,impl,pre)
+      equation
+        (cache,s1_1,prop,dae) =
+					verifyBuiltInHandlerType(
+					   cache,
+					   env,
+					   {s1},
+					   impl,
+					   Types.isIntegerOrRealOrBooleanOrSubTypeOfEither,
+					   "boolean",pre);
+      then
+        (cache,s1_1,prop,dae);
+  end matchcontinue;
+end elabBuiltinBoolean;
+
 protected function elabBuiltinIntegerEnum
 "function: elabBuiltinIntegerEnum
   This function elaborates on the builtin operator Integer for Enumerations, which extracts
@@ -6817,6 +6869,7 @@ algorithm
     case "sqrt" then elabBuiltinSqrt;
     case "div" then elabBuiltinDiv;
     case "integer" then elabBuiltinInteger;
+    case "boolean" then elabBuiltinBoolean;
     case "mod" then elabBuiltinMod;
     case "rem" then elabBuiltinRem;
     case "diagonal" then elabBuiltinDiagonal;
@@ -10989,10 +11042,11 @@ algorithm
       then
         (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),SCode.RO());
 
-    // evaluate parameters only if "evalparam" is set; TODO! also ceval if annotation Evaluate=true.
+    // evaluate parameters only if "evalparam" or RTOpts.getEvaluateParametersInAnnotations()is set
+    // TODO! also ceval if annotation Evaluate=true.
     case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_)
       equation
-        true = RTOpts.debugFlag("evalparam");
+        true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -11006,9 +11060,9 @@ algorithm
 
     // a binding equation and evalparam
     case (cache,env,cr,acc,var,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_) 
-      equation 
+      equation         
         true = SCode.isParameterOrConst(var);
-        true = RTOpts.debugFlag("evalparam");
+        true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on.";

@@ -222,7 +222,22 @@ end setShowAnnotations;
 
 public function getRunningTestsuite
   output Boolean runningTestsuite;
+  external "C";
 end getRunningTestsuite;
+
+public function getEvaluateParametersInAnnotations
+"@author: adrpo
+ flag to tell us if we should evaluate parameters in annotations"
+ output Boolean shouldEvaluate; 
+ external "C";
+end getEvaluateParametersInAnnotations;
+
+public function setEvaluateParametersInAnnotations
+"@author: adrpo
+ flag to tell us if we should evaluate parameters in annotations"
+ input Boolean shouldEvaluate; 
+ external "C";
+end setEvaluateParametersInAnnotations;
 
 end RTOpts;
 

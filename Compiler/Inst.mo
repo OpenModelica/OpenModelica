@@ -938,6 +938,7 @@ algorithm
         (cache,env_2,ih,dae);
 
     case (cache,env,ih,{},_) then (cache,env,ih,DAEUtil.emptyDae);
+    
     case (_,_,ih,_,ref)
       equation
         print("Inst.instClassDecls failed\n ref =" +& Absyn.pathString(ref) +& "\n");

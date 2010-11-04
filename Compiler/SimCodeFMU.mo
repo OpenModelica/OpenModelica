@@ -1227,9 +1227,10 @@ algorithm
       String i_guid;
 
     case ( txt,
-           (i_simCode as SimCode.SIMCODE(fileNamePrefix = i_fileNamePrefix, modelInfo = i_modelInfo)),
+           (i_simCode as SimCode.SIMCODE(fileNamePrefix = i_fileNamePrefix, modelInfo = i_modelInfo, initialEquations = i_initialEquations)),
            i_guid )
       local
+        list<SimCode.SimEqSystem> i_initialEquations;
         SimCode.ModelInfo i_modelInfo;
         String i_fileNamePrefix;
         SimCode.SimCode i_simCode;
@@ -1257,7 +1258,7 @@ algorithm
         txt = Tpl.softNewLine(txt);
         txt = setStartValues(txt, i_simCode);
         txt = Tpl.softNewLine(txt);
-        txt = initializeFunction(txt, i_simCode);
+        txt = initializeFunction(txt, i_initialEquations);
         txt = Tpl.softNewLine(txt);
         txt = eventUpdateFunction(txt, i_simCode);
         txt = Tpl.softNewLine(txt);
@@ -1961,32 +1962,120 @@ algorithm
   end matchcontinue;
 end setStartValues;
 
-public function initializeFunction
+protected function lm_61
   input Tpl.Text in_txt;
-  input SimCode.SimCode in_i_simCode;
+  input list<SimCode.SimEqSystem> in_items;
+  input Tpl.Text in_i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_varDecls)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_varDecls;
+
+    case ( txt,
+           {},
+           i_varDecls )
+      then (txt, i_varDecls);
+
+    case ( txt,
+           (i_eq as SimCode.SES_SIMPLE_ASSIGN(cref = _)) :: rest,
+           i_varDecls )
+      local
+        list<SimCode.SimEqSystem> rest;
+        SimCode.SimEqSystem i_eq;
+      equation
+        (txt, i_varDecls) = SimCodeC.equation_(txt, i_eq, SimCode.contextOther, i_varDecls);
+        txt = Tpl.nextIter(txt);
+        (txt, i_varDecls) = lm_61(txt, rest, i_varDecls);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           _ :: rest,
+           i_varDecls )
+      local
+        list<SimCode.SimEqSystem> rest;
+      equation
+        (txt, i_varDecls) = lm_61(txt, rest, i_varDecls);
+      then (txt, i_varDecls);
+  end matchcontinue;
+end lm_61;
+
+protected function lm_62
+  input Tpl.Text in_txt;
+  input list<SimCode.SimEqSystem> in_items;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_i_simCode)
+  matchcontinue(in_txt, in_items)
     local
       Tpl.Text txt;
 
     case ( txt,
-           SimCode.SIMCODE(modelInfo = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "// Used to set the first time event, if any.\n",
-                                    "void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {\n",
-                                    "}\n",
-                                    "\n"
-                                }, true));
+           {} )
       then txt;
 
     case ( txt,
-           _ )
+           SimCode.SES_SIMPLE_ASSIGN(cref = i_cref) :: rest )
+      local
+        list<SimCode.SimEqSystem> rest;
+        DAE.ComponentRef i_cref;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (sim_verbose) { printf(\"Setting variable start value: %s(start=%f)\\n\", \""));
+        txt = SimCodeC.cref(txt, i_cref);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\", "));
+        txt = SimCodeC.cref(txt, i_cref);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("); }"));
+        txt = Tpl.nextIter(txt);
+        txt = lm_62(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<SimCode.SimEqSystem> rest;
+      equation
+        txt = lm_62(txt, rest);
       then txt;
   end matchcontinue;
+end lm_62;
+
+public function initializeFunction
+  input Tpl.Text txt;
+  input list<SimCode.SimEqSystem> i_initialEquations;
+
+  output Tpl.Text out_txt;
+protected
+  Tpl.Text i_eqPart;
+  Tpl.Text i_varDecls;
+algorithm
+  i_varDecls := emptyTxt;
+  i_eqPart := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  (i_eqPart, i_varDecls) := lm_61(i_eqPart, i_initialEquations, i_varDecls);
+  i_eqPart := Tpl.popIter(i_eqPart);
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                   "// Used to set the first time event, if any.\n",
+                                   "void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {\n",
+                                   "{\n"
+                               }, true));
+  out_txt := Tpl.pushBlock(out_txt, Tpl.BT_INDENT(2));
+  out_txt := Tpl.writeText(out_txt, i_varDecls);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
+  out_txt := Tpl.writeText(out_txt, i_eqPart);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_62(out_txt, i_initialEquations);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
+  out_txt := Tpl.popBlock(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("}"));
 end initializeFunction;
 
 public function eventUpdateFunction
@@ -2017,7 +2106,7 @@ algorithm
   end matchcontinue;
 end eventUpdateFunction;
 
-protected function fun_63
+protected function fun_65
   input Tpl.Text in_txt;
   input String in_i_modelInfo_directory;
 
@@ -2042,9 +2131,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
   end matchcontinue;
-end fun_63;
+end fun_65;
 
-protected function lm_64
+protected function lm_66
   input Tpl.Text in_txt;
   input list<String> in_items;
 
@@ -2067,7 +2156,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_lib);
         txt = Tpl.nextIter(txt);
-        txt = lm_64(txt, rest);
+        txt = lm_66(txt, rest);
       then txt;
 
     case ( txt,
@@ -2075,12 +2164,12 @@ algorithm
       local
         list<String> rest;
       equation
-        txt = lm_64(txt, rest);
+        txt = lm_66(txt, rest);
       then txt;
   end matchcontinue;
-end lm_64;
+end lm_66;
 
-protected function fun_65
+protected function fun_67
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_libsStr;
@@ -2105,9 +2194,9 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_65;
+end fun_67;
 
-protected function fun_66
+protected function fun_68
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_libsStr;
@@ -2132,7 +2221,7 @@ algorithm
         txt = Tpl.writeText(txt, i_libsStr);
       then txt;
   end matchcontinue;
-end fun_66;
+end fun_68;
 
 public function fmuMakefile
   input Tpl.Text in_txt;
@@ -2167,14 +2256,14 @@ algorithm
         Tpl.Text i_libsStr;
         Tpl.Text i_dirExtra;
       equation
-        i_dirExtra = fun_63(emptyTxt, i_modelInfo_directory);
+        i_dirExtra = fun_65(emptyTxt, i_modelInfo_directory);
         i_libsStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        i_libsStr = lm_64(i_libsStr, i_makefileParams_libs);
+        i_libsStr = lm_66(i_libsStr, i_makefileParams_libs);
         i_libsStr = Tpl.popIter(i_libsStr);
         str_3 = Tpl.textString(i_dirExtra);
-        i_libsPos1 = fun_65(emptyTxt, str_3, i_libsStr);
+        i_libsPos1 = fun_67(emptyTxt, str_3, i_libsStr);
         str_5 = Tpl.textString(i_dirExtra);
-        i_libsPos2 = fun_66(emptyTxt, str_5, i_libsStr);
+        i_libsPos2 = fun_68(emptyTxt, str_5, i_libsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "# Makefile generated by OpenModelica\n",
                                     "\n",

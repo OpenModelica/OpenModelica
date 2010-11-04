@@ -386,6 +386,10 @@ protected constant tuple<DAE.TType, Option<Type_a>> int2int=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
           DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
 
+protected constant tuple<DAE.TType, Option<Type_a>> int2bool=(
+          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
+          DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
+
 protected constant tuple<DAE.TType, Option<Type_a>> enumeration2int=(
           DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}),NONE))},
           DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
@@ -2446,6 +2450,9 @@ algorithm
       env = Env.extendFrameT(env, "rem", intInt2int);
       env = Env.extendFrameT(env, "ceil", real2real);
       envb = Env.extendFrameT(env, "floor", real2real);
+      env = Env.extendFrameT(envb, "boolean", bool2bool);
+      env = Env.extendFrameT(envb, "boolean", real2bool);
+      env = Env.extendFrameT(envb, "boolean", int2bool);
       env = Env.extendFrameT(envb, "integer", real2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
