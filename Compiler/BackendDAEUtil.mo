@@ -4432,6 +4432,11 @@ algorithm
         ((_,ext_arg_2)) = func((e,ext_arg_1)); 
       then
         ext_arg_2;
+    case (SOME(BackendDAE.RESIDUAL_EQUATION(exp = e)),func,inTypeA)
+      equation
+        ((_,ext_arg_1)) = func((e,inTypeA)); 
+      then
+        ext_arg_1;        
     case (SOME(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE()))),func,inTypeA)
       equation
         tp = Expression.typeof(e);
@@ -4450,7 +4455,7 @@ algorithm
     case (SOME(BackendDAE.ALGORITHM(index = ind,in_ = expl,out = exps)),func,inTypeA)
       equation
         ext_arg_1 = traverseBackendDAEExpList(expl,func,inTypeA);
-        ext_arg_2 = traverseBackendDAEExpList(exps,func,inTypeA);
+        ext_arg_2 = traverseBackendDAEExpList(exps,func,ext_arg_1);
       then
         ext_arg_2;
     case (SOME(BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2)),func,inTypeA)
