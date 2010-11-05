@@ -4381,7 +4381,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
-      then traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsEqn,1,arrayLength(equOptArr),inTypeA);
+      then traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
@@ -4390,7 +4390,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
-protected function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
+protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExpsOptEqn
   author: PA
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;  
@@ -4405,6 +4405,7 @@ protected function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEq
 algorithm
   outTypeA:=  matchcontinue (inEquation,func,inTypeA)
     local
+      BackendDAE.Equation eqn;
       DAE.Exp e1,e2,e;
       list<DAE.Exp> expl,exps;
       DAE.ExpType tp;
@@ -4414,85 +4415,13 @@ algorithm
       DAE.ElementSource source;
      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case (NONE(),func,inTypeA) then inTypeA;
-    case (SOME(BackendDAE.EQUATION(exp = e1,scalar = e2)),func,inTypeA)
+    case (SOME(eqn),func,inTypeA)
       equation
-        ((_,ext_arg_1)) = func((e1,inTypeA));
-        ((_,ext_arg_2)) = func((e2,ext_arg_1));
-      then
-        ext_arg_2;
-    case (SOME(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl)),func,inTypeA)
-      equation
-        ext_arg_1 = traverseBackendDAEExpList(expl,func,inTypeA);
+        (_,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
       then
         ext_arg_1;
-    case (SOME(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)),func,inTypeA)
-      equation
-        tp = Expression.typeof(e);
-        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
-        ((_,ext_arg_2)) = func((e,ext_arg_1)); 
-      then
-        ext_arg_2;
-    case (SOME(BackendDAE.RESIDUAL_EQUATION(exp = e)),func,inTypeA)
-      equation
-        ((_,ext_arg_1)) = func((e,inTypeA)); 
-      then
-        ext_arg_1;        
-    case (SOME(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr,right = e,elsewhenPart=NONE()))),func,inTypeA)
-      equation
-        tp = Expression.typeof(e);
-        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
-        ((_,ext_arg_2)) = func((e,ext_arg_1)); 
-      then
-        ext_arg_2;
-    case (SOME(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr,e,SOME(elsePart)),source = source)),func,inTypeA)
-      equation
-        tp = Expression.typeof(e);
-        ((_,ext_arg_1)) = func((DAE.CREF(cr,tp),inTypeA));
-        ((_,ext_arg_2)) = func((e,ext_arg_1));  
-        ext_arg_3 = traverseBackendDAEExpsEqn(SOME(BackendDAE.WHEN_EQUATION(elsePart,source)),func,ext_arg_2);
-      then
-        ext_arg_3;
-    case (SOME(BackendDAE.ALGORITHM(index = ind,in_ = expl,out = exps)),func,inTypeA)
-      equation
-        ext_arg_1 = traverseBackendDAEExpList(expl,func,inTypeA);
-        ext_arg_2 = traverseBackendDAEExpList(exps,func,ext_arg_1);
-      then
-        ext_arg_2;
-    case (SOME(BackendDAE.COMPLEX_EQUATION(index = ind, lhs = e1, rhs = e2)),func,inTypeA)
-      equation
-        ((_,ext_arg_1)) = func((e1,inTypeA)); 
-        ((_,ext_arg_2)) = func((e2,ext_arg_1)); 
-      then
-        ext_arg_2;
   end matchcontinue;
-end traverseBackendDAEExpsEqn;
-
-public function traverseBackendDAEExpList
-"function traverseBackendDAEExps
- author Frenkel TUD:
- Calls user function for each element of list."
-  replaceable type Type_a subtypeof Any;
-  input list<DAE.Exp> expl;
-  input FuncExpType rel;
-  input Type_a ext_arg;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;  
-algorithm
-  outTypeA := matchcontinue(expl,rel,ext_arg)
-  local 
-      DAE.Exp e; 
-      list<DAE.Exp> expl1;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
-    case({},_,ext_arg_1) then ext_arg_1;
-    case(e::expl1,rel,ext_arg_1) equation
-      ((_,ext_arg_2)) = rel((e, ext_arg_1));
-      ext_arg_3 = traverseBackendDAEExpList(expl1,rel,ext_arg_2);
-    then ext_arg_3; 
-  end matchcontinue;
-end traverseBackendDAEExpList;
+end traverseBackendDAEExpsOptEqn;
 
 protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
   author: Frenkel TUD

@@ -44,7 +44,6 @@ public import BackendDAE;
 public import DAE;
 
 protected import Algorithm;
-protected import BackendDump;
 protected import BackendDAEUtil;
 protected import BackendDAEOptimize;
 protected import BackendEquation;
@@ -2250,95 +2249,13 @@ algorithm
   (outEqns, outIeqns,outAeqns,outAlgs,outVars) :=
   matchcontinue(vars,eqns,ieqns,aeqns,algs,functions)
     case(vars,eqns,ieqns,aeqns,algs,functions) equation
-      (eqns,(vars,_)) = expandDerOperatorEqns(eqns,(vars,functions));
-      (ieqns,(vars,_)) = expandDerOperatorEqns(ieqns,(vars,functions));
+      (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,expandDerExp,(vars,functions));
+      (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,expandDerExp,(vars,functions));
       (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
       (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
     then(eqns,ieqns,aeqns,algs,vars);
   end matchcontinue;
 end expandDerOperator;
-
-protected function expandDerOperatorEqns
-"Help function to expandDerOperator"
-  input list<BackendDAE.Equation> eqns;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output list<BackendDAE.Equation> outEqns;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outEqns,outVars) := matchcontinue(eqns,vars)
-  local BackendDAE.Equation e;
-    case({},vars) then ({},vars);
-    case(e::eqns,vars) equation
-      (e,vars) = expandDerOperatorEqn(e,vars);
-      (eqns,vars)  = expandDerOperatorEqns(eqns,vars);
-    then (e::eqns,vars);
-    case(_,_) equation
-      Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorEqns failed\n");
-      then fail();
-    end matchcontinue;
-end expandDerOperatorEqns;
-
-protected function expandDerOperatorEqn
-"Help function to expandDerOperator, handles Equations"
-  input BackendDAE.Equation eqn;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output BackendDAE.Equation outEqn;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outEqn,outVars) := matchcontinue(eqn,vars)
-    local
-      DAE.Exp e1,e2; list<DAE.Exp> expl; Integer i;
-      DAE.ComponentRef cr; BackendDAE.WhenEquation wheneq;
-      DAE.ElementSource source "the element source";
-
-    case(BackendDAE.EQUATION(e1,e2,source),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
-    then (BackendDAE.EQUATION(e1,e2,source),vars);
-    case(BackendDAE.COMPLEX_EQUATION(i,e1,e2,source),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
-    then (BackendDAE.COMPLEX_EQUATION(i,e1,e2,source),vars);
-    case  (BackendDAE.ARRAY_EQUATION(i,expl,source),vars)
-    then (BackendDAE.ARRAY_EQUATION(i,expl,source),vars);
-    case (BackendDAE.SOLVED_EQUATION(cr,e1,source),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-    then (BackendDAE.SOLVED_EQUATION(cr,e1,source),vars);
-    case(BackendDAE.RESIDUAL_EQUATION(e1,source),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-    then (BackendDAE.RESIDUAL_EQUATION(e1,source),vars);
-    case (eqn as BackendDAE.ALGORITHM(index = _),vars) then (eqn,vars);
-    case (BackendDAE.WHEN_EQUATION(wheneq,source),vars) equation
-      (wheneq,vars) = expandDerOperatorWhenEqn(wheneq,vars);
-    then (BackendDAE.WHEN_EQUATION(wheneq,source),vars);
-    case (eqn ,vars) equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprint("failtrace", "- BackendDAECreate.expandDerOperatorEqn, eqn =");
-      Debug.fprint("failtrace", BackendDump.equationStr(eqn));
-      Debug.fprint("failtrace", " failed\n");
-    then fail();
-  end matchcontinue;
-end expandDerOperatorEqn;
-
-protected function expandDerOperatorWhenEqn
-"Helper function to expandDerOperatorWhenEqn"
-  input BackendDAE.WhenEquation wheneq;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output BackendDAE.WhenEquation outWheneq;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outWheneq, outVars) := matchcontinue(wheneq,vars)
-    local DAE.ComponentRef cr; DAE.Exp e1; Integer indx; BackendDAE.WhenEquation elsewheneq;
-    case(BackendDAE.WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-      (elsewheneq,vars) = expandDerOperatorWhenEqn(elsewheneq,vars);
-    then (BackendDAE.WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars);
-
-    case(BackendDAE.WHEN_EQ(indx,cr,e1,NONE()),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-    then (BackendDAE.WHEN_EQ(indx,cr,e1,NONE()),vars);
-  end matchcontinue;
-end expandDerOperatorWhenEqn;
 
 protected function expandDerOperatorAlgs
 "Help function to expandDerOperator"
@@ -2416,23 +2333,6 @@ algorithm
     then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars);
   end matchcontinue;
 end expandDerOperatorArrEqn;
-
-protected function expandDerExps
-"Help function to e.g. expandDerOperatorEqn"
-  input list<DAE.Exp> expl;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output list<DAE.Exp> outExpl;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outExpl,outVars) := matchcontinue(expl,vars)
-    local DAE.Exp e;
-    case({},vars) then ({},vars);
-    case(e::expl,vars) equation
-      ((e,vars)) = Expression.traverseExp(e,expandDerExp,vars);
-      (expl,vars) = expandDerExps(expl,vars);
-    then (e::expl,vars);
-  end matchcontinue;
-end expandDerExps;
 
 protected function expandDerExp
 "Help function to e.g. expandDerOperatorEqn"
