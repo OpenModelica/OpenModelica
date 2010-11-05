@@ -225,7 +225,7 @@ algorithm
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;
       Integer index;
-     Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),func,inTypeA)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
@@ -282,7 +282,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqn;
 
-protected function traverseBackendDAEExpList
+public function traverseBackendDAEExpList
 "function traverseBackendDAEExps
  author Frenkel TUD:
  Calls user function for each element of list."
