@@ -78,9 +78,6 @@
     <ClCompile Include="notebook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="notebookparser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="notebooksocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -257,9 +254,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="notebookcommands.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="notebookparser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="omc_communication.h">

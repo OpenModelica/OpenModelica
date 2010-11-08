@@ -88,7 +88,7 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>qtmain.lib;QtGui4.lib;QtNetwork4.lib;QtXml4.lib;NotebookParser.lib;antlr.lib;mico2313.lib;QtCore4.lib;QtOpenGL4.lib;pltpkg2.lib;ws2_32.lib;imm32.lib;winmm.lib;coin3.lib;soqt1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmain.lib;QtGui4.lib;QtNetwork4.lib;QtXml4.lib;mico2313.lib;QtCore4.lib;QtOpenGL4.lib;pltpkg2.lib;ws2_32.lib;imm32.lib;winmm.lib;coin3.lib;soqt1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(Configuration)\OMNotebook.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Release;$(QTHOME)\lib;..\Pltpkg2\Release;$(OMDEV)\lib\mico-win32-msvc\;$(COINDIR)\lib\;..\3Dpkg\Release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -181,7 +181,6 @@ copy $(ProjectDir)\*.xml $(ProjectDir)\..\..\build\share\omnotebook\
     <ClCompile Include="indent.cpp" />
     <ClCompile Include="inputcell.cpp" />
     <ClCompile Include="notebook.cpp" />
-    <ClCompile Include="notebookparser.cpp" />
     <ClCompile Include="notebooksocket.cpp" />
     <ClCompile Include="omc_communication.cc" />
     <ClCompile Include="omc_communicator.cpp" />
@@ -384,7 +383,6 @@ copy $(ProjectDir)\*.xml $(ProjectDir)\..\..\build\share\omnotebook\
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_notebook.cpp;%(Outputs)</Outputs>
     </CustomBuild>
     <ClInclude Include="notebookcommands.h" />
-    <ClInclude Include="notebookparser.h" />
     <CustomBuild Include="notebooksocket.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing notebooksocket.h...</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe notebooksocket.h -o moc_notebooksocket.cpp
@@ -552,10 +550,6 @@ copy $(ProjectDir)\*.xml $(ProjectDir)\..\..\build\share\omnotebook\
     </ProjectReference>
     <ProjectReference Include="..\ext\OMPlotWindow.vcxproj">
       <Project>{79f27dd3-82fe-3aad-80b3-1255dc2db9d9}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\NotebookParser\NotebookParser.vcxproj">
-      <Project>{3700a59e-e33b-4ac7-8385-35d486aee4e0}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\Pltpkg2\Pltpkg2.vcxproj">
