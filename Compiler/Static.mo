@@ -12786,16 +12786,12 @@ algorithm
     
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_)
       equation
-        typ1 = Types.arrayElementType(typ1);
-        typ2 = Types.arrayElementType(typ2);
         true = Types.subtype(typ1, typ2);
       then
         rtype;
     
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_)
       equation
-        typ1 = Types.arrayElementType(typ1);
-        typ2 = Types.arrayElementType(typ2);
         true = Types.subtype(typ2, typ1);
       then
         rtype;
