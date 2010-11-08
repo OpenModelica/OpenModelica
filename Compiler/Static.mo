@@ -13726,6 +13726,8 @@ algorithm
       DAE.DAElist dae1;
       list<DAE.Element> dae1_2Elts;
       Env.Env env2;
+      ClassInf.State dummyFunc;
+
     case (cache,env,{},impl) then (cache,env,DAEUtil.emptyDae,{});
     case (cache,env,ld,impl)
       equation
@@ -13740,14 +13742,16 @@ algorithm
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
 
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-          Connect.SETS({},{},{},{}), ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")), ld_mod, {}, {}, {}, impl);
+        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
 
-        (cache,env2,_,_,dae1,_,_,_,_) =
-          Inst.instElementList(cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-                               DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}),
-                               ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")),
-                               ld_mod,{},impl,Inst.INNER_CALL,ConnectionGraph.EMPTY);
+        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          Connect.emptySet, dummyFunc, ld_mod, {}, {}, {}, impl);
+
+        (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
+          cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
+          impl, Inst.INNER_CALL, ConnectionGraph.EMPTY);
 
         // The instantiation of the components may have produced some equations
         (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);

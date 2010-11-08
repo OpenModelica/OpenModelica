@@ -56,6 +56,8 @@ protected import System;
 protected import Util;
 
 
+public constant DAE.ComponentRef DUMMY = DAE.CREF_IDENT("dummy", DAE.ET_OTHER(), {});
+
 /***************************************************/
 /* generate a ComponentRef */
 /***************************************************/

@@ -1347,14 +1347,15 @@ algorithm
       list<DAE.ComponentRef> connection "connection_set connect_refs";
       list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
       list<Connect.OuterConnect> outerConnects "connect statements to propagate upwards";
+      list<Connect.StreamFlowConnect> sf;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
       
-    case (Connect.SETS(setLst, connection, deletedComponents, outerConnects), broken)
+    case (Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf), broken)
       equation
         setLst = removeBrokenConnectionsFromSetLst(setLst, broken);        
         outerConnects = Util.listSelect1(outerConnects, broken, outerConenctNOTFromConnect);
       then 
-        Connect.SETS(setLst, connection, deletedComponents, outerConnects);
+        Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf);
   end matchcontinue;
 end removeBrokenConnectionsFromSets;
 

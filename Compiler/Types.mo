@@ -2890,6 +2890,21 @@ algorithm
   end matchcontinue;
 end getVars;
 
+public function getConnectorVars
+  "Returns the list of variables in a connector, or fails if the type is not a
+  connector."
+  input Type inType;
+  output list<Var> outVars;
+algorithm
+  outVars := matchcontinue(inType)
+    local list<Var> vars;
+    case ((DAE.T_COMPLEX(
+           complexClassType = ClassInf.CONNECTOR(path = _),
+           complexVarLst = vars), _))
+      then vars;
+  end matchcontinue;
+end getConnectorVars;
+
 protected function isInputVar "function: isInputVar
   author: LS
 

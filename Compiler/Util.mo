@@ -3678,22 +3678,24 @@ public function listGetMemberOnTrue "function listGetmemberOnTrue
     function equalLength(string,string) returns true if the strings are of same length
     listGetMemberOnTrue(\"a\",{\"bb\",\"b\",\"ccc\"},equalLength) => \"b\""
   input Type_a inTypeA;
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
-  output Type_a outTypeA;
+  input list<Type_b> inTypeBLst;
+  input FuncType inFunc;
+  output Type_b outTypeB;
   replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aType_aToBoolean
-    input Type_a inTypeA1;
-    input Type_a inTypeA2;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a inTypeA;
+    input Type_b inTypeB;
     output Boolean outBoolean;
-  end FuncTypeType_aType_aToBoolean;
+  end FuncType;
 algorithm
-  outTypeA:=
-  matchcontinue (inTypeA,inTypeALst,inFuncTypeTypeATypeAToBoolean)
+  outTypeB:=
+  matchcontinue (inTypeA,inTypeBLst,inFunc)
     local
-      FuncTypeType_aType_aToBoolean p;
-      Type_a x,y,res;
-      list<Type_a> ys;
+      FuncType p;
+      Type_a x;
+      Type_b y,res;
+      list<Type_b> ys;
     case (_,{},p) then fail();
     case (x,(y :: ys),p)
       equation
@@ -4034,6 +4036,43 @@ algorithm
         y::res;
   end matchcontinue;
 end listRemoveOnTrue;
+
+public function listRemoveFirstOnTrue
+  "Removes the first element from the list that matches the given element, using
+  a boolean function. Ex:
+    listRemoveFirstOnTrue(3, intEq, {2,3,4,3}) = {2,4,3}"
+  input Type_a inCompElement;
+  input FuncType inFunc;
+  input list<Type_b> inList;
+  output list<Type_b> outList;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+ 
+  partial function FuncType
+    input Type_a e1;
+    input Type_b e2;
+    output Boolean res;
+  end FuncType;
+algorithm
+  outList := matchcontinue(inCompElement, inFunc, inList)
+    local
+      Type_b e;
+      list<Type_b> rest;
+      
+    case (_, _, {}) then {};
+    case (_, _, e :: rest)
+      equation
+        true = inFunc(inCompElement, e);
+      then
+        rest;
+    case (_, _, e :: rest)
+      equation
+        rest = listRemoveFirstOnTrue(inCompElement, inFunc, rest);
+      then
+        e :: rest;
+  end matchcontinue;
+end listRemoveFirstOnTrue;
 
 public function listIntersectionIntN "provides same functionality as listIntersection, but for integer values between 1 and N
 The complexity in this case is O(n)"

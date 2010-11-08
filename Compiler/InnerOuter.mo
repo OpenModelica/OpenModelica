@@ -283,9 +283,7 @@ With the difference that we add the scope of the inner declaration to the connec
 algorithm
   ocsets := matchcontinue(repl,csets,sources,targets)
     local
-      list<Connect.Set> sets;
-      list<DAE.ComponentRef> ccons,dcs;
-      list<Connect.OuterConnect> ocs,ocs2;
+      list<Connect.OuterConnect> ocs;
     // no outer connects!
     case(repl,Connect.SETS(outerConnects = {}),_,_) then csets;
     // no targets!
@@ -297,12 +295,13 @@ algorithm
       then
         csets;
     // we have something
-    case(repl,Connect.SETS(sets,ccons,dcs,ocs),sources,targets)
+    case(repl,Connect.SETS(outerConnects = ocs),sources,targets)
       equation
         // adrpo: send in the sources/targets so we avoid building them again!
-        ocs2 = changeOuterReferences3(ocs,repl,sources,targets);
+        ocs = changeOuterReferences3(ocs,repl,sources,targets);
+        csets = ConnectUtil.setOuterConnects(csets, ocs);
       then
-        Connect.SETS(sets,ccons,dcs,ocs2);
+        csets;
   end matchcontinue;
 end changeOuterReferences2;
 
@@ -396,15 +395,26 @@ algorithm outCr := matchcontinue(inCr,src,dst)
   end matchcontinue;
 end changeOuterReferences4;
 
-public function changeInnerOuterInOuterConnect 
+public function changeInnerOuterInOuterConnect
+  "changes inner to outer and outer to inner where needed"
+  input Connect.Sets inSets;
+  output Connect.Sets outSets;
+
+  list<Connect.OuterConnect> outerConnects;
+algorithm
+  Connect.SETS(outerConnects = outerConnects) := inSets;
+  outerConnects := Util.listMap(outerConnects, changeInnerOuterInOuterConnect2);
+  outSets := ConnectUtil.setOuterConnects(inSets, outerConnects);
+end changeInnerOuterInOuterConnect;
+
+public function changeInnerOuterInOuterConnect2 
 "@author: adrpo
   changes inner to outer and outer to inner where needed"
-  input list<Connect.OuterConnect> ocs;
-  output list<Connect.OuterConnect> oocs;
+  input Connect.OuterConnect inOC;
+  output Connect.OuterConnect outOC;
 algorithm
-  oocs := matchcontinue(ocs)
+  outOC := matchcontinue(inOC)
     local
-      list<Connect.OuterConnect> recRes;
       Connect.OuterConnect oc;
       DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
       Absyn.InnerOuter io1,io2;
@@ -413,42 +423,33 @@ algorithm
       list<DAE.ComponentRef> src,dst;
       String s1,s2;
       DAE.ElementSource source "the origin of the element";
-    // handle nothingness
-    case({}) then {};
+
     // the left hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs)
+    case Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)
       equation
         (_,true) = innerOuterBooleans(io1);
-        // (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr1);
-        // ncr1 = cr3;
         ncr1 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
         //   ComponentReference.printComponentRefStr(cr1) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
-        recRes = changeInnerOuterInOuterConnect(ocs);
       then
-        Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source)::recRes;
+        Connect.OUTERCONNECT(scope,cr1,Absyn.INNER(),f1,cr2,io2,f2,source);
+
     // the right hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs)
+    case Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)
       equation
         (_,true) = innerOuterBooleans(io2);
-        // (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr2);
-        // ncr2 = cr3;        
         ncr2 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
         //   ComponentReference.printComponentRefStr(cr2) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
-        recRes = changeInnerOuterInOuterConnect(ocs);
       then
-        Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source)::recRes;
+        Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,Absyn.INNER(),f2,source);
+
     // none of left or right hand side are outer
-    case((oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source))::ocs)
-      equation
-        recRes = changeInnerOuterInOuterConnect(ocs);
-      then
-        oc::recRes;
+    else then inOC;
   end matchcontinue;
-end changeInnerOuterInOuterConnect;
+end changeInnerOuterInOuterConnect2;
 
 protected function buildInnerOuterRepl
 "Builds replacement rules for changing outer references
@@ -631,14 +632,15 @@ algorithm
       list<DAE.ComponentRef> crs;
       list<DAE.ComponentRef> delcomps;
       list<Connect.OuterConnect> outerConnects;
+      list<Connect.StreamFlowConnect> sf;
       InstHierarchy ih;
       Connect.Sets newCsets;
 
-    case(cache,env,ih,pre,Connect.SETS(setLst,crs,delcomps,outerConnects),topCall)
+    case(cache,env,ih,pre,Connect.SETS(setLst,crs,delcomps,outerConnects,sf),topCall)
       equation
         (outerConnects,setLst,crs,innerOuterConnects) = retrieveOuterConnections2(cache,env,ih,pre,outerConnects,setLst,crs,topCall);
       then
-        (Connect.SETS(setLst,crs,delcomps,outerConnects),innerOuterConnects);
+        (Connect.SETS(setLst,crs,delcomps,outerConnects,sf),innerOuterConnects);
     
   end matchcontinue;
 end retrieveOuterConnections;
@@ -840,7 +842,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then
@@ -905,7 +907,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
     then
@@ -921,7 +923,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then setLst;

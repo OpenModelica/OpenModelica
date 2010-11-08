@@ -4892,6 +4892,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae2;
       Prefix.Prefix pre;
+      ClassInf.State temp;
     case (localCache,localEnv,localIterExp,localRangeIdList,impl,pre,info)
       equation
         (localCache,subscriptList,ld) = deriveArrayDimAndTempVars(localCache,localEnv,localRangeIdList,impl,{},{},pre,info);
@@ -4902,11 +4903,13 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld,false);
         ld2 = Inst.componentElts(ld2);
         ld_mod = Inst.addNomod(ld2);
-        (localCache,env2,ih) = Inst.addComponentsToEnv(localCache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-        Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")), ld_mod, {}, {}, {}, impl);
-       (cache2,env2,ih,_,_,_,_,_,_) = Inst.instElementList(localCache,env2,ih,UnitAbsyn.noStore,
-        DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")),
-        ld_mod,{},impl,Inst.INNER_CALL,ConnectionGraph.EMPTY);
+        temp = ClassInf.UNKNOWN(Absyn.IDENT("temp"));
+        (localCache,env2,ih) = Inst.addComponentsToEnv(localCache, env2,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          Connect.emptySet, temp, ld_mod, {}, {}, {}, impl);
+        (cache2,env2,ih,_,_,_,_,_,_) = Inst.instElementList(localCache, env2, ih,
+          UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+          temp, ld_mod, {}, impl, Inst.INNER_CALL, ConnectionGraph.EMPTY);
 
         (cache2,_,DAE.PROP(t,_),_) = Static.elabExp(cache2,env2,localIterExp,impl,NONE(),false,pre,info);
 

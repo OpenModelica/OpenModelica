@@ -1244,6 +1244,20 @@ algorithm
   vl_1 := getMatchingElements(vl, isInput);
 end getInputVars;
 
+public function isFlowVar
+  "Succeeds if the given variable has a flow prefix."
+  input DAE.Element inElement;
+algorithm
+  DAE.VAR(kind = DAE.VARIABLE(), flowPrefix = DAE.FLOW()) := inElement;
+end isFlowVar;
+
+public function isStreamVar
+  "Succeeds if the given variable has a stream prefix."
+  input DAE.Element inElement;
+algorithm
+  DAE.VAR(kind = DAE.VARIABLE(), streamPrefix = DAE.STREAM()) := inElement;
+end isStreamVar;
+
 public function isOutputVar
 "Succeeds if Element is an output variable."
   input DAE.Element inElement;
