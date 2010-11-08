@@ -2519,6 +2519,7 @@ end crefToMStr;
 
 
 
+
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -5540,6 +5541,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
   case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
+  case ENUM_LITERAL(__)  then match flag case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
   case e as UNARY(__)
   case e as LBINARY(__)

@@ -30731,6 +30731,31 @@ algorithm
   end matchcontinue;
 end fun_675;
 
+protected function fun_676
+  input Tpl.Text in_txt;
+  input Integer in_i_flag;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_flag)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_integer"));
+      then txt;
+  end matchcontinue;
+end fun_676;
+
 public function expTypeFromExpFlag
   input Tpl.Text in_txt;
   input DAE.Exp in_i_exp;
@@ -30770,6 +30795,13 @@ algorithm
            i_flag )
       equation
         txt = fun_675(txt, i_flag);
+      then txt;
+
+    case ( txt,
+           DAE.ENUM_LITERAL(name = _),
+           i_flag )
+      equation
+        txt = fun_676(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -30927,31 +30959,6 @@ algorithm
   end matchcontinue;
 end expTypeFromExpFlag;
 
-protected function fun_677
-  input Tpl.Text in_txt;
-  input Integer in_i_flag;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_flag)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           1 )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("boolean"));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_boolean"));
-      then txt;
-  end matchcontinue;
-end fun_677;
-
 protected function fun_678
   input Tpl.Text in_txt;
   input Integer in_i_flag;
@@ -31001,6 +31008,31 @@ algorithm
       then txt;
   end matchcontinue;
 end fun_679;
+
+protected function fun_680
+  input Tpl.Text in_txt;
+  input Integer in_i_flag;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_flag)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("boolean"));
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_boolean"));
+      then txt;
+  end matchcontinue;
+end fun_680;
 
 public function expTypeFromOpFlag
   input Tpl.Text in_txt;
@@ -31351,7 +31383,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_677(txt, i_flag);
+        txt = fun_678(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -31360,7 +31392,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_678(txt, i_flag);
+        txt = fun_679(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -31369,7 +31401,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_679(txt, i_flag);
+        txt = fun_680(txt, i_flag);
       then txt;
 
     case ( txt,
