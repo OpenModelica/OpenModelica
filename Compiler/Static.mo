@@ -4479,11 +4479,11 @@ algorithm
 			list<DAE.Dimension> rest;
     case ({}) then true;
     case ({_}) then true;
-		case ({dim1, dim2}) then Exp.dimensionsEqual(dim1, dim2);
+		case ({dim1, dim2}) then Expression.dimensionsEqual(dim1, dim2);
 		case ((dim1 :: (dim2 :: rest)))
       equation
 				res = sameDimensions3((dim2 :: rest));
-				res2 = Exp.dimensionsEqual(dim1, dim2);
+				res2 = Expression.dimensionsEqual(dim1, dim2);
         res_1 = boolAnd(res, res2);
       then
         res_1;
