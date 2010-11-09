@@ -13902,7 +13902,6 @@ protected
   list<SCode.Class> graphicProgramSCode;
   list<Env.Frame> env;
   list<String> res;
-  String resStr;
   Absyn.Program placementProgram;
 algorithm
   placementProgram := modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
