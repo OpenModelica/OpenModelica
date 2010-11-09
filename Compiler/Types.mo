@@ -987,7 +987,7 @@ algorithm
       equation
         res = getDimensionSizes(tp);
       then
-        (-1 :: res);
+        (0 :: res);
     case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensionSizes(tp);
     case ((_,_))

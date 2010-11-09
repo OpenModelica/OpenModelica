@@ -4418,11 +4418,11 @@ protected function sameDimensions
   output Boolean res;
 
   list<DAE.Type> types;
-  list<list<Integer>> dims;
+	list<list<DAE.Dimension>> dims;
 algorithm
   types := Util.listMap(inProps, Types.getPropType);
-  dims := Util.listMap(types, Types.getDimensionSizes);
-  res := sameDimensions2(dims);
+	dims := Util.listMap(types, Types.getDimensions);
+	res := sameDimensions2(dims);
 end sameDimensions;
 
 protected function sameDimensionsExceptionDimX
@@ -4433,58 +4433,57 @@ protected function sameDimensionsExceptionDimX
   output Boolean res;
 
   list<DAE.Type> types;
-  list<list<Integer>> dims;
+	list<list<DAE.Dimension>> dims;
 algorithm
   types := Util.listMap(inProps, Types.getPropType);
-  dims := Util.listMap(types, Types.getDimensionSizes);
+  dims := Util.listMap(types, Types.getDimensions);
   dims := Util.listRemoveNth(dims, dimException);
   res := sameDimensions2(dims);
 end sameDimensionsExceptionDimX;
 
 protected function sameDimensions2
-  input list<list<Integer>> inIntegerLstLst;
+	input list<list<DAE.Dimension>> inDimensions;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inIntegerLstLst)
+	matchcontinue (inDimensions)
     local
-      list<list<Integer>> l,restelts;
-      list<Integer> elts;
-      Integer dim1,dim2;
-    case (l)
+			list<list<DAE.Dimension>> rest_dims;
+			list<DAE.Dimension> dims;
+    case _
       equation
-        {} = Util.listFlatten(l);
+				{} = Util.listFlatten(inDimensions);
       then
         true;
-    case (l)
+    case _
       equation
-        elts = Util.listMap(l, Util.listFirst);
-        restelts = Util.listMap(l, Util.listRest);
-        true = sameDimensions3(elts);
-        true = sameDimensions2(restelts);
+				dims = Util.listMap(inDimensions, Util.listFirst);
+				rest_dims = Util.listMap(inDimensions, Util.listRest);
+				true = sameDimensions3(dims);
+				true = sameDimensions2(rest_dims);
       then
         true;
-    case (_) then false;
+		else then false;
   end matchcontinue;
 end sameDimensions2;
 
 protected function sameDimensions3
   "Helper function to sameDimensions2. Check that all dimensions in a list are equal."
-  input list<Integer> inDims;
+	input list<DAE.Dimension> inDims;
   output Boolean outRes;
 algorithm
   outRes := matchcontinue (inDims)
     local
-      Integer i1,i2;
+			DAE.Dimension dim1, dim2;
       Boolean res,res2,res_1;
-      list<Integer> rest;
+			list<DAE.Dimension> rest;
     case ({}) then true;
     case ({_}) then true;
-    case ({i1,i2}) then (i1 == i2);
-    case ((i1 :: (i2 :: rest)))
+		case ({dim1, dim2}) then Exp.dimensionsEqual(dim1, dim2);
+		case ((dim1 :: (dim2 :: rest)))
       equation
-        res = sameDimensions3((i2 :: rest));
-        res2 = (i1 == i2) or i1 == -1 or i2 == -1;
+				res = sameDimensions3((dim2 :: rest));
+				res2 = Exp.dimensionsEqual(dim1, dim2);
         res_1 = boolAnd(res, res2);
       then
         res_1;
