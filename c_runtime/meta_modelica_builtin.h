@@ -226,6 +226,7 @@ stringHash_rettype stringHash(modelica_string_const);
 stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
 stringHashSdbm_rettype stringHashSdbm(modelica_string_const);
 
+modelica_metatype boxptr_stringEq(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_stringAppend(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_stringHash(modelica_metatype);
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype);

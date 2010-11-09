@@ -8716,7 +8716,6 @@ algorithm
       list<Ident> t_lst;
       Ident fn_str,types_str,scope,pre_str;
       String s,name,argStr,id,args_str,str;
-      Env.Cache cache;
       DAE.ExpType tp;
       SCode.Mod mod;
       DAE.Mod tmod;

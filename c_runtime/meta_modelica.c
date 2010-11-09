@@ -412,7 +412,7 @@ void printAny(void* any) /* For debugging */
   ctor = 255 & (hdr >> 2);
   
   if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
-    fprintf(stderr, "meta_array(");
+    fprintf(stderr, "MetaArray(");
     for (i=1; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       printAny(data);

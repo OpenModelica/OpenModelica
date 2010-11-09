@@ -609,6 +609,11 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, mod
   return res;
 }
 
+modelica_metatype boxptr_stringEq(modelica_metatype str1, modelica_metatype str2)
+{
+  return mmc_mk_icon(stringEq(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2)));
+}
+
 /* List Operations */
 
 listReverse_rettype listReverse(modelica_metatype lst)

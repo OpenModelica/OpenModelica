@@ -5440,7 +5440,7 @@ algorithm
   resType := matchcontinue (ty,prefix,bindings,info)
     local
       String id,id1,id2,bstr,tstr;
-      Type t1,t2,ty,ty1,ty2;
+      Type t1,t2,ty1,ty2;
       list<Type> tys,tys1,tys2,rest;
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
@@ -5506,7 +5506,7 @@ public function polymorphicBindingsLookup
 algorithm
   resType := matchcontinue (id, bindings)
     local
-      String id,id2;
+      String id2;
       list<Type> tys;
       PolymorphicBindings rest;
     case (id, (id2,tys)::_)
@@ -5901,7 +5901,7 @@ algorithm
   (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,solvedBindings)
     local
       Type ty,ty1,ty2;
-      list<Type> tys,tys1,tys2,rest;
+      list<Type> tys,rest;
       String id,id1,id2;
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
@@ -5977,7 +5977,7 @@ algorithm
   (outTys,outSolvedBindings) := matchcontinue (tys1,tys2,changed,solvedBindings)
     local
       Type ty,ty1,ty2;
-      list<Type> tys,tys1,tys2,rest;
+      list<Type> tys,rest;
       String id,id1,id2;
     case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
@@ -6079,6 +6079,8 @@ algorithm
       list<String> ids;
     case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);
+    case ((DAE.T_POLYMORPHIC(id),_),expected,bindings)
+      then addPolymorphicBinding("$$" +& id,expected,bindings);
     case ((DAE.T_BOXED(ty1),_),ty2,bindings)
       equation
         ty1 = unboxedType(ty1);
