@@ -485,7 +485,7 @@ algorithm
       RenamedPatList renamedPatList;
       RenamedPat pat,first2,second2;
       Integer constTag,i,numPosArgs;
-      list<Absyn.NamedArg> namedArgList;
+      list<Absyn.NamedArg> namedArgList,invalidArgs;
       Absyn.Path recName,pathName;
       SCode.Class sClass;
       list<String> fieldNameList, fieldNamesPos, fieldNamesNamed;
@@ -610,8 +610,7 @@ algorithm
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
 
         // CALL EXPRESSION - translates pos/named args into only pos ones
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,namedArgList)),
-        localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info)
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,namedArgList)),localVar,localAsBinds,localCache,localEnv,localConstTagEnv,info)
       equation
         recName = Absyn.crefToPath(compRef);
 
@@ -627,13 +626,12 @@ algorithm
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
 
         //Sorting of named arguments
-        funcArgsNamedFixed = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
 
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList(funcArgs
-          ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv,status) = renamePatList(funcArgs,localVar2,1,{},{},localCache,localEnv,localConstTagEnv,info);
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
-
+        status = checkInvalidPatternNamedArgs(invalidArgs,status,info);
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv,status);
         // EMPTY LIST EXPRESSION
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_,localConstTagEnv,info)
@@ -2000,22 +1998,21 @@ protected function generatePositionalArgs "function: generatePositionalArgs
   input list<Absyn.NamedArg> namedArgList;
   input list<Absyn.Exp> accList;
   output list<Absyn.Exp> outList;
+  output list<Absyn.NamedArg> outInvalidNames;
 algorithm
-  outList :=
-  matchcontinue (fieldNameList,namedArgList,accList)
+  (outList,outInvalidNames) := matchcontinue (fieldNameList,namedArgList,accList)
     local
       list<Absyn.Exp> localAccList;
       list<Absyn.Ident> restFieldNames;
       Absyn.Ident firstFieldName;
-      list<Absyn.Exp> expL;
+      Absyn.Exp exp;
       list<Absyn.NamedArg> localNamedArgList;
-    case ({},_,localAccList) then localAccList;
+    case ({},namedArgList,localAccList) then (listReverse(localAccList),namedArgList);
     case (firstFieldName :: restFieldNames,localNamedArgList,localAccList)
       equation
-        expL = Util.listCreate(findFieldExpInList(firstFieldName,localNamedArgList));
-        localAccList = listAppend(localAccList,expL);
-        localAccList = generatePositionalArgs(restFieldNames,localNamedArgList,localAccList);
-      then localAccList;
+        (exp,localNamedArgList) = findFieldExpInList(firstFieldName,localNamedArgList);
+        (localAccList,localNamedArgList) = generatePositionalArgs(restFieldNames,localNamedArgList,exp::localAccList);
+      then (localAccList,localNamedArgList);
   end matchcontinue;
 end generatePositionalArgs;
 
@@ -2026,22 +2023,23 @@ protected function findFieldExpInList "function: findFieldExpInList
   input Absyn.Ident firstFieldName;
   input list<Absyn.NamedArg> namedArgList;
   output Absyn.Exp outExp;
+  output list<Absyn.NamedArg> outNamedArgList;
 algorithm
-  outExp :=
-  matchcontinue (firstFieldName,namedArgList)
+  (outExp,outNamedArgList) := matchcontinue (firstFieldName,namedArgList)
     local
       Absyn.Exp e;
       Absyn.Ident localFieldName,aName;
-      list<Absyn.NamedArg> restNamedArgList;
-    case (_,{}) then Absyn.CREF(Absyn.WILD());
-    case (localFieldName,Absyn.NAMEDARG(aName,e) :: _)
+      list<Absyn.NamedArg> rest;
+      Absyn.NamedArg first;
+    case (_,{}) then (Absyn.CREF(Absyn.WILD()),{});
+    case (localFieldName,Absyn.NAMEDARG(aName,e) :: rest)
       equation
         true = stringEq(localFieldName,aName);
-      then e;
-    case (localFieldName,_ :: restNamedArgList)
+      then (e,rest);
+    case (localFieldName,first::rest)
       equation
-        e = findFieldExpInList(localFieldName,restNamedArgList);
-      then e;
+        (e,rest) = findFieldExpInList(localFieldName,rest);
+      then (e,first::rest);
   end matchcontinue;
 end findFieldExpInList;
 
@@ -2629,5 +2627,26 @@ algorithm
     case Absyn.ELSE(localDecls = els) then els;
   end matchcontinue;
 end getCaseDecls;
+
+protected function checkInvalidPatternNamedArgs
+"Checks that there are no invalid named arguments in the pattern"
+  input list<Absyn.NamedArg> args;
+  input Util.Status status;
+  input Absyn.Info info;
+  output Util.Status outStatus;
+algorithm
+  outStatus := match (args,status,info)
+    local
+      list<String> argsNames;
+      String str1;
+    case ({},status,_) then status;
+    case (args,status,info)
+      equation
+        (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
+        str1 = Util.stringDelimitList(argsNames, ",");
+        Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1}, info);
+      then Util.FAILURE();
+  end match;
+end checkInvalidPatternNamedArgs;
 
 end Patternm;
