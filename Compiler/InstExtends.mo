@@ -1289,7 +1289,7 @@ algorithm
     local
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
-      Absyn.Exp exp,exp1,exp2,ifexp,truebranch,elsebranch;
+      Absyn.Exp exp1,exp2,ifexp,truebranch,elsebranch;
       list<Absyn.Exp> expl;
       Option<Absyn.Exp> optExp;
       list<list<Absyn.Exp>> expll;

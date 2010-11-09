@@ -79,64 +79,64 @@ end VarKind;
 public
 uniontype Var "- Variables"
   record VAR
-    DAE.ComponentRef varName "varName ; variable name" ;
+    .DAE.ComponentRef varName "varName ; variable name" ;
     VarKind varKind "varKind ; Kind of variable" ;
-    DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
+    .DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
     Type varType "varType ; builtin type or enumeration" ;
-    Option<DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
+    Option< .DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;
-    DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
+    .DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
     Integer index "index ; index in impl. vector" ;
-    DAE.ElementSource source "origin of variable" ;
-    Option<DAE.VariableAttributes> values "values ; values on builtin attributes" ;
+    .DAE.ElementSource source "origin of variable" ;
+    Option< .DAE.VariableAttributes> values "values ; values on builtin attributes" ;
     Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
-    DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
-    DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
+    .DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
+    .DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
   end VAR;
 end Var;
 
 public
 uniontype Equation "- Equation"
   record EQUATION
-    DAE.Exp exp;
-    DAE.Exp scalar "scalar" ;
-    DAE.ElementSource source "origin of equation";
+    .DAE.Exp exp;
+    .DAE.Exp scalar "scalar" ;
+    .DAE.ElementSource source "origin of equation";
   end EQUATION;
 
   record ARRAY_EQUATION
     Integer index "index ; index in arrayequations 0..n-1" ;
-    list<DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
-    DAE.ElementSource source "origin of equation";
+    list< .DAE.Exp> crefOrDerCref "crefOrDerCref ; CREF or der(CREF)" ;
+    .DAE.ElementSource source "origin of equation";
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
-    DAE.ComponentRef componentRef "componentRef" ;
-    DAE.Exp exp "exp" ;
-    DAE.ElementSource source "origin of equation";
+    .DAE.ComponentRef componentRef "componentRef" ;
+    .DAE.Exp exp "exp" ;
+    .DAE.ElementSource source "origin of equation";
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
-    DAE.Exp exp "exp ; not present from front end" ;
-    DAE.ElementSource source "origin of equation";
+    .DAE.Exp exp "exp ; not present from front end" ;
+    .DAE.ElementSource source "origin of equation";
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
     Integer index      "Index in algorithms, 0..n-1" ;
-    list<DAE.Exp> in_  "Inputs CREF or der(CREF)" ;
-    list<DAE.Exp> out  "Outputs CREF or der(CREF)" ;
-    DAE.ElementSource source "origin of algorithm";
+    list< .DAE.Exp> in_  "Inputs CREF or der(CREF)" ;
+    list< .DAE.Exp> out  "Outputs CREF or der(CREF)" ;
+    .DAE.ElementSource source "origin of algorithm";
   end ALGORITHM;
 
   record WHEN_EQUATION
     WhenEquation whenEquation "whenEquation" ;
-    DAE.ElementSource source "origin of equation";
+    .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
     Integer index "Index in algorithm clauses";
-    DAE.Exp lhs "left ; lhs";
-    DAE.Exp rhs "right ; rhs";
-    DAE.ElementSource source "origin of equation";
+    .DAE.Exp lhs "left ; lhs";
+    .DAE.Exp rhs "right ; rhs";
+    .DAE.ElementSource source "origin of equation";
   end COMPLEX_EQUATION;
 
 end Equation;
@@ -145,8 +145,8 @@ public
 uniontype WhenEquation "- When Equation"
   record WHEN_EQ
     Integer index         "Index in when clauses" ;
-    DAE.ComponentRef left "Left hand side of equation" ;
-    DAE.Exp right         "Right hand side of equation" ;
+    .DAE.ComponentRef left "Left hand side of equation" ;
+    .DAE.Exp right         "Right hand side of equation" ;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
 
@@ -155,20 +155,20 @@ end WhenEquation;
 public
 uniontype ReinitStatement "- Reinit Statement"
   record REINIT
-    DAE.ComponentRef stateVar "State variable to reinit" ;
-    DAE.Exp value             "Value after reinit" ;
-    DAE.ElementSource source "origin of equation";
+    .DAE.ComponentRef stateVar "State variable to reinit" ;
+    .DAE.Exp value             "Value after reinit" ;
+    .DAE.ElementSource source "origin of equation";
   end REINIT;
 
   record ASSERT
-    DAE.Exp condition;
-    DAE.Exp message;
-    DAE.ElementSource source "the origin of the component/equation/algorithm";
+    .DAE.Exp condition;
+    .DAE.Exp message;
+    .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;  
   
   record TERMINATE " The Modelica builtin terminate(msg)"
-    DAE.Exp message;
-    DAE.ElementSource source "the origin of the component/equation/algorithm";
+    .DAE.Exp message;
+    .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE; 
 
   record EMPTY_REINIT
@@ -179,7 +179,7 @@ end ReinitStatement;
 public
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
-    DAE.Exp condition                   "The when-condition" ;
+    .DAE.Exp condition                   "The when-condition" ;
     list<ReinitStatement> reinitStmtLst "List of reinit statements associated to the when clause." ;
     Option<Integer> elseClause          "index of elsewhen clause" ;
 
@@ -194,7 +194,7 @@ end WhenClause;
 public
 uniontype ZeroCrossing "- Zero Crossing"
   record ZERO_CROSSING
-    DAE.Exp relation_          "function" ;
+    .DAE.Exp relation_          "function" ;
     list<Integer> occurEquLst  "List of equations where the function occurs" ;
     list<Integer> occurWhenLst "List of when clauses where the function occurs" ;
   end ZERO_CROSSING;
@@ -227,7 +227,7 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
     EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
-    array<DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
+    array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
   end DAE;
@@ -239,9 +239,9 @@ type ExternalObjectClasses = list<ExternalObjectClass> "classes of external obje
 uniontype ExternalObjectClass "class of external objects"
   record EXTOBJCLASS
     Absyn.Path path "className of external object";
-    DAE.Function constructor "constructor is an EXTFUNCTION";
-    DAE.Function destructor "destructor is an EXTFUNCTION";
-    DAE.ElementSource source "origin of equation";
+    .DAE.Function constructor "constructor is an EXTFUNCTION";
+    .DAE.Function destructor "destructor is an EXTFUNCTION";
+    .DAE.ElementSource source "origin of equation";
   end EXTOBJCLASS;
 end ExternalObjectClass;
 
@@ -277,16 +277,16 @@ public
 uniontype MultiDimEquation "- Multi Dimensional Equation"
   record MULTIDIM_EQUATION
     list<Integer> dimSize "dimSize ; dimension sizes" ;
-    DAE.Exp left "left ; lhs" ;
-    DAE.Exp right "right ; rhs" ;
-    DAE.ElementSource source "the element source";
+    .DAE.Exp left "left ; lhs" ;
+    .DAE.Exp right "right ; rhs" ;
+    .DAE.ElementSource source "the element source";
   end MULTIDIM_EQUATION;
 end MultiDimEquation;
 
 public
 uniontype CrefIndex "- Component Reference Index"
   record CREFINDEX
-    DAE.ComponentRef cref "cref" ;
+    .DAE.ComponentRef cref "cref" ;
     Integer index "index" ;
   end CREFINDEX;
 
@@ -358,8 +358,7 @@ uniontype TreeValue "Each node in the binary tree can have a value associated wi
 end TreeValue;
 
 public
-type Key = DAE.ComponentRef "A key is a Component Reference
-    - Key" ;
+type Key = .DAE.ComponentRef "A key is a Component Reference";
 
 public
 type Value = Integer "- Value" ;

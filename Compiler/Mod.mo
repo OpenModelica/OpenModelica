@@ -1499,9 +1499,9 @@ protected function indexEqmod "function: indexEqmod
 algorithm
   outTypesEqModOption := matchcontinue (inTypesEqModOption,inIntegerLst)
     local
-      Option<DAE.EqMod> e;
+      Option<DAE.EqMod> emod;
       tuple<DAE.TType, Option<Absyn.Path>> t_1,t;
-      DAE.Exp exp,exp2;
+      DAE.Exp e,exp,exp2;
       Values.Value e_val_1,e_val;
       DAE.Const c;
       Integer x;
@@ -1511,7 +1511,7 @@ algorithm
       String exp_str;
 
     case (NONE(),_) then NONE();
-    case (e,{}) then e;
+    case (emod,{}) then emod;
 
     // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) 
     case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_)),xs) then NONE();
@@ -1523,9 +1523,9 @@ algorithm
         exp2 = DAE.ICONST(x);
         exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
-        e = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
+        emod = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
       then
-        e;
+        emod;
 
         // For modifiers without value, apply subscript operator
     case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),_)),(x :: xs))
@@ -1533,11 +1533,11 @@ algorithm
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
-        e = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
+        emod = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
       then
-        e;
+        emod;
 
-    case (e as SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
+    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
       equation
                 /* Trying to apply a non-array modifier to an array, which isn't
                  * really allowed but working anyway. Some standard Modelica libraries

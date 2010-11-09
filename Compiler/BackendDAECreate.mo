@@ -452,7 +452,7 @@ algorithm
         (vars, knvars, extVars, eqns, reqns, ieqns, aeqns,backendMultiDimEq :: iaeqns, algs, whenclauses_1, extObjCls,states);
     
     // when equations
-    case ((daeEl as DAE.WHEN_EQUATION(condition = c,equations = eqns)) :: daeLstRest,functionTree,states,vars,knvars,extVars,whenclauses)
+    case ((daeEl as DAE.WHEN_EQUATION(condition = c)) :: daeLstRest,functionTree,states,vars,knvars,extVars,whenclauses)
       equation
         (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(daeLstRest, functionTree, states, vars, knvars, extVars, whenclauses);
@@ -2472,7 +2472,7 @@ protected function differentZeroCrossing "function: differentZeroCrossing
   input BackendDAE.ZeroCrossing zc1;
   input BackendDAE.ZeroCrossing zc2;
   output Boolean res_1;
-  Boolean res,res_1;
+  Boolean res;
 algorithm
   res := sameZeroCrossing(zc1, zc2);
   res_1 := boolNot(res);
@@ -2490,7 +2490,7 @@ public function findZeroCrossings "function: findZeroCrossings
   input list<BackendDAE.WhenClause> wc;
   input list<DAE.Algorithm> algs;
   output list<BackendDAE.ZeroCrossing> res_1;
-  list<BackendDAE.ZeroCrossing> res,res_1;
+  list<BackendDAE.ZeroCrossing> res;
 algorithm
   res := findZeroCrossings2(vars, knvars,eq,multiDimEqs,1, wc, 1, algs);
   res_1 := mergeZeroCrossings(res);

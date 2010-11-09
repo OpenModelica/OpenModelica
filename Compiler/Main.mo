@@ -710,7 +710,7 @@ algorithm
                                         InnerOuter.emptyInstHierarchy,
                                         s);
       then
-      (c, Env.emptyEnv(), d, s, Absyn.lastClassname(program));
+      (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -761,7 +761,7 @@ algorithm
   matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
       BackendDAE.BackendDAE dlow,dlow_1;
-      list<Integer>[:] m,mT;
+      array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
       list<SCode.Class> p;
@@ -910,7 +910,7 @@ algorithm
       Absyn.Program ap;
       DAE.DAElist dae;
       array<Integer> ass1,ass2;
-      list<Integer>[:] m,mt;
+      array<list<Integer>> m,mt;
       list<list<Integer>> comps;
       Env.Cache cache;
       Env.Env env;
@@ -1195,7 +1195,7 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm
-  () := matchcontinue (inStringLst)
+  _ := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;

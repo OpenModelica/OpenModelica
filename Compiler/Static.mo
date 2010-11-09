@@ -1502,7 +1502,7 @@ algorithm
     case (cache,env,Absyn.CREF(componentRef = cr as Absyn.CREF_IDENT("useHeatPort", _)),impl,pre,info)
       equation
         dexp  = DAE.BCONST(false);
-        prop = DAE.PROP(DAE.T_BOOL_DEFAULT(), DAE.C_CONST());
+        prop = DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST());
       then
         (cache,dexp,prop);
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre,info)
@@ -8973,7 +8973,8 @@ public function isExternalObjectFunction
   output Boolean res;
 algorithm
   (outCache,res) := matchcontinue(cache,env,path)
-    local Env.Cache cache; Env.Env env_1;
+    local
+      Env.Env env_1;
       list<SCode.Element> els;
     case (cache,env,path) equation
       (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),env_1)

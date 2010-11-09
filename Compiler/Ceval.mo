@@ -1713,7 +1713,7 @@ algorithm
       then
         fail();
     
-    case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dimExp,(impl as false),st,MSG())
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,MSG())
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         false = Types.dimensionsKnown(tp);
@@ -1724,7 +1724,7 @@ algorithm
       then
         fail();
     
-    case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dimExp,(impl as false),st,NO_MSG())
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,NO_MSG())
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr);
         false = Types.dimensionsKnown(tp);
@@ -2463,7 +2463,7 @@ algorithm
         (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,NONE(), msg);
 				print(str);
       then
-        (cache,Values.NORETCALL,st);
+        (cache,Values.NORETCALL(),st);
   end matchcontinue;
 end cevalBuiltinPrint;
 
@@ -2846,7 +2846,6 @@ protected function extractValueStringChar
   output String str;
 algorithm
   str := matchcontinue (val)
-    local String str;
     case Values.STRING(str) equation 1 = stringLength(str); then str;
   end matchcontinue;
 end extractValueStringChar;
@@ -3518,7 +3517,7 @@ algorithm
       equation
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), msg);
-        ri_1 = ri1/ri2;
+        ri_1 = intDiv(ri1,ri2);
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())
@@ -4445,7 +4444,7 @@ algorithm
       list<DAE.Dimension> dims;
     
     // size(cr)
-    case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
+    case (cache,env,DAE.CREF(componentRef = cr),impl,st,msg)
       equation
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);

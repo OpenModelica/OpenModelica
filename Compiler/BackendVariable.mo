@@ -2377,7 +2377,6 @@ public function addVars "function: addVars
   input list<BackendDAE.Var> varlst;
   input BackendDAE.Variables vars;
   output BackendDAE.Variables vars_1;
-  BackendDAE.Variables vars_1;
 algorithm
   vars_1 := Util.listFold(varlst, addVar, vars);
 end addVars;

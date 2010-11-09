@@ -733,7 +733,6 @@ algorithm
     local
       list<Item> ims;
       Absyn.Import imp2;
-      Boolean res;
     
     // first import in the list matches  
     case (IMPORT(imp2)::ims,imp)
@@ -1467,7 +1466,6 @@ algorithm
   outChildren := matchcontinue(path,inChildren,env)
     local
       Ident id1,id2;
-      Absyn.Path path;
       list<CacheTree> children,children2;
       CacheTree child;
       Env env2;

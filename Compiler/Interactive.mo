@@ -2383,7 +2383,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION, p, path);
+        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION(), p, path);
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -2397,7 +2397,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION, p, path);
+        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION(), p, path);
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -11869,7 +11869,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION, p, modelpath);
+        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
       then
         str;
     case (_,_) then "get_diagram_annotation failed!";
@@ -11925,7 +11925,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, ICON_ANNOTATION, p, modelpath);
+        str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
       then
         str;
     case (_,_) then "";
@@ -12751,8 +12751,8 @@ protected function isAnnotationType
   input AnnotationType annotationType;
 algorithm
   _ := matchcontinue(annotationStr, annotationType)
-    case ("Icon", ICON_ANNOTATION) then ();
-    case ("Diagram", DIAGRAM_ANNOTATION) then ();
+    case ("Icon", ICON_ANNOTATION()) then ();
+    case ("Diagram", DIAGRAM_ANNOTATION()) then ();
   end matchcontinue;
 end isAnnotationType;
 

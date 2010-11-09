@@ -1617,7 +1617,6 @@ algorithm
     local
       Cache cache;
       String n;
-      Absyn.InnerOuter io;
       Env.Env env;
       Prefix.Prefix pre;
       InstHierarchy ih;
@@ -1961,9 +1960,7 @@ public function getValue
   output InstInner v;
 algorithm
   v := matchcontinue(tpl)
-    local
-      Key k; Value v;
-    case((k,v)) then v;
+    case((_,v)) then v;
   end matchcontinue;
 end getValue;
 
@@ -2067,8 +2064,8 @@ public function emptyInstHierarchyHashTable
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 1000);
-  emptyarr := fill(NONE(), 100);
+  arr := arrayCreate(1000, {});
+  emptyarr := arrayCreate(100, NONE());
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyInstHierarchyHashTable;
 
@@ -2422,7 +2419,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,pos,entry)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
         (pos < size) = true;
@@ -2475,7 +2472,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,pos,len;
+      Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     

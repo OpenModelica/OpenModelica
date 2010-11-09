@@ -91,7 +91,7 @@ end setDebugFlag;
 public function noProc
   output Integer outInteger;
 
-  external "C" noProc = RTOpts_noProc() annotation(Library = "omcruntime");
+  external "C" outInteger = RTOpts_noProc() annotation(Library = "omcruntime");
 end noProc;
 
 public function setEliminationLevel

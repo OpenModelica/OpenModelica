@@ -1621,7 +1621,7 @@ algorithm
         ci_state = ClassInf.start(r, Env.getEnvName(env_1));
         c_1 = SCode.classSetPartial(c, false);
         (cache,env_3,ih,store,dae1,csets_1,ci_state_1,tys,bc_ty,_,_,_)
-        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, INNER_CALL, ConnectionGraph.EMPTY,NONE());
+        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         dae = dae1_1;
@@ -2679,7 +2679,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         res = instdimsIntOptList(ss);
       then
-        DAE.DIM_UNKNOWN :: res;
+        DAE.DIM_UNKNOWN() :: res;
     // The case of non-expanded arrays. Possibly SLICE will have to be replaced by something else     
     case (DAE.SLICE(exp=e) :: ss) 
       equation
@@ -2692,7 +2692,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         res = instdimsIntOptList(ss);
       then
-        DAE.DIM_UNKNOWN :: res;
+        DAE.DIM_UNKNOWN() :: res;
   end matchcontinue;
 end instdimsIntOptList;
 
@@ -3303,7 +3303,7 @@ algorithm
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
         (cache,env3,ih,store,dae1,csets1,ci_state1,tys,graph) =
-          instElementList(cache, env2, ih, store, mods , pre, csets, ci_state, cdefelts_2, inst_dims, impl, INNER_CALL, graph);
+          instElementList(cache, env2, ih, store, mods , pre, csets, ci_state, cdefelts_2, inst_dims, impl, INNER_CALL(), graph);
         mods = Types.removeFirstSubsRedecl(mods);
         
         ErrorExt.rollBack("instClassdefBasicType1"); // rollback before going into instBasictypeBaseclass 
@@ -3842,7 +3842,7 @@ algorithm _ := matchcontinue(elems, inmod,callingScope)
     SCode.Element elem;
     String cn,s1,s2;
     DAE.Mod mod;
-  case({},DAE.NOMOD,_) then ();
+  case({},DAE.NOMOD(),_) then ();
   case({},DAE.MOD(subModLst={}),_) then ();
   case({},inmod,callingScope)
     equation
@@ -4765,7 +4765,7 @@ algorithm
         //lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls,
-                          inst_dims, true, INNER_CALL, ConnectionGraph.EMPTY) "instantiate constants";
+                          inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY) "instantiate constants";
         // Debug.traceln("partialInstClassdef OK " +& className);
       then
         (cache,env3,ih,ci_state2);
@@ -4913,13 +4913,13 @@ algorithm
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
         ltmod = Util.listMap1(crefs,getModsForDep,xs);
-        cmod2 = Util.listFold_3(cmod::ltmod,Mod.merge,DAE.NOMOD,env,pre);
+        cmod2 = Util.listFold_3(cmod::ltmod,Mod.merge,DAE.NOMOD(),env,pre);
 
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
-        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
+        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res,csets) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
@@ -4944,13 +4944,13 @@ algorithm
         cref = Absyn.CREF_IDENT(name,{});
 
         ltmod = Util.listMap1(crefs,getModsForDep,xs);
-        cmod2 = Util.listFold_3(ltmod,Mod.merge,DAE.NOMOD,env,pre);
+        cmod2 = Util.listFold_3(ltmod,Mod.merge,DAE.NOMOD(),env,pre);
 
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
-        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
+        (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
 
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res,csets) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
@@ -4978,7 +4978,7 @@ end getOptionArraydim;
 public function addNomod
 "function: addNomod
   This function takes an SCode.Element list and tranforms it into a
-  (SCode.Element Mod) list by inserting DAE.NOMOD for each element.
+  (SCode.Element Mod) list by inserting DAE.NOMOD() for each element.
   Used to transform elements into a uniform list combined from inherited
   elements and ordinary elements."
   input list<SCode.Element> inSCodeElementLst;
@@ -5144,7 +5144,7 @@ algorithm _ := matchcontinue(m,pre,str)
       verifySingleMod2(subs,{},pre,str);
     then
       ();
-  case(DAE.NOMOD,pre,str) then ();
+  case(DAE.NOMOD(),pre,str) then ();
   case(DAE.REDECL(finalPrefix=_),pre,str) then ();
 end matchcontinue;
 end verifySingleMod;
@@ -7531,7 +7531,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod,DAE.C_CONST,pre,n,source);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_CONST(),pre,n,source);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims,NONE(), dae_var_attr, comment,io,finalPrefix,source,false);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -7557,7 +7557,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM,pre,n,source);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM(),pre,n,source);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
@@ -7667,7 +7667,7 @@ algorithm
             
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
-      ((dim as DAE.DIM_UNKNOWN) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         true = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
@@ -7682,7 +7682,7 @@ algorithm
 
     // Array variables with unknown dimensions, non-expanding case 
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
-      ((dim as DAE.DIM_UNKNOWN) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         false = RTOpts.splitArrays();
         // Try to deduce the dimension from the modifier.
@@ -7746,7 +7746,7 @@ algorithm (outMod2) := matchcontinue(inMod,cl)
     Absyn.Each e;
     Option<DAE.EqMod> tq;
     list<DAE.SubMod> subs;
-  case(inMod, (cl as SCode.CLASS(restriction = SCode.R_ENUMERATION)))
+  case(inMod, (cl as SCode.CLASS(restriction = SCode.R_ENUMERATION())))
     then Types.removeModList(inMod, {"min","max","start","fixed","quantity"});
   case(inMod, _)
     equation
@@ -7859,7 +7859,7 @@ algorithm
   // When doing checkModel we might have parameters with variable bindings, 
   // for example when the binding depends on the dimensions on an array with
   // unknown dimensions. 
-  case (DAE.C_PARAM,DAE.C_UNKNOWN,_,_,_,_)
+  case (DAE.C_PARAM(),DAE.C_UNKNOWN(),_,_,_,_)
     equation
       true = OptManager.getOption("checkModel");
     then ();
@@ -7907,17 +7907,17 @@ algorithm
       equation
         ty_1 = makeArrayType(xs, (tty,p));
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,ty_1),p));*/
-    case (DAE.DIM_UNKNOWN :: xs, (tty, p))
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty_1),p));*/
+    case (DAE.DIM_UNKNOWN() :: xs, (tty, p))
       equation
         ty_1 = makeArrayType(xs, (tty, p));
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN, ty_1), p));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), ty_1), p));
     case (DAE.DIM_EXP(exp = _) :: xs, (tty, p))
       equation
         ty_1 = makeArrayType(xs, (tty, p));
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN, ty_1), p));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), ty_1), p));
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- Inst.makeArrayType failed");
@@ -7969,13 +7969,13 @@ algorithm
       list<SCode.Element> els, extendsels;
       SCode.Path path;
 
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAE.NOMOD);  /* impl */
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl,DAE.NOMOD);
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl,DAE.NOMOD);
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl,DAE.NOMOD);
+    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAE.NOMOD());  /* impl */
+    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl,DAE.NOMOD());
+    case (cache,_,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl,DAE.NOMOD());
+    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl,DAE.NOMOD());
 
     case (cache,_,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(),
-                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl,DAE.NOMOD);
+                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl,DAE.NOMOD());
 
     /*------------------------*/
     /* MetaModelica extension */
@@ -7989,11 +7989,11 @@ algorithm
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1,NONE(), impl,NONE(),true, false,pre,info);
-      then (cache,dim1,cl,DAE.NOMOD);
+      then (cache,dim1,cl,DAE.NOMOD());
 
     // Partial function definitions with no output - stefan
     case (cache,env,ih,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) 
-      then (cache,{},cl,DAE.NOMOD);
+      then (cache,{},cl,DAE.NOMOD());
 
     case (cache,env,ih,_,_,SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(),partialPrefix = false),_,_)
       equation
@@ -8001,7 +8001,7 @@ algorithm
       then fail();
 
       // MetaModelica Uniontype. Added 2009-05-11 sjoelund
-    case (cache,env,ih,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAE.NOMOD);
+    case (cache,env,ih,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAE.NOMOD());
       /*----------------------*/
           
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */
@@ -8044,7 +8044,7 @@ algorithm
         (cache,res,cl,type_mods);
 
     case (cache,_,_,_,_,cl as SCode.CLASS(name = _),_,_)
-      then (cache,{},cl,DAE.NOMOD);
+      then (cache,{},cl,DAE.NOMOD());
 
     case (_,_,_,_,_,SCode.CLASS(name = id),_,_)
       equation
@@ -8092,7 +8092,7 @@ algorithm
         env = Env.extendFrameV(inEnv,
           DAE.TYPES_VAR(
             lit,
-            DAE.ATTR(false, false, SCode.RO(), SCode.VAR, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+            DAE.ATTR(false, false, SCode.RO(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
             false,
             (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
@@ -8521,7 +8521,7 @@ algorithm
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {":"});
       then
         fail();*/
-    case (DAE.DIM_UNKNOWN,_) then DAE.WHOLEDIM();
+    case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
     case (DAE.DIM_INTEGER(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
     case (DAE.DIM_ENUM(size = i), _) then DAE.INDEX(DAE.ICONST(i));
     case (DAE.DIM_EXP(exp = e), _) then DAE.INDEX(e);
@@ -8543,7 +8543,7 @@ algorithm
       Integer i;
       DAE.Subscript eSubscr;
 
-    case (DAE.DIM_UNKNOWN,_) then DAE.WHOLEDIM();
+    case (DAE.DIM_UNKNOWN(),_) then DAE.WHOLEDIM();
     case (DAE.DIM_INTEGER(integer = i),_) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
     case (DAE.DIM_ENUM(size = i), _) then DAE.SLICE(DAE.RANGE(DAE.ET_INT(),DAE.ICONST(1),NONE(),DAE.ICONST(i)));
     case (DAE.DIM_EXP(exp = e as DAE.RANGE(exp = _)), _) then DAE.INDEX(e);
@@ -8566,7 +8566,7 @@ algorithm
 		/*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
 					DAE.MOD(eqModOption =	
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))*/
-    case (DAE.DIM_UNKNOWN, DAE.MOD(eqModOption = 
+    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
             SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))
 			equation
         (d :: _) = Expression.arrayDimension(tp);
@@ -8574,7 +8574,7 @@ algorithm
 			then sub;
     /*case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
           DAE.MOD(eqModOption = _))*/
-    case (DAE.DIM_UNKNOWN, DAE.MOD(eqModOption = _))
+    case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = _))
 		  equation
 		    Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
 		  then fail();
@@ -8847,7 +8847,6 @@ protected function propagateInnerOuter
       DAE.VarDirection dir;
       String s1,s2;
       DAE.Element x;
-      Absyn.InnerOuter io;
       DAE.VarProtection prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
@@ -8992,7 +8991,7 @@ algorithm
       Absyn.Path enum_type, enum_lit;
 
     /* component environment If is a function var. */
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN,dims,idxs,inst_dims,impl,comment,io,_,info,graph)
+    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,_,info,graph)
       equation
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) =
@@ -9033,7 +9032,7 @@ algorithm
         fail();
     */
     
-    /*case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    /*case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         s = DAE.INDEX(DAE.ICONST(i));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
@@ -9420,7 +9419,7 @@ protected function elabArraydimDecl
   Given an Absyn.ArrayDim, this function evaluates all dimension
   size specifications, creating a list of dimensions.
   When the array dimension size is specified as :, the result
-  will contain DAE.DIM_UNKNOWN."
+  will contain DAE.DIM_UNKNOWN()."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -9471,14 +9470,14 @@ algorithm
       equation
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
       then
-        (cache,DAE.DIM_UNKNOWN :: l);
+        (cache,DAE.DIM_UNKNOWN() :: l);
     // For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect,pre,info)
       equation
         true = Absyn.crefEqual(cref, cr);
-        //dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_UNKNOWN);
-        dim = DAE.DIM_UNKNOWN;
+        //dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_UNKNOWN());
+        dim = DAE.DIM_UNKNOWN();
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
       then
         (cache, dim :: l);
@@ -9526,7 +9525,7 @@ algorithm
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
         //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
         false = RTOpts.splitArrays();
-        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
+        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
         //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
       then
@@ -9567,7 +9566,7 @@ algorithm
         //(cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl);
         (cache, l) = elabArraydimDecl(cache, env, cref, ds, impl, st, doVect, pre,info);
       then
-        (cache, DAE.DIM_UNKNOWN :: l);
+        (cache, DAE.DIM_UNKNOWN() :: l);
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
       equation
         (cache,e,DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
@@ -9599,9 +9598,9 @@ algorithm
   outDimension := matchcontinue(inDimension1, inDimension2)
     local
       DAE.Dimension x, y;
-    case (DAE.DIM_UNKNOWN, DAE.DIM_UNKNOWN) then DAE.DIM_UNKNOWN;
-    case (x, DAE.DIM_UNKNOWN) then x;
-    case (DAE.DIM_UNKNOWN, y) then y;
+    case (DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()) then DAE.DIM_UNKNOWN();
+    case (x, DAE.DIM_UNKNOWN()) then x;
+    case (DAE.DIM_UNKNOWN(), y) then y;
     case (x, DAE.DIM_EXP(exp = _)) then x;
     case (DAE.DIM_EXP(exp = _), y) then y;
     case (x, y)
@@ -9637,8 +9636,8 @@ algorithm
         true = intEq(xI, yI); // equality(xI = yI); 
       then 
         inDimension1;
-    case (DAE.DIM_UNKNOWN, de) then de;
-    case (de, DAE.DIM_UNKNOWN) then de;
+    case (DAE.DIM_UNKNOWN(), de) then de;
+    case (de, DAE.DIM_UNKNOWN()) then de;
     /*case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_SUBSCRIPT(subscript = _))
       equation
         de = arraydimCondition(
@@ -10121,7 +10120,7 @@ algorithm
         prot = false;
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
           instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1,
-              ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,INNER_CALL, ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
+              ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true,pre,info) "impl" ;
 
         // set the source of this element
@@ -11710,7 +11709,7 @@ algorithm
       then dae;
         
     /* If arrays are expanded and dimension is unknown, report an error */
-    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         true = RTOpts.splitArrays(); 
         s = ComponentReference.printComponentRefStr(vn);
@@ -14795,7 +14794,7 @@ algorithm
   outValueArray := matchcontinue (valueArray,pos,entry)
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size,pos;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
         (pos < size) = true;

@@ -1438,10 +1438,10 @@ algorithm
       list<DAE.Exp> clonedElements, newElements;
       list<DAE.Exp> indices;
       DAE.ComponentRef cref;
-      list<BackendDAE.Var> arrayElements;
       list<DAE.ComponentRef> varCrefs;
       list<DAE.Exp> varExprs;
       DAE.Exp daeExp;
+      list<BackendDAE.Var> bvars;
     
     case (DAE.CREF(componentRef = _), _, _, _)
       equation
@@ -1461,8 +1461,8 @@ algorithm
         
     case (DAE.CREF(componentRef = cref), _, _, _)
       equation
-        (arrayElements, _) = BackendVariable.getVar(cref, vars);
-        varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
+        (bvars, _) = BackendVariable.getVar(cref, vars);
+        varCrefs = Util.listMap(bvars, BackendVariable.varCref);
         varExprs = Util.listMap(varCrefs, Expression.crefExp);
       then varExprs;
 
@@ -1470,8 +1470,8 @@ algorithm
       equation
         // If the range is not constant, then we just extract all array elements
         // of the array.
-        (arrayElements, _) = BackendVariable.getVar(cref, vars);
-        varCrefs = Util.listMap(arrayElements, BackendVariable.varCref);
+        (bvars, _) = BackendVariable.getVar(cref, vars);
+        varCrefs = Util.listMap(bvars, BackendVariable.varCref);
         varExprs = Util.listMap(varCrefs, Expression.crefExp);
       then varExprs;
       
@@ -2771,7 +2771,7 @@ algorithm
     list<DAE.Subscript> subs;
     DAE.Dimension d;
     case({}) then {};
-    case(DAE.DIM_UNKNOWN::dims) 
+    case(DAE.DIM_UNKNOWN()::dims) 
       equation
         rangelist = dimensionsToRange(dims);
       then {}::rangelist;

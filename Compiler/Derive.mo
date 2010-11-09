@@ -69,14 +69,14 @@ public function differentiateEquationTime "function: differentiateEquationTime
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input DAE.FunctionTree inFunctions;
-  input DAE.Algorithm[:] al;
+  input array<DAE.Algorithm> al;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
-  input BackendDAE.MultiDimEquation[:] inMultiEqn;
+  input array<BackendDAE.MultiDimEquation> inMultiEqn;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output BackendDAE.Equation outEquation;
-  output DAE.Algorithm[:] outal;
+  output array<DAE.Algorithm> outal;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
-  output BackendDAE.MultiDimEquation[:] outArrayEqs;
+  output array<BackendDAE.MultiDimEquation> outArrayEqs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
   output Boolean outAdd;
 algorithm
@@ -94,10 +94,10 @@ algorithm
       list<Boolean> blst; 
       DAE.ExpType exptyp;
       list<DAE.ExpType> exptyplst; 
-      DAE.Algorithm[:] a1;
+      array<DAE.Algorithm> a1;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedMultiEqn;
       Boolean add;
-      BackendDAE.MultiDimEquation[:] ae,ae1;
+      array<BackendDAE.MultiDimEquation> ae,ae1;
       list<BackendDAE.MultiDimEquation> listae,listae1;
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
@@ -255,12 +255,12 @@ end traversingcrefOrDerCrefFinder;
 protected function addArray "
 Author: Frenkel TUD"
   input Integer inIndex;
-  input Type_a[:] inArray;
+  input array<Type_a> inArray;
   input Type_a inA;
   input Integer inNumber;
   input list<tuple<Integer,Integer,Integer>> inDerivedArray;   
   output Integer outIndex;
-  output Type_a[:] outArray; 
+  output array<Type_a> outArray; 
   output list<tuple<Integer,Integer,Integer>> outDerivedArray;
   output Boolean outAdd;
   replaceable type Type_a subtypeof Any;
@@ -271,7 +271,7 @@ algorithm
       tuple<Integer,Integer,Integer> dArray;
       list<Type_a> alst,alst1;
       Integer index,index1,dindex,dnumber,dnumber_1;
-      Type_a[:] a1;
+      array<Type_a> a1;
       Boolean add;
    // no derived functions without outputs
    case (inIndex,inArray,inA,inNumber,derivedArray)
@@ -969,18 +969,16 @@ algorithm
       BackendDAE.Variables timevars;
       DAE.FunctionTree functions;
       tuple<Integer,DAE.derivativeCond> cond;
-      Absyn.Path default,fname,da,inFuncName,inDFuncName;
+      Absyn.Path default,fname,da,inDFuncName;
       DAE.TType typ;
       list<tuple<Integer,DAE.derivativeCond>> cr,cr1;
       Integer derivativeOrder;
       Option<Absyn.Path> dd; 
       Integer do;
-      DAE.Type tp;     
       list<DAE.FuncArg> funcArg;
       list<DAE.Type> tplst; 
       list<Boolean> bl,bl1,bl2,bl3;
       list<Absyn.Path> lowerOrderDerivatives;
-      DAE.FunctionDefinition mapper;
     // check conditions, order=1  
     case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),(DAE.T_FUNCTION(funcArg=funcArg),_),expl,(timevars,functions))
       equation
@@ -1029,7 +1027,7 @@ algorithm
       Integer i,i_1;
       DAE.Exp e,de;
       list<Boolean> bl,bl1;
-      Boolean[:] ba;
+      array<Boolean> ba;
       Absyn.Path p1,p2;
     
     // no conditions

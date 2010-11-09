@@ -2742,7 +2742,7 @@ public function listFold_3 "function: listFold_3
     input Type_a iterated;
     input Type_c extraArg;
     input Type_d extraArg2;
-    output Type_b foldArg;
+    output Type_b ofoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2750,7 +2750,6 @@ algorithm
     local
       Type_b foldArg1,foldArg2;
       Type_a l;
-      list<Type_a> lst;
     case ({},foldFunc,foldArg,extraArg,extraArg2) then foldArg;
     case ((l :: lst),foldFunc,foldArg,extraArg,extraArg2)
       equation
@@ -3915,7 +3914,7 @@ then; listUnionOnTrue({1,2,3,4,5},{3,6,7},equal); => {1,2,3,4,5,6,7}
     partial function FuncTypeType_aType_aToType_b
     input list<Type_a> inTypeA1;
     input list<Type_a> inTypeA2;
-    input Type_c inTypeA2;
+    input Type_c inTypeC;
     output list<Type_a> outTypeA;
   end FuncTypeType_aType_aToType_b;
 algorithm outTypeALst := matchcontinue(inTypeALst1,inTypeALst2,inFunc,extArg)

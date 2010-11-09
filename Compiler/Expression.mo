@@ -1272,7 +1272,7 @@ algorithm
       then 
         DAE.DIM_INTEGER(x):: recursive;      
     
-    case ((ss as DAE.WHOLEDIM) :: subs)
+    case ((ss as DAE.WHOLEDIM()) :: subs)
       equation
         recursive = subscriptDimensions(subs);
       then
@@ -4770,7 +4770,7 @@ public function isWholeDim ""
   output Boolean b;
 algorithm
   b := matchcontinue(s)
-    case(DAE.WHOLEDIM) then true;
+    case(DAE.WHOLEDIM()) then true;
     case(_) then false;
   end matchcontinue;
 end isWholeDim;
@@ -6155,7 +6155,7 @@ algorithm
 end isValidSubscript;
 
 public function subscriptContain "function: subscriptContain
-	This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM)"
+	This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
   input list<Subscript> issl1;
   input list<Subscript> issl2;
   output Boolean contained;

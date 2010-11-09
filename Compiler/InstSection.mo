@@ -1686,13 +1686,13 @@ algorithm
         dae;
 				
 		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.INITIAL())
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.INITIAL())
 			equation
         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an initial array equation of dim 1
-			  // Now the dimension can be made DAE.DIM_UNKNOWN, I just don't want to break anything for now -- alleb
+			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
 			then 
 				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)}); 
 
@@ -1703,7 +1703,7 @@ algorithm
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an array equation of dim 1
-			  // Now the dimension can be made DAE.DIM_UNKNOWN, I just don't want to break anything for now -- alleb
+			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
 			then 
 				DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 				
@@ -5155,9 +5155,9 @@ algorithm
     /* adrpo: these are completly wrong! 
               will result in equations 1 = 1!
     case (DAE.DIM_EXP(exp = _), _) then {DAE.ICONST(1)};
-    case (DAE.DIM_UNKNOWN, _) then {DAE.ICONST(1)};
+    case (DAE.DIM_UNKNOWN(), _) then {DAE.ICONST(1)};
     */
-    case (DAE.DIM_UNKNOWN, _)
+    case (DAE.DIM_UNKNOWN(), _)
       equation
         true = OptManager.getOption("checkModel");
         ints = Util.listIntRange(1); // try to make an array index of 1 when we don't know the dimension

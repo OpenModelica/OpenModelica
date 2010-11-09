@@ -382,7 +382,6 @@ public function prefixToCrefOpt "function: prefixToCref
   Convert a prefix to an optional component reference."
   input Prefix.Prefix pre;
   output Option<DAE.ComponentRef> cref_1;
-  Option<DAE.ComponentRef> cref_1;
 algorithm
   cref_1 := prefixToCrefOpt2(pre, NONE());
 end prefixToCrefOpt;

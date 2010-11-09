@@ -2970,11 +2970,18 @@ algorithm
         env = Env.extendFrameT(env, "realAbs", real2real);
         env = Env.extendFrameT(env, "realNeg", real2real);
         env = Env.extendFrameT(env, "realCos", real2real);
+        env = Env.extendFrameT(env, "realCosh", real2real);
+        env = Env.extendFrameT(env, "realAcos", real2real);
         env = Env.extendFrameT(env, "realSin", real2real);
+        env = Env.extendFrameT(env, "realSinh", real2real);
+        env = Env.extendFrameT(env, "realAsin", real2real);
         env = Env.extendFrameT(env, "realAtan", real2real);
+        env = Env.extendFrameT(env, "realAtan2", realReal2real);
+        env = Env.extendFrameT(env, "realTanh", real2real);
         env = Env.extendFrameT(env, "realExp", real2real);
         env = Env.extendFrameT(env, "realLn", real2real);
         env = Env.extendFrameT(env, "realLog10", real2real);
+        env = Env.extendFrameT(env, "realCeil", real2real);
         env = Env.extendFrameT(env, "realFloor", real2real);
         env = Env.extendFrameT(env, "realSqrt", real2real);
 

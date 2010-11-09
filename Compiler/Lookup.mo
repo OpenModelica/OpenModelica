@@ -205,7 +205,7 @@ algorithm
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
+          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
@@ -527,7 +527,7 @@ algorithm
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding bind;
-      String id,id2,ident,str;
+      String id,id2,str;
       list<Env.Item> fs;
       list<Env.Frame> env,p_env,cenv,prevFrames;
       DAE.ComponentRef cref;
@@ -1208,7 +1208,7 @@ algorithm
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, /*true*/false, Inst.INNER_CALL, ConnectionGraph.EMPTY, filterCref);
+          ci_state, c, false, {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, filterCref);
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -2847,9 +2847,9 @@ algorithm
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-    DAE.NOMOD,Prefix.NOPRE, Connect.emptySet,
-    ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD),
-    {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+    DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,
+    ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
+    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
   varlst := Types.boxVarLst(varlst);
   ftype := (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
