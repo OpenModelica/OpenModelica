@@ -1588,6 +1588,8 @@ algorithm
       list<Boolean> boolList;
       Absyn.Info info;
       Absyn.ElementSpec spec;
+      Absyn.ElementItem elt;
+      String str;
     
     case ({}, _) then ();
     
@@ -1597,6 +1599,13 @@ algorithm
         checkShadowing2(info, elIdents, invalidDecls);
         checkShadowing(elItems, invalidDecls);
       then ();
+
+    case ((elt as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec))) :: elItems, invalidDecls)
+      equation
+        failure(_ = getElementSpecComponentNames(spec));
+        str = Dump.unparseElementitemStr(0,elt);
+        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT, {str}, info);
+      then fail();
   end matchcontinue;
 end checkShadowing;
 
@@ -1654,7 +1663,7 @@ algorithm
     
     case _
       equation
-        Debug.fprintln("matchcase", "- DFA.getElementName failed");
+        Debug.fprintln("matchcase", "- DFA.getElementName failed " +& Absyn.elementSpecName(spec));
       then fail();
   end matchcontinue;
 end getElementSpecComponentNames;

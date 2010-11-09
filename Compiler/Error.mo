@@ -283,6 +283,7 @@ public constant ErrorID META_CONS_TYPE_MATCH=5015;
 public constant ErrorID META_STRICT_RML_MATCH_IN_OUT=5016;
 public constant ErrorID META_NONE_CREF=5017;
 public constant ErrorID META_INVALID_PATTERN_NAMED_FIELD=5018;
+public constant ErrorID META_INVALID_LOCAL_ELEMENT=5019;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -470,7 +471,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ARGUMENT_MUST_BE_VARIABLE,TRANSLATION(),ERROR(),
           "%s argument to %s in component %s must be a variable"),
           (NO_MATCHING_FUNCTION_FOUND,TRANSLATION(),ERROR(),
-          "No matching function found for %s in component %s, candidates are %s"),
+          "No matching function found for %s in component %s\ncandidates are %s"),
           (NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE,TRANSLATION(),ERROR(),
           "No matching function found for %s"),
           (FUNCTION_COMPS_MUST_HAVE_DIRECTION,TRANSLATION(),ERROR(),
@@ -639,7 +640,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s."),
           (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"%s. Strict RML enforces match expression input and output to be the same as the function's."),
           (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead."),
-          (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s")
+          (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s"),
+          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s")
+
           };
 
 protected import ErrorExt;

@@ -2725,7 +2725,7 @@ public function partialInstClassIn
   The only work performed by this function is to instantiate local classes and
   inherited classes."
   input Env.Cache inCache;
-  input Env.Env inEnv;
+  input .Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -2772,8 +2772,7 @@ algorithm
       SCode.Class aa_5;
       Boolean aa_6;
       InstDims aa_7;
-      replaceable type Type_a subtypeof Any;
-      Type_a bbx, bby;
+      tuple<InstDims,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class> bbx,bby;
       Absyn.Info info;
 
     // see if we find a partial class inst

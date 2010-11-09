@@ -8620,8 +8620,8 @@ algorithm
           elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ") of type " +& Types.unparseType(functype);
-        types_str = Types.unparseType(tp1) ;
+        fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ")\nof type\n  " +& Types.unparseType(functype);
+        types_str = "\n  " +& Types.unparseType(tp1);
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
       then
         (cache,NONE());
