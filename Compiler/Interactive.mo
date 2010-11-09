@@ -17782,7 +17782,6 @@ algorithm
     local
       Absyn.Exp e1,e2,e11,e21;
       Absyn.Ident id;
-      list<Absyn.Exp> pargs;
      case({},rel,ext_arg) then (({},ext_arg));
      case(e1::pargs,rel,ext_arg)
        equation

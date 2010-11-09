@@ -1195,7 +1195,7 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm
-  _ := matchcontinue (inStringLst)
+  () := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;
@@ -1206,7 +1206,7 @@ algorithm
       // Setup mingw path only once.
     case _
       equation
-        omhome = System.readEnv("OPENMODELICAHOME");
+        omhome = Settings.getInstallationDirectoryPath();
         // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
@@ -1219,7 +1219,7 @@ algorithm
         args_1 = RTOpts.args(args);
         
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         
         // debug_show_depth(2);
         
@@ -1259,7 +1259,7 @@ algorithm
     case args as _::_
       equation
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
@@ -1271,7 +1271,7 @@ algorithm
     case _
       equation
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();
@@ -1284,7 +1284,7 @@ algorithm
     case _
       equation
         false = System.userIsRoot();
-        failure(_ = System.readEnv("OPENMODELICAHOME"));
+        failure(_ = Settings.getInstallationDirectoryPath());
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");
         print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
