@@ -284,6 +284,7 @@ public constant ErrorID META_STRICT_RML_MATCH_IN_OUT=5016;
 public constant ErrorID META_NONE_CREF=5017;
 public constant ErrorID META_INVALID_PATTERN_NAMED_FIELD=5018;
 public constant ErrorID META_INVALID_LOCAL_ELEMENT=5019;
+public constant ErrorID META_INVALID_COMPLEX_TYPE=5020;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -641,7 +642,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"%s. Strict RML enforces match expression input and output to be the same as the function's."),
           (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead."),
           (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s"),
-          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s")
+          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s"),
+          (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s<...>")
 
           };
 

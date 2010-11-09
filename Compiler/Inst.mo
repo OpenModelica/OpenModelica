@@ -3779,6 +3779,16 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_POLYMORPHIC, {className}, info);
       then fail();
+
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=cn),modifications=mod),
+          re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        cns = Absyn.pathString(cn);
+        Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
+      then fail();
+
     /* ----------------------- */
 
     /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */
@@ -14842,7 +14852,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,pos,len;
+      Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     
