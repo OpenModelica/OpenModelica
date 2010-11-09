@@ -1157,7 +1157,7 @@ end lookupCompModification12;
 
 protected function lookupComplexCompModification "Lookups a component modification from a complex constructor
 (e.g. record constructor) by name."
-  input option<DAE.EqMod> eqMod;
+  input Option<DAE.EqMod> eqMod;
   input Absyn.Ident n;
   input Boolean finalPrefix;
   input Absyn.Each each_;

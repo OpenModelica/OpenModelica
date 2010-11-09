@@ -1484,7 +1484,7 @@ protected
   Absyn.AlgorithmItem algItem;
 algorithm
   (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv, info);
-  checkShadowing(declList,invalidDecls);
+  Util.SUCCESS() := checkShadowing(declList,invalidDecls,Util.SUCCESS());
   (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
   alg := Absyn.ALG_MATCHCASES(matchType,inputVarList,cases);
   algItem := Absyn.ALGORITHMITEM(alg, NONE(), info);
@@ -1528,7 +1528,7 @@ algorithm
     
     case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _, info)
       equation
-        checkShadowing(firstDecls,invalidDecls);
+        Util.SUCCESS() = checkShadowing(firstDecls,invalidDecls,Util.SUCCESS());
         exp2 = createListFromExpression(result,resVarList);
         algs3 = createLastAssignments(resVarList,exp2,info);
         algs = {};
@@ -1539,7 +1539,7 @@ algorithm
     case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info)
       equation
         dfaEnv = initialDfaEnv;
-        checkShadowing(firstDecls,invalidDecls);
+        Util.SUCCESS() = checkShadowing(firstDecls,invalidDecls,Util.SUCCESS());
 
         exp2 = createListFromExpression(result,resVarList);
 
@@ -1581,8 +1581,10 @@ end getMatchContinueInvalidDeclsAndInitialEnv;
 protected function checkShadowing
   input list<Absyn.ElementItem> elItems;
   input list<String> invalidDecls;
+  input Util.Status status "call with Util.SUCCESS() if no errors have occurred yet";
+  output Util.Status outStatus;
 algorithm
-  _ := matchcontinue (elItems, invalidDecls)
+  outStatus := matchcontinue (elItems, invalidDecls, status)
     local
       list<String> elIdents;
       list<Boolean> boolList;
@@ -1591,21 +1593,21 @@ algorithm
       Absyn.ElementItem elt;
       String str;
     
-    case ({}, _) then ();
+    case ({}, _, status) then status;
     
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec)) :: elItems, invalidDecls)
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec)) :: elItems, invalidDecls, status)
       equation
         elIdents = getElementSpecComponentNames(spec);
-        checkShadowing2(info, elIdents, invalidDecls);
-        checkShadowing(elItems, invalidDecls);
-      then ();
+        status = checkShadowing2(info, elIdents, invalidDecls, status);
+        status = checkShadowing(elItems, invalidDecls, status);
+      then status;
 
-    case ((elt as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec))) :: elItems, invalidDecls)
+    case ((elt as Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec))) :: elItems, invalidDecls, status)
       equation
         failure(_ = getElementSpecComponentNames(spec));
         str = Dump.unparseElementitemStr(0,elt);
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT, {str}, info);
-      then fail();
+      then Util.FAILURE();
   end matchcontinue;
 end checkShadowing;
 
@@ -1613,18 +1615,20 @@ protected function checkShadowing2
   input Absyn.Info info;
   input list<String> elIdents;
   input list<String> invalidDecls;
+  input Util.Status status;
+  output Util.Status outStatus;
 algorithm
-  _ := matchcontinue (info, elIdents, invalidDecls)
+  outStatus := matchcontinue (info, elIdents, invalidDecls, status)
     local
       String elIdent;
     
-    case (_, {}, _) then ();
+    case (_, {}, _, status) then status;
     
-    case (info, elIdent::elIdents, invalidDecls)
+    case (info, elIdent::elIdents, invalidDecls, status)
       equation
-        checkShadowing3(info,elIdent,invalidDecls);
-        checkShadowing2(info,elIdents,invalidDecls);
-      then ();
+        status = checkShadowing3(info,elIdent,invalidDecls,status);
+        status = checkShadowing2(info,elIdents,invalidDecls,status);
+      then status;
   end matchcontinue;
 end checkShadowing2;
 
@@ -1632,18 +1636,20 @@ protected function checkShadowing3
   input Absyn.Info info;
   input String elIdent;
   input list<String> invalidDecls;
+  input Util.Status status;
+  output Util.Status outStatus;
 algorithm
-  _ := matchcontinue (info, elIdent, invalidDecls)
+  outStatus := matchcontinue (info, elIdent, invalidDecls, status)
     
-    case (_, elIdent, invalidDecls)
+    case (_, elIdent, invalidDecls, status)
       equation
         false = listMember(elIdent, invalidDecls);
-      then ();
+      then status;
     
-    case (info, elIdent, _)
+    case (info, elIdent, _, status)
       equation
         Error.addSourceMessage(Error.MATCH_SHADOWING, {elIdent}, info);
-      then fail();
+      then Util.FAILURE();
   end matchcontinue;
 end checkShadowing3;
 

@@ -8780,7 +8780,7 @@ functiontree of a newly created dae"
   input Env.Env env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
-  input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Option<SCode.Class> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;
   output Util.Status status;
@@ -8794,7 +8794,7 @@ functiontree of a newly created dae"
   input Env.Env env;
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
-  input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Option<SCode.Class> clOpt "if not present, looked up by name in environment";
   input Integer numError "if errors were added, do not add a generic error message";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;

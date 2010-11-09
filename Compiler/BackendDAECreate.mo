@@ -736,7 +736,7 @@ protected function lowerVarkind
   input DAE.Flow inFlow;
   input DAE.Stream inStream;
   input BackendDAE.BinTree inBinTree;
-  input option<DAE.VariableAttributes> daeAttr;
+  input Option<DAE.VariableAttributes> daeAttr;
   output BackendDAE.VarKind outVarKind;
   output BackendDAE.BinTree outBinTree;
 algorithm

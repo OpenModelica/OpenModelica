@@ -8296,15 +8296,15 @@ algorithm
       Absyn.Path t;
       SCode.Mod m;
       Option<SCode.Comment> comment;
-      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods,mods_original;
+      DAE.Mod cmod,m_1,classmod,mm,mod_1,mod_2,mod_3,mods,mods_original;
       SCode.Class cl;
       list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
-      Connect.Sets csets,csets_1;
+      Connect.Sets csets_1;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
       DAE.Binding binding,binding_1;
-      Absyn.ComponentRef cref,owncref;
+      Absyn.ComponentRef owncref;
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
       Env.InstStatus is;
@@ -8406,23 +8406,21 @@ algorithm
     local
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       String n,id,str,str2,str3;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
-      list<Absyn.Subscript> ad,subscr;
+      Boolean repl,flowPrefix,streamPrefix;
+      list<Absyn.Subscript> subscr;
       SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Absyn.Path t;
-      SCode.Mod m;
       Option<SCode.Comment> comment;
-      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
-      SCode.Class cl;
-      list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
+      DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3,mods;
+      list<Env.Frame> env2,compenv,env2_1,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
-      Connect.Sets csets,csets_1;
+      Connect.Sets csets_1;
       Option<DAE.EqMod> eq;
       list<DAE.Dimension> dims;
       DAE.Binding binding,binding_1;
-      Absyn.ComponentRef cref,owncref;
+      Absyn.ComponentRef owncref;
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
       Env.InstStatus is;
@@ -14027,8 +14025,7 @@ algorithm
   (outCache,outEnv,outIH,outSets,outUpdatedComps) :=
   matchcontinue (cache,env,inIH,pre,mod,crefs,ci_state,csets,impl,updatedComps)
     local
-      list<Env.Frame> env_1,env_2,env;
-      Connect.Sets csets;
+      list<Env.Frame> env_1,env_2;
       DAE.Mod mods;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;

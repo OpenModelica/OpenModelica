@@ -5184,13 +5184,13 @@ algorithm
   (out,t) := matchcontinue (elist,typeList,printFailtrace)
     local
       DAE.Exp e;
-      Type ty, superType;
+      Type ty, st;
     case ({},{},_) then ({}, (DAE.T_NOTYPE(),NONE()));
     case (e :: _, ty :: _,printFailtrace)
       equation
-        superType = Util.listReduce(typeList, superType);
-        elist = listMatchSuperType2(elist,typeList,superType,printFailtrace);
-      then (elist, superType);
+        st = Util.listReduce(typeList, superType);
+        elist = listMatchSuperType2(elist,typeList,st,printFailtrace);
+      then (elist, st);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- Types.listMatchSuperType failed");
@@ -5201,11 +5201,11 @@ end listMatchSuperType;
 protected function listMatchSuperType2
   input list<DAE.Exp> elist;
   input list<Type> typeList;
-  input Type superType;
+  input Type st;
   input Boolean printFailtrace;
   output list<DAE.Exp> out;
 algorithm
-  out := matchcontinue (elist, typeList, superType, printFailtrace)
+  out := matchcontinue (elist, typeList, st, printFailtrace)
     local
       DAE.Exp e;
       list<DAE.Exp> erest;
@@ -5213,10 +5213,10 @@ algorithm
       list<Type> trest;
       String str;
     case ({},{},_,_) then {};
-    case (e::erest, t::trest, superType, printFailtrace)
+    case (e::erest, t::trest, st, printFailtrace)
       equation
-        (e,t) = matchType(e,t,superType,printFailtrace);
-        erest = listMatchSuperType2(erest,trest,superType,printFailtrace);
+        (e,t) = matchType(e,t,st,printFailtrace);
+        erest = listMatchSuperType2(erest,trest,st,printFailtrace);
       then (e::erest);
     case (e::_,_,_,_)
       equation
