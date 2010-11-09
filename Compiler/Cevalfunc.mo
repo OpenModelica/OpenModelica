@@ -1580,7 +1580,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
     case(val1::vals1, val2::vals2, insubs,env,ty)
       equation
         val3 = mergeValues(val1,val2,insubs,env,ty);
-        vals3 = mergeValues2(vals2,vals2,insubs,env,ty);
+        vals3 = mergeValues2(vals1,vals2,insubs,env,ty);
         then
           val3::vals3;
 end matchcontinue;
