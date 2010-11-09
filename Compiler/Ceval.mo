@@ -950,21 +950,21 @@ protected function cevalBuiltin
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  partial function HandlerFunc
+		input Env.Cache inCache;
+    input list<Env.Frame> inEnvFrameLst;
+    input list<DAE.Exp> inExpExpLst;
+    input Boolean inBoolean;
+    input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+    input Msg inMsg;
+    output Env.Cache outCache;
+    output Values.Value outValue;
+    output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  end HandlerFunc;
 algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
     local
-      partial function HandlerFunc
-				input Env.Cache inCache;
-        input list<Env.Frame> inEnvFrameLst;
-        input list<DAE.Exp> inExpExpLst;
-        input Boolean inBoolean;
-        input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-        input Msg inMsg;
-        output Env.Cache outCache;
-        output Values.Value outValue;
-        output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-      end HandlerFunc;
       Values.Value v,newval;
       Option<Interactive.InteractiveSymbolTable> st;
       list<Env.Frame> env;
@@ -1681,7 +1681,7 @@ algorithm
       then
         (cache,Values.INTEGER(i),st);
     
-    case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dimExp,impl,st,msg)
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,impl,st,msg)
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);

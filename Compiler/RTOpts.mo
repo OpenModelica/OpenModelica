@@ -58,7 +58,7 @@ end typeinfo;
 public function splitArrays
   output Boolean outBoolean;
 
-  external "C" splitArrays = RTOpts_splitArrays() annotation(Library = "omcruntime");
+  external "C" outBoolean = RTOpts_splitArrays() annotation(Library = "omcruntime");
 end splitArrays;
 
 public function paramsStruct

@@ -1064,9 +1064,9 @@ algorithm
       then Absyn.TPATH(p,NONE());
     case t
       equation
-        true = RTOpts.debugFlag("matchcase");
         str = Types.unparseType(t);
-        Debug.fprintln("matchcase", "- MetaUtil.typeConvert failed: " +& str);
+        str = "MetaUtil.typeConvert failed: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
 end typeConvert;
@@ -1113,7 +1113,7 @@ algorithm
       Absyn.ElementItem elem1;
       Absyn.Exp elem2;
     case ({},localCnt,localAccList1,localAccList2)
-      then (localAccList1,localAccList2);
+      then (listReverse(localAccList1),listReverse(localAccList2));
     case ({(DAE.T_TUPLE(rest),_)},1,{},{})
       equation
         (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
@@ -1129,8 +1129,8 @@ algorithm
             tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
             Absyn.dummyInfo,NONE()));
         elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
-        localAccList1 = listAppend(localAccList1,{elem1});
-        localAccList2 = listAppend(localAccList2,{elem2});
+        localAccList1 = elem1::localAccList1;
+        localAccList2 = elem2::localAccList2;
         (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
     case (ty::_,_,_,_)

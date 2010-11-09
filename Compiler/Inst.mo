@@ -1836,8 +1836,7 @@ algorithm
       InstDims aa_7;
       Boolean aa_8;
       Option<DAE.ComponentRef> aa_9;
-      replaceable type Type_a subtypeof Any;
-      Type_a bbx, bby;
+      tuple<InstDims,Boolean,DAE.Mod,Connect.Sets,ClassInf.State,SCode.Class,Option<DAE.ComponentRef>> bbx, bby;
       CachedInstItem partialFunc;
       ConnectionGraph.ConnectionGraph graphCached;
 
@@ -2140,7 +2139,7 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,tys,bc /* NONE() */,NONE(),NONE(),graph);
 
     // adrpo: 2010-09-27: here we do two things at once, but not correctly!
-    // Instantiate enumeration class at top level Prefix.NOPRE 
+    // Instantiate enumeration class at top level Prefix.NOPRE() 
     //   when we are instantiating with no prefix, it means we are instantiating the enumeration class!
     //   and we don't care about modifications!
     // Instantiate enumeration VARIABLE with a prefix!  
@@ -2562,14 +2561,14 @@ algorithm
       String s,s1,s2;
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
         false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
@@ -2578,7 +2577,7 @@ algorithm
         
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -2586,7 +2585,7 @@ algorithm
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
@@ -2596,14 +2595,14 @@ algorithm
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR));
+        failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        equality(c=DAE.C_VAR);
+        equality(c=DAE.C_VAR());
         s = ExpressionDump.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
       then fail();
@@ -2675,7 +2674,7 @@ algorithm
         res = instdimsIntOptList(ss);
       then
         (DAE.DIM_INTEGER(i) :: res);
-    case (DAE.WHOLEDIM :: ss)
+    case (DAE.WHOLEDIM() :: ss)
       equation
         true = OptManager.getOption("checkModel");
         res = instdimsIntOptList(ss);
@@ -7139,7 +7138,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         s1 = ComponentReference.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
-        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE
+        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
         Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
@@ -7172,7 +7171,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);        
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
-        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE
+        // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
         Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
@@ -9210,7 +9209,7 @@ algorithm
       equation
         (cache,_,SOME((SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_)),_)
           = Lookup.lookupIdent(cache,env, id);
-        (cache, subs, _) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE, info);
+        (cache, subs, _) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE(), info);
         dims = Expression.subscriptDimensions(subs);
       then
         (cache,dims);
