@@ -1142,7 +1142,7 @@ protected function streamEquations "function: streamEquations
   input list<Connect.StreamSetElement> cs;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(cs)
+  outDae := match(cs)
     local
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource src1, src2, src;
@@ -1152,6 +1152,7 @@ algorithm
       list<String> strs;
       Connect.Face f1, f2;
       DAE.Exp cref1, cref2, e1, e2;
+      list<Connect.StreamSetElement> inside, outside;
 
     // Unconnected stream connector, do nothing!
     case ({(_, _, Connect.INSIDE(), _)})
@@ -1181,26 +1182,215 @@ algorithm
     // cr1 = cr2;
     case ({(cr1, _, f1, src1), (cr2, _, f2, src2)}) 
       equation
-        // faces are not equal! one inside, one outside
-        false = faceEqual(f1, f2); 
         src = DAEUtil.mergeSources(src1, src2);
-        // add the stream equation cr1 = cr2 for one inside, one outside
         dae = DAE.DAE({
                 DAE.EQUATION(DAE.CREF(cr1,DAE.ET_OTHER()), 
                              DAE.CREF(cr2,DAE.ET_OTHER()), 
                              src)});
       then dae;
 
-    // Anything else, ERROR!
-    case (cs) 
+    // The general case with N inside connectors and M outside:
+    case (_)
       equation
-        strs = Util.listMap(cs, printStreamRefStr);
-        str = Util.stringDelimitList(strs, ", ");
-        str = stringAppendList({"stream set: {",str,"}"});        
-        print("Only one-to-one connections of streams are supported: unsupported connection set:" +& str);
-      then DAEUtil.emptyDae;
-  end matchcontinue;   
+        (outside, inside) = Util.listSplitOnTrue(cs, isOutsideStream);
+        dae = Util.listFold_3(outside, streamEquationGeneral, DAEUtil.emptyDae,
+          outside, inside);
+      then
+        dae;
+  end match;   
 end streamEquations;
+
+protected function isOutsideStream
+  "Returns true of the stream set element is an outside connector."
+  input Connect.StreamSetElement inElement;
+  output Boolean isOutside;
+algorithm
+  isOutside := match(inElement)
+    case ((_, _, Connect.OUTSIDE(), _)) then true;
+    else then false;
+  end match;
+end isOutsideStream;
+
+protected function streamEquationGeneral
+  "Generates an equation for an outside stream connector."
+  input DAE.DAElist inDae;
+  input Connect.StreamSetElement inElement;
+  input list<Connect.StreamSetElement> inOutsideElements;
+  input list<Connect.StreamSetElement> inInsideElements;
+  output DAE.DAElist outDae;
+
+  list<Connect.StreamSetElement> outside;
+  DAE.ComponentRef stream_cr;
+  DAE.Exp cref_exp, outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  DAE.ElementSource src;
+  DAE.DAElist dae;
+algorithm
+  (stream_cr, _, _, src) := inElement;
+  cref_exp := Expression.crefExp(stream_cr);
+  outside := removeStreamSetElement(stream_cr, inOutsideElements);
+  res := streamSumEquationExp(outside, inInsideElements);
+  dae := DAE.DAE({DAE.EQUATION(cref_exp, res, src)});
+  outDae := DAEUtil.joinDaes(dae, inDae);
+end streamEquationGeneral;
+
+protected function streamSumEquationExp
+  "Generates the sum expression used by stream connector equations, given M
+  outside connectors and N inside connectors:
+
+    (sum(max(-flow_exp[i], eps) * stream_exp[i] for i in N) +
+     sum(max( flow_exp[i], eps) * inStream(stream_exp[i]) for i in M)) /
+    (sum(max(-flow_exp[i], eps) for i in N) +
+     sum(max( flow_exp[i], eps) for i in M))
+  "
+  input list<Connect.StreamSetElement> inOutsideElements;
+  input list<Connect.StreamSetElement> inInsideElements;
+  output DAE.Exp outSumExp;
+
+  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+algorithm
+  outSumExp := match(inOutsideElements, inInsideElements)
+    // No outside components.
+    case ({}, _)
+      equation
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(inside_sum1, inside_sum2);
+      then
+        res;
+    // No inside components.
+    case (_, {})
+      equation
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        res = Expression.expDiv(outside_sum1, outside_sum2);
+      then
+        res;
+    // Both outside and inside components.
+    else
+      equation
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
+                                Expression.expAdd(outside_sum2, inside_sum2));
+      then
+        res;
+  end match;
+end streamSumEquationExp;
+
+protected function sumMap
+  "Creates a sum expression by applying the given function on the list of
+  elements and summing up the resulting expressions."
+  input list<SetElement> inElements;
+  input FuncType inFunc;
+  output DAE.Exp outExp;
+  
+  replaceable type SetElement subtypeof Any;
+  partial function FuncType
+    input SetElement inElement;
+    output DAE.Exp outExp;
+  end FuncType;
+algorithm
+  outExp := match(inElements, inFunc)
+    local
+      SetElement elem;
+      list<SetElement> rest_elem;
+      DAE.Exp e1, e2;
+
+    case ({elem}, _)
+      equation
+        e1 = inFunc(elem);
+      then
+        e1;
+
+    case (elem :: rest_elem, _)
+      equation
+        e1 = inFunc(elem);
+        e2 = sumMap(rest_elem, inFunc);
+      then
+        Expression.expAdd(e1, e2);
+  end match;
+end sumMap;
+
+protected function streamFlowExp
+  "Returns the stream and flow component in a stream set element as expressions."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outStreamExp;
+  output DAE.Exp outFlowExp;
+
+  DAE.ComponentRef stream_cr, flow_cr;
+algorithm
+  (stream_cr, flow_cr, _, _) := inElement;
+  outStreamExp := Expression.crefExp(stream_cr);
+  outFlowExp := Expression.crefExp(flow_cr);
+end streamFlowExp;
+
+protected function flowExp
+  "Returns the flow component in a stream set element as an expression."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outFlowExp;
+
+  DAE.ComponentRef flow_cr;
+algorithm
+  (_, flow_cr, _, _) := inElement;
+  outFlowExp := Expression.crefExp(flow_cr);
+end flowExp;
+
+protected function sumOutside1
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(flow_exp, eps) * inStream(stream_exp)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp stream_exp, flow_exp;
+algorithm
+  (stream_exp, flow_exp) := streamFlowExp(inElement);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp),
+                              makeInStreamCall(stream_exp));
+end sumOutside1;
+
+protected function sumInside1
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(-flow_exp, eps) * stream_exp
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp stream_exp, flow_exp;
+algorithm
+  (stream_exp, flow_exp) := streamFlowExp(inElement);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
+end sumInside1;
+
+protected function sumOutside2
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(flow_exp, eps)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp flow_exp;
+algorithm
+  flow_exp := flowExp(inElement);
+  outExp := makePositiveMaxCall(flow_exp);
+end sumOutside2;
+
+protected function sumInside2
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(-flow_exp, eps)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp flow_exp;
+algorithm
+  flow_exp := flowExp(inElement);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  outExp := makePositiveMaxCall(flow_exp);
+end sumInside2;
 
 protected function faceEqual "function: sameFace
 Test for face equality."
@@ -1224,6 +1414,15 @@ algorithm
   outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp}, false,
     false, DAE.ET_OTHER(), DAE.NO_INLINE());
 end makeInStreamCall;
+
+protected function makePositiveMaxCall
+  "Generates a max(flow_exp, eps) call."
+  input DAE.Exp inFlowExp;
+  output DAE.Exp outPositiveMaxCall;
+algorithm
+  outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
+    {inFlowExp, DAE.RCONST(1e-15)}, false, true, DAE.ET_REAL(), DAE.NO_INLINE());
+end makePositiveMaxCall;
 
 public function evaluateInStream
   "This function evaluates the inStream operator for a component reference,
@@ -1269,6 +1468,7 @@ algorithm
       DAE.Exp e;
       DAE.ElementSource src;
       Absyn.Info info;
+      list<Connect.StreamSetElement> el, inside, outside;
 
     // Unconnected stream connector:
     // inStream(c) = c;
@@ -1294,15 +1494,14 @@ algorithm
       then
         e;
 
-    // The general case, not implemented yet.
-    case (_, (_, _, _, src) :: _, _)
+    // The general case:
+    else
       equation
-        info = DAEUtil.getElementSourceFileInfo(src);
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"inStream on more than one-to-one connections",
-           "implement it and send a patch to OpenModelica."}, info);
+        (outside, inside) = Util.listSplitOnTrue(inStreams, isOutsideStream);
+        inside = removeStreamSetElement(inStreamCref, inside);
+        e = streamSumEquationExp(outside, inside);
       then
-        fail();
+        e;
   end match;
 end generateInStreamExp;
 
