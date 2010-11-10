@@ -6078,6 +6078,7 @@ algorithm
     case (la,lb,index)
       equation
         (index == 0) = true;
+        lb = listReverse(lb);
       then
         (la,lb);
     case ((a :: la),lb,index)
