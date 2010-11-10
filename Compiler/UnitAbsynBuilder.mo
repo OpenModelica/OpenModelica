@@ -58,8 +58,9 @@ protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
   output list<SCode.Element> du;
 
 algorithm
-   du := matchcontinue(p,tpl) local
-   Env.Env env; list<SCode.Element> du;
+   du := matchcontinue(p,tpl)
+     local
+       Env.Env env;
      case(p,tpl) equation
        (_,_,env as Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
      then du;

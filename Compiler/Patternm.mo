@@ -66,7 +66,7 @@ type RightHandList = DFA.RightHandList;
 type RightHandSide = DFA.RightHandSide;
 type IndexVector = DFA.IndexVector;
 type AsList = list<Absyn.EquationItem>;
-type AsArray = AsList[:];
+type AsArray = array<AsList>;
 type ArcName = Absyn.Ident;
 
 protected function ASTtoMatrixForm "function: ASTtoMatrixForm
@@ -2477,7 +2477,6 @@ protected function getCaseDecls
   output list<Absyn.ElementItem> els;
 algorithm
   els := matchcontinue (cas)
-    local list<Absyn.ElementItem> els;
     case Absyn.CASE(localDecls = els) then els;
     case Absyn.ELSE(localDecls = els) then els;
   end matchcontinue;
@@ -2690,7 +2689,6 @@ algorithm
     local
       Absyn.Exp exp;
       String s;
-      DAE.Pattern pattern;
       DAE.Type ty,t;
       Absyn.Path utPath1,utPath2,fqPath;
       Integer index,numPosArgs;
@@ -2788,7 +2786,7 @@ algorithm
       list<DAE.Pattern> pats;
       DAE.Exp exp;
       DAE.Pattern pat,head,tail;
-      String id,str;
+      String id;
       DAE.ExpType et;
     case DAE.PAT_WILD() then "_";
     case DAE.PAT_AS(id,_,DAE.PAT_WILD()) then id;

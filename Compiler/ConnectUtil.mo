@@ -71,7 +71,6 @@ protected import Types;
 protected import Util;
 
 public
-type Env     = Env.Env;
 type AvlTree = Env.AvlTree;
 type Cache   = Env.Cache;
 
@@ -576,8 +575,8 @@ public function addArrayFlow "function: addArrayFlow
 algorithm
   outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
     local
-      Connect.Sets s,ss_1,ss_2,ss;
-      DAE.ComponentRef r1_1,r2_1,r1,r2;
+      Connect.Sets s,ss_1,ss_2;
+      DAE.ComponentRef r1_1,r2_1;
       Integer i_1,i;
       Connect.Set s1,s2;
 
@@ -736,8 +735,8 @@ public function addArrayStream "function: addArrayStream
 algorithm
   outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
     local
-      Connect.Sets s,ss_1,ss_2,ss;
-      DAE.ComponentRef r1_1,r2_1,r1,r2;
+      Connect.Sets s,ss_1,ss_2;
+      DAE.ComponentRef r1_1,r2_1;
       Integer i_1,i;
       Connect.Set s1,s2;
 
@@ -2223,7 +2222,7 @@ public function componentFace
   All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
   of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
   to corresponding inner ones."
-  input Env env;
+  input Env.Env env;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;

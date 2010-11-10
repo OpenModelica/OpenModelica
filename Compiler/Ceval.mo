@@ -513,7 +513,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP);
+				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.POWOP());
       then
         (cache,resVal,stOpt);
 
@@ -522,7 +522,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP);
+				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.MULOP());
       then
         (cache,resVal,stOpt);
 
@@ -531,7 +531,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP);
+				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.DIVOP());
       then
         (cache,resVal,stOpt);
 
@@ -551,7 +551,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP);
+				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.ADDOP());
       then
         (cache,resVal,stOpt);
 
@@ -560,7 +560,7 @@ algorithm
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
-				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP);
+				resVal = ValuesUtil.safeIntRealOp(lhvVal, rhvVal, Values.SUBOP());
       then
         (cache,resVal,stOpt);
 
@@ -707,7 +707,7 @@ algorithm
         (cache,Values.REAL(r),stOpt);
 
     // cast real to integer
-    case (cache,env,DAE.CAST(ty = DAE.ET_INT, exp = e),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.CAST(ty = DAE.ET_INT(), exp = e),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.REAL(r),stOpt) = ceval(cache, env, e, impl, stOpt, dimOpt, msg);
         i = realInt(r);

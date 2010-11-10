@@ -223,9 +223,9 @@ algorithm
       BackendDAE.BackendDAE daelow;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
-      BackendDAE.MultiDimEquation[:] ae;
+      array<BackendDAE.MultiDimEquation> ae;
       list<DAE.Exp> expVars,options;
-      list<Integer>[:] m,mt;
+      array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
       DAE.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
@@ -2152,8 +2152,8 @@ algorithm
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] ass1,ass2;
+      array<list<Integer>> m,mT;
+      array<Integer> ass1,ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -2295,8 +2295,8 @@ algorithm
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] ass1,ass2;
+      array<list<Integer>> m,mT;
+      array<Integer> ass1,ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -3256,8 +3256,8 @@ algorithm
       list<DAE.Element> dael;
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] ass1,ass2;
+      array<list<Integer>> m,mT;
+      array<Integer> ass1,ass2;
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -3694,9 +3694,9 @@ algorithm
       Values.Value ret_val;
       list<DAE.Function> funcelems;
       Boolean x;
-      Integer[:] ass1,ass2;
+      array<Integer> ass1,ass2;
       DAE.DAElist dae_1,dae;
-      list<Integer>[:] m,mT;
+      array<list<Integer>> m,mT;
       list<DAE.Element> dael;
       list<SCode.Class> p_1,sp;
       list<list<Integer>> comps;

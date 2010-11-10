@@ -177,7 +177,6 @@ algorithm
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
-      Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
@@ -590,7 +589,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph)
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR)) = Types.propsAnd(props); 
+        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props); 
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
         
         // set the source of this element
@@ -1008,7 +1007,7 @@ algorithm
       Boolean b1,b2,b3,b4; 
       DAE.DAElist fdae1,fdae2,dae;
       DAE.Exp elabedE1_2, elabedE2_2;
-      DAE.Properties prop1, prop2;
+      DAE.Properties prop1;
       Prefix.Prefix pre;
     case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,pre,info) equation
       b3 = Types.isPropTupleArray(prop);
@@ -1055,7 +1054,7 @@ algorithm
       fillValue = (listLength(typeList)-listLength(aexpl));
       lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types"; 
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
+      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's"; 
       aexpl = listAppend(aexpl,aexpl2);      
       lst = listAppend(lst,lst2);
       tupleConst = listAppend(tupleConst,tupleConst2);
@@ -1066,7 +1065,7 @@ algorithm
       fillValue = (listLength(typeList)-1);
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
       lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";  
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
+      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's"; 
       aexpl = inExp::aexpl2;
       lst = propType::lst2; 
       tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
@@ -2834,8 +2833,8 @@ algorithm
       equation
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
-        wilds = Util.listFill(DAE.CREF(DAE.WILD, DAE.ET_OTHER), wild_count);
-        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR), wild_count);
+        wilds = Util.listFill(DAE.CREF(DAE.WILD(), DAE.ET_OTHER()), wild_count);
+        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR()), wild_count);
      then Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     // Otherwise, call Algorithm.makeAssignment as usual.
     case (_, _, _, _, _, _, _)
@@ -3037,7 +3036,7 @@ algorithm
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
         stmt = DAE.STMT_ASSIGN(
                  DAE.ET_OTHER(),
-                 DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
+                 DAE.CREF(DAE.WILD(),DAE.ET_OTHER()),
                  e_2,source);
       then
         (localCache,stmt);
@@ -4272,7 +4271,6 @@ algorithm
       Boolean flowPrefix, streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
-      Absyn.InnerOuter io1,io2;
       Boolean c1outer,c2outer;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -4650,13 +4648,12 @@ algorithm
       Connect.Face f1,f2;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
-      Integer dim1,dim2;
+      Integer dim2;
       DAE.DAElist dae,dae1,dae2;
       list<DAE.Var> l1,l2;
       Boolean flowPrefix,streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
-      Absyn.InnerOuter io1,io2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
@@ -4718,7 +4715,6 @@ algorithm
       String n;
       DAE.Attributes attr1,attr2;
       Boolean flow1,flow2,stream1,stream2;
-      SCode.Variability vt1,vt2;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;

@@ -2937,7 +2937,7 @@ algorithm
     case({}) equation
       then 0;
     case(SCode.COMPONENT(attributes = SCode.ATTR(
-        direction = Absyn.OUTPUT,
+        direction = Absyn.OUTPUT(),
         arrayDims = {Absyn.SUBSCRIPT(Absyn.INTEGER(dim))}
       )) :: _) equation
       then dim;
@@ -2970,7 +2970,7 @@ algorithm
       
     case(env, {})
       then NONE();
-    case(env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
+    case(env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(),
          classDef = SCode.PARTS(elementLst = els))) :: _)
       equation
         SOME(path) = Env.getEnvPath(env);
@@ -3640,7 +3640,7 @@ algorithm
           Lookup.lookupClass(cache,env, cn, true);
 
 
-        env3 = Env.openScope(cenv, enc2, SOME(cn2), SOME(Env.CLASS_SCOPE));
+        env3 = Env.openScope(cenv, enc2, SOME(cn2), SOME(Env.CLASS_SCOPE()));
         ci_state2 = ClassInf.start(r, Env.getEnvName(env3));
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) =
         instClassIn(
@@ -4267,7 +4267,6 @@ algorithm
 	local
       Env.Cache cache;
       Env.Env env1;
-      DAE.Function fn;
       DAE.Type funcTp;
       String s;
       InstanceHierarchy ih;
@@ -4361,7 +4360,6 @@ input list<SCode.Element> els;
 output SCode.Class cl;
 algorithm
   cl:= matchcontinue(els)
-    local SCode.Class cl;
     case SCode.CLASSDEF(classDef = cl as SCode.CLASS(name="destructor"))::_ then cl;
     case _::els then getExternalObjectDestructor(els);
   end matchcontinue;
@@ -15138,9 +15136,9 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ElementSource src;
       Connect.Sets cs;
-    case (DAE.VAR(componentRef = cr, flowPrefix = DAE.FLOW, source = src), cs)
+    case (DAE.VAR(componentRef = cr, flowPrefix = DAE.FLOW(), source = src), cs)
       equation
-        cs = ConnectUtil.addFlowVariable(cs, cr, Connect.INSIDE, src);
+        cs = ConnectUtil.addFlowVariable(cs, cr, Connect.INSIDE(), src);
       then
         cs;
     case (_, _) then inConnectionSet;

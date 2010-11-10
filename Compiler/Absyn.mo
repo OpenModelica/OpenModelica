@@ -3921,7 +3921,7 @@ Helper function for mergeElementAttributes
   input Variability v2;
   output Variability v3;
 algorithm v3 := matchcontinue(v1,v2)
-  case(v1,VAR) then v1;
+  case(v1,VAR()) then v1;
   case(v1,_) then v1;
 end matchcontinue;
 end propagateAbsynVariability;

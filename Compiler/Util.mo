@@ -3294,7 +3294,7 @@ public function listSelect2 "function listSelect1
   partial function FuncTypeType_aType_bToBoolean
     input Type_a inTypeA;
     input Type_b inTypeB;
-    input Type_c inTypeB;
+    input Type_c inTypeC;
     output Boolean outBoolean;
   end FuncTypeType_aType_bToBoolean;
 algorithm

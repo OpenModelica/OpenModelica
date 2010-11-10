@@ -52,7 +52,7 @@ public import RTOpts;
 
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
-type SimpleStateArray = SimpleState[:];
+type SimpleStateArray = array<SimpleState>;
 
 // protected imports
 protected import Dump;
@@ -1072,12 +1072,12 @@ uniontype RightHandSide "Datastructure for the righthand sides in a matchcontinu
   end RIGHTHANDLIGHT;
 end RightHandSide;
 
-type RenamedPatVec = RenamedPat[:];
+type RenamedPatVec = array<RenamedPat>;
 type RenamedPatList = list<RenamedPat>;
-type RenamedPatMatrix = RenamedPatList[:];
+type RenamedPatMatrix = array<RenamedPatList>;
 type RenamedPatMatrix2 = list<RenamedPatList>;
 type IndexVector = list<Integer>;
-type RightHandVector = RightHandSide[:];
+type RightHandVector = array<RightHandSide>;
 type RightHandList = list<RightHandSide>;
 
 // Functions for the handling of matrices
@@ -1107,7 +1107,7 @@ algorithm
       Integer first;
       IndexVector rest;
       RenamedPatList localPatList;
-      RenamedPat[:] temp;
+      array<RenamedPat> temp;
       RenamedPat temp2;
     
     case (_,{},localAccPatList) then localAccPatList;

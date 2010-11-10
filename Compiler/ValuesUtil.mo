@@ -331,55 +331,55 @@ algorithm
       Integer iv1, iv2,iv3;
       DAE.Exp e;
       //MUL
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP)
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.MULOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.MULOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.MULOP)
+    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.MULOP())
       equation
         rv2 = intReal(iv2);
         rv3 = rv1 *. rv2;
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.MULOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.MULOP())
       equation
         rv1 = intReal(iv1);
         rv3 = rv1 *. rv2;
       then
         Values.REAL(rv3);
-    case (Values.REAL(rv1), Values.REAL(rv2), Values.MULOP)
+    case (Values.REAL(rv1), Values.REAL(rv2), Values.MULOP())
       equation
         rv3 = rv1 *. rv2;
       then
         Values.REAL(rv3);
         //DIV
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.DIVOP)
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.DIVOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.DIVOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.DIVOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.DIVOP)
+    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.DIVOP())
       equation
         rv2 = intReal(iv2);
         rv3 = rv1 /. rv2;
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.DIVOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.DIVOP())
       equation
         rv1 = intReal(iv1);
         rv3 = rv1 /. rv2;
       then
         Values.REAL(rv3);
-    case (Values.REAL(rv1), Values.REAL(rv2), Values.DIVOP)
+    case (Values.REAL(rv1), Values.REAL(rv2), Values.DIVOP())
       equation
         rv3 = rv1 /. rv2;
       then
         Values.REAL(rv3);
         //POW
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP) // this means indirect that we are dealing with decimal numbers (a^(-b)) = 1/a^b
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP()) // this means indirect that we are dealing with decimal numbers (a^(-b)) = 1/a^b
       equation
         true = (iv2 < 0);
         rv1 = intReal(iv1);
@@ -387,80 +387,80 @@ algorithm
         rv3 = realPow(rv1, rv2);
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP)
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.POWOP)
+    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.POWOP())
       equation
         rv2 = intReal(iv2);
         rv3 = realPow(rv1, rv2);
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP())
       equation
         iv2 = realInt(rv2);
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP())
       equation
         rv1 = intReal(iv1);
         rv3 = realPow(rv1, rv2);
       then
         Values.REAL(rv3);
-    case (Values.REAL(rv1), Values.REAL(rv2), Values.POWOP)
+    case (Values.REAL(rv1), Values.REAL(rv2), Values.POWOP())
       equation
         rv3 = realPow(rv1, rv2);
       then
         Values.REAL(rv3);
         //ADD
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.ADDOP)
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.ADDOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.ADDOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.ADDOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.ADDOP)
+    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.ADDOP())
       equation
         rv2 = intReal(iv2);
         rv3 = rv1 +. rv2;
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.ADDOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.ADDOP())
       equation
         rv1 = intReal(iv1);
         rv3 = rv1 +. rv2;
       then
         Values.REAL(rv3);
-    case (Values.REAL(rv1), Values.REAL(rv2), Values.ADDOP)
+    case (Values.REAL(rv1), Values.REAL(rv2), Values.ADDOP())
       equation
         rv3 = rv1 +. rv2;
       then
         Values.REAL(rv3);
         //SUB
-    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.SUBOP)
+    case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.SUBOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.SUBOP);
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.SUBOP());
         outv = expValue(e);
       then
         outv;
-    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.SUBOP)
+    case (Values.REAL(rv1),Values.INTEGER(iv2), Values.SUBOP())
       equation
         rv2 = intReal(iv2);
         rv3 = rv1 -. rv2;
       then
         Values.REAL(rv3);
-    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.SUBOP)
+    case (Values.INTEGER(iv1), Values.REAL(rv2), Values.SUBOP())
       equation
         rv1 = intReal(iv1);
         rv3 = rv1 -. rv2;
       then
         Values.REAL(rv3);
-    case (Values.REAL(rv1), Values.REAL(rv2), Values.SUBOP)
+    case (Values.REAL(rv1), Values.REAL(rv2), Values.SUBOP())
       equation
         rv3 = rv1 -. rv2;
       then

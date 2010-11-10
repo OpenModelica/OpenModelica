@@ -1441,7 +1441,7 @@ algorithm
         expl1 = BackendDAEUtil.statesAndVarsExp(e1, vars);
         expl2 = BackendDAEUtil.statesAndVarsExp(e2, vars);
         expl = listAppend(expl1, expl2);
-        numnodes = Util.listReduce(ds, int_mul);
+        numnodes = Util.listReduce(ds, intMul);
         lst = lowerMultidimeqn2(expl, numnodes, aindx, source);
       then
         lst;

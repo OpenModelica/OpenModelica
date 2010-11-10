@@ -332,7 +332,6 @@ public function prefixToCref "function: prefixToCref
   Convert a prefix to a component reference."
   input Prefix.Prefix pre;
   output DAE.ComponentRef cref_1;  
-  DAE.ComponentRef cref_1;
 algorithm
   (_,cref_1) := prefixToCref2(Env.emptyCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
 end prefixToCref;

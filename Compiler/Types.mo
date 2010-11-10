@@ -443,7 +443,7 @@ local
   case(ev as DAE.COMPLEX_VAR(name,tp))
     equation
       ty = expTypetoTypesType(tp);
-      tv = DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW, SCode.VAR, Absyn.BIDIR, Absyn.UNSPECIFIED),false,ty,DAE.UNBOUND(),NONE());
+      tv = DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND(),NONE());
       then
         tv;
   case(_) equation print("error in convertFromExpToTypesVar\n"); then fail();
@@ -2776,7 +2776,6 @@ protected function getInputVars "function: getInputVars
 "
   input list<Var> vl;
   output list<Var> vl_1;
-  list<Var> vl_1;
 algorithm
   vl_1 := getVars(vl, isInputVar);
 end getInputVars;
@@ -2788,7 +2787,6 @@ protected function getOutputVars "function: getOutputVars
 "
   input list<Var> vl;
   output list<Var> vl_1;
-  list<Var> vl_1;
 algorithm
   vl_1 := getVars(vl, isOutputVar);
 end getOutputVars;
