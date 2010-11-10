@@ -1011,7 +1011,7 @@ end matrixConstrMaxDim;
 
 protected function elabCallReduction
 "function: elabCallReduction
-  This function elaborates reduction expressions, that look like function
+  This function elaborates reduction expressions that look like function
   calls. For example an array constructor."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1079,8 +1079,7 @@ algorithm
       then
         (cache, exp_1, DAE.PROP(expty, const), st);
     
-    // min, max, sum and product - expansion failed in previous case, generate
-    // reduction call.
+    // Expansion failed in previous case, generate reduction call.
     case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect,pre,info)
       equation
         (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_)
@@ -1091,6 +1090,7 @@ algorithm
         (cache,exp_1,DAE.PROP(expty, expconst),st) = 
           elabExp(cache, env_1, exp, impl, st, doVect,pre,info);
         const = Types.constAnd(expconst, iterconst);
+        expty = reductionType(fn, expty, iterexp_1);
         prop = DAE.PROP(expty, const);
         fn_1 = Absyn.crefToPath(fn);
       then
@@ -1102,6 +1102,19 @@ algorithm
       then fail();
   end matchcontinue;
 end elabCallReduction;
+
+protected function reductionType
+  input Absyn.ComponentRef fn;
+  input DAE.Type inType;
+  input DAE.Exp inRangeExp;
+  output DAE.Type outType;
+algorithm
+  outType := match(fn, inType, inRangeExp)
+    case (Absyn.CREF_IDENT(name = "array"), _, _) 
+      then Types.liftArray(inType, DAE.DIM_EXP(inRangeExp));
+    else then inType;
+  end match;
+end reductionType;
 
 protected function chooseReductionFn
   input Absyn.ComponentRef fn;

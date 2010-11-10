@@ -2483,7 +2483,7 @@ algorithm
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW() ,initial_, source);
+        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW(), initial_, source);
       then
         (cache,{stmt});
 
@@ -2496,7 +2496,7 @@ algorithm
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(cre2, cprop, e_2, eprop, acc,initial_,source);
+        stmt = makeAssignment(cre2, cprop, e_2, eprop, acc, initial_, source);
       then
         (cache,{stmt});
 
