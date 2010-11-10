@@ -56,6 +56,7 @@ public type Subscript = Absyn.Subscript;
 public
 uniontype Restriction
   record R_CLASS end R_CLASS;
+  record R_OPTIMIZATION end R_OPTIMIZATION;
   record R_MODEL end R_MODEL;
   record R_RECORD end R_RECORD;
   record R_BLOCK end R_BLOCK;
@@ -879,6 +880,7 @@ algorithm
   outString:=
   matchcontinue (inRestriction)
     case R_CLASS() then "CLASS";
+    case R_OPTIMIZATION() then "OPTIMIZATION";
     case R_MODEL() then "MODEL";
     case R_RECORD() then "RECORD";
     case R_BLOCK() then "BLOCK";
@@ -1654,6 +1656,7 @@ protected function restrictionEqual "Returns true if two Restriction's are equal
 algorithm
    equal := matchcontinue(restr1,restr2)
      case (R_CLASS(),R_CLASS()) then true;
+     case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;       
      case (R_MODEL(),R_MODEL()) then true;
      case (R_RECORD(),R_RECORD()) then true;
      case (R_BLOCK(),R_BLOCK()) then true;

@@ -55,6 +55,10 @@ uniontype State "- Machine states, the string contains the classname."
   record UNKNOWN
     Absyn.Path path;
   end UNKNOWN;
+  
+   record OPTIMIZATION
+    Absyn.Path path;
+   end OPTIMIZATION;
 
   record MODEL
     Absyn.Path path;
@@ -92,6 +96,10 @@ uniontype State "- Machine states, the string contains the classname."
   record HAS_EQUATIONS
     Absyn.Path path;
   end HAS_EQUATIONS;
+  
+  record HAS_CONSTRAINTS
+    Absyn.Path path;
+  end HAS_CONSTRAINTS;
 
   record IS_NEW
     Absyn.Path path;
@@ -155,6 +163,8 @@ end State;
 public
 uniontype Event "- Events"
   record FOUND_EQUATION "There are equations inside the current definition" end FOUND_EQUATION;
+    
+  record FOUND_CONSTRAINT "There are constranit (equations) inside the current definition" end FOUND_CONSTRAINT;
 
   record NEWDEF "A definition with elements, i.e. a long definition" end NEWDEF;
 
@@ -183,6 +193,7 @@ algorithm
   matchcontinue (inState)
     local Absyn.Path p;
     case UNKNOWN(path = p) then "unknown";
+    case OPTIMIZATION(path = p) then "optimization";
     case MODEL(path = p) then "model";
     case RECORD(path = p) then "record";
     case BLOCK(path = p) then "block";
@@ -196,6 +207,7 @@ algorithm
     case TYPE_BOOL(path = p) then "Boolean";
     case IS_NEW(path = p) then "new def";
     case HAS_EQUATIONS(path = p) then "has eqn";
+    case HAS_CONSTRAINTS(path = p) then "has constr";
     case EXTERNAL_OBJ(_) then "ExternalObject";
     case META_TUPLE(p) then "tuple";
     case META_LIST(p) then "list";
@@ -218,6 +230,12 @@ algorithm
     case UNKNOWN(path = p)
       equation
         Print.printBuf("UNKNOWN ");
+        Print.printBuf(Absyn.pathString(p));
+      then
+        ();
+    case OPTIMIZATION(path = p)
+      equation
+        Print.printBuf("OPTIMIZATION ");
         Print.printBuf(Absyn.pathString(p));
       then
         ();
@@ -299,6 +317,12 @@ algorithm
         Print.printBuf(Absyn.pathString(p));
       then
         ();
+    case HAS_CONSTRAINTS(path = p)
+      equation
+        Print.printBuf("HAS_CONSTRAINTS ");
+        Print.printBuf(Absyn.pathString(p));
+      then
+        ();
   end matchcontinue;
 end printState;
 
@@ -314,6 +338,7 @@ algorithm
     local String s;
       Absyn.Path p;
     case UNKNOWN(path = p) then p;
+    case OPTIMIZATION(path = p) then p;
     case MODEL(path = p) then p;
     case RECORD(path = p) then p;
     case BLOCK(path = p) then p;
@@ -322,10 +347,9 @@ algorithm
     case PACKAGE(path = p) then p;
     case FUNCTION(path = p) then p;
     case ENUMERATION(path = p) then p;
-      
-    case HAS_EQUATIONS(path = p) then p;
-    case IS_NEW(path = p) then p;
-            
+    case HAS_EQUATIONS(path = p) then p;   
+    case HAS_CONSTRAINTS(path = p) then p;
+    case IS_NEW(path = p) then p;        
     case TYPE_INTEGER(path = p) then p;
     case TYPE_REAL(path = p) then p;
     case TYPE_STRING(path = p) then p;
@@ -354,6 +378,7 @@ algorithm
     local
       String name;
     case FOUND_EQUATION() then "FOUND_EQUATION";
+    case FOUND_CONSTRAINT() then "FOUND_CONSTRAINT";      
     case NEWDEF() then "NEWDEF";
     case FOUND_COMPONENT(name) then "FOUND_COMPONENT(" +& name +& ")";
   end matchcontinue;
@@ -372,6 +397,7 @@ algorithm
   matchcontinue (inRestriction,inPath)
     local Absyn.Path p; Boolean isExpandable;
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
+    case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then MODEL(p);
     case (SCode.R_RECORD(),p) then RECORD(p);
     case (SCode.R_BLOCK(),p) then BLOCK(p);
@@ -410,6 +436,7 @@ algorithm
       Boolean isExpandable;
       String s;
     case (UNKNOWN(path = p),NEWDEF()) then IS_NEW(p);  /* Event `NEWDEF\' */
+    case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);      
     case (MODEL(path = p),NEWDEF()) then MODEL(p);
     case (RECORD(path = p),NEWDEF()) then RECORD(p);
     case (BLOCK(path = p),NEWDEF()) then BLOCK(p);
@@ -429,6 +456,7 @@ algorithm
 
    /* Event 'FOUND_COMPONENT' */
     case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);  /* Event `NEWDEF\' */
+    case (OPTIMIZATION(path = p),FOUND_COMPONENT(name = _)) then OPTIMIZATION(p);      
     case (MODEL(path = p),FOUND_COMPONENT(name = _)) then MODEL(p);
     case (RECORD(path = p),FOUND_COMPONENT(name = _)) then RECORD(p);
     case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then BLOCK(p);
@@ -458,6 +486,8 @@ algorithm
 
    /* Event `FOUND_EQUATION\' */
     case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
+    case (OPTIMIZATION(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);    
+    case (OPTIMIZATION(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);        
     case (IS_NEW(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
     case (MODEL(path = p),FOUND_EQUATION()) then MODEL(p);
     case (RECORD(path = p),FOUND_EQUATION())
@@ -475,8 +505,15 @@ algorithm
         fail();
     case (TYPE(path = p),FOUND_EQUATION()) then fail();
     case (PACKAGE(path = p),FOUND_EQUATION()) then fail();
+    case (PACKAGE(path = p),FOUND_CONSTRAINT()) then fail();
+    case (BLOCK(path = p),FOUND_CONSTRAINT()) then fail();
+    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();
+    case (RECORD(path = p),FOUND_CONSTRAINT()) then fail();
+    case (MODEL(path = p),FOUND_CONSTRAINT()) then fail();
+    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();      
     case (FUNCTION(path = p),FOUND_EQUATION()) then fail();
     case (HAS_EQUATIONS(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
+    case (HAS_CONSTRAINTS(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);
     case (st,ev)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -505,6 +542,8 @@ algorithm
     
     case (IS_NEW(path = p),SCode.R_CLASS()) then ();
     case (HAS_EQUATIONS(path = p),SCode.R_CLASS()) then ();
+    case (HAS_EQUATIONS(path = p),SCode.R_OPTIMIZATION()) then ();
+    case (HAS_CONSTRAINTS(path = p),SCode.R_OPTIMIZATION()) then ();
     
     case (MODEL(path = p),SCode.R_MODEL()) then ();
     case (IS_NEW(path = p),SCode.R_MODEL()) then ();

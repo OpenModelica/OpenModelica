@@ -189,6 +189,7 @@ algorithm
     case (d,Absyn.R_FUNCTION()) equation true  = containsExternalFuncDecl(d); then SCode.R_EXT_FUNCTION();
     case (d,Absyn.R_FUNCTION()) equation false = containsExternalFuncDecl(d); then SCode.R_FUNCTION();
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
+    case (_,Absyn.R_OPTIMIZATION()) then SCode.R_OPTIMIZATION();     
     case (_,Absyn.R_MODEL()) then SCode.R_MODEL();
     case (_,Absyn.R_RECORD()) then SCode.R_RECORD();
     case (_,Absyn.R_BLOCK()) then SCode.R_BLOCK();
