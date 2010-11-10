@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -111,6 +111,7 @@ protected import ValuesUtil;
 protected import DAEUtil;
 protected import PrefixUtil;
 protected import CevalScript;
+protected import VarTransform;
 // protected import AbsynDep;
 
 protected constant DAE.Exp defaultOutputFormat = DAE.SCONST("plt");
@@ -434,7 +435,7 @@ algorithm
       local DAE.Exp e;
       equation
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
-        (cache,e,prop,st_1,dae) = elabCall(cache,env, fn, args, nargs, impl, st,pre);
+        (cache,e,prop,st_1,dae) = elabCall(cache,env, fn, args, nargs, impl, st, pre);
         c = Types.propAllConst(prop);
         e = Exp.simplify(e);
         Debug.fprintln("sei", "elab_exp CALL done");
@@ -1305,6 +1306,18 @@ algorithm
         fail();
   end matchcontinue;
 end constToVariability;
+  
+protected function variabilityToConst "translates an SCode.Variability to a DAE.Const"
+  input SCode.Variability variability;
+  output DAE.Const const;
+algorithm
+  const := matchcontinue(variability)
+    case(SCode.VAR())      then DAE.C_VAR();
+    case(SCode.DISCRETE()) then DAE.C_VAR();      
+    case(SCode.PARAM())    then DAE.C_PARAM();
+    case(SCode.CONST())    then DAE.C_CONST();
+  end matchcontinue;
+end variabilityToConst;
   
 protected function expandArray
 	"Symbolically expands an array with the help of elabCallReduction2."
@@ -6465,7 +6478,7 @@ algorithm
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
           listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})}),
           slots);
-        (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache, env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre);
+        (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre);
         c = Util.listReduce(constlist, Types.constAnd);
         dae = DAEUtil.joinDaes(dae1,dae2);
         exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
@@ -8618,7 +8631,44 @@ algorithm
   (outCache,outExp,outProperties,outDae) :=
   elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption,inPrefix);
 end elabCallArgs;
-      
+
+
+protected function createInputVariableReplacements
+"@author: adrpo
+  This function will add the binding expressions for inputs
+  to the variable replacement structure. This is needed to
+  be able to replace input variables in default values.
+  Example: ... "
+  input list<Slot> inSlotLst;
+  input VarTransform.VariableReplacements inVarsRepl;
+  output VarTransform.VariableReplacements outVarsRepl;
+algorithm
+  outVarsRepl := matchcontinue(inSlotLst, inVarsRepl)
+    local
+      VarTransform.VariableReplacements i,o;
+      Ident id; DAE.Exp e;
+      list<Slot> rest;
+    
+    // handle empty 
+    case ({}, i) then i;
+    
+    // only interested in filled slots that have a optional expression 
+    case (SLOT(an = (id, _), true_ = true, expExpOption = SOME(e))::rest, i)
+      equation        
+        o = VarTransform.addReplacement(i, DAE.CREF_IDENT(id, DAE.ET_OTHER(), {}), e);
+        o = createInputVariableReplacements(rest, o);
+      then 
+        o;
+    
+    // try the next. 
+    case (_::rest, i)
+      equation
+        o = createInputVariableReplacements(rest, i);
+      then
+        o;
+  end matchcontinue;
+end createInputVariableReplacements;
+ 
 protected function elabCallArgs2 "
 function: elabCallArgs
   Given the name of a function and two lists of expression and
@@ -8648,7 +8698,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env;
       list<Slot> slots,newslots,newslots2,slots2;
       list<DAE.Exp> args_1,args_2,args1;
-      list<DAE.Const> constlist;
+      list<DAE.Const> constlist, constInputArgs, constDefaultArgs;
       DAE.Const const;
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
@@ -8679,6 +8729,8 @@ algorithm
       Integer index;
       list<String> fieldNames;
       list<DAE.Var> vars;
+      VarTransform.VariableReplacements inputVarsRepl;
+      DAE.Exp callExp;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8692,7 +8744,7 @@ algorithm
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);
         (cache,cl as SCode.CLASS(name = name, restriction = SCode.R_RECORD()),env_1) = Lookup.lookupClass(cache, env, fn, false);
-        (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache,env_1 /* env */, fn);
+        (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
         (comps,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1)
@@ -8700,10 +8752,12 @@ algorithm
         */
         fargs = Util.listMap(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{},pre);
-        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
-        (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl,pre);
+        (cache,args_1,newslots,constInputArgs,_,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/, impl, {}, pre);
+        (cache,newslots2,constDefaultArgs,_) = fillDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre);
+        constlist = listAppend(constInputArgs, constDefaultArgs);
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());        
         args_2 = expListFromSlots(newslots2);
+        
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
@@ -8781,26 +8835,53 @@ algorithm
         Absyn.Path fpath;
       equation
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_)
-        	= Lookup.lookupType(cache,env, fn, false);
-//        print(" inst record: " +& name +& " \n");
-        (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
+        	= Lookup.lookupType(cache, env, fn, false);
+        // print(" inst record: " +& name +& " \n");
+        (_,recordCl,recordEnv) = Lookup.lookupClass(cache, env, fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         Util.setStatefulBoolean(stopElab,true);
         lastId = Absyn.pathLastIdent(fn);
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
-
+        
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_,dae1) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},pre);
+        // here we get the constantness of INPUT ARGUMENTS!
+        (cache,args_1,newslots,constInputArgs,_,dae1) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre);
+                
         //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,Exp.printExpStr), ", ") +& "\n");
-        vect_dims = slotsVectorizable(newslots);
+        (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
+        // here we get the constantness of DEFAULT ARGUMENTS!
+        // print("Record env: " +& Env.printEnvStr(env_2) +& "\nclass: " +& SCode.printClassStr(cl) +& "\n");
+        (cache,newslots2,constDefaultArgs,_) = fillDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre);        
+        vect_dims = slotsVectorizable(newslots2);
+                
+        // adrpo 2010-11-09, 
+        //  constantness should be based on the full argument list, 
+        //  *INCLUDING DEFAULT VALUES* not only on the input arguments  
+        //  as input arguments might be *EMPTY*, i.e.
+        //  parameter Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData
+        //            material = Modelica.Magnetic.FluxTubes.Material.HardMagnetic.BaseData(); 
+        
+        constlist = listAppend(constInputArgs, constDefaultArgs); 
+        
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
-        (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
-        (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl,pre);
+        
+        // adrpo: 2010-11-09 
+        //   TODO! FIXME! i think we should NOT expand the default slots here!
+        //                and leave just the ones given as input 
         args_2 = expListFromSlots(newslots2);
+                        
         tp = complexTypeFromSlots(newslots2,ClassInf.RECORD(fn));
-        (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), vect_dims, newslots2, prop);
+        callExp = DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE);
+        
+        // create a replacement for input variables -> their binding
+        //inputVarsRepl = createInputVariableReplacements(newslots2, VarTransform.emptyReplacements());
+        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
+        // replace references to inputs in the arguments  
+        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
+        
+        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         (cache,dae) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
@@ -8821,11 +8902,12 @@ algorithm
         tys = Util.listMap(vars, Types.getVarType);
         fargs = Util.listThreadTuple(fieldNames, tys);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_,dae1) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{},pre);
+        (cache,args_1,newslots,constInputArgs,_,dae1) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre);
+        (cache,newslots2,constDefaultArgs,_) = fillDefaultSlots(cache, newslots, c, env, impl, {}, pre);
+        constlist = listAppend(constInputArgs, constDefaultArgs);
         const = Util.listReduce(constlist, Types.constAnd);
         tyconst = elabConsts(t, const);
         prop = getProperties(t, tyconst);
-        (cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl,pre);
         args_2 = expListFromSlots(newslots2);
         (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
       then
@@ -8863,6 +8945,12 @@ algorithm
         tp = Types.elabType(restype);
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre);
         callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline);
+        
+        // create a replacement for input variables -> their binding
+        //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
+        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");        
+        // replace references to inputs in the arguments  
+        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());        
 
         //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
 
@@ -9075,22 +9163,24 @@ algorithm
       list<DAE.Exp> args_2;
       list<Slot> slots2;
       Prefix pre;
-      // If we find a class
-    case(cache,env,inArgs,fn,slots,impl,pre) equation
-      // We need the class to fill default slots
-      (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
-      (cache,slots2) = fillDefaultSlots(cache,slots, cl, env_2, impl,pre);
-      // Update argument list to include default values.
-      args_2 = expListFromSlots(slots2);
-    then (cache,args_2,slots2);
+    
+    // If we find a class
+    case(cache,env,inArgs,fn,slots,impl,pre) 
+      equation
+        // We need the class to fill default slots
+        (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
+        (cache,slots2,_,_) = fillDefaultSlots(cache, slots, cl, env_2, impl, {}, pre);
+        // Update argument list to include default values.
+        args_2 = expListFromSlots(slots2);
+      then 
+        (cache,args_2,slots2);
 
       // If no class found. builtin, with no defaults. NOTE: if builtin class with defaults exist
       // both its type -and- its class must be added to Builtin.mo
-    case(cache,env,inArgs,fn,slots,impl,_)
-    then (cache,inArgs,slots);
+    case(cache,env,inArgs,fn,slots,impl,_) then (cache,inArgs,slots);
+    
   end matchcontinue;
 end addDefaultArgs;
-
 
 protected function determineConstSpecialFunc "For the special functions constructor and destructor,
 in external object,
@@ -9960,6 +10050,7 @@ algorithm
         (cache,newexp,newslots,clist,polymorphicBindings,dae1);
 
     // Empty function call, e.g foo(), is always constant
+    // arpo 2010-11-09: TODO! FIXME! this is not always true, RecordCall() can contain DEFAULT bindings that are param!
     case (cache,env,{},{},slots,checkTypes,impl,polymorphicBindings,_)
       equation
       then (cache,{},slots,{DAE.C_CONST()},polymorphicBindings,DAEUtil.emptyDae);
@@ -10061,6 +10152,55 @@ algorithm
   end matchcontinue;
 end expListFromSlots;
 
+protected function getExpInModifierFomEnvOrClass
+"@author: adrpo
+  we should get the modifier from the environemnt as it might have been changed by a extends modification!"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SCode.Ident inComponentName;
+  input SCode.Class inClass;
+  output Absyn.Exp outExp;
+algorithm
+  outExp := matchcontinue(inCache,inEnv,inComponentName,inClass)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      SCode.Ident id;
+      SCode.Class cls;
+      Absyn.Exp exp;
+      DAE.Mod extendsMod;
+      SCode.Mod scodeMod;
+    
+    // no element in env
+    case (cache, env, id, cls)
+      equation
+        //(_, _, NONE(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
+        //print("here1\n");
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);        
+      then
+        exp;    
+    
+    // no modifier in env
+    case (cache, env, id, cls)
+      equation
+        (_, _, SOME((_,DAE.NOMOD())), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
+        print("here2");        
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((exp,_)))) = SCode.getElementNamed(id, cls);        
+      then
+        exp;
+    
+    // some modifier in env, return that
+    case (cache, env, id, cls)
+      equation
+        (_, _, SOME((_,extendsMod)), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
+        print("here3");        
+        scodeMod = Mod.unelabMod(extendsMod);
+        SCode.MOD(_,_,_,SOME((exp,_))) = scodeMod;
+      then
+        exp;
+  end matchcontinue;
+end getExpInModifierFomEnvOrClass;
+
 protected function fillDefaultSlots
 "function: fillDefaultSlots
   This function takes a slot list and a class definition of a function
@@ -10070,12 +10210,15 @@ protected function fillDefaultSlots
   input SCode.Class inClass;
   input Env.Env inEnv;
   input Boolean inBoolean;
+  input Types.PolymorphicBindings inPolymorphicBindings;
   input Prefix inPrefix;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
+  output list<DAE.Const> outTypesConstLst;
+  output Types.PolymorphicBindings outPolymorphicBindings;  
 algorithm
-  (outCache,outSlotLst) :=
-  matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean,inPrefix)
+  (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) := 
+  matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean,inPolymorphicBindings,inPrefix)
     local
       list<Slot> res,xs;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
@@ -10088,28 +10231,37 @@ algorithm
       DAE.Exp exp,exp_1;
       tuple<DAE.TType, Option<Absyn.Path>> t,tp;
       DAE.Const c1;
+      list<DAE.Const> constLst;
       Ident id;
       Env.Cache cache;
       Prefix pre;
-    case (cache,(SLOT(an = fa,true_ = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre) /* impl */
+      Types.PolymorphicBindings polymorphicBindings;
+    
+    case (cache,(SLOT(an = fa,true_ = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre)
       equation
-        (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre);
+        (cache, res, constLst, polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre);
       then
-        (cache,SLOT(fa,true,e,ds) :: res);
-    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
+        (cache, SLOT(fa,true,e,ds) :: res, constLst, polymorphicBindings);
+    
+    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre)
       equation
-        (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre);
-        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
-        (cache,exp,DAE.PROP(t,c1),_,_) = elabExp(cache,env, dexp, impl, NONE,true,pre);
-        (exp_1,_) = Types.matchType(exp,t,tp,true);
+        (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre);
+
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);        
+        
+        (cache,exp,DAE.PROP(t,c1),_,_) = elabExp(cache, env, dexp, impl, NONE, true, pre);
+        // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
+        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,polymorphicBindings,false);
       then
-        (cache,SLOT((id,tp),true,SOME(exp_1),ds) :: res);
-    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,pre)
+        (cache, SLOT((id,tp),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+    
+    case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre)
       equation
-        (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl,pre) "Error.add_message(Error.INTERNAL_ERROR,{id})" ;
+        (cache, res, constLst, polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre) "Error.add_message(Error.INTERNAL_ERROR,{id})" ;
       then
-        (cache,SLOT((id,tp),true,e,ds) :: xs);
-    case (cache,{},_,_,_,_) then (cache,{});
+        (cache,SLOT((id,tp),true,e,ds) :: xs, constLst, polymorphicBindings);
+    
+    case (cache,{},_,_,_,_,_) then (cache,{},{},{});
   end matchcontinue;
 end fillDefaultSlots;
 
@@ -10189,10 +10341,10 @@ algorithm
     case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings,pre)
       then (cache,slots,{},polymorphicBindings,DAEUtil.emptyDae);
 
-        // exact match
+    // exact match
     case (cache, env, (e :: es), ((farg as (_,vt)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre)
       equation
-        (cache,e_1,props,_,dae1) = elabExp(cache,env, e, impl, NONE, true,pre);
+        (cache,e_1,props,_,dae1) = elabExp(cache,env, e, impl, NONE, true, pre);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
@@ -10512,8 +10664,8 @@ algorithm
       equation
         (cache,c_1,const,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        variability = applySubscriptsVariability(variability, const);
-        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt,io, t, binding, doVect,splicedExpData,pre);
+        variability = applySubscriptsVariability(variability, const);        
+        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt, io, t, binding, doVect, splicedExpData, pre);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre);        
         t = fixEnumerationType(t);
       then
@@ -10973,11 +11125,15 @@ algorithm
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
-    case (cache,_,cr,acc,_,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_,_)
+    case (cache,_,cr,acc,var,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_,_)
       equation
         expTy = Types.elabType(t);
+        // adrpo: 2010-11-09
+        //  use the variability to generate the constantness
+        //  instead of returning *variabile* variability DAE.C_VAR()      
+        const = variabilityToConst(var);
       then
-        (cache,DAE.CREF(cr,expTy),DAE.C_VAR,acc);
+        (cache, DAE.CREF(cr,expTy), const, acc);
 
     // adrpo: report a warning if the binding came from a start value!
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix)

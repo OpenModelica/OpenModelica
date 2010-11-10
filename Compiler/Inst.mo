@@ -5745,8 +5745,10 @@ algorithm
           DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (DAE.T_NOTYPE(),NONE),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih,dae1) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
-        (cache,env_2,ih,dae2) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
-        dae = DAEUtil.joinDaes(dae1,dae2);
+        // adpro: this was twice!
+        // (cache,env_2,ih,dae2) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
+        // dae = DAEUtil.joinDaes(dae1,dae2);
+        dae = dae1;
       then
         (cache,env_2,ih,dae);
     // no components in list
@@ -6024,7 +6026,7 @@ algorithm
          * modifier, the modifier should be the value to use.
          */
         (variableClassMod,classmod_1) = modifyInstantiateClass(classmod_1,t);
-
+        
         //(cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
         //print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " component mod: " +& SCode.printModStr(m) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
         (cache,m_1,fdae6) = Mod.elabMod(cache, env2, ih, pre, m, impl);
@@ -6047,9 +6049,9 @@ algorithm
           mod_1,csets,fdae5) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
         env_1 = env;
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
-
+        
         checkRecursiveDefinition(env,cenv,ci_state,cl);
-
+        
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
@@ -6058,8 +6060,8 @@ algorithm
         
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = isFunctionInput(ci_state, dir);
-        (cache,dims,fdae4) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl, NONE, true, is_function_input,pre);
-
+        (cache,dims,fdae4) = elabArraydim(cache, env2_1, owncref, t,ad, eq, impl, NONE, true, is_function_input, pre);
+        
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,mod_1,fdae2) = Mod.updateMod(cache, cenv, ih, pre, mod_1, impl);

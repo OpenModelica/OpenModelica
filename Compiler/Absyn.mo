@@ -3685,7 +3685,24 @@ public function expEqual "Returns true if two expressions are equal"
   output Boolean equal;
 algorithm
   equal := matchcontinue(exp1,exp2)
-    local Exp x, y;
+    local 
+      Exp x, y;
+      Integer i1, i2, i; Real r1, r2, r;
+    
+    // real vs. integer  
+    case (INTEGER(i), REAL(r))
+      equation
+        true = realEq(intReal(i), r);
+      then
+        true;
+    
+    case (REAL(r), INTEGER(i))
+      equation
+        true = realEq(intReal(i), r);
+      then
+        true;
+    
+    // anything else, exact match!
     case (x, y) equation equality(x = y);          then true;
     case (x, y) equation failure(equality(x = y)); then false;
   end matchcontinue;
