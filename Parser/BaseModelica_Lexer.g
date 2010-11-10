@@ -114,6 +114,16 @@ SUBTYPEOF;
 COLONCOLON;
 
 // ---------
+// OptiMo
+// ---------
+
+OPTIMIZATION;
+CONSTRAINT;
+//FREE;
+//INITIALGUESS;
+//FINALTIME;
+
+// ---------
 // Operators
 // ---------
 
@@ -226,6 +236,11 @@ ASSIGN : ':=';
 COMMA : ',';
 COLON : ':';
 SEMICOLON : ';';
+
+// ---------
+// OptiMo
+// ---------
+// in the file MetaModelica_Lexer.g
 
 /*------------------------------------------------------------------
  * LEXER RULES

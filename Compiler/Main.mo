@@ -156,7 +156,8 @@ algorithm
         false = Util.strncmp("partial ", str, 8);
         false = Util.strncmp("function ", str, 9);
         false = Util.strncmp("connector ", str, 10);
-        false = Util.strncmp("encapsulated ", str, 12);
+        false = Util.strncmp("encapsulated ", str, 13);
+        false = Util.strncmp("optimization ", str, 13);
       then
         false;
     case _ then true;

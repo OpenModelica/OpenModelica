@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Linkï¿½ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -562,6 +562,7 @@ public function unparseRestrictionStr
 algorithm
   outString := matchcontinue (inRestriction)
     case Absyn.R_CLASS() then "class";
+    case Absyn.R_OPTIMIZATION() then "optimization";
     case Absyn.R_MODEL() then "model";
     case Absyn.R_RECORD() then "record";
     case Absyn.R_BLOCK() then "block";
@@ -850,6 +851,7 @@ protected function printClassRestriction
 algorithm
   _ := matchcontinue (inRestriction)
     case Absyn.R_CLASS() equation Print.printBuf("Absyn.R_CLASS"); then ();
+    case Absyn.R_OPTIMIZATION() equation Print.printBuf("Absyn.R_OPTIMIZATION"); then ();
     case Absyn.R_MODEL() equation Print.printBuf("Absyn.R_MODEL"); then ();
     case Absyn.R_RECORD() equation Print.printBuf("Absyn.R_RECORD"); then ();
     case Absyn.R_BLOCK() equation Print.printBuf("Absyn.R_BLOCK"); then ();
@@ -1045,6 +1047,7 @@ algorithm
     local
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
+      // list<Absyn.ConstraintItem> constr;
       list<Absyn.AlgorithmItem> algs;
       Absyn.ExternalDecl edecl;
     case (Absyn.PUBLIC(contents = el))
@@ -1064,6 +1067,13 @@ algorithm
     case (Absyn.EQUATIONS(contents = eqs))
       equation
         Print.printBuf("Absyn.EQUATIONS([");
+        printList(eqs, printEquationitem, ", ");
+        Print.printBuf("])");
+      then
+        ();
+    case (Absyn.CONSTRAINTS(contents = eqs))
+      equation
+        Print.printBuf("Absyn.CONSTRAINTS([");
         printList(eqs, printEquationitem, ", ");
         Print.printBuf("])");
       then
@@ -1209,7 +1219,16 @@ algorithm
         str = stringAppendList({is,"protected \n",s1});
       then
         str;
-    
+
+    case (i,Absyn.CONSTRAINTS(contents = eqs),_)
+      equation
+        s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        i_1 = i - 1;
+        is = indentStr(i_1);
+        str = stringAppendList({"\n",is,"constraint \n",s1});
+      then
+        str;
+
     case (i,Absyn.EQUATIONS(contents = eqs),_)
       equation
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
@@ -2471,7 +2490,7 @@ algorithm
   end matchcontinue;
 end unparseModificationStr;
 
-protected function unparseMod1Str "function: unparseMod1Str
+public function unparseMod1Str "function: unparseMod1Str
 
   Helper function to unparse_modification_str
 "
@@ -5529,7 +5548,12 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_CLASS end Absyn.R_CLASS;");
       then ();
-    
+
+    case Absyn.R_OPTIMIZATION()
+      equation
+        Print.printBuf("record Absyn.R_OPTIMIZATION end Absyn.R_OPTIMIZATION;");
+      then ();
+
     case Absyn.R_MODEL()
       equation
         Print.printBuf("record Absyn.R_MODEL end Absyn.R_MODEL;");

@@ -35,7 +35,8 @@ options {
   language = C;
 }
 
-import MetaModelica_Lexer; /* Makes all tokens defined */
+import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer */
+//import OptiMo_Lexer;  /* Makes all tokens defined */
 
 @includes {
   #include <stdlib.h>
@@ -159,6 +160,7 @@ class_definition [int final] returns [void* ast] :
 
 class_type returns [void* ast] :
   ( CLASS { ast = Absyn__R_5fCLASS; }
+  | OPTIMIZATION { ast = Absyn__R_5fOPTIMIZATION; }
   | MODEL { ast = Absyn__R_5fMODEL; }
   | RECORD { ast = Absyn__R_5fRECORD; }
   | BLOCK { ast = Absyn__R_5fBLOCK; }
@@ -283,6 +285,7 @@ composition2 returns [void* ast] :
     | el=initial_equation_clause
     | el=initial_algorithm_clause
     | el=equation_clause
+    | el=constraint_clause
     | el=algorithm_clause
     ) els=composition2 {ast = mk_cons(el,els);}
   )
@@ -585,10 +588,20 @@ equation_clause returns [void* ast] :
   EQUATION es=equation_annotation_list {ast = Absyn__EQUATIONS(es);}
     ;
 
+constraint_clause returns [void* ast] :
+  CONSTRAINT es=constraint_annotation_list {ast = Absyn__CONSTRAINTS(es);}
+    ;
+
 equation_annotation_list returns [void* ast] :
-  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+  { LA(1) == T_END || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
   ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=equation_annotation_list {ast = mk_cons(e,es);}
+  ;
+
+constraint_annotation_list returns [void* ast] :
+  { LA(1) == T_END || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+  |
+  ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=constraint_annotation_list {ast = mk_cons(e,es);}
   ;
 
 algorithm_clause returns [void* ast] :
@@ -621,6 +634,23 @@ equation returns [void* ast] :
   cmt=comment
     {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start));}
   ;
+
+constraint returns [void* ast] :
+  ( e=equality_or_noretcall_equation 
+  | e=conditional_equation_e
+  | e=for_clause_e
+  | e=connect_clause
+  | e=when_clause_e   
+  | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
+  | EQUALITY LPAR e1=expression EQUALS e2=expression RPAR
+    {
+      e = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+    }
+  )
+  cmt=comment
+    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start));}
+  ;
+
 
 algorithm returns [void* ast] :
   ( aa=assign_clause_a {a = aa.ast;}
@@ -1161,7 +1191,7 @@ annotation returns [void* ast] :
 
 code_expression returns [void* ast] :
   ( CODE LPAR
-    ( (initial=INITIAL)? ((EQUATION eq=code_equation_clause)|(T_ALGORITHM alg=code_algorithm_clause))
+    ( (initial=INITIAL)? ((EQUATION eq=code_equation_clause)|(CONSTRAINT constr=code_constraint_clause)|(T_ALGORITHM alg=code_algorithm_clause))
     | (LPAR expression RPAR) => e=expression   /* Allow Code((<expr>)) */
     | m=modification
     | (expression RPAR) => e=expression
@@ -1174,6 +1204,8 @@ code_expression returns [void* ast] :
           ast = Absyn__CODE(Absyn__C_5fMODIFICATION(m));
         } else if (eq) {
           ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(mk_bcon(initial), eq));
+        } else if (constr) {
+          ast = Absyn__CODE(Absyn__C_5fCONSTRAINTSECTION(mk_bcon(initial), constr));
         } else if (alg) {
           ast = Absyn__CODE(Absyn__C_5fALGORITHMSECTION(mk_bcon(initial), alg));
         } else {
@@ -1189,6 +1221,18 @@ code_equation_clause returns [void* ast] :
       ast = mk_cons(e.ast,or_nil(as));
     }
   | a=annotation SEMICOLON as=code_equation_clause?
+    {
+      ast = mk_cons(Absyn__EQUATIONITEMANN(a),or_nil(as));
+    }
+  )
+  ;
+
+code_constraint_clause returns [void* ast] :
+  ( e=equation SEMICOLON as=code_constraint_clause?
+    {
+      ast = mk_cons(e.ast,or_nil(as));
+    }
+  | a=annotation SEMICOLON as=code_constraint_clause?
     {
       ast = mk_cons(Absyn__EQUATIONITEMANN(a),or_nil(as));
     }

@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Linkï¿½ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -98,6 +98,7 @@ uniontype Program
    indicates the hieractical position of the program."
   record PROGRAM  "PROGRAM, the top level construct"
     list<Class>  classes "List of classes" ;
+ //   list<Optimization>  optimizations "List of classes" ;
     Within       within_ "Within clause" ;
     TimeStamp    globalBuildTimes "";
   end PROGRAM;
@@ -190,7 +191,7 @@ end Class;
 
 public
 uniontype ClassDef
-"The ClassDef type contains the definition part of a class declaration.
+"The ClassDef type contains thClasse definition part of a class declaration.
  The definition is either explicit, with a list of parts
  (public, protected, equation, and algorithm), or it is a definition
  derived from another class or an enumeration type.
@@ -284,6 +285,10 @@ uniontype ClassPart "A class definition contains several parts.  There are publi
   record PROTECTED
     list<ElementItem> contents;
   end PROTECTED;
+
+  record CONSTRAINTS
+    list<EquationItem> contents;
+  end CONSTRAINTS;
 
   record EQUATIONS
     list<EquationItem> contents;
@@ -863,6 +868,11 @@ uniontype CodeNode "The Code uniontype is used for Meta-programming. It originat
     ComponentRef componentRef;
   end C_VARIABLENAME;
 
+  record C_CONSTRAINTSECTION
+    Boolean boolean;
+    list<EquationItem> equationItemLst;
+  end C_CONSTRAINTSECTION;
+
   record C_EQUATIONSECTION
     Boolean boolean;
     list<EquationItem> equationItemLst;
@@ -1022,6 +1032,7 @@ uniontype Restriction "These constructors each correspond to a different kind of
   assigned special restrictions.
  "
   record R_CLASS end R_CLASS;
+  record R_OPTIMIZATION end R_OPTIMIZATION;
   record R_MODEL end R_MODEL;
   record R_RECORD end R_RECORD;
   record R_BLOCK end R_BLOCK;
@@ -3503,6 +3514,7 @@ algorithm
   outString:=
   matchcontinue (inRestriction)
     case R_CLASS() then "CLASS";
+    case R_OPTIMIZATION() then "OPTIMIZATION";
     case R_MODEL() then "MODEL";
     case R_RECORD() then "RECORD";
     case R_BLOCK() then "BLOCK";
