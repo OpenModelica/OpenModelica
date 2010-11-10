@@ -766,10 +766,6 @@ algorithm
     case (Values.BOOL(boolean = false),_,_,st,info) then st;
     case (Values.BOOL(boolean = true),exp,algitemlst,st,info)
       equation
-      then
-        st;
-    case (Values.BOOL(boolean = true),exp,algitemlst,st,info)
-      equation
         st_1 = evaluateAlgStmtLst(algitemlst, st);
         (value,st_2) = evaluateExpr(exp, st_1,info);
         st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2,info); /* Tail recursive */

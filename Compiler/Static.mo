@@ -1590,7 +1590,6 @@ algorithm
         (cache,e_1,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,info) /* Function calls */
       equation
-        fnstr = Dump.printComponentRefStr(fn);
         (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info);
       then
         (cache,e_1,prop);
@@ -10112,7 +10111,14 @@ algorithm
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,polymorphicBindings,false);
       then
         (cache, SLOT((id,tp),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+
+    case (cache,(SLOT(an = (id,tp),slotFilled = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
+      equation
+        (cache, res, constLst, polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
+      then
+        (cache,SLOT((id,tp),false,e,ds) :: res, constLst, polymorphicBindings);
     
+
     case (cache,{},_,_,_,_,_,_) then (cache,{},{},{});
   end matchcontinue;
 end fillDefaultSlots;
