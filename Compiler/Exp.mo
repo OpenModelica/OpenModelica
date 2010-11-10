@@ -10359,7 +10359,7 @@ algorithm
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
-        res = solve2(lhs, rhs, cr);
+        res = solve2(lhs, rhs, cr, false);
         res_1 = simplify1(res);
       then
         res_1;
@@ -10391,7 +10391,7 @@ algorithm
 end solve;
 
 public function solveLin
-"function: solve
+"function: solve linear equation
   Solves an equation consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable."
@@ -10436,22 +10436,22 @@ algorithm
         res_1 = simplify1(lhs);
       then
         res_1;    
-
+        
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
         true = hasOnlyFactors(lhs,rhs);
         lhs = DAE.BINARY(lhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
         rhs = DAE.BINARY(rhs,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(1.0));
-        res = solve2(lhs, rhs, cr);
+        res = solve2(lhs, rhs, cr, true);
         res_1 = simplify1(res);
       then
-        res_1;
+        res_1;        
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
       equation
-        res = solve2(lhs, rhs, cr);
+        res = solve2(lhs, rhs, cr, true);
         res_1 = simplify1(res);
       then
         res_1;
@@ -10508,19 +10508,21 @@ protected function solve2
   input Exp inExp1;
   input Exp inExp2;
   input Exp inExp3;
+  input Boolean linearExps;
   output Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp1,inExp2,inExp3)
+  outExp := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
       Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
       ComponentRef cr;
+      Boolean linExp;
     
-    // e1 e2 e3 
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
+     // e1 e2 e3 
+    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         false = hasOnlyFactors(e1,e2);
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
+        lhsder = Derive.differentiateExp(lhs, cr,linExp);
         lhsder_1 = simplify(lhsder);
         false = isZero(lhsder_1);
         false = expContains(lhsder_1, crexp);
@@ -10531,7 +10533,7 @@ algorithm
       then
         rhs_1;
 
-    case(e1,e2,(crexp as DAE.CREF(componentRef = cr)))
+    case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
       local Exp invCr; list<Exp> factors;
       equation
         ({invCr},factors) = Util.listSplitOnTrue1(listAppend(factors(e1),factors(e2)),isInverseCref,cr);
@@ -10540,40 +10542,40 @@ algorithm
       then
         rhs_1;
 
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
+    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
+        lhsder = Derive.differentiateExp(lhs, cr, linExp);
         lhsder_1 = simplify(lhsder);
         true = expContains(lhsder_1, crexp);
-        /*print("solve2 failed: Not linear: ");
-        print(printExpStr(e1));
-        print(" = ");
-        print(printExpStr(e2));
-        print("\nsolving for: ");
-        print(printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(printExpStr(lhsder));
-        print("\n");*/
+        Debug.fcall("failtrace",print, "solve2 failed: Not linear: ");
+        Debug.fcall("failtrace",print, printExpStr(e1));
+        Debug.fcall("failtrace",print," = ");
+        Debug.fcall("failtrace",print,printExpStr(e2));
+        Debug.fcall("failtrace",print,"\nsolving for: ");
+        Debug.fcall("failtrace",print,printExpStr(crexp));
+        Debug.fcall("failtrace",print,"\n");
+        Debug.fcall("failtrace",print,"derivative: ");
+        Debug.fcall("failtrace",print,printExpStr(lhsder));
+        Debug.fcall("failtrace",print,"\n");
       then
         fail();
     
-    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
+    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
-        lhsder = Derive.differentiateExpCont(lhs, cr);
+        lhsder = Derive.differentiateExp(lhs, cr, linExp);
         lhsder_1 = simplify(lhsder);
-        /*print("solve2 failed: ");
-        print(printExpStr(e1));
-        print(" = ");
-        print(printExpStr(e2));
-        print("\nsolving for: ");
-        print(printExpStr(crexp));
-        print("\n");
-        print("derivative: ");
-        print(printExpStr(lhsder_1));
-        print("\n");*/
+        Debug.fcall("failtrace",print,"solve2 failed: ");
+        Debug.fcall("failtrace",print,printExpStr(e1));
+        Debug.fcall("failtrace",print," = ");
+        Debug.fcall("failtrace",print,printExpStr(e2));
+        Debug.fcall("failtrace",print,"\nsolving for: ");
+        Debug.fcall("failtrace",print,printExpStr(crexp));
+        Debug.fcall("failtrace",print,"\n");
+        Debug.fcall("failtrace",print,"derivative: ");
+        Debug.fcall("failtrace",print,printExpStr(lhsder_1));
+        Debug.fcall("failtrace",print,"\n");
       then
         fail();
   end matchcontinue;

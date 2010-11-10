@@ -1664,13 +1664,13 @@ algorithm
         extObjInfo = createExtObjInfo(dlow2);
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
-        allEquations = createEquations(false, false, true, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        allEquationsPlusWhen = createEquations(true, false, true, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        stateContEquations = createEquations(false, false, false, dae, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        allEquations = createEquations(false, false, true, false, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        allEquationsPlusWhen = createEquations(true, false, true, false, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        stateContEquations = createEquations(false, false, false, false, dae, dlow2, ass1, ass2, blt_states, helpVarInfo);
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(false, false, true, dae, dlow2, ass1, ass2,
+        nonStateContEquations = createEquations(false, false, true, false, dae, dlow2, ass1, ass2,
                                                 contBlocks, helpVarInfo);
-        nonStateDiscEquations = createEquations(false, useZerocrossing(), true, dae, dlow2, ass1, ass2,
+        nonStateDiscEquations = createEquations(false, useZerocrossing(), true, false, dae, dlow2, ass1, ass2,
                                                 discBlocks, helpVarInfo);
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
@@ -1826,7 +1826,7 @@ algorithm
          // create Matrix A and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,dae,comref_states,comref_states,varlst);
-        JacAEquations = createEquationsLin(false, false, false, dae, deriveddlow2, v1, v2, comps1, {});
+        JacAEquations = createEquations(false, false, false, true, dae, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
         derivedVariables = DAELow.varList(v);
         JacAVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
@@ -1834,7 +1834,7 @@ algorithm
         // create Matrix C and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,dae,comref_outputvars,comref_states,varlst);
-        JacCEquations = createEquationsLin(false, false, false, dae, deriveddlow2, v1, v2, comps1, {});
+        JacCEquations = createEquations(false, false, false, true, dae, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
         derivedVariables = DAELow.varList(v);
         JacCVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
@@ -1847,7 +1847,7 @@ algorithm
          // create Matrix B and variables
          Debug.fcall("jacdump2", print, "Dump of daelow for Matrix B.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,dae,comref_states,comref_inputvars,varlst);
-        JacBEquations = createEquationsLin(false, false, false, dae, deriveddlow2, v1, v2, comps1, {});
+        JacBEquations = createEquations(false, false, false, true, dae, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
         derivedVariables = DAELow.varList(v);
         JacBVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
@@ -1855,7 +1855,7 @@ algorithm
         // create Matrix D and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
         (deriveddlow2, v1, v2, comps1) = DAELow.generateLinearMatrix(deriveddlow1,dae,comref_outputvars,comref_inputvars,varlst);
-        JacDEquations = createEquationsLin(false, false, false, dae, deriveddlow2, v1, v2, comps1, {});
+        JacDEquations = createEquations(false, false, false, true, dae, deriveddlow2, v1, v2, comps1, {});
         v = DAELow.daeVars(deriveddlow2);
         derivedVariables = DAELow.varList(v);
         JacDVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
@@ -2658,6 +2658,7 @@ protected function createEquations
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
+  input Boolean linearSystem "if true generate allway a linear system";
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
@@ -2667,7 +2668,7 @@ protected function createEquations
   output list<SimEqSystem> equations;
 algorithm
   equations :=
-  matchcontinue (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, comps, helpVarInfo)
+  matchcontinue (includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, comps, helpVarInfo)
     local
       list<Integer> comp;
       list<list<Integer>> restComps;
@@ -2678,60 +2679,84 @@ algorithm
       DAELow.EquationArray eqns;
       DAELow.Var v;
       list<Integer> zcEqns;
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {}, helpVarInfo)
+    case (includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, {}, helpVarInfo)
       then {};
-    /* ignore when equations if we should not generate them */
-    case (false, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+        
+    // ignore when equations if we should not generate them 
+    case (false, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
         DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (DAELow.WHEN_EQUATION(_,_),_) = getEquationAndSolvedVar(index, eqns, vars, ass2);
-        equations = createEquations(false, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations = createEquations(false, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equations;
-    /* ignore discrete if we should not generate them */
-    case (includeWhen, skipDiscInZc, false, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+          
+    // ignore discrete if we should not generate them 
+    case (includeWhen, skipDiscInZc, false, linearSystem, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
         DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
-        equations = createEquations(includeWhen, skipDiscInZc, false, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations = createEquations(includeWhen, skipDiscInZc, false, linearSystem, dae, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equations;
-    /* ignore discrete in zero crossing if we should not generate them */
-    case (includeWhen, true, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+          
+    // ignore discrete in zero crossing if we should not generate them 
+    case (includeWhen, true, genDiscrete, linearSystem, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
         DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
         zcEqns = DAELow.zeroCrossingsEquations(dlow);
         true = listMember(index, zcEqns);
-        equations = createEquations(includeWhen, true, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations = createEquations(includeWhen, true, genDiscrete, linearSystem, dae, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equations;
-    /* single equation */
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+          
+    // a linear single equation 
+    case (includeWhen, skipDiscInZc, genDiscrete, true, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
       equation
-        equation_ = createEquation(index, dlow, ass1, ass2, helpVarInfo);
-        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equation_ = createEquation(index, dlow, ass1, ass2, helpVarInfo,true);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, true, dae, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equation_ :: equations;
-    /* multiple equations that must be solved together (algebraic loop) */
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
+          
+    // a linear system of equations 
+    case (includeWhen, skipDiscInZc, genDiscrete, true, dae, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
       local
         list<SimEqSystem> equations_,equations1;
       equation
-        equations_ = createOdeSystem(genDiscrete, dlow, ass1, ass2, comp, helpVarInfo);
-        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations_ = createOdeSystem(genDiscrete, true, dlow, ass1, ass2, comp, helpVarInfo);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, true, dae, dlow, ass1, ass2, restComps, helpVarInfo);
         equations1 = listAppend(equations_,equations); 
       then
         equations1;
-    case (_,_,_,_,_,_,_,{index} :: restComps,_)
+                    
+    // single equation
+    case (includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
+      equation
+        equation_ = createEquation(index, dlow, ass1, ass2, helpVarInfo, linearSystem);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+      then
+        equation_ :: equations;
+          
+    // multiple equations that must be solved together (algebraic loop)
+    case (includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
+      local
+        list<SimEqSystem> equations_,equations1;
+      equation
+        equations_ = createOdeSystem(genDiscrete, linearSystem, dlow, ass1, ass2, comp, helpVarInfo);
+        equations = createEquations(includeWhen, skipDiscInZc, genDiscrete, linearSystem, dae, dlow, ass1, ass2, restComps, helpVarInfo);
+        equations1 = listAppend(equations_,equations); 
+      then
+        equations1;
+    case (_,_,_,_,_,_,_,_,{index} :: restComps,_)
       equation
         Debug.fprintln("failtrace"," Failed to create Equation with:" +& intString(index));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
         fail();
-    case (_,_,_,_,_,_,_,(comp as (_ :: (_ :: _))) :: restComps,_)
+    case (_,_,_,_,_,_,_,_,(comp as (_ :: (_ :: _))) :: restComps,_)
       local
         list<String> str;
       equation
@@ -2743,78 +2768,17 @@ algorithm
   end matchcontinue;
 end createEquations;
 
-
-protected function createEquationsLin
-  input Boolean includeWhen;
-  input Boolean skipDiscInZc;
-  input Boolean genDiscrete;
-  input DAE.DAElist dae;
-  input DAELow.DAELow dlow;
-  input Integer[:] ass1;
-  input Integer[:] ass2;
-  input list<list<Integer>> comps;
-  input list<HelpVarInfo> helpVarInfo;
-  output list<SimEqSystem> equations;
-algorithm
-  equations :=
-  matchcontinue (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, comps, helpVarInfo)
-    local
-      list<Integer> comp;
-      list<list<Integer>> restComps;
-      list<DAELow.Equation> equations_2;
-      SimEqSystem equation_;
-      Integer index;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Var v;
-      list<Integer> zcEqns;
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {}, helpVarInfo)
-      then {};
-    /* single equation */
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps, helpVarInfo)
-      equation
-        equation_ = createEquationLin(index, dlow, ass1, ass2, helpVarInfo);
-        equations = createEquationsLin(includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
-      then
-        equation_ :: equations;
-    /* multiple equations that must be solved together (algebraic loop) */
-    case (includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps, helpVarInfo)
-      local
-        list<SimEqSystem> equations_,equations1;
-      equation
-        equations_ = createOdeSystemLin(genDiscrete, dlow, ass1, ass2, comp, helpVarInfo);
-        equations = createEquationsLin(includeWhen, skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps, helpVarInfo);
-        equations1 = listAppend(equations_,equations); 
-      then
-        equations1;
-    case (_,_,_,_,_,_,_,{index} :: restComps,_)
-      equation
-        Debug.fprintln("failtrace"," Failed to create Equation with:" +& intString(index));
-        Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
-      then
-        fail();
-    case (_,_,_,_,_,_,_,(comp as (_ :: (_ :: _))) :: restComps,_)
-      local
-        list<String> str;
-      equation
-        str = Util.listMap(comp,intString);
-        Debug.fprintln("failtrace"," Failed to create EquationLin with:" +& System.stringAppendList(str));
-        Error.addMessage(Error.INTERNAL_ERROR, {"createEquationsLin failed"});
-      then
-        fail();        
-  end matchcontinue;
-end createEquationsLin;
-
 protected function createEquation
   input Integer eqNum;
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
   input Integer[:] ass2;
   input list<HelpVarInfo> helpVarInfo;
+  input Boolean linearSystem "if true generate allway a linear system";
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  matchcontinue (eqNum, dlow, ass1, ass2, helpVarInfo)
+  matchcontinue (eqNum, dlow, ass1, ass2, helpVarInfo, linearSystem)
     local
       list<Integer> restEqNums;
       list<DAELow.Equation> eqnsList;
@@ -2855,10 +2819,23 @@ algorithm
       list<DAE.Exp> conditions;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       DAELow.WhenEquation whenEquation;
-    /* when eq */
+      
+    // solve allway a linear equations 
+    case (eqNum,
+        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+        ass1, ass2, helpVarInfo, true)
+      equation
+        (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = kind))
+        = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        exp_ = Exp.solveLin(e1, e2, varexp);
+      then
+        SES_SIMPLE_ASSIGN(cr, exp_);  
+        
+    /// when eq
     case (eqNum,
           DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns, eventInfo=DAELow.EVENT_INFO(whenClauseLst=wcl)),
-          ass1, ass2, helpVarInfo)
+          ass1, ass2, helpVarInfo, false)
       equation
         (DAELow.WHEN_EQUATION(whenEquation,_),_) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         DAELow.WHEN_EQ(wcIndex, left, right, _) = whenEquation;
@@ -2866,10 +2843,11 @@ algorithm
         conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
       then
         SES_WHEN(left, right, conditionsWithHindex);
-    /* single equation: non-state */
+    
+    // single equation: non-state 
     case (eqNum,
           DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, helpVarInfo)
+          ass1, ass2, helpVarInfo, false)
       equation
         (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
@@ -2878,10 +2856,11 @@ algorithm
         exp_ = solve(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
-    /* single equation: state */
+    
+    // single equation: state
     case (eqNum,
           DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, helpVarInfo)
+          ass1, ass2, helpVarInfo,false)
       equation
         (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = DAELow.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
@@ -2889,10 +2868,11 @@ algorithm
         exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
-    /* non-state non-linear */
+    
+    // non-state non-linear
     case (e,
           DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
-          ass1, ass2, helpVarInfo)
+          ass1, ass2, helpVarInfo,false)
       equation
         ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
@@ -2904,10 +2884,11 @@ algorithm
         (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
       then
         SES_NONLINEAR(index, resEqs, {cr});
-    /* state nonlinear */
+    
+    // state nonlinear
     case (e,
           DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
-          ass1, ass2, helpVarInfo)
+          ass1, ass2, helpVarInfo,false)
       equation
         ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = DAELow.STATE())) =
           getEquationAndSolvedVar(e, eqns, vars, ass2);
@@ -2920,8 +2901,8 @@ algorithm
       then
         SES_NONLINEAR(index, resEqs, {cr_1});
 
-    /* Algorithm for single variable. */
-    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
+    // Algorithm for single variable.
+    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo,false)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
@@ -2939,8 +2920,8 @@ algorithm
       then
         SES_ALGORITHM(algStatements);
 
-    /* inverse Algorithm for single variable . */
-    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
+    // inverse Algorithm for single variable .
+    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo,false)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
@@ -2959,122 +2940,6 @@ algorithm
       then fail();
   end matchcontinue;
 end createEquation;
-
-protected function createEquationLin
-  input Integer eqNum;
-  input DAELow.DAELow dlow;
-  input Integer[:] ass1;
-  input Integer[:] ass2;
-  input list<HelpVarInfo> helpVarInfo;
-  output SimEqSystem equation_;
-algorithm
-  equation_ :=
-  matchcontinue (eqNum, dlow, ass1, ass2, helpVarInfo)
-    local
-      list<Integer> restEqNums;
-      list<DAELow.Equation> eqnsList;
-      Exp.ComponentRef cr,origname, cr_1;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      DAELow.VarKind kind;
-      DAELow.Var v;
-      Exp.Exp e1;
-      Exp.Exp e2;
-      Exp.Exp varexp;
-      Exp.Exp exp_;
-      DAELow.Variables vars;
-      DAELow.EquationArray eqns;
-      DAELow.Equation eqn;
-      String varname;
-      String name;
-      String c_name;
-      String id;
-      Integer indx;
-      Integer e_1;
-      Integer e;
-      Integer index;
-      Algorithm.Algorithm alg;
-      Algorithm.Algorithm[:] algs;
-      list<DAE.Statement> algStatements;
-      list<DAE.Exp> inputs,outputs;
-      DAELow.VariableArray vararr;
-      DAELow.MultiDimEquation[:] ae;
-      VarTransform.VariableReplacements repl;
-      list<SimEqSystem> resEqs;
-      list<DAELow.WhenClause> wcl;
-      Integer wcIndex;
-      DAE.ComponentRef left;
-      DAE.Exp right;
-
-    /* single equation: non-state */
-    case (eqNum,
-          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, helpVarInfo)
-      equation
-        (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = kind))
-          = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
-        exp_ = Exp.solveLin(e1, e2, varexp);
-      then
-        SES_SIMPLE_ASSIGN(cr, exp_);
-/*
-    // non-state non-linear 
-    case (e,
-          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
-          ass1, ass2, helpVarInfo)
-      equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(varName = cr, varKind = kind)) =
-        getEquationAndSolvedVar(e, eqns, vars, ass2);
-        isNonState(kind);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
-        failure(_ = solve(e1, e2, varexp));
-        index = tick();
-        index = eqNum; // Use the equation number as unique index
-        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
-      then
-        SES_NONLINEAR(index, resEqs, {cr});
-*/
-    /* Algorithm for single variable. */
-    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, helpVarInfo)
-      local
-        Integer indx;
-        list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
-        DAE.ComponentRef varOutput;
-        DAE.ElementSource source "the origin of the element";
-      equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
-        // The output variable of the algorithm must be the variable solved
-        // for, otherwise we need to solve an inverse problem of an algorithm
-        // section.
-        true = Exp.crefEqual(DAELow.varCref(v),varOutput);
-        alg = alg[indx + 1];
-        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
-      then
-        SES_ALGORITHM(algStatements);
-
-    /* inverse Algorithm for single variable . */
-    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo)
-      local
-        Integer indx;
-        list<DAE.Exp> algInputs,algOutputs;
-        DAELow.Var v;
-        DAE.ComponentRef varOutput;
-        String algStr,message;
-        DAE.ElementSource source "the origin of the element";
-      equation
-        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
-				// We need to solve an inverse problem of an algorithm section.
-        false = Exp.crefEqual(DAELow.varCref(v),varOutput);
-        alg = alg[indx + 1];
-        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = System.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
-        Error.addMessage(Error.INTERNAL_ERROR,{message});
-      then fail();
-  end matchcontinue;
-end createEquationLin;
 
 protected function addHindexForCondition
   input DAE.Exp condition;
@@ -3234,8 +3099,26 @@ algorithm
   end matchcontinue;
 end applyResidualReplacementsEqn;
 
+protected function changeJactype
+input DAELow.JacobianType inJactype;
+output DAELow.JacobianType outJactype;
+algorithm 
+  outJactype := matchcontinue(inJactype)
+  local
+  DAELow.JacobianType jacType;
+  case (jacType as DAELow.JAC_TIME_VARYING()) then jacType;
+  case (jacType as DAELow.JAC_CONSTANT()) then jacType;
+  case (jacType as DAELow.JAC_NONLINEAR()) then DAELow.JAC_TIME_VARYING();
+  case (jacType as DAELow.JAC_NO_ANALYTIC())
+    equation
+     Debug.fprint("failtrace", "- failed to calculate a Jacobian a system of equation \n");
+    then fail();
+  end matchcontinue;
+end changeJactype;
+
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
+  input Boolean linearSystem "if true generate allway a linear system";
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
@@ -3244,7 +3127,7 @@ protected function createOdeSystem
   output list<SimEqSystem> equations_;
 algorithm
   equations_ :=
-  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
+  matchcontinue (genDiscrete,linearSystem,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
     local
       String rettp,fn;
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
@@ -3274,8 +3157,38 @@ algorithm
       
       String dstr,dstr1,dstr2;
       list<String> dlstr;
-    /* mixed system of equations, continuous part only */
-    case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    
+    // create allway a linear system of equations 
+    case (genDiscrete,true,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+      equation
+        // extract the variables and equations of the block.
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
+        eqn_lst = replaceDerOpInEquationList(eqn_lst);
+        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
+        ae1 = listArray(mdelst);        
+        // States are solved for der(x) not x.
+        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        vars_1 = DAELow.listVar(var_lst_1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);
+        eqns_1 = DAELow.listEquation(eqn_lst);
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
+        m = DAELow.incidenceMatrix(subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        // Jacobian of a Linear System is always linear 
+        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        // if DAELow.JAC_NONLINEAR() then set to time_varying
+        jac_tp = changeJactype(jac_tp);
+        equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
+      then
+        equations_;   
+      
+    // mixed system of equations, continuous part only
+    case (false,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -3300,8 +3213,8 @@ algorithm
         equations_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
-    /* mixed system of equations, both continous and discrete eqns*/
-    case (true,(dlow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    // mixed system of equations, both continous and discrete eqns
+    case (true,false,(dlow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -3330,8 +3243,8 @@ algorithm
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
       then
         {SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims)};
-        /* continuous system of equations try tearing algorithm*/
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+        // continuous system of equations try tearing algorithm
+    case (genDiscrete,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       local
         DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
         Integer[:] v1,v2,v1_1,v2_1;
@@ -3371,8 +3284,8 @@ algorithm
         equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, helpVarInfo);
       then
         {equation_};
-    /* continuous system of equations */
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
+    // continuous system of equations 
+    case (genDiscrete,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -3396,7 +3309,7 @@ algorithm
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem failed"});
       then
@@ -3404,81 +3317,6 @@ algorithm
   end matchcontinue;
 end createOdeSystem;
 
-
-protected function createOdeSystemLin
-  input Boolean genDiscrete "if true generate discrete equations";
-  input DAELow.DAELow inDAELow1;
-  input Integer[:] inIntegerArray2;
-  input Integer[:] inIntegerArray3;
-  input list<Integer> inIntegerLst4;
-  input list<HelpVarInfo> helpVarInfo;
-  output list<SimEqSystem> equations_;
-algorithm
-  equations_ :=
-  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,helpVarInfo)
-    local
-      String rettp,fn;
-      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
-      list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
-      DAELow.Variables vars_1,vars,knvars,exvars;
-      DAELow.AliasVariables av;
-      DAELow.EquationArray eqns_1,eqns,se,ie;
-      DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
-      list<Integer>[:] m,m_1,mt_1;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      DAELow.JacobianType jac_tp;
-      String s;
-      DAELow.MultiDimEquation[:] ae,ae1;
-      list<DAELow.MultiDimEquation> mdelst;
-      Algorithm.Algorithm[:] al;
-      DAELow.EventInfo ev;
-      Integer[:] ass1,ass2;
-      list<Integer> block_;
-      DAELow.ExternalObjectClasses eoc;
-      list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
-      Integer numValues;
-      list<SimVar> simVarsDisc;
-      list<SimEqSystem> discEqs;
-      list<String> values;
-      list<Integer> value_dims;
-      SimEqSystem equation_;
-      
-      String dstr,dstr1,dstr2;
-      list<String> dlstr;
-    /* continuous system of equations */
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
-      equation
-        // extract the variables and equations of the block.
-        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
-        // States are solved for der(x) not x.
-        var_lst_1 = Util.listMap(var_lst, transformXToXd);
-        vars_1 = DAELow.listVar(var_lst_1);
-        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
-        // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);
-        eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = DAELow.incidenceMatrix(subsystem_dae);
-        m_1 = DAELow.absIncidenceMatrix(m);
-        mt_1 = DAELow.transposeMatrix(m_1);
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
-        // Jacobian of a Linear System is always linear 
-        //jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        jac_tp = DAELow.JAC_TIME_VARYING();
-        equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
-      then
-        equations_;
-    case (_,_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem Linear failed"});
-      then
-        fail();
-  end matchcontinue;
-end createOdeSystemLin;
 
 protected function generateTearingSystem "function: generateTearingSystem
   author: Frenkel TUD
@@ -3545,7 +3383,7 @@ algorithm
         eqn1 = DAELow.listEquation(eqn_lst2);
         daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generade code for other equations
-        simeqnsystem = Util.listMap4(block_1,createEquation,daelow1, ass1, ass2, helpVarInfo);
+        simeqnsystem = Util.listMap5(block_1,createEquation,daelow1, ass1, ass2, helpVarInfo,false);
         (resEqs,_) = createNonlinearResidualEquations(reqns, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
@@ -4104,7 +3942,7 @@ algorithm
       DAELow.MultiDimEquation[:] ae;      
     case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
       equation
-       reqn = createEquation(r,daelow, Ass1, Ass2, helpVarInfo);        
+       reqn = createEquation(r,daelow, Ass1, Ass2, helpVarInfo,false);        
       then 
         {reqn};
     case (block_ as _::_::_,mixedEvent,daelow as DAELow.DAELOW(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
