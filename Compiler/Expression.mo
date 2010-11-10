@@ -60,20 +60,21 @@ public type Subscript = DAE.Subscript;
 public type Var = DAE.ExpVar;
 
 // protected imports
+protected import Algorithm;
 protected import ClassInf;
 protected import ComponentReference;
-protected import ExpressionSimplify;
-protected import Error;
-protected import RTOpts;
-protected import Util;
-protected import ModUtil;
-protected import Debug;
-protected import Static;
-protected import Env;
-protected import ExpressionDump;
 protected import DAEUtil;
-protected import Algorithm;
+protected import Debug;
+protected import Env;
+protected import Error;
+protected import ExpressionDump;
+protected import ExpressionSimplify;
+protected import ModUtil;
+protected import OptManager;
 protected import Prefix;
+protected import RTOpts;
+protected import Static;
+protected import Util;
 
 /***************************************************/
 /* transform to other types */
@@ -1390,6 +1391,11 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i; 
+    case DAE.DIM_UNKNOWN()
+      equation
+        true = OptManager.getOption("checkModel");
+      then
+        0;
   end matchcontinue;
 end dimensionSize;
 
@@ -1398,22 +1404,7 @@ public function dimensionsSizes
   input list<DAE.Dimension> inDims;
   output list<Integer> outValues;
 algorithm
-  outValues := matchcontinue(inDims)
-    local
-      DAE.Dimension dim;
-      list<DAE.Dimension> dims;
-      Integer i;
-      list<Integer> ii;
-    
-    case {} then {};
-    
-    case (dim::dims)
-      equation
-        i = dimensionSize(dim);
-        ii = dimensionsSizes(dims);
-      then
-        i::ii;   
-  end matchcontinue;
+  outValues := Util.listMap(inDims, dimensionSize);
 end dimensionsSizes;
 
 public function typeof "
