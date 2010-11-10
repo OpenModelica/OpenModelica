@@ -1119,6 +1119,52 @@ algorithm
   end matchcontinue;
 end lookupCompModification;
 
+public function lookupCompModificationFromEqu "function: lookupCompModification
+  This function is used to look up an identifier in a modification."
+  input DAE.Mod inMod;
+  input Absyn.Ident inIdent;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inMod,inIdent)
+    local
+      DAE.Mod mod,mod1,mod2;
+      list<DAE.SubMod> subs;
+      Ident n,i;
+      Option<DAE.EqMod> eqMod;
+      Absyn.Each e;
+      Boolean f;
+    case (DAE.NOMOD(),_) then DAE.NOMOD();
+    case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
+    case (DAE.MOD(finalPrefix=f,each_=e,subModLst = subs,eqModOption=eqMod),n)
+      equation
+        mod1 = lookupCompModification2(subs, n);
+        mod2 = lookupComplexCompModification(eqMod,n,f,e);
+        mod = selectEqMod(mod1, mod2);
+      then
+        mod;
+  end matchcontinue;
+end lookupCompModificationFromEqu;
+
+protected function selectEqMod
+"@adrpo:
+  This function selects the eqmod modifier if is not DAE.NOMOD! AND IS TYPED!
+  Otherwise check for duplicates"
+ input DAE.Mod subMod;
+ input DAE.Mod eqMod;
+ output DAE.Mod mod;
+algorithm
+  mod := matchcontinue(subMod, eqMod)
+    // eqmod is nomod!
+    case (subMod, eqMod as DAE.NOMOD()) then subMod;
+    case (subMod, eqMod as DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _)))) then eqMod;
+    case (subMod, eqMod)
+      equation
+        mod = checkDuplicateModifications(subMod,eqMod);
+      then
+        mod;
+  end matchcontinue;
+end selectEqMod;
+
 public function lookupCompModification12 "function: lookupCompModification
 Author: BZ, 2009-07
 Function for looking up modifiers on specific component.
@@ -1222,9 +1268,16 @@ algorithm
   outMod := matchcontinue(mod1,mod2)
     local 
       String s1,s2,s;
+      DAE.Mod mod;
 
     case(DAE.NOMOD(),mod2) then mod2;
     case(mod1,DAE.NOMOD()) then mod1;
+    // if they are equal, return the second one!
+    case(mod1,mod2) 
+      equation
+        true = modEqual(mod1, mod2);
+      then mod2;    
+    // print error message
     case(mod1,mod2) equation
       s1 = printModStr(mod1);
       s2 = printModStr(mod2);

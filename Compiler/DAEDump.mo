@@ -1384,15 +1384,29 @@ algorithm
       String name,s1,s2;
       list<DAE.Var> varLst;
 
+    // handle empty
     case((DAE.T_COMPLEX(complexVarLst={}),_)) then "";
-    
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) 
-      equation
-        s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
-        str = s1+&s2;
-      then str;
-    
+
+    // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,protected_=true,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
+      s1 ="protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+      str = s1+&s2;
+    then str;
+
+    // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(parameter_=SCode.CONST()),type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
+      s1 ="constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+      str = s1+&s2;
+    then str;
+
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
+      s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+      str = s1+&s2;
+    then str;
+
     case((DAE.T_FUNCTION(funcResultType=tp),_)) then printRecordConstructorInputsStr(tp);
   end matchcontinue;
 end printRecordConstructorInputsStr;

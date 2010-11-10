@@ -1293,6 +1293,19 @@ algorithm
   end matchcontinue;
 end variabilityString;
 
+public function accessibilityString
+"function: accessibilityString
+  Print Accessibility to a string."
+  input Accessibility inAccessibility;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAccessibility)
+    case (RW()) then "RW";
+    case (RO()) then "RO";
+    case (WO()) then "WO";
+  end matchcontinue;
+end accessibilityString;
+
 public function innerouterString
 "function: innerouterString
   Print a inner outer info to a string."

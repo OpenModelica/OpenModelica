@@ -571,7 +571,8 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
   case ((((comp as SCode.COMPONENT(component = id)),cmod,b) :: xs),mod,env)
       equation
         // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
-        cmod2 = Mod.lookupCompModification(mod, id);
+        // take ONLY the modification from the equation if is typed
+        cmod2 = Mod.lookupCompModificationFromEqu(mod, id);
         // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
         mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
         mod_rest = Types.removeMod(mod,id);

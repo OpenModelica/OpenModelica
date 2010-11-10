@@ -1603,16 +1603,32 @@ algorithm
     local 
       String name; DAE.Type tp; Absyn.Import imp;
       Absyn.TypeSpec tsp;
+      Boolean flowPrefix "flow";
+      Boolean streamPrefix "stream";
+      SCode.Accessibility accessibility "accessibility";
+      SCode.Variability parameter_ "parameter";
+      Absyn.Direction direction "direction";
+      Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";      
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) 
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, innerOuter),type_=tp))) 
       equation
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
-        +& Types.printTypeStr(tp) +& ")";
+        +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
+        Util.if_(flowPrefix,"flow", "") +& ", " +&
+        Util.if_(streamPrefix,"stream", "") +& ", " +&
+        SCode.accessibilityString(accessibility) +& ", " +&
+        SCode.variabilityString(parameter_) +& ", " +&
+        SCode.innerouterString(innerOuter);
       then str;
     
-    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp), _)))) 
+    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp,innerOuter=innerOuter,attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, parameter_, direction)), _)))) 
       equation
-        str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp);    
+        str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
+        Util.if_(flowPrefix,"flow", "") +& ", " +&
+        Util.if_(streamPrefix,"stream", "") +& ", " +&
+        SCode.accessibilityString(accessibility) +& ", " +&
+        SCode.variabilityString(parameter_) +& ", " +&
+        SCode.innerouterString(innerOuter);            
       then str;
     
     case(CLASS(class_=SCode.CLASS(name=name))) 

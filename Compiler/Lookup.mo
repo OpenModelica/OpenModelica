@@ -1959,7 +1959,14 @@ algorithm
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
-        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cdefelts,false,NONE());
+        // print("Record Elements: " +& 
+        //   Util.stringDelimitList(
+        //     Util.listMap(
+        //       Util.listMap(
+        //         eltsMods, 
+        //         Util.tuple21),
+        //       SCode.printElementStr), "\n"));
+        (env1,_) = Inst.addClassdefsToEnv(env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
         (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (cache,env1,funcelts,elts);
@@ -2023,8 +2030,9 @@ algorithm
       Absyn.Info info;
 
     case ({},_,_) then {};
-
-    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    
+    // final becomes protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case ((((comp as SCode.COMPONENT(id,io,fl as true,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
         info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
@@ -2040,10 +2048,57 @@ algorithm
         umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
-        var = SCode.VAR();
+        // adrpo: 2010-11-09 : TODO! FIXME! why is this?? keep the variability!
+        // var = SCode.VAR();
+        // dir = Absyn.INPUT();
+      then
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
+    
+    // constants become protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var as SCode.CONST(),dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+      equation
+        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
+        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        // adrpo: this was wrong, you won't find any id modification there!!!
+        // bjozac: This was right, you will find id modification unless modifers does not belong to component!
+        // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
+        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        fullMod = mod_1;
+        selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
+        (_,cmod) = Mod.updateMod(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        umod = Mod.unelabMod(selectedMod);
+        res = buildRecordConstructorElts(rest, mods, env);
+        // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
+        // adrpo: 2010-11-09 : TODO! FIXME! why is this?? keep the variability!
+        // var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,umod,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
+    
+    // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
+    case ((((comp as SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+      equation
+        info = Util.getOptionOrDefault(nfo, Absyn.dummyInfo);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
+        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
+        // adrpo: this was wrong, you won't find any id modification there!!!
+        // bjozac: This was right, you will find id modification unless modifers does not belong to component!
+        // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty!
+        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        fullMod = mod_1;
+        selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
+        (_,cmod) = Mod.updateMod(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true,info);
+        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
+        umod = Mod.unelabMod(selectedMod);
+        res = buildRecordConstructorElts(rest, mods, env);
+        // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
+        // adrpo: 2010-11-09 : TODO! FIXME! why is this?? keep the variability!
+        // var = SCode.VAR();
+        dir = Absyn.INPUT();
+      then
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,umod,comment,cond,nfo,cc) :: res);
 
     case ((comp,cmod)::_,mods,_)
       equation

@@ -1220,8 +1220,7 @@ algorithm
         (cache, newval, st);
        
     // Record constructors
-    case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,
-         impl,st,dim,msg)
+    case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,impl,st,dim,msg)
       equation
         true = ModUtil.pathEqual(funcpath,complexName);
         varNames = Util.listMap(varLst,Expression.varName);

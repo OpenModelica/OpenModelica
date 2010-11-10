@@ -5754,7 +5754,8 @@ algorithm
           DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (DAE.T_NOTYPE(),NONE()),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
-        (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
+        // adpro: this was twice!
+        // (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
         (cache,env_2,ih);
     // no components in list
@@ -6033,7 +6034,7 @@ algorithm
          * modifier, the modifier should be the value to use.
          */
         (variableClassMod,classmod_1) = modifyInstantiateClass(classmod_1,t);
-
+        
         //(cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
         //print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " component mod: " +& SCode.printModStr(m) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
         (cache,m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, info);
@@ -6056,9 +6057,9 @@ algorithm
           mod_1,csets) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
         env_1 = env;
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
-
+        
         checkRecursiveDefinition(env,cenv,ci_state,cl);
-
+        
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
