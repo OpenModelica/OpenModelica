@@ -6774,7 +6774,7 @@ protected function getCalledFunctionsInFunctions
 algorithm
   res := matchcontinue(paths,accumulated,funcs)
     local
-      list<Absyn.Path> res,acc,rest;
+      list<Absyn.Path> acc,rest;
       Absyn.Path path;
     case ({},accumulated,funcs) then accumulated;
     case (path::rest,accumulated,funcs)

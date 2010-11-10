@@ -1205,7 +1205,6 @@ public function getOutputVars "function getOutputVars
 "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
-  list<DAE.Element> vl_1;
 algorithm
   vl_1 := getMatchingElements(vl, isOutputVar);
 end getOutputVars;
@@ -1217,7 +1216,6 @@ public function getProtectedVars "
 "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
-  list<DAE.Element> vl_1;
 algorithm
   vl_1 := getMatchingElements(vl, isProtectedVar);
 end getProtectedVars;
@@ -1229,7 +1227,6 @@ public function getBidirVars "function get_output_vars
 "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
-  list<DAE.Element> vl_1;
 algorithm
   vl_1 := getMatchingElements(vl, isBidirVar);
 end getBidirVars;
@@ -1239,7 +1236,6 @@ public function getInputVars "
 "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
-  list<DAE.Element> vl_1;
 algorithm
   vl_1 := getMatchingElements(vl, isInput);
 end getInputVars;
@@ -2479,8 +2475,7 @@ algorithm
              absynCommentOption = comment) /* VAR */
       equation
         e1 = Util.optionToList(bndexp);
-        e3 = Util.listMap(instdims, getAllExpsSubscript);
-        e3 = Util.listFlatten(e3);
+        e3 = Util.listFlatten(Util.listMap(instdims, getAllExpsSubscript));
         crefexp = crefToExp(cref);
         exps = Util.listFlatten({e1,e3,{crefexp}});
       then

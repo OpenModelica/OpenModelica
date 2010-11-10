@@ -3794,7 +3794,6 @@ protected function renameComponentInExternalDecl
   input Absyn.ComponentRef old_comp;
   input Absyn.ComponentRef new_comp;
   output Absyn.ExternalDecl external_1;
-  Absyn.ExternalDecl external_1;
 algorithm
   print("-rename_component_in_external_decl not implemented yet\n");
   external_1 := external_;
@@ -4396,14 +4395,14 @@ protected function extractAllComponents
  extracts all the components and \"extends\""
   input Absyn.Program p;
   output Components comps;
-  Absyn.Program p_1;
+  SCode.Program p_1;
   list<Env.Frame> env;
 protected
   Real t1,t2,t3;
 algorithm
   p_1 := SCodeUtil.translateAbsyn2SCode(p);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-  ((p_1,_,(comps,p,env))) := traverseClasses(p,NONE(), extractAllComponentsVisitor,
+  ((_,_,(comps,_,_))) := traverseClasses(p,NONE(), extractAllComponentsVisitor,
           (COMPONENTS({},0),p,env), true) "traverse protected" ;
 end extractAllComponents;
 
@@ -5740,7 +5739,7 @@ algorithm
       String visibility_str,s1,element_str,res,s2;
       Absyn.ElementItem current;
       list<Absyn.ElementItem> rest;
-    case (visibility_str,{}) /* Util.string_append_list({\"{ elementvisibility=\", visibility_str,\" }\"}) => res */  then "";
+    case (visibility_str,{}) then "";
     case (visibility_str,(current :: {})) /* deal with the last element */
       equation
         s1 = getElementInfo(current);
@@ -5804,16 +5803,17 @@ algorithm
     local
       Absyn.Path modelpath;
       String i,public_str,protected_str,elements_str,str;
-      Boolean p,f,e;
+      Boolean f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
       Absyn.ComponentRef model_;
+      Absyn.Program p;
     /* a class with parts */
     case (model_,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(i,_,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         protected_elementitem_list = getProtectedList(parts);
         public_str = constructElementsInfo("public", public_elementitem_list);
@@ -5826,7 +5826,7 @@ algorithm
     case (model_,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(parts=parts),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(i,_,f,e,r,Absyn.CLASS_EXTENDS(parts=parts),_) = getPathedClassInProgram(modelpath, p);
         public_elementitem_list = getPublicList(parts);
         protected_elementitem_list = getProtectedList(parts);
         public_str = constructElementsInfo("public", public_elementitem_list);
@@ -5839,7 +5839,7 @@ algorithm
     case (model_,p)
       equation
         modelpath = Absyn.crefToPath(model_);
-        Absyn.CLASS(i,p,f,e,r,_,_) = getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
+        Absyn.CLASS(i,_,f,e,r,_,_) = getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
         maybe later we can give info about that also" ;
       then
         "{ }";
@@ -6389,13 +6389,14 @@ algorithm
   outAbsynElementSpecLst:=
   matchcontinue (inAbsynElementItemLst)
     local
+      Absyn.Element el;
       Absyn.ElementSpec elt;
       list<Absyn.ElementSpec> res;
       list<Absyn.ElementItem> rest;
     case ({}) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest))
+    case ((Absyn.ELEMENTITEM(element = el) :: rest))
       equation
-        elt = getExtendsElementspecInElement(elt) "Bug in MetaModelica Compiler (MMC). If the two premisses below are in swapped order
+        elt = getExtendsElementspecInElement(el) "Bug in MetaModelica Compiler (MMC). If the two premisses below are in swapped order
     the compiler enters infinite loop (but no stack overflow)" ;
         res = getExtendsElementspecInElementitems(rest);
       then
@@ -7035,8 +7036,8 @@ algorithm
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
-        names2_1 = Util.listMap1r(names2, string_append, ".");
-        names2_2 = Util.listMap1r(names2_1, string_append, name);
+        names2_1 = Util.listMap1r(names2, stringAppend, ".");
+        names2_2 = Util.listMap1r(names2_1, stringAppend, name);
         names = getModificationNames(rest);
         res = listAppend(names2_2, names);
       then
@@ -7046,8 +7047,8 @@ algorithm
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
-        names2_1 = Util.listMap1r(names2, string_append, ".");
-        names2_2 = Util.listMap1r(names2_1, string_append, name);
+        names2_1 = Util.listMap1r(names2, stringAppend, ".");
+        names2_2 = Util.listMap1r(names2_1, stringAppend, name);
         names = getModificationNames(rest);
         res = listAppend(names2_2, names);
       then
@@ -7647,7 +7648,7 @@ algorithm
       list<Absyn.ElementItem> elements_1,elements;
       Absyn.Path old_comp,new_comp;
       Absyn.ClassPart a;
-    case ({},_,_,env) then ({},false);  /* the old name for the component signal if something in class have been changed rule  Absyn.path_string(old_comp) => old_str & Absyn.path_string(new_comp) => new_str & Util.string_append_list({old_str,\" => \", new_str,\"\\n\"}) => print_str & print print_str & int_eq(1,2) => true --------- rename_class_in_parts(_,old_comp,new_comp,env) => ({},false) */
+    case ({},_,_,env) then ({},false);  /* the old name for the component signal if something in class have been changed rule */
     case ((Absyn.PUBLIC(contents = elements) :: res),old_comp,new_comp,env)
       equation
         (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
@@ -7741,13 +7742,13 @@ algorithm
       Option<Absyn.Comment> cmt;
       list<Absyn.ElementArg> elargs;
 
-    case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule  Absyn.path_string(old_comp) => old_str & Absyn.path_string(new_comp) => new_str & Util.string_append_list({old_str,\" ==> \", new_str,\"\\n\"}) => print_str & print print_str & int_eq(1,2) => true --------- rename_class_in_element_spec(A,old_comp,new_comp,env) => (A,false) */
+    case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
       equation
         (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path, new_comp) "& Absyn.path_string(path) => old_str & Absyn.path_string(new_comp) => new_str & Absyn.path_string(new_path) => new2_str & Util.string_append_list({old_str,\" =E=> \", new_str,\" \",new2_str ,\"\\n\"}) => print_str & print print_str &" ;
+        new_path = changeLastIdent(path, new_comp);
       then
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
     case (Absyn.EXTENDS(path = path_1,elementArg = elargs, annotationOpt=annOpt),old_comp,new_comp,env)
@@ -8554,7 +8555,7 @@ protected function getClassAttributes
   input Absyn.Program p;
   output String res_1;
   Absyn.Path path;
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,res_1;
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
   Absyn.Restriction restr;
   Absyn.ClassDef cdef;
@@ -18101,7 +18102,7 @@ algorithm
         (topNamesStr, newLF, pAst); // loading
     case (f, lf, pAst, _)
       equation
-        failure(p1 = Parser.parse(f)); // failed to parse!
+        failure(_ = Parser.parse(f)); // failed to parse!
       then
         ("error",lf,pAst); // return error
   end matchcontinue;
@@ -18158,7 +18159,7 @@ algorithm
   res := matchcontinue (ast,addFunctions)
   local
     list<Absyn.Class> classes;
-    String old, res;
+    String old;
     list<String> toPrint;
     case (ast,addFunctions)
       equation
@@ -18193,7 +18194,6 @@ algorithm
       list<Absyn.Class> rest;
       Absyn.Class class_;
       String str;
-      list<String> res;
     case ({},_) then {};
     case (class_::rest,addFunctions) equation
       str = getDefinitionsClass(class_, addFunctions);
@@ -18212,7 +18212,7 @@ algorithm
       list<Absyn.Class> rest;
       list<Absyn.ClassPart> parts;
       String ident, baseIdent, tyStr;
-      list<String> enumList, res;
+      list<String> enumList,strs;
       Absyn.TypeSpec ts;
       Absyn.ElementAttributes attr;
       list<Absyn.EnumLiteral> el;
@@ -18223,40 +18223,40 @@ algorithm
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_PACKAGE()),addFunctions)
       equation
         ident = "(package " +& ident;
-        res = getDefinitionParts(parts, addFunctions);
-        res =  ident :: res;
-      then Util.stringDelimitList(res, "\n");
+        strs = getDefinitionParts(parts, addFunctions);
+        strs = ident :: strs;
+      then Util.stringDelimitList(strs, "\n");
     case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),_)
       equation
-        res = {"(partial function", ident, ")"};
-      then Util.stringDelimitList(res, " ");
+        strs = {"(partial function", ident, ")"};
+      then Util.stringDelimitList(strs, " ");
     case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),true)
       equation
-        res = getDefinitionParts(parts, true);
-        res = "(function" :: ident :: res;
-      then Util.stringDelimitList(res, " ");
+        strs = getDefinitionParts(parts, true);
+        strs = "(function" :: ident :: strs;
+      then Util.stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_UNIONTYPE()),_)
       equation
-        res = {"(uniontype", ident, ")"};
-      then Util.stringDelimitList(res, " ");
+        strs = {"(uniontype", ident, ")"};
+      then Util.stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_RECORD()),_)
       equation
-        res = getDefinitionParts(parts, false);
-        res = "(record" :: ident :: res;
-      then Util.stringDelimitList(res, " ");
+        strs = getDefinitionParts(parts, false);
+        strs = "(record" :: ident :: strs;
+      then Util.stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
       equation
         indexArg = intString(index);
         pathArg = Absyn.pathLastIdent(path);
-        res = getDefinitionParts(parts, false);
-        res = "(metarecord" :: ident :: indexArg :: pathArg :: res;
-      then Util.stringDelimitList(res, " ");
+        strs = getDefinitionParts(parts, false);
+        strs = "(metarecord" :: ident :: indexArg :: pathArg :: strs;
+      then Util.stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = ts, attributes = attr)),_)
       equation
         numDim = getDefinitionDimensions(ts,attr);
         tyStr = Util.if_(numDim == 0, "", "[" +& intString(numDim)) +& getDefinitionTypeSpecPathString(ts);
-        res = {"(type", ident, tyStr, ")"};
-      then Util.stringDelimitList(res, " ");
+        strs = {"(type", ident, tyStr, ")"};
+      then Util.stringDelimitList(strs, " ");
     // Do enumerations really work properly in OMC?
     //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
     //  enumList = Util.listMap(el, getEnumerationLiterals);
@@ -18294,8 +18294,6 @@ protected function getDefinitionPathString
   output String out;
 algorithm
   out := matchcontinue (path)
-  local
-    Absyn.Path path;
     // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" +& Absyn.pathString(path);
     // Thus, scope/lookup is done by the application recieving this information
     case path then Absyn.pathString(path);
@@ -18370,7 +18368,7 @@ algorithm
     Absyn.TypeSpec ts;
     Absyn.Variability variability;
     Absyn.ElementAttributes attr;
-    list<String> res,res2;
+    list<String> res2;
 
     case ({},_,_) then {};
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF(replaceable_ = false, class_ = class_)))::rest,addFunctions,isPublic)
@@ -18427,7 +18425,6 @@ algorithm
   local
     list<Absyn.ComponentItem> rest;
     String ident;
-    list<String> res;
     list<Absyn.Subscript> l;
     Integer sumDim;
 
@@ -18695,7 +18692,7 @@ algorithm
       Absyn.ElementItem current, tmp;
       list<Absyn.ElementItem> rest;//, res_list, list2;
       Absyn.Program p;
-    case ({}, p) /* Util.string_append_list({\"{ elementvisibility=\", visibility_str,\" }\"}) => res */
+    case ({}, p)
       equation
         s1 = "";
         res_list = Util.listCreate(s1);

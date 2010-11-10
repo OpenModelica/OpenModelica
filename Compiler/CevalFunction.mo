@@ -616,7 +616,7 @@ algorithm
         env = updateVariableBinding(inIter, env, inIterType, inStartValue);
         (cache, env, loop_ctrl) = evaluateStatements(inStatements, cache, env);
         next_val = ValuesUtil.safeIntRealOp(inStartValue, inStepValue, 
-          Values.ADDOP);
+          Values.ADDOP());
         (cache, env, loop_ctrl) = evaluateForLoopRange(cache, env, inIter,
           inIterType, next_val, inStepValue, inStopValue, inStatements, loop_ctrl);
       then
@@ -708,7 +708,7 @@ protected function setupFunctionEnvironment
   output Env.Cache outCache;
   output Env.Env outEnv;
 algorithm
-  outEnv := Env.openScope(inEnv, false, SOME(inFuncName), SOME(Env.FUNCTION_SCOPE));
+  outEnv := Env.openScope(inEnv, false, SOME(inFuncName), SOME(Env.FUNCTION_SCOPE()));
   (outCache, outEnv) := 
     extendEnvWithFunctionVars(inCache, outEnv, inFuncVars, inFuncArgs);
 end setupFunctionEnvironment;
