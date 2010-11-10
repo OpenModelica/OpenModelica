@@ -1391,20 +1391,41 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i; 
+  end matchcontinue;
+end dimensionSize;
+
+public function dimensionSizeAll
+  "Extracts an integer from an array dimension. Also handles DIM_EXP and
+  DIM_UNKNOWN if checkModel is used."
+  input DAE.Dimension dim;
+  output Integer value;
+algorithm
+  value := matchcontinue(dim)
+    local
+      Integer i;
+      DAE.Exp e;
+    case DAE.DIM_INTEGER(integer = i) then i;
+    case DAE.DIM_ENUM(size = i) then i;
+    case DAE.DIM_EXP(exp = e) then expInt(e);
+    case DAE.DIM_EXP(exp = _)
+      equation
+        true = OptManager.getOption("checkModel");
+      then
+        0;
     case DAE.DIM_UNKNOWN()
       equation
         true = OptManager.getOption("checkModel");
       then
         0;
   end matchcontinue;
-end dimensionSize;
+end dimensionSizeAll;
 
 public function dimensionsSizes
   "Extracts a list of integers from a list of array dimensions"
   input list<DAE.Dimension> inDims;
   output list<Integer> outValues;
 algorithm
-  outValues := Util.listMap(inDims, dimensionSize);
+  outValues := Util.listMap(inDims, dimensionSizeAll);
 end dimensionsSizes;
 
 public function typeof "
