@@ -4577,4 +4577,12 @@ algorithm
   end matchcontinue;
 end onlyLiteralsInExp;
 
+public function makeCons
+  input Exp e1;
+  input Exp e2;
+  output Exp e;
+algorithm
+  e := CONS(e1,e2);
+end makeCons;
+
 end Absyn;

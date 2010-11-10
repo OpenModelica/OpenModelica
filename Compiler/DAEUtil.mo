@@ -3704,7 +3704,7 @@ algorithm
         
     case(elt::_,_,_)
       equation
-        print(" failure in DAE.traverseDAE\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"DAEUtil.traverseDAE not implemented correctly"});
         str = DAEDump.dumpElementsStr({elt});
         print(str);
       then fail();
@@ -3738,6 +3738,7 @@ algorithm
       Algorithm.Else algElse;
       Absyn.Path fnName;
       Absyn.MatchType matchType;
+      DAE.Pattern pattern;
       
     case ({},_,extraArg) then ({},extraArg);
       
@@ -3772,6 +3773,11 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
         
+    case (((x as DAE.STMT_ASSIGN_PATTERN(lhs = pattern, rhs = e, source = source)) :: xs),func,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, extraArg));
+        (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+      then (DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source) :: xs_1,extraArg);
     case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),func,extraArg)
       equation
         (algElse,extraArg) = traverseDAEEquationsStmtsElse(algElse,func,extraArg);

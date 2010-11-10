@@ -2520,6 +2520,7 @@ end crefToMStr;
 
 
 
+
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -3687,24 +3688,25 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
  "Generates an algorithm statement."
 ::=
   match stmt
-  case s as STMT_ASSIGN(__)       then algStmtAssign(s, context, &varDecls /*BUFC*/)
-  case s as STMT_ASSIGN_ARR(__)   then algStmtAssignArr(s, context, &varDecls /*BUFC*/)
-  case s as STMT_TUPLE_ASSIGN(__) then algStmtTupleAssign(s, context, &varDecls /*BUFC*/)
-  case s as STMT_IF(__)           then algStmtIf(s, context, &varDecls /*BUFC*/)
-  case s as STMT_FOR(__)          then algStmtFor(s, context, &varDecls /*BUFC*/)
-  case s as STMT_WHILE(__)        then algStmtWhile(s, context, &varDecls /*BUFC*/)
-  case s as STMT_ASSERT(__)       then algStmtAssert(s, context, &varDecls /*BUFC*/)
-  case s as STMT_TERMINATE(__)    then algStmtTerminate(s, context, &varDecls /*BUFC*/)
-  case s as STMT_WHEN(__)         then algStmtWhen(s, context, &varDecls /*BUFC*/)
-  case s as STMT_MATCHCASES(__)   then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
-  case s as STMT_BREAK(__)        then 'break;<%\n%>'
-  case s as STMT_FAILURE(__)      then algStmtFailure(s, context, &varDecls /*BUFC*/)
-  case s as STMT_TRY(__)          then algStmtTry(s, context, &varDecls /*BUFC*/)
-  case s as STMT_CATCH(__)        then algStmtCatch(s, context, &varDecls /*BUFC*/)
-  case s as STMT_THROW(__)        then 'throw 1;<%\n%>'
-  case s as STMT_RETURN(__)       then 'goto _return;<%\n%>'
-  case s as STMT_NORETCALL(__)    then algStmtNoretcall(s, context, &varDecls /*BUFC*/)
-  else "NOT IMPLEMENTED ALG STATEMENT"
+  case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSIGN_PATTERN(__) then algStmtAssignPattern(s, context, &varDecls /*BUFC*/)
+  case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFC*/)
+  case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFC*/)
+  case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFC*/)
+  case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFC*/)
+  case s as STMT_MATCHCASES(__)     then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
+  case s as STMT_BREAK(__)          then 'break;<%\n%>'
+  case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFC*/)
+  case s as STMT_CATCH(__)          then algStmtCatch(s, context, &varDecls /*BUFC*/)
+  case s as STMT_THROW(__)          then 'throw 1;<%\n%>'
+  case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
+  case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFC*/)
+  else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
 end algStatement;
 
 
@@ -5614,6 +5616,90 @@ template dimension(Dimension d)
   case DAE.DIM_UNKNOWN(__) then ":"
   else "INVALID_DIMENSION"
 end dimension;
+
+template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls)
+ "Generates an assigment algorithm statement."
+::=
+  match stmt
+  case STMT_ASSIGN_PATTERN(__) then
+    let &preExp = buffer ""
+    let &assignments = buffer ""
+    let expPart = daeExp(rhs, context, &preExp, &varDecls)
+    <<<%preExp%>
+    <%patternMatch(lhs,expPart,&varDecls,&assignments)%><%assignments%>>>
+end algStmtAssignPattern;
+
+template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
+::=
+  match pat
+  /* NOTE: This comment needs to be present or the hasindex count is off in some other cases */
+  case PAT_WILD(__) then '/* WILD pattern: <%rhs%> */<%\n%>'
+  case p as PAT_CONSTANT(__)
+    then
+      let &unboxBuf = buffer ""
+      let urhs = (match p.ty
+        case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
+        else rhs
+      )
+      <<<%unboxBuf%><%match p.exp
+        case c as ICONST(__) then 'if (<%c.integer%> != <%urhs%>) throw 1;<%\n%>'
+        case c as RCONST(__) then 'if (<%c.real%> != <%urhs%>) throw 1;<%\n%>'
+        case c as SCONST(__) then 'if (strcmp("<%c.string%>", <%urhs%>) != 0) throw 1;<%\n%>'
+        case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) throw 1;<%\n%>'
+        case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) throw 1;<%\n%>'
+        case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) throw 1;<%\n%>'
+        else 'UNKNOWN_CONSTANT_PATTERN'
+      %>>>
+  case p as PAT_SOME(__) then
+    let tvar = tempDecl("modelica_metatype", &varDecls)
+    <<if (optionNone(<%rhs%>)) throw 1;
+    <%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), 1));
+    <%patternMatch(p.pat,tvar,&varDecls,&assignments)%>>>
+  case PAT_CONS(__) then
+    let tvarHead = tempDecl("modelica_metatype", &varDecls)
+    let tvarTail = tempDecl("modelica_metatype", &varDecls)
+    <<if (listEmpty(<%rhs%>)) throw 1;
+    <%tvarHead%> = MMC_CAR(<%rhs%>);
+    <%tvarTail%> = MMC_CDR(<%rhs%>);
+    <%patternMatch(head,tvarHead,&varDecls,&assignments)%><%patternMatch(tail,tvarTail,&varDecls,&assignments)%>>>
+  case PAT_META_TUPLE(__)
+    then
+      (patterns |> p hasindex i1 =>
+        let tvar = tempDecl("modelica_metatype", &varDecls)
+        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
+        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        >>)
+  case PAT_CALL_TUPLE(__)
+    then
+      (patterns |> p hasindex i1 =>
+        let nrhs = '<%rhs%>.targ<%i1%>'
+        patternMatch(p,nrhs,&varDecls,&assignments)
+      )
+  case PAT_CALL(__)
+    then
+      <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) throw 1;
+       <%(patterns |> p hasindex i0 =>
+        let tvar = tempDecl("modelica_metatype", &varDecls)
+        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
+        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        >>); indexOffset=2%>
+      >>
+  case p as PAT_AS_FUNC_PTR(__) then
+    let &assignments += '*((modelica_fnptr*)&_<%p.id%>) = <%rhs%>;<%\n%>'
+    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  case p as PAT_AS(ty = NONE()) then
+    let &assignments += '_<%p.id%> = <%rhs%>;<%\n%>'
+    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  case p as PAT_AS(ty = SOME(et)) then
+    let &unboxBuf = buffer ""
+    let &assignments += '_<%p.id%> = <%unboxVariable(rhs, et, &unboxBuf, &varDecls)%>;<%\n%>'
+    <<<%&unboxBuf%>
+    <%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
+end patternMatch;
 
 end SimCodeC;
 

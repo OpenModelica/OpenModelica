@@ -53,6 +53,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Absyn;
 protected import Dump;
+protected import Patternm;
 protected import ValuesUtil;
 protected import Values;
 protected import Types;
@@ -1460,7 +1461,8 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
-      Algorithm.Else else_;      
+      Algorithm.Else else_;
+      DAE.Pattern pattern;    
     
     case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.ASUB(_,_),exp = e),i)
       equation
@@ -1486,6 +1488,16 @@ algorithm
       equation
         indent(i);
         ComponentReference.printComponentRef(c);
+        Print.printBuf(" := ");
+        ExpressionDump.printExp(e);
+        Print.printBuf(";\n");
+      then
+        ();
+    
+    case (DAE.STMT_ASSIGN_PATTERN(lhs = pattern, rhs = e),i)
+      equation
+        indent(i);
+        Print.printBuf(Patternm.patternStr(pattern));
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
         Print.printBuf(";\n");

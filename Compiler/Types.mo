@@ -6238,4 +6238,30 @@ algorithm
   end matchcontinue;
 end liftArraySubscriptList;
 
+public function convertTupleToMetaTuple "Needed when pattern-matching"
+  input DAE.Exp exp;
+  input Type ty;
+  output DAE.Exp oexp;
+  output Type oty;
+algorithm
+  (oexp,oty) := match (exp,ty)
+    case (DAE.TUPLE(_),ty)
+      equation
+        /* So we can verify that the contents of the tuple is boxed */
+        (oexp,oty) = matchType(exp,ty,DAE.T_BOXED_DEFAULT,false);
+      then (oexp,oty);
+    case (exp,ty) then (exp,ty);
+  end match;
+end convertTupleToMetaTuple;
+
+public function isFunctionType
+  input Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case ((DAE.T_FUNCTION(funcArg=_),_)) then true;
+    else false;
+  end match;
+end isFunctionType;
+
 end Types;

@@ -681,6 +681,42 @@ package DAE
     end METARECORDCALL;
   end Exp;
   
+  uniontype Pattern "Patterns deconstruct expressions"
+    record PAT_WILD "_"
+    end PAT_WILD;
+    record PAT_CONSTANT "compare to this constant value using equality"
+      Option<ExpType> ty "so we can unbox if needed";
+      Exp exp;
+    end PAT_CONSTANT;
+    record PAT_AS "id as pat"
+      String id;
+      Option<ExpType> ty;
+      Pattern pat;
+    end PAT_AS;
+    record PAT_AS_FUNC_PTR "id as pat"
+      String id;
+      Pattern pat;
+    end PAT_AS_FUNC_PTR;
+    record PAT_META_TUPLE "(pat1,...,patn)"
+      list<Pattern> patterns;
+    end PAT_META_TUPLE;
+    record PAT_CALL_TUPLE "(pat1,...,patn)"
+      list<Pattern> patterns;
+    end PAT_CALL_TUPLE;
+    record PAT_CONS "head::tail"
+      Pattern head;
+      Pattern tail;
+    end PAT_CONS;
+    record PAT_CALL "RECORD(pat1,...,patn); all patterns are positional"
+      Absyn.Path name;
+      Integer index;
+      list<Pattern> patterns;
+    end PAT_CALL;
+    record PAT_SOME "SOME(pat)"
+      Pattern pat;
+    end PAT_SOME;
+  end Pattern;
+
   uniontype ComponentRef
     record CREF_QUAL
       Ident ident;
@@ -823,6 +859,11 @@ package DAE
       Exp exp;
       ElementSource source;
     end STMT_TUPLE_ASSIGN;
+    record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
+      Pattern lhs;
+      Exp rhs;
+      ElementSource source "the origin of the component/equation/algorithm";
+    end STMT_ASSIGN_PATTERN;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;

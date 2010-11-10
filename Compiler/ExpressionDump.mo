@@ -1991,6 +1991,14 @@ algorithm
       then
         ();
 
+    case (DAE.META_TUPLE(es),_)
+      equation
+        Print.printBuf("Tuple(");
+        printList(es, printExp, ",");
+        Print.printBuf(")");
+      then
+        ();
+
     // MetaModelica list cons
     case (DAE.CONS(_,e1,e2),_)
       equation

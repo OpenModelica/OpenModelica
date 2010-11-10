@@ -2427,6 +2427,7 @@ algorithm
       DAE.InlineType inline;
       DAE.ExpType tp;
       String str;
+      DAE.Pattern pattern;
 
     //------------------------------------------
     // Part of MetaModelica list extension. KS
@@ -2527,36 +2528,14 @@ algorithm
         // Prevent infinite recursion
         failure(Absyn.MATCHEXP(matchTy=_) = right);
         failure(Absyn.VALUEBLOCK(result=_) = right);
-        expl = MetaUtil.extractListFromTuple(left,0);
-        onlyCref = MetaUtil.onlyCrefExpressions(expl);
-        tupleExp = MetaUtil.isTupleExp(right);
 
         (cache,e_1,prop,_) = Static.elabExp(cache,env,right,impl,NONE(),true,pre,info);
-        ty = Util.if_(tupleExp,MetaUtil.fixMetaTuple(prop),Types.getPropType(prop));
-        (elemList,varList) = MetaUtil.extractOutputVarsType({ty},1,{},{});
-
-        true = (not onlyCref) or (listLength(varList)<>listLength(expl));
-        /*
-          lhs := rhs; is translated into (vars=list of temporary variables with types of rhs):
-          _ := matchcontinue ()
-            local vars
-            case ()
-              equation
-                vars = rhs;
-                _ := matchcontinue vars
-                case lhs then ();
-              then ();
-        */
-        
-        lhsExp = MetaUtil.createLhsExp(varList);
-        matchExp = Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},{Absyn.CASE(left,info,{},{},Absyn.TUPLE({}),NONE())},NONE());
-        vb = Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
-          {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,right),NONE(),info),Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),NONE(),info)}),
-          Absyn.BOOL(true));
-        // Debug.traceln("vb:" +& Dump.printExpStr(vb) +& "\n");
-        alg = SCode.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),vb,NONE(),info);
-        (cache,stmts) = instStatement(cache,env,ih,pre,alg,source,initial_,impl,unrollForLoops);
-      then (cache,stmts);
+        ty = Types.getPropType(prop);
+        (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
+        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source);
+      then (cache,{stmt});
         
     /* Tuple with rhs constant */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)

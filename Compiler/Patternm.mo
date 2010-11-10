@@ -40,13 +40,17 @@ package Patternm
   matchcontinue expression."
 
 public import Absyn;
+public import DAE;
 public import DFA;
 public import Env;
 public import SCode;
 public import Debug;
 public import Dump;
 public import RTOpts;
+public import Types;
 
+protected import ComponentReference;
+protected import ExpressionDump;
 protected import Error;
 protected import Lookup;
 protected import Util;
@@ -2468,155 +2472,6 @@ algorithm
 end matchArcs;
 //----------------
 
-//--------------------//
-// Some Type Checking //
-//--------------------//
-
-/*protected function typeCheck1 "function: typeCheck1"
-  input Env.Cache cache;
-  input Env.Env env;
-  input RenamedPatMatrix2 patMat;
-  input list<Absyn.Exp> expList;
-  output Boolean bool;
-algorithm
-  bool :=
-  matchcontinue (cache,env,patMat,expList)
-    case (localCache,localEnv,localPatMat,localExpList)
-      local
-        RenamedPatList patList;
-        RenamedPatMatrix2 localPatMat;
-        Env.Cache localCache;
-        Env.Env localEnv;
-        list<Absyn.Exp> localExpList; Boolean b;
-      equation
-        patList = getVarTypes(localExpList,{});
-        b = patternCheck(localPatMat,patList);
-      then b;
-  end matchcontinue;
-end typeCheck1;
-
-protected function getVarTypes "function: getVarTypes"
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.Exp> expList;
-  input RenamedPatList inList;
-  output Env.Cache outCache;
-  output RenamedPatList outList;
-algorithm
-  (outCache,outList) :=
-  matchcontinue (cache,env,expList,inList)
-    local
-      RenamedPatList localAccList;
-    case (localCache,_,{},localAccList) then (localCache,localAccList);
-    case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: restExp,localAccList)
-      local
-        Absyn.Ident id; list<Absyn.Exp> restExp;
-        DAE.Type t; RenamedPat rp;
-        Env.Cache localCache; Env.Env localEnv;
-      equation
-        (_,t,_)=
-        Lookup.lookupVar(localCache,localEnv,ComponentReference.makeCrefIdent(id,{}));
-        rp = fromTypeToRenamedPat(t);
-        localAccList = listAppend(localAccList,{rp});
-        (localCache,localAccList) = getVarTypes(restExp,localAccList);
-      then (localCache,localAccList);
-  end matchcontinue;
-end getVarTypes;
-
-protected function fromTypeToRenamedPat "function: fromTypeToRenamedPat"
-  input DAE.Type t;
-  output RenamedPat rp;
-algorithm
-  rp :=
-  matchcontinue (t)
-    case ((DAE.T_INTEGER(_),_))
-    then DFA.RP_INTEGER("a",1);
-
-    case ((DAE.T_STRING(_),_))
-    then DFA.RP_STRING("a","a");
-
-    case ((DAE.T_BOOL(_),_))
-    then DFA.RP_BOOL("a",true);
-
-    case ((DAE.T_LIST(_),_))
-    then DFA.RP_CONS("a",DFA.RP_WILDCARD("a"),DFA.RP_WILDCARD("a"));
-  end matchcontinue;
-end fromTypeToRenamedPat;
-
-public function patternCheck "function: patternCheck"
-  input RenamedPatMatrix2 mat;
-  input RenamedPatList lst;
-  output Boolean b;
-algorithm
-  b :=
-  matchcontinue (mat,lst)
-    case ({},l) then true;
-    case ({{}},l) then true;
-    case (firstRow :: restRows,l)
-      local
-        RenamedPatMatrix2 restRows;
-        RenamedPatList firstRow;
-        RenamedPat pat;
-        Boolean b2;
-      equation
-        pat = Util.listFirst(firstRow);
-        b2 = patternCheck2(pat,firstRow);
-        true = b2;
-        b2 = patternCheck(restRows);
-      then b2;
-    case (_,_) then fail();
-  end matchcontinue;
-end patternCheck;
-
-public function patternCheck2 "function: patterCheck2"
-  input RenamedPat pat;
-  input RenamedPatList pList;
-  output Boolean outB;
-algorithm
-  outB :=
-  matchcontinue (pat,pList)
-    case (_,{}) then true;
-    case (p,firstP :: restP)
-      local
-      equation
-        true = twoPatternMatch(p,firstP);
-        b = patternCheck2(firstP,restP);
-      then b;
-    case (_,_) then fail();
-  end matchcontinue;
-end patternCheck2;
-
-public function twoPatternMatch "function: twoPatternMatch"
-  input RenamedPat pat1;
-  input RenamedPat pat2;
-  output Boolean outB;
-algorithm
-  outB :=
-  matchcontinue (pat1,pat2)
-    case (DFA.RP_WILDCARD(_),_) then true;
-    case (_,DFA.RP_WILDCARD(_)) then true;
-    case (DFA.RP_EMPTYLIST(_),DFA.RP_EMPTYLIST(_)) then true;
-    case (DFA.RP_INTEGER(_),DFA.RP_INTEGER(_)) then true;
-    case (DFA.RP_REAL(_),DFA.RP_REAL(_)) then true;
-    case (DFA.RP_BOOL(_),DFA.RP_BOOL(_)) then true;
-    case (DFA.RP_STRING(_),DFA.RP_STRING(_)) then true;
-    case (DFA.RP_CALL(_,_,_),DFA.RP_CALL(_,_,_)) then true;
-    case (DFA.RP_CREF(_,_),DFA.RP_CREF(_,_)) then true;
-    case (DFA.RP_TUPLE(_,_),DFA.RP_TUPLE(_,_)) then true;
-    case (DFA.RP_CONS(_,_,_),DFA.RP_CONS(_,_,_)) then true;
-    case (p1,p2)
-      local  RenamedPat p1; RenamedPat p2;
-      equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n");
-        print("Non matching patterns");
-        DFA.printPattern(p1); print(",");
-        DFA.printPattern(p2); print("\n");
-      then fail();
-  end matchcontinue;
-end twoPatternMatch; */
-//------------------
-
 protected function getCaseDecls
   input Absyn.Case cas;
   output list<Absyn.ElementItem> els;
@@ -2648,5 +2503,311 @@ algorithm
       then Util.FAILURE();
   end match;
 end checkInvalidPatternNamedArgs;
+
+public function elabPattern
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Exp lhs;
+  input DAE.Type ty;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Pattern pattern;
+algorithm
+  (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info);
+end elabPattern;
+
+protected function elabPattern2
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Exp lhs;
+  input DAE.Type ty;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Pattern pattern;
+algorithm
+  (outCache,pattern) := match (cache,env,lhs,ty,info)
+    local
+      list<Absyn.Exp> exps;
+      list<DAE.Type> tys;
+      list<DAE.Pattern> patterns;
+      Absyn.Exp exp,head,tail;
+      String id,s,str;
+      Integer i;
+      Real r;
+      Boolean b;
+      DAE.Type ty1,ty2,tyHead,tyTail;
+      Option<DAE.ExpType> et;
+      DAE.Pattern patternHead,patternTail;
+      Absyn.ComponentRef fcr;
+      Absyn.FunctionArgs fargs;
+      Absyn.Path utPath;
+
+    case (cache,env,Absyn.INTEGER(i),ty,info)
+      equation
+        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
+
+    case (cache,env,Absyn.REAL(r),ty,info)
+      equation
+        et = validPatternType(DAE.T_REAL_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
+
+    case (cache,env,Absyn.UNARY(Absyn.UMINUS(),Absyn.INTEGER(i)),ty,info)
+      equation
+        et = validPatternType(DAE.T_INTEGER_DEFAULT,ty,info);
+        i = -i;
+      then (cache,DAE.PAT_CONSTANT(et,DAE.ICONST(i)));
+
+    case (cache,env,Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(r)),ty,info)
+      equation
+        et = validPatternType(DAE.T_REAL_DEFAULT,ty,info);
+        r = realNeg(r);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.RCONST(r)));
+
+    case (cache,env,Absyn.STRING(s),ty,info)
+      equation
+        et = validPatternType(DAE.T_STRING_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.SCONST(s)));
+
+    case (cache,env,Absyn.BOOL(b),ty,info)
+      equation
+        et = validPatternType(DAE.T_BOOL_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.BCONST(b)));
+
+    case (cache,env,Absyn.ARRAY({}),ty,info)
+      equation
+        et = validPatternType(DAE.T_LIST_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(et,DAE.LIST(DAE.ET_OTHER(),{})));
+
+    case (cache,env,Absyn.ARRAY(exps),ty,info)
+      equation
+        lhs = Util.listFold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
+        (cache,pattern) = elabPattern(cache,env,lhs,ty,info);
+      then (cache,pattern);
+
+    case (cache,env,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),ty,info)
+      equation
+        _ = validPatternType(DAE.T_NONE_DEFAULT,ty,info);
+      then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
+
+    case (cache,env,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),(DAE.T_METAOPTION(ty),_),info)
+      equation
+        (cache,pattern) = elabPattern(cache,env,exp,ty,info);
+      then (cache,DAE.PAT_SOME(pattern));
+
+    case (cache,env,Absyn.CONS(head,tail),tyTail as (DAE.T_LIST(tyHead),_),info)
+      equation
+        tyHead = Types.boxIfUnboxedType(tyHead);
+        (cache,patternHead) = elabPattern(cache,env,head,tyHead,info);
+        (cache,patternTail) = elabPattern(cache,env,tail,tyTail,info);
+      then (cache,DAE.PAT_CONS(patternHead,patternTail));
+
+    case (cache,env,Absyn.TUPLE(exps),(DAE.T_METATUPLE(tys),_),info)
+      equation
+        tys = Util.listMap(tys, Types.boxIfUnboxedType);
+        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
+      then (cache,DAE.PAT_META_TUPLE(patterns));
+
+    case (cache,env,Absyn.TUPLE(exps),(DAE.T_TUPLE(tys),_),info)
+      equation
+        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
+      then (cache,DAE.PAT_CALL_TUPLE(patterns));
+
+    case (cache,env,lhs as Absyn.CALL(fcr,fargs),(DAE.T_UNIONTYPE(_),SOME(utPath)),info)
+      equation
+        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+      then (cache,pattern);
+
+    case (cache,env,Absyn.AS(id,exp),ty2,info)
+      equation
+        (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
+        et = validPatternType(ty1,ty2,info);
+        (cache,pattern) = elabPattern2(cache,env,exp,ty2,info);
+        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
+      then (cache,pattern);
+
+    case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info)
+      equation
+        (cache,DAE.TYPES_VAR(type_ = ty1),_,_) = Lookup.lookupIdent(cache,env,id);
+        et = validPatternType(ty1,ty2,info);
+        pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
+      then (cache,pattern);
+
+    case (cache,env,Absyn.CREF(Absyn.WILD()),_,info) then (cache,DAE.PAT_WILD());
+
+    case (cache,env,lhs,ty,info)
+      equation
+        str = Dump.printExpStr(lhs);
+        str = "- Patternm.elabPattern failed: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then fail();
+  end match;
+end elabPattern2;
+
+protected function elabPatternTuple
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Exp> exps;
+  input list<DAE.Type> tys;
+  input Absyn.Info info;
+  input Absyn.Exp lhs "for error messages";
+  output Env.Cache outCache;
+  output list<DAE.Pattern> patterns;
+algorithm
+  (outCache,patterns) := match (cache,env,exps,tys,info,lhs)
+    local
+      Absyn.Exp exp;
+      String s;
+      DAE.Pattern pattern;
+      DAE.Type ty;
+    case (cache,env,{},{},info,lhs) then (cache,{});
+    case (cache,env,exp::exps,ty::tys,info,lhs)
+      equation
+        (cache,pattern) = elabPattern2(cache,env,exp,ty,info);
+        (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
+      then (cache,pattern::patterns);
+    case (cache,env,_,_,info,lhs)
+      equation
+        s = Dump.printExpStr(lhs);
+        s = "Pattern had different number of elements: " +& s;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
+      then fail();
+  end match;
+end elabPatternTuple;
+
+protected function elabPatternCall
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Path callPath;
+  input Absyn.FunctionArgs fargs;
+  input Absyn.Path utPath;
+  input Absyn.Info info;
+  input Absyn.Exp lhs "for error messages";
+  output Env.Cache outCache;
+  output DAE.Pattern pattern;
+algorithm
+  (outCache,pattern) := matchcontinue (cache,env,callPath,fargs,utPath,info,lhs)
+    local
+      Absyn.Exp exp;
+      String s;
+      DAE.Pattern pattern;
+      DAE.Type ty,t;
+      Absyn.Path utPath1,utPath2,fqPath;
+      Integer index,numPosArgs;
+      list<Absyn.NamedArg> namedArgList,invalidArgs;
+      list<Absyn.Exp> funcArgsNamedFixed,funcArgs;
+      list<String> fieldNameList,fieldNamesNamed;
+      list<DAE.Type> fieldTypeList;
+      list<DAE.Var> fieldVarList;
+      list<DAE.Pattern> patterns;
+    case (cache,env,callPath,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,info,lhs)
+      equation
+        (cache,t as (DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
+        validUniontype(utPath1,utPath2,info,lhs);
+
+        fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
+        fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
+        
+        numPosArgs = listLength(funcArgs);
+        (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
+
+        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
+        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+      then (cache,DAE.PAT_CALL(fqPath,index,patterns));
+    case (cache,env,callPath,_,_,info,lhs)
+      equation
+        failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
+        s = Dump.printExpStr(lhs);
+        s = "Call pattern is not a record deconstructor: " +& s;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
+      then fail();
+  end matchcontinue;
+end elabPatternCall;
+
+protected function validPatternType
+  input DAE.Type ty1;
+  input DAE.Type ty2;
+  input Absyn.Info info;
+  output Option<DAE.ExpType> ty;
+algorithm
+  ty := matchcontinue (ty1,ty2,info)
+    local
+      DAE.ExpType et;
+      String s1,s2,str;
+      DAE.ComponentRef cr;
+    case (ty1,(DAE.T_BOXED(ty2),_),_)
+      equation
+        cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
+        (_,ty1) = Types.matchType(DAE.CREF(cr,DAE.ET_OTHER()),ty2,ty1,true);
+        et = Types.elabType(ty1);
+      then SOME(et);
+    case (ty1,ty2,_)
+      equation
+        cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
+        (_,_) = Types.matchType(DAE.CREF(cr,DAE.ET_OTHER()),ty2,ty1,true);
+      then NONE();
+    case (ty1,ty2,info)
+      equation
+        s1 = Types.unparseType(ty1);
+        s2 = Types.unparseType(ty2);
+        str = "Patternm.validPatternType failed: " +& s1 +& ", " +& s2;
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then fail();
+  end matchcontinue;
+end validPatternType;
+
+protected function validUniontype
+  input Absyn.Path path1;
+  input Absyn.Path path2;
+  input Absyn.Info info;
+  input Absyn.Exp lhs;
+algorithm
+  _ := matchcontinue (path1,path2,info,lhs)
+    local
+      String str;
+    case (path1,path2,_,_)
+      equation
+        true = Absyn.pathEqual(path1,path2);
+      then ();
+    else
+      equation
+        str = "Deconstructor " +& Dump.printExpStr(lhs) +& " is not part of uniontype " +& Absyn.pathString(path2);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then fail();
+  end matchcontinue;
+end validUniontype;
+
+public function patternStr "Pattern to String unparsing"
+  input DAE.Pattern pattern;
+  output String str;
+algorithm
+  str := matchcontinue pattern
+    local
+      list<DAE.Pattern> pats;
+      DAE.Exp exp;
+      DAE.Pattern pat,head,tail;
+      String id,str;
+      DAE.ExpType et;
+    case DAE.PAT_WILD() then "_";
+    case DAE.PAT_AS(id,_,DAE.PAT_WILD()) then id;
+
+    case DAE.PAT_META_TUPLE(pats)
+      equation
+        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+      then "Tuple(" +& str +& ")";
+
+    case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
+
+    case DAE.PAT_CONSTANT(_,exp) then ExpressionDump.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" +& ExpressionDump.typeString(et) +& ")" +& ExpressionDump.printExpStr(exp);
+    case DAE.PAT_AS(id,_,pat) then id +& " as " +& patternStr(pat);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
+      then "*PATTERN*";
+  end matchcontinue;
+end patternStr;
 
 end Patternm;

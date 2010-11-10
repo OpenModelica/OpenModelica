@@ -19873,6 +19873,16 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
+           (i_s as DAE.STMT_ASSIGN_PATTERN(lhs = _)),
+           i_context,
+           i_varDecls )
+      local
+        DAE.Statement i_s;
+      equation
+        (txt, i_varDecls) = algStmtAssignPattern(txt, i_s, i_context, i_varDecls);
+      then (txt, i_varDecls);
+
+    case ( txt,
            (i_s as DAE.STMT_IF(exp = _)),
            i_context,
            i_varDecls )
@@ -20020,7 +20030,7 @@ algorithm
            _,
            i_varDecls )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("NOT IMPLEMENTED ALG STATEMENT"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("#error NOT_IMPLEMENTED_ALG_STATEMENT"));
       then (txt, i_varDecls);
   end matchcontinue;
 end algStatement;
@@ -31453,5 +31463,607 @@ algorithm
       then txt;
   end matchcontinue;
 end dimension;
+
+public function algStmtAssignPattern
+  input Tpl.Text in_txt;
+  input DAE.Statement in_i_stmt;
+  input SimCode.Context in_i_context;
+  input Tpl.Text in_i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_i_stmt, in_i_context, in_i_varDecls)
+    local
+      Tpl.Text txt;
+      SimCode.Context i_context;
+      Tpl.Text i_varDecls;
+
+    case ( txt,
+           DAE.STMT_ASSIGN_PATTERN(rhs = i_rhs, lhs = i_lhs),
+           i_context,
+           i_varDecls )
+      local
+        DAE.Pattern i_lhs;
+        DAE.Exp i_rhs;
+        Tpl.Text i_expPart;
+        Tpl.Text i_assignments;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        i_assignments = emptyTxt;
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_rhs, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        (txt, i_expPart, i_varDecls, i_assignments) = patternMatch(txt, i_lhs, i_expPart, i_varDecls, i_assignments);
+        txt = Tpl.writeText(txt, i_assignments);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           _,
+           _,
+           i_varDecls )
+      then (txt, i_varDecls);
+  end matchcontinue;
+end algStmtAssignPattern;
+
+protected function fun_684
+  input Tpl.Text in_txt;
+  input Option<DAE.ExpType> in_i_p_ty;
+  input Tpl.Text in_i_varDecls;
+  input Tpl.Text in_i_unboxBuf;
+  input Tpl.Text in_i_rhs;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+  output Tpl.Text out_i_unboxBuf;
+algorithm
+  (out_txt, out_i_varDecls, out_i_unboxBuf) :=
+  matchcontinue(in_txt, in_i_p_ty, in_i_varDecls, in_i_unboxBuf, in_i_rhs)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_varDecls;
+      Tpl.Text i_unboxBuf;
+      Tpl.Text i_rhs;
+
+    case ( txt,
+           SOME(i_et),
+           i_varDecls,
+           i_unboxBuf,
+           i_rhs )
+      local
+        DAE.ExpType i_et;
+      equation
+        (txt, i_unboxBuf, i_varDecls) = unboxVariable(txt, Tpl.textString(i_rhs), i_et, i_unboxBuf, i_varDecls);
+      then (txt, i_varDecls, i_unboxBuf);
+
+    case ( txt,
+           _,
+           i_varDecls,
+           i_unboxBuf,
+           i_rhs )
+      equation
+        txt = Tpl.writeText(txt, i_rhs);
+      then (txt, i_varDecls, i_unboxBuf);
+  end matchcontinue;
+end fun_684;
+
+protected function fun_685
+  input Tpl.Text in_txt;
+  input DAE.Exp in_i_p_exp;
+  input Tpl.Text in_i_urhs;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_p_exp, in_i_urhs)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_urhs;
+
+    case ( txt,
+           (i_c as DAE.ICONST(integer = i_c_integer)),
+           i_urhs )
+      local
+        Integer i_c_integer;
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
+        txt = Tpl.writeStr(txt, intString(i_c_integer));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" != "));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           (i_c as DAE.RCONST(real = i_c_real)),
+           i_urhs )
+      local
+        Real i_c_real;
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
+        txt = Tpl.writeStr(txt, realString(i_c_real));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" != "));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           (i_c as DAE.SCONST(string = i_c_string)),
+           i_urhs )
+      local
+        String i_c_string;
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (strcmp(\""));
+        txt = Tpl.writeStr(txt, i_c_string);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\", "));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") != 0) throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           (i_c as DAE.BCONST(bool = i_c_bool)),
+           i_urhs )
+      local
+        Boolean i_c_bool;
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
+        txt = Tpl.writeStr(txt, Tpl.booleanString(i_c_bool));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" != "));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           (i_c as DAE.LIST(valList = {})),
+           i_urhs )
+      local
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (!listEmpty("));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")) throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           (i_c as DAE.META_OPTION(exp = NONE())),
+           i_urhs )
+      local
+        DAE.Exp i_c;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (!optionNone("));
+        txt = Tpl.writeText(txt, i_urhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")) throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then txt;
+
+    case ( txt,
+           _,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("UNKNOWN_CONSTANT_PATTERN"));
+      then txt;
+  end matchcontinue;
+end fun_685;
+
+protected function lm_686
+  input Tpl.Text in_txt;
+  input list<DAE.Pattern> in_items;
+  input Tpl.Text in_i_assignments;
+  input Tpl.Text in_i_rhs;
+  input Tpl.Text in_i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_assignments;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_assignments, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_assignments, in_i_rhs, in_i_varDecls)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_assignments;
+      Tpl.Text i_rhs;
+      Tpl.Text i_varDecls;
+
+    case ( txt,
+           {},
+           i_assignments,
+           _,
+           i_varDecls )
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           i_p :: rest,
+           i_assignments,
+           i_rhs,
+           i_varDecls )
+      local
+        list<DAE.Pattern> rest;
+        DAE.Pattern i_p;
+        Integer i_i1;
+        Tpl.Text i_tvar;
+      equation
+        i_i1 = Tpl.getIteri_i1(txt);
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, "modelica_metatype", i_varDecls);
+        txt = Tpl.writeText(txt, i_tvar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("), "));
+        txt = Tpl.writeStr(txt, intString(i_i1));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("));\n"));
+        (txt, i_tvar, i_varDecls, i_assignments) = patternMatch(txt, i_p, i_tvar, i_varDecls, i_assignments);
+        txt = Tpl.nextIter(txt);
+        (txt, i_assignments, i_varDecls) = lm_686(txt, rest, i_assignments, i_rhs, i_varDecls);
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           _ :: rest,
+           i_assignments,
+           i_rhs,
+           i_varDecls )
+      local
+        list<DAE.Pattern> rest;
+      equation
+        (txt, i_assignments, i_varDecls) = lm_686(txt, rest, i_assignments, i_rhs, i_varDecls);
+      then (txt, i_assignments, i_varDecls);
+  end matchcontinue;
+end lm_686;
+
+protected function lm_687
+  input Tpl.Text in_txt;
+  input list<DAE.Pattern> in_items;
+  input Tpl.Text in_i_assignments;
+  input Tpl.Text in_i_varDecls;
+  input Tpl.Text in_i_rhs;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_assignments;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_assignments, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_assignments, in_i_varDecls, in_i_rhs)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_assignments;
+      Tpl.Text i_varDecls;
+      Tpl.Text i_rhs;
+
+    case ( txt,
+           {},
+           i_assignments,
+           i_varDecls,
+           _ )
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           i_p :: rest,
+           i_assignments,
+           i_varDecls,
+           i_rhs )
+      local
+        list<DAE.Pattern> rest;
+        DAE.Pattern i_p;
+        Integer i_i1;
+        Tpl.Text i_nrhs;
+      equation
+        i_i1 = Tpl.getIteri_i1(txt);
+        i_nrhs = Tpl.writeText(emptyTxt, i_rhs);
+        i_nrhs = Tpl.writeTok(i_nrhs, Tpl.ST_STRING(".targ"));
+        i_nrhs = Tpl.writeStr(i_nrhs, intString(i_i1));
+        (txt, i_nrhs, i_varDecls, i_assignments) = patternMatch(txt, i_p, i_nrhs, i_varDecls, i_assignments);
+        txt = Tpl.nextIter(txt);
+        (txt, i_assignments, i_varDecls) = lm_687(txt, rest, i_assignments, i_varDecls, i_rhs);
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           _ :: rest,
+           i_assignments,
+           i_varDecls,
+           i_rhs )
+      local
+        list<DAE.Pattern> rest;
+      equation
+        (txt, i_assignments, i_varDecls) = lm_687(txt, rest, i_assignments, i_varDecls, i_rhs);
+      then (txt, i_assignments, i_varDecls);
+  end matchcontinue;
+end lm_687;
+
+protected function lm_688
+  input Tpl.Text in_txt;
+  input list<DAE.Pattern> in_items;
+  input Tpl.Text in_i_assignments;
+  input Tpl.Text in_i_rhs;
+  input Tpl.Text in_i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_assignments;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_assignments, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_assignments, in_i_rhs, in_i_varDecls)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_assignments;
+      Tpl.Text i_rhs;
+      Tpl.Text i_varDecls;
+
+    case ( txt,
+           {},
+           i_assignments,
+           _,
+           i_varDecls )
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           i_p :: rest,
+           i_assignments,
+           i_rhs,
+           i_varDecls )
+      local
+        list<DAE.Pattern> rest;
+        DAE.Pattern i_p;
+        Integer i_i0;
+        Tpl.Text i_tvar;
+      equation
+        i_i0 = Tpl.getIteri_i0(txt);
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, "modelica_metatype", i_varDecls);
+        txt = Tpl.writeText(txt, i_tvar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("), "));
+        txt = Tpl.writeStr(txt, intString(i_i0));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("));\n"));
+        (txt, i_tvar, i_varDecls, i_assignments) = patternMatch(txt, i_p, i_tvar, i_varDecls, i_assignments);
+        txt = Tpl.nextIter(txt);
+        (txt, i_assignments, i_varDecls) = lm_688(txt, rest, i_assignments, i_rhs, i_varDecls);
+      then (txt, i_assignments, i_varDecls);
+
+    case ( txt,
+           _ :: rest,
+           i_assignments,
+           i_rhs,
+           i_varDecls )
+      local
+        list<DAE.Pattern> rest;
+      equation
+        (txt, i_assignments, i_varDecls) = lm_688(txt, rest, i_assignments, i_rhs, i_varDecls);
+      then (txt, i_assignments, i_varDecls);
+  end matchcontinue;
+end lm_688;
+
+public function patternMatch
+  input Tpl.Text in_txt;
+  input DAE.Pattern in_i_pat;
+  input Tpl.Text in_i_rhs;
+  input Tpl.Text in_i_varDecls;
+  input Tpl.Text in_i_assignments;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_rhs;
+  output Tpl.Text out_i_varDecls;
+  output Tpl.Text out_i_assignments;
+algorithm
+  (out_txt, out_i_rhs, out_i_varDecls, out_i_assignments) :=
+  matchcontinue(in_txt, in_i_pat, in_i_rhs, in_i_varDecls, in_i_assignments)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_rhs;
+      Tpl.Text i_varDecls;
+      Tpl.Text i_assignments;
+
+    case ( txt,
+           DAE.PAT_WILD(),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("/* WILD pattern: "));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" */"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           (i_p as DAE.PAT_CONSTANT(ty = i_p_ty, exp = i_p_exp)),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Exp i_p_exp;
+        Option<DAE.ExpType> i_p_ty;
+        DAE.Pattern i_p;
+        Tpl.Text i_urhs;
+        Tpl.Text i_unboxBuf;
+      equation
+        i_unboxBuf = emptyTxt;
+        (i_urhs, i_varDecls, i_unboxBuf) = fun_684(emptyTxt, i_p_ty, i_varDecls, i_unboxBuf, i_rhs);
+        txt = Tpl.writeText(txt, i_unboxBuf);
+        txt = fun_685(txt, i_p_exp, i_urhs);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           (i_p as DAE.PAT_SOME(pat = i_p_pat)),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Pattern i_p_pat;
+        DAE.Pattern i_p;
+        Tpl.Text i_tvar;
+      equation
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, "modelica_metatype", i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (optionNone("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(")) throw 1;\n"));
+        txt = Tpl.writeText(txt, i_tvar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("), 1));\n"));
+        (txt, i_tvar, i_varDecls, i_assignments) = patternMatch(txt, i_p_pat, i_tvar, i_varDecls, i_assignments);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           DAE.PAT_CONS(head = i_head, tail = i_tail),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Pattern i_tail;
+        DAE.Pattern i_head;
+        Tpl.Text i_tvarTail;
+        Tpl.Text i_tvarHead;
+      equation
+        (i_tvarHead, i_varDecls) = tempDecl(emptyTxt, "modelica_metatype", i_varDecls);
+        (i_tvarTail, i_varDecls) = tempDecl(emptyTxt, "modelica_metatype", i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (listEmpty("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(")) throw 1;\n"));
+        txt = Tpl.writeText(txt, i_tvarHead);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_CAR("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(");\n"));
+        txt = Tpl.writeText(txt, i_tvarTail);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = MMC_CDR("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(");\n"));
+        (txt, i_tvarHead, i_varDecls, i_assignments) = patternMatch(txt, i_head, i_tvarHead, i_varDecls, i_assignments);
+        (txt, i_tvarTail, i_varDecls, i_assignments) = patternMatch(txt, i_tail, i_tvarTail, i_varDecls, i_assignments);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           DAE.PAT_META_TUPLE(patterns = i_patterns),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        list<DAE.Pattern> i_patterns;
+      equation
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), NONE(), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        (txt, i_assignments, i_varDecls) = lm_686(txt, i_patterns, i_assignments, i_rhs, i_varDecls);
+        txt = Tpl.popIter(txt);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           DAE.PAT_CALL_TUPLE(patterns = i_patterns),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        list<DAE.Pattern> i_patterns;
+      equation
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), NONE(), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        (txt, i_assignments, i_varDecls) = lm_687(txt, i_patterns, i_assignments, i_varDecls, i_rhs);
+        txt = Tpl.popIter(txt);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           DAE.PAT_CALL(index = i_index, patterns = i_patterns),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        list<DAE.Pattern> i_patterns;
+        Integer i_index;
+        Integer ret_0;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (mmc__uniontype__metarecord__typedef__equal("));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
+        txt = Tpl.writeStr(txt, intString(i_index));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
+        ret_0 = listLength(i_patterns);
+        txt = Tpl.writeStr(txt, intString(ret_0));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(") == 0) throw 1;\n"));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(1));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(2, NONE(), NONE(), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        (txt, i_assignments, i_varDecls) = lm_688(txt, i_patterns, i_assignments, i_rhs, i_varDecls);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.popBlock(txt);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           (i_p as DAE.PAT_AS_FUNC_PTR(id = i_p_id, pat = i_p_pat)),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Pattern i_p_pat;
+        String i_p_id;
+        DAE.Pattern i_p;
+      equation
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING("*((modelica_fnptr*)&_"));
+        i_assignments = Tpl.writeStr(i_assignments, i_p_id);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(") = "));
+        i_assignments = Tpl.writeText(i_assignments, i_rhs);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(";"));
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_NEW_LINE());
+        (txt, i_rhs, i_varDecls, i_assignments) = patternMatch(txt, i_p_pat, i_rhs, i_varDecls, i_assignments);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           (i_p as DAE.PAT_AS(ty = NONE(), id = i_p_id, pat = i_p_pat)),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Pattern i_p_pat;
+        String i_p_id;
+        DAE.Pattern i_p;
+      equation
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING("_"));
+        i_assignments = Tpl.writeStr(i_assignments, i_p_id);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(" = "));
+        i_assignments = Tpl.writeText(i_assignments, i_rhs);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(";"));
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_NEW_LINE());
+        (txt, i_rhs, i_varDecls, i_assignments) = patternMatch(txt, i_p_pat, i_rhs, i_varDecls, i_assignments);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           (i_p as DAE.PAT_AS(ty = SOME(i_et), id = i_p_id, pat = i_p_pat)),
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      local
+        DAE.Pattern i_p_pat;
+        String i_p_id;
+        DAE.ExpType i_et;
+        DAE.Pattern i_p;
+        Tpl.Text i_unboxBuf;
+      equation
+        i_unboxBuf = emptyTxt;
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING("_"));
+        i_assignments = Tpl.writeStr(i_assignments, i_p_id);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(" = "));
+        (i_assignments, i_unboxBuf, i_varDecls) = unboxVariable(i_assignments, Tpl.textString(i_rhs), i_et, i_unboxBuf, i_varDecls);
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_STRING(";"));
+        i_assignments = Tpl.writeTok(i_assignments, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeText(txt, i_unboxBuf);
+        txt = Tpl.softNewLine(txt);
+        (txt, i_rhs, i_varDecls, i_assignments) = patternMatch(txt, i_p_pat, i_rhs, i_varDecls, i_assignments);
+      then (txt, i_rhs, i_varDecls, i_assignments);
+
+    case ( txt,
+           _,
+           i_rhs,
+           i_varDecls,
+           i_assignments )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("UNKNOWN_PATTERN /* rhs: "));
+        txt = Tpl.writeText(txt, i_rhs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" */"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+      then (txt, i_rhs, i_varDecls, i_assignments);
+  end matchcontinue;
+end patternMatch;
 
 end SimCodeC;

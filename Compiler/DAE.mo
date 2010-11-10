@@ -472,6 +472,12 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN_ARR;
 
+  record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
+    Pattern lhs;
+    Exp rhs;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_ASSIGN_PATTERN;
+
   record STMT_IF
     Exp exp;
     list<Statement> statementLst;
@@ -664,6 +670,8 @@ public constant Type T_INTEGER_BOXED = (T_BOXED((T_INTEGER({}),NONE())),NONE());
 public constant Type T_STRING_BOXED  = (T_BOXED((T_STRING({}),NONE())),NONE());
 public constant Type T_BOOL_BOXED    = (T_BOXED((T_BOOL({}),NONE())),NONE());
 public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
+public constant Type T_LIST_DEFAULT = (T_LIST((T_NOTYPE(),NONE())),NONE());
+public constant Type T_NONE_DEFAULT = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
@@ -1159,6 +1167,42 @@ uniontype Exp "Expressions
   /* --- */
 
 end Exp;
+
+public uniontype Pattern "Patterns deconstruct expressions"
+  record PAT_WILD "_"
+  end PAT_WILD;
+  record PAT_CONSTANT "compare to this constant value using equality"
+    Option<ExpType> ty "so we can unbox if needed";
+    Exp exp;
+  end PAT_CONSTANT;
+  record PAT_AS "id as pat"
+    String id;
+    Option<ExpType> ty "so we can unbox if needed";
+    Pattern pat;
+  end PAT_AS;
+  record PAT_AS_FUNC_PTR "id as pat"
+    String id;
+    Pattern pat;
+  end PAT_AS_FUNC_PTR;
+  record PAT_META_TUPLE "(pat1,...,patn)"
+    list<Pattern> patterns;
+  end PAT_META_TUPLE;
+  record PAT_CALL_TUPLE "(pat1,...,patn)"
+    list<Pattern> patterns;
+  end PAT_CALL_TUPLE;
+  record PAT_CONS "head::tail"
+    Pattern head;
+    Pattern tail;
+  end PAT_CONS;
+  record PAT_CALL "RECORD(pat1,...,patn); all patterns are positional"
+    Absyn.Path name;
+    Integer index;
+    list<Pattern> patterns;
+  end PAT_CALL;
+  record PAT_SOME "SOME(pat)"
+    Pattern pat;
+  end PAT_SOME;
+end Pattern;
 
 public
 uniontype Operator "Operators which are overloaded in the abstract syntax are here

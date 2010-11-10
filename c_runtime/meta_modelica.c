@@ -66,6 +66,7 @@ void mmc_prim_set_real(struct mmc_real *p, double d)
 double mmc_prim_get_real(void *p)
 {
     union mmc_double_as_words u;
+    if ((0 == ((mmc_sint_t)p & 1))) return MMC_UNTAGFIXNUM(p);
     u.data[0] = MMC_REALDATA(p)[0];
     if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
       u.data[1] = MMC_REALDATA(p)[1];

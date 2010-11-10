@@ -1011,6 +1011,9 @@ algorithm
         expl=Util.listMap(vallist,valueExp);
       then DAE.METARECORDCALL(path,expl,namelst,ix);
 
+    case (Values.META_FAIL())
+      then DAE.CALL(Absyn.IDENT("fail"),{},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
+
     case (v)
       equation
         Debug.fprintln("failtrace", "ValuesUtil.valueExp failed for "+&valString(v)+&"\n");
