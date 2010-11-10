@@ -3021,18 +3021,18 @@ algorithm
       Absyn.InnerOuter inner_outer;
       String name;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> constraint;
+      Option<Absyn.ConstrainClass> constrainClass;
       Absyn.ComponentRef old_comp,new_comp;
     case ({},_,_) then {};  /* the old name for the component */
     case (((element as Absyn.ELEMENTITEM(element =
       Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,
-                    specification = elementspec,info = info,constrainClass = constraint))) :: res),old_comp,new_comp)
+                    specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp)
       equation
         res_1 = renameComponentInElements(res, old_comp, new_comp);
         elementspec_1 = renameComponentInElementSpec(elementspec, old_comp, new_comp);
         element_1 = Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
-          constraint));
+          constrainClass));
       then
         (element_1 :: res_1);
     case ((element :: res),old_comp,new_comp)
@@ -3426,7 +3426,7 @@ algorithm
       Absyn.InnerOuter inner_outer;
       String name;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> constraint;
+      Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Exp exp_1,exp;
       list<Absyn.ElementArg> element_args_1,element_args;
     case (Absyn.C_TYPENAME(path = path),old_comp,new_comp) then Absyn.C_TYPENAME(path);  /* the old name for the component */
@@ -3445,13 +3445,13 @@ algorithm
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
       then
         Absyn.C_ALGORITHMSECTION(b,algs_1);
-    case (Absyn.C_ELEMENT(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constraint)),old_comp,new_comp)
+    case (Absyn.C_ELEMENT(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constrainClass)),old_comp,new_comp)
       equation
         elementspec_1 = renameComponentInElementSpec(elementspec, old_comp, new_comp);
       then
         Absyn.C_ELEMENT(
           Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
-          constraint));
+          constrainClass));
     case (Absyn.C_EXPRESSION(exp = exp),old_comp,new_comp)
       equation
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
@@ -7708,17 +7708,17 @@ algorithm
       Absyn.InnerOuter inner_outer;
       String name;
       Absyn.Info info;
-      Option<Absyn.ConstrainClass> constraint;
+      Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Path old_comp,new_comp;
       list<Env.Frame> env;
     case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
-    case (((element as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constraint))) :: res),old_comp,new_comp,env)
+    case (((element as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,name = name,specification = elementspec,info = info,constrainClass = constrainClass))) :: res),old_comp,new_comp,env)
       equation
         (res_1,changed1) = renameClassInElements(res, old_comp, new_comp, env);
         (elementspec_1,changed2) = renameClassInElementSpec(elementspec, old_comp, new_comp, env);
         element_1 = Absyn.ELEMENTITEM(
           Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,name,elementspec_1,info,
-          constraint));
+          constrainClass));
         changed = Util.boolOrList({changed1,changed2});
       then
         ((element_1 :: res_1),changed);
@@ -12704,7 +12704,7 @@ protected function getAnnotationFromParts
 algorithm
   outAbsynElementArgLst := matchcontinue (inAbsynClassPartLst, annotationType)
     local
-      list<Absyn.ElementArg> res;
+      list<Absyn.ElementArg> res1, res2, res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> rest;
       list<Absyn.EquationItem> eqns;
@@ -12712,43 +12712,55 @@ algorithm
     
     case ({}, _) then {};
     
-    case ((Absyn.PUBLIC(contents = elts) :: rest), _) 
+    case (Absyn.PUBLIC(contents = elts) :: rest, annotationType) 
       equation 
-        res = getAnnotationFromElts(elts, annotationType); 
+        res1 = getAnnotationFromElts(elts, annotationType);
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);
       then 
         res;
     
-    case ((Absyn.PROTECTED(contents = elts) :: rest), _) 
+    case (Absyn.PROTECTED(contents = elts) :: rest, annotationType) 
       equation 
-        res = getAnnotationFromElts(elts, annotationType); 
+        res1 = getAnnotationFromElts(elts, annotationType); 
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);
       then 
         res;
     
-    case ((Absyn.EQUATIONS(contents = eqns) :: rest), _) 
+    case (Absyn.EQUATIONS(contents = eqns) :: rest, annotationType) 
       equation 
-        res = getAnnotationFromEqns(eqns, annotationType); 
+        res1 = getAnnotationFromEqns(eqns, annotationType); 
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);
       then 
         res;
     
-    case ((Absyn.INITIALEQUATIONS(contents = eqns) :: rest), _) 
+    case (Absyn.INITIALEQUATIONS(contents = eqns) :: rest, annotationType) 
       equation 
-        res = getAnnotationFromEqns(eqns, annotationType); 
+        res1 = getAnnotationFromEqns(eqns, annotationType);
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);        
       then 
         res;
     
-    case ((Absyn.ALGORITHMS(contents = algs) :: rest), _) 
+    case (Absyn.ALGORITHMS(contents = algs) :: rest, annotationType) 
       equation 
-        res = getAnnotationFromAlgs(algs, annotationType);
+        res1 = getAnnotationFromAlgs(algs, annotationType);
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);        
       then 
         res;
     
-    case ((Absyn.INITIALALGORITHMS(contents = algs) :: rest), _) 
+    case (Absyn.INITIALALGORITHMS(contents = algs) :: rest, _) 
       equation
-        res = getAnnotationFromAlgs(algs, annotationType); 
+        res1 = getAnnotationFromAlgs(algs, annotationType);
+        res2 = getAnnotationFromParts(rest, annotationType);
+        res = listAppend(res1, res2);
       then
         res;
     
-    case ((_ :: rest), _) 
+    case (_ :: rest, _) 
       equation 
         res = getAnnotationFromParts(rest, annotationType); 
       then 
@@ -12768,13 +12780,16 @@ algorithm
       list<Absyn.ElementArg> lst,res;
       list<Absyn.ElementItem> rest;
     
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
+    // handle empty
+    case ({}, _) then {};
+    
+    case (Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest, _)
       equation 
         containAnnotation(lst, annotationType); 
       then 
         lst;
     
-    case ((_ :: rest), _)
+    case (_ :: rest, _)
       equation 
         res = getAnnotationFromElts(rest, annotationType); 
       then 
@@ -14323,6 +14338,7 @@ algorithm
           inModelPath)
       equation
         // print(Dump.unparseStr(graphicProgram, false));
+        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
         
@@ -14351,7 +14367,8 @@ algorithm
           inFullProgram,
           inModelPath)
       equation
-        //print(Dump.unparseStr(p, false));
+        // print(Dump.unparseStr(p, false));
+        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");      
         (stripmod,gxmods) = stripGraphicsModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
 
@@ -14375,7 +14392,8 @@ algorithm
           inFullProgram,
           inModelPath)
       equation
-        //print(Dump.unparseStr(p, false));
+        // print(Dump.unparseStr(p, false));
+        // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");        
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
 
@@ -14401,7 +14419,8 @@ algorithm
           inFullProgram,
           inModelPath)
       equation
-        //print(Dump.unparseStr(p, false));
+        // print(Dump.unparseStr(p, false));
+        // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");        
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, anncname);
@@ -14419,10 +14438,12 @@ algorithm
       then
         str;
 
-    case (_,inClass,inFullProgram,inModelPath)
+    case (inAnnotation, inClass, inFullProgram,inModelPath)
       equation
-        //print(Dump.unparseStr(p, false));
-        Print.printBuf("Interactive.getAnnotationString failed!\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", 
+          "- Interactive.getAnnotationString failed on annotation: " +& 
+          Dump.unparseAnnotationOption(0, SOME(inAnnotation)));
       then
         fail();
   end matchcontinue;

@@ -2442,7 +2442,7 @@ algorithm
   end matchcontinue;
 end unparseModificationStr;
 
-protected function unparseMod1Str "function: unparseMod1Str
+public function unparseMod1Str "function: unparseMod1Str
 
   Helper function to unparse_modification_str
 "
