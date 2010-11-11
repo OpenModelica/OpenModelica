@@ -58,6 +58,9 @@ testmeta:
 	(cd testsuite/meta; time $(MAKE) -f Makefile)
 	(cd testsuite/records; time $(MAKE) -f Makefile)
 
+t:
+	(cd testsuite/meta; time ../rtest -v SimplifyTest.mos)
+
 testlibraries:
 	(cd testsuite/libraries; time $(MAKE) -f Makefile)
 
@@ -87,8 +90,6 @@ distclean: clean
 	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
-	(cd modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
-	(cd flat_modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	rm -f Compiler/.depend
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 	rm -f $(autoconfGeneratedFiles)
@@ -102,8 +103,6 @@ clean: qtclean
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd flat_modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	rm -rf build/share build/lib build/include build/bin/OMPlotWindow* build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omcd build/bin/omcd.exe build/bin/omcp build/bin/omcp.exe  build/bin/omc-diff build/bin/omc-diff.exe
 
