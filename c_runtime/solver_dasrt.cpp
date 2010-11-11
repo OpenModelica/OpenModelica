@@ -202,7 +202,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     function_updateDependents();
 
     saveall();
-
+    checkTermination();
     function_storeDelayed();
 
     sim_result->emit();
@@ -234,6 +234,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     // alg vars too.
     acceptedStep=1;
     functionDAE_output();
+    checkTermination(); 
     function_storeDelayed(); //TODO NEW storeDelayed
     acceptedStep=0;
 
@@ -281,8 +282,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         StartEventIteration(&globalData->timeValue);
 
         // Store new values after event into delayed expressions buffers 
+        checkTermination();
         function_storeDelayed();
-
         sim_result->emit();
         if (sim_verbose) {
           cout << "Done checking events at time " << globalData->timeValue << endl;
@@ -317,8 +318,9 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep = 1;
         functionDAE_output();
-          function_storeDelayed();
-          acceptedStep = 0;
+	checkTermination();
+	function_storeDelayed();
+        acceptedStep = 0;
         } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout); 
 
         info[0] = 1;
@@ -357,13 +359,15 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // alg vars too.
         acceptedStep=1;
         functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
-        function_storeDelayed();
+	checkTermination();
+	function_storeDelayed();
         acceptedStep=0;
       } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout);
     } // end while
 
     acceptedStep=1;
     functionDAE_output2(); // calculate discrete varibles separately, see above
+    checkTermination();
     acceptedStep=0;
 
     if (sim_verbose) { cout << "Simulation stopped at time " << globalData->timeValue << endl; }

@@ -153,7 +153,7 @@ uniontype WhenEquation "- When Equation"
 end WhenEquation;
 
 public
-uniontype ReinitStatement "- Reinit Statement"
+uniontype WhenOperator "- Reinit Statement"
   record REINIT
     .DAE.ComponentRef stateVar "State variable to reinit" ;
     .DAE.Exp value             "Value after reinit" ;
@@ -170,17 +170,13 @@ uniontype ReinitStatement "- Reinit Statement"
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE; 
-
-  record EMPTY_REINIT
-  end EMPTY_REINIT;
-  
-end ReinitStatement;
+end WhenOperator;
 
 public
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
     .DAE.Exp condition                   "The when-condition" ;
-    list<ReinitStatement> reinitStmtLst "List of reinit statements associated to the when clause." ;
+    list<WhenOperator> reinitStmtLst "List of reinit statements associated to the when clause." ;
     Option<Integer> elseClause          "index of elsewhen clause" ;
 
   // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.

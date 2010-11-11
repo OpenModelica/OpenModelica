@@ -1345,10 +1345,8 @@ template functionWhen(list<SimWhenClause> whenClauses)
       case <%i0%>:
         <%functionWhenCaseEquation(whenEq, &varDecls /*BUFC*/)%>
         <%reinits |> reinit =>
-          let &preExp = buffer "" /*BUFD*/
-          let body = functionWhenReinitStatement(reinit, &preExp /*BUFC*/,
-                                               &varDecls /*BUFC*/)
-          '<%preExp%><%\n%><%body%>'
+          let body = functionWhenReinitStatement(reinit, &varDecls /*BUFC*/)
+          '<%body%>'
         ;separator="\n"%>
         break;<%\n%>
       >>
@@ -1392,16 +1390,29 @@ case SOME(weq as WHEN_EQ(__)) then
 end functionWhenCaseEquation;
 
 
-template functionWhenReinitStatement(ReinitStatement reinit, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
+template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=
 match reinit
 case REINIT(__) then
+  let &preExp = buffer "" /*BUFD*/
   let val = daeExp(value, contextSimulationDiscrete,
                  &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
-  <%cref(stateVar)%> = <%val%>;
+  <%preExp%>  <%cref(stateVar)%> = <%val%>;
+  >>
+case TERMINATE(__) then 
+  let &preExp = buffer "" /*BUFD*/
+  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
+  >>
+case ASSERT(__) then 
+  let &preExp = buffer "" /*BUFD*/
+  let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>  MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
   >>
 end functionWhenReinitStatement;
 
@@ -1419,16 +1430,7 @@ case SIM_WHEN_CLAUSE(__) then
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
       'edge(localData->helpVars[<%hidx%>])'
     ;separator=" || ")	
-  let ifthen = functionWhenReinitStatementThen(reinits, &preExp /*BUFP*/,
-                            &varDecls /*BUFP*/)                     
-/*let ifelse = functionWhenReinitStatementElse(reinits, &preExp /*BUFP*/,
-  							&varDecls /*BUFP*/) 
-  let hvars = (conditions |> (exp, hindex) =>
-  let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
-                        &varDecls /*BUFC*/)
-  '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
-	)
-*/
+  let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
 if reinits then	
 <<
@@ -1438,45 +1440,48 @@ if reinits then
   <%helpInits%>
   if (<%helpIf%>) { 
     <%ifthen%>
-     needToIterate = 1;
   }
 >>
 end genreinits;
 
-      /*
-      let &preExp2 = buffer "" /*BUFD*/
-  let reint = ( reinits |> reinit =>  
-  let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
-  '<%preExp2%>\n<%expL%>;')
-      	//if reinits then
-	  //let &varDecls = buffer "" /*BUFD*/
-      let helpif = 'edge(localData->helpVars[<%hindex%>]'
-      let &preExp2 = buffer "" /*BUFD*/
-      let reint = ( reinits |> reinit =>  
-      let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
 
-      '<%preExp%>\n<%expL%>'
-      ;separator="\n")
-    >>*/
-
-template functionWhenReinitStatementThen(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
+template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
   	match reinit
   	case REINIT(__) then 
+  		let &preExp = buffer "" /*BUFD*/
   		let val = daeExp(value, contextSimulationDiscrete,
         	         &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  		'<%cref(stateVar)%> = <%val%>;';separator="\n"
-  	)
+ 		<<
+  		<%preExp%>
+                <%cref(stateVar)%> = <%val%>;
+                needToIterate=1;
+                >>
+  	case TERMINATE(__) then 
+  		let &preExp = buffer "" /*BUFD*/
+		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+		<<	
+                <%preExp%> 
+                MODELICA_TERMINATE(<%msgVar%>);
+                >>
+	case ASSERT(__) then 
+  		let &preExp = buffer "" /*BUFD*/
+		let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+                <<
+                <%preExp%> 
+                MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
+                >>
+  ;separator="\n")
   <<
    <%body%>	
   >>
 end functionWhenReinitStatementThen;
 
 
-template functionWhenReinitStatementElse(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
+template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
                             Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=

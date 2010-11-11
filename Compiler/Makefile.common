@@ -80,7 +80,6 @@ Inst.mo \
 InstExtends.mo \
 InstSection.mo \
 Interactive.mo \
-Linearization.mo \
 Lookup.mo \
 Main.mo \
 MMath.mo \

@@ -54,6 +54,7 @@ protected import Absyn;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import Builtin;
 protected import ComponentReference;
 protected import Ceval;
 protected import ClassInf;
@@ -3726,8 +3727,6 @@ algorithm
   end matchcontinue;
 end calculateJacobianRow2;
 
-
-
 public function analyzeJacobian "function: analyzeJacobian
   author: PA
 
@@ -4006,8 +4005,6 @@ algorithm
         res;
   end matchcontinue;
 end containAnyVar;
-
-
 
 public function getEqnsysRhsExp "function: getEqnsysRhsExp
   author: PA

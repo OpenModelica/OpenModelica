@@ -32,13 +32,12 @@
 package BackendDAETransform
 " file:	       BackendDAETransform.mo
   package:     BackendDAETransform
-  description: BackendDAEOPtimize contains functions that do some kind of
-               optimazation on the BackendDAE datatype:
-               - removing simpleEquations
-               - Tearing/Relaxation
-               - Linearization
-               - Inline Integration
-               - and so on ... 
+  description: BackendDAETransform contains functions that are needed to perform 
+               a transformation to a Block-Lower-Triangular-DAE.
+               - matchingAlgorithm
+               - strongComponents
+               - reduceIndexDummyDer
+
   
   RCS: $Id$
 "
@@ -1155,9 +1154,6 @@ end checkStack;
 /******************************************
  reduceIndexDummyDer and stuff
  *****************************************/
-
-
-
 
 protected function reduceIndexDummyDer
 "function: reduceIndexDummyDer

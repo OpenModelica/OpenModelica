@@ -3531,7 +3531,7 @@ end functionStoreDelayed;
 
 protected function lm_99
   input Tpl.Text in_txt;
-  input list<BackendDAE.ReinitStatement> in_items;
+  input list<BackendDAE.WhenOperator> in_items;
   input SimCode.SimCode in_i_simCode;
 
   output Tpl.Text out_txt;
@@ -3551,7 +3551,7 @@ algorithm
            BackendDAE.REINIT(value = i_value, stateVar = i_stateVar) :: rest,
            i_simCode )
       local
-        list<BackendDAE.ReinitStatement> rest;
+        list<BackendDAE.WhenOperator> rest;
         DAE.ComponentRef i_stateVar;
         DAE.Exp i_value;
         Tpl.Text i_valueExp;
@@ -3573,7 +3573,7 @@ algorithm
            _ :: rest,
            i_simCode )
       local
-        list<BackendDAE.ReinitStatement> rest;
+        list<BackendDAE.WhenOperator> rest;
       equation
         txt = lm_99(txt, rest, i_simCode);
       then txt;
@@ -3603,7 +3603,7 @@ algorithm
            i_simCode )
       local
         list<SimCode.SimWhenClause> rest;
-        list<BackendDAE.ReinitStatement> i_reinits;
+        list<BackendDAE.WhenOperator> i_reinits;
         Option<BackendDAE.WhenEquation> i_whenEq;
         Integer i_i0;
       equation

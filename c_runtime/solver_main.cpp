@@ -166,7 +166,6 @@ flag 1=explicit euler
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
 {
-	acceptedStep = 1; // euler only takes accepted steps
 
 	//Workaround for Relation in simulation_events
 	euler_in_use = 1;
@@ -324,7 +323,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		 *
 		 */
 
-        retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
+                retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 
 		functionDAE_output();
 
@@ -349,6 +348,11 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		// Emit this time step
 		sim_result->emit();
 		saveall();
+		
+
+		//Check for termination of terminate() or assert()
+	        checkTermination();
+		
 		if (retValIntration){
 			throw TerminateSimulationException(globalData->timeValue,
 					string("Error in Simulation. Solver exit with error.\n"));
@@ -486,9 +490,9 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
     	do{
     		tout = globalData->timeValue + *step;
 
-    		if (sim_verbose){
-				cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
-			}
+    		//if (sim_verbose){
+		//		cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
+		//}
 
     		if (jac_flag){
 			DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,

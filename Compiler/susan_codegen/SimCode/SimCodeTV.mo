@@ -185,7 +185,7 @@ package SimCode
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
       list<DAE.ComponentRef> conditionVars;
-      list<BackendDAE.ReinitStatement> reinits;
+      list<BackendDAE.WhenOperator> reinits;
       Option<BackendDAE.WhenEquation> whenEq;
       list<tuple<DAE.Exp, Integer>> conditions;
     end SIM_WHEN_CLAUSE;
@@ -416,15 +416,25 @@ package BackendDAE
       DAE.Exp relation_;
     end ZERO_CROSSING;
   end ZeroCrossing;
-
-  uniontype ReinitStatement
+  
+  uniontype WhenOperator "- Reinit Statement"
     record REINIT
-      DAE.ComponentRef stateVar;
-      DAE.Exp value;
-
+      DAE.ComponentRef stateVar "State variable to reinit" ;
+      DAE.Exp value             "Value after reinit" ;
+      DAE.ElementSource source "origin of equation";
     end REINIT;
-    record EMPTY_REINIT end EMPTY_REINIT;
-  end ReinitStatement;
+
+    record ASSERT
+      DAE.Exp condition;
+      DAE.Exp message;
+      DAE.ElementSource source "the origin of the component/equation/algorithm";
+    end ASSERT;  
+  
+    record TERMINATE " The Modelica builtin terminate(msg)"
+      DAE.Exp message;
+      DAE.ElementSource source "the origin of the component/equation/algorithm";
+    end TERMINATE; 
+  end WhenOperator;
 
   uniontype WhenEquation
     record WHEN_EQ

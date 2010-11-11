@@ -5008,7 +5008,7 @@ end functionStoreDelayed;
 
 protected function lm_124
   input Tpl.Text in_txt;
-  input list<BackendDAE.ReinitStatement> in_items;
+  input list<BackendDAE.WhenOperator> in_items;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -5029,15 +5029,11 @@ algorithm
            i_reinit :: rest,
            i_varDecls )
       local
-        list<BackendDAE.ReinitStatement> rest;
-        BackendDAE.ReinitStatement i_reinit;
+        list<BackendDAE.WhenOperator> rest;
+        BackendDAE.WhenOperator i_reinit;
         Tpl.Text i_body;
-        Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_body, i_preExp, i_varDecls) = functionWhenReinitStatement(emptyTxt, i_reinit, i_preExp, i_varDecls);
-        txt = Tpl.writeText(txt, i_preExp);
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        (i_body, i_varDecls) = functionWhenReinitStatement(emptyTxt, i_reinit, i_varDecls);
         txt = Tpl.writeText(txt, i_body);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_124(txt, rest, i_varDecls);
@@ -5047,7 +5043,7 @@ algorithm
            _ :: rest,
            i_varDecls )
       local
-        list<BackendDAE.ReinitStatement> rest;
+        list<BackendDAE.WhenOperator> rest;
       equation
         (txt, i_varDecls) = lm_124(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -5078,7 +5074,7 @@ algorithm
            i_varDecls )
       local
         list<SimCode.SimWhenClause> rest;
-        list<BackendDAE.ReinitStatement> i_reinits;
+        list<BackendDAE.WhenOperator> i_reinits;
         Option<BackendDAE.WhenEquation> i_whenEq;
         Integer i_i0;
       equation
@@ -5206,42 +5202,78 @@ end functionWhenCaseEquation;
 
 public function functionWhenReinitStatement
   input Tpl.Text in_txt;
-  input BackendDAE.ReinitStatement in_i_reinit;
-  input Tpl.Text in_i_preExp;
+  input BackendDAE.WhenOperator in_i_reinit;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
-  output Tpl.Text out_i_preExp;
   output Tpl.Text out_i_varDecls;
 algorithm
-  (out_txt, out_i_preExp, out_i_varDecls) :=
-  matchcontinue(in_txt, in_i_reinit, in_i_preExp, in_i_varDecls)
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_i_reinit, in_i_varDecls)
     local
       Tpl.Text txt;
-      Tpl.Text i_preExp;
       Tpl.Text i_varDecls;
 
     case ( txt,
            BackendDAE.REINIT(value = i_value, stateVar = i_stateVar),
-           i_preExp,
            i_varDecls )
       local
         DAE.ComponentRef i_stateVar;
         DAE.Exp i_value;
         Tpl.Text i_val;
+        Tpl.Text i_preExp;
       equation
+        i_preExp = emptyTxt;
         (i_val, i_preExp, i_varDecls) = daeExp(emptyTxt, i_value, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  "));
         txt = cref(txt, i_stateVar);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_val);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-      then (txt, i_preExp, i_varDecls);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           BackendDAE.TERMINATE(message = i_message),
+           i_varDecls )
+      local
+        DAE.Exp i_message;
+        Tpl.Text i_msgVar;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_msgVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  MODELICA_TERMINATE("));
+        txt = Tpl.writeText(txt, i_msgVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+      then (txt, i_varDecls);
+
+    case ( txt,
+           BackendDAE.ASSERT(condition = i_condition, message = i_message),
+           i_varDecls )
+      local
+        DAE.Exp i_message;
+        DAE.Exp i_condition;
+        Tpl.Text i_msgVar;
+        Tpl.Text i_condVar;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_condVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_condition, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        (i_msgVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  MODELICA_ASSERT("));
+        txt = Tpl.writeText(txt, i_condVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, i_msgVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+      then (txt, i_varDecls);
 
     case ( txt,
            _,
-           i_preExp,
            i_varDecls )
-      then (txt, i_preExp, i_varDecls);
+      then (txt, i_varDecls);
   end matchcontinue;
 end functionWhenReinitStatement;
 
@@ -5311,7 +5343,7 @@ end lm_129;
 
 protected function fun_130
   input Tpl.Text in_txt;
-  input list<BackendDAE.ReinitStatement> in_i_reinits;
+  input list<BackendDAE.WhenOperator> in_i_reinits;
   input Tpl.Text in_i_ifthen;
   input Tpl.Text in_i_helpIf;
   input Tpl.Text in_i_helpInits;
@@ -5362,7 +5394,6 @@ algorithm
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeText(txt, i_ifthen);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(" needToIterate = 1;\n"));
         txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("}"));
         txt = Tpl.popBlock(txt);
@@ -5391,7 +5422,7 @@ algorithm
            i_varDecls,
            i_int )
       local
-        list<BackendDAE.ReinitStatement> i_reinits;
+        list<BackendDAE.WhenOperator> i_reinits;
         list<tuple<DAE.Exp, Integer>> i_conditions;
         Tpl.Text i_ifthen;
         Tpl.Text i_helpIf;
@@ -5403,7 +5434,7 @@ algorithm
         i_helpIf = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" || ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_helpIf, i_helpInits, i_varDecls, i_preExp) = lm_129(i_helpIf, i_conditions, i_helpInits, i_varDecls, i_preExp);
         i_helpIf = Tpl.popIter(i_helpIf);
-        (i_ifthen, i_preExp, i_varDecls) = functionWhenReinitStatementThen(emptyTxt, i_reinits, i_preExp, i_varDecls);
+        (i_ifthen, i_varDecls) = functionWhenReinitStatementThen(emptyTxt, i_reinits, i_varDecls);
         txt = fun_130(txt, i_reinits, i_ifthen, i_helpIf, i_helpInits, i_preExp, i_int);
       then (txt, i_varDecls);
 
@@ -5417,107 +5448,146 @@ end genreinits;
 
 protected function fun_132
   input Tpl.Text in_txt;
-  input BackendDAE.ReinitStatement in_i_reinit;
+  input BackendDAE.WhenOperator in_i_reinit;
   input Tpl.Text in_i_varDecls;
-  input Tpl.Text in_i_preExp;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varDecls;
-  output Tpl.Text out_i_preExp;
 algorithm
-  (out_txt, out_i_varDecls, out_i_preExp) :=
-  matchcontinue(in_txt, in_i_reinit, in_i_varDecls, in_i_preExp)
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_i_reinit, in_i_varDecls)
     local
       Tpl.Text txt;
       Tpl.Text i_varDecls;
-      Tpl.Text i_preExp;
 
     case ( txt,
            BackendDAE.REINIT(value = i_value, stateVar = i_stateVar),
-           i_varDecls,
-           i_preExp )
+           i_varDecls )
       local
         DAE.ComponentRef i_stateVar;
         DAE.Exp i_value;
         Tpl.Text i_val;
+        Tpl.Text i_preExp;
       equation
+        i_preExp = emptyTxt;
         (i_val, i_preExp, i_varDecls) = daeExp(emptyTxt, i_value, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(1));
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(6));
         txt = cref(txt, i_stateVar);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_val);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-      then (txt, i_varDecls, i_preExp);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    ";\n",
+                                    "needToIterate=1;"
+                                }, false));
+        txt = Tpl.popBlock(txt);
+        txt = Tpl.popBlock(txt);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           BackendDAE.TERMINATE(message = i_message),
+           i_varDecls )
+      local
+        DAE.Exp i_message;
+        Tpl.Text i_msgVar;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_msgVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(8));
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MODELICA_TERMINATE("));
+        txt = Tpl.writeText(txt, i_msgVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        txt = Tpl.popBlock(txt);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           BackendDAE.ASSERT(condition = i_condition, message = i_message),
+           i_varDecls )
+      local
+        DAE.Exp i_message;
+        DAE.Exp i_condition;
+        Tpl.Text i_msgVar;
+        Tpl.Text i_condVar;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_condVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_condition, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        (i_msgVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MODELICA_ASSERT("));
+        txt = Tpl.writeText(txt, i_condVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, i_msgVar);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+      then (txt, i_varDecls);
 
     case ( txt,
            _,
-           i_varDecls,
-           i_preExp )
-      then (txt, i_varDecls, i_preExp);
+           i_varDecls )
+      then (txt, i_varDecls);
   end matchcontinue;
 end fun_132;
 
 protected function lm_133
   input Tpl.Text in_txt;
-  input list<BackendDAE.ReinitStatement> in_items;
+  input list<BackendDAE.WhenOperator> in_items;
   input Tpl.Text in_i_varDecls;
-  input Tpl.Text in_i_preExp;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varDecls;
-  output Tpl.Text out_i_preExp;
 algorithm
-  (out_txt, out_i_varDecls, out_i_preExp) :=
-  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_preExp)
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_varDecls)
     local
       Tpl.Text txt;
       Tpl.Text i_varDecls;
-      Tpl.Text i_preExp;
 
     case ( txt,
            {},
-           i_varDecls,
-           i_preExp )
-      then (txt, i_varDecls, i_preExp);
+           i_varDecls )
+      then (txt, i_varDecls);
 
     case ( txt,
            i_reinit :: rest,
-           i_varDecls,
-           i_preExp )
+           i_varDecls )
       local
-        list<BackendDAE.ReinitStatement> rest;
-        BackendDAE.ReinitStatement i_reinit;
+        list<BackendDAE.WhenOperator> rest;
+        BackendDAE.WhenOperator i_reinit;
       equation
-        (txt, i_varDecls, i_preExp) = fun_132(txt, i_reinit, i_varDecls, i_preExp);
+        (txt, i_varDecls) = fun_132(txt, i_reinit, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_133(txt, rest, i_varDecls, i_preExp);
-      then (txt, i_varDecls, i_preExp);
+        (txt, i_varDecls) = lm_133(txt, rest, i_varDecls);
+      then (txt, i_varDecls);
 
     case ( txt,
            _ :: rest,
-           i_varDecls,
-           i_preExp )
+           i_varDecls )
       local
-        list<BackendDAE.ReinitStatement> rest;
+        list<BackendDAE.WhenOperator> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_133(txt, rest, i_varDecls, i_preExp);
-      then (txt, i_varDecls, i_preExp);
+        (txt, i_varDecls) = lm_133(txt, rest, i_varDecls);
+      then (txt, i_varDecls);
   end matchcontinue;
 end lm_133;
 
 public function functionWhenReinitStatementThen
   input Tpl.Text txt;
-  input list<BackendDAE.ReinitStatement> i_reinits;
-  input Tpl.Text i_preExp;
+  input list<BackendDAE.WhenOperator> i_reinits;
   input Tpl.Text i_varDecls;
 
   output Tpl.Text out_txt;
-  output Tpl.Text out_i_preExp;
   output Tpl.Text out_i_varDecls;
 protected
   Tpl.Text i_body;
 algorithm
   i_body := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  (i_body, out_i_varDecls, out_i_preExp) := lm_133(i_body, i_reinits, i_varDecls, i_preExp);
+  (i_body, out_i_varDecls) := lm_133(i_body, i_reinits, i_varDecls);
   i_body := Tpl.popIter(i_body);
   out_txt := Tpl.pushBlock(txt, Tpl.BT_INDENT(1));
   out_txt := Tpl.writeText(out_txt, i_body);
@@ -5526,7 +5596,7 @@ end functionWhenReinitStatementThen;
 
 protected function fun_135
   input Tpl.Text in_txt;
-  input BackendDAE.ReinitStatement in_i_reinit;
+  input BackendDAE.WhenOperator in_i_reinit;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5567,7 +5637,7 @@ end fun_135;
 
 protected function lm_136
   input Tpl.Text in_txt;
-  input list<BackendDAE.ReinitStatement> in_items;
+  input list<BackendDAE.WhenOperator> in_items;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
 
@@ -5593,8 +5663,8 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<BackendDAE.ReinitStatement> rest;
-        BackendDAE.ReinitStatement i_reinit;
+        list<BackendDAE.WhenOperator> rest;
+        BackendDAE.WhenOperator i_reinit;
       equation
         (txt, i_varDecls, i_preExp) = fun_135(txt, i_reinit, i_varDecls, i_preExp);
         txt = Tpl.nextIter(txt);
@@ -5606,7 +5676,7 @@ algorithm
            i_varDecls,
            i_preExp )
       local
-        list<BackendDAE.ReinitStatement> rest;
+        list<BackendDAE.WhenOperator> rest;
       equation
         (txt, i_varDecls, i_preExp) = lm_136(txt, rest, i_varDecls, i_preExp);
       then (txt, i_varDecls, i_preExp);
@@ -5615,7 +5685,7 @@ end lm_136;
 
 public function functionWhenReinitStatementElse
   input Tpl.Text txt;
-  input list<BackendDAE.ReinitStatement> i_reinits;
+  input list<BackendDAE.WhenOperator> i_reinits;
   input Tpl.Text i_preExp;
   input Tpl.Text i_varDecls;
 

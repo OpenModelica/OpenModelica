@@ -413,7 +413,7 @@ algorithm
     local
       Functiontuple fns;
       DAE.Exp e,e_1;
-      list<BackendDAE.ReinitStatement> rslst,rslst_1;
+      list<BackendDAE.WhenOperator> rslst,rslst_1;
       Option<Integer> io;
 
     case(BackendDAE.WHEN_CLAUSE(e,rslst,io),fns)
@@ -433,16 +433,16 @@ end inlineWhenClause;
 protected function inlineReinitStmt
 "function: inlineReinitStmt
 	inlines function calls in a reinit statement"
-	input BackendDAE.ReinitStatement inReinitStatement;
+	input BackendDAE.WhenOperator inReinitStatement;
 	input Functiontuple inElementList;
-	output BackendDAE.ReinitStatement outReinitStatement;
+	output BackendDAE.WhenOperator outReinitStatement;
 algorithm
   outReinitStatement := matchcontinue(inReinitStatement,inElementList)
     local
       Functiontuple fns;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
-      BackendDAE.ReinitStatement rs;
+      BackendDAE.WhenOperator rs;
       DAE.ElementSource source "the origin of the element";
 
     case(BackendDAE.REINIT(cref,e,source),fns)

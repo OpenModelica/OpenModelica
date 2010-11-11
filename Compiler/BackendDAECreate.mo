@@ -1099,7 +1099,7 @@ algorithm
       BackendDAE.Variables elseVars;
       list<BackendDAE.Equation> res, res1;
       list<BackendDAE.Equation> trueEqnLst, elseEqnLst;
-      list<BackendDAE.ReinitStatement> reinit;
+      list<BackendDAE.WhenOperator> reinit;
       Integer equation_count,reinit_count,extra,tot_count,i_1,i,nextWhenIndex;
       Boolean hasReinit;
       list<BackendDAE.WhenClause> whenClauseList1,whenClauseList2,whenClauseList3,whenClauseList4,whenList,elseClauseList;
@@ -1159,14 +1159,14 @@ protected function lowerWhenEqn2
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
   input Integer inWhenClauseIndex;
   output list<BackendDAE.Equation> outEquationLst;
-  output list<BackendDAE.ReinitStatement> outReinitStatementLst;
+  output list<BackendDAE.WhenOperator> outReinitStatementLst;
 algorithm
   (outEquationLst,outReinitStatementLst):=
   matchcontinue (inDAEElementLst,inWhenClauseIndex)
     local
       BackendDAE.Value i;
       list<BackendDAE.Equation> eqnl;
-      list<BackendDAE.ReinitStatement> reinit;
+      list<BackendDAE.WhenOperator> reinit;
       DAE.Exp e_2,cre,e,cond;
       DAE.ComponentRef cr_1,cr,cref_;
       list<DAE.Element> xs;
@@ -2729,7 +2729,7 @@ protected function makeWhenClauses
   outputs: (WhenClause list)"
   input Integer n           "Number of copies to make.";
   input DAE.Exp inCondition "the condition expression";
-  input list<BackendDAE.ReinitStatement> inReinitStatementLst;
+  input list<BackendDAE.WhenOperator> inReinitStatementLst;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
 algorithm
   outWhenClauseLst:=
@@ -2738,7 +2738,7 @@ algorithm
       BackendDAE.Value i_1,i;
       list<BackendDAE.WhenClause> res;
       DAE.Exp cond;
-      list<BackendDAE.ReinitStatement> reinit;
+      list<BackendDAE.WhenOperator> reinit;
 
     case (0,_,_) then {};
     case (i,cond,reinit)

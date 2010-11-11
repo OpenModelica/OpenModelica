@@ -52,14 +52,38 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
-
+#include <string>
 
 using namespace std;
+
+
+/* \brief This class is used for throwing an exception when simulation code should be terminated.
+ * For instance, when a terminate call occurse or if an assert becomes active
+ */
+
+class TerminateSimulationException {
+public:
+  TerminateSimulationException(const std::string& msg) : currentTime(0.0), errorMessage(msg) {}
+  TerminateSimulationException(double time) : currentTime(time), errorMessage("") {}
+  TerminateSimulationException(double time, const std::string& msg) : currentTime(time), errorMessage(msg) {}
+  TerminateSimulationException() : currentTime(0.0) {}
+  virtual ~TerminateSimulationException() {}
+  const std::string& getMessage() const { return errorMessage; }
+  double getTime() const { return currentTime; }
+protected:
+  double currentTime;
+  std::string errorMessage;
+};
 
 extern int sim_verbose; // control debug output during simulation.
 extern int sim_noemit; // control emitting result data to file
 extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
-extern int modelTermination; //// Becomes non-zero when user terminates simulation.
+extern int modelTermination; // Becomes non-zero when user terminates simulation.
+extern int terminationTerminate; // Becomes non-zero when user terminates simulation.
+extern int terminationAssert; // Becomes non-zero when model call assert simulation.
+extern int warningLevelAssert; // Becomes non-zero when model call assert with warning level.
+extern string TermMsg; // message for termination.
+
 
 /* Flags for controlling logging to stdout */
 extern const int LOG_EVENTS;
@@ -325,33 +349,12 @@ int callSolver(int, char**, string, string, double, double, double, long, double
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(cond,msg) do { if (!(cond)&& acceptedStep) { modelTermination=1; \
-throw TerminateSimulationException(string(msg)); } } while(0)
+#define MODELICA_ASSERT(cond,msg) if (!(cond)) { terminationAssert = 1; TermMsg = msg; }
 
-#define MODELICA_TERMINATE(msg) do { modelTermination=1; \
-throw TerminateSimulationException(string(msg)); } } while(0)
+#define MODELICA_TERMINATE(msg)  { modelTermination=1; \
+terminationTerminate = 1; TermMsg = msg; }
 
 #define initial() localData->init
-
-#include <string>
-
-/* \brief This class is used for throwing an exception when simulation code should be terminated.
- * For instance, when a terminate call occurse or if an assert becomes active
- */
-
-class TerminateSimulationException {
-public:
-  TerminateSimulationException(const std::string& msg) : currentTime(0.0), errorMessage(msg) {}
-  TerminateSimulationException(double time) : currentTime(time), errorMessage("") {}
-  TerminateSimulationException(double time, const std::string& msg) : currentTime(time), errorMessage(msg) {}
-  TerminateSimulationException() : currentTime(0.0) {}
-  virtual ~TerminateSimulationException() {}
-  const std::string& getMessage() const { return errorMessage; }
-  double getTime() const { return currentTime; }
-protected:
-  double currentTime;
-  std::string errorMessage;
-};
 
 #endif
 
