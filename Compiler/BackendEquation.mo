@@ -371,6 +371,68 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEOptEqn;
 
+public function traverseBackendDAEEqnsWithStop "function: traverseBackendDAEEqns
+  author: Frenkel TUD
+
+  traverses all equations of a BackendDAE.EquationArray.
+"
+  replaceable type Type_a subtypeof Any;  
+  input BackendDAE.EquationArray inEquationArray;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue (inEquationArray,func,inTypeA)
+    local
+      array<Option<BackendDAE.Equation>> equOptArr;
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
+      then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+      then
+        fail();          
+  end matchcontinue;
+end traverseBackendDAEEqnsWithStop;
+
+protected function traverseBackendDAEOptEqnWithStop "function: traverseBackendDAEOptEqnWithStop
+  author: Frenkel TUD 2010-11
+  Helper for traverseBackendDAEExpsEqnsWithStop."
+  replaceable type Type_a subtypeof Any;  
+  input Option<BackendDAE.Equation> inEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Boolean outBoolean;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=  matchcontinue (inEquation,func,inTypeA)
+    local
+      BackendDAE.Equation eqn;
+     Type_a ext_arg;
+     Boolean b;
+    case (NONE(),func,inTypeA) then (true,inTypeA);
+    case (SOME(eqn),func,inTypeA)
+      equation
+        ((_,b,ext_arg)) = func((eqn,inTypeA));
+      then
+        (b,ext_arg);
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
+      then
+        fail();   
+  end matchcontinue;
+end traverseBackendDAEOptEqnWithStop;
+
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;
   input BackendDAE.Equation e2;

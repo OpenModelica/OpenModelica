@@ -4253,7 +4253,7 @@ public function traverseBackendDAEArrayNoCopy "
     output Type_b outTypeA;
     partial function FuncExpType
      input tuple<Type_c, Type_b> inTpl;
-      output tuple<Type_c, Type_b> outTpl;
+     output tuple<Type_c, Type_b> outTpl;
     end FuncExpType;
   end FuncArrayType;    
 algorithm
@@ -4270,6 +4270,54 @@ algorithm
     then ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEArrayNoCopy;
+
+public function traverseBackendDAEArrayNoCopyWithStop "
+ help function to traverseBackendDAEArrayNoCopyWithStop
+ author: Frenkel TUD
+  same like traverseBackendDAEArrayNoCopy but with a additional
+  parameter to stop the traveral."
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  input array<Type_a> array;
+  input FuncExpTypeWithStop func;
+  input FuncArrayTypeWithStop arrayfunc;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_b inTypeB;
+  output Type_b outTypeB;
+  partial function FuncExpTypeWithStop
+    input tuple<Type_c, Type_b> inTpl;
+    output tuple<Type_c, Boolean, Type_b> outTpl;
+  end FuncExpTypeWithStop;
+  partial function FuncArrayTypeWithStop
+    input Type_a inTypeB;
+    input FuncExpTypeWithStop func;
+    input Type_b inTypeA;
+    output Boolean outBoolean;
+    output Type_b outTypeA;
+    partial function FuncExpTypeWithStop
+     input tuple<Type_c, Type_b> inTpl;
+      output tuple<Type_c, Boolean, Type_b> outTpl;
+    end FuncExpTypeWithStop;
+  end FuncArrayTypeWithStop;    
+algorithm
+  outTypeB := matchcontinue(array,func,arrayfunc,pos,len,inTypeB)
+    local 
+      Type_b ext_arg_1,ext_arg_2;
+    case(_,_,_,pos,len,inTypeB) equation 
+      true = pos > len;
+    then inTypeB;
+    
+    case(array,func,arrayfunc,pos,len,inTypeB) equation
+      (true,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
+      ext_arg_2 = traverseBackendDAEArrayNoCopyWithStop(array,func,arrayfunc,pos+1,len,ext_arg_1);
+    then ext_arg_2;
+    case(array,func,arrayfunc,pos,len,inTypeB) equation
+      (false,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
+    then ext_arg_1;
+  end matchcontinue;
+end traverseBackendDAEArrayNoCopyWithStop;
 
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
