@@ -332,6 +332,9 @@ This function checks wheter a type is complex AND not extending a base type."
   input Type ty;
   output Boolean b;
 algorithm b := matchcontinue(ty)
+  local
+    Type ty;
+  case((DAE.T_COMPLEX(complexTypeOption = SOME(ty)), _)) then isComplexType(ty);
   case((DAE.T_COMPLEX(_,_::_,_,_),_)) then true; // not derived from baseclass
   case(_) then false;
   end matchcontinue;
