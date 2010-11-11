@@ -79,10 +79,10 @@ algorithm
 
     case (inProgram)
       equation
-        System.addToRoots(Inst.instHashIndex, Inst.emptyInstHashTable());
-        System.addToRoots(Types.memoryIndex,  Types.createEmptyTypeMemory());        
+        setGlobalRoot(Inst.instHashIndex, Inst.emptyInstHashTable());
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());        
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
-        // System.addToRoots(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
+        // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
 
         // set the external flag that signals the presence of inner/outer components in the model
@@ -185,6 +185,8 @@ algorithm
   outRestriction := matchcontinue (inClass,inRestriction)
     local
       Absyn.Class d;
+      Absyn.Path name;
+      Integer index;
 
     case (d,Absyn.R_FUNCTION()) equation true  = containsExternalFuncDecl(d); then SCode.R_EXT_FUNCTION();
     case (d,Absyn.R_FUNCTION()) equation false = containsExternalFuncDecl(d); then SCode.R_FUNCTION();
@@ -210,9 +212,6 @@ algorithm
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
     case (_,Absyn.R_METARECORD(name,index)) //MetaModelica extension, added by x07simbj
-      local
-        Absyn.Path name;
-        Integer index;
       then SCode.R_METARECORD(name,index);
     case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
 
@@ -290,7 +289,7 @@ algorithm
     case Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt)
       equation
         // Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
-        mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE)), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
+        mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE())), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
         scodeCmt = translateComment(cmt);
       then
         SCode.DERIVED(t,mod,attr,scodeCmt);
@@ -306,7 +305,7 @@ algorithm
         initals = translateClassdefInitialalgorithms(parts);
         decl = translateClassdefExternaldecls(parts);
         decl = translateAlternativeExternalAnnotation(decl,parts);
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE, cmtString)));
+        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
         SCode.PARTS(els,eqs,initeqs,als,initals,decl,anns,scodeCmt);
 
@@ -341,8 +340,8 @@ algorithm
         initeqs = translateClassdefInitialequations(parts);
         als = translateClassdefAlgorithms(parts);
         initals = translateClassdefInitialalgorithms(parts);
-        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,NONE)), false, Absyn.NON_EACH());
-        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE, cmtString)));
+        mod = translateMod(SOME(Absyn.CLASSMOD(cmod,NONE())), false, Absyn.NON_EACH());
+        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
       then
         SCode.CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals,anns,scodeCmt);
 
@@ -376,32 +375,32 @@ algorithm
       list<Absyn.ElementItem> els;
       list<Absyn.ClassPart> cls;
     // none
-    case (NONE,_) then NONE;
+    case (NONE(),_) then NONE();
     // Already filled.
     case (decl as SOME(Absyn.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.EXTERNAL(_,SOME(ann))::_)
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(ann))::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
 	// Annotation item.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(_::els)::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
 		then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
 	// Next classpart list
-    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC({})::cls)
+    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 
-	case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
+	case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
     then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(_::els)::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
 		then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
 	// Next classpart list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED({})::cls)
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 	// Next in list
-	case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),_::cls)
+	case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
 		then translateAlternativeExternalAnnotation(decl,cls);
 	// not found
     case (decl,_) then decl;
@@ -415,7 +414,7 @@ protected function translateEnumlist
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output list<SCode.Enum> outEnumLst;
 algorithm
-  outIdentLst := matchcontinue (inAbsynEnumLiteralLst)
+  outEnumLst := matchcontinue (inAbsynEnumLiteralLst)
     local
       list<SCode.Enum> res;
       String id;
@@ -690,10 +689,9 @@ algorithm
     local
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
-      Absyn.ForIterators iterators;
       Absyn.FunctionArgs functionArgs;
       Absyn.Exp assignComponent,value,boolExpr,elseIfBoolExpr;
-      list<Absyn.Exp> conditions,switchCases;
+      list<Absyn.Exp> conditions,switchCases,inputExps;
       list<SCode.Statement> stmts,stmts1,stmts2;
       list<list<SCode.Statement>> stmtsList;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
@@ -752,16 +750,16 @@ algorithm
     case (Absyn.ALG_THROW(),comment,info)
     then SCode.ALG_THROW(comment,info);
     
-    case (Absyn.ALG_MATCHCASES(matchType,switchCases),comment,info)
-    then SCode.ALG_MATCHCASES(matchType,switchCases,comment,info);
+    case (Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases),comment,info)
+    then SCode.ALG_MATCHCASES(matchType,inputExps,switchCases,comment,info);
       
     case (Absyn.ALG_GOTO(labelName),comment,info)
     then SCode.ALG_GOTO(labelName,comment,info);
     
-    case (Absyn.ALG_FAILURE(algi),comment,info)
+    case (Absyn.ALG_FAILURE(body),comment,info)
       equation
-        {stmt} = translateClassdefAlgorithmitems({algi});
-      then SCode.ALG_FAILURE(stmt,comment,info);
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_FAILURE(stmts,comment,info);
     
     /*
     case (_,comment,info)
@@ -809,7 +807,7 @@ algorithm
         res = translateClassdefExternaldecls(rest);
       then
         res;
-    case ({}) then NONE;
+    case ({}) then NONE();
   end matchcontinue;
 end translateClassdefExternaldecls;
 
@@ -963,7 +961,7 @@ algorithm
       SCode.Mod m;
     case(Absyn.ANNOTATION(args))
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        m = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         res = SCode.ANNOTATION(m);
       then
         res;
@@ -1025,7 +1023,7 @@ algorithm
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
       true = name ==& arg;
     then SOME(str);
-    case({},arg) then NONE;
+    case({},arg) then NONE();
     case(_::args,arg) then translateDefineunitParam(args,arg);
   end matchcontinue;
 end translateDefineunitParam;
@@ -1035,12 +1033,12 @@ protected function translateDefineunitParam2 " help function to translateElement
   input String arg;
   output Option<Real> weightOpt;
 algorithm
-  (expOpt) := matchcontinue(args,arg)
+  weightOpt := matchcontinue(args,arg)
     local String name; Real r;
     case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
       true = name ==& arg;
     then SOME(r);
-    case({},arg) then NONE;
+    case({},arg) then NONE();
     case(_::args,arg) then translateDefineunitParam2(args,arg);
   end matchcontinue;
 end translateDefineunitParam2;
@@ -1062,7 +1060,7 @@ algorithm
     local
       SCode.ClassDef de_1;
       SCode.Restriction re_1;
-      Boolean finalPrefix,prot,rp,pa,fi,e,repl_1,fl,st;
+      Boolean prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n,ns,str;
@@ -1083,11 +1081,14 @@ algorithm
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
+      Absyn.Path path;
+      Absyn.Annotation absann;
+      SCode.Annotation ann;
+      Absyn.Variability variability;
 
     case (cc,finalPrefix,_,repl,prot,
       Absyn.CLASSDEF(replaceable_ = rp,
-                     class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,
-                                                 body = de,info = file_info))),info)
+                     class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = file_info))),info)
       equation
         // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
@@ -1095,37 +1096,32 @@ algorithm
       then
         {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),cc)};
 
-    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
-      local Absyn.Path n;
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
-        ns = Absyn.pathString(n);
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
       then
-        {SCode.EXTENDS(n,mod,NONE())};
+        {SCode.EXTENDS(path,mod,NONE())};
 
-    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = SOME(absann)),info)
-      local Absyn.Path n; Absyn.Annotation absann; SCode.Annotation ann;
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
-        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
-        ns = Absyn.pathString(n);
+        mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         ann = translateAnnotation(absann);
       then
-        {SCode.EXTENDS(n,mod,SOME(ann))};
+        {SCode.EXTENDS(path,mod,SOME(ann))};
 
     case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 
     case (cc,finalPrefix,io,repl,prot,Absyn.COMPONENTS(attributes =
-      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,
+      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
-      local Absyn.Variability pa;
       equation
         // Debug.fprintln("translate", "translating component: " +& n);
         setHasInnerOuterDefinitionsHandler(io);
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, false, Absyn.NON_EACH());
-        pa_1 = translateVariability(pa) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
+        pa_1 = translateVariability(variability) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
         repl_1 = translateRedeclarekeywords(repl);
         comment_1 = translateComment(comment);
@@ -1271,14 +1267,14 @@ algorithm
       SCode.Annotation ann;
       String str;
 
-    case(NONE) then NONE;
-    case(SOME(Absyn.COMMENT(NONE,NONE))) then SOME(SCode.COMMENT(NONE,NONE));
-    case(SOME(Absyn.COMMENT(NONE,SOME(str)))) then SOME(SCode.COMMENT(NONE,SOME(str)));
-    case(SOME(Absyn.COMMENT(SOME(absann),NONE)))
+    case(NONE()) then NONE();
+    case(SOME(Absyn.COMMENT(NONE(),NONE()))) then SOME(SCode.COMMENT(NONE(),NONE()));
+    case(SOME(Absyn.COMMENT(NONE(),SOME(str)))) then SOME(SCode.COMMENT(NONE(),SOME(str)));
+    case(SOME(Absyn.COMMENT(SOME(absann),NONE())))
       equation
         ann = translateAnnotation(absann);
       then
-        SOME(SCode.COMMENT(SOME(ann),NONE));
+        SOME(SCode.COMMENT(SOME(ann),NONE()));
     case(SOME(Absyn.COMMENT(SOME(absann),SOME(str))))
       equation
         ann = translateAnnotation(absann);
@@ -1313,7 +1309,9 @@ algorithm
       Absyn.FunctionArgs fargs;
       list<Absyn.ForIterator> restIterators;
       Option<SCode.Comment> com;
-      Absyn.Info info;
+      list<Absyn.Exp> conditions;
+      list<list<Absyn.EquationItem>> trueBranches;
+      list<list<SCode.EEquation>> trueEEquations;
 
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info)
       equation
@@ -1324,10 +1322,6 @@ algorithm
 
     /* else-if branches are put as if branches in false branch */
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info)
-      local
-        list<Absyn.Exp> conditions;
-        list<list<Absyn.EquationItem>> trueBranches;
-        list<list<SCode.EEquation>> trueEEquations;
       equation
         (conditions,trueBranches) = Util.splitTuple2List((e,tb)::eis);
         trueEEquations = Util.listMap(trueBranches,translateEEquations);
@@ -1338,7 +1332,7 @@ algorithm
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
-        eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE)}));
+        eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
         then eq;
         */
         print(" failure in SCode==> translateEquation IF_EQ\n");
@@ -1446,20 +1440,20 @@ algorithm
       list<SCode.SubMod> subs;
       list<Absyn.ElementArg> l;
 
-    case (NONE,_,_) then SCode.NOMOD();  /* final */
+    case (NONE(),_,_) then SCode.NOMOD();  /* final */
     case (SOME(Absyn.CLASSMOD({},(SOME(e)))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD({},(NONE))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE);
+    case (SOME(Absyn.CLASSMOD({},(NONE()))),finalPrefix,each_) then SCode.MOD(finalPrefix,each_,{},NONE());
     case (SOME(Absyn.CLASSMOD(l,SOME(e))),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then
         SCode.MOD(finalPrefix,each_,subs,SOME((e,false)));
 
-    case (SOME(Absyn.CLASSMOD(l,NONE)),finalPrefix,each_)
+    case (SOME(Absyn.CLASSMOD(l,NONE())),finalPrefix,each_)
       equation
         subs = translateArgs(l);
       then
-        SCode.MOD(finalPrefix,each_,subs,NONE);
+        SCode.MOD(finalPrefix,each_,subs,NONE());
   end matchcontinue;
 end translateMod;
 
@@ -1500,7 +1494,7 @@ algorithm
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(), NONE, false, spec, NONE)
+        elist = translateElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(),NONE(), false, spec,NONE())
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false" ;
       then
@@ -1549,7 +1543,7 @@ algorithm
     case (Absyn.CREF_QUAL(name = i,subScripts = ss,componentRef = path),mod)
       equation
         sub = translateSub(path, mod);
-        mod = SCode.MOD(false,Absyn.NON_EACH(),{sub},NONE);
+        mod = SCode.MOD(false,Absyn.NON_EACH(),{sub},NONE());
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
@@ -1570,7 +1564,7 @@ algorithm
       SCode.Mod m;
       list<SCode.Subscript> l;
     case ({},m) then m;
-    case (l,m) then SCode.MOD(false,Absyn.NON_EACH(),{SCode.IDXMOD(l,m)},NONE);
+    case (l,m) then SCode.MOD(false,Absyn.NON_EACH(),{SCode.IDXMOD(l,m)},NONE());
   end matchcontinue;
 end translateSubSub;
 
@@ -1633,7 +1627,7 @@ public function prefixTuple
   input String prefix;
   output tuple<Absyn.Exp, Absyn.Exp> prefixedExpTuple;
 algorithm
-  prefixedExp := matchcontinue(expTuple, prefix)
+  prefixedExpTuple := matchcontinue(expTuple, prefix)
     local
       Absyn.Exp e1,e2;
 
@@ -1713,7 +1707,7 @@ algorithm
       SCode.Ident s,sym;
       Integer x;
       Absyn.ComponentRef c,fcn;
-      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,step;
+      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,step,cond;
       Absyn.Operator op;
       list<tuple<Absyn.Exp, Absyn.Exp>> lst;
       Absyn.FunctionArgs args;
@@ -1776,15 +1770,14 @@ algorithm
       then
         Absyn.RELATION(e1a, op, e2a);
     // if expressions
-    case (Absyn.IFEXP(ifExp = c,trueBranch = t,elseBranch = f,elseIfBranch = lst), prefix)
-      local Absyn.Exp c;
+    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = lst), prefix)
       equation
-        c = prefixUnqualifiedCrefsFromExp(c, prefix);
+        cond = prefixUnqualifiedCrefsFromExp(cond, prefix);
         t = prefixUnqualifiedCrefsFromExp(t, prefix);
         f = prefixUnqualifiedCrefsFromExp(f, prefix);
         lst = Util.listMap1(lst, prefixTuple, prefix); // TODO! fixme, prefix these also.
       then
-        Absyn.IFEXP(c, t, f, lst);
+        Absyn.IFEXP(cond, t, f, lst);
     // calls
     case (Absyn.CALL(function_ = fcn,functionArgs = args), prefix)
       equation

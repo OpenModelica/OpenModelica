@@ -198,7 +198,7 @@ template mmMatchingExp(MatchingExp it) ::=
                          ;separator=", "%>)
     >>
   case SOME_MATCH(__)     then 'SOME(<%mmMatchingExp(value)%>)'
-  case NONE_MATCH(__)     then "NONE"
+  case NONE_MATCH(__)     then "NONE()"
   case TUPLE_MATCH(__)    then '(<%tupleArgs |> it => mmMatchingExp(it);separator=", "%>)'
   case LIST_MATCH(__)     then '{<%listElts |> it => mmMatchingExp(it);separator=", "%>}'
   case LIST_CONS_MATCH(__)  then  '<%mmMatchingExp(head)%> :: <%mmMatchingExp(rest)%>'

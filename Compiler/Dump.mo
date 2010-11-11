@@ -40,20 +40,21 @@ package Dump
   Printing routines for debugging of the AST.  These functions do
   nothing but print the data structures to the standard output.
 
-  The main entrypoint for this module is the function \"dump\" which
-  takes an entire program as an argument, and prints it all in
-  Modelica source form. The other interface functions can be used
-  to print smaller portions of a program."
+  The main entrypoint for this module is the function Dump.dump 
+  which takes an entire program as an argument, and prints it all 
+  in Modelica source form. The other interface functions can be 
+  used to print smaller portions of a program."
 
+// public imports
 public import Absyn;
 public import Interactive;
 
 public type Ident = String;
 
+// protected imports
 protected import Print;
 protected import Util;
 protected import Debug;
-protected import System;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -114,7 +115,7 @@ algorithm
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
-        str = System.stringAppendList({s1,s2,"\n"});
+        str = stringAppendList({s1,s2,"\n"});
       then
         str;
     case (_,_) then "unparsing failed\n";
@@ -139,7 +140,7 @@ algorithm
       equation
         s1 = unparseClassStr(i, c, "", ("",""), "");
         s2 = unparseClassList(i, cs);
-        res = System.stringAppendList({s1,";\n",s2});
+        res = stringAppendList({s1,";\n",s2});
       then
         res;
   end matchcontinue;
@@ -162,7 +163,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = Absyn.pathString(p);
-        str = System.stringAppendList({s1,"within ",s2,";\n"});
+        str = stringAppendList({s1,"within ",s2,";\n"});
       then
         str;
   end matchcontinue;
@@ -206,7 +207,7 @@ algorithm
   outString := matchcontinue (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
     local
       Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,io,s6,s7,s8,s9,name,baseClassName;
-      Integer i_1,i,indent;
+      Integer i_1,i;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
@@ -220,7 +221,8 @@ algorithm
       Absyn.Path fname;
       list<Ident> vars;
       tuple<String,String> re;
-      String redeclareStr, replaceableStr, partialStr, finalStr, encapsulatedStr, restrictionStr, prefixKeywords;
+      String redeclareStr, replaceableStr, partialStr, encapsulatedStr, restrictionStr, prefixKeywords;      
+      
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
     // if the order is not the one above the parser will give errors!
@@ -237,12 +239,12 @@ algorithm
         s5 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n,s5,"\n",s4,is,"end ",n});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
+    
     case (indent,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                             body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
-      local Option<Absyn.Comment> optcmt;
+                             body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = cmt)),fi,re,io)
       equation
         is = indentStr(indent);
         partialStr = selectString(p, "partial ", "");
@@ -252,12 +254,13 @@ algorithm
         s4 = unparseElementattrStr(attr);
         s6 = unparseTypeSpec(tspec);
         s8 = unparseMod1Str(m);
-        s9 = unparseCommentOption(optcmt);
+        s9 = unparseCommentOption(cmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
       then
         str;
+    
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
@@ -270,9 +273,10 @@ algorithm
         s5 = unparseCommentOption(cmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
       then
         str;
+    
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
@@ -284,9 +288,10 @@ algorithm
         s5 = unparseCommentOption(cmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
       then
         str;
+    
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
@@ -301,9 +306,10 @@ algorithm
         s6 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
+    
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
           body = Absyn.PDER(functionName = fname,vars = vars,comment=cmt)),fi,re,io)
       equation
@@ -316,7 +322,7 @@ algorithm
         s5 = Util.stringDelimitList(vars, ", ");
         s6 = unparseCommentOption(cmt);
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        str = System.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
   end matchcontinue;
@@ -344,13 +350,14 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
+    
     case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = _))
       equation
         s1 = selectString(p, "partial ", "");
         s2 = selectString(f, "final ", "");
         s2_1 = selectString(e, "encapsulated ", "");
         s3 = unparseRestrictionStr(r);
-        str = System.stringAppendList({s2_1,s1,s2,s3});
+        str = stringAppendList({s2_1,s1,s2,s3});
       then
         str;
   end matchcontinue;
@@ -366,14 +373,17 @@ algorithm
     local
       Ident s1,str,cmt;
       Option<Absyn.Annotation> annopt;
-    case (NONE) then "";
+    
+    case (NONE()) then "";
+    
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         s1 = unparseAnnotationOption(0, annopt);
-        str = System.stringAppendList({" \"",cmt,"\"",s1});
+        str = stringAppendList({" \"",cmt,"\"",s1});
       then
         str;
-    case (SOME(Absyn.COMMENT(annopt,NONE)))
+    
+    case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         str = unparseAnnotationOption(0, annopt);
       then
@@ -389,11 +399,13 @@ public function unparseCommentOptionNoAnnotation
 algorithm
   outString := matchcontinue (inAbsynCommentOption)
     local Ident str,cmt;
+    
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
       equation
-        str = System.stringAppendList({" \"",cmt,"\""});
+        str = stringAppendList({" \"",cmt,"\""});
       then
         str;
+    
     case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
@@ -407,24 +419,27 @@ algorithm
     local
       Ident str,cmt;
       Option<Absyn.Annotation> annopt;
-    case (NONE)
+    
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
         ();
+    
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
         dumpAnnotationOption(annopt);
-        str = System.stringAppendList({"SOME(\"",cmt,"\")))"});
+        str = stringAppendList({"SOME(\"",cmt,"\")))"});
         Print.printBuf(str);
       then
         ();
-    case (SOME(Absyn.COMMENT(annopt,NONE)))
+    
+    case (SOME(Absyn.COMMENT(annopt,NONE())))
       equation
         Print.printBuf("SOME(Absyn.COMMENT(");
         dumpAnnotationOption(annopt);
-        Print.printBuf(",NONE))");
+        Print.printBuf(",NONE()))");
       then
         ();
   end matchcontinue;
@@ -437,11 +452,13 @@ protected function dumpAnnotationOption
 algorithm
   _ := matchcontinue (inAbsynAnnotationOption)
     local list<Absyn.ElementArg> mod;
-    case (NONE)
+    
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
         ();
+    
     case (SOME(Absyn.ANNOTATION(mod)))
       equation
         Print.printBuf("SOME(Absyn.ANNOTATION(");
@@ -464,19 +481,22 @@ algorithm
       Option<Absyn.Comment> optcmt,optcmt2;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
+    
     case ({}) then "";
+    
     case ((Absyn.ENUMLITERAL(literal = str,comment = optcmt) :: (a :: b)))
       equation
         s1 = unparseCommentOption(optcmt);
         s2 = unparseEnumliterals((a :: b));
-        res = System.stringAppendList({str,s1,", ",s2});
+        res = stringAppendList({str,s1,", ",s2});
       then
         res;
+    
     case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt),Absyn.ENUMLITERAL(literal = str2,comment = optcmt2)})
       equation
         s1 = unparseCommentOption(optcmt);
         s2 = unparseCommentOption(optcmt2);
-        res = System.stringAppendList({str," ",s1,", ",str2," ",s2});
+        res = stringAppendList({str," ",s1,", ",str2," ",s2});
       then
         res;
   end matchcontinue;
@@ -504,7 +524,9 @@ algorithm
       Option<Absyn.Comment> optcmt,optcmt2;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
+    
     case ({}) then ();
+    
     case ((Absyn.ENUMLITERAL(literal = str,comment = optcmt) :: (a :: b)))
       equation
         Print.printBuf("Absyn.ENUMLITERAL(\"");
@@ -515,6 +537,7 @@ algorithm
         printEnumliterals2((a :: b));
       then
         ();
+    
     case ({Absyn.ENUMLITERAL(literal = str,comment = optcmt),Absyn.ENUMLITERAL(literal = str2,comment = optcmt2)})
       equation
         Print.printBuf("Absyn.ENUMLITERAL(\"");
@@ -553,6 +576,8 @@ algorithm
     case Absyn.R_PREDEFINED_REAL() then "Real";
     case Absyn.R_PREDEFINED_STRING() then "String";
     case Absyn.R_PREDEFINED_BOOLEAN() then "Boolean";
+    case Absyn.R_METARECORD(_,_) then "metarecord";
+    case _ then "*unknown*";
   end matchcontinue;
 end unparseRestrictionStr;
 
@@ -610,6 +635,7 @@ algorithm
       Absyn.Exp expr;
       list<Interactive.InteractiveStmt> l;
       Boolean sc;
+    
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
       equation
         Print.printBuf("IALG(");
@@ -617,6 +643,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
+    
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IEXP(exp = expr)}))
       equation
         Print.printBuf("IEXP(");
@@ -624,6 +651,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
+    
     case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
       equation
         Print.printBuf("IALG(");
@@ -703,7 +731,7 @@ algorithm
         s3 = intString(scol);
         s4 = intString(eline);
         s5 = intString(ecol);
-        str = System.stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
+        str = stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
       then
         str;
   end matchcontinue;
@@ -873,7 +901,7 @@ algorithm
       list<Absyn.ElementArg> l;
       Absyn.Exp e;
     case (Absyn.CLASSMOD(elementArgLst = {})) then "";
-    case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE))
+    case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE()))
       equation
         s1 = getStringList(l, unparseElementArgStr, ", ");
         s2 = stringAppend("(", s1);
@@ -883,7 +911,7 @@ algorithm
     case (Absyn.CLASSMOD(expOption = SOME(e)))
       equation
         s1 = printExpStr(e);
-        str = System.stringAppendList({" = ",s1});
+        str = stringAppendList({" = ",s1});
       then
         str;
   end matchcontinue;
@@ -955,7 +983,7 @@ algorithm
         s3 = printComponentRefStr(r);
         s4 = unparseOptModificationStr(optm);
         s5 = unparseStringCommentOption(optstr);
-        str = System.stringAppendList({s1,s2,s3,s4,s5});
+        str = stringAppendList({s1,s2,s3,s4,s5});
       then
         str;
     case (Absyn.REDECLARATION(finalItem = f,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constr))
@@ -968,7 +996,7 @@ algorithm
         redeclareStr = redeclareStr +& s1;
         s4 = unparseElementspecStr(0, spec, s2, (redeclareStr,replaceableStr), "");
         s5 = unparseConstrainclassOptStr(constr);
-        str = System.stringAppendList({s4,s5});
+        str = stringAppendList({s4,s5});
       then
         str;
   end matchcontinue;
@@ -1092,21 +1120,21 @@ algorithm
       Option<Ident> id;
       Option<Absyn.ComponentRef> cref;
       list<Absyn.Exp> exps;
-    case Absyn.EXTERNALDECL(funcName = id,lang = NONE,output_ = cref,args = exps)
+    case Absyn.EXTERNALDECL(funcName = id,lang = NONE(),output_ = cref,args = exps)
       equation
-        idstr = getOptionStr(id, identity);
+        idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
-        str = System.stringAppendList({idstr,", ",crefstr,", (",expstr,")"});
+        str = stringAppendList({idstr,", ",crefstr,", (",expstr,")"});
         Print.printBuf(str);
       then
         ();
     case Absyn.EXTERNALDECL(funcName = id,lang = SOME(lang),output_ = cref,args = exps)
       equation
-        idstr = getOptionStr(id, identity);
+        idstr = Util.getOptionOrDefault(id, "");
         crefstr = getOptionStr(cref, printComponentRefStr);
         expstr = printListStr(exps, printExpStr, ",");
-        str = System.stringAppendList({idstr,", \"",lang,"\", ",crefstr,", (",expstr,")"});
+        str = stringAppendList({idstr,", \"",lang,"\", ",crefstr,", (",expstr,")"});
         Print.printBuf(str);
       then
         ();
@@ -1157,77 +1185,86 @@ algorithm
       Absyn.ComponentRef output_;
       list<Absyn.Exp> expl;
       Option<Absyn.Annotation> ann,ann2;
+      list<Absyn.AlgorithmItem> als;      
+    
     case (i,Absyn.PUBLIC(contents = {}),_) then "";
     case (i,Absyn.PROTECTED(contents = {}),_) then "";
     case (i,Absyn.EQUATIONS(contents = {}),_) then "";
     case (i,Absyn.INITIALEQUATIONS(contents = {}),_) then "";
     case (i,Absyn.ALGORITHMS(contents = {}),_) then "";
     case (i,Absyn.INITIALALGORITHMS(contents = {}),_) then "";
+    
     case (i,Absyn.PUBLIC(contents = el),true)
       equation
         s1 = unparseElementitemStrLst(i, el);
         // no ident needed! i_1 = i - 1; is = indentStr(i_1);
-        str = System.stringAppendList({s1});
+        str = stringAppendList({s1});
       then
         str;
+    
     case (i,Absyn.PUBLIC(contents = el),false)
       equation
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({is,"public \n",s1});
+        str = stringAppendList({is,"public \n",s1});
       then
         str;
+    
     case (i,Absyn.PROTECTED(contents = el),_)
       equation
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({is,"protected \n",s1});
+        str = stringAppendList({is,"protected \n",s1});
       then
         str;
+
     case (i,Absyn.CONSTRAINTS(contents = eqs),_)
       equation
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({"\n",is,"constraint \n",s1});
+        str = stringAppendList({"\n",is,"constraint \n",s1});
       then
         str;
+
     case (i,Absyn.EQUATIONS(contents = eqs),_)
       equation
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({"\n",is,"equation \n",s1});
+        str = stringAppendList({"\n",is,"equation \n",s1});
       then
         str;
+    
     case (i,Absyn.INITIALEQUATIONS(contents = eqs),_)
       equation
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({"\n",is,"initial equation \n",s1});
+        str = stringAppendList({"\n",is,"initial equation \n",s1});
       then
         str;
-    case (i,Absyn.ALGORITHMS(contents = eqs),_)
-      local list<Absyn.AlgorithmItem> eqs;
+    
+    case (i,Absyn.ALGORITHMS(contents = als),_)
       equation
-        s1 = unparseAlgorithmStrLst(i, eqs, "\n");
+        s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({is,"algorithm \n",s1});
+        str = stringAppendList({is,"algorithm \n",s1});
       then
         str;
-    case (i,Absyn.INITIALALGORITHMS(contents = eqs),_)
-      local list<Absyn.AlgorithmItem> eqs;
+    
+    case (i,Absyn.INITIALALGORITHMS(contents = als),_)
       equation
-        s1 = unparseAlgorithmStrLst(i, eqs, "\n");
+        s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({is,"initial algorithm \n",s1});
+        str = stringAppendList({is,"initial algorithm \n",s1});
       then
         str;
+    
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
                           funcName = SOME(ident),lang = lang,output_ = SOME(output_),
                           args = expl,annotation_ = ann),annotation_ = ann2),_)
@@ -1239,13 +1276,14 @@ algorithm
         is = indentStr(i);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {"\n",is,"external ",langstr," ",outputstr," = ",ident,"(",
           expstr,") ",annstr,";",annstr2,"\n"});
       then
         str;
+    
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
-                           funcName = SOME(ident),lang = lang,output_ = NONE,
+                           funcName = SOME(ident),lang = lang,output_ = NONE(),
                            args = expl,annotation_ = ann),annotation_ = ann2),_)
       equation
         langstr = getExtlangStr(lang);
@@ -1254,20 +1292,21 @@ algorithm
         is = indentStr(i);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {"\n",is,"external ",langstr," ",ident,"(",expstr,") ",
           annstr,"; ",annstr2,"\n"});
       then
         str;
+    
     case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
-                           funcName = NONE,lang = lang,output_ = NONE,
+                           funcName = NONE(),lang = lang,output_ = NONE(),
                            annotation_ = ann),annotation_ = ann2),_)
       equation
         is = indentStr(i);
         langstr = getExtlangStr(lang);
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
-        res = System.stringAppendList({"\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"});
+        res = stringAppendList({"\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"});
       then
         res;
   end matchcontinue;
@@ -1281,8 +1320,8 @@ protected function getExtlangStr
 algorithm
   outString := matchcontinue (inStringOption)
     local Ident res,str;
-    case (NONE) then "";
-    case (SOME(str)) equation res = System.stringAppendList({"\"",str,"\""}); then res;
+    case (NONE()) then "";
+    case (SOME(str)) equation res = stringAppendList({"\"",str,"\""}); then res;
   end matchcontinue;
 end getExtlangStr;
 
@@ -1355,7 +1394,7 @@ algorithm
     case (Absyn.ANNOTATION(elementArgs = mod))
       equation
         Print.printBuf("ANNOTATION(");
-        printModification(Absyn.CLASSMOD(mod,NONE));
+        printModification(Absyn.CLASSMOD(mod,NONE()));
         Print.printBuf(")");
       then
         ();
@@ -1380,7 +1419,7 @@ algorithm
       equation
         s1 = unparseElementitemStr(i, x);
         s2 = unparseElementitemStrLst(i, xs);
-        res = System.stringAppendList({s1,"\n",s2});
+        res = stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
@@ -1425,7 +1464,7 @@ algorithm
       Ident s,res;
       Integer i;
       Option<Absyn.Annotation> ann;
-    case (_,NONE) then "";
+    case (_,NONE()) then "";
     case (i,ann)
       equation
         s = unparseAnnotationOption(i, ann);
@@ -1449,19 +1488,19 @@ algorithm
       Integer i;
     case (0,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
         s2 = stringAppend(" annotation", s1);
         str = s2; // stringAppend(s2, "");
       then
         str;
     case (i,SOME(Absyn.ANNOTATION(mod)))
       equation
-        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
+        s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE()));
         is = indentStr(i);
-        str = System.stringAppendList({is,"annotation",s1});
+        str = stringAppendList({is,"annotation",s1});
       then
         str;
-    case (_,NONE) then "";
+    case (_,NONE()) then "";
   end matchcontinue;
 end unparseAnnotationOption;
 
@@ -1482,7 +1521,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info info;
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
-                        specification = spec,info = info,constrainClass = NONE))
+                        specification = spec,info = info,constrainClass = NONE()))
       equation
         Print.printBuf("Absyn.ELEMENT(");
         printBool(finalPrefix);
@@ -1495,7 +1534,7 @@ algorithm
         printElementspec(spec);
         Print.printBuf(", ");
         printInfo(info);
-        Print.printBuf("), NONE)");
+        Print.printBuf("),NONE())");
       then
         ();
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
@@ -1527,7 +1566,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.TEXT(optName = NONE,string = text,info = info))
+    case (Absyn.TEXT(optName = NONE(),string = text,info = info))
       equation
         Print.printBuf("Absyn.TEXT(");
         Print.printBuf("NONE, \"");
@@ -1572,16 +1611,16 @@ algorithm
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, redeclareKeywords, s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = System.stringAppendList({s4,s5,";"});
+        str = stringAppendList({s4,s5,";"});
       then
         str;
-    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE(),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
         s1 = selectString(finalPrefix, "final ", "");
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, ("",""), s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = System.stringAppendList({s4,s5,";"});
+        str = stringAppendList({s4,s5,";"});
       then
         str;
     case(i,Absyn.DEFINEUNIT(name,{})) equation
@@ -1596,15 +1635,15 @@ algorithm
     case (i,Absyn.TEXT(optName = SOME(name),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {"/* Absyn.TEXT(SOME(\"",name,"\"), \"",text,"\", ",s1,
           "); */"});
       then
         str;
-    case (i,Absyn.TEXT(optName = NONE,string = text,info = info))
+    case (i,Absyn.TEXT(optName = NONE(),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
-        str = System.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
+        str = stringAppendList({"/* Absyn.TEXT(NONE(), \"",text,"\", ",s1,"); */"});
       then
         str;
     case(_,_) equation
@@ -1625,7 +1664,7 @@ algorithm
     local
       Ident res;
       Absyn.ConstrainClass constr;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(constr))
       equation
         res = " " +& unparseConstrainclassStr(constr);
@@ -1812,7 +1851,7 @@ algorithm
     local
       Ident str,f,io,s1,s2,is,s3,ad,s4;
       tuple<String,String> r;
-      Integer i,indent;
+      Integer i;
       Boolean repl;
       Absyn.Class cl;
       Absyn.Path p;
@@ -1822,12 +1861,14 @@ algorithm
       list<Absyn.ComponentItem> cs;
       String prefixKeywords;
       Option<Absyn.Annotation> annOpt;
+      Absyn.Import imp;      
 
     case (i,Absyn.CLASSDEF(replaceable_ = repl,class_ = cl),f,r,io) /* indent */
       equation
         str = unparseClassStr(i, cl, f, r, io);
       then
         str;
+    
     case (i,Absyn.EXTENDS(path = p,elementArg = {},annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
@@ -1835,9 +1876,10 @@ algorithm
         is = indentStr(i);
         s3 = unparseAnnotationOption(0, annOpt);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
-        str = System.stringAppendList({is,s2,s3});
+        str = stringAppendList({is,s2,s3});
       then
         str;
+    
     case (i,Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
@@ -1846,9 +1888,10 @@ algorithm
         is = indentStr(i);
         s4 = unparseAnnotationOption(0, annOpt);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
-        str = System.stringAppendList({is,s2,"(",s3,")",s4});
+        str = stringAppendList({is,s2,"(",s3,")",s4});
       then
         str;
+    
     case (i,Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs),f,r,io)
       equation
         s1 = unparseTypeSpec(t);
@@ -1857,19 +1900,20 @@ algorithm
         s3 = getStringList(cs, unparseComponentitemStr, ",");
         is = indentStr(i);
         prefixKeywords = unparseElementPrefixKeywords(r, f, io, "", "");
-        str = System.stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
+        str = stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
       then
         str;
-    case (indent,Absyn.IMPORT(import_ = i),f,r,io)
-      local Absyn.Import i;
+    
+    case (i,Absyn.IMPORT(import_ = imp),f,r,io)
       equation
-        s1 = unparseImportStr(i);
+        s1 = unparseImportStr(imp);
         s2 = stringAppend("import ", s1);
-        is = indentStr(indent);
+        is = indentStr(i);
         // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for import!
-        str = System.stringAppendList({is,s2});
+        str = stringAppendList({is,s2});
       then
         str;
+    
     case (_,_,_,_,_)
       equation
         Print.printBuf(" ##ERROR## ");
@@ -1883,11 +1927,11 @@ public function printImport
   Prints an Import to the Print buffer."
   input Absyn.Import inImport;
 algorithm
-  _:=
-  matchcontinue (inImport)
+  _ := matchcontinue (inImport)
     local
       Ident i;
       Absyn.Path p;
+    
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
         Print.printBuf(i);
@@ -1895,11 +1939,13 @@ algorithm
         printPath(p);
       then
         ();
+    
     case (Absyn.QUAL_IMPORT(path = p))
       equation
         printPath(p);
       then
         ();
+    
     case (Absyn.UNQUAL_IMPORT(path = p))
       equation
         printPath(p);
@@ -1919,6 +1965,7 @@ algorithm
     local
       Ident s1,s2,str,i;
       Absyn.Path p;
+    
     case (Absyn.NAMED_IMPORT(name = i,path = p))
       equation
         s1 = stringAppend(i, " = ");
@@ -1926,11 +1973,13 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str;
+    
     case (Absyn.QUAL_IMPORT(path = p))
       equation
         str = Absyn.pathString(p);
       then
         str;
+    
     case (Absyn.UNQUAL_IMPORT(path = p))
       equation
         s1 = Absyn.pathString(p);
@@ -1941,19 +1990,17 @@ algorithm
 end unparseImportStr;
 
 protected function printElementattr "function: printElementattr
-
-  Prints ElementAttributes to the Print buffer.
-"
+  Prints ElementAttributes to the Print buffer."
   input Absyn.ElementAttributes inElementAttributes;
 algorithm
-  _:=
-  matchcontinue (inElementAttributes)
+  _ := matchcontinue (inElementAttributes)
     local
       Ident vs,ds;
       Boolean fl,st;
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
+    
     case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
@@ -1971,6 +2018,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (_)
       equation
         Print.printBuf(" ##ERROR## print_elementattr");
@@ -2000,7 +2048,7 @@ algorithm
         ss = selectString(st, "stream ", "");
         vs = unparseVariabilitySymbolStr(var);
         ds = unparseDirectionSymbolStr(dir);
-        str = System.stringAppendList({fs,ss,vs,ds});
+        str = stringAppendList({fs,ss,vs,ds});
       then
         str;
     case (_)
@@ -2184,7 +2232,7 @@ algorithm
         s1 = unparseComponentStr(c);
         s2 = unparseComponentCondition(optcond);
         s3 = unparseCommentOption(cmtopt);
-        str = System.stringAppendList({s1,s2,s3});
+        str = stringAppendList({s1,s2,s3});
       then
         str;
   end matchcontinue;
@@ -2208,7 +2256,7 @@ algorithm
         res = stringAppend(" if ", s1);
       then
         res;
-    case (NONE) then "";
+    case (NONE()) then "";
   end matchcontinue;
 end unparseComponentCondition;
 
@@ -2221,7 +2269,7 @@ algorithm
   _:=
   matchcontinue (inAbsynArrayDimOption)
     local list<Absyn.Subscript> s;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
@@ -2316,7 +2364,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (NONE) then ();
+    case (NONE()) then ();
   end matchcontinue;
 end printOptModification;
 
@@ -2377,7 +2425,7 @@ algorithm
   _:=
   matchcontinue (inAbsynExpOption)
     local Absyn.Exp e;
-    case NONE
+    case NONE()
       equation
         Print.printBuf("NONE()");
       then
@@ -2409,7 +2457,7 @@ algorithm
         str = unparseModificationStr(opt);
       then
         str;
-    case (NONE) then "";
+    case (NONE()) then "";
   end matchcontinue;
 end unparseOptModificationStr;
 
@@ -2426,7 +2474,7 @@ algorithm
       Ident s1,s2,str;
       list<Absyn.ElementArg> l;
       Option<Absyn.Exp> e;
-    case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE)) then "()";  /* Special case for empty modifications */
+    case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE())) then "()";  /* Special case for empty modifications */
     case (Absyn.CLASSMOD(elementArgLst = l, expOption = e))
       equation
         s1 = unparseMod1Str(l);
@@ -2477,7 +2525,7 @@ algorithm
     local
       Ident s1,str;
       Absyn.Exp e;
-    case NONE then "";
+    case NONE() then "";
     case SOME(e)
       equation
         s1 = printExpStr(e);
@@ -2503,13 +2551,10 @@ end equationName;
 
 public function printEquation "Equations
   function: printEquation
-
-  Prints an Equation to the Print buffer.
-"
+  Prints an Equation to the Print buffer."
   input Absyn.Equation inEquation;
 algorithm
-  _:=
-  matchcontinue (inEquation)
+  _ := matchcontinue (inEquation)
     local
       Absyn.Exp e,e1,e2;
       list<Absyn.EquationItem> tb,fb,el;
@@ -2519,6 +2564,8 @@ algorithm
       Absyn.EquationItem equItem;
       Absyn.ComponentRef cr;
       Absyn.FunctionArgs fargs;
+      Absyn.ComponentRef cr1,cr2;
+    
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation
         Print.printBuf("IF (");
@@ -2530,6 +2577,7 @@ algorithm
         printListDebug("print_equation", fb, printEquationitem, ";");
       then
         ();
+    
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         Print.printBuf("EQ_EQUALS(");
@@ -2539,6 +2587,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.EQ_NORETCALL(functionName = cr,functionArgs = fargs)) /* EQ_NORETCALL */
       equation
         Print.printBuf("EQ_NORETCALL(");
@@ -2547,16 +2596,17 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
-      local Absyn.ComponentRef e1,e2;
+    
+    case (Absyn.EQ_CONNECT(connector1 = cr1,connector2 = cr2))
       equation
         Print.printBuf("EQ_CONNECT(");
-        printComponentRef(e1);
+        printComponentRef(cr1);
         Print.printBuf(",");
-        printComponentRef(e2);
+        printComponentRef(cr2);
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.EQ_FOR(iterators=iterators,forEquations = el)
       equation
         Print.printBuf("FOR ");
@@ -2566,6 +2616,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
+    
     case Absyn.EQ_FAILURE(equItem)
       equation
         Print.printBuf("FAILURE(");
@@ -2573,6 +2624,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN EQUATION ** ");
@@ -2582,14 +2634,13 @@ algorithm
 end printEquation;
 
 protected function printEquationitem "function: printEquationitem
-
-  Prints and EquationItem to the Print buffer.
-"
+  Prints and EquationItem to the Print buffer."
   input Absyn.EquationItem inEquationItem;
 algorithm
-  _:=
-  matchcontinue (inEquationItem)
-    local Absyn.Equation eq;
+  _ := matchcontinue (inEquationItem)
+    local 
+      Absyn.Equation eq;
+    
     case Absyn.EQUATIONITEM(equation_ = eq)
       equation
         Print.printBuf("EQUATIONITEM(");
@@ -2597,6 +2648,7 @@ algorithm
         Print.printBuf(", <comment>)\n");
       then
         ();
+    
     case Absyn.EQUATIONITEMANN(annotation_ = _)
       equation
         Print.printBuf("EQUATIONITEMANN(<annotation>)\n");
@@ -2612,27 +2664,28 @@ public function unparseEquationStr
   input Absyn.Equation inEquation;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inEquation)
+  outString := matchcontinue (inInteger,inEquation)
     local
       Ident s1,s2,is,str,s3,s4,id;
-      Absyn.ComponentRef cref;
+      Absyn.ComponentRef cref,cr1,cr2;
       Integer i_1,i,indent;
       Absyn.Exp e,e1,e2,exp;
       Absyn.ForIterators iterators;
       list<Absyn.EquationItem> tb,fb,el,eql;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb,eqlelse;
       Absyn.FunctionArgs fargs;
-      Absyn.EquationItem equItem;
+      Absyn.EquationItem equItem;      
+    
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = {}))
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
         s2 = unparseEquationitemStrLst(i_1, tb, ";\n");
         is = indentStr(i);
-        str = System.stringAppendList({"if ",s1," then\n",is,s2,is,"end if"});
+        str = stringAppendList({"if ",s1," then\n",is,s2,is,"end if"});
       then
         str;
+    
     case (i,Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation
         s1 = printExpStr(e);
@@ -2641,44 +2694,48 @@ algorithm
         s3 = unparseEqElseifStrLst(i_1, eb, "\n");
         s4 = unparseEquationitemStrLst(i_1, fb, ";\n");
         is = indentStr(i);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {is,"if ",s1," then\n",s2,s3,"\n",is,"else\n",s4,"\n",is,
           "end if"});
       then
         str;
+    
     case (i,Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         is = indentStr(i);
-        str = System.stringAppendList({is,s1," = ",s2});
+        str = stringAppendList({is,s1," = ",s2});
       then
         str;
-    case (i,Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
-      local Absyn.ComponentRef e1,e2;
+    
+    case (i,Absyn.EQ_CONNECT(connector1 = cr1,connector2 = cr2))
       equation
-        s1 = printComponentRefStr(e1);
-        s2 = printComponentRefStr(e2);
+        s1 = printComponentRefStr(cr1);
+        s2 = printComponentRefStr(cr2);
         is = indentStr(i);
-        str = System.stringAppendList({is,"connect(",s1,",",s2,")"});
+        str = stringAppendList({is,"connect(",s1,",",s2,")"});
       then
         str;
-    case (indent,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
+    
+    case (i,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
       equation
         s1 = printIteratorsStr(iterators);
-        s2 = unparseEquationitemStrLst(indent, el, ";\n");
-        is = indentStr(indent);
-        str = System.stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
+        s2 = unparseEquationitemStrLst(i, el, ";\n");
+        is = indentStr(i);
+        str = stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
       then
         str;
+    
     case (i,Absyn.EQ_NORETCALL(functionName = cref,functionArgs = fargs))
       equation
         s2 = printFunctionArgsStr(fargs);
         id = printComponentRefStr(cref);
         is = indentStr(i);
-        str = System.stringAppendList({is, id,"(",s2,")"});
+        str = stringAppendList({is, id,"(",s2,")"});
       then
         str;
+    
     case (i,Absyn.EQ_WHEN_E(whenExp = exp,whenEquations = eql,elseWhenEquations = eqlelse))
       equation
         s1 = printExpStr(exp);
@@ -2686,67 +2743,66 @@ algorithm
         s2 = unparseEquationitemStrLst(i_1, eql, ";\n");
         is = indentStr(i);
         s4 = unparseEqElsewhenStrLst(i_1, eqlelse);
-        str = System.stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
+        str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
       then
         str;
+    
     case (i,Absyn.EQ_FAILURE(equItem))
       equation
         s1 = unparseEquationitemStr(0, equItem);
         is = indentStr(i);
-        str = System.stringAppendList({is,"failure(",s1,")"});
+        str = stringAppendList({is,"failure(",s1,")"});
       then
         str;
+    
     case (_,_)
       equation
-        Print.printBuf(" /** Failure! UNKNOWN EQUATION **/ ");
+        Print.printBuf(" /** Dump.unparseEquationStr Failure! UNKNOWN EQUATION **/ ");
       then
         "";
   end matchcontinue;
 end unparseEquationStr;
 
 protected function unparseEquationitemStrLst "function:unparseEquationitemStrLst
-
-  Prettyprints and EquationItem list to a string.
-"
+  Prettyprints and EquationItem list to a string."
   input Integer inInteger;
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   input String inString;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynEquationItemLst,inString)
+  outString := matchcontinue (inInteger,inAbsynEquationItemLst,inString)
     local
       Ident s1,s2,res,sep;
       Integer i;
       Absyn.EquationItem x;
       list<Absyn.EquationItem> xs;
+    
     case (_,{},_) then "";  /* indent */
+    
     case (i,(x :: xs),sep)
       equation
         s1 = unparseEquationitemStr(i, x);
         s2 = unparseEquationitemStrLst(i, xs, sep);
-        res = System.stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
 end unparseEquationitemStrLst;
 
 protected function unparseEquationitemStr "function: unparseEquationitemStr
-
-  Prettyprints an EquationItem to a string.
-"
+  Prettyprints an EquationItem to a string."
   input Integer inInteger;
   input Absyn.EquationItem inEquationItem;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inEquationItem)
+  outString := matchcontinue (inInteger,inEquationItem)
     local
       Ident s1,s2,str;
       Integer i;
       Absyn.Equation eq;
       Option<Absyn.Comment> optcmt;
       Absyn.Annotation ann;
+    
     case (i,Absyn.EQUATIONITEM(equation_ = eq,comment = optcmt))
       equation
         s1 = unparseEquationStr(i, eq);
@@ -2754,6 +2810,7 @@ algorithm
         str = stringAppend(s1, s2);
       then
         str;
+    
     case (i,Absyn.EQUATIONITEMANN(annotation_ = ann))
       equation
         str = unparseAnnotationOption(i, SOME(ann));
@@ -2763,16 +2820,14 @@ algorithm
 end unparseEquationitemStr;
 
 protected function printEqElseif "function: printEqElseif
-
-  Prints an Elseif branch to the Print buffer.
-"
+  Prints an Elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
 algorithm
-  _:=
-  matchcontinue (inTplAbsynExpAbsynEquationItemLst)
+  _ := matchcontinue (inTplAbsynExpAbsynEquationItemLst)
     local
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
+    
     case ((e,el))
       equation
         Print.printBuf(" ELSEIF ");
@@ -2785,67 +2840,66 @@ algorithm
 end printEqElseif;
 
 protected function unparseEqElseifStrLst "function: unparseEqElseifStrLst
-
-  Prettyprints an elseif branch to a string.
-"
+  Prettyprints an elseif branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTplAbsynExpAbsynEquationItemLstLst;
   input String inString;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst,inString)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst,inString)
     local
       Ident s1,res,sep,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x1,x,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
+    
     case (_,{},_) then "";
+    
     case (i,{x1},sep)
       equation
         s1 = unparseEqElseifStr(i, x1);
-        res = System.stringAppendList({s1,sep});
+        res = stringAppendList({s1,sep});
       then
         res;
+    
     case (i,(x :: (xs as (_ :: _))),sep)
       equation
         s2 = unparseEqElseifStrLst(i, xs, sep);
         s1 = unparseEqElseifStr(i, x);
-        res = System.stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,sep,s2});
       then
         res;
+    
     case (i,{x1,x2},sep)
       equation
         s1 = unparseEqElseifStr(i, x1);
         s2 = unparseEqElseifStr(i, x2);
-        res = System.stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
 end unparseEqElseifStrLst;
 
 protected function unparseEqElseifStr "function: unparseEqElseifStr
-
-  Helper function to unparse_eq_elseif_str_lst
-"
+  Helper function to unparseEqElseifStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
       Ident s1,s2,is,res;
       Integer i_1,i;
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
+    
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
         s2 = unparseEquationitemStrLst(i, el, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        res = System.stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
+        res = stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
       then
         res;
   end matchcontinue;
@@ -2853,16 +2907,14 @@ end unparseEqElseifStr;
 
 protected function printAlgorithmitem "Algorithm clauses
   function: printAlgorithmitem
-
-  Prints an AlgorithmItem to the Print buffer.
-"
+  Prints an AlgorithmItem to the Print buffer."
   input Absyn.AlgorithmItem inAlgorithmItem;
 algorithm
-  _:=
-  matchcontinue (inAlgorithmItem)
+  _ := matchcontinue (inAlgorithmItem)
     local
       Absyn.Algorithm alg;
       Absyn.Annotation ann;
+    
     case (Absyn.ALGORITHMITEM(algorithm_ = alg))
       equation
         Print.printBuf("ALGORITHMITEM(");
@@ -2870,6 +2922,7 @@ algorithm
         Print.printBuf(")\n");
       then
         ();
+    
     case (Absyn.ALGORITHMITEMANN(annotation_ = ann))
       equation
         Print.printBuf("ALGORITHMITEMANN(<annotation>)\n");
@@ -2883,8 +2936,7 @@ public function printAlgorithm
   Prints an Algorithm to the Print buffer."
   input Absyn.Algorithm inAlgorithm;
 algorithm
-  _:=
-  matchcontinue (inAlgorithm)
+  _ := matchcontinue (inAlgorithm)
     local
       Absyn.ComponentRef cr;
       Absyn.Exp exp,e1,e2,e, assignComp;
@@ -2905,6 +2957,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)) /* ALG_NORETCALL */
       equation
         Print.printBuf("ALG_NORETCALL(");
@@ -2913,6 +2966,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb))
       equation
         Print.printBuf("IF (");
@@ -2924,6 +2978,7 @@ algorithm
         printListDebug("print_algorithm", fb, printAlgorithmitem, ";");
       then
         ();
+    
     case Absyn.ALG_FOR(iterators=iterators,forBody = el)
       equation
         Print.printBuf("FOR ");
@@ -2933,6 +2988,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
+    
     case Absyn.ALG_WHILE(boolExpr = e,whileBody = al)
       equation
         Print.printBuf("WHILE ");
@@ -2942,13 +2998,13 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el)
+    
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = eb)
       /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
 	       Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
 	       ----------------------------------------------------------
 	       print_algorithm Absyn.ALG_WHEN_E(e,al)
       */
-      local list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> el;
       equation
         Print.printBuf("WHEN_A ");
         printExp(e);
@@ -2957,23 +3013,33 @@ algorithm
         Print.printBuf("}");
       then
         ();
+    
     case Absyn.ALG_RETURN()
       equation
         Print.printBuf("RETURN()");
       then
         ();
+    
     case Absyn.ALG_BREAK()
       equation
         Print.printBuf("BREAK()");
       then
         ();
-    case Absyn.ALG_FAILURE(algItem)
+        
+    case Absyn.ALG_FAILURE({algItem})
       equation
         Print.printBuf("FAILURE(");
         printAlgorithmitem(algItem);
         Print.printBuf(")");
       then
         ();
+    
+    case Absyn.ALG_FAILURE(_)
+      equation
+        Print.printBuf("FAILURE(...)");
+      then
+        ();
+    
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN ALGORITHM CLAUSE ** ");
@@ -2983,27 +3049,26 @@ algorithm
 end printAlgorithm;
 
 protected function unparseAlgorithmStrLst "function: unparseAlgorithmStrLst
-
-  Prettyprints an AlgorithmItem list to a string.
-"
+  Prettyprints an AlgorithmItem list to a string."
   input Integer inInteger;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input String inString;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
+  outString := matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
     local
       Ident s1,s2,res,sep;
       Integer i;
       Absyn.AlgorithmItem x;
       list<Absyn.AlgorithmItem> xs;
+    
     case (_,{},_) then "";
+    
     case (i,(x :: xs),sep)
       equation
         s1 = unparseAlgorithmStr(i, x);
         s2 = unparseAlgorithmStrLst(i, xs, sep);
-        res = System.stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
@@ -3015,15 +3080,16 @@ protected function unparseAlgorithmStrLstLst
   input String inString;
   output list<String> outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
+  outString := matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
     local
       Ident s1,sep;
       list<Ident> s2;
       Integer i;
       list<Absyn.AlgorithmItem> x;
       list<list<Absyn.AlgorithmItem>> xs;
+    
     case (_,{},_) then {};
+    
     case (i,(x :: xs),sep)
       equation
         s1 = unparseAlgorithmStrLst(i, x, sep);
@@ -3034,15 +3100,12 @@ algorithm
 end unparseAlgorithmStrLstLst;
 
 public function unparseAlgorithmStr "function: unparseAlgorithmStr
-
-  Helper function to unparse_algorithm_str
-"
+  Helper function to unparseAlgorithmStr"
   input Integer inInteger;
   input Absyn.AlgorithmItem inAlgorithmItem;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAlgorithmItem)
+  outString := matchcontinue (inInteger,inAlgorithmItem)
     local
       Ident s1,s2,s3,is,str,s4,s5,str_1;
       Integer i,i_1,ident_1,ident;
@@ -3055,16 +3118,20 @@ algorithm
       Absyn.Annotation ann;
       Absyn.ForIterators iterators;
       Absyn.AlgorithmItem algItem;
-
+      Absyn.MatchType matchType;
+      list<Absyn.Exp> explist;
+      list<String> strlist;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */
       equation
         s1 = printExpStr(assignComp);
         s2 = printExpStr(exp);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList({is,s1,":=",s2,s3,";"});
+        str = stringAppendList({is,s1,":=",s2,s3,";"});
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb),comment = optcmt)) /* ALG_IF */
       equation
         s1 = printExpStr(e);
@@ -3074,24 +3141,23 @@ algorithm
         s4 = unparseAlgorithmStrLst(i, fb, "\n");
         s5 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {is,"if ",s1," then \n",is,s2,s3,"\n",is,"else ",s4,"\n",is,
           "end if",s5,";"});
       then
         str;
-    case (ident,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators=iterators,forBody = el),comment = optcmt)) /* ALG_FOR */
-      local Ident i;
+    
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators=iterators,forBody = el),comment = optcmt)) /* ALG_FOR */
       equation
-        ident_1 = ident + 1;
+        i_1 = i + 1;
         s1 = printIteratorsStr(iterators);
-        s2 = unparseAlgorithmStrLst(ident_1, el, "\n");
+        s2 = unparseAlgorithmStrLst(i_1, el, "\n");
         s3 = unparseCommentOption(optcmt);
-        is = indentStr(ident);
-        str = System.stringAppendList(
-          {is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,
-          ";"});
+        is = indentStr(i);
+        str = stringAppendList({is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,";"});
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(boolExpr = e,whileBody = al),comment = optcmt)) /* ALG_WHILE */
       equation
         s1 = printExpStr(e);
@@ -3099,10 +3165,10 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList(
-          {is,"while (",s1,") loop\n",is,s2,"\n",is,"end while",s3,";"});
+        str = stringAppendList({is,"while (",s1,") loop\n",is,s2,"\n",is,"end while",s3,";"});
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = al2),comment = optcmt)) /* ALG_WHEN_A */
       equation
         s1 = printExpStr(e);
@@ -3111,32 +3177,34 @@ algorithm
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         s4 = unparseAlgElsewhenStrLst(i_1, al2);
-        str = System.stringAppendList(
-          {is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when",s3,
-          ";"});
+        str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when",s3,";"});
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs),comment = optcmt)) /* ALG_NORETCALL */
       equation
         s1 = printComponentRefStr(cr);
         s2 = printFunctionArgsStr(fargs);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList({is,s1,"(",s2,")",s3,";"});
+        str = stringAppendList({is,s1,"(",s2,")",s3,";"});
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEMANN(annotation_ = ann))
       equation
         str = unparseAnnotationOption(i, SOME(ann));
         str_1 = stringAppend(str, ";");
       then
         str_1;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_RETURN(),comment = optcmt)) /* ALG_RETURN */
       equation
         s3 = unparseCommentOption(optcmt);
         str = "return" +& s3 +& ";";
       then
         str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_BREAK(),comment = optcmt)) /* ALG_BREAK */
       equation
         s3 = unparseCommentOption(optcmt);
@@ -3144,7 +3212,8 @@ algorithm
         str = is +& "break" +& s3 +& ";";
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(algItem),comment = optcmt)) /* ALG_FAILURE */
+    
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE({algItem}),comment = optcmt)) /* ALG_FAILURE */
       equation
         s1 = unparseAlgorithmStr(0, algItem);
         s3 = unparseCommentOption(optcmt);
@@ -3152,16 +3221,21 @@ algorithm
         str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
       then
         str;
+    
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(_),comment = optcmt)) /* ALG_FAILURE */
+      equation
+        s3 = unparseCommentOption(optcmt);
+        is = indentStr(i);
+        str = is +& "failure(...)" +& s3 +& ";";
+      then
+        str;
+    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(matchType=matchType,switchCases=explist), comment = optcmt))
-      local
-        Absyn.MatchType matchType;
-        list<Absyn.Exp> explist;
-        list<String> strlist;
       equation
         s3 = unparseCommentOption(optcmt);
         strlist = Util.listMap(explist, printExpStr);
         strlist = Util.listMap1r(strlist, stringAppend, "\ncase:\n    ");
-        s2 = System.stringAppendList(strlist);
+        s2 = stringAppendList(strlist);
         str_1 = printMatchType(matchType) +& " cases { " +& s2 +& " } "+& s3 +&";";
       then
         str_1;
@@ -3171,11 +3245,11 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {is,"try\n",is,s2,is,"end try",s3,";"});
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_THROW,comment = optcmt)) /* ALG_THROW */
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_THROW(),comment = optcmt)) /* ALG_THROW */
       equation
         is = indentStr(i);
         str = is +& "throw;";
@@ -3187,7 +3261,7 @@ algorithm
         s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
-        str = System.stringAppendList(
+        str = stringAppendList(
           {is,"catch\n",is,s2,is,"end catch",s3,";"});
       then
         str;
@@ -3200,144 +3274,140 @@ algorithm
 end unparseAlgorithmStr;
 
 protected function unparseAlgElsewhenStrLst "function: unparseAlgElsewhenStrLst
-
-  Unparses an elsewhen branch in an algorithm to a string.
-"
+  Unparses an elsewhen branch in an algorithm to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst)
     local
       Ident res,s1,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
+    
     case (_,{}) then "";
+    
     case (i,{x})
       equation
         res = unparseAlgElsewhenStr(i, x);
       then
         res;
+    
     case (i,{x1,x2})
       equation
         s1 = unparseAlgElsewhenStr(i, x1);
         s2 = unparseAlgElsewhenStr(i, x2);
-        res = System.stringAppendList({s1,"\n",s2});
+        res = stringAppendList({s1,"\n",s2});
       then
         res;
+    
     case (i,(x :: (xs as (_ :: _))))
       equation
         s1 = unparseAlgElsewhenStr(i, x);
         s2 = unparseAlgElsewhenStrLst(i, xs);
-        res = System.stringAppendList({s1,"\n",s2});
+        res = stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
 end unparseAlgElsewhenStrLst;
 
 protected function unparseAlgElsewhenStr "function: unparseAlgElsewhenStr
-
-  Helper function to unparse_alg_elsewhen_str_lst
-"
+  Helper function to unparseAlgElsewhenStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Ident is,s1,s2,res;
       Integer i;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algl;
+    
     case (i,(exp,algl))
       equation
         is = indentStr(i);
         s1 = unparseAlgorithmStrLst(i, algl, "\n");
         s2 = printExpStr(exp);
-        res = System.stringAppendList({"elsewhen ",s2," then\n",s1});
+        res = stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
   end matchcontinue;
 end unparseAlgElsewhenStr;
 
 protected function unparseEqElsewhenStrLst "function: unparseEqElsewhenStrLst
-
-  Prettyprints an equation elsewhen branch to a string.
-"
+  Prettyprints an equation elsewhen branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTplAbsynExpAbsynEquationItemLstLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst)
     local
       Ident res,s1,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
+    
     case (_,{}) then "";
+    
     case (i,{x})
       equation
         res = unparseEqElsewhenStr(i, x);
       then
         res;
+    
     case (i,{x1,x2})
       equation
         s1 = unparseEqElsewhenStr(i, x1);
         s2 = unparseEqElsewhenStr(i, x2);
-        res = System.stringAppendList({s1,"\n",s2});
+        res = stringAppendList({s1,"\n",s2});
       then
         res;
+    
     case (i,(x :: xs))
       equation
         s1 = unparseEqElsewhenStr(i, x);
         s2 = unparseEqElsewhenStrLst(i, xs);
-        res = System.stringAppendList({s1,"\n",s2});
+        res = stringAppendList({s1,"\n",s2});
       then
         res;
   end matchcontinue;
 end unparseEqElsewhenStrLst;
 
 protected function unparseEqElsewhenStr "function: unparseEqElsewhenStr
-
-  Helper function to unparse_eq_elsewhen_str_lst
-"
+  Helper function to unparseEqWlsewhenStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
       Ident is,s1,s2,res;
       Integer i;
       Absyn.Exp exp;
       list<Absyn.EquationItem> eql;
+    
     case (i,(exp,eql))
       equation
         is = indentStr(i);
         s1 = unparseEquationitemStrLst(i, eql, ";\n");
         s2 = printExpStr(exp);
-        res = System.stringAppendList({"elsewhen ",s2," then\n",s1});
+        res = stringAppendList({"elsewhen ",s2," then\n",s1});
       then
         res;
   end matchcontinue;
 end unparseEqElsewhenStr;
 
 protected function printAlgElseif "function: printAlgElseif
-
-  Prints an algorithm elseif branch to the Print buffer.
-"
+  Prints an algorithm elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
 algorithm
-  _:=
-  matchcontinue (inTplAbsynExpAbsynAlgorithmItemLst)
+  _ := matchcontinue (inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
+    
     case ((e,el))
       equation
         Print.printBuf(" ELSEIF ");
@@ -3350,54 +3420,51 @@ algorithm
 end printAlgElseif;
 
 protected function unparseAlgElseifStrLst "function: unparseAlgElseifStrLst
-
-  Prettyprints an algorithm elseif branch to a string.
-"
+  Prettyprints an algorithm elseif branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input String inString;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst,inString)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst,inString)
     local
       Ident s2,s1,res,sep;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
+    
     case (_,{},_) then "";
+    
     case (i,(x :: xs),sep)
       equation
         s2 = unparseAlgElseifStrLst(i, xs, sep);
         s1 = unparseAlgElseifStr(i, x);
-        res = System.stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,sep,s2});
       then
         res;
   end matchcontinue;
 end unparseAlgElseifStrLst;
 
 protected function unparseAlgElseifStr "function: unparseAlgElseifStr
-
-  Helper function to unparse_alg_elseif_str_lst
-"
+  Helper function to unparseAlgElseifStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
+  outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
       Ident s1,s2,is,str;
       Integer i_1,i;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
+    
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
         s2 = unparseAlgorithmStrLst(i, el, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = System.stringAppendList({is,"elseif ",s1," then\n",s2});
+        str = stringAppendList({is,"elseif ",s1," then\n",s2});
       then
         str;
   end matchcontinue;
@@ -3405,17 +3472,15 @@ end unparseAlgElseifStr;
 
 public function printComponentRef "Component references and paths
   function: printComponentRef
-
-  Print a `ComponentRef\' to the Print buffer.
-"
+  Print a ComponentRef to the Print buffer."
   input Absyn.ComponentRef inComponentRef;
 algorithm
-  _:=
-  matchcontinue (inComponentRef)
+  _ := matchcontinue (inComponentRef)
     local
       Ident s;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
+    
     case Absyn.CREF_IDENT(name = s,subscripts = subs)
       equation
         Print.printBuf("Absyn.CREF_IDENT(\"");
@@ -3425,6 +3490,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.CREF_QUAL(name = s,subScripts = subs,componentRef = cr)
       equation
         Print.printBuf("Absyn.CREF_QUAL(\"");
@@ -3436,7 +3502,8 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    /* MetaModelica wildcard */
+    
+    // MetaModelica wildcard
     case Absyn.WILD()
       equation
         Print.printBuf("Absyn.WILD");
@@ -3446,19 +3513,19 @@ algorithm
 end printComponentRef;
 
 public function printSubscripts "function: printSubscripts
-
-  Prints a Subscript to the Print buffer.
-"
+  Prints a Subscript to the Print buffer."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
 algorithm
-  _:=
-  matchcontinue (inAbsynSubscriptLst)
-    local list<Absyn.Subscript> l;
+  _ := matchcontinue (inAbsynSubscriptLst)
+    local 
+      list<Absyn.Subscript> l;
+    
     case {}
       equation
         Print.printBuf("[]");
       then
         ();
+    
     case l
       equation
         Print.printBuf("[");
@@ -3470,24 +3537,23 @@ algorithm
 end printSubscripts;
 
 public function printComponentRefStr "function: printComponentRefStr
-
-  Print a `ComponentRef\' and return as a string.
-"
+  Print a ComponentRef and return as a string."
   input Absyn.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef)
+  outString := matchcontinue (inComponentRef)
     local
       Ident subsstr,s_1,s,crs,s_2,s_3;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
+    
     case Absyn.CREF_IDENT(name = s,subscripts = subs)
       equation
         subsstr = printSubscriptsStr(subs);
         s_1 = stringAppend(s, subsstr);
       then
         s_1;
+    
     case Absyn.CREF_QUAL(name = s,subScripts = subs,componentRef = cr)
       equation
         crs = printComponentRefStr(cr);
@@ -3497,29 +3563,30 @@ algorithm
         s_3 = stringAppend(s_2, crs);
       then
         s_3;
+    
     case Absyn.CREF_FULLYQUALIFIED(componentRef = cr)
       equation
         crs = printComponentRefStr(cr);
         s_3 = stringAppend(".", crs);
       then
         s_3;
+    
     case Absyn.WILD() then "_";
   end matchcontinue;
 end printComponentRefStr;
 
 public function printSubscriptsStr "function: printSubscriptsStr
-
-  Prettyprint a Subscript list to a string.
-"
+  Prettyprint a Subscript list to a string."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAbsynSubscriptLst)
+  outString := matchcontinue (inAbsynSubscriptLst)
     local
       Ident s,s_1,s_2;
       list<Absyn.Subscript> l;
+    
     case {} then "";
+    
     case l
       equation
         s = printListStr(l, printSubscriptStr, ",");
@@ -3531,9 +3598,7 @@ algorithm
 end printSubscriptsStr;
 
 public function printPath "function: printPath
-
-  Print a `Path\'.
-"
+  Print a Path."
   input Absyn.Path p;
   Ident s;
 algorithm
@@ -3542,16 +3607,14 @@ algorithm
 end printPath;
 
 protected function dumpPath "function: dumpPath
-
-  Dumps path to the Print buffer
-"
+  Dumps path to the Print buffer"
   input Absyn.Path inPath;
 algorithm
-  _:=
-  matchcontinue (inPath)
+  _ := matchcontinue (inPath)
     local
       Ident str;
       Absyn.Path path;
+    
     case (Absyn.IDENT(name = str))
       equation
         Print.printBuf("Absyn.IDENT(\"");
@@ -3559,6 +3622,7 @@ algorithm
         Print.printBuf("\")");
       then
         ();
+    
     case (Absyn.QUALIFIED(name = str,path = path))
       equation
         Print.printBuf("Absyn.QUALIFIED(\"");
@@ -3571,28 +3635,22 @@ algorithm
   end matchcontinue;
 end dumpPath;
 
-protected function printPathStr "function: print_path
-
-  Print a `Path\'.
-"
+protected function printPathStr "function: printPathStr
+  Print a Path."
   input Absyn.Path p;
   output String s;
 algorithm
   s := Absyn.pathString(p);
 end printPathStr;
 
-public function printExp "- Expressions
-  function: printExp
-
-  This function prints a complete expression to the Print buffer.
-"
+public function printExp "function: printExp
+  This function prints a complete expression to the Print buffer."
   input Absyn.Exp inExp;
 algorithm
-  _:=
-  matchcontinue (inExp)
+  _ := matchcontinue (inExp)
     local
       Ident s,sym;
-      Integer x;
+      Integer i; Real r; Boolean b; 
       Absyn.ComponentRef c,fcn;
       Absyn.Exp e1,e2,e,t,f,start,stop,step;
       Absyn.Operator op;
@@ -3600,28 +3658,30 @@ algorithm
       Absyn.FunctionArgs args;
       list<Absyn.Exp> es;
       Absyn.MatchType matchType;
-      Absyn.Exp head, rest;
-      Absyn.Exp inputExp;
+      Absyn.Exp head, rest,inputExp,cond;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.Case> cases;
       Option<String> comment;
-    case (Absyn.INTEGER(value = x))
+      list<list<Absyn.Exp>> esLst;
+    
+    case (Absyn.INTEGER(value = i))
       equation
-        s = intString(x);
+        s = intString(i);
         Print.printBuf("Absyn.INTEGER(");
         Print.printBuf(s);
         Print.printBuf(")");
       then
         ();
-    case (Absyn.REAL(value = x))
-      local Real x;
+    
+    case (Absyn.REAL(value = r))
       equation
-        s = realString(x);
+        s = realString(r);
         Print.printBuf("Absyn.REAL(");
         Print.printBuf(s);
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.CREF(componentRef = c))
       equation
         Print.printBuf("Absyn.CREF(");
@@ -3629,6 +3689,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.STRING(value = s))
       equation
         Print.printBuf("Absyn.STRING(\"");
@@ -3636,16 +3697,19 @@ algorithm
         Print.printBuf("\")");
       then
         ();
+    
     case (Absyn.BOOL(value = false))
       equation
         Print.printBuf("Absyn.BOOL(false)");
       then
         ();
+    
     case (Absyn.BOOL(value = true))
       equation
         Print.printBuf("Absyn.BOOL(true)");
       then
         ();
+    
     case (Absyn.BINARY(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3658,6 +3722,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.UNARY(op = op,exp = e))
       equation
         sym = dumpOpSymbol(op);
@@ -3668,6 +3733,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3680,6 +3746,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.LUNARY(op = op,exp = e))
       equation
         sym = dumpOpSymbol(op);
@@ -3690,6 +3757,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.RELATION(exp1 = e1,op = op,exp2 = e2))
       equation
         sym = dumpOpSymbol(op);
@@ -3702,11 +3770,11 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.IFEXP(ifExp = c,trueBranch = t,elseBranch = f,elseIfBranch = lst))
-      local Absyn.Exp c;
+    
+    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = lst))
       equation
         Print.printBuf("Absyn.IFEXP(");
-        printExp(c);
+        printExp(cond);
         Print.printBuf(", ");
         printExp(t);
         Print.printBuf(", ");
@@ -3714,6 +3782,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.CALL(function_ = fcn,functionArgs = args))
       equation
         Print.printBuf("Absyn.CALL(");
@@ -3723,6 +3792,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args))
       equation
         Print.printBuf("Absyn.PARTEVALFUNCTION(");
@@ -3732,6 +3802,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.ARRAY(arrayExp = es)
       equation
         Print.printBuf("Absyn.ARRAY([");
@@ -3739,6 +3810,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
+    
     case Absyn.TUPLE(expressions = es) /* PR. */
       equation
         Print.printBuf("Absyn.TUPLE([");
@@ -3747,23 +3819,25 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    case Absyn.MATRIX(matrix = es)
-      local list<list<Absyn.Exp>> es;
+    
+    case Absyn.MATRIX(matrix = esLst)
       equation
         Print.printBuf("Absyn.MATRIX([");
-        printListDebug("print_exp", es, printRow, ";");
+        printListDebug("print_exp", esLst, printRow, ";");
         Print.printBuf("])");
       then
         ();
-    case Absyn.RANGE(start = start,step = NONE,stop = stop)
+    
+    case Absyn.RANGE(start = start,step = NONE(),stop = stop)
       equation
         Print.printBuf("Absyn.RANGE(");
         printExp(start);
-        Print.printBuf(",NONE,");
+        Print.printBuf(",NONE(),");
         printExp(stop);
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.RANGE(start = start,step = SOME(step),stop = stop)
       equation
         Print.printBuf("Absyn.RANGE(");
@@ -3775,13 +3849,14 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.END()
       equation
         Print.printBuf("Absyn.END");
       then
         ();
 
-    /* MetaModelica expressions! */
+    // MetaModelica expressions!
     case Absyn.LIST(es)
       equation
         Print.printBuf("Absyn.LIST([");
@@ -3789,6 +3864,7 @@ algorithm
         Print.printBuf("])");
       then
         ();
+    
     case Absyn.CONS(head, rest)
       equation
         Print.printBuf("Absyn.CONS(");
@@ -3798,6 +3874,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.AS(s, rest)
       equation
         Print.printBuf("Absyn.AS(");
@@ -3807,6 +3884,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
       equation
         Print.printBuf("Absyn.MATCHEXP(MatchType(");
@@ -3823,6 +3901,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case (_)
       equation
         Print.printBuf("#UNKNOWN EXPRESSION#");
@@ -3855,7 +3934,7 @@ algorithm
       list<Absyn.EquationItem> e;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, l, e, r, c)
+    case Absyn.CASE(p, _, l, e, r, c)
       equation
         Print.printBuf("Absyn.CASE(");
         Print.printBuf("Pattern(");
@@ -3939,7 +4018,7 @@ algorithm
         printExp(exp);
         Print.printBuf(")");
       then ();
-    case ((id, NONE))
+    case ((id,NONE()))
       equation
         Print.printBuf("(");
         Print.printBuf(id);
@@ -3986,7 +4065,7 @@ algorithm
       equation
         estr = printExpStr(exp);
         istr = printIteratorsStr(iterators);
-        str = System.stringAppendList({estr," for ", istr});
+        str = stringAppendList({estr," for ", istr});
       then
         str;
   end matchcontinue;
@@ -4009,14 +4088,14 @@ algorithm
     case ({(id, SOME(exp))})
       equation
         s1 = printExpStr(exp);
-        s = System.stringAppendList({id, " in ", s1});
+        s = stringAppendList({id, " in ", s1});
       then s;
     case ({(id, NONE())}) then id;
     case (x::rest)
       equation
         s1 = printIteratorsStr({x});
         s2 = printIteratorsStr(rest);
-        s = System.stringAppendList({s1, ", ", s2});
+        s = stringAppendList({s1, ", ", s2});
       then s;
   end matchcontinue;
 end printIteratorsStr;
@@ -4145,7 +4224,7 @@ algorithm
     case (str,pparent,pexpr) /* expr, prio. parent expr, prio. expr */
       equation
         (pparent > pexpr) = true;
-        str_1 = System.stringAppendList({"(",str,")"});
+        str_1 = stringAppendList({"(",str,")"});
       then
         str_1;
     case (str,_,_) then str;
@@ -4174,47 +4253,57 @@ algorithm
     local
       String s,s_1,s_2,s_3,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
       String s4, s5, s6;
-      Integer x,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
+      Integer i,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
       Absyn.ComponentRef c,fcn;
       Boolean b;
-      Absyn.Exp e,e1,e2,t,f,start,stop,step;
+      Real r;
+      Absyn.Exp e,e1,e2,t,f,start,stop,step,head,rest,inputExp,cond,result;
       Absyn.Operator op;
       list<tuple<Absyn.Exp, Absyn.Exp>> elseif_;
       Absyn.FunctionArgs args;
       list<Absyn.Exp> es;
       Absyn.MatchType matchType;
-      Absyn.Exp head, rest;
-      Absyn.Exp inputExp;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.Case> cases;
       Option<String> comment;
-    case (Absyn.INTEGER(value = x))
+      list<list<Absyn.Exp>> lstEs;
+      Absyn.CodeNode cod;
+      list<Absyn.ElementItem> els; 
+      list<Absyn.AlgorithmItem> algs;
+      list<Absyn.AlgorithmItem> patternMatching;
+      list<Absyn.EquationItem>  equationBody;
+      list<Absyn.AlgorithmItem> resultAssignments;
+    
+    case (Absyn.INTEGER(value = i))
       equation
-        s = intString(x);
+        s = intString(i);
       then
         s;
-    case (Absyn.REAL(value = x))
-      local Real x;
+    
+    case (Absyn.REAL(value = r))
       equation
-        s = realString(x);
+        s = realString(r);
       then
         s;
+    
     case (Absyn.CREF(componentRef = c))
       equation
         s = printComponentRefStr(c);
       then
         s;
+    
     case (Absyn.STRING(value = s))
       equation
-        s_1 = stringAppend("\"", s);
-        s_2 = stringAppend(s_1, "\"");
+        s = stringAppendList({"\"", s, "\""});
       then
-        s_2;
+        s;
+    
     case (Absyn.BOOL(value = b))
       equation
         s = printBoolStr(b);
       then
         s;
+    
     case ((e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4229,6 +4318,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
+    
     case ((e as Absyn.UNARY(op = op,exp = e1)))
       equation
         sym = opSymbol(op);
@@ -4239,6 +4329,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
+    
     case ((e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4253,6 +4344,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
+    
     case ((e as Absyn.LUNARY(op = op,exp = e1)))
       equation
         sym = opSymbol(op);
@@ -4263,6 +4355,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
+    
     case ((e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)))
       equation
         sym = opSymbol(op);
@@ -4277,23 +4370,24 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    case ((e as Absyn.IFEXP(ifExp = c,trueBranch = t,elseBranch = f,elseIfBranch = elseif_)))
-      local Absyn.Exp c;
+    
+    case ((e as Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = elseif_)))
       equation
-        cs = printExpStr(c);
+        cs = printExpStr(cond);
         ts = printExpStr(t);
         fs = printExpStr(f);
         p = expPriority(e);
-        pc = expPriority(c);
+        pc = expPriority(cond);
         pt = expPriority(t);
         pf = expPriority(f);
         cs_1 = parenthesize(cs, pc, p);
         ts_1 = parenthesize(ts, pt, p);
         fs_1 = parenthesize(fs, pf, p);
         el = printElseifStr(elseif_);
-        str = System.stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
+        str = stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
       then
         str;
+    
     case (Absyn.CALL(function_ = fcn,functionArgs = args))
       equation
         fs = printComponentRefStr(fcn);
@@ -4303,6 +4397,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
+    
     case (Absyn.PARTEVALFUNCTION(function_ = fcn,functionArgs = args))
       equation
         fs = printComponentRefStr(fcn);
@@ -4313,6 +4408,7 @@ algorithm
         s_3 = stringAppend(s_2, ")");
       then
         s_3;
+    
     case Absyn.ARRAY(arrayExp = es)
       equation
         s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;
@@ -4320,6 +4416,7 @@ algorithm
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
+    
     case Absyn.TUPLE(expressions = es)
       equation
         s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;
@@ -4327,15 +4424,16 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case Absyn.MATRIX(matrix = es)
-      local list<list<Absyn.Exp>> es;
+    
+    case Absyn.MATRIX(matrix = lstEs)
       equation
-        s = printListStr(es, printRowStr, ";") "Does not need parentheses" ;
+        s = printListStr(lstEs, printRowStr, ";") "Does not need parentheses" ;
         s_1 = stringAppend("[", s);
         s_2 = stringAppend(s_1, "]");
       then
         s_2;
-    case ((e as Absyn.RANGE(start = start,step = NONE,stop = stop)))
+    
+    case ((e as Absyn.RANGE(start = start,step = NONE(),stop = stop)))
       equation
         s1 = printExpStr(start);
         s3 = printExpStr(stop);
@@ -4344,9 +4442,10 @@ algorithm
         pstop = expPriority(stop);
         s1_1 = parenthesize(s1, pstart, p);
         s3_1 = parenthesize(s3, pstop, p);
-        s = System.stringAppendList({s1_1,":",s3_1});
+        s = stringAppendList({s1_1,":",s3_1});
       then
         s;
+    
     case ((e as Absyn.RANGE(start = start,step = SOME(step),stop = stop)))
       equation
         s1 = printExpStr(start);
@@ -4359,32 +4458,35 @@ algorithm
         s1_1 = parenthesize(s1, pstart, p);
         s3_1 = parenthesize(s3, pstop, p);
         s2_1 = parenthesize(s2, pstep, p);
-        s = System.stringAppendList({s1_1,":",s2_1,":",s3_1});
+        s = stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (Absyn.CODE(code = c))
-      local Absyn.CodeNode c;
+    
+    case (Absyn.CODE(code = cod))
       equation
-        res = printCodeStr(c);
-        res_1 = System.stringAppendList({"Code(",res,")"});
+        res = printCodeStr(cod);
+        res_1 = stringAppendList({"Code(",res,")"});
       then
         res_1;
+    
     case Absyn.END() then "end";
 
-    /* MetaModelica expressions */
+    // MetaModelica expressions
     case Absyn.CONS(head, rest)
       equation
         s1 = printExpStr(head);
         s2 = printExpStr(rest);
-        s = System.stringAppendList({s1, "::", s2});
+        s = stringAppendList({s1, "::", s2});
       then
         s;
+    
     case Absyn.AS(s1, rest)
       equation
         s2 = printExpStr(rest);
-        s = System.stringAppendList({s1, " as ", s2});
+        s = stringAppendList({s1, " as ", s2});
       then
         s;
+    
     case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
       equation
         s1 = printMatchType(matchType);
@@ -4392,25 +4494,18 @@ algorithm
         s3 = unparseStringCommentOption(comment);
         s4 = unparseLocalElements(3, localDecls);
         s5 = getStringList(cases, printCaseStr, "\n");
-        s = System.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
+        s = stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
+    
     case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKALGORITHMS(algs),result)
-      local
-        Absyn.Exp result;
-        list<Absyn.ElementItem> els; list<Absyn.AlgorithmItem> algs;
       equation
         s1 = printExpStr(result);
         s2 = unparseAlgorithmStrLst(4 /* Exp doesn't get i input  make a guess :( */, algs, "\n");
         s = "valueblock(\n  " +& s2 +& ", result=" +& s1 +& ")";
       then s;
+
     case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(patternMatching,equationBody,resultAssignments),result)
-      local
-        Absyn.Exp result;
-        list<Absyn.ElementItem> els;
-        list<Absyn.AlgorithmItem> patternMatching;
-        list<Absyn.EquationItem>  equationBody;
-        list<Absyn.AlgorithmItem> resultAssignments;
       equation
         s1 = printExpStr(result);
         s2 = unparseAlgorithmStrLst(2, patternMatching, "\n");
@@ -4418,6 +4513,7 @@ algorithm
         s4 = unparseAlgorithmStrLst(2, resultAssignments, "\n");
         s = "valueblock(\n" +& s2 +& "\n" +& s3 +& "\n" +& s4 +& ")";
       then s;
+    
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;
@@ -4476,31 +4572,31 @@ algorithm
       list<Absyn.EquationItem> eq;
       Absyn.Exp r;
       Option<String> c;
-    case Absyn.CASE(p, {}, {}, r, c)
+    case Absyn.CASE(p, _, {}, {}, r, c)
       equation
         s1 = printExpStr(p);
         s4 = printExpStr(r);
-        s = System.stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
+        s = stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
       then s;
-    case Absyn.CASE(p, l, eq, r, c)
+    case Absyn.CASE(p, _, l, eq, r, c)
       equation
         s1 = printExpStr(p);
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
         s4 = printExpStr(r);
-        s = System.stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
+        s = stringAppendList({"\tcase (", s1, ")", s2, s3, "\t  then ", s4, ";"});
       then s;
     case Absyn.ELSE({}, {}, r, c)
       equation
         s4 = printExpStr(r);
-        s = System.stringAppendList({"\telse then ", s4, ";"});
+        s = stringAppendList({"\telse then ", s4, ";"});
       then s;
     case Absyn.ELSE(l, eq, r, c)
       equation
         s2 = unparseLocalElements(3, l);
         s3 = unparseLocalEquations(3, eq);
         s4 = printExpStr(r);
-        s = System.stringAppendList({"\telse", s2, s3, "\t  then ", s4, ";"});
+        s = stringAppendList({"\telse", s2, s3, "\t  then ", s4, ";"});
       then s;
   end matchcontinue;
 end printCaseStr;
@@ -4536,14 +4632,14 @@ algorithm
       equation
         s1 = selectString(b, "initial ", "");
         s2 = unparseEquationitemStrLst(1, eqitems, ";\n");
-        res = System.stringAppendList({s1,"equation ",s2});
+        res = stringAppendList({s1,"equation ",s2});
       then
         res;
     case (Absyn.C_ALGORITHMSECTION(boolean = b,algorithmItemLst = algitems))
       equation
         s1 = selectString(b, "initial ", "");
         s2 = unparseAlgorithmStrLst(1, algitems, ";\n");
-        res = System.stringAppendList({s1,"algorithm ",s2});
+        res = stringAppendList({s1,"algorithm ",s2});
       then
         res;
     case (Absyn.C_ELEMENT(element = elt))
@@ -4581,7 +4677,7 @@ algorithm
         s1 = printExpStr(ec);
         s2 = printExpStr(ee);
         s3 = printElseifStr(rest);
-        str = System.stringAppendList({" elseif ",s1," then ",s2,s3});
+        str = stringAppendList({" elseif ",s1," then ",s2,s3});
       then
         str;
   end matchcontinue;
@@ -4759,7 +4855,7 @@ algorithm
     local
       Type_a x;
       FuncTypeType_aTo r;
-    case (NONE,_)
+    case (NONE(),_)
       equation
         Print.printBuf("NONE()");
       then
@@ -4905,7 +5001,7 @@ end printBool;
 public function getOptionStr "function getOptionStr
 
   Retrieve the string from a string option.
-  If NONE return empty string.
+  If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -4927,14 +5023,14 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 
 public function getOptionStrDefault "function getOptionStrDefault
 
   Retrieve the string from a string option.
-  If NONE return default string.
+  If NONE() return default string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -4957,7 +5053,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_,def) then def;
+    case (NONE(),_,def) then def;
   end matchcontinue;
 end getOptionStrDefault;
 
@@ -4988,7 +5084,7 @@ algorithm
         str_1 = stringAppend(default_str, str);
       then
         str_1;
-    case (NONE,_,default_str) then "";
+    case (NONE(),_,default_str) then "";
   end matchcontinue;
 end getOptionWithConcatStr;
 
@@ -5002,10 +5098,10 @@ algorithm
   outString:=
   matchcontinue (inStringOption)
     local Ident str,s;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(s))
       equation
-        str = System.stringAppendList({" \"",s,"\""});
+        str = stringAppendList({" \"",s,"\""});
       then
         str;
   end matchcontinue;
@@ -5020,34 +5116,19 @@ algorithm
   _:=
   matchcontinue (inStringOption)
     local Ident str,s;
-    case (NONE)
+    case (NONE())
       equation
         Print.printBuf("NONE()");
       then
         ();
     case (SOME(s))
       equation
-        str = System.stringAppendList({"SOME(\"",s,"\")"});
+        str = stringAppendList({"SOME(\"",s,"\")"});
         Print.printBuf(str);
       then
         ();
   end matchcontinue;
 end printStringCommentOption;
-
-protected function identity "function: identity
-
-  The identity function.
-"
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA:=
-  matchcontinue (inTypeA)
-    local Type_a x;
-    case (x) then x;
-  end matchcontinue;
-end identity;
 
 public function printBoolStr "function: printBoolStr
 
@@ -5105,7 +5186,7 @@ algorithm
       equation
         str1 = Absyn.pathString(path);
         str2 = unparseTypeSpecLst(typeSpecLst);
-        str3 = System.stringAppendList({str1,"<",str2,">"});
+        str3 = stringAppendList({str1,"<",str2,">"});
         s = getOptionStr(adim, printArraydimStr);
         str = stringAppend(str3, s);
       then
@@ -5132,7 +5213,7 @@ algorithm
       equation
         str1 = unparseTypeSpec(x);
         str2 = unparseTypeSpecLst(rest);
-        str3 = System.stringAppendList({str1,", ",str2});
+        str3 = stringAppendList({str1,", ",str2});
       then
         str3;
   end matchcontinue;
@@ -5161,7 +5242,7 @@ end stdout;
 public function getAstAsCorbaString
   input Absyn.Program program;
 algorithm
-  outStr := matchcontinue program
+  _ := matchcontinue program
     local
       list<Absyn.Class> classes;
       Absyn.Within within_;
@@ -5458,87 +5539,107 @@ end printEnumLiteralAsCorbaString;
 protected function printRestrictionAsCorbaString
   input Absyn.Restriction r;
 algorithm
-  _ := matchcontinue r
+  _ := matchcontinue (r)
+    local
+      Absyn.Path path;
+      Integer i;    
+    
     case Absyn.R_CLASS()
       equation
         Print.printBuf("record Absyn.R_CLASS end Absyn.R_CLASS;");
       then ();
+
     case Absyn.R_OPTIMIZATION()
       equation
         Print.printBuf("record Absyn.R_OPTIMIZATION end Absyn.R_OPTIMIZATION;");
       then ();
+
     case Absyn.R_MODEL()
       equation
         Print.printBuf("record Absyn.R_MODEL end Absyn.R_MODEL;");
       then ();
+    
     case Absyn.R_RECORD()
       equation
         Print.printBuf("record Absyn.R_RECORD end Absyn.R_RECORD;");
       then ();
+    
     case Absyn.R_BLOCK()
       equation
         Print.printBuf("record Absyn.R_BLOCK end Absyn.R_BLOCK;");
       then ();
+    
     case Absyn.R_CONNECTOR()
       equation
         Print.printBuf("record Absyn.R_CONNECTOR end Absyn.R_CONNECTOR;");
       then ();
+    
     case Absyn.R_EXP_CONNECTOR()
       equation
         Print.printBuf("record Absyn.R_EXP_CONNECTOR end Absyn.R_EXP_CONNECTOR;");
       then ();
+    
     case Absyn.R_TYPE()
       equation
         Print.printBuf("record Absyn.R_TYPE end Absyn.R_TYPE;");
       then ();
+    
     case Absyn.R_PACKAGE()
       equation
         Print.printBuf("record Absyn.R_PACKAGE end Absyn.R_PACKAGE;");
       then ();
+    
     case Absyn.R_FUNCTION()
       equation
         Print.printBuf("record Absyn.R_FUNCTION end Absyn.R_FUNCTION;");
       then ();
+    
     case Absyn.R_OPERATOR()
       equation
         Print.printBuf("record Absyn.R_OPERATOR end Absyn.R_OPERATOR;");
       then ();
+    
     case Absyn.R_OPERATOR_FUNCTION()
       equation
         Print.printBuf("record Absyn.R_OPERATOR_FUNCTION end Absyn.R_OPERATOR_FUNCTION;");
       then ();
+    
     case Absyn.R_ENUMERATION()
       equation
         Print.printBuf("record Absyn.R_ENUMERATION end Absyn.R_ENUMERATION;");
       then ();
+    
     case Absyn.R_PREDEFINED_INTEGER()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_INTEGER end Absyn.R_PREDEFINED_INTEGER;");
       then ();
+    
     case Absyn.R_PREDEFINED_REAL()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_REAL end Absyn.R_PREDEFINED_REAL;");
       then ();
+    
     case Absyn.R_PREDEFINED_STRING()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_STRING end Absyn.R_PREDEFINED_STRING;");
       then ();
+    
     case Absyn.R_PREDEFINED_BOOLEAN()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_BOOLEAN end Absyn.R_PREDEFINED_BOOLEAN;");
       then ();
+    
     case Absyn.R_PREDEFINED_ENUMERATION()
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_ENUMERATION end Absyn.R_PREDEFINED_ENUMERATION;");
       then ();
+    
     case Absyn.R_UNIONTYPE()
       equation
         Print.printBuf("record Absyn.R_UNIONTYPE end Absyn.R_UNIONTYPE;");
       then ();
+    
     case Absyn.R_METARECORD(name=path,index=i)
-      local
-        Absyn.Path path;
-        Integer i;
       equation
         Print.printBuf("record Absyn.R_METARECORD name = ");
         printPathAsCorbaString(path);
@@ -5546,6 +5647,7 @@ algorithm
         Print.printBuf(intString(i));
         Print.printBuf(" end Absyn.R_METARECORD;");
       then ();
+    
     case Absyn.R_UNKNOWN()
       equation
         Print.printBuf("record Absyn.R_UNKNOWN end Absyn.R_UNKNOWN;");
@@ -6022,11 +6124,11 @@ algorithm
     local
       Absyn.Exp assignComponent, value, ifExp, boolExpr;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfAlgorithmBranch,elseWhenAlgorithmBranch;
-      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,tryBody,catchBody;
+      list<Absyn.AlgorithmItem> trueBranch,elseBranch,forBody,whileBody,whenBody,tryBody,catchBody,body;
       Absyn.ForIterators iterators;
       Absyn.ComponentRef functionCall;
       Absyn.FunctionArgs functionArgs;
-      list<Absyn.Exp> switchCases;
+      list<Absyn.Exp> inputExps, switchCases;
       String label;
       Absyn.AlgorithmItem equ;
       Absyn.MatchType matchType;
@@ -6108,10 +6210,12 @@ algorithm
       equation
         Print.printBuf("record Absyn.ALG_THROW end Absyn.ALG_THROW;");
       then ();
-    case Absyn.ALG_MATCHCASES(matchType,switchCases)
+    case Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases)
       equation
         Print.printBuf("record Absyn.ALG_MATCHCASES matchType = ");
         printMatchTypeAsCorbaString(matchType);
+        Print.printBuf(", inputExps = ");
+        printListAsCorbaString(inputExps, printExpAsCorbaString, ",");
         Print.printBuf(", switchCases = ");
         printListAsCorbaString(switchCases, printExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_MATCHCASES;");
@@ -6128,10 +6232,10 @@ algorithm
         Print.printBuf(label);
         Print.printBuf("\" end Absyn.ALG_LABEL;");
       then ();
-    case Absyn.ALG_FAILURE(equ)
+    case Absyn.ALG_FAILURE(body)
       equation
-        Print.printBuf("record Absyn.ALG_FAILURE equ = ");
-        printAlgorithmItemAsCorbaString(equ);
+        Print.printBuf("record Absyn.ALG_FAILURE body = ");
+        printListAsCorbaString(body, printAlgorithmItemAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_FAILURE;");
       then ();
   end matchcontinue;
@@ -6674,14 +6778,17 @@ algorithm
   _ := matchcontinue case_
     local
       Absyn.Exp pattern;
+      Absyn.Info info;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.EquationItem>  equations;
       Absyn.Exp result;
       Option<String> comment;
-    case Absyn.CASE(pattern,localDecls,equations,result,comment)
+    case Absyn.CASE(pattern,info,localDecls,equations,result,comment)
       equation
         Print.printBuf("record Absyn.CASE pattern = ");
         printExpAsCorbaString(pattern);
+        Print.printBuf(", info = ");
+        printInfo(info);
         Print.printBuf(", localDecls = ");
         printListAsCorbaString(localDecls, printElementItemAsCorbaString, ",");
         Print.printBuf(", equations = ");

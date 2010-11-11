@@ -54,7 +54,8 @@ template translateModel(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsFile(functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
@@ -72,7 +73,8 @@ template translateFunctions(FunctionCode functionCode)
 match functionCode
 case FUNCTIONCODE(__) then
   let filePrefix = name
-  let()= textFile(functionsFile(mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.c')
+  let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
+  let()= textFile(functionsFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.c')
   let()= textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile')
   "" // Return empty result since result written to files directly
 end translateFunctions;
@@ -163,13 +165,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "string.h"
   #include "simulation_runtime.h"
   
-  #if defined(_MSC_VER) && !defined(_SIMULATION_RUNTIME_H)
-    #define DLLExport   __declspec( dllexport )
-  #else 
-    #define DLLExport /* nothing */
-  #endif 
-  
-  #include "<%fileNamePrefix%>_functions.cpp"
+  #include "<%fileNamePrefix%>_functions.h"
   
   >>
 end simulationFileHeader;
@@ -1349,10 +1345,8 @@ template functionWhen(list<SimWhenClause> whenClauses)
       case <%i0%>:
         <%functionWhenCaseEquation(whenEq, &varDecls /*BUFC*/)%>
         <%reinits |> reinit =>
-          let &preExp = buffer "" /*BUFD*/
-          let body = functionWhenReinitStatement(reinit, &preExp /*BUFC*/,
-                                               &varDecls /*BUFC*/)
-          '<%preExp%><%\n%><%body%>'
+          let body = functionWhenReinitStatement(reinit, &varDecls /*BUFC*/)
+          '<%body%>'
         ;separator="\n"%>
         break;<%\n%>
       >>
@@ -1396,16 +1390,29 @@ case SOME(weq as WHEN_EQ(__)) then
 end functionWhenCaseEquation;
 
 
-template functionWhenReinitStatement(ReinitStatement reinit, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
+template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=
 match reinit
 case REINIT(__) then
+  let &preExp = buffer "" /*BUFD*/
   let val = daeExp(value, contextSimulationDiscrete,
                  &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
-  <%cref(stateVar)%> = <%val%>;
+  <%preExp%>  <%cref(stateVar)%> = <%val%>;
+  >>
+case TERMINATE(__) then 
+  let &preExp = buffer "" /*BUFD*/
+  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
+  >>
+case ASSERT(__) then 
+  let &preExp = buffer "" /*BUFD*/
+  let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>  MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
   >>
 end functionWhenReinitStatement;
 
@@ -1423,16 +1430,7 @@ case SIM_WHEN_CLAUSE(__) then
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
       'edge(localData->helpVars[<%hidx%>])'
     ;separator=" || ")	
-  let ifthen = functionWhenReinitStatementThen(reinits, &preExp /*BUFP*/,
-                            &varDecls /*BUFP*/)                     
-/*let ifelse = functionWhenReinitStatementElse(reinits, &preExp /*BUFP*/,
-  							&varDecls /*BUFP*/) 
-  let hvars = (conditions |> (exp, hindex) =>
-  let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
-                        &varDecls /*BUFC*/)
-  '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
-	)
-*/
+  let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
 if reinits then	
 <<
@@ -1442,45 +1440,48 @@ if reinits then
   <%helpInits%>
   if (<%helpIf%>) { 
     <%ifthen%>
-     needToIterate = 1;
   }
 >>
 end genreinits;
 
-      /*
-      let &preExp2 = buffer "" /*BUFD*/
-  let reint = ( reinits |> reinit =>  
-  let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
-  '<%preExp2%>\n<%expL%>;')
-      	//if reinits then
-	  //let &varDecls = buffer "" /*BUFD*/
-      let helpif = 'edge(localData->helpVars[<%hindex%>]'
-      let &preExp2 = buffer "" /*BUFD*/
-      let reint = ( reinits |> reinit =>  
-      let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
 
-      '<%preExp%>\n<%expL%>'
-      ;separator="\n")
-    >>*/
-
-template functionWhenReinitStatementThen(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
+template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
   	match reinit
   	case REINIT(__) then 
+  		let &preExp = buffer "" /*BUFD*/
   		let val = daeExp(value, contextSimulationDiscrete,
         	         &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  		'<%cref(stateVar)%> = <%val%>;';separator="\n"
-  	)
+ 		<<
+  		<%preExp%>
+                <%cref(stateVar)%> = <%val%>;
+                needToIterate=1;
+                >>
+  	case TERMINATE(__) then 
+  		let &preExp = buffer "" /*BUFD*/
+		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+		<<	
+                <%preExp%> 
+                MODELICA_TERMINATE(<%msgVar%>);
+                >>
+	case ASSERT(__) then 
+  		let &preExp = buffer "" /*BUFD*/
+		let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+                <<
+                <%preExp%> 
+                MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
+                >>
+  ;separator="\n")
   <<
    <%body%>	
   >>
 end functionWhenReinitStatementThen;
 
 
-template functionWhenReinitStatementElse(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
+template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
                             Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
 ::=
@@ -2238,29 +2239,33 @@ case SES_WHEN(__) then
 end equationWhen;
 
 
-template simulationFunctionsFile(list<Function> functions, list<String> includes)
+template simulationFunctionsFile(String filePrefix, list<Function> functions, list<String> includes)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
-  #ifdef __cplusplus
+  #include "<%filePrefix%>_functions.h"
+  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
   extern "C" {
-  #endif
-  
-  /* Header */
-  <%externalFunctionIncludes(includes)%>
-  <%functionHeaders(functions)%>
-  /* End Header */
-  
-  /* Body */
   <%functionBodies(functions)%>
-  /* End Body */
-  
-  #ifdef __cplusplus
   }
-  #endif
-  
   >>
 end simulationFunctionsFile;
+
+template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<String> includes)
+ "Generates the content of the C file for functions in the simulation case."
+::=
+  <<
+  #ifndef <%filePrefix%>__functions__H
+  #define <%filePrefix%>__functions__H
+  <%commonHeader()%>
+  extern "C" {
+  <%externalFunctionIncludes(includes)%>
+  <%functionHeaders(functions)%>
+  }
+  #endif
+  >>
+end simulationFunctionsHeaderFile;
 
 
 template simulationMakefile(SimCode simCode)
@@ -2285,8 +2290,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: <%fileNamePrefix%>.cpp
-  <%\t%> $(CXX) $(CFLAGS) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) <%libsPos2%>
+  <%fileNamePrefix%>: <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h
+  <%\t%> $(CXX) $(CFLAGS) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) <%libsPos2%>
   >>
 end simulationMakefile;
 
@@ -2338,7 +2343,6 @@ template initVals(list<SimVar> varsLst) ::=
   ;separator="\n"
 end initVals;
 
-
 template initVal(Exp initialValue) 
 ::=
   match initialValue 
@@ -2350,16 +2354,10 @@ template initVal(Exp initialValue)
   else "*ERROR* initial value of unknown type"
 end initVal;
 
-
-template functionsFile(Function mainFunction,
-                       list<Function> functions,
-                       list<RecordDeclaration> extraRecordDecls,
-                       list<String> includes)
- "Generates the contents of the main C file for the function case."
+template commonHeader()
 ::=
   <<
   #include "modelica.h"
-  #include <algorithm>
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
@@ -2369,36 +2367,57 @@ template functionsFile(Function mainFunction,
   #else
     #define DLLExport /* nothing */
   #endif
+  >>
+end commonHeader;
+
+template functionsFile(String filePrefix,
+                       Function mainFunction,
+                       list<Function> functions,
+                       list<RecordDeclaration> extraRecordDecls,
+                       list<String> includes)
+ "Generates the contents of the main C file for the function case."
+::=
+  <<
+  #include "<%filePrefix%>.h"
+  #include <algorithm>
+  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
+
+  extern "C" {
+  <%functionBody(mainFunction,true)%>
+  <%functionBodies(functions)%>
+  <%extraRecordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+  }
   
-  #if !defined(MODELICA_ASSERT)
-    #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
-  #endif
-  #if !defined(MODELICA_TERMINATE)
-    #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
-  #endif
-  
+  >>
+end functionsFile;
+
+template functionsHeaderFile(String filePrefix,
+                       Function mainFunction,
+                       list<Function> functions,
+                       list<RecordDeclaration> extraRecordDecls,
+                       list<String> includes)
+ "Generates the contents of the main C file for the function case."
+::=
+  <<
+  #ifndef <%filePrefix%>__H
+  #define <%filePrefix%>__H
+  <%commonHeader()%>
   #ifdef __cplusplus
   extern "C" {
   #endif
   
-  /* Header */
   <%externalFunctionIncludes(includes)%>
   <%functionHeader(mainFunction,true)%>
   <%functionHeaders(functions)%>
-  <%extraRecordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
-  /* End Header */
-  
-  /* Body */
-  <%functionBody(mainFunction,true)%>
-  <%functionBodies(functions)%>
-  /* End Body */
-  
+  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
+
   #ifdef __cplusplus
   }
-  #endif<%\n%>
+  #endif
+  #endif
   >>
-end functionsFile;
-
+end functionsHeaderFile;
 
 template functionsMakefile(FunctionCode fnCode)
  "Generates the contents of the makefile for the function case."
@@ -2418,7 +2437,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   
   .PHONY: <%name%>
-  <%name%>: <%name%>.c
+  <%name%>: <%name%>.c <%name%>.h
   <%\t%> $(LINK) $(CFLAGS) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(LDFLAGS) -lm
   >>
 end functionsMakefile;
@@ -2427,7 +2446,7 @@ template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then crefStr(cr)
+  case FUNCTION_CONTEXT(__) then "_" + crefStr(cr)
   else cref(cr)
 end contextCref;
 
@@ -2435,7 +2454,7 @@ template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
 	match context
-	case FUNCTION_CONTEXT(__) then name
+	case FUNCTION_CONTEXT(__) then "_" + name
 	else "$P" + name
 end contextIteratorName;
 
@@ -2479,6 +2498,7 @@ template crefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
+  // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
@@ -2502,6 +2522,10 @@ template crefToMStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToMStr;
 
+
+
+
+
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -2524,7 +2548,7 @@ template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then arrayCrefStr(cr)
+  case FUNCTION_CONTEXT(__) then "_" + arrayCrefStr(cr)
   else arrayCrefCStr(cr)
 end contextArrayCref;
 
@@ -2650,13 +2674,13 @@ template functionHeader(Function fn, Boolean inFunc)
   match fn
     case FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), funArgs, outVars)%>
   
@@ -2676,17 +2700,15 @@ template functionHeader(Function fn, Boolean inFunc)
           modelica_metatype targ1;
         } <%fname%>_rettypeboxed;
         
-        DLLExport
         <%fname%>_rettypeboxed boxptr_<%fname%>(<%funArgsBoxedStr%>);
         >>
       <<
-      <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       #define <%fname%>_rettype_1 targ1
       typedef struct <%fname%>_rettype_s {
         struct <%fname%> targ1;
       } <%fname%>_rettype;
       
-      DLLExport 
       <%fname%>_rettype _<%fname%>(<%funArgsStr%>);
 
       <%boxedHeader%>
@@ -2699,27 +2721,46 @@ template recordDeclaration(RecordDeclaration recDecl)
   match recDecl
   case RECORD_DECL_FULL(__) then
     <<
-    struct <%name%> {
-      <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
-    };
     <%recordDefinition(dotPath(defPath),
                       underscorePath(defPath),
-                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","))%>
+                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
+                      listLength(variables))%>
     >> 
   case RECORD_DECL_DEF(__) then
     <<
     <%recordDefinition(dotPath(path),
                       underscorePath(path),
-                      (fieldNames |> name => '"<%name%>"' ;separator=","))%>
+                      (fieldNames |> name => '"<%name%>"' ;separator=","),
+                      listLength(fieldNames))%>
     >>
 end recordDeclaration;
 
+template recordDeclarationHeader(RecordDeclaration recDecl)
+ "Generates structs for a record declaration."
+::=
+  match recDecl
+  case RECORD_DECL_FULL(__) then
+    <<
+    struct <%name%> {
+      <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+    };
+    <%recordDefinitionHeader(dotPath(defPath),
+                      underscorePath(defPath),
+                      listLength(variables))%>
+    >> 
+  case RECORD_DECL_DEF(__) then
+    <<
+    <%recordDefinitionHeader(dotPath(path),
+                      underscorePath(path),
+                      listLength(fieldNames))%>
+    >>
+end recordDeclarationHeader;
 
-template recordDefinition(String origName, String encName, String fieldNames)
+template recordDefinition(String origName, String encName, String fieldNames, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
   <<
-  const char* <%encName%>__desc__fields[] = {<%fieldNames%>};
+  const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};
   struct record_description <%encName%>__desc = {
     "<%encName%>", /* package_record__X */
     "<%origName%>", /* package.record_X */
@@ -2727,6 +2768,15 @@ template recordDefinition(String origName, String encName, String fieldNames)
   };
   >>
 end recordDefinition;
+
+template recordDefinitionHeader(String origName, String encName, Integer numFields)
+ "Generates the definition struct for a record declaration."
+::=
+  <<
+  extern const char* <%encName%>__desc__fields[<%numFields%>];
+  extern struct record_description <%encName%>__desc;
+  >>
+end recordDefinitionHeader;
 
 template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc)
 ::= functionHeaderImpl(fname, fargs, outVars, inFunc, false)
@@ -2765,11 +2815,9 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
 
-  DLLExport 
   <%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
   >> else <<
 
-  DLLExport 
   void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
   >>
 end functionHeaderImpl;
@@ -2777,14 +2825,14 @@ end functionHeaderImpl;
 template funArgName(Variable var)
 ::=
   match var
-  case VARIABLE(__) then crefStr(name)
+  case VARIABLE(__) then contextCref(name,contextFunction)
   case FUNCTION_PTR(__) then name
 end funArgName;
 
 template funArgDefinition(Variable var)
 ::=
   match var
-  case VARIABLE(__) then '<%varType(var)%> <%crefStr(name)%>'
+  case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition;
 
@@ -2793,7 +2841,7 @@ template funArgBoxedDefinition(Variable var)
   unless it's a function pointer"
 ::=
   match var
-  case VARIABLE(__) then 'modelica_metatype <%crefStr(name)%>'
+  case VARIABLE(__) then 'modelica_metatype <%contextCref(name,contextFunction)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgBoxedDefinition;
 
@@ -2863,7 +2911,7 @@ template extFunDefArg(SimExtArg extArg)
 ::=
   match extArg
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
-    let name = crefStr(c)
+    let name = contextCref(c,contextFunction)
     let typeStr = if ii then
         if ia then
           match extType(t) 
@@ -2884,7 +2932,7 @@ template extFunDefArg(SimExtArg extArg)
     <%typeStr%>
     >>
   case SIMEXTARGSIZE(cref=c) then
-    let name = crefStr(c)
+    let name = contextCref(c,contextFunction)
     let eStr = daeExpToString(exp)
     <<
     size_t <%name%>_<%eStr%>
@@ -2895,7 +2943,7 @@ template extFunDefArgF77(SimExtArg extArg)
 ::= 
   match extArg
   case SIMEXTARG(cref=c, isInput = true, type_=t) then
-    let name = crefStr(c)
+    let name = contextCref(c,contextFunction)
     let typeStr = 'const <%extType(t)%> *'
     '<%typeStr%> <%name%>'
   case SIMEXTARG(__) then extFunDefArg(extArg)
@@ -2943,7 +2991,7 @@ case FUNCTION(__) then
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFC*/)
-  let stateVar = tempDecl("state", &varDecls /*BUFC*/)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFC*/)
   let _ = (variableDeclarations |> var =>
       varInit(var, "", i1, &varDecls /*BUFC*/, &varInits /*BUFC*/)
     )
@@ -2956,12 +3004,13 @@ case FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
     <%outVarInits%>
-    <%stateVar%> = get_memory_state();
+    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
 
     <%varInits%>
 
@@ -2969,7 +3018,7 @@ case FUNCTION(__) then
     
     _return:
     <%outVarsStr%>
-    restore_memory_state(<%stateVar%>);
+    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%if outVars then retVar%>;
   }
   
@@ -3004,21 +3053,22 @@ case EXTERNAL_FUNCTION(__) then
   // make sure the variable is named "out", doh!
   let retVar = if outVars then outDecl(retType, &varDecls /*BUFC*/)  
   let &outputAlloc = buffer "" /*BUFD*/
-  let stateVar = tempDecl("state", &varDecls /*BUFC*/)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFC*/)
   let callPart = extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   let _ = (outVars |> var =>
       varInit(var, retVar, i1, &varDecls /*BUFC*/, &outputAlloc /*BUFC*/)
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+  <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>' ;separator=", "%>)
   {
     <%varDecls%>
-    <%stateVar%> = get_memory_state();
+    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%outputAlloc%>
     <%preExp%>
     <%callPart%>
-    restore_memory_state(<%stateVar%>);
+    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%if outVars then retVar%>;
   }
 
@@ -3026,10 +3076,10 @@ case EXTERNAL_FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>;' ;separator="\n"%>
+    <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
-    out = _<%fname%>(<%funArgs |> VARIABLE(__) => crefStr(name) ;separator=", "%>);
+    out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
     <%outVars |> var as VARIABLE(__) => writeOutVar(var, i1) ;separator="\n"%>
     return 0;
   }
@@ -3054,6 +3104,7 @@ case RECORD_CONSTRUCTOR(__) then
   let structVar = tempDecl(structType, &varDecls /*BUFC*/)
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
@@ -3086,7 +3137,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let &varDecls = buffer ""
   let retVar = if outvars then tempDecl(retTypeBoxed, &varDecls)
   let funRetVar = if outvars then tempDecl(retType, &varDecls)
-  let stateVar = tempDecl("state", &varDecls)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let &varBox = buffer ""
   let &varUnbox = buffer ""
   let args = (funargs |> arg => funArgUnbox(arg, &varDecls, &varBox) ;separator=", ")
@@ -3098,12 +3149,12 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
   {
     <%varDecls%>
-    <%stateVar%> = get_memory_state();
+    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%varBox%>
     <%if outvars then '<%funRetVar%> = '%>_<%fname%>(<%args%>);
     <%varUnbox%>
     <%retStr%>
-    restore_memory_state(<%stateVar%>);
+    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%retVar%>;
   }
   >>
@@ -3116,7 +3167,7 @@ case RECORD_CONSTRUCTOR(__) then
   let() = System.tmpTickReset(1)
   let &varDecls = buffer ""
   let &preExp = buffer ""
-  let stateVar = tempDecl("state", &varDecls)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let fname = underscorePath(name)
   let retType = '<%fname%>_rettypeboxed'
   let retVar = tempDecl(retType, &varDecls)
@@ -3124,20 +3175,20 @@ case RECORD_CONSTRUCTOR(__) then
     let varStr = crefStr(name)
     funArgBox(varStr, ty, &preExp, &varDecls)
     ;separator=", ")*/
-  let funArgsStr = (funArgs |> var as VARIABLE(__) => crefStr(name) ;separator=", ")
+  let funArgsStr = (funArgs |> var as VARIABLE(__) => contextCref(name,contextFunction) ;separator=", ")
   let boxRetVar = tempDecl("modelica_metatype", &varDecls)
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
   <%retType%> boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
   {
     <%varDecls%>
-    <%stateVar%> = get_memory_state();
+    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
 
     <%preExp%>
     <%boxRetVar%> = mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
     <%retVar%>.<%retType%>_1 = <%boxRetVar%>;
 
-    restore_memory_state(<%stateVar%>);
+    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%retVar%>;
   }
   >>
@@ -3160,7 +3211,7 @@ case VARIABLE(__) then
       tmpVar
     else 
       crefStr(varname)*/
-  let varName = crefStr(name)
+  let varName = contextCref(name,contextFunction)
   unboxVariable(varName, ty, &varBox, &varDecls)
 case FUNCTION_PTR(__) then // Function pointers don't need to be boxed.
   name 
@@ -3254,11 +3305,11 @@ template readInVar(Variable var)
   match var
   case VARIABLE(name=cr, ty=ET_COMPLEX(complexClassType=RECORD(__))) then
     <<
-    if (read_modelica_record(&inArgs, <%readInVarRecordMembers(ty, crefStr(cr))%>)) return 1;
+    if (read_modelica_record(&inArgs, <%readInVarRecordMembers(ty, contextCref(cr,contextFunction))%>)) return 1;
     >>
   case VARIABLE(__) then
     <<
-    if (read_<%expTypeArrayIf(ty)%>(&inArgs, &<%crefStr(name)%>)) return 1;
+    if (read_<%expTypeArrayIf(ty)%>(&inArgs, &<%contextCref(name,contextFunction)%>)) return 1;
     >>
 end readInVar;
 
@@ -3319,8 +3370,8 @@ template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUF
 ::=
 match var
 case var as VARIABLE(__) then
-  let &varDecls += if not outStruct then '<%varType(var)%> <%crefStr(var.name)%>;<%\n%>' //else ""
-  let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%crefStr(var.name)%>'
+  let &varDecls += if not outStruct then '<%varType(var)%> <%contextCref(var.name,contextFunction)%>;<%\n%>' //else ""
+  let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCref(var.name,contextFunction)%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)
     ;separator=", ") 
@@ -3330,13 +3381,18 @@ case var as VARIABLE(__) then
     let &varInits += defaultValue
     " "
   else
-    match var.value
+    (match var.value
     case SOME(exp) then
-      let defaultValue = '<%crefStr(var.name)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls)%>;<%\n%>'
+      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls)%>;<%\n%>'
       let &varInits += defaultValue
       " "
     else
-      ""
+      "")
+case var as FUNCTION_PTR(__) then
+  let &ignore = buffer ""
+  let &varDecls += functionArg(var,&ignore)
+  ""
+else let &varDecls += '#error Unknown local variable type<%\n%>' ""
 end varInit;
 
 template varDefaultValue(Variable var, String outStruct, Integer i, String lhsVarName,  Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
@@ -3345,7 +3401,7 @@ match var
 case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
-    'copy_<%expTypeShort(var.ty)%>_array_data(&<%crefStr(cr)%>, &<%outStruct%>.targ<%i%>);<%\n%>'
+    'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(cr,contextFunction)%>, &<%outStruct%>.targ<%i%>);<%\n%>'
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)%>'
     <<
@@ -3364,7 +3420,7 @@ case var as FUNCTION_PTR(__) then
   let rettype = '<%name%>_rettype'
   match ty
     case ET_NORETCALL() then
-      let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%>;'
+      let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%><%\n%>;'
       'void(*_<%name%>)(<%typelist%>);<%\n%>'
     else
       let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
@@ -3375,7 +3431,7 @@ case var as FUNCTION_PTR(__) then
       <%args |> arg hasindex i1 => 
         <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
     } <%rettype%>;
-    <%rettype%>(*_<%name%>)(<%typelist%>);
+    <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
     >>
   end match
 end functionArg;
@@ -3392,12 +3448,12 @@ case var as VARIABLE(__) then
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%i%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     <<
-    copy_<%expTypeShort(var.ty)%>_array_data(&<%crefStr(var.name)%>, &<%dest%>.targ<%i%>);
+    copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.targ<%i%>);
     >>
   else
     let &varInits += initRecordMembers(var)
     <<
-    <%dest%>.targ<%i%> = <%crefStr(var.name)%>;
+    <%dest%>.targ<%i%> = <%contextCref(var.name,contextFunction)%>;
     >>
 end varOutput;
 
@@ -3405,7 +3461,7 @@ template initRecordMembers(Variable var)
 ::=
 match var
 case VARIABLE(ty = ET_COMPLEX(complexClassType = RECORD)) then
-	let varName = crefStr(name)
+	let varName = contextCref(name,contextFunction)
 	(ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
 end initRecordMembers;
 
@@ -3419,7 +3475,7 @@ case COMPLEX_VAR(tp = ET_ARRAY(__)) then
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
-::= '<%crefStr(cr)%>_ext'
+::= '<%contextCref(cr,contextFunction)%>_ext'
 end extVarName;
 
 template extFunCall(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -3481,9 +3537,9 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
     match ty case ET_STRING(__) then
       ""
     else
-      let &varDecls += '<%extType(ty)%> <%crefStr(c)%>_ext;<%\n%>'
+      let &varDecls += '<%extType(ty)%> <%contextCref(c,contextFunction)%>_ext;<%\n%>'
       <<
-      <%crefStr(c)%>_ext = (<%extType(ty)%>)<%crefStr(c)%>;
+      <%contextCref(c,contextFunction)%>_ext = (<%extType(ty)%>)<%contextCref(c,contextFunction)%>;
       >>
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
@@ -3498,7 +3554,7 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
   match arg
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
-    'convert_alloc_<%expTypeArray(ty)%>_to_f77(&<%crefStr(c)%>, &<%extVarName(c)%>);'
+    'convert_alloc_<%expTypeArray(ty)%>_to_f77(&<%contextCref(c,contextFunction)%>, &<%extVarName(c)%>);'
   case SIMEXTARG(outputIndex = oi, isArray = ia, type_= ty, cref = c) then
     match oi case 0 then "" else
       let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
@@ -3513,7 +3569,7 @@ template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls)
 ::=
   match var
   case var as VARIABLE(__) then
-    let var_name = crefStr(name)
+    let var_name = contextCref(name,contextFunction)
     let &varDecls += '<%varType(var)%> <%var_name%>;<%\n%>'
     let &varDecls += '<%varType(var)%> <%extVarName(name)%>;<%\n%>'
     let defaultValue = match value 
@@ -3541,7 +3597,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     ""
   else
     <<
-    out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%crefStr(c)%>_ext;
+    out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%contextCref(c,contextFunction)%>_ext;
     >>
 end extFunCallVarcopy;
 
@@ -3555,7 +3611,7 @@ case SIMEXTARG(outputIndex=oi, isArray=ai, type_=ty, cref=c) then
     ""
   else
     let outarg = 'out.targ<%oi%>'
-    let ext_name = '<%crefStr(c)%>_ext'
+    let ext_name = '<%contextCref(c,contextFunction)%>_ext'
     match ai 
     case false then 
       '<%outarg%> = (<%expTypeModelica(ty)%>)<%ext_name%>;<%\n%>'
@@ -3568,7 +3624,7 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
 ::=
   match extArg
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
-    let name = if oi then 'out.targ<%oi%>' else crefStr(c)
+    let name = if oi then 'out.targ<%oi%>' else contextCref(c,contextFunction)
     let shortTypeStr = expTypeShort(t)
     'data_of_<%shortTypeStr%>_array(&(<%name%>))'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
@@ -3576,12 +3632,12 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
     let suffix = if oi then "_ext"
                else match t case ET_STRING(__) then ""
                else "_ext"
-    '<%prefix%><%crefStr(c)%><%suffix%>'
+    '<%prefix%><%contextCref(c,contextFunction)%><%suffix%>'
   case SIMEXTARGEXP(__) then
     daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case SIMEXTARGSIZE(cref=c) then
     let typeStr = expTypeShort(type_)
-    let name = if outputIndex then 'out.targ<%outputIndex%>' else crefStr(c)
+    let name = if outputIndex then 'out.targ<%outputIndex%>' else contextCref(c,contextFunction)
     let dim = daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     'size_of_dimension_<%typeStr%>_array(<%name%>, <%dim%>)'
 end extArg;
@@ -3598,7 +3654,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
                    "_ext"
                  else 
                    match ia case true then "_ext" else ""
-    '&<%crefStr(c)%><%suffix%>'
+    '&<%contextCref(c,contextFunction)%><%suffix%>'
   case SIMEXTARGEXP(__) then
     daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case SIMEXTARGSIZE(cref=c) then
@@ -3608,14 +3664,15 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
     let sizeVar = tempDecl("int", &varDecls)
     let dim = daeExp(exp, contextFunction, &preExp, &varDecls)
     let size_call = 'size_of_dimension_<%expTypeShort(type_)%>_array'
-    let &preExp += '<%sizeVar%> = <%size_call%>(<%crefStr(c)%>, <%dim%>);<%\n%>'
+    let &preExp += '<%sizeVar%> = <%size_call%>(<%contextCref(c,contextFunction)%>, <%dim%>);<%\n%>'
     '&<%sizeVar%>'
 end extArgF77;
 
 template tempSizeVarName(ComponentRef c, DAE.Exp indices)
+
 ::=
   match indices
-  case ICONST(__) then '<%crefStr(c)%>_size_<%integer%>'
+  case ICONST(__) then '<%contextCref(c,contextFunction)%>_size_<%integer%>'
   else "tempSizeVarName:UNHANDLED_EXPRESSION"
 end tempSizeVarName;
 
@@ -3636,22 +3693,25 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
  "Generates an algorithm statement."
 ::=
   match stmt
-  case s as STMT_ASSIGN(__)       then algStmtAssign(s, context, &varDecls /*BUFC*/)
-  case s as STMT_ASSIGN_ARR(__)   then algStmtAssignArr(s, context, &varDecls /*BUFC*/)
-  case s as STMT_TUPLE_ASSIGN(__) then algStmtTupleAssign(s, context, &varDecls /*BUFC*/)
-  case s as STMT_IF(__)           then algStmtIf(s, context, &varDecls /*BUFC*/)
-  case s as STMT_FOR(__)          then algStmtFor(s, context, &varDecls /*BUFC*/)
-  case s as STMT_WHILE(__)        then algStmtWhile(s, context, &varDecls /*BUFC*/)
-  case s as STMT_ASSERT(__)       then algStmtAssert(s, context, &varDecls /*BUFC*/)
-  case s as STMT_WHEN(__)         then algStmtWhen(s, context, &varDecls /*BUFC*/)
-  case s as STMT_MATCHCASES(__)   then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
-  case s as STMT_BREAK(__)        then 'break;<%\n%>'
-  case s as STMT_TRY(__)          then algStmtTry(s, context, &varDecls /*BUFC*/)
-  case s as STMT_CATCH(__)        then algStmtCatch(s, context, &varDecls /*BUFC*/)
-  case s as STMT_THROW(__)        then 'throw 1;<%\n%>'
-  case s as STMT_RETURN(__)       then 'goto _return;<%\n%>'
-  case s as STMT_NORETCALL(__)    then algStmtNoretcall(s, context, &varDecls /*BUFC*/)
-  else "NOT IMPLEMENTED ALG STATEMENT"
+  case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSIGN_PATTERN(__) then algStmtAssignPattern(s, context, &varDecls /*BUFC*/)
+  case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFC*/)
+  case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFC*/)
+  case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFC*/)
+  case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFC*/)
+  case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFC*/)
+  case s as STMT_MATCHCASES(__)     then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
+  case s as STMT_BREAK(__)          then 'break;<%\n%>'
+  case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFC*/)
+  case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFC*/)
+  case s as STMT_CATCH(__)          then algStmtCatch(s, context, &varDecls /*BUFC*/)
+  case s as STMT_THROW(__)          then 'throw 1;<%\n%>'
+  case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
+  case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFC*/)
+  else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
 end algStatement;
 
 
@@ -3665,6 +3725,15 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     >>
+  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_VAR(__)))
+  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_FUNC(__))) then
+    let &preExp = buffer "" /*BUFD*/
+    let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    <<
+    <%preExp%>
+    <%varPart%> = (modelica_fnptr) <%expPart%>;
+    >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3673,6 +3742,29 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <%preExp%>
     <%varPart%> = <%expPart%>;
     >>
+  case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then
+    (match expTypeFromExpShort(exp)
+      case "metatype" then
+        // MetaModelica Array
+        (match exp case ASUB(exp=arr, sub={idx}) then
+        let &preExp = buffer ""
+        let arr1 = daeExp(arr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        <<
+        <%preExp%>
+        arrayUpdate(<%arr1%>,<%idx1%>,<%val1%>);
+        >>)
+        // Modelica Array
+      else
+        let &preExp = buffer "" /*BUFD*/
+        let varPart = daeExpAsub(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        let expPart = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        <<
+        <%preExp%>
+        <%varPart%> = <%expPart%>;
+        >>
+    )
   case STMT_ASSIGN(__) then
     let &preExp = buffer "" /*BUFD*/
     let expPart1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3805,7 +3897,7 @@ template algStmtFor(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/
  "Generates a for algorithm statement."
 ::=
   match stmt
-  case s as STMT_FOR(exp=rng as RANGE(__)) then
+  case s as STMT_FOR(range=rng as RANGE(__)) then
     algStmtForRange(s, context, &varDecls /*BUFC*/)
   case s as STMT_FOR(__) then
     algStmtForGeneric(s, context, &varDecls /*BUFC*/)
@@ -3816,12 +3908,12 @@ template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*B
  "Generates a for algorithm statement where range is RANGE."
 ::=
 match stmt
-case STMT_FOR(exp=rng as RANGE(__)) then
+case STMT_FOR(range=rng as RANGE(__)) then
   let identType = expType(type_, iterIsArray)
   let identTypeShort = expTypeShort(type_)
   let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls)
                  ;separator="\n")
-  algStmtForRange_impl(rng, ident, identType, identTypeShort, stmtStr, context, &varDecls)
+  algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls)
 end algStmtForRange;
 
 template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls)
@@ -3830,7 +3922,7 @@ template algStmtForRange_impl(Exp range, Ident iterator, String type, String sho
 match range
 case RANGE(__) then
   let iterName = contextIteratorName(iterator, context)
-  let stateVar = tempDecl("state", &varDecls)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let startVar = tempDecl(type, &varDecls)
   let stepVar = tempDecl(type, &varDecls)
   let stopVar = tempDecl(type, &varDecls)
@@ -3846,9 +3938,9 @@ case RANGE(__) then
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
   {
     for(<%type%> <%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
-      <%stateVar%> = get_memory_state();
+      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%body%>
-      restore_memory_state(<%stateVar%>);
+      <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     }
   }
   >>
@@ -3863,7 +3955,7 @@ case STMT_FOR(__) then
   let arrayType = expTypeArray(type_)
   let stmtStr = (statementLst |> stmt => 
     algStatement(stmt, context, &varDecls) ;separator="\n")
-  algStmtForGeneric_impl(exp, ident, iterType, arrayType, iterIsArray, stmtStr, 
+  algStmtForGeneric_impl(range, iter, iterType, arrayType, iterIsArray, stmtStr, 
     context, &varDecls)
 end algStmtForGeneric;
 
@@ -3872,7 +3964,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
  "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
 ::=
   let iterName = contextIteratorName(iterator, context)
-  let stateVar = tempDecl("state", &varDecls)
+  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let tvar = tempDecl("int", &varDecls)
   let ivar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
@@ -3887,10 +3979,10 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   <%type%> <%iterName%>;
   
     for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
-      <%stateVar%> = get_memory_state();
+      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%stmtStuff%>
       <%body%>
-      restore_memory_state(<%stateVar%>);
+      <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     }
   }
   >>
@@ -3927,6 +4019,29 @@ case STMT_ASSERT(__) then
   >>
 end algStmtAssert;
 
+template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates an assert algorithm statement."
+::=
+match stmt
+case STMT_TERMINATE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let msgVar = daeExp(msg, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%preExp%>
+  MODELICA_TERMINATE(<%msgVar%>);
+  >>
+end algStmtTerminate;
+
+template algStmtMatchcasesVarDeclsAndAssign(list<Exp> expList, Context context, Text &varDecls, Text &varAssign, Text &preExp)
+::=
+  (expList |> exp =>
+    let decl = tempDecl(expTypeFromExpModelica(exp), &varDecls)
+    // let content = daeExp(exp, context, &preExp, &varDecls)
+    let lhs = scalarLhsCref(exp, context, &preExp, &varDecls)
+    let &varAssign += '<%decl%> = <%lhs%>;' + "\n"
+      '<%lhs%> = <%decl%>;'
+    ; separator = "\n")
+end algStmtMatchcasesVarDeclsAndAssign;
 
 template algStmtMatchcases(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a matchcases algorithm statement."
@@ -3935,10 +4050,19 @@ match stmt
 case STMT_MATCHCASES(__) then
   let loopVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
   let doneVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
+  let &inVarDecl = buffer ""
+  let &inVarAssign = buffer ""
+  let &inVarPreExp = buffer ""
+  let inVarAssignLoop = algStmtMatchcasesVarDeclsAndAssign(inputExps, context, &inVarDecl, &inVarAssign, &inVarPreExp)
   let numCases = listLength(caseStmt)
   <<
+
   <%doneVar%> = 0;
+  <%inVarDecl%>
+  <%inVarPreExp%>
+  <%inVarAssign%>
   for (<%loopVar%>=0; 0==<%doneVar%> && <%loopVar%><<%numCases%>; <%loopVar%>++) {
+    <%inVarAssignLoop%>
     <% match matchType case MATCHCONTINUE(__) then 'try { /* matchcontinue */' else '{' %>
       switch (<%loopVar%>) {
         <%caseStmt |> e hasindex i0 =>
@@ -3964,6 +4088,26 @@ case STMT_MATCHCASES(__) then
   if (0 == <%doneVar%>) throw 1; /* Didn't end in a valid state */
   >>
 end algStmtMatchcases;
+
+
+template algStmtFailure(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates a failure() algorithm statement."
+::=
+match stmt
+case STMT_FAILURE(__) then
+  let tmp = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
+  let stmtBody = (body |> stmt =>
+      algStatement(stmt, context, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  <%tmp%> = 0; /* begin failure */
+  try {
+    <%stmtBody%>
+    <%tmp%> = 1;
+  } catch (int ex) {}
+  if (<%tmp%>) throw 1; /* end failure */
+  >>
+end algStmtFailure;
 
 
 template algStmtTry(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -4160,7 +4304,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
 ::=
   match ecr
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
-    '*((modelica_fnptr*)&_<%functionName(cr)%>)'
+    '*((modelica_fnptr*)&_<%crefStr(cr)%>)'
   case ecr as CREF(componentRef=CREF_IDENT(__)) then
     if crefNoSub(ecr.componentRef) then
       contextCref(ecr.componentRef, context)
@@ -4249,9 +4393,9 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
     else
       daeExpRecordCrefRhs(t, cr, context, preExp, varDecls)
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
-    '(modelica_fnptr)boxptr_<%functionName(cr)%>'
+    '((modelica_fnptr)boxptr_<%functionName(cr)%>)'
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
-    '(modelica_fnptr) _<%functionName(cr)%>'
+    '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
 
@@ -4489,6 +4633,7 @@ case rel as RELATION(__) then
     case GREATER(ty = ET_INT(__))      then '(<%e1%> > <%e2%>)'
     case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
     case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
+
     case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = ET_INT(__))       then '(<%e1%> <= <%e2%>)'
     case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
@@ -4665,6 +4810,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFC*/)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="rem"),
             expLst={e1, e2}) then
@@ -4851,6 +4997,15 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
  "Generates code for an asub expression."
 ::=
+  match expTypeFromExpShort(exp)
+  case "metatype" then
+  // MetaModelica Array
+    (match exp case ASUB(exp=e, sub={idx}) then
+      let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      'arrayGet(<%e1%>,<%idx1%>)')
+  // Modelica Array
+  else
   match exp
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
     'ASUB_EASY_CASE'
@@ -5008,7 +5163,6 @@ case exp as VALUEBLOCK(__) then
   let _ = (valueblockVars(exp) |> var =>
       varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
     )
-  let funArgs = (valueblockVars(exp) |> var => functionArg(var, &ignore) ;separator="\n")
   let resType = expTypeModelica(ty)
   let res = tempDecl(expTypeModelica(ty), &preExp /*BUFC*/)
   let stmts = (body |> stmt =>
@@ -5020,7 +5174,6 @@ case exp as VALUEBLOCK(__) then
       <<
       {
         <%varDeclsInner%>
-        <%funArgs%>
         <%preExpInner%>
         <%stmts%>
         <%preExpRes%>
@@ -5110,7 +5263,7 @@ template daeExpMetaOption(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a meta modelica option expression."
 ::=
   match exp
-  case META_OPTION(exp=NONE) then
+  case META_OPTION(exp=NONE()) then
     "mmc_mk_none()"
   case META_OPTION(exp=SOME(e)) then
     let expPart = daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -5143,7 +5296,7 @@ template daeExpMetaHelperConstant(Exp e, Context context, Text &preExp /*BUFP*/,
  "Generates a constant meta modelica value."
 ::=
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  daeExpMetaHelperConstantNameType(expPart, Exp.typeof(e),
+  daeExpMetaHelperConstantNameType(expPart, Expression.typeof(e),
                                    &preExp /*BUFC*/, &varDecls /*BUFC*/)
 end daeExpMetaHelperConstant;
 
@@ -5395,6 +5548,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
   case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
+  case ENUM_LITERAL(__)  then match flag case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
   case e as UNARY(__)
   case e as LBINARY(__)
@@ -5467,6 +5621,90 @@ template dimension(Dimension d)
   case DAE.DIM_UNKNOWN(__) then ":"
   else "INVALID_DIMENSION"
 end dimension;
+
+template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls)
+ "Generates an assigment algorithm statement."
+::=
+  match stmt
+  case STMT_ASSIGN_PATTERN(__) then
+    let &preExp = buffer ""
+    let &assignments = buffer ""
+    let expPart = daeExp(rhs, context, &preExp, &varDecls)
+    <<<%preExp%>
+    <%patternMatch(lhs,expPart,&varDecls,&assignments)%><%assignments%>>>
+end algStmtAssignPattern;
+
+template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
+::=
+  match pat
+  /* NOTE: This comment needs to be present or the hasindex count is off in some other cases */
+  case PAT_WILD(__) then '/* WILD pattern: <%rhs%> */<%\n%>'
+  case p as PAT_CONSTANT(__)
+    then
+      let &unboxBuf = buffer ""
+      let urhs = (match p.ty
+        case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
+        else rhs
+      )
+      <<<%unboxBuf%><%match p.exp
+        case c as ICONST(__) then 'if (<%c.integer%> != <%urhs%>) throw 1;<%\n%>'
+        case c as RCONST(__) then 'if (<%c.real%> != <%urhs%>) throw 1;<%\n%>'
+        case c as SCONST(__) then 'if (strcmp("<%c.string%>", <%urhs%>) != 0) throw 1;<%\n%>'
+        case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) throw 1;<%\n%>'
+        case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) throw 1;<%\n%>'
+        case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) throw 1;<%\n%>'
+        else 'UNKNOWN_CONSTANT_PATTERN'
+      %>>>
+  case p as PAT_SOME(__) then
+    let tvar = tempDecl("modelica_metatype", &varDecls)
+    <<if (optionNone(<%rhs%>)) throw 1;
+    <%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), 1));
+    <%patternMatch(p.pat,tvar,&varDecls,&assignments)%>>>
+  case PAT_CONS(__) then
+    let tvarHead = tempDecl("modelica_metatype", &varDecls)
+    let tvarTail = tempDecl("modelica_metatype", &varDecls)
+    <<if (listEmpty(<%rhs%>)) throw 1;
+    <%tvarHead%> = MMC_CAR(<%rhs%>);
+    <%tvarTail%> = MMC_CDR(<%rhs%>);
+    <%patternMatch(head,tvarHead,&varDecls,&assignments)%><%patternMatch(tail,tvarTail,&varDecls,&assignments)%>>>
+  case PAT_META_TUPLE(__)
+    then
+      (patterns |> p hasindex i1 =>
+        let tvar = tempDecl("modelica_metatype", &varDecls)
+        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
+        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        >>)
+  case PAT_CALL_TUPLE(__)
+    then
+      (patterns |> p hasindex i1 =>
+        let nrhs = '<%rhs%>.targ<%i1%>'
+        patternMatch(p,nrhs,&varDecls,&assignments)
+      )
+  case PAT_CALL(__)
+    then
+      <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) throw 1;
+       <%(patterns |> p hasindex i0 =>
+        let tvar = tempDecl("modelica_metatype", &varDecls)
+        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
+        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        >>); indexOffset=2%>
+      >>
+  case p as PAT_AS_FUNC_PTR(__) then
+    let &assignments += '*((modelica_fnptr*)&_<%p.id%>) = <%rhs%>;<%\n%>'
+    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  case p as PAT_AS(ty = NONE()) then
+    let &assignments += '_<%p.id%> = <%rhs%>;<%\n%>'
+    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  case p as PAT_AS(ty = SOME(et)) then
+    let &unboxBuf = buffer ""
+    let &assignments += '_<%p.id%> = <%unboxVariable(rhs, et, &unboxBuf, &varDecls)%>;<%\n%>'
+    <<<%&unboxBuf%>
+    <%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    >>
+  else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
+end patternMatch;
 
 end SimCodeC;
 

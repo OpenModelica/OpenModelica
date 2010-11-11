@@ -81,20 +81,20 @@ package Env
   (packages and classes) are combined into the same data structure, enabling a
   uniform lookup mechanism "
 
+// public imports
 public import Absyn;
+public import ClassInf;
 public import DAE;
 public import SCode;
-public import HashTable5;
-public import ClassInf;
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
   record CACHE
-    Option<EnvCache>[:] envCache "The cache contains of environments from which classes can be found";
+    array<Option<EnvCache>> envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
-    HashTable5.HashTable instantiatedFuncs "and a hashtable to indicated already instantiated functions (to break inst. of recursive function calls)";
+    array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
   end CACHE;
 end Cache;
 
@@ -175,16 +175,20 @@ uniontype Item
 
 end Item;
 
+// protected imports
+protected import ComponentReference;
+protected import DAEDump;
+protected import DAEUtil;
+protected import Debug;
 protected import Dump;
-protected import Exp;
+protected import Error;
+protected import Expression;
+protected import ExpressionDump;
 protected import Print;
 protected import Util;
-protected import System;
 protected import Types;
-protected import Debug;
 protected import OptManager;
 protected import RTOpts;
-protected import Error;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -192,12 +196,13 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
  protected
-  Option<EnvCache>[:] arr; HashTable5.HashTable instFuncs;
+  array<Option<EnvCache>> arr;
+  array<DAE.FunctionTree> instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
-  arr := listArray({NONE});
-  instFuncs := HashTable5.emptyHashTable();
-  cache := CACHE(arr,NONE,instFuncs);
+  arr := listArray({NONE()});
+  instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
+  cache := CACHE(arr,NONE(),instFuncs);
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -210,7 +215,7 @@ public function newEnvironment
   "Creates a new empty environment."
   output Env newEnv;
 algorithm
-  newEnv := Util.listCreate(newFrame(false, NONE, NONE));
+  newEnv := Util.listCreate(newFrame(false,NONE(),NONE()));
 end newEnvironment;
 
 protected function newFrame "function: newFrame
@@ -222,22 +227,24 @@ protected function newFrame "function: newFrame
   output Frame outFrame;
   AvlTree httypes;
   AvlTree ht;
+  DAE.ComponentRef cref_;
 algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  outFrame := FRAME(inName,inType,ht,httypes,{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
+  cref_ := ComponentReference.makeCrefIdent("",DAE.ET_OTHER(),{});
+  outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),enc,{});
 end newFrame;
 
 public function isTyped "
 Author BZ 2008-06
 This function checks wheter an InstStatus is typed or not.
-Currently used by Inst->update_components_in_env.
-"
-input InstStatus is;
-output Boolean b;
-algorithm b := matchcontinue(is)
-  case(VAR_UNTYPED()) then false;
-  case(_) then true;
+Currently used by Inst.updateComponentsInEnv."
+  input InstStatus is;
+  output Boolean b;
+algorithm 
+  b := matchcontinue(is)
+    case(VAR_UNTYPED()) then false;
+    case(_) then true;
   end matchcontinue;
 end isTyped;
 
@@ -251,7 +258,7 @@ public function openScope "function: openScope
   input Option<Ident> inIdentOption;
   input Option<ScopeType> inTypeOption;
   output Env outEnv;
-
+protected
   Frame f;
 algorithm
   f := newFrame(inBoolean, inIdentOption, inTypeOption);
@@ -264,10 +271,12 @@ public function inForLoopScope "returns true if environment has a frame that is 
 algorithm
   res := matchcontinue(env)
     local String name;
+    
     case(FRAME(optName = SOME(name))::_) 
       equation
-        true = stringEqual(name, forScopeName);
+        true = stringEq(name, forScopeName);
       then true;
+    
     case(_) then false;
   end matchcontinue;
 end inForLoopScope;
@@ -278,10 +287,12 @@ public function inForIterLoopScope "returns true if environment has a frame that
 algorithm
   res := matchcontinue(env)
     local String name;
+    
     case(FRAME(optName = SOME(name))::_) 
       equation
-        true = stringEqual(name, forIterScopeName);
+        true = stringEq(name, forIterScopeName);
       then true;
+    
     case(_) then false;
   end matchcontinue;
 end inForIterLoopScope;
@@ -294,7 +305,7 @@ algorithm
     local String name;
     case(FRAME(optName = SOME(name))::env) 
       equation
-        true = stringEqual(name, forScopeName);
+        true = stringEq(name, forScopeName);
         env = stripForLoopScope(env);
       then env;
     case(env) then env;
@@ -328,7 +339,7 @@ algorithm
       then
         name::names;
     // frame without a name
-    case ((FRAME(optName = NONE)::inEnv))
+    case ((FRAME(optName = NONE())::inEnv))
       equation
         names = getScopeNames(inEnv);
       then
@@ -387,10 +398,10 @@ algorithm
    then AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
 
    // nothing
-   case(AVLTREENODE(NONE,h,l,r),classEnv) equation
+   case(AVLTREENODE(NONE(),h,l,r),classEnv) equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-   then AVLTREENODE(NONE,h,l,r);
+   then AVLTREENODE(NONE(),h,l,r);
   end matchcontinue;
 end updateEnvClassesInTree;
 
@@ -401,7 +412,7 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
 algorithm
   outTree := matchcontinue(tree,classEnv)
   local AvlTree t;
-    case(NONE,classEnv) then NONE;
+    case(NONE(),classEnv) then NONE();
     case(SOME(t),classEnv) equation
       t = updateEnvClassesInTree(t,classEnv);
     then SOME(t);
@@ -708,7 +719,7 @@ algorithm
 						type_,
 						binding,
 						constOfForIteratorRange),
-					NONE, VAR_UNTYPED(), {});
+					NONE(), VAR_UNTYPED(), {});
 			then new_env_1;
 	end matchcontinue;
 end extendFrameForIterator;
@@ -722,7 +733,6 @@ algorithm
     local
       list<Item> ims;
       Absyn.Import imp2;
-      Boolean res;
     
     // first import in the list matches  
     case (IMPORT(imp2)::ims,imp)
@@ -835,7 +845,7 @@ public function getEnvPath "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path
   option I.e. it collects all identifiers of each frame until it reaches
   the topmost unnamed frame. If the environment is only the topmost frame,
-  NONE is returned."
+  NONE() is returned."
   input Env inEnv;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm
@@ -844,14 +854,14 @@ algorithm
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE)}) then SOME(Absyn.IDENT(id));
+    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE())}) then SOME(Absyn.IDENT(id));
     case ((FRAME(optName = SOME(id)) :: rest))
       equation
         SOME(path) = getEnvPath(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
-    case (_) then NONE;
+    case (_) then NONE();
   end matchcontinue;
 end getEnvPath;
 
@@ -960,7 +970,7 @@ algorithm
       Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
-      print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),", "));
+      print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),", "));
       print("\n");
     then ();
   end matchcontinue;
@@ -987,8 +997,8 @@ algorithm
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        encflag_str = boolString(encflag);
+        res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
       then
@@ -1015,17 +1025,17 @@ algorithm
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        encflag_str = boolString(encflag);
+        res = stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
+    case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = Util.boolString(encflag);
-        res = System.stringAppendList(
+        encflag_str = boolString(encflag);
+        res = stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
@@ -1057,7 +1067,7 @@ algorithm
       equation
         s1 = printFrameElementStr(("",e));
         s2 = printImportsStr(rst);
-        res = System.stringAppendList({s1,", ",s2});
+        res = stringAppendList({s1,", ",s2});
       then
         res;
   end matchcontinue;
@@ -1093,7 +1103,7 @@ algorithm
         var_str = Types.unparseVar(tv);
         frame_str = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, binding:",bind_str});
       then
@@ -1104,32 +1114,32 @@ algorithm
         elt_str = SCode.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
-        res = System.stringAppendList(
+        res = stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
           "}, compframe: []"});
       then
         res;
-    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
+    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE(),instStatus = i,env = env)))
       equation
-        res = System.stringAppendList({"v:",n,"\n"});
+        res = stringAppendList({"v:",n,"\n"});
       then
         res;
     case ((n,CLASS(class_ = _)))
       equation
-        res = System.stringAppendList({"c:",n,"\n"});
+        res = stringAppendList({"c:",n,"\n"});
       then
         res;
     case ((n,TYPE(list_ = lst)))
       equation
         len = listLength(lst);
         lenstr = intString(len);
-        res = System.stringAppendList({"t:",n," (",lenstr,")\n"});
+        res = stringAppendList({"t:",n," (",lenstr,")\n"});
       then
         res;
     case ((n,IMPORT(import_ = imp)))
       equation
         s = Dump.unparseImportStr(imp);
-        res = System.stringAppendList({"imp:",s,"\n"});
+        res = stringAppendList({"imp:",s,"\n"});
       then
         res;
   end matchcontinue;
@@ -1193,48 +1203,14 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm
   outCache := matchcontinue(inCache,env)
   local
-    	Option<EnvCache>[:] envCache;
-    	HashTable5.HashTable ef;
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
 
     case (CACHE(envCache,_,ef),env) equation
  //    	print("setCachedInitialEnv\n");
       then CACHE(envCache,SOME(env),ef);
   end matchcontinue;
 end setCachedInitialEnv;
-
-public function addCachedInstFunc "adds the FQ path to the set of instantiated functions"
-  input Cache inCache;
-  input Absyn.Path func "fully qualified function name";
-  output Cache outCache;
-algorithm
-  outCache := matchcontinue(inCache,func)
-  local
-    	Option<EnvCache>[:] envCache;
-    	HashTable5.HashTable ef;
-    	Absyn.ComponentRef cr;
-    	Option<Env> ienv;
-
-    case (CACHE(envCache,ienv,ef),func) equation
-      cr = Absyn.pathToCref(func);
-      ef = HashTable5.add((cr,0),ef);
-      then CACHE(envCache,ienv,ef);
-  end matchcontinue;
-end addCachedInstFunc;
-
-function getCachedInstFunc "returns the integer value 0 if the FQ function is in the set of already instantiated functions. If not, this function fails"
-  input Cache inCache;
-  input Absyn.Path path;
-  output Integer res;
-algorithm
-  res := matchcontinue(inCache,path)
-  local HashTable5.HashTable ef; Absyn.ComponentRef cr;
-    Integer v;
-    case(CACHE(instantiatedFuncs=ef),path) equation
-      cr = Absyn.pathToCref(path);
-      v = HashTable5.get(cr,ef);
-    then v;
-  end matchcontinue;
-end getCachedInstFunc;
 
 public function cacheGet "Get an environment from the cache."
   input Absyn.Path scope;
@@ -1243,8 +1219,10 @@ public function cacheGet "Get an environment from the cache."
   output Env env;
 algorithm
   env:= matchcontinue(scope,path,cache)
-  local CacheTree tree;  Option<EnvCache>[:] arr;
-    HashTable5.HashTable ef;
+    local
+      CacheTree tree;
+      array<Option<EnvCache>> arr;
+      array<DAE.FunctionTree> ef;
    case (scope,path,CACHE(arr ,_,ef))
       equation
         true = OptManager.getOption("envCache");
@@ -1265,15 +1243,15 @@ algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
     Option<Env> ie;
-    Option<EnvCache>[:] arr;
-    HashTable5.HashTable ef;
+    array<Option<EnvCache>> arr;
+    array<DAE.FunctionTree> ef;
     case(_,inCache,env) equation
       false = OptManager.getOption("envCache");
     then inCache;
 
     case (fullpath,CACHE(arr,ie,ef),env)
       equation
-        NONE = arr[1];
+        NONE() = arr[1];
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
         //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
@@ -1369,7 +1347,7 @@ algorithm
 	  //	Simple name found in children, search for model from this scope.
     case (Absyn.IDENT(id1),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         //print("found (1) ");print(id); print("\n");
         env = cacheGetEnv3(path,children2);
       then 
@@ -1386,7 +1364,7 @@ algorithm
     // for qualified name, found first matching identifier in child
      case (Absyn.QUALIFIED(id1,path2),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation
-         true = stringEqual(id1, id2);
+         true = stringEq(id1, id2);
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
@@ -1412,13 +1390,13 @@ algorithm
 		// found matching simple name
     case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::_)
       equation
-        true = stringEqual(id1, id2); 
+        true = stringEq(id1, id2); 
       then env;
     
     // found matching qualified name
     case (Absyn.QUALIFIED(id1,path),CACHETREE(id2,_,children)::_)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         env = cacheGetEnv3(path,children);
       then env;
 
@@ -1436,7 +1414,7 @@ public function cacheAddEnv "Add an environment to the cache"
   input Env env "environment";
   output CacheTree outTree;
 algorithm
-  outTree := matchcontinue(path,tree,env)
+  outTree := matchcontinue(fullpath,tree,env)
     local
       Ident id1,globalID,id2;
       Absyn.Path path;
@@ -1448,7 +1426,7 @@ algorithm
     case (Absyn.IDENT(id1),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env)
       equation
         // print(id);print(" already added\n");
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         // shouldn't we replace it?
         // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
       then tree;
@@ -1488,7 +1466,6 @@ algorithm
   outChildren := matchcontinue(path,inChildren,env)
     local
       Ident id1,id2;
-      Absyn.Path path;
       list<CacheTree> children,children2;
       CacheTree child;
       Env env2;
@@ -1496,14 +1473,14 @@ algorithm
     // qualified name, found matching
     case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,env)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         children2 = cacheAddEnv2(path,children2,env);
       then CACHETREE(id2,env2,children2)::children;
 
 		// simple name, found matching
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,env)
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
         //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
@@ -1541,8 +1518,8 @@ algorithm
   str := matchcontinue(cache)
     local 
       CacheTree tree;
-      Option<EnvCache>[:] arr;
-      HashTable5.HashTable ef;
+      array<Option<EnvCache>> arr;
+      array<DAE.FunctionTree> ef;
       String s,s2;
     
     // some cache present
@@ -1550,8 +1527,8 @@ algorithm
       equation
         SOME(ENVCACHE(tree)) = arr[1];
         s = printCacheTreeStr(tree,1);
-        str = System.stringAppendList({"Cache:\n",s,"\n"});
-        s2 = HashTable5.dumpHashTableStr(ef);
+        str = stringAppendList({"Cache:\n",s,"\n"});
+        s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
         str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
     // empty cache
@@ -1573,8 +1550,8 @@ algorithm
     case (CACHETREE(id,_,children),indent)
       equation
         s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
-        s1 = System.stringAppendList(Util.listFill(" ",indent));
-        str = System.stringAppendList({s1,id,"\n",s});
+        s1 = stringAppendList(Util.listFill(" ",indent));
+        str = stringAppendList({s1,id,"\n",s});
 	    then str;
 	end matchcontinue;
 end printCacheTreeStr;
@@ -1589,7 +1566,7 @@ algorithm
     local DAE.Subscript s;
     case(subs)
       equation
-        str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,Exp.printSubscriptStr),", ") +& "\n";
+        str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
         print(str);
       then
         str;
@@ -1696,7 +1673,7 @@ end AvlTreeValue;
 public function avlTreeNew "Return an empty tree"
   output AvlTree tree;
 algorithm
-  tree := AVLTREENODE(NONE,0,NONE,NONE);
+  tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
 public function avlTreeAdd "
@@ -1705,45 +1682,23 @@ public function avlTreeAdd "
   input AvlKey inKey;
   input AvlValue inValue;
   output AvlTree outAvlTree;
-  partial function FuncTypeKeyToInteger
-    input AvlKey inKey;
-    output Integer outInteger;
-  end FuncTypeKeyToInteger;
 algorithm
   outAvlTree := matchcontinue (inAvlTree,inKey,inValue)
     local
-      partial function FuncTypeStringToInteger
-        input AvlKey inString;
-        output Integer outInteger;
-      end FuncTypeStringToInteger;
       AvlKey key,rkey;
       AvlValue value,rval;
       Option<AvlTree> left,right;
-      FuncTypeStringToInteger hashfunc;
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
     
-    /* adrpo 2010-10-07: what is this??? WHAT is "lskf" KEY??
     // empty tree
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key as "lskf",value)
-      then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
-    
-		// replace this node
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key as "lskf",value)
-      equation
-        true = stringEqual(rkey, key);
-        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
-      then
-        bt;*/
-        
-    // empty tree
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
+    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
     
 		// replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        0 = System.strcmp(key,rkey); // equal
+        0 = stringCompare(key,rkey); // equal
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
@@ -1753,7 +1708,7 @@ algorithm
     // insert to right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        1 = System.strcmp(key,rkey); // bigger
+        1 = stringCompare(key,rkey); // bigger
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -1763,13 +1718,13 @@ algorithm
     // insert to left subtree
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        -1 = System.strcmp(key,rkey); // smaller
+        -1 = stringCompare(key,rkey); // smaller
         t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
       then
         bt;
-      
+    
     case (_,_,_)
       equation
         print("avlTreeAdd failed\n");
@@ -1858,7 +1813,7 @@ protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
   output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE,0,NONE,NONE);
+    case(NONE()) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -1999,14 +1954,15 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-input AvlTree node;
-input AvlTree parent;
-output AvlTree outParent "updated parent";
+  input AvlTree node;
+  input AvlTree parent;
+  output AvlTree outParent "updated parent";
 algorithm
   outParent := matchcontinue(node,parent)
-    local Option<AvlTreeValue> value;
+    local
+      Option<AvlTreeValue> value;
       Integer height ;
-      AvlTree left,right,bt,leftNode,rightNode;
+      AvlTree bt;
 
     case(node,parent) equation
       parent = setRight(parent,leftNode(node));
@@ -2077,45 +2033,34 @@ public function avlTreeGet "  Get a value from the binary tree given a key.
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
-  partial function FuncTypeKeyToInteger
-    input AvlKey inKey;
-    output Integer outInteger;
-  end FuncTypeKeyToInteger;
 algorithm
-  outValue:=
-  matchcontinue (inAvlTree,inKey)
+  outValue := matchcontinue (inAvlTree,inKey)
     local
-      partial function FuncTypeStringToInteger
-        input AvlKey inString;
-        output Integer outInteger;
-      end FuncTypeStringToInteger;
       AvlKey rkey,key;
       AvlValue rval,res;
-      Option<AvlTree> left,right;
-      FuncTypeStringToInteger hashfunc;
+      Option<AvlTree> optLeft,optRight;
+      AvlTree left,right;
       Integer rhval;
     
     // hash func Search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
-        true = stringEqual(rkey, key);
+        0 = stringCompare(rkey, key);
       then
         rval;
     
     // search to the right
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
-      local AvlTree right;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-        true = System.strcmp(key,rkey) > 0;
+        1 = stringCompare(key,rkey);
         res = avlTreeGet(right, key);
       then
         res;
 
     // search to the left
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
-      local AvlTree left;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-        false = System.strcmp(key,rkey) > 0;
+        -1 = stringCompare(key,rkey);
         res = avlTreeGet(left, key);
       then
         res;
@@ -2124,7 +2069,7 @@ end avlTreeGet;
 
 protected function getOptionStr "function getOptionStr
   Retrieve the string from a string option.
-  If NONE return empty string."
+  If NONE() return empty string."
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   output String outString;
@@ -2145,7 +2090,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 
@@ -2170,7 +2115,7 @@ algorithm
         res = "\n" +& valueStr(rval) +& ",  " +& s2 +&",  " +& s3;
       then
         res;
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -2202,7 +2147,7 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := matchcontinue(bt)
-    case(NONE) then 0;
+    case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;
@@ -2285,7 +2230,7 @@ algorithm
       then
         lst;
         
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         lst1 = getVariablesFromOptionAvlTree(l);
         lst2 = getVariablesFromOptionAvlTree(r);
@@ -2336,8 +2281,8 @@ algorithm
       DAE.ComponentRef cr;
       list<Frame> fl;
     case ({}) then false;
-    case (FRAME(optType = SOME(FUNCTION_SCOPE)) :: _) then true;
-    case (FRAME(optType = SOME(CLASS_SCOPE)) :: _) then false;
+    case (FRAME(optType = SOME(FUNCTION_SCOPE())) :: _) then true;
+    case (FRAME(optType = SOME(CLASS_SCOPE())) :: _) then false;
     case (_ :: fl) then inFunctionScope(fl);
   end matchcontinue;
 end inFunctionScope;
@@ -2347,8 +2292,8 @@ public function classInfToScopeType
   output Option<ScopeType> outType;
 algorithm
   outType := matchcontinue(inState)
-    case ClassInf.FUNCTION(path = _) then SOME(FUNCTION_SCOPE);
-    case _ then SOME(CLASS_SCOPE);
+    case ClassInf.FUNCTION(path = _) then SOME(FUNCTION_SCOPE());
+    case _ then SOME(CLASS_SCOPE());
   end matchcontinue;
 end classInfToScopeType;
 
@@ -2357,10 +2302,115 @@ public function restrictionToScopeType
   output Option<ScopeType> outType;
 algorithm
   outType := matchcontinue(inRestriction)
-    case SCode.R_FUNCTION then SOME(FUNCTION_SCOPE);
-    case _ then SOME(CLASS_SCOPE);
+    case SCode.R_FUNCTION() then SOME(FUNCTION_SCOPE());
+    case _ then SOME(CLASS_SCOPE());
   end matchcontinue;
 end restrictionToScopeType;
+
+public function getFunctionTree
+"Selector function"
+  input Cache cache;
+  output DAE.FunctionTree ft;
+  array<DAE.FunctionTree> ef;
+algorithm
+  CACHE(functions = ef) := cache;
+  ft := arrayGet(ef, 1);
+end getFunctionTree;
+
+public function addCachedInstFuncGuard
+"adds the FQ path to the set of instantiated functions as NONE().
+This guards against recursive functions."
+  input Cache cache;
+  input Absyn.Path func "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(cache,func)
+    local
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
+    	Absyn.ComponentRef cr;
+    	Option<Env> ienv;
+
+      /* Don't overwrite SOME() with NONE() */
+    case (cache, func)
+      equation
+        checkCachedInstFuncGuard(cache, func);
+      then cache;
+
+    case (CACHE(envCache,ienv,ef),func as Absyn.FULLYQUALIFIED(_))
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
+      then CACHE(envCache,ienv,ef);
+    // Non-FQ paths mean aliased functions; do not add these to the cache
+    case (cache,_) then (cache);
+  end matchcontinue;
+end addCachedInstFuncGuard;
+
+public function addDaeFunction
+"adds the list<DAE.Function> to the set of instantiated functions"
+  input Cache inCache;
+  input list<DAE.Function> funcs "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,funcs)
+    local
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
+    	Option<Env> ienv;
+    case (CACHE(envCache,ienv,ef),funcs)
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addDaeFunction;
+
+public function addDaeExtFunction
+"adds the external functions in list<DAE.Function> to the set of instantiated functions"
+  input Cache inCache;
+  input list<DAE.Function> funcs "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,funcs)
+    local
+    	array<Option<EnvCache>> envCache;
+    	array<DAE.FunctionTree> ef;
+    	Option<Env> ienv;
+    case (CACHE(envCache,ienv,ef),funcs)
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addDaeExtFunction;
+
+public function getCachedInstFunc
+"returns the function in the set"
+  input Cache inCache;
+  input Absyn.Path path;
+  output DAE.Function func;
+algorithm
+  func := matchcontinue(inCache,path)
+    local
+      array<DAE.FunctionTree> ef;
+    case(CACHE(functions=ef),path)
+      equation
+        SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+      then func;
+  end matchcontinue;
+end getCachedInstFunc;
+
+public function checkCachedInstFuncGuard
+"succeeds if the FQ function is in the set of functions"
+  input Cache inCache;
+  input Absyn.Path path;
+algorithm
+  _ := matchcontinue(inCache,path)
+    local
+      array<DAE.FunctionTree> ef;
+    case(CACHE(functions=ef),path) equation
+      _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+    then ();
+  end matchcontinue;
+end checkCachedInstFuncGuard;
 
 end Env;
 

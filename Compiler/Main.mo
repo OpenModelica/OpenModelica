@@ -43,14 +43,17 @@ package Main
 
 protected import Absyn;
 protected import AbsynDep;
-protected import Parser;
+protected import BackendDAE;
+protected import BackendDAECreate;
+protected import BackendDAETransform;
+protected import BackendDAEUtil;
+protected import BackendDump;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
 protected import SCodeUtil;
 protected import DAE;
 protected import DAEUtil;
-protected import DAELow;
 protected import Inst;
 protected import Interactive;
 protected import Dependency;
@@ -67,6 +70,7 @@ protected import SimCode;
 protected import ErrorExt;
 protected import Error;
 protected import CevalScript;
+protected import Parser;
 protected import Env;
 protected import Settings;
 protected import InnerOuter;
@@ -132,9 +136,9 @@ algorithm
 	e.g typeOf function would be taken as a type definition otherwise */
       equation
         true = Util.strncmp(" ", str, 1);
-        clst = string_list_string_char(str);
+        clst = stringListStringChar(str);
         clst_1 = listDelete(clst, 0);
-        str_1 = string_char_list_string(clst_1);
+        str_1 = stringCharListString(clst_1);
         res = checkClassdef(str_1);
       then
         res;
@@ -172,7 +176,7 @@ algorithm
       equation
         true = RTOpts.debugFlag(flagstr);
         debugstr = Print.getString();
-        res_with_debug = System.stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+        res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
     case (_,res) then res;
   end matchcontinue;
@@ -221,7 +225,7 @@ algorithm
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
         (p,msg) = Parser.parsestring(str);
-        true = stringEqual(msg, "Ok") "Always succeeds, check msg for errors" ;
+        true = stringEq(msg, "Ok") "Always succeeds, check msg for errors" ;
         Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
@@ -245,7 +249,7 @@ algorithm
         Debug.fprint("dump",
           "\nNot a class definition, trying expresion parser\n");
         (exp,msg) = Parser.parsestringexp(str);
-        true = stringEqual(msg, "Ok") "always succeeds, check msg for errors" ;
+        true = stringEq(msg, "Ok") "always succeeds, check msg for errors" ;
         (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
         Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
         Debug.fcall("dump", Dump.dumpIstmt, exp);
@@ -254,14 +258,13 @@ algorithm
       then
         (true,res,newisymb);
     case (str,isymb)
-      local Interactive.InteractiveStmts p;
       equation
         //debug_print("Command: fail", str);
         Debug.fcall0("failtrace", Print.clearBuf);
-        (p,msg) = Parser.parsestring(str);
-        (p,expmsg) = Parser.parsestringexp(str);
-        false = stringEqual(msg, "Ok");
-        false = stringEqual(expmsg, "Ok");
+        (_,msg) = Parser.parsestring(str);
+        (_,expmsg) = Parser.parsestringexp(str);
+        false = stringEq(msg, "Ok");
+        false = stringEq(expmsg, "Ok");
         Debug.fprint("failtrace", "\nBoth parser and expression parser failed: \n");
         Debug.fprintl("failtrace", {"parser: \n",msg,"\n"});
         Debug.fprintl("failtrace", {"expparser: \n",expmsg,"\n"});
@@ -318,7 +321,7 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         last :: _ = listReverse(lst);
-        true = stringEqual(last, "mo");
+        true = stringEq(last, "mo");
       then
         ();
     
@@ -326,7 +329,7 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         last :: _ = listReverse(lst);
-        true = stringEqual(last, "mof");
+        true = stringEq(last, "mof");
       then
         ();
   end matchcontinue;
@@ -341,7 +344,7 @@ protected function isFlatModelicaFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "mof");
+  true := stringEq(last, "mof");
 end isFlatModelicaFile;
 
 protected function isModelicaScriptFile
@@ -353,7 +356,7 @@ protected function isModelicaScriptFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "mos");
+  true := stringEq(last, "mos");
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
@@ -365,7 +368,7 @@ protected function isCodegenTemplateFile
 algorithm
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
-  true := stringEqual(last, "tpl");
+  true := stringEq(last, "tpl");
 end isCodegenTemplateFile;
 
 protected function versionRequest
@@ -524,6 +527,10 @@ algorithm
       Interactive.InteractiveSymbolTable newst, st;
       Env.Cache cache;
       Env.Env env;
+      DAE.FunctionTree funcs;
+      AbsynDep.Depends dep;
+      list<Absyn.Class> cls;
+      Integer r;
 
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
@@ -535,10 +542,6 @@ algorithm
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (f :: libs)
-      local
-        String s;
-        AbsynDep.Depends dep;
-        list<Absyn.Class> cls;
       equation
         //print("Class to instantiate: " +& RTOpts.classToInstantiate() +& "\n");
         Debug.fcall("execstat", print, "*** Main -> entering at time: " +& realString(clock()) +& "\n");
@@ -579,17 +582,19 @@ algorithm
 
         d = Debug.bcallret1(RTOpts.debugFlag("transformsbeforedump"),DAEUtil.transformationsBeforeBackend,d,d);
 
+        funcs = Env.getFunctionTree(cache);
+
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret1("flatmodelica", DAEDump.dumpStr, d, "");
+        s = Debug.fcallret2("flatmodelica", DAEDump.dumpStr, d, funcs, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
         Debug.fcall("flatmodelica", Print.printBuf, s);
         Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret1("none", DAEDump.dumpStr, d, "");
+        s = Debug.fcallret2("none", DAEDump.dumpStr, d, funcs, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
         Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall("daedump", DAEDump.dump, d);
+        Debug.fcall2("daedump", DAEDump.dump, d, funcs);
         Debug.fcall("daedump2", DAEDump.dump2, d);
         Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
@@ -639,7 +644,6 @@ algorithm
 
     // deal with problems
     case (f::_)
-      local Integer r;
       equation
         false = System.regularFileExists(f);
         print("File does not exist: "); print(f); print("\n");
@@ -649,7 +653,6 @@ algorithm
         fail();
 
     case (f::_)
-      local Integer r;
       equation
         true = System.regularFileExists(f);
         print("Error processing file: "); print(f); print("\n");
@@ -687,7 +690,7 @@ protected function instantiate
   output list<SCode.Class> scode;
   output Absyn.Path cname;
 algorithm
-  (cache, env, dae, cname) := matchcontinue(program)
+  (cache, env, dae, scode, cname) := matchcontinue(program)
     local
       Env.Cache c;
       Env.Env e;
@@ -708,7 +711,7 @@ algorithm
                                         InnerOuter.emptyInstHierarchy,
                                         s);
       then
-      (c, Env.emptyEnv(), d, s, Absyn.lastClassname(program));
+      (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -733,7 +736,7 @@ protected function runBackendQ
   It should be run if either \"blt\" flag is set or if
   parallelization is enabled by giving flag -n=<no proc.>"
   output Boolean res_1;
-  Boolean bltflag,sim_cg,par,res,res_1;
+  Boolean bltflag,sim_cg,par,res;
   Integer n;
 algorithm
   bltflag := RTOpts.debugFlag("blt");
@@ -758,9 +761,9 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
-      DAELow.DAELow dlow,dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
+      BackendDAE.BackendDAE dlow,dlow_1;
+      array<list<Integer>> m,mT;
+      array<Integer> v1,v2;
       list<list<Integer>> comps;
       list<SCode.Class> p;
       Absyn.Program ap;
@@ -770,38 +773,38 @@ algorithm
       Env.Env env;
       list<Integer> reseqn,tearvar;
       DAE.FunctionTree funcs;
+      String str,strtearing;
     case (cache,env,p,ap,dae,daeimpl,classname)
-      local String str,strtearing;
       equation
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
-        dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
-        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
+        funcs = Env.getFunctionTree(cache);
+        dlow = BackendDAECreate.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
+        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow);
+        mT = BackendDAEUtil.transposeMatrix(m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        funcs = DAEUtil.daeFunctionTree(dae);
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        (v1,v2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
-        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", DAELow.dump, dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpMatching, v1);
-        (comps) = DAELow.strongComponents(m, mT, v1, v2);
+        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall("bltdump", BackendDump.dump, dlow_1);
+        Debug.fcall("bltdump", BackendDump.dumpMatching, v1);
+        (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
         /**
          * TODO: Activate this when we call it from a command like +d=...
          *
          *
          * str = Absyn.pathString(classname);
-         * str = DAELow.unparseStr(dlow, comps, v1, v2, false,str);
-         * //Debug.fcall("flat", DAELow.unparseStr,dlow, comps, v1, v2, true);
+         * str = BackendDAE.unparseStr(dlow, comps, v1, v2, false,str);
+         * //Debug.fcall("flat", BackendDAE.unparseStr,dlow, comps, v1, v2, true);
         **/
-        // Debug.fcall("eqnsizedump",DAELow.dumpComponentSizes,comps);
-        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
-				str = DAELow.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
+        // Debug.fcall("eqnsizedump",BackendDump.dumpComponentSizes,comps);
+        Debug.fcall("bltdump", BackendDump.dumpComponents, comps);
+				str = BackendDump.dumpComponentsGraphStr(BackendDAEUtil.systemSize(dlow_1),m,mT,v1,v2);
 				Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
@@ -824,19 +827,19 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
-  input DAELow.DAELow inDAELow1;
-  input Integer[:] inIntegerArray2;
-  input Integer[:] inIntegerArray3;
+  input BackendDAE.BackendDAE inBackendDAE1;
+  input array<Integer> inIntegerArray2;
+  input array<Integer> inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
   _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer n,nx,ny,np;
-      DAELow.DAELow indexed_dae,indexed_dae_1,dae;
+      BackendDAE.BackendDAE indexed_dae,indexed_dae_1,dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
-      Integer[:] ass1,ass2;
+      array<Integer> ass1,ass2;
       list<list<Integer>> comps;
     case (_,_,_,_)
       equation
@@ -846,8 +849,8 @@ algorithm
         ();
     case (dae,ass1,ass2,comps)
       equation
-        indexed_dae = DAELow.translateDae(dae,NONE());
-        indexed_dae_1 = DAELow.calculateValues(indexed_dae);
+        indexed_dae = BackendDAEUtil.translateDae(dae,NONE());
+        indexed_dae_1 = BackendDAEUtil.calculateValues(indexed_dae);
         TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
@@ -863,7 +866,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_,_,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(indexed_dae_1);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);
@@ -889,17 +892,17 @@ protected function simcodegen
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
-  input DAELow.DAELow inDAELow5;
-  input Integer[:] inIntegerArray6;
-  input Integer[:] inIntegerArray7;
-  input DAELow.IncidenceMatrix inIncidenceMatrix8;
-  input DAELow.IncidenceMatrixT inIncidenceMatrixT9;
+  input BackendDAE.BackendDAE inBackendDAE5;
+  input array<Integer> inIntegerArray6;
+  input array<Integer> inIntegerArray7;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
   input list<list<Integer>> inIntegerLstLst10;
 algorithm
   _:=
-  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
+  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inBackendDAE5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
-      DAELow.DAELow indexed_dlow,indexed_dlow_1,dlow;
+      BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1,dlow;
       String cname_str,filename,funcfilename,init_filename,makefilename,file_dir;
       Absyn.ComponentRef a_cref;
       list<String> libs;
@@ -907,8 +910,8 @@ algorithm
       list<SCode.Class> p;
       Absyn.Program ap;
       DAE.DAElist dae;
-      Integer[:] ass1,ass2;
-      list<Integer>[:] m,mt;
+      array<Integer> ass1,ass2;
+      array<list<Integer>> m,mt;
       list<list<Integer>> comps;
       Env.Cache cache;
       Env.Env env;
@@ -921,27 +924,23 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
-        indexed_dlow = DAELow.translateDae(dlow,NONE());
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
-        Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
+        indexed_dlow = BackendDAEUtil.translateDae(dlow,NONE());
+        indexed_dlow_1 = BackendDAEUtil.calculateValues(indexed_dlow);
+        Debug.fcall("dumpindxdae", BackendDump.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
-        //filename = System.stringAppendList({cname_str,".cpp"});
-        //funcfilename = System.stringAppendList({cname_str,"_functions.cpp"});
-        //init_filename = System.stringAppendList({cname_str,"_init.txt"});
-        //makefilename = System.stringAppendList({cname_str,".makefile"});
+        //filename = stringAppendList({cname_str,".cpp"});
+        //funcfilename = stringAppendList({cname_str,"_functions.cpp"});
+        //init_filename = stringAppendList({cname_str,"_init.txt"});
+        //makefilename = stringAppendList({cname_str,".makefile"});
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","plt");        
-        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
+        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, Env.getFunctionTree(cache), classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
       then
         ();
-    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */
-      equation
-        true = RTOpts.simulationCg();
-      then
-        fail();
-    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */
+    /* If not generating simulation code: Succeed so no error messages are printed */
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = RTOpts.simulationCg();
       then
@@ -1112,15 +1111,15 @@ algorithm
       String file;
       Interactive.InteractiveSymbolTable inSymbolTable, outSymbolTable;
       String str;
+      Integer rest;
     case (file,inSymbolTable)
       equation
         true = System.regularFileExists(file);
-        str = System.stringAppendList({"runScript(\"",file,"\")"});
+        str = stringAppendList({"runScript(\"",file,"\")"});
         (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
       then
         outSymbolTable;
     case (file,inSymbolTable)
-       local Integer rest;
       equation
         false = System.regularFileExists(file);
       then
@@ -1197,23 +1196,22 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm
-  _:= matchcontinue (inStringLst)
+  _ := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String s,str,omhome,oldpath,newpath;
       Interactive.InteractiveSymbolTable symbolTable;
-      String omhome;
       
       // Setup mingw path only once.
     case _
       equation
-        omhome = System.readEnv("OPENMODELICAHOME");
+        omhome = Settings.getInstallationDirectoryPath();
         // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
-        newpath = System.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
+        newpath = stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
         _ = System.setEnv("PATH",newpath,true);
       then fail();
     
@@ -1222,11 +1220,8 @@ algorithm
         args_1 = RTOpts.args(args);
         
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         
-        // we need this as we get the arguments in reverse from RTOpts.args
-        args_1 = listReverse(args_1);
-
         // debug_show_depth(2);
         
         // reset the timer used to calculate 
@@ -1265,7 +1260,7 @@ algorithm
     case args as _::_
       equation
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
@@ -1277,7 +1272,7 @@ algorithm
     case _
       equation
         false = System.userIsRoot();
-        _ = System.readEnv("OPENMODELICAHOME");
+        _ = Settings.getInstallationDirectoryPath();
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();
@@ -1290,7 +1285,7 @@ algorithm
     case _
       equation
         false = System.userIsRoot();
-        failure(_ = System.readEnv("OPENMODELICAHOME"));
+        failure(_ = Settings.getInstallationDirectoryPath());
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");
         print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");

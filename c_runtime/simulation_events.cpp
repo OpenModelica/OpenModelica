@@ -668,6 +668,29 @@ bool change(modelica_boolean& var) {
   return (var != pre(var));
 }
 
+int checkTermination(){
+  if (terminationAssert) {
+    if (warningLevelAssert) { // terminated from assert, etc.
+       cout << "Simulation call assert() at time " << globalData->timeValue << endl;
+       cout << "Level : warning" << endl;
+       cout << "Message : " << TermMsg << endl;
+     }else{
+       cout << "Simulation call assert() at time " << globalData->timeValue << endl;
+       cout << "Level : error" << endl;
+       cout << "Message : " << TermMsg << endl;
+       throw TerminateSimulationException(globalData->timeValue);
+     }
+  }
+  if (terminationTerminate){
+    cout << "Simulation call terminate() at time " << globalData->timeValue << endl;
+    cout << "Message : " << TermMsg << endl;
+    throw TerminateSimulationException(globalData->timeValue);
+  }
+}
+
+
+
+
 /*
  * All event functions from here, are till now only used in Euler
  *

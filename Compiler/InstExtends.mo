@@ -52,7 +52,9 @@ public import SCode;
 public import Prefix;
 
 // protected imports
+protected import BaseHashTable;
 protected import Builtin;
+protected import ComponentReference;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -109,7 +111,6 @@ algorithm
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
-      ClassInf.State new_ci_state;
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
       Integer tmp;
@@ -150,8 +151,8 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = Inst.splitEltsNoComponents(els);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE);
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE());
 
         (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
@@ -298,7 +299,7 @@ algorithm
   tmpelts := Util.listMap(outTplSCodeElementModLst,Util.tuple21);
   (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
-  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,NONE);
+  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,NONE());
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -390,7 +391,7 @@ protected function instClassExtendsList2
 algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
-      SCode.Element elt,compelt,classExtendsElt,compelt;
+      SCode.Element elt,compelt,classExtendsElt;
       SCode.Class cl,classExtendsClass;
       SCode.ClassDef classDef,classExtendsCdef;
       Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1;
@@ -425,8 +426,8 @@ algorithm
         cl = SCode.CLASS(name2,partialPrefix2,encapsulatedPrefix2,restriction2,classDef,info2);
         compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, cc2);
 
-        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
+        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods,NONE());
+        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
@@ -669,30 +670,30 @@ algorithm
       Absyn.Path p;
     case (SCode.COMPONENT(component = id),ht)
       equation
-        ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
+        ht = BaseHashTable.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.CLASSDEF(name = id),ht)
       equation        
-        ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
+        ht = BaseHashTable.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.IMPORT(imp = Absyn.NAMED_IMPORT(name = id, path = p)),ht)
       equation
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;
     case (SCode.IMPORT(imp = Absyn.QUAL_IMPORT(path = p)),ht)
       equation
         id = Absyn.pathLastIdent(p);
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;
     // adrpo: 2010-10-07 handle unqualified imports!!! TODO! FIXME! should we just ignore them??
     //                   this fixes bug: #1234 https://openmodelica.org:8443/cb/issue/1234
     case (SCode.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = p)),ht)
       equation
         id = Absyn.pathLastIdent(p);
-        failure(_ = HashTableStringToPath.get(id, ht));
-        ht = HashTableStringToPath.add((id,p), ht);
+        failure(_ = BaseHashTable.get(id, ht));
+        ht = BaseHashTable.add((id,p), ht);
       then ht;        
   end matchcontinue;
 end getLocalIdentElement;
@@ -1150,7 +1151,7 @@ algorithm
     case (cache,env,path1,ht)
       equation
         id = Absyn.pathFirstIdent(path1);
-        path2 = HashTableStringToPath.get(id,ht);
+        path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
         //Debug.fprintln("debug","Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
@@ -1178,20 +1179,22 @@ algorithm
     local
       String id;
       Absyn.Path path;
+      DAE.ComponentRef cref_;
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
         //Debug.traceln("Try ht lookup " +& id);
-        path = HashTableStringToPath.get(id,ht);
+        path = BaseHashTable.get(id,ht);
         //Debug.traceln("Got path " +& Absyn.pathString(path));
       then (cache,Absyn.crefReplaceFirstIdent(cref,path));
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
         //Debug.fprintln("debug","Try lookupV " +& id);
-        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,cref_);
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id),NONE);
+        env = Env.openScope(env,true,SOME(id),NONE());
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,ht)
       equation
@@ -1199,7 +1202,7 @@ algorithm
         //Debug.fprintln("debug","Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id),NONE);
+        env = Env.openScope(env,true,SOME(id),NONE());
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,_) then (cache,cref);
   end matchcontinue;
@@ -1253,16 +1256,16 @@ algorithm
     local
       SCode.Mod mod;
       list<SCode.SubMod> rest_mods;
+      Absyn.Ident ident;
+      list<SCode.Subscript> subs;
     case (_, _, {}, _) then (cache, {});
     case (_, _, SCode.NAMEMOD(ident = ident, A = mod) :: rest_mods, _)
-      local Absyn.Ident ident;
       equation
         (cache, mod) = fixModifications(cache, env, mod, ht);
         (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
       then
         (cache, SCode.NAMEMOD(ident, mod) :: rest_mods);
     case (_, _, SCode.IDXMOD(subscriptLst = subs, an = mod) :: rest_mods, _)
-      local list<SCode.Subscript> subs;
       equation
         (cache, mod) = fixModifications(cache, env, mod, ht);
         (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
@@ -1287,7 +1290,7 @@ algorithm
     local
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
-      Absyn.Exp exp,exp1,exp2,ifexp,truebranch,elsebranch;
+      Absyn.Exp exp1,exp2,ifexp,truebranch,elsebranch;
       list<Absyn.Exp> expl;
       Option<Absyn.Exp> optExp;
       list<list<Absyn.Exp>> expll;
@@ -1564,7 +1567,7 @@ protected function fixListTuple2
     output Type_B outTypeA;
   end FixBFn;
 algorithm
-  (outCache,outLst) := matchcontinue (cache,env,rest,ht,fixA,fixB)
+  (outCache,outA) := matchcontinue (cache,env,rest,ht,fixA,fixB)
     local
       Type_A a;
       Type_B b;

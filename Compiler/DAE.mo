@@ -30,7 +30,7 @@
  */
 
 package DAE
-" file:	 DAE.mo
+" file:        DAE.mo
   package:     DAE
   description: DAE management and output
 
@@ -41,11 +41,11 @@ package DAE
   containing only flat modelica, i.e. equations, algorithms, variables and
   functions."
 
+// public imports
 public import Absyn;
 public import ClassInf;
 public import SCode;
 public import Values;
-//protected import Exp;
 
 public type Ident = String;
 
@@ -55,50 +55,38 @@ public type StartValue = Option<Exp>;
 
 public constant String UNIQUEIO = "$unique$outer$";
 
+public constant String derivativeNamePrefix="$DER";
+
 
 public uniontype VarKind
-  record VARIABLE end VARIABLE;
-
-  record DISCRETE end DISCRETE;
-
-  record PARAM end PARAM;
-
-  record CONST end CONST;
-
+  record VARIABLE "variable" end VARIABLE;
+  record DISCRETE "discrete" end DISCRETE;
+  record PARAM "parameter"   end PARAM;
+  record CONST "constant"    end CONST;
 end VarKind;
 
 public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
    it is not a connector variable at all."
   record FLOW end FLOW;
-
   record NON_FLOW end NON_FLOW;
-
   record NON_CONNECTOR end NON_CONNECTOR;
-
 end Flow;
 
 public uniontype Stream "The Stream of a variable indicates if it is a Stream variable or not, or if
    it is not a connector variable at all."
   record STREAM end STREAM;
-
   record NON_STREAM end NON_STREAM;
-
   record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
-
 end Stream;
 
-
 public uniontype VarDirection
-  record INPUT end INPUT;
-
-  record OUTPUT end OUTPUT;
-
-  record BIDIR end BIDIR;
-
+  record INPUT  "input"                   end INPUT;
+  record OUTPUT "output"                  end OUTPUT;
+  record BIDIR  "neither input or output" end BIDIR;
 end VarDirection;
 
 public uniontype VarProtection
-  record PUBLIC "public variables" end PUBLIC;
+  record PUBLIC "public variables"       end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
 end VarProtection;
 
@@ -156,14 +144,14 @@ public uniontype Element
   end EQUEQUATION;
 
   record ARRAY_EQUATION " an array equation"
-    list<Integer> dimension "dimension sizes" ;
+    list<Dimension> dimension "dimension sizes" ;
     Exp exp;
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
 	record INITIAL_ARRAY_EQUATION "An initial array equation"
-		list<Integer> dimension "dimension sizes";
+		list<Dimension> dimension "dimension sizes";
 		Exp exp;
 		Exp array;
 		ElementSource source "the origin of the component/equation/algorithm";
@@ -225,25 +213,10 @@ public uniontype Element
     Option<SCode.Comment> comment;
   end COMP;
 
-  record FUNCTION " A Modelica function"
-    Absyn.Path path;
-    list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
-    Type type_;
-    Boolean partialPrefix "MetaModelica extension";
-    InlineType inlineType;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end FUNCTION;
-
-  record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
-    Absyn.Path path;
-    Type type_;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end RECORD_CONSTRUCTOR;
-
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
-    Element constructor "constructor is an EXTFUNCTION";
-    Element destructor "destructor is an EXTFUNCTION";
+    Function constructor "constructor is an EXTFUNCTION";
+    Function destructor "destructor is an EXTFUNCTION";
     ElementSource source "the origin of the component/equation/algorithm";
   end EXTOBJECTCLASS;
 
@@ -272,6 +245,23 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
 end Element;
+
+public uniontype Function
+  record FUNCTION " A Modelica function"
+    Absyn.Path path;
+    list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
+    Type type_;
+    Boolean partialPrefix "MetaModelica extension";
+    InlineType inlineType;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end FUNCTION;
+
+  record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
+    Absyn.Path path;
+    Type type_;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end RECORD_CONSTRUCTOR;
+end Function;
 
 public uniontype InlineType
   record NORM_INLINE "Normal inline, inline as soon as possible"
@@ -415,14 +405,13 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
 "
   record DAE
     list<Element> elementLst;
-    FunctionTree functions "set of functions";
   end DAE;
 end DAElist;
 
 /* AVLTree for functions */
 public type AvlKey = Absyn.Path;
 
-public type AvlValue = Element;
+public type AvlValue = Option<Function>;
 
 public type FunctionTree = AvlTree;
 
@@ -483,6 +472,12 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN_ARR;
 
+  record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
+    Pattern lhs;
+    Exp rhs;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_ASSIGN_PATTERN;
+
   record STMT_IF
     Exp exp;
     list<Statement> statementLst;
@@ -491,10 +486,10 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_IF;
 
   record STMT_FOR
-    ExpType type_;
+    ExpType type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
-    Ident ident;
-    Exp exp;
+    Ident iter "the iterator variable";
+    Exp range "range for the loop";
     list<Statement> statementLst;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_FOR;
@@ -545,6 +540,11 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_BREAK;
 
   // MetaModelica extension. KS
+  record STMT_FAILURE
+    list<Statement> body;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end STMT_FAILURE;
+
   record STMT_TRY
     list<Statement> tryBody;
     ElementSource source "the origin of the component/equation/algorithm";
@@ -571,6 +571,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
 
   record STMT_MATCHCASES "match[continue] helper"
     Absyn.MatchType matchType;
+    list<Exp> inputExps "for now these are idents; they should be full expressions (but the cases are not split into matching and assignments...)";
     list<Exp> caseStmt;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_MATCHCASES;
@@ -606,7 +607,7 @@ uniontype Var "- Variables"
     Boolean protected_ "protected" ;
     Type type_ "type" ;
     Binding binding "binding ; equation modification" ;
-    Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE if is NOT a for iterator";
+    Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
 
 end Var;
@@ -663,7 +664,14 @@ public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
 public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
 public constant Type T_BOOL_DEFAULT    = (T_BOOL({}),NONE());
 public constant Type T_ENUMERATION_DEFAULT = 
-  (T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}), NONE);
+  (T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}), NONE());
+public constant Type T_REAL_BOXED    = (T_BOXED((T_REAL({}),NONE())),NONE());
+public constant Type T_INTEGER_BOXED = (T_BOXED((T_INTEGER({}),NONE())),NONE());
+public constant Type T_STRING_BOXED  = (T_BOXED((T_STRING({}),NONE())),NONE());
+public constant Type T_BOOL_BOXED    = (T_BOXED((T_BOOL({}),NONE())),NONE());
+public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
+public constant Type T_LIST_DEFAULT = (T_LIST((T_NOTYPE(),NONE())),NONE());
+public constant Type T_NONE_DEFAULT = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
@@ -683,7 +691,7 @@ public uniontype TType "-TType contains the actual type"
   end T_BOOL;
 
   record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
-    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
+    Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
     list<Var> literalVarLst;
@@ -721,6 +729,9 @@ public uniontype TType "-TType contains the actual type"
   end T_UNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+    Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
+    // If the metarecord constructor was added to the FunctionTree, this would
+    // not be needed. They are used to create the datatype in the runtime...
     Integer index; //The index in the uniontype
     list<Var> fields;
   end T_METARECORD;
@@ -903,7 +914,7 @@ end Mod;
 
 /* -- End Types.mo -- */
 
-/* -- Start Exp.mo -- */
+/* -- Start Expression.mo -- */
 public
 uniontype ExpType "- Basic types
     These types are not used as expression types (see the `Types\'
@@ -1076,9 +1087,9 @@ uniontype Exp "Expressions
 
   record RANGE
     ExpType ty;
-    Exp exp;
-    Option<Exp> expOption;
-    Exp range "Range constructor, e.g. 1:0.5:10" ;
+    Exp exp "start value";
+    Option<Exp> expOption "step value";
+    Exp range "stop value; Range constructor, e.g. 1:0.5:10" ;
   end RANGE;
 
   record TUPLE
@@ -1150,13 +1161,48 @@ uniontype Exp "Expressions
     Absyn.Path path;
     list<Exp> args;
     list<String> fieldNames;
-    // SCode.Path name; //Name of the uniontype - removed 2009-09-18 /sjoelund
     Integer index; //Index in the uniontype
   end METARECORDCALL;
 
   /* --- */
 
 end Exp;
+
+public uniontype Pattern "Patterns deconstruct expressions"
+  record PAT_WILD "_"
+  end PAT_WILD;
+  record PAT_CONSTANT "compare to this constant value using equality"
+    Option<ExpType> ty "so we can unbox if needed";
+    Exp exp;
+  end PAT_CONSTANT;
+  record PAT_AS "id as pat"
+    String id;
+    Option<ExpType> ty "so we can unbox if needed";
+    Pattern pat;
+  end PAT_AS;
+  record PAT_AS_FUNC_PTR "id as pat"
+    String id;
+    Pattern pat;
+  end PAT_AS_FUNC_PTR;
+  record PAT_META_TUPLE "(pat1,...,patn)"
+    list<Pattern> patterns;
+  end PAT_META_TUPLE;
+  record PAT_CALL_TUPLE "(pat1,...,patn)"
+    list<Pattern> patterns;
+  end PAT_CALL_TUPLE;
+  record PAT_CONS "head::tail"
+    Pattern head;
+    Pattern tail;
+  end PAT_CONS;
+  record PAT_CALL "RECORD(pat1,...,patn); all patterns are positional"
+    Absyn.Path name;
+    Integer index;
+    list<Pattern> patterns;
+  end PAT_CALL;
+  record PAT_SOME "SOME(pat)"
+    Pattern pat;
+  end PAT_SOME;
+end Pattern;
 
 public
 uniontype Operator "Operators which are overloaded in the abstract syntax are here
@@ -1343,7 +1389,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   end INDEX;
 
 end Subscript;
-/* -- End Exp.mo -- */
+/* -- End Expression.mo -- */
 
 end DAE;
 

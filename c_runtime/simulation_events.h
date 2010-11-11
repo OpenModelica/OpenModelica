@@ -84,6 +84,8 @@ double LessEq(double a,double b);
 double Greater(double a,double b);
 double GreaterEq(double a,double b);
 
+int checkTermination();
+
 extern long inUpdate;
 extern int euler_in_use;
 const int InterationMax = 100;

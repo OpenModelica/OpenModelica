@@ -76,6 +76,7 @@ typedef int mmc_sint_t;
 #define MMC_STRINGHDR(nbytes)	(((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
 #define MMC_HDRSLOTS(hdr)	((hdr) >> 10)
 #define MMC_GETHDR(x)		(*(mmc_uint_t*)MMC_UNTAGPTR(x))
+#define MMC_HDRCTOR(hdr) (((hdr) >> 2) & 255)
 #define MMC_HDRISSTRING(hdr)	(((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
 #define MMC_HDRSTRLEN(hdr)	(((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
 #define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
@@ -104,6 +105,8 @@ struct mmc_string {
     char data[1];	/* `bytes' elements + terminating '\0' */
 };
 
+#define mmc__mk__bcon_rettype mmc_mk_bcon_rettype
+#define mmc__mk__bcon(X) mmc_mk_bcon(X)
 #define mmc__mk__icon_rettype mmc_mk_icon_rettype
 #define mmc__mk__icon(X) mmc_mk_icon(X)
 #define mmc__mk__rcon_rettype mmc_mk_rcon_rettype
@@ -113,11 +116,13 @@ struct mmc_string {
 #define mmc__mk__acon_rettype mmc_mk_acon_rettype
 #define mmc__mk__acon(X) (&(X))
 
+typedef modelica_metatype mmc_mk_bcon_rettype;
 typedef modelica_metatype mmc_mk_icon_rettype;
 typedef modelica_metatype mmc_mk_rcon_rettype;
 typedef modelica_metatype mmc_mk_scon_rettype;
 typedef modelica_metatype mmc_mk_acon_rettype;
 
+#define mmc_mk_bcon(X) (X != 0 ? mmc_mk_icon(1) : mmc_mk_icon(0))
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
 mmc_mk_scon_rettype mmc_mk_scon(const char*);
@@ -147,7 +152,7 @@ int mmc_boxes_equal(void*, void*);
 void mmc__unbox(modelica_metatype box, void* res);
 
 typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
-mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int,modelica_string_t);
+mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int);
 
 void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */

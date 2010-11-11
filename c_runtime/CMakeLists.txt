@@ -110,19 +110,23 @@ SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
 					   sendData/sendData.h sendData/humbug.h)				 
 						 
-					   
 SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input.cpp
-                simulation_events.cpp solver_dasrt.cpp solver_euler.cpp 
-				simulation_result.cpp simulation_delay.cpp tables.cpp
-				options.cpp dgesv_aux.c)
-					   
+                simulation_events.cpp solver_dasrt.cpp  
+				simulation_result_plt.cpp simulation_result_csv.cpp simulation_result_bin.cpp
+				simulation_result_mat.cpp simulation_delay.cpp tables.cpp
+				options.cpp dgesv_aux.c linearize.cpp solver_main.cpp)
+	
 SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
-                simulation_events.h solver_dasrt.h solver_euler.h simulation_result.h
-				simulation_delay.h tables.h options.h)
+                simulation_events.h solver_dasrt.h simulation_result.h
+				simulation_delay.h tables.h options.h linearize.h solver_main.h
+				simulation_result_plt.h simulation_result_plt.h simulation_result_mat.h
+				simulation_result_empty.h simulation_result_csv.h simulation_result_bin.h
+				simulation_inline_solver.h )
 
 
 # Library c_runtime
 #ADD_DEFINITIONS(/Wall /O3  /ansi /pedantic)
+ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)
 if(WIN32)
 #add_definitions(/MT)
 endif(WIN32)

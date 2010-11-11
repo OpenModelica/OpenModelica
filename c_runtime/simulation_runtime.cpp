@@ -61,7 +61,12 @@ bool interactiveSimuation = false; //This variable signals if an simulation sess
 /***************/
 const char* version = "20100629";
 // Becomes non-zero when model terminates simulation.
-int modelTermination=0;
+int modelTermination = 0;
+int terminationTerminate = 0;
+int terminationAssert = 0;
+char* terminateMessage = 0;
+int warningLevelAssert =  0;
+string TermMsg;
 
 int sim_verbose; // Flag for logging
 int sim_noemit; // Flag for not emitting data

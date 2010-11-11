@@ -77,9 +77,6 @@ goto rule ## func ## Ex; }}
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
   #define make_redeclare_keywords(replaceable,redeclare) (replaceable && redeclare ? Absyn__REDECLARE_5fREPLACEABLE : replaceable ? Absyn__REPLACEABLE : redeclare ? Absyn__REDECLARE : NULL)
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
-#if 1 /* mk_bcon will be defined in RML later */
-  #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
-#endif
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mk_box_eat_all(int ix, ...);
@@ -294,7 +291,9 @@ composition2 returns [void* ast] :
   )
   ;
 
-external_clause returns [void* ast] :
+external_clause returns [void* ast] @init {
+  retexp.ast = 0;
+} :
         EXTERNAL
         ( lang=language_specification )?
         ( ( retexp=component_reference EQUALS )?
@@ -302,7 +301,7 @@ external_clause returns [void* ast] :
         ( ann1 = annotation )? SEMICOLON
         ( ann2 = external_annotation )?
           {
-            ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
+            ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp.ast), or_nil(expl), mk_some_or_none(ann1));
             ast = mk_cons(Absyn__EXTERNAL(ast, mk_some_or_none(ann2)), mk_nil());
           }
         ;
@@ -538,7 +537,7 @@ element_modification_or_replaceable returns [void* ast] :
     ;
 
 element_modification [void *each, void *final] returns [void* ast] :
-  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr, mk_some_or_none(mod), mk_some_or_none(cmt)); }
+  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt)); }
   ;
 
 element_redeclaration returns [void* ast] :
@@ -661,7 +660,7 @@ algorithm returns [void* ast] :
   | a=when_clause_a
   | BREAK {a = Absyn__ALG_5fBREAK;}
   | RETURN {a = Absyn__ALG_5fRETURN;}
-  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(al.ast);}
+  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(mk_cons(al.ast,mk_nil()));}
   | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
     {
       a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
@@ -800,7 +799,7 @@ algorithm_list returns [void* ast] :
 connect_clause returns [void* ast] :
   CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR 
   {
-    ast = Absyn__EQ_5fCONNECT(cr1,cr2);
+    ast = Absyn__EQ_5fCONNECT(cr1.ast,cr2.ast);
   }
   ;
 
@@ -838,7 +837,7 @@ expression returns [void* ast] :
   ;
 
 part_eval_function_expression returns [void* ast] :
-  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr, fc); }
+  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr.ast, fc); }
   ;
 
 if_expression returns [void* ast] :
@@ -988,7 +987,7 @@ primary returns [void* ast] @declarations {
   | v=STRING           {$ast = Absyn__STRING(mk_scon((char*)$v.text->chars));}
   | T_FALSE            {$ast = Absyn__BOOL(RML_FALSE);}
   | T_TRUE             {$ast = Absyn__BOOL(RML_TRUE);}
-  | ptr=component_reference__function_call {$ast = ptr;}
+  | ptr=component_reference__function_call {$ast = ptr.ast;}
   | DER el=function_call {$ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
   | LPAR el=output_expression_list[&tupleExpressionIsTuple]
     {
@@ -1013,12 +1012,14 @@ matrix_expression_list returns [void* ast] :
 component_reference__function_call returns [void* ast] :
   cr=component_reference ( fc=function_call )? {
       if (fc != NULL)
-        ast = Absyn__CALL(cr,fc);
-      else
-        ast = Absyn__CREF(cr);
+        $ast = Absyn__CALL(cr.ast,fc);
+      else {
+        modelicaParserAssert(!cr.isNone, "NONE is not valid MetaModelica syntax regardless of what tricks RML has played on you! Use NONE() instead.", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        $ast = Absyn__CREF(cr.ast);
+      }
     }
   | i=INITIAL LPAR RPAR {
-      ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
+      $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
     }
   ;
 
@@ -1053,21 +1054,27 @@ name_path_star2 returns [void* ast, int unqual] :
     }
   ;
 
-component_reference returns [void* ast] :
+component_reference returns [void* ast, int isNone] :
   (dot=DOT)? cr=component_reference2
     {
-      $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr) : cr;
+      $ast = dot ? Absyn__CREF_5fFULLYQUALIFIED(cr.ast) : cr.ast;
+      $isNone = cr.isNone;
     }
-  | WILD {$ast = Absyn__WILD;}
+  | WILD {$ast = Absyn__WILD; $isNone = false;}
   ;
 
-component_reference2 returns [void* ast] :
+component_reference2 returns [void* ast, int isNone] @init {
+  cr.ast = 0;
+} :
     (id=IDENT | id=OPERATOR) ( arr=array_subscripts )? ( DOT cr=component_reference2 )?
     {
-      if (cr)
-        ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr);
+      if (cr.ast) {
+        $ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr.ast);
+        $isNone = false;
+      }
       else {
-        ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
+        $isNone = metamodelica_enabled() && strcmp("NONE",(char*)$id.text->chars) == 0;
+        $ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
       }
     }
   ;
@@ -1309,35 +1316,39 @@ match_expression returns [void* ast] :
      T_END MATCH)
   )
      {
-       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, es, cs, mk_some_or_none(cmt));
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, or_nil(es), cs, mk_some_or_none(cmt));
      }
   ;
 
 local_clause returns [void* ast] :
   (LOCAL el=element_list)?
     {
-      ast = or_nil(el);
+      ast = el;
     }
   ;
 
 cases returns [void* ast] :
   c=onecase cs=cases2
     {
-      ast = mk_cons(c,cs);
+      $ast = mk_cons(c.ast,cs.ast);
     }
   ;
 
 cases2 returns [void* ast] :
   ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression SEMICOLON)?
     {
+      if (es != NULL)
+        c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                             ModelicaParser_readonly, ModelicaParser_filename_C);
       if (exp)
-       ast = mk_cons(Absyn__ELSE(es,or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
       else
-       ast = mk_nil();
+       $ast = mk_nil();
     }
   | c=onecase cs=cases2
     {
-      ast = mk_cons(c, cs);
+      $ast = mk_cons(c.ast, cs.ast);
     }
   )
   ;
@@ -1345,10 +1356,14 @@ cases2 returns [void* ast] :
 onecase returns [void* ast] :
   (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression SEMICOLON)
     {
-        ast = Absyn__CASE(pat,es,or_nil(eqs),exp,mk_some_or_none(cmt));
+        if (es != NULL)
+          c_add_source_message(2, "SYNTAX", "Warning", "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+                               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                               ModelicaParser_readonly, ModelicaParser_filename_C);
+        $ast = Absyn__CASE(pat.ast,pat.info,or_nil(es),or_nil(eqs),exp,mk_some_or_none(cmt));
     }
   ;
 
-pattern returns [void* ast] :
-  e=expression {ast = e;}
+pattern returns [void* ast, void* info] :
+  e=expression {$ast = e; $info = INFO($start);}
   ;

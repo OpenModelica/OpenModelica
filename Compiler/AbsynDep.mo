@@ -1,5 +1,42 @@
-package AbsynDep "Copyright MathCore Engineering AB 2007
-  author Peter Aronsson
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2010, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
+ * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+package AbsynDep 
+" 
+  file:        AbsynDep.mo
+  package:     AbsynDep
+  description: AbsynDep builds dependencies based on a start class (program slicing)
+  author:      Peter Aronsson
+
+  RCS: $Id$
 
   This package contains a data structure and functions for maintaining dependency information between
   Absyn classes.
@@ -16,8 +53,7 @@ package AbsynDep "Copyright MathCore Engineering AB 2007
   getUsesTransitive(depends,class) -> avltree of used classes under transitive closure
 
   getUsedBy(depends,class) => avltree of classes that uses the class (e.g as component)
-
-  "
+"
 
   public uniontype Depends " dependency information (uses/usedBy) for classes"
     record DEPENDS
@@ -29,11 +65,10 @@ package AbsynDep "Copyright MathCore Engineering AB 2007
  end Depends;
 
 
- public import Absyn;
+public import Absyn;
 
- protected import Util;
- protected import System;
- protected import ModUtil;
+protected import Util;
+protected import ModUtil;
 
 public function dumpDepends "prints dependency information to stdout"
   input Depends depends;
@@ -306,7 +341,7 @@ end AvlTreeValue;
 public function avlTreeNew "Return an empty tree"
   output AvlTree tree;
 algorithm
-  tree := AVLTREENODE(NONE,0,NONE,NONE);
+  tree := AVLTREENODE(NONE(),0,NONE(),NONE());
 end avlTreeNew;
 
 protected function avlTreeToList "return tree as a flat list of tuples"
@@ -322,8 +357,8 @@ protected function avlTreeToList2 "help function to avlTreeToList"
 algorithm
   lst := matchcontinue(tree)
   local Option<AvlTree> r,l; AvlKey k; AvlValue v;
-    case NONE then {};
-    case(SOME(AVLTREENODE(value = NONE,left = l,right = r) )) equation
+    case NONE() then {};
+    case(SOME(AVLTREENODE(value = NONE(),left = l,right = r) )) equation
       lst = listAppend(avlTreeToList2(l),avlTreeToList2(r));
     then lst;
     case(SOME(AVLTREENODE(value=SOME(AVLTREEVALUE(k,v)),left = l, right = r))) equation
@@ -350,8 +385,8 @@ algorithm
       AvlTree t_1,t,right_1,left_1,bt;
 
       /* empty tree*/
-    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
-    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+    case (AVLTREENODE(value = NONE(),height=h,left = NONE(),right = NONE()),key,value)
+    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE(),NONE());
 
 		/* Replace this node. NOTE: different from generic impl. Joins the list. */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
@@ -365,7 +400,7 @@ algorithm
         /* Insert to right  */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -375,7 +410,7 @@ algorithm
         /* Insert to left subtree */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
          t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
@@ -394,7 +429,7 @@ input Option<AvlTree> t;
 output AvlTree outT;
 algorithm
   outT := matchcontinue(t)
-    case(NONE) then AVLTREENODE(NONE,0,NONE,NONE);
+    case(NONE()) then AVLTREENODE(NONE(),0,NONE(),NONE());
     case(SOME(outT)) then outT;
   end matchcontinue;
 end createEmptyAvlIfNone;
@@ -465,12 +500,14 @@ protected function doBalance3 "help function to doBalance2"
   output AvlTree outBt;
 algorithm
   outBt := matchcontinue(bt)
-  local AvlTree rr;
-    case(bt) equation
-      true = differenceInHeight(getOption(rightNode(bt))) > 0;
-      rr = rotateRight(getOption(rightNode(bt)));
-      bt = setRight(bt,SOME(rr));
-    then bt;
+    local
+      AvlTree rr;
+    case (bt)
+      equation
+        true = differenceInHeight(getOption(rightNode(bt))) > 0;
+        rr = rotateRight(getOption(rightNode(bt)));
+        bt = setRight(bt,SOME(rr));
+      then bt;
     case(bt) then bt;
   end matchcontinue;
 end doBalance3;
@@ -535,21 +572,23 @@ algorithm
 end rightNode;
 
 protected function exchangeLeft "help function to balance"
-input AvlTree node;
-input AvlTree parent;
-output AvlTree outParent "updated parent";
+  input AvlTree node;
+  input AvlTree parent;
+  output AvlTree outParent "updated parent";
 algorithm
   outParent := matchcontinue(node,parent)
-    local Option<AvlTreeValue> value;
-      Integer height ;
-      AvlTree left,right,bt,leftNode,rightNode;
+    local
+      Option<AvlTreeValue> value;
+      Integer height;
+      AvlTree bt;
 
-    case(node,parent) equation
-      parent = setRight(parent,leftNode(node));
-      parent = balance(parent);
-      node = setLeft(node,SOME(parent));
-      bt = balance(node);
-    then bt;
+    case  (node,parent)
+      equation
+        parent = setRight(parent,leftNode(node));
+        parent = balance(parent);
+        node = setLeft(node,SOME(parent));
+        bt = balance(node);
+      then bt;
   end matchcontinue;
 end exchangeLeft;
 
@@ -632,29 +671,27 @@ algorithm
     local
       AvlKey rkey,key;
       AvlValue rval,res;
-      Option<AvlTree> left,right;
+      AvlTree left,right;
       Integer rhval;
       /* hash func Search to the right */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key)
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
         true = ModUtil.pathEqual(rkey,key);
       then
         rval;
 
         /* Search to the right */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = SOME(right)),key)
-      local AvlTree right;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),right = SOME(right)),key)
       equation
-        true = System.strcmp(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
+        true = stringCompare(Absyn.pathString(key),Absyn.pathString(rkey)) > 0;
         res = avlTreeGet(right, key);
       then
         res;
 
         /* Search to the left */
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left),right = right),key)
-      local AvlTree left;
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = SOME(left)),key)
       equation
-        /*true = System.strcmp(key,rkey) < 0;*/
+        /*true = stringCompare(key,rkey) < 0;*/
         res = avlTreeGet(left, key);
       then
         res;
@@ -667,7 +704,7 @@ protected function avlTreeGetSubsopt
   output AvlValue outValue;
   AvlTree item;
   algorithm outValue := matchcontinue(inAvlTree,inKey)
-  case(NONE,_) then {};
+  case(NONE(),_) then {};
   case(SOME(item),inKey) then avlTreeGetSubs (item,inKey);
 end matchcontinue;
 end avlTreeGetSubsopt;
@@ -686,7 +723,7 @@ algorithm outValue:= matchcontinue (inAvlTree,inKey)
       Boolean b1,b2;
       String s1;
       // end of tree case
-  case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE,right = NONE),key)
+  case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE(),right = NONE()),key)
     equation
       b2 = Absyn.pathPrefixOf(key,rkey);
       rval = Util.if_(b2,rval,{});
@@ -708,7 +745,7 @@ end avlTreeGetSubs;
 protected function getOptionStr "function getOptionStr
 
   Retrieve the string from a string option.
-  If NONE return empty string.
+  If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -730,7 +767,7 @@ algorithm
         str = r(a);
       then
         str;
-    case (NONE,_) then "";
+    case (NONE(),_) then "";
   end matchcontinue;
 end getOptionStr;
 
@@ -756,7 +793,7 @@ algorithm
         res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
       then
         res;
-    case (AVLTREENODE(value = NONE,left = l,right = r))
+    case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
@@ -789,7 +826,7 @@ protected function getHeight "Retrieve the height of a node"
   output Integer height;
 algorithm
   height := matchcontinue(bt)
-    case(NONE) then 0;
+    case(NONE()) then 0;
     case(SOME(AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;

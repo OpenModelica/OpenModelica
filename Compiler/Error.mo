@@ -229,10 +229,12 @@ public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
 public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
-public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=145;
-public constant ErrorID NON_STREAM_OPERAND_IN_STREAM_OPERATOR = 146;
-public constant ErrorID UNBALANCED_CONNECTOR = 147;
-
+public constant ErrorID GENERIC_INST_FUNCTION=145;
+public constant ErrorID WRONG_NO_OF_ARGS=146;
+public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=147;
+public constant ErrorID LOOKUP_FUNCTION_GOT_CLASS=148;
+public constant ErrorID NON_STREAM_OPERAND_IN_STREAM_OPERATOR = 149;
+public constant ErrorID UNBALANCED_CONNECTOR = 150;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -271,6 +273,18 @@ public constant ErrorID META_UNIONTYPE_ALIAS_MODS=5005;
 public constant ErrorID META_COMPLEX_TYPE_MOD=5006;
 public constant ErrorID META_MATCHEXP_RESULT_NUM_ARGS=5007;
 public constant ErrorID META_CEVAL_FUNCTION_REFERENCE=5008;
+public constant ErrorID NON_INSTANTIATED_FUNCTION=5009;
+public constant ErrorID META_UNSOLVED_POLYMORPHIC_BINDINGS=5010;
+public constant ErrorID META_RECORD_FOUND_FAILURE=5011;
+public constant ErrorID META_INVALID_PATTERN=5012;
+public constant ErrorID META_MATCH_INPUT_OUTPUT_NON_CREF=5013;
+public constant ErrorID META_MATCH_GENERAL_FAILURE=5014;
+public constant ErrorID META_CONS_TYPE_MATCH=5015;
+public constant ErrorID META_STRICT_RML_MATCH_IN_OUT=5016;
+public constant ErrorID META_NONE_CREF=5017;
+public constant ErrorID META_INVALID_PATTERN_NAMED_FIELD=5018;
+public constant ErrorID META_INVALID_LOCAL_ELEMENT=5019;
+public constant ErrorID META_INVALID_COMPLEX_TYPE=5020;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -442,6 +456,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Operand of %s in component %s must be builtin-type in %s"),
           (WRONG_TYPE_OR_NO_OF_ARGS,TRANSLATION(),ERROR(),
           "Wrong type or wrong number of arguments to %s (in component %s)"),
+          (WRONG_NO_OF_ARGS,TRANSLATION(),ERROR(),"Wrong number of arguments to %s"),
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s in component %s"),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
@@ -457,7 +472,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ARGUMENT_MUST_BE_VARIABLE,TRANSLATION(),ERROR(),
           "%s argument to %s in component %s must be a variable"),
           (NO_MATCHING_FUNCTION_FOUND,TRANSLATION(),ERROR(),
-          "No matching function found for %s in component %s, candidates are %s"),
+          "No matching function found for %s in component %s\ncandidates are %s"),
           (NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE,TRANSLATION(),ERROR(),
           "No matching function found for %s"),
           (FUNCTION_COMPS_MUST_HAVE_DIRECTION,TRANSLATION(),ERROR(),
@@ -498,9 +513,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
-          (NON_STREAM_OPERAND_IN_STREAM_OPERATOR(), TRANSLATION(), ERROR(),
+          (NON_STREAM_OPERAND_IN_STREAM_OPERATOR, TRANSLATION(), ERROR(),
           "Operand %s to operator %s in component %s is not a stream variable."),
-          (UNBALANCED_CONNECTOR(), TRANSLATION(), WARNING(),
+          (UNBALANCED_CONNECTOR, TRANSLATION(), WARNING(),
           "Connector %s is not balanced: %s"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"),
@@ -527,12 +542,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Using non-standardized function %s in component %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
           "Error, %s"),
-          (ARRAY_INDEX_OUT_OF_BOUNDS(),TRANSLATION(),ERROR(),
+          (ARRAY_INDEX_OUT_OF_BOUNDS,TRANSLATION(),ERROR(),
           "Index out of bounds. Adressing position: %s, while array length is: %s"),
-          (SELF_REFERENCE_EQUATION(),TRANSLATION(), WARNING(),
+          (SELF_REFERENCE_EQUATION,TRANSLATION(), WARNING(),
           "Circular reference with variable \"%s\""),
 /*   ******* INACTIVE FOR NOW
-          (CLASS_NAME_VARIABLE(), TRANSLATION(),ERROR(),
+          (CLASS_NAME_VARIABLE, TRANSLATION(),ERROR(),
           "Declared a variable with name %s while having a class named %s"),
 */
           (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
@@ -581,7 +596,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal derivative. der(%s) in component %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
-          (HIGHER_VARIABILITY_BINDING(),TRANSLATION(),ERROR(),
+          (HIGHER_VARIABILITY_BINDING,TRANSLATION(),ERROR(),
           "Component %s of variability %s has binding %s of higher variability %s."),
           
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
@@ -614,9 +629,22 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has mismatched number of expected (%s) and actual (%s) outputs. The expressions were %s and %s."),
           (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead."),
           (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s)."),
-          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)")
-           
-          
+          (NON_INSTANTIATED_FUNCTION,SYMBOLIC(),ERROR(),"Tried to use function %s, but it was not instantiated."),
+          (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s"),
+          (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n  Input bindings:\n%s\n  Solved bindings:\n%s\n  Unsolved bindings:\n%s"),
+          (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"In metarecord call %s: %s"),
+          (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
+          (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
+          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
+          (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
+          (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s."),
+          (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s."),
+          (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"%s. Strict RML enforces match expression input and output to be the same as the function's."),
+          (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead."),
+          (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s"),
+          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s"),
+          (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s<...>")
+
           };
 
 protected import ErrorExt;
@@ -637,7 +665,7 @@ algorithm _ :=
       filename = fixFilenameForTestsuite(filename);
       ErrorExt.updateCurrentComponent(component,b1,filename,i1,i3,i2,i4);
       then ();
-  case(component,NONE)
+  case(component,NONE())
         equation
       ErrorExt.updateCurrentComponent(component,false,"",-1,-1,-1,-1);
       then ();
@@ -734,7 +762,7 @@ algorithm
       Absyn.Info info;
     
     // we DON'T have an info, add message
-    case (inErrorID,inMessageTokens,NONE)
+    case (inErrorID,inMessageTokens,NONE())
       equation
         addMessage(inErrorID, inMessageTokens);
       then ();

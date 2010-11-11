@@ -42,20 +42,32 @@
 #define snprintf _snprintf
 #endif
 
+extern "C" {
+
 /* Boolean Operations */
-boolAnd_rettype boolAnd(modelica_boolean b1, modelica_boolean b2)
+modelica_metatype boxptr_boolAnd(modelica_metatype b1, modelica_metatype b2)
 {
-  return ((b1 != 0) && b2 != 0 ? 1 : 0);
+  return ((b1 != 0) && (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
 }
 
-boolOr_rettype boolOr(modelica_boolean b1, modelica_boolean b2)
+modelica_metatype boxptr_boolOr(modelica_metatype b1, modelica_metatype b2)
 {
-  return ((b1 != 0) || b2 != 0 ? 1 : 0);
+  return ((b1 != 0) || (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
 }
 
-boolNot_rettype boolNot(modelica_boolean b)
+modelica_metatype boxptr_boolEq(modelica_metatype b1, modelica_metatype b2)
 {
-  return (b == 0 ? 1 : 0);
+  return mmc_mk_icon(b1 == b2);
+}
+
+modelica_metatype boxptr_boolNot(modelica_metatype b)
+{
+  return (b == 0 ? mmc_mk_icon(1) : mmc_mk_icon(0));
+}
+
+modelica_metatype boxptr_boolString(modelica_metatype b)
+{
+  return mmc_mk_scon(boolString(b));
 }
 
 /* Integer Operations */
@@ -246,51 +258,6 @@ realMin_rettype realMin(modelica_real r1, modelica_real r2)
   return r1 < r2 ? r1 : r2;
 }
 
-realAbs_rettype realAbs(modelica_real r)
-{
-  return fabs(r);
-}
-
-realNeg_rettype realNeg(modelica_real r)
-{
-  return -r;
-}
-
-realCos_rettype realCos(modelica_real r)
-{
-  return cos(r);
-}
-
-realSin_rettype realSin(modelica_real r)
-{
-  return sin(r);
-}
-
-realAtan_rettype realAtan(modelica_real r)
-{
-  return atan(r);
-}
-
-realExp_rettype realExp(modelica_real r)
-{
-  return exp(r);
-}
-
-realLn_rettype realLn(modelica_real r)
-{
-  return log(r);
-}
-
-realFloor_rettype realFloor(modelica_real r)
-{
-  return floor(r);
-}
-
-realSqrt_rettype realSqrt(modelica_real r)
-{
-  return sqrt(r);
-}
-
 realLt_rettype realLt(modelica_real r1, modelica_real r2)
 {
   return r1 < r2;
@@ -338,11 +305,65 @@ realString_rettype realString(modelica_real r)
     init_modelica_string(&res, "inf");
   else if (isnan(r))
     init_modelica_string(&res, "NaN");
-  else if (snprintf(buffer, 32, "%.16g", r) <= 0)
-    throw 1;
-  else
+  else {
+    char* endptr;
+    int ix = snprintf(buffer, 32, "%.16g", r);
+    long ignore;
+    if (ix < 0)
+      throw 1;
+    errno = 0;
+    /* If it looks like an integer, we need to append .0 so it looks like real */
+    ignore = strtol(buffer,&endptr,10);
+    if (errno == 0 && *endptr == '\0') {
+      if (ix > 30)
+        throw 1;
+      buffer[ix++] = '.';
+      buffer[ix++] = '0';
+      buffer[ix] = '\0';
+    }
     init_modelica_string(&res, buffer);
+  }
   return res;
+}
+
+modelica_metatype boxptr_realAdd(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)+mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realSub(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)-mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMul(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)*mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realDiv(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1)/mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMod(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(fmod(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
+}
+
+modelica_metatype boxptr_realPow(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(pow(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
+}
+
+modelica_metatype boxptr_realMax(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1) > mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
+}
+
+modelica_metatype boxptr_realMin(modelica_metatype r1, modelica_metatype r2)
+{
+  return mmc_mk_rcon(mmc_prim_get_real(r1) < mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
 }
 
 /* String Character Conversion */
@@ -382,6 +403,76 @@ stringInt_rettype stringInt(modelica_string_t str)
 
   return res;
 }
+/******************** String HASH Functions ********************/
+/*
+ * adrpo 2008-12-02
+ * http://www.cse.yorku.ca/~oz/hash.html
+ * hash functions which could be useful to replace System__hash:
+ */
+/*** djb2 hash ***/
+static inline unsigned long djb2_hash(const unsigned char *str)
+{
+  unsigned long hash = 5381;
+  int c;
+  while (0 != (c = *str++))  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  return hash;
+}
+
+/*** sdbm hash ***/
+static inline unsigned long sdbm_hash(const unsigned char* str)
+{
+  unsigned long hash = 0;
+  int c;
+  while (0 != (c = *str++)) hash = c + (hash << 6) + (hash << 16) - hash;
+  return hash;
+}
+
+/* adrpo: really bad hash :) */
+stringInt_rettype stringHash(modelica_string_const str)
+{
+  long res = 0, i=0;
+  while (0 != (str[i])) { res += str[i]; i++; }
+  return res;
+}
+
+/* adrpo: see the comment above about djb2 hash */
+stringInt_rettype stringHashDjb2(modelica_string_const str)
+{
+  long res = djb2_hash((const unsigned char*)str);
+  return res;
+}
+
+/* adrpo: see the comment above about sdbm hash */
+stringInt_rettype stringHashSdbm(modelica_string_const str)
+{
+  long res = sdbm_hash((const unsigned char*)str);
+  return res;
+}
+
+/******************** BOXED String HASH Functions ********************/
+/* adrpo: really bad hash :) */
+modelica_metatype boxptr_stringHash(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHash(s));
+  return res;
+}
+
+/* adrpo: see the comment above about djb2 hash */
+modelica_metatype boxptr_stringHashDjb2(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHashDjb2(s));
+  return res;
+}
+
+/* adrpo: see the comment above about sdbm hash */
+modelica_metatype boxptr_stringHashSdmb(modelica_metatype str)
+{
+  const char* s = MMC_STRINGDATA(str);
+  modelica_metatype res = mmc_mk_icon(stringHashSdbm(s));
+  return res;
+}
 
 stringListStringChar_rettype stringListStringChar(modelica_string_t str)
 {
@@ -417,35 +508,58 @@ listStringCharString_rettype listStringCharString(modelica_metatype lst)
 stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
-  modelica_string_t res, res_head;
+  modelica_string_t res, res_head, tmp;
   modelica_metatype car, lstHead;
   lstLen = listLength(lst);
   acc = 0;
   lstHead = lst;
   for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
-    acc += MMC_HDRSTRLEN(MMC_GETHDR(MMC_CAR(lst)));
+    tmp = MMC_STRINGDATA(MMC_CAR(lst));
+    acc += strlen(tmp);
   }
-  alloc_modelica_string(&res, acc+1);
+  res = (char*) malloc(acc+1);
   res_head = res;
   lst = lstHead;
   for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
     car = MMC_CAR(lst);
-    len = MMC_HDRSTRLEN(MMC_GETHDR(car));
-    strncpy(res,MMC_STRINGDATA(car),len);
+    tmp = MMC_STRINGDATA(car);
+    len = strlen(tmp);
+    memcpy(res,tmp,len);
     res += len;
   }
   *res = '\0';
   return res_head;
 }
 
-stringAppend_rettype stringAppend(modelica_string_t str1, modelica_string_t str2)
+/* OMC declares this const, but we don't always use it in that manner... */
+stringAppendListExt_rettype stringAppendListExt(modelica_metatype lst)
 {
-  modelica_string_t tmp;
-  cat_modelica_string(&tmp,str1,str2);
-  return tmp;
+  return stringAppendList(lst);
 }
 
-stringLength_rettype stringLength(modelica_string_t str)
+stringAppend_rettype stringAppend(modelica_string_const s1, modelica_string_const s2)
+{
+  int len1 = strlen(s1);
+  int len2 = strlen(s2);
+  char* str = (char*) malloc(len1+len2+1);
+
+  memcpy(str, s1, len1);
+  memcpy(str + len1, s2, len2 + 1);
+  str[len1+len2] = '\0';
+  return str;
+}
+
+modelica_metatype boxptr_stringAppend(modelica_metatype str1, modelica_metatype str2)
+{
+  const char* s1 = MMC_STRINGDATA(str1);
+  const char* s2 = MMC_STRINGDATA(str2);
+  char* str = stringAppend(s1,s2);
+  modelica_metatype res = mmc_mk_scon(str);
+  free(str);
+  return res;
+}
+
+stringLength_rettype stringLength(modelica_string_const str)
 {
   return strlen(str);
 }
@@ -460,7 +574,7 @@ stringCompare_rettype stringCompare(modelica_string_t str1, modelica_string_t st
   return 0;
 }
 
-stringEqual_rettype stringEqual(modelica_string_t str1, modelica_string_t str2)
+stringEq_rettype stringEq(modelica_string_t str1, modelica_string_t str2)
 {
   return 0 == strcmp(str1,str2) ? 1 : 0;
 }
@@ -493,6 +607,11 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, mod
   copy_modelica_string(str, &res);
   res[ix-1] = c[0];
   return res;
+}
+
+modelica_metatype boxptr_stringEq(modelica_metatype str1, modelica_metatype str2)
+{
+  return mmc_mk_icon(stringEq(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2)));
 }
 
 /* List Operations */
@@ -533,7 +652,7 @@ listLength_rettype listLength(modelica_metatype lst)
   return res;
 }
 
-listMember_rettype listMember(modelica_metatype lst, modelica_metatype obj)
+listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {
@@ -729,3 +848,31 @@ void equality(modelica_metatype in1, modelica_metatype in2)
     throw 1;
 }
 
+/* Weird RML crap */
+static modelica_metatype global_roots[1024];
+
+getGlobalRoot_rettype getGlobalRoot(int ix) {
+  return global_roots[ix];
+}
+
+void setGlobalRoot(int ix, modelica_metatype val) {
+  global_roots[ix] = val;
+}
+
+valueConstructor_rettype valueConstructor(modelica_metatype val) {
+  return MMC_HDRCTOR(MMC_GETHDR(val));
+}
+
+modelica_metatype boxptr_getGlobalRoot(modelica_metatype ix) {
+  return global_roots[MMC_UNTAGFIXNUM(ix)];
+}
+
+void boxptr_setGlobalRoot(modelica_metatype ix, modelica_metatype val) {
+  global_roots[MMC_UNTAGFIXNUM(ix)] = val;
+}
+
+modelica_metatype boxptr_valueConstructor(modelica_metatype val) {
+  return mmc_mk_icon(MMC_HDRCTOR(MMC_GETHDR(val)));
+}
+
+}

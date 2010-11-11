@@ -59,15 +59,16 @@ public type Algorithm = DAE.Algorithm;
 public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
-protected import RTOpts;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionDump;
 protected import Print;
+protected import RTOpts;
 protected import Types;
 protected import Util;
-protected import System;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -158,8 +159,8 @@ algorithm
     case (lhs,lprop,rhs,rprop,_,initial_,source)
       equation
         DAE.C_CONST() = Types.propAnyConst(lprop);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -168,7 +169,7 @@ algorithm
     case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
-        true = Exp.isRecord(cr);
+        true = ComponentReference.isRecord(cr);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
@@ -176,16 +177,16 @@ algorithm
     case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     /* assignment to a constant, report error */
     case (lhs,_,rhs,_,SCode.RO(),_,source)
       equation
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -209,8 +210,8 @@ algorithm
         lt = Types.getPropType(lprop);
         rt = Types.getPropType(rprop);
         false = Types.equivtypes(lt, rt);
-        lhs_str = Exp.printExpStr(lhs);
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        rhs_str = ExpressionDump.printExpStr(rhs);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -223,9 +224,9 @@ algorithm
       equation
         Print.printErrorBuf("- Algorithm.makeAssignment failed\n");
         Print.printErrorBuf("    ");
-        Print.printErrorBuf(Exp.printExpStr(lhs));
+        Print.printErrorBuf(ExpressionDump.printExpStr(lhs));
         Print.printErrorBuf(" := ");
-        Print.printErrorBuf(Exp.printExpStr(rhs));
+        Print.printErrorBuf(ExpressionDump.printExpStr(rhs));
         Print.printErrorBuf("\n");
       then
         fail();
@@ -242,9 +243,12 @@ protected function makeAssignment2
   output Statement outStatement;
 algorithm
   outStatement := matchcontinue(lhs,lhprop,rhs,rhprop,source)
-    local DAE.ComponentRef c;
+    local
+      DAE.ComponentRef c;
       DAE.ExpType crt,t;
       DAE.Exp rhs_1,e3,e1;
+      DAE.Type ty;
+      list<DAE.Exp> ea2;
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
@@ -252,7 +256,7 @@ algorithm
         t = getPropExpType(lhprop);
       then
         DAE.STMT_ASSIGN(t,DAE.CREF(c,crt),rhs_1,source);
-        /* TODO: Use this when we have fixed states in DAELow .lower(...)
+        /* TODO: Use this when we have fixed states in BackendDAE .lower(...)
         case (e1 as DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
@@ -262,7 +266,6 @@ algorithm
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
-      local DAE.Type ty;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
@@ -272,7 +275,6 @@ algorithm
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
 
     case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop,source)
-      local list<DAE.Exp> ea2;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
@@ -292,18 +294,17 @@ public function makeAssignmentsList
   input DAE.ElementSource source;
   output list<Statement> assignments;
 algorithm
-  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps,
-      accessibility, initial_, source)
+  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps, accessibility, initial_, source)
+    local
+      DAE.Exp lhs, rhs;
+      list<DAE.Exp> rest_lhs, rest_rhs;
+      DAE.Properties lhs_prop, rhs_prop;
+      list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
+      DAE.Statement ass;
+      list<DAE.Statement> rest_ass;
     case ({}, {}, {}, {}, _, _, _) then {};
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
-      local
-        DAE.Exp lhs, rhs;
-        list<DAE.Exp> rest_lhs, rest_rhs;
-        DAE.Properties lhs_prop, rhs_prop;
-        list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
-        DAE.Statement ass;
-        list<DAE.Statement> rest_ass;
       equation
         ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source); 
         rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);
@@ -341,10 +342,10 @@ algorithm
       equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = stringAppendList({"(",s,")"});
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -352,10 +353,10 @@ algorithm
       equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = stringAppendList({"(",s,")"});
+        rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -383,10 +384,10 @@ algorithm
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
         true = RTOpts.debugFlag("failtrace");
-        sl = Util.listMap(lhs, Exp.printExpStr);
+        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
-        lhs_str = System.stringAppendList({"(",s,")"});
-        rhs_str = Exp.printExpStr(rhs);
+        lhs_str = stringAppendList({"(",s,")"});
+        rhs_str = ExpressionDump.printExpStr(rhs);
         str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCode.printInitialStr(initial_);
@@ -465,7 +466,7 @@ algorithm
         DAE.STMT_IF(e,tb,else_,source);
     case (e,DAE.PROP(type_ = t),_,_,_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -498,7 +499,7 @@ algorithm
         DAE.ELSEIF(e,b,else_);
     case (((e,DAE.PROP(type_ = t),_) :: _),_)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
       then
@@ -533,7 +534,7 @@ algorithm
         DAE.STMT_FOR(et,array,i,e,stmts,source);
     case (_,e,DAE.PROP(type_ = t),_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -560,7 +561,7 @@ algorithm
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
     case (e,DAE.PROP(type_ = t),_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -590,7 +591,7 @@ algorithm
     case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = t),_,_,source)
       equation
-        e_str = Exp.printExpStr(e);
+        e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addSourceMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str,t_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -658,7 +659,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
 output list<DAE.ComponentRef> crs;
 algorithm
-  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Exp.getCrefFromExp),Exp.crefEqual);
+  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Expression.extractCrefsFromExp),ComponentReference.crefEqual);
 end getCrefFromAlg;
 
 
@@ -685,377 +686,25 @@ end getAllExps;
 
 public function getAllExpsStmts "function: getAllExpsStmts
 
-  This function takes a list of statements and returns all expressions
+  This function takes a list of statements and returns all expressions and subexpressions
   in all statements.
 "
   input list<Statement> stmts;
   output list<DAE.Exp> exps;
-  list<list<DAE.Exp>> expslist;
 algorithm
-  expslist := Util.listMap(stmts, getAllExpsStmt);
-  exps := Util.listFlatten(expslist);
+  (_,exps) := DAEUtil.traverseDAEEquationsStmts(stmts,getAllExpsStmtsCollector,{});
 end getAllExpsStmts;
 
-protected function getAllExpsStmt "function: getAllExpsStmt
-  Returns all expressions in a statement."
-  input Statement inStatement;
-  output list<DAE.Exp> outExpExpLst;
+function getAllExpsStmtsCollector
+  input tuple<DAE.Exp,list<DAE.Exp>> itpl;
+  output tuple<DAE.Exp,list<DAE.Exp>> otpl;
 algorithm
-  outExpExpLst:=
-  matchcontinue (inStatement)
-    local
-      DAE.Exp crexp,exp,e1,e2;
-      DAE.ExpType expty;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
-      list<Statement> stmts;
-      Else else_;
-      Boolean flag;
-      Ident id;
-      Statement elsew;
-      Absyn.Path fname;
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp)
-      equation
-        crexp = crefToExp(cr);
-      then
-        {crexp,exp};
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp)
-      local list<DAE.Exp> ea2;
-      equation
-      then
-        {e2,exp};
-    case DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp)
-      equation
-        exps = listAppend(explist, {exp});
-      then
-        exps;
-    case DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
-      equation
-        crexp = crefToExp(cr);
-      then
-        {crexp,exp};
-    case DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_)
-      equation
-        exps1 = getAllExpsStmts(stmts);
-        elseexps = getAllExpsElse(else_);
-        exps = listAppend(exps1, elseexps);
-      then
-        (exp :: exps);
-    case DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHILE(exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
-      equation
-				exps1 = getAllExpsStmt(elsew);
-        exps = list_append(getAllExpsStmts(stmts),exps1);
-      then
-        (exp :: exps);
-    case DAE.STMT_WHEN(exp = exp,statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        (exp :: exps);
-    case DAE.STMT_ASSERT(cond = e1,msg= e2) then {e1,e2};
-    case DAE.STMT_BREAK(source = _) then {};
-    case DAE.STMT_RETURN(source = _) then {};
-    case DAE.STMT_THROW(source = _) then {};
-    case DAE.STMT_TRY(tryBody = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-    case DAE.STMT_CATCH(catchBody = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-
-    case DAE.STMT_NORETCALL(exp = e1) then {e1};
-
-    case(DAE.STMT_REINIT(var = e1, value = e2)) then {e1,e2};
-
-    case(DAE.STMT_MATCHCASES(caseStmt = exps)) then exps;
-
-    case _
-      equation
-        Debug.fprintln("failtrace", "- Algorithm.getAllExpsStmt failed");
-      then
-        fail();
-  end matchcontinue;
-end getAllExpsStmt;
-
-protected function getAllExpsElse "function: getAllExpsElse
-  Helper function to getAllExpsStmt."
-  input Else inElse;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inElse)
-    local
-      list<DAE.Exp> exps1,elseexps,exps;
-      DAE.Exp exp;
-      list<Statement> stmts;
-      Else else_;
-    case DAE.NOELSE() then {};
-    case DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_)
-      equation
-        exps1 = getAllExpsStmts(stmts);
-        elseexps = getAllExpsElse(else_);
-        exps = listAppend(exps1, elseexps);
-      then
-        (exp :: exps);
-    case DAE.ELSE(statementLst = stmts)
-      equation
-        exps = getAllExpsStmts(stmts);
-      then
-        exps;
-  end matchcontinue;
-end getAllExpsElse;
-
-protected function crefToExp "function: crefToExp
-  Creates an expression from a ComponentRef.
-  The type of the expression will become DAE.ET_OTHER."
-  input DAE.ComponentRef inComponentRef;
-  output DAE.Exp outExp;
-algorithm
-  outExp:=
-  matchcontinue (inComponentRef)
-    local DAE.ComponentRef cref;
-    case cref then DAE.CREF(cref,DAE.ET_OTHER());
-  end matchcontinue;
-end crefToExp;
-
-
-public function traverseExps "function: traverseExps
-
-  This function goes through the Algorithm structure and finds all the
-  expressions and performs the function on them
-"
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
-  input Algorithm inAlgorithm;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;
-algorithm
-  outTypeBLst:=
-  matchcontinue (inAlgorithm,func,inTypeA)
-    local
-      list<Type_b> talst;
-      list<Statement> stmts;
-    case (DAE.ALGORITHM_STMTS(statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-  end matchcontinue;
-end traverseExps;
-
-protected function traverseExpsStmts "function: traverseExps
-
-  helper for traverseExps.
-"
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;
-  input list<Statement> stmts;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType; 
-algorithm
-  outTypeBLst := Util.listMapFlat2(stmts, traverseExpsStmt, func, inTypeA);
-end traverseExpsStmts;
-
-protected function traverseExpsStmt "function: traverseExpsStmt
-  Helper for traverseExpsStmt."
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
-  input Statement inStatement;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;  
-algorithm
-  outTypeBLst:=
-  matchcontinue (inStatement,func,inTypeA)
-    local
-      DAE.Exp crexp,exp,e1,e2;
-      DAE.ExpType expty;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
-      list<Statement> stmts;
-      Else else_;
-      Boolean flag;
-      Ident id;
-      Statement elsew;
-      Absyn.Path fname;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp),func,inTypeA)
-      equation
-        crexp = crefToExp(cr);
-        talst = func(crexp,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2; 
-    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp),func,inTypeA)
-      local list<DAE.Exp> ea2;
-      equation
-        talst = func(e2,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;  
-    case (DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp),func,inTypeA)
-      equation
-        exps = listAppend(explist, {exp});
-        talst = Util.listMapFlat1(exps,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp),func,inTypeA)
-      equation
-        crexp = crefToExp(cr);
-        talst = func(crexp,inTypeA);
-        talst1 = func(exp,inTypeA); 
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;  
-    case (DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsElse(else_,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_WHILE(exp = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew)),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsStmt(elsew,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-        talst1 = func(exp,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-      then talst2;
-    case (DAE.STMT_ASSERT(cond = e1,msg= e2),func,inTypeA)
-      equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA); 
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;    
-    case (DAE.STMT_BREAK(source = _),_,_) then {};
-    case (DAE.STMT_RETURN(source = _),_,_) then {};
-    case (DAE.STMT_THROW(source = _),_,_) then {};
-    case (DAE.STMT_TRY(tryBody = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_CATCH(catchBody = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
-    case (DAE.STMT_NORETCALL(exp = e1),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-      then talst; 
-    case(DAE.STMT_REINIT(var = e1, value = e2),func,inTypeA) 
-      equation
-        talst = func(e1,inTypeA);
-        talst1 = func(e2,inTypeA);
-        talst2 = listAppend(talst,talst1);
-      then
-        talst2;
-    case(DAE.STMT_MATCHCASES(caseStmt = exps),func,inTypeA)
-      equation
-        talst = Util.listMapFlat1(exps,func,inTypeA);
-      then
-        talst;
-    case (_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- Algorithm.traverseExpsStmt failed");
-      then
-        fail();
-  end matchcontinue;
-end traverseExpsStmt;
-
-protected function traverseExpsElse "function: traverseExpsElse
-  Helper function to traverseExpsStmt."
-  replaceable type Type_a subtypeof Any;  
-  replaceable type Type_b subtypeof Any;  
-  input Else inElse;
-  input FuncExpType func;
-  input Type_a inTypeA; 
-  output list<Type_b> outTypeBLst;
-  partial function FuncExpType
-    input DAE.Exp inExp;
-    input Type_a inTypeA;
-    output list<Type_b> outTypeB;
-  end FuncExpType;   
-algorithm
-  outTypeBLst:=
-  matchcontinue (inElse,func,inTypeA)
+  otpl := matchcontinue itpl
     local
       DAE.Exp exp;
-      list<Statement> stmts;
-      Else else_;
-      list<Type_b> talst,talst1,talst2,talst3,talst4;
-    case (DAE.NOELSE(),_,_) then {};
-    case (DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_),func,inTypeA)
-      equation
-        talst = func(exp,inTypeA);
-        talst1 = traverseExpsStmts(stmts,func,inTypeA);
-        talst2 = listAppend(talst,talst1);  
-        talst3 = traverseExpsElse(else_,func,inTypeA);
-        talst4 = listAppend(talst2,talst3);  
-      then talst4;
-    case (DAE.ELSE(statementLst = stmts),func,inTypeA)
-      equation
-        talst = traverseExpsStmts(stmts,func,inTypeA);
-      then
-        talst;
+      list<DAE.Exp> inExps;
+    case ((exp,inExps)) then Expression.traverseExp(exp,Expression.expressionCollector,inExps);
   end matchcontinue;
-end traverseExpsElse;
-
+end getAllExpsStmtsCollector;
 
 end Algorithm;
-

@@ -258,7 +258,7 @@ match simVar
   >>  
 end ScalarVariableAttribute;
 
-template getVariablity(DAELow.VarKind varKind)
+template getVariablity(VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."
 ::=
 match varKind

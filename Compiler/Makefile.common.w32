@@ -4,7 +4,6 @@ SRCMO= Absyn.mo \
 	Builtin.mo \
 	Ceval.mo \
 	CevalScript.mo \
-	Cevalfunc.mo \
 	ClassInf.mo \
 	ClassLoader.mo \
 	Connect.mo \

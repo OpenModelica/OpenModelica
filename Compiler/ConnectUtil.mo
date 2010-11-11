@@ -30,11 +30,11 @@
  */
 
 package ConnectUtil
-" file:	 ConnectUtil.mo
-  package:      ConnectUtil
+" file:        ConnectUtil.mo
+  package:     ConnectUtil
   description: Connection set management
 
-  RCS: $Id: ConnectUtil.mo 4762 2010-01-11 03:41:52Z adrpo $
+  RCS: $Id$
 
   Connections generate connection sets (datatype SET is described in Connect)
   which are constructed during instantiation.  When a connection
@@ -45,33 +45,123 @@ package ConnectUtil
   creation of all connect-equations later passed to the DAE module
   in DAEUtil.mo."
 
+// public imports
 public import Absyn;
+public import ClassInf;
 public import Connect;
 public import DAE;
 public import Env;
 public import InnerOuter;
 public import Prefix;
-public import ClassInf;
-public import ConnectionGraph;
 
-protected import Exp;
+// protected imports
+protected import ComponentReference;
 protected import DAEUtil;
-protected import Static;
-protected import Lookup;
-protected import Print;
-protected import Util;
-protected import Types;
 protected import Debug;
-protected import Error;
 protected import Dump;
+protected import Error;
+protected import Expression;
+protected import Lookup;
 protected import PrefixUtil;
+protected import Print;
 protected import RTOpts;
-protected import System;
+protected import SCode;
+protected import Static;
+protected import Types;
+protected import Util;
 
 public
-type Env     = Env.Env;
 type AvlTree = Env.AvlTree;
 type Cache   = Env.Cache;
+
+protected function setConnectSets
+  "Sets the connection set part of a Connect.Sets."
+  input Connect.Sets inCS;
+  input list<Connect.Set> inSets;
+  output Connect.Sets outCS;
+
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(_, c, d, o, sf) := inCS;
+  outCS := Connect.SETS(inSets, c, d, o, sf);
+end setConnectSets;
+
+protected function addConnectSet
+  "Adds a connection set to a Connect.Sets."
+  input Connect.Sets inCS;
+  input Connect.Set inSet;
+  output Connect.Sets outCS;
+  
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(sl, c, d, o, sf) := inCS;
+  outCS := Connect.SETS(inSet :: sl, c, d, o, sf);
+end addConnectSet;
+
+public function setOuterConnects
+  "Sets the outer connect part of a Connect.Sets."
+  input Connect.Sets inCS;
+  input list<Connect.OuterConnect> inOuterConnects;
+  output Connect.Sets outCS;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(sl, c, d, _, sf) := inCS;
+  outCS := Connect.SETS(sl, c, d, inOuterConnects, sf);
+end setOuterConnects;
+
+public function addOuterConnect
+  "Adds an outer connect to a Connect.Sets."
+  input Connect.Sets inCS;
+  input Connect.OuterConnect inOuterConnect;
+  output Connect.Sets outCS;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(sl, c, d, o, sf) := inCS;
+  outCS := Connect.SETS(sl, c, d, inOuterConnect :: o, sf);
+end addOuterConnect;
+
+public function setConnectionCrefs
+  "Sets the connection part of a Connect.Sets."
+  input Connect.Sets inCS;
+  input list<DAE.ComponentRef> inConnectionCrefs;
+  output Connect.Sets outCS;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(sl, _, d, o, sf) := inCS;
+  outCS := Connect.SETS(sl, inConnectionCrefs, d, o, sf);
+end setConnectionCrefs;
+
+public function addConnectionCrefs
+  "Adds a list of connection crefs to a Connect.Sets."
+  input Connect.Sets inCS;
+  input list<DAE.ComponentRef> inConnectionCrefs;
+  output Connect.Sets outCS;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(sl, c, d, o, sf) := inCS;
+  c := listAppend(inConnectionCrefs, c);
+  outCS := Connect.SETS(sl, c, d, o, sf);
+end addConnectionCrefs;
 
 public function addDeletedComponent
   "Adds a conditional component with condition = false to the connection sets,
@@ -79,15 +169,14 @@ public function addDeletedComponent
   input DAE.ComponentRef component;
   input Connect.Sets inSets;
   output Connect.Sets outSets;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
 algorithm
-  outSets := matchcontinue(component, inSets)
-    local
-      list<Connect.Set> setLst;
-      list<DAE.ComponentRef> crs, deletedComps;
-      list<Connect.OuterConnect> outerConn;
-    case (_, Connect.SETS(setLst, crs, deletedComps, outerConn))
-      then Connect.SETS(setLst, crs, component :: deletedComps, outerConn);
-  end matchcontinue;
+  Connect.SETS(sl, c, d, o, sf) := inSets;
+  outSets := Connect.SETS(sl, c, component :: d, o, sf);
 end addDeletedComponent;
 
 protected function isDeletedComponent
@@ -104,7 +193,7 @@ algorithm
     case (_, {}) then false;
     case (_, c :: _)
       equation
-        true = Exp.crefPrefixOf(c, component);
+        true = ComponentReference.crefPrefixOf(c, component);
       then
         true;
     case (_, _ :: rest)
@@ -164,14 +253,17 @@ algorithm
       list<Connect.Set> ss;
       list<DAE.ComponentRef> crs,dc;
       list<Connect.OuterConnect> oc;
+      Connect.OuterConnect new_oc;
     // First check if already added
-    case(scope,sets as Connect.SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2,_)
+    case(scope, Connect.SETS(outerConnects = oc),cr1,cr2,io1,io2,f1,f2,_)
       equation
         _::_ = Util.listSelect2(oc,cr1,cr2,outerConnectionMatches);
       then sets;
     // add the outerconnect
-    case(scope,Connect.SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2,source)
-      then Connect.SETS(ss,crs,dc,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::oc);
+    case(scope,_,cr1,cr2,io1,io2,f1,f2,source)
+      equation
+        new_oc = Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
+      then addOuterConnect(sets, new_oc);
   end matchcontinue;
 end addOuterConnection;
 
@@ -186,8 +278,8 @@ algorithm
     case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) 
       equation
         matches =
-        Exp.crefEqual(cr11,cr1) and Exp.crefEqual(cr22,cr2) or
-        Exp.crefEqual(cr11,cr2) and Exp.crefEqual(cr22,cr1);
+        ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
+        ComponentReference.crefEqual(cr11,cr2) and ComponentReference.crefEqual(cr22,cr1);
       then matches;
   end matchcontinue;
 end outerConnectionMatches;
@@ -212,9 +304,9 @@ the connection should be added to the set, resulting in
 algorithm
   (outSetLst,outCrs,added) := matchcontinue(cr1,cr2,io1,io2,f1,f2,setLst,inCrs)
   local
-    list<tuple<DAE.ComponentRef,DAE.ElementSource>> crs;
-    list<tuple<DAE.ComponentRef,Connect.Face,DAE.ElementSource>> fcrs;
-    list<tuple<DAE.ComponentRef,Option<DAE.ComponentRef>,Connect.Face,DAE.ElementSource>> scrs;
+    list<Connect.EquSetElement> crs;
+    list<Connect.FlowSetElement> fcrs;
+    list<Connect.StreamSetElement> scrs;
     Connect.Set set; Boolean added2;
 
     case(cr1,cr2,io1,io2,f1,f2,{},inCrs) then ({},inCrs,false);
@@ -271,7 +363,7 @@ protected function addOuterConnectToSets22 "help function to addOuterconnectToSe
 algorithm
   (outCrs,outCrs2,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,crs,inCrs)
     local
-      DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
+      DAE.ComponentRef outerCr,connectorCr,newCr;
       DAE.ElementSource src;
 
     case(cr1,cr2,true,true,crs,inCrs)
@@ -282,15 +374,15 @@ algorithm
     case(cr1,cr2,true,false,crs,inCrs)
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr1,crefTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,crs,inCrs)
       equation
         (outerCr,src)::_ = Util.listSelect1(crs,cr2,crefTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
       then ((newCr,src)::crs,inCrs,true);
 
     case(cr1,cr2,_,_,crs,inCrs) then (crs,inCrs,false);
@@ -334,9 +426,9 @@ protected function addOuterConnectToSets33 "help function to addOuterconnectToSe
   output list<Connect.Set> outSets;
   output Boolean added;
 algorithm
-  (outCrs,outCrs2,added,outSets) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs,inSets)
+  (outCrs,outCrs2,outSets,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs,inSets)
     local
-      DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
+      DAE.ComponentRef outerCr,connectorCr,newCr;
       DAE.ElementSource src;
       list<Connect.Set> sets;
 
@@ -348,16 +440,16 @@ algorithm
     case(cr1,cr2,true,false,f1,f2,crs,inCrs,_)
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr1,flowTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f2, inSets);
       then ((newCr,f2,src)::crs,inCrs,sets,true);
 
     case(cr1,cr2,false,true,f1,f2,crs,inCrs,_)
       equation
         (outerCr,_,src)::_ = Util.listSelect1(crs,cr2,flowTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
         sets = removeUnconnectedFlowVariable(newCr, f1, inSets);
       then ((newCr,f1,src)::crs,inCrs,sets,true);
 
@@ -400,9 +492,8 @@ protected function addOuterConnectToSets44 "help function to addOuterconnectToSe
 algorithm
   (outCrs,outCrs2,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs)
     local
-      DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
+      DAE.ComponentRef outerCr,connectorCr,newCr, outerCrFlow;
       DAE.ElementSource src;
-      Option<DAE.ComponentRef> outerCrFlowOpt;
 
     case(cr1,cr2,true,true,f1,f2,crs,inCrs)
       equation
@@ -411,17 +502,17 @@ algorithm
 
     case(cr1,cr2,true,false,f1,f2,crs,inCrs)
       equation
-        (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr1,streamTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
-        newCr = Exp.joinCrefs(cr2,connectorCr);        
-      then ((newCr,NONE(),f2,src)::crs,inCrs,true);
+        (outerCr,outerCrFlow,_,src)::_ = Util.listSelect1(crs,cr1,streamTuplePrefixOf);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr1);
+        newCr = ComponentReference.joinCrefs(cr2,connectorCr);        
+      then ((newCr,outerCrFlow,f2,src)::crs,inCrs,true);
 
     case(cr1,cr2,false,true,f1,f2,crs,inCrs)
       equation
-        (outerCr,outerCrFlowOpt,_,src)::_ = Util.listSelect1(crs,cr2,streamTuplePrefixOf);
-        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
-        newCr = Exp.joinCrefs(cr1,connectorCr);
-      then ((newCr,NONE(),f1,src)::crs,inCrs,true);
+        (outerCr,outerCrFlow,_,src)::_ = Util.listSelect1(crs,cr2,streamTuplePrefixOf);
+        connectorCr = ComponentReference.crefStripPrefix(outerCr,cr2);
+        newCr = ComponentReference.joinCrefs(cr1,connectorCr);
+      then ((newCr,outerCrFlow,f1,src)::crs,inCrs,true);
 
     case(cr1,cr2,_,_,_,_,crs,inCrs) then (crs,inCrs,false);
   end matchcontinue;
@@ -446,7 +537,6 @@ public function addEqu "function: addEqu
   input DAE.ElementSource source "the origin of the element";
   output Connect.Sets ss_1;
   Connect.Set s1,s2;
-  Connect.Sets ss_1;
 algorithm
   s1 := findEquSet(ss, r1, source);
   s2 := findEquSet(ss, r2, source);
@@ -464,7 +554,6 @@ public function addFlow "function: addFlow
   input DAE.ElementSource source "the element origin";
   output Connect.Sets ss_1;
   Connect.Set s1,s2;
-  Connect.Sets ss_1;
 algorithm
   s1 := findFlowSet(ss, r1, d1, source);
   s2 := findFlowSet(ss, r2, d2, source);
@@ -480,22 +569,22 @@ public function addArrayFlow "function: addArrayFlow
   input Connect.Face d2;
   input Integer dsize;
   input DAE.ElementSource source "the element origin";
-  output Connect.Sets ss_1;
+  output Connect.Sets outSets;
   Connect.Set s1,s2;
   Connect.Sets ss_1;
 algorithm
   outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
     local
-      Connect.Sets s,ss_1,ss_2,ss;
-      DAE.ComponentRef r1_1,r2_1,r1,r2;
+      Connect.Sets s,ss_1,ss_2;
+      DAE.ComponentRef r1_1,r2_1;
       Integer i_1,i;
       Connect.Set s1,s2;
 
     case (s,_,_,_,_,0,source) then s;
     case (ss,r1,d1,r2,d2,i,source)
       equation
-        r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
+        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
+        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
         s1 = findFlowSet(ss, r1_1, d1, source);
         s2 = findFlowSet(ss, r2_1, d2, source);
@@ -515,27 +604,23 @@ public function addFlowVariable
   output Connect.Sets outCS;
 algorithm
   outCS := matchcontinue(inCS, inCref, inFace, inSource)
+    local
+      list<Connect.Set> sl;
+      Connect.Set flow_set;
+    
     // If the variable has already been added, do nothing.
     case (Connect.SETS(setLst = sl as _ :: _), _, _, _)
-      local
-        list<Connect.Set> sl;
       equation
         failure(_ = Util.listMap2(sl, checkSet, inCref, inFace));
       then
         inCS;
 
     // Otherwise, create a new flow set and add it to the sets.
-    case (Connect.SETS(setLst = sl, connection = c, deletedComponents = d,
-        outerConnects = o), _, _, _)
-      local
-        list<Connect.Set> sl;
-        list<DAE.ComponentRef> c, d;
-        list<Connect.OuterConnect> o;
-        Connect.Set flow_set;
+    else
       equation
         flow_set = newFlowSet(inCref, inFace, inSource);
       then
-        Connect.SETS(flow_set :: sl, c, d, o);
+        addConnectSet(inCS, flow_set);
   end matchcontinue;
 end addFlowVariable;
 
@@ -548,19 +633,77 @@ public function checkSet
   output Connect.Set outSet;
 algorithm
   outSet := matchcontinue(inSet, inComponentRef, inFace)
+    local 
+      list<Connect.FlowSetElement> cs;  
+    
     case (Connect.FLOW(tplExpComponentRefFaceLst = cs), _, _)
-      local list<Connect.FlowSetElement> cs;
       equation
         failure(findInSetFlow(cs, inComponentRef, inFace));
       then
         inSet;
+    
     case (Connect.EQU(expComponentRefLst = _), _, _) then inSet;
+    
     case (Connect.STREAM(tplExpComponentRefFaceLst = _), _, _) then inSet;
   end matchcontinue;
 end checkSet;
 
+public function addStreamFlowAssociation
+  "Adds an association between a stream variable and a flow."
+  input DAE.ComponentRef inStreamCref;
+  input DAE.ComponentRef inFlowCref;
+  input Connect.Sets inSets;
+  output Connect.Sets outSets;
+
+  list<Connect.Set> sl;
+  list<DAE.ComponentRef> c, d;
+  list<Connect.OuterConnect> o;
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  outSets := matchcontinue(inStreamCref, inFlowCref, inSets)
+
+    // Association already added.
+    case (_, _, _)
+      equation
+        _ = getStreamFlowAssociation(inStreamCref, inSets);
+      then
+        inSets;
+
+    // Add a new association.
+    case (_, _, Connect.SETS(sl, c, d, o, sf))
+      then Connect.SETS(sl, c, d, o, (inStreamCref, inFlowCref) :: sf);
+  end matchcontinue;
+end addStreamFlowAssociation;
+
+public function getStreamFlowAssociation
+  "Returns the flow variable that is associated with a stream varible, or
+  fails."
+  input DAE.ComponentRef inStreamCref;
+  input Connect.Sets inSets;
+  output DAE.ComponentRef outFlowCref;
+
+  list<Connect.StreamFlowConnect> sf;
+algorithm
+  Connect.SETS(streamFlowConnects = sf) := inSets;
+  ((_, outFlowCref)) := Util.listGetMemberOnTrue(inStreamCref, sf,
+    streamFlowConnectEqual);
+end getStreamFlowAssociation;
+
+protected function streamFlowConnectEqual
+  "Helper function to getStreamFlowAssociation, checks if the stream cref
+  matches the cref in the StreamFlowConnect tuple."
+  input DAE.ComponentRef inStreamCref;
+  input Connect.StreamFlowConnect inStreamFlowConnect;
+  output Boolean isEqual;
+
+  DAE.ComponentRef stream_cr;
+algorithm
+  (stream_cr, _) := inStreamFlowConnect;
+  isEqual := ComponentReference.crefEqualNoStringCompare(stream_cr, inStreamCref);
+end streamFlowConnectEqual;
+
 public function addStream "function: addStream
-  Adds an flow equation, see addEqu above."
+  Adds an stream equation, see addEqu above."
   input Connect.Sets ss;
   input DAE.ComponentRef r1;
   input Connect.Face d1;
@@ -568,11 +711,14 @@ public function addStream "function: addStream
   input Connect.Face d2;
   input DAE.ElementSource source "the element origin";
   output Connect.Sets ss_1;
+
   Connect.Set s1,s2;
-  Connect.Sets ss_1;
+  DAE.ComponentRef f1, f2;
 algorithm
-  s1 := findStreamSet(ss, r1, d1, source);
-  s2 := findStreamSet(ss, r2, d2, source);
+  f1 := getStreamFlowAssociation(r1, ss);
+  f2 := getStreamFlowAssociation(r2, ss);
+  s1 := findStreamSet(ss, r1, f1, d1, source);
+  s2 := findStreamSet(ss, r2, f2, d2, source);
   ss_1 := merge(ss, s1, s2);
 end addStream;
 
@@ -585,26 +731,22 @@ public function addArrayStream "function: addArrayStream
   input Connect.Face d2;
   input Integer dsize;
   input DAE.ElementSource source "the element origin";
-  output Connect.Sets ss_1;
-  Connect.Set s1,s2;
-  Connect.Sets ss_1;
+  output Connect.Sets outSets;
 algorithm
   outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
     local
-      Connect.Sets s,ss_1,ss_2,ss;
-      DAE.ComponentRef r1_1,r2_1,r1,r2;
+      Connect.Sets s,ss_1,ss_2;
+      DAE.ComponentRef r1_1,r2_1;
       Integer i_1,i;
       Connect.Set s1,s2;
 
     case (s,_,_,_,_,0,source) then s;
     case (ss,r1,d1,r2,d2,i,source)
       equation
-        r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
+        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
+        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
-        s1 = findStreamSet(ss, r1_1, d1, source);
-        s2 = findStreamSet(ss, r2_1, d2, source);
-        ss_1 = merge(ss, s1, s2);
+        ss_1 = addStream(ss, r1_1, d1, r2_1, d2, source);
         ss_2 = addArrayStream(ss_1, r1, d1, r2, d2, i_1, source);
       then
         ss_2;
@@ -631,7 +773,7 @@ algorithm
     case (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
       equation
         expSubs = generateSubscriptList(dimensions);
-        subSubs = Util.listListMap(expSubs,Exp.makeIndexSubscript);
+        subSubs = Util.listListMap(expSubs,Expression.makeIndexSubscript);
         outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs,source);
       then
        outSets;
@@ -659,8 +801,8 @@ algorithm
     case (s,_,_,{},_) then s;
     case (ss,r1,r2,dims::restDims,source)
       equation
-        r1_1 = Exp.replaceCrefSliceSub(r1,dims);
-        r2_1 = Exp.replaceCrefSliceSub(r2,dims);
+        r1_1 = ComponentReference.replaceCrefSliceSub(r1,dims);
+        r2_1 = ComponentReference.replaceCrefSliceSub(r2,dims);
         s1 = findEquSet(ss, r1_1, source);
         s2 = findEquSet(ss, r2_1, source);
         ss_1 = merge(ss, s1, s2);
@@ -703,20 +845,20 @@ algorithm
     local
       list<DAE.Exp> exp_indices;
       list<list<DAE.Exp>> res;
+      Integer i;
+      list<Integer> indices;
+      Absyn.Path name;
+      list<String> l;
+      list<DAE.Exp> el;
+    
     case DAE.DIM_INTEGER(integer = i)
-      local 
-        Integer i;
-        list<Integer> indices;
       equation
         indices = Util.listIntRange(i);
-        res = Util.listMap(Util.listMap(indices, Exp.makeIntegerExp), Util.listCreate);
+        res = Util.listMap(Util.listMap(indices, Expression.makeIntegerExp), Util.listCreate);
       then
         res;
+    
     case DAE.DIM_ENUM(enumTypeName = name, literals = l)
-      local
-        Absyn.Path name;
-        list<String> l;
-        list<DAE.Exp> el;
       equation
         (DAE.ARRAY(array = el), _) = Static.makeEnumerationArray(name, l);
         res = Util.listMap(el, Util.listCreate);
@@ -730,25 +872,29 @@ Helper function for generateSubscriptList, merges recursive dimensions with curr
   input list<list<DAE.Exp>> curr;
   input list<list<DAE.Exp>> Indexies;
   output list<list<DAE.Exp>> oIndexies;
-algorithm oIndexies := matchcontinue(curr,Indexies)
-  local
-    list<DAE.Exp> il;
-    list<list<DAE.Exp>> ill,merged;
-  case(_,{}) then {};
-  case(curr,(il as (_ :: (_ :: _)))::ill)
-    equation
-      ill = mergeCurrentWithRestIndexies(curr,ill);
-      merged = Util.listMap1(curr,Util.listAppendr,il);
-      merged = listAppend(merged,ill);
+algorithm 
+  oIndexies := matchcontinue(curr,Indexies)
+    local
+      list<DAE.Exp> il;
+      list<list<DAE.Exp>> ill,merged;
+  
+    case(_,{}) then {};
+  
+    case(curr,(il as (_ :: (_ :: _)))::ill)
+      equation
+        ill = mergeCurrentWithRestIndexies(curr,ill);
+        merged = Util.listMap1(curr,Util.listAppendr,il);
+        merged = listAppend(merged,ill);
       then
         merged;
-  case(curr,(il as {_})::ill)
-    equation
-      ill = mergeCurrentWithRestIndexies(curr,ill);
-      merged = Util.listMap1(curr,Util.listAppendr,il);
-      merged = listAppend(merged,ill);
-    then
-      merged;
+    
+    case(curr,(il as {_})::ill)
+      equation
+        ill = mergeCurrentWithRestIndexies(curr,ill);
+        merged = Util.listMap1(curr,Util.listAppendr,il);
+        merged = listAppend(merged,ill);
+      then
+        merged;
   end matchcontinue;
 end mergeCurrentWithRestIndexies;
 
@@ -760,7 +906,7 @@ protected function crefTupleNotPrefixOf
 algorithm
   selected := matchcontinue(tupleCrSource,compName)
     local DAE.ComponentRef cr;
-    case((cr,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end crefTupleNotPrefixOf;
 
@@ -772,7 +918,7 @@ protected function crefTuplePrefixOf
 algorithm
   selected := matchcontinue(tupleCrSource,compName)
     local DAE.ComponentRef cr;
-    case((cr,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end crefTuplePrefixOf;
 
@@ -784,7 +930,7 @@ protected function flowTupleNotPrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end flowTupleNotPrefixOf;
 
@@ -796,7 +942,7 @@ protected function flowTuplePrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end flowTuplePrefixOf;
 
@@ -808,7 +954,7 @@ protected function streamTupleNotPrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+    case((cr,_,_,_),compName) then ComponentReference.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end streamTupleNotPrefixOf;
 
@@ -820,7 +966,7 @@ protected function streamTuplePrefixOf
 algorithm
   b:= matchcontinue(tpl,compName)
     local DAE.ComponentRef cr;
-    case((cr,_,_,_),compName) then Exp.crefPrefixOf(compName,cr);
+    case((cr,_,_,_),compName) then ComponentReference.crefPrefixOf(compName,cr);
   end matchcontinue;
 end streamTuplePrefixOf;
 
@@ -828,56 +974,60 @@ public function equations
   "From a number of connection sets, this function generates a list of
   equations."
   input Connect.Sets inSets;
-  output DAE.DAElist  outDae;
+  output DAE.DAElist outDae;
+  
+  list<Connect.Set> ss;
+  list<DAE.DAElist> daes;
 algorithm
-  outDAEElementLst := matchcontinue (inSets)
-    local
-      DAE.DAElist dae1,dae2,dae;
-      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
-      list<DAE.ComponentRef> crs, dc;
-      list<Connect.Set> ss;
-      Connect.Sets sets;
-      list<Connect.OuterConnect> outerConn;
+  Connect.SETS(setLst = ss) := inSets;
+  outDae := Util.listFold(ss, equations_dispatch, DAEUtil.emptyDae);
+end equations;
 
-    case (Connect.SETS(setLst = {})) then DAEUtil.emptyDae;
+public function equations_dispatch
+  "Helper function to equations, calls the right equation generating function."
+  input Connect.Set inSet;
+  input DAE.DAElist inDae;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(inSet, inDae)
+    local
+      list<Connect.EquSetElement> csEqu;
+      list<Connect.FlowSetElement> csFlow;
+      list<Connect.StreamSetElement> csStream;
+      DAE.DAElist dae;
 
     // generate potential equations
-    case (Connect.SETS((Connect.EQU(expComponentRefLst = cs) :: ss),crs,dc,outerConn))
+    case (Connect.EQU(expComponentRefLst = csEqu), _)
       equation
-        dae1 = equEquations(cs);
-        dae2 = equations(Connect.SETS(ss,crs,dc,outerConn));
-        dae = DAEUtil.joinDaes(dae1, dae2);
+        dae = equEquations(csEqu);
+        dae = DAEUtil.joinDaes(inDae, dae);
       then
         dae;
-    
+
     // generate flow equations
-    case (Connect.SETS((Connect.FLOW(tplExpComponentRefFaceLst = cs) :: ss),crs,dc,outerConn))
-      local list<tuple<DAE.ComponentRef, Connect.Face, DAE.ElementSource>> cs;
+    case (Connect.FLOW(tplExpComponentRefFaceLst = csFlow), _)
       equation
-        dae1 = flowEquations(cs);
-        dae2 = equations(Connect.SETS(ss,crs,dc,outerConn));
-        dae = DAEUtil.joinDaes(dae1, dae2);
+        dae = flowEquations(csFlow);
+        dae = DAEUtil.joinDaes(inDae, dae);
       then
         dae;
-    
+
     // generate stream equations
-    case (Connect.SETS((Connect.STREAM(tplExpComponentRefFaceLst = cs) :: ss),crs,dc,outerConn))
-      local list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Connect.Face, DAE.ElementSource>> cs;
-      equation        
-        dae1 = streamEquations(cs);
-        dae2 = equations(Connect.SETS(ss,crs,dc,outerConn));
-        dae = DAEUtil.joinDaes(dae1, dae2);
+    case (Connect.STREAM(tplExpComponentRefFaceLst = csStream), _)
+      equation
+        dae = streamEquations(csStream);
+        dae = DAEUtil.joinDaes(inDae, dae);
       then
-        dae;    
-    
+        dae;
+        
     // failure
-    case (sets)
+    else
       equation
         Debug.fprint("failtrace","- ConnectUtil.equations failed\n");
       then
         fail();
   end matchcontinue;
-end equations;
+end equations_dispatch;
 
 protected function equEquations "function: equEquations
   A non-flow connection set contains a number of components.
@@ -902,14 +1052,16 @@ algorithm
       list<Absyn.Path> typeLst;      
 
     case {_} then DAEUtil.emptyDae;
+    
     case ((x,src1) :: ((y,src2) :: cs))
       equation
-        DAE.DAE(eq,funcs) = equEquations(((x,src1) :: cs));
+        DAE.DAE(eq) = equEquations(((x,src1) :: cs));
         DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
         // do not propagate connects from different sources! use the crefs directly!
         src = DAE.SOURCE(info, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
       then
-        (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq,funcs));
+        (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq));
+    
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
   end matchcontinue;
 end equEquations;
@@ -933,8 +1085,7 @@ algorithm
   sum := flowSum(cs);
   (ed::lde) := Util.listMap(cs, Util.tuple33);
   source := Util.listFold(lde, DAEUtil.mergeSources, ed);
-  funcs := DAEUtil.avlTreeNew();
-  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), source)},funcs);
+  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), source)});
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -951,12 +1102,14 @@ algorithm
       DAE.ComponentRef c;
       Connect.Face f;
       list<Connect.FlowSetElement> cs;
+    
     case {(c,f,_)}
       equation
         exp = signFlow(c, f);
-         //print("Generating flow expression: " +& Exp.printExpStr(exp) +& "\n");
+         //print("Generating flow expression: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then
         exp;
+    
     case (((c,f,_) :: cs))
       equation
         exp1 = signFlow(c, f);
@@ -988,7 +1141,7 @@ protected function streamEquations "function: streamEquations
   input list<Connect.StreamSetElement> cs;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(cs)
+  outDae := match(cs)
     local
       DAE.ComponentRef cr1, cr2;
       DAE.ElementSource src1, src2, src;
@@ -997,38 +1150,246 @@ algorithm
       String str;
       list<String> strs;
       Connect.Face f1, f2;
+      DAE.Exp cref1, cref2, e1, e2;
+      list<Connect.StreamSetElement> inside, outside;
 
-    // handle only two stream connects in the set for now!
-        
-    // both inside, do nothing!
+    // Unconnected stream connector, do nothing!
+    case ({(_, _, Connect.INSIDE(), _)})
+      then DAEUtil.emptyDae;
+
+    // Both inside, do nothing!
     case ({(cr1, _, Connect.INSIDE(), _), (cr2, _, Connect.INSIDE(), _)})
       then DAEUtil.emptyDae;
 
-    // one inside, one outside
+    // Both outside:
+    // cr1 = inStream(cr2);
+    // cr2 = inStream(cr2);
+    case ({(cr1, _, Connect.OUTSIDE(), src1), (cr2, _, Connect.OUTSIDE(), src2)})
+      equation
+        cref1 = Expression.crefExp(cr1);
+        cref2 = Expression.crefExp(cr2);
+        e1 = makeInStreamCall(cref2);
+        e2 = makeInStreamCall(cref1);
+        src = DAEUtil.mergeSources(src1, src2);
+        dae = DAE.DAE({
+          DAE.EQUATION(cref1, e1, src),
+          DAE.EQUATION(cref2, e2, src)});
+      then
+        dae;
+
+    // One inside, one outside:
+    // cr1 = cr2;
     case ({(cr1, _, f1, src1), (cr2, _, f2, src2)}) 
       equation
-        // faces are not equal! one inside, one outside
-        false = faceEqual(f1, f2); 
-        funcs = DAEUtil.avlTreeNew();
         src = DAEUtil.mergeSources(src1, src2);
-        // add the stream equation cr1 = cr2 for one inside, one outside
         dae = DAE.DAE({
                 DAE.EQUATION(DAE.CREF(cr1,DAE.ET_OTHER()), 
                              DAE.CREF(cr2,DAE.ET_OTHER()), 
-                             src)},
-                funcs);
+                             src)});
       then dae;
 
-    // anything else, ERROR!
-    case (cs) 
+    // The general case with N inside connectors and M outside:
+    case (_)
       equation
-        strs = Util.listMap(cs, printStreamRefStr);
-        str = Util.stringDelimitList(strs, ", ");
-        str = System.stringAppendList({"stream set: {",str,"}"});        
-        print("Only one-to-one connections of streams are supported: unsupported connection set:" +& str);
-      then DAEUtil.emptyDae;
-  end matchcontinue;   
+        (outside, inside) = Util.listSplitOnTrue(cs, isOutsideStream);
+        dae = Util.listFold_3(outside, streamEquationGeneral, DAEUtil.emptyDae,
+          outside, inside);
+      then
+        dae;
+  end match;   
 end streamEquations;
+
+protected function isOutsideStream
+  "Returns true of the stream set element is an outside connector."
+  input Connect.StreamSetElement inElement;
+  output Boolean isOutside;
+algorithm
+  isOutside := match(inElement)
+    case ((_, _, Connect.OUTSIDE(), _)) then true;
+    else then false;
+  end match;
+end isOutsideStream;
+
+protected function streamEquationGeneral
+  "Generates an equation for an outside stream connector."
+  input DAE.DAElist inDae;
+  input Connect.StreamSetElement inElement;
+  input list<Connect.StreamSetElement> inOutsideElements;
+  input list<Connect.StreamSetElement> inInsideElements;
+  output DAE.DAElist outDae;
+
+  list<Connect.StreamSetElement> outside;
+  DAE.ComponentRef stream_cr;
+  DAE.Exp cref_exp, outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+  DAE.ElementSource src;
+  DAE.DAElist dae;
+algorithm
+  (stream_cr, _, _, src) := inElement;
+  cref_exp := Expression.crefExp(stream_cr);
+  outside := removeStreamSetElement(stream_cr, inOutsideElements);
+  res := streamSumEquationExp(outside, inInsideElements);
+  dae := DAE.DAE({DAE.EQUATION(cref_exp, res, src)});
+  outDae := DAEUtil.joinDaes(dae, inDae);
+end streamEquationGeneral;
+
+protected function streamSumEquationExp
+  "Generates the sum expression used by stream connector equations, given M
+  outside connectors and N inside connectors:
+
+    (sum(max(-flow_exp[i], eps) * stream_exp[i] for i in N) +
+     sum(max( flow_exp[i], eps) * inStream(stream_exp[i]) for i in M)) /
+    (sum(max(-flow_exp[i], eps) for i in N) +
+     sum(max( flow_exp[i], eps) for i in M))
+  "
+  input list<Connect.StreamSetElement> inOutsideElements;
+  input list<Connect.StreamSetElement> inInsideElements;
+  output DAE.Exp outSumExp;
+
+  DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
+algorithm
+  outSumExp := match(inOutsideElements, inInsideElements)
+    // No outside components.
+    case ({}, _)
+      equation
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(inside_sum1, inside_sum2);
+      then
+        res;
+    // No inside components.
+    case (_, {})
+      equation
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        res = Expression.expDiv(outside_sum1, outside_sum2);
+      then
+        res;
+    // Both outside and inside components.
+    else
+      equation
+        outside_sum1 = sumMap(inOutsideElements, sumOutside1);
+        outside_sum2 = sumMap(inOutsideElements, sumOutside2);
+        inside_sum1 = sumMap(inInsideElements, sumInside1);
+        inside_sum2 = sumMap(inInsideElements, sumInside2);
+        res = Expression.expDiv(Expression.expAdd(outside_sum1, inside_sum1),
+                                Expression.expAdd(outside_sum2, inside_sum2));
+      then
+        res;
+  end match;
+end streamSumEquationExp;
+
+protected function sumMap
+  "Creates a sum expression by applying the given function on the list of
+  elements and summing up the resulting expressions."
+  input list<SetElement> inElements;
+  input FuncType inFunc;
+  output DAE.Exp outExp;
+  
+  replaceable type SetElement subtypeof Any;
+  partial function FuncType
+    input SetElement inElement;
+    output DAE.Exp outExp;
+  end FuncType;
+algorithm
+  outExp := match(inElements, inFunc)
+    local
+      SetElement elem;
+      list<SetElement> rest_elem;
+      DAE.Exp e1, e2;
+
+    case ({elem}, _)
+      equation
+        e1 = inFunc(elem);
+      then
+        e1;
+
+    case (elem :: rest_elem, _)
+      equation
+        e1 = inFunc(elem);
+        e2 = sumMap(rest_elem, inFunc);
+      then
+        Expression.expAdd(e1, e2);
+  end match;
+end sumMap;
+
+protected function streamFlowExp
+  "Returns the stream and flow component in a stream set element as expressions."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outStreamExp;
+  output DAE.Exp outFlowExp;
+
+  DAE.ComponentRef stream_cr, flow_cr;
+algorithm
+  (stream_cr, flow_cr, _, _) := inElement;
+  outStreamExp := Expression.crefExp(stream_cr);
+  outFlowExp := Expression.crefExp(flow_cr);
+end streamFlowExp;
+
+protected function flowExp
+  "Returns the flow component in a stream set element as an expression."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outFlowExp;
+
+  DAE.ComponentRef flow_cr;
+algorithm
+  (_, flow_cr, _, _) := inElement;
+  outFlowExp := Expression.crefExp(flow_cr);
+end flowExp;
+
+protected function sumOutside1
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(flow_exp, eps) * inStream(stream_exp)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp stream_exp, flow_exp;
+algorithm
+  (stream_exp, flow_exp) := streamFlowExp(inElement);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp),
+                              makeInStreamCall(stream_exp));
+end sumOutside1;
+
+protected function sumInside1
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(-flow_exp, eps) * stream_exp
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp stream_exp, flow_exp;
+algorithm
+  (stream_exp, flow_exp) := streamFlowExp(inElement);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
+end sumInside1;
+
+protected function sumOutside2
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(flow_exp, eps)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp flow_exp;
+algorithm
+  flow_exp := flowExp(inElement);
+  outExp := makePositiveMaxCall(flow_exp);
+end sumOutside2;
+
+protected function sumInside2
+  "Helper function to streamSumEquationExp. Returns the expression 
+    max(-flow_exp, eps)
+  given a stream set element."
+  input Connect.StreamSetElement inElement;
+  output DAE.Exp outExp;
+
+  DAE.Exp flow_exp;
+algorithm
+  flow_exp := flowExp(inElement);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  outExp := makePositiveMaxCall(flow_exp);
+end sumInside2;
 
 protected function faceEqual "function: sameFace
 Test for face equality."
@@ -1044,6 +1405,133 @@ algorithm
   end matchcontinue;
 end faceEqual;
 
+protected function makeInStreamCall
+  "Creates an inStream call expression."
+  input DAE.Exp inStreamExp;
+  output DAE.Exp outInStreamCall;
+algorithm
+  outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp}, false,
+    false, DAE.ET_OTHER(), DAE.NO_INLINE());
+end makeInStreamCall;
+
+protected function makePositiveMaxCall
+  "Generates a max(flow_exp, eps) call."
+  input DAE.Exp inFlowExp;
+  output DAE.Exp outPositiveMaxCall;
+algorithm
+  outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
+    {inFlowExp, DAE.RCONST(1e-15)}, false, true, DAE.ET_REAL(), DAE.NO_INLINE());
+end makePositiveMaxCall;
+
+public function evaluateInStream
+  "This function evaluates the inStream operator for a component reference,
+  given the connection sets."
+  input DAE.ComponentRef inStreamCref;
+  input Connect.Sets inSets;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inStreamCref, inSets)
+    local
+      list<Connect.StreamSetElement> sl;
+      DAE.Exp in_stream_exp;
+    case (_, _)
+      equation
+        // Look up the connection set for the component (as inside).
+        Connect.STREAM(sl) = findStreamSet(inSets, inStreamCref,
+          ComponentReference.DUMMY, Connect.INSIDE(), DAE.emptyElementSource);
+        in_stream_exp = generateInStreamExp(inStreamCref, sl, inSets);
+      then
+        in_stream_exp;
+    case (_, _)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- ConnectUtil.evaluateInStream failed for " +&
+          ComponentReference.crefStr(inStreamCref) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end evaluateInStream;
+
+protected function generateInStreamExp
+  "Helper function to evaluateInStream. Generates an expression for inStream
+  given a connection set."
+  input DAE.ComponentRef inStreamCref;
+  input list<Connect.StreamSetElement> inStreams;
+  input Connect.Sets inSets;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inStreamCref, inStreams, inSets)
+    local
+      DAE.ComponentRef c;
+      Connect.Face f1, f2;
+      DAE.Exp e;
+      DAE.ElementSource src;
+      Absyn.Info info;
+      list<Connect.StreamSetElement> el, inside, outside;
+
+    // Unconnected stream connector:
+    // inStream(c) = c;
+    case (_, {(c, _, Connect.INSIDE(), _)}, _) then Expression.crefExp(c);
+
+    // Two inside connected stream connectors:
+    // inStream(c1) = c2;
+    // inStream(c2) = c1;
+    case (_, {(_, _, Connect.INSIDE(), _), (_, _, Connect.INSIDE(), _)}, _)
+      equation
+        {(c, _, _, _)} = removeStreamSetElement(inStreamCref, inStreams);
+        e = Expression.crefExp(c);
+      then
+        e;
+
+    // One inside, one outside connected stream connector:
+    // inStream(c1) = inStream(c2);
+    case (_, {(_, _, f1, _), (_, _, f2, _)}, _)
+      equation
+        false = faceEqual(f1, f2);
+        {(c, _, _, _)} = removeStreamSetElement(inStreamCref, inStreams);
+        e = evaluateInStream(c, inSets);
+      then
+        e;
+
+    // The general case:
+    else
+      equation
+        (outside, inside) = Util.listSplitOnTrue(inStreams, isOutsideStream);
+        inside = removeStreamSetElement(inStreamCref, inside);
+        e = streamSumEquationExp(outside, inside);
+      then
+        e;
+  end match;
+end generateInStreamExp;
+
+public function evaluateActualStream
+  "This function evaluates the actualStream operator for a component reference,
+  given the connection sets."
+  input DAE.ComponentRef inStreamCref;
+  input Connect.Sets inSets;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inStreamCref, inSets)
+    local
+      DAE.ComponentRef flow_cr;
+      DAE.Exp e, flow_exp, stream_exp, instream_exp;
+      DAE.ExpType ety;
+    case (_, _)
+      equation
+        flow_cr = getStreamFlowAssociation(inStreamCref, inSets);
+        ety = ComponentReference.crefType(inStreamCref);
+        flow_exp = Expression.crefExp(flow_cr);
+        stream_exp = Expression.crefExp(inStreamCref);
+        instream_exp = evaluateInStream(inStreamCref, inSets);
+        // actualStream(stream_var) = if flow_var > 0 then inStream(stream_var)
+        //                                            else stream_var;
+        e = DAE.IFEXP(DAE.RELATION(flow_exp, DAE.GREATER(ety), DAE.RCONST(0.0)),
+            instream_exp, stream_exp);
+      then
+        e;  
+  end match;
+end evaluateActualStream;
+        
 //- Lookup
 //  These functions are used to find and create connection sets.
 
@@ -1061,23 +1549,23 @@ algorithm
       Connect.Set s;
       DAE.ComponentRef c;
       list<Connect.Set> ss;
-      list<DAE.ComponentRef> crs,dc;
-      list<Connect.OuterConnect> outerConn;
+      list<Connect.EquSetElement> csEqu;      
 
     case (Connect.SETS(setLst = {}),c,source)
       equation
         s = newEquSet(c, source);
       then
         s;
-    case (Connect.SETS(setLst = ((s as Connect.EQU(expComponentRefLst = cs)) :: _)),c,source)
-      local list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
+    
+    case (Connect.SETS(setLst = ((s as Connect.EQU(expComponentRefLst = csEqu)) :: _)),c,source)
       equation
-        findInSetEqu(cs, c);
+        findInSetEqu(csEqu, c);
       then
         s;
-    case (Connect.SETS((_ :: ss),crs,dc,outerConn),c,source)
+    
+    case (Connect.SETS(setLst = (_ :: ss)),c,source)
       equation
-        s = findEquSet(Connect.SETS(ss,crs,dc,outerConn), c, source);
+        s = findEquSet(setConnectSets(inSets, ss), c, source);
       then
         s;
   end matchcontinue;
@@ -1099,23 +1587,23 @@ algorithm
       DAE.ComponentRef c;
       Connect.Face d;
       list<Connect.Set> ss;
-      list<DAE.ComponentRef> crs,dc;
-      list<Connect.OuterConnect> outerConn;
+      list<Connect.FlowSetElement> cs;      
 
     case (Connect.SETS(setLst = {}),c,d,source)
       equation
         s = newFlowSet(c, d, source);
       then
         s;
-    case (Connect.SETS(setLst = ((s as Connect.FLOW(tplExpComponentRefFaceLst = cs)) :: _)),c,d,source)
-      local list<tuple<DAE.ComponentRef, Connect.Face, DAE.ElementSource>> cs; 
+    
+    case (Connect.SETS(setLst = ((s as Connect.FLOW(tplExpComponentRefFaceLst = cs)) :: _)),c,d,source) 
       equation
         findInSetFlow(cs, c, d);
       then
         s;
-    case (Connect.SETS((_ :: ss),crs,dc,outerConn),c,d,source)
+    
+    case (Connect.SETS(setLst = (_ :: ss)),c,d,source)
       equation
-        s = findFlowSet(Connect.SETS(ss,crs,dc,outerConn), c, d, source);
+        s = findFlowSet(setConnectSets(inSets, ss), c, d, source);
       then
         s;
   end matchcontinue;
@@ -1183,10 +1671,7 @@ protected function newEquSet "function: newEquSet
   input DAE.ElementSource source "the origin of the element";
   output Connect.Set outSet;
 algorithm
-  outSet := matchcontinue (inComponentRef, source)
-    local DAE.ComponentRef c;
-    case (c,source) then Connect.EQU({(c,source)});
-  end matchcontinue;
+  outSet := Connect.EQU({(inComponentRef, source)});
 end newEquSet;
 
 protected function newFlowSet "function: newFlowSet
@@ -1197,75 +1682,82 @@ protected function newFlowSet "function: newFlowSet
   input DAE.ElementSource source "the origin of the element";
   output Connect.Set outSet;
 algorithm
-  outSet := matchcontinue (inComponentRef,inFace,source)
-    local DAE.ComponentRef c; Connect.Face d;
-    case (c,d,source) then Connect.FLOW({(c,d,source)});
-  end matchcontinue;
+  outSet := Connect.FLOW({(inComponentRef, inFace, source)});
 end newFlowSet;
 
 protected function findStreamSet "function: findStreamSet
-  This function finds a flow connection set that contains the
-  component named by the second argument.  If no such set is found,
-  a new set is created."
+  This function finds a stream connection set that contains the component named
+  by the second argument.  If no such set is found, a new set is created."
   input Connect.Sets inSets;
-  input DAE.ComponentRef inComponentRef;
+  input DAE.ComponentRef inStreamCref;
+  input DAE.ComponentRef inFlowCref;
   input Connect.Face inFace;
   input DAE.ElementSource source "the element source";
   output Connect.Set outSet;
 algorithm
-  outSet := matchcontinue (inSets,inComponentRef,inFace,source)
+  outSet := matchcontinue (inSets,inStreamCref,inFlowCref,inFace,source)
     local
       Connect.Set s;
-      DAE.ComponentRef c;
-      Connect.Face d;
-      list<Connect.Set> ss;
-      list<DAE.ComponentRef> crs,dc;
-      list<Connect.OuterConnect> outerConn;
+      list<Connect.Set> sl;
+      list<Connect.StreamSetElement> cs;      
 
-    case (Connect.SETS(setLst = {}),c,d,source)
+    case (Connect.SETS(setLst = {}), _, _, _, _)
       equation
-        s = newStreamSet(c, d, source);
+        s = newStreamSet(inStreamCref, inFlowCref, inFace, source);
       then
         s;
-    case (Connect.SETS(setLst = ((s as Connect.STREAM(tplExpComponentRefFaceLst = cs)) :: _)),c,d,source)
-      local list<Connect.StreamSetElement> cs;
+    
+    case (Connect.SETS(setLst = (s as Connect.STREAM(tplExpComponentRefFaceLst = cs)) :: _), 
+        _, _, _, _)
       equation
-        findInSetStream(cs, c);
+        findInSetStream(cs, inStreamCref, inFace);
       then
         s;
-    case (Connect.SETS((_ :: ss),crs,dc,outerConn),c,d,source)
+    
+    case (Connect.SETS(setLst = (_ :: sl)), _, _, _, _)
       equation
-        s = findStreamSet(Connect.SETS(ss,crs,dc,outerConn), c, d, source);
+        inSets = setConnectSets(inSets, sl);
+        s = findStreamSet(inSets, inStreamCref, inFlowCref, inFace, source);
       then
         s;
   end matchcontinue;
 end findStreamSet;
 
+protected function findInSetStream
+  "This is a version of findInSet which is specialized on stream connection
+  sets."
+  input list<Connect.StreamSetElement> inSets;
+  input DAE.ComponentRef inComponentRef;
+  input Connect.Face inFace;
+algorithm
+  _ := matchcontinue(inSets, inComponentRef, inFace)
+    local
+      DAE.ComponentRef c1, c2;
+      Connect.Face f1, f2;
+      list<Connect.StreamSetElement> cs;
+    case ((c1, _, f1, _) :: _, c2, f2)
+      equation
+        Static.eqCref(c1, c2);
+        true = faceEqual(f1, f2);
+      then ();
+    case (_ :: cs, c2, f2)
+      equation
+        findInSetStream(cs, c2, f2);
+      then ();
+  end matchcontinue;
+end findInSetStream;
+
 protected function newStreamSet "function: newStreamSet
   This function creates a new-stream connection set containing only
   the given component."
-  input DAE.ComponentRef inComponentRef;
+  input DAE.ComponentRef inStreamCref;
+  input DAE.ComponentRef inFlowCref;
   input Connect.Face inFace;
   input DAE.ElementSource source "the origin of the element";
   output Connect.Set outSet;
 algorithm
-  outSet := matchcontinue (inComponentRef,inFace,source)
-    local DAE.ComponentRef c; Connect.Face d;
-    case (c,d,source) then Connect.STREAM({(c,NONE(),d,source)});
-  end matchcontinue;
+  outSet := Connect.STREAM({(inStreamCref, inFlowCref, inFace, source)});
 end newStreamSet;
-
-protected function findInSetStream "function: findInSetStream
-  This is a version of findInSet which is specialized on stream connection sets"
-  input list<Connect.StreamSetElement> inTplExpComponentRefFaceLst;
-  input DAE.ComponentRef inComponentRef;
-algorithm
-  _ := matchcontinue (inTplExpComponentRefFaceLst,inComponentRef)
-    local DAE.ComponentRef c1,c2; list<Connect.StreamSetElement> cs;
-    case ((c1,_,_,_) :: _,c2) equation Static.eqCref(c1, c2); then ();
-    case (_ :: cs,c2) equation findInSetStream(cs, c2); then ();
-  end matchcontinue;
-end findInSetStream;
 
 protected function setsEqual
   input Connect.Set inSet1;
@@ -1283,33 +1775,39 @@ algorithm
     // pointer equality testing first.
     case (inSet1, inSet2)
       equation
-        true = System.refEqual(inSet1, inSet2);         
+        true = referenceEq(inSet1, inSet2);         
       then true;
 
     // deal with empty case
     case (Connect.EQU({}), Connect.EQU({})) then true;
     case (Connect.FLOW({}), Connect.FLOW({})) then true;
     case (Connect.STREAM({}), Connect.STREAM({})) then true;      
+
     // deal with non empty Connect.EQU
-    case (Connect.EQU((cr1,_)::equRest1), Connect.EQU((cr2,_)::equRest2))
+    case (Connect.EQU((cr1,_)::equRest1), 
+          Connect.EQU((cr2,_)::equRest2))
       equation
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
         true = setsEqual(Connect.EQU(equRest1),Connect.EQU(equRest2));
       then
         true;
+
     // deal with non empty Connect.FLOW
-    case (Connect.FLOW((cr1,face1,_)::flowRest1), Connect.FLOW((cr2,face2,_)::flowRest2))
+    case (Connect.FLOW((cr1,face1,_)::flowRest1), 
+          Connect.FLOW((cr2,face2,_)::flowRest2))
       equation
         true = faceEqual(face1, face2);
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
         true = setsEqual(Connect.FLOW(flowRest1),Connect.FLOW(flowRest2));
       then
         true;
+
     // deal with non empty Connect.STREAM
-    case (Connect.STREAM((cr1,_,face1,_)::streamRest1), Connect.STREAM((cr2,_,face2,_)::streamRest2))
+    case (Connect.STREAM((cr1,_,face1,_)::streamRest1), 
+          Connect.STREAM((cr2,_,face2,_)::streamRest2))
       equation
         true = faceEqual(face1, face2);
-        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
+        true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
         true = setsEqual(Connect.STREAM(streamRest1),Connect.STREAM(streamRest2));
       then
         true;        
@@ -1329,8 +1827,7 @@ protected function merge "function: merge
 algorithm
   outSets := matchcontinue (inSets,inSet1,inSet2)
     local
-      list<Connect.Set> ss,ss_1;
-      list<DAE.ComponentRef> crs,dc;
+      Connect.Sets sets;
       // potential
       list<Connect.EquSetElement> pcs,pcs1,pcs2;
       // flow
@@ -1338,7 +1835,6 @@ algorithm
       // stream
       list<Connect.StreamSetElement> scs,scs1,scs2;
       Connect.Set s1,s2;
-      list<Connect.OuterConnect> outerConn;
     
     // sets are equal, do nothing
     case (inSets,s1,s2)
@@ -1348,34 +1844,37 @@ algorithm
         inSets;
 
     // potential
-    case (Connect.SETS(ss,crs,dc,outerConn),
+    case (sets,
           (s1 as Connect.EQU(expComponentRefLst = pcs1)),
           (s2 as Connect.EQU(expComponentRefLst = pcs2)))
       equation
         pcs = Util.listMergeSorted(pcs1, pcs2, equSetElementLess);
-        Connect.SETS(ss_1,_,_,_) = removeSet2(Connect.SETS(ss,crs,dc,outerConn), s1, s2);
+        sets = removeSet2(sets, s1, s2);
+        sets = addConnectSet(sets, Connect.EQU(pcs));
       then
-        Connect.SETS((Connect.EQU(pcs) :: ss_1),crs,dc,outerConn);
+        sets;
     
     // flow
-    case (Connect.SETS(ss,crs,dc,outerConn),
+    case (sets,
           (s1 as Connect.FLOW(tplExpComponentRefFaceLst = fcs1)),
           (s2 as Connect.FLOW(tplExpComponentRefFaceLst = fcs2)))
       equation
         fcs = listAppend(fcs1, fcs2);
-        Connect.SETS(ss_1,_,_,_) = removeSet2(Connect.SETS(ss,crs,dc,outerConn), s1, s2);
+        sets = removeSet2(sets, s1, s2);
+        sets = addConnectSet(sets, Connect.FLOW(fcs));
       then
-        Connect.SETS((Connect.FLOW(fcs) :: ss_1),crs,dc,outerConn);
+        sets;
     
     // stream
-    case (Connect.SETS(ss,crs,dc,outerConn),
+    case (sets,
           (s1 as Connect.STREAM(tplExpComponentRefFaceLst = scs1)),
           (s2 as Connect.STREAM(tplExpComponentRefFaceLst = scs2)))      
       equation
         scs = listAppend(scs1, scs2);
-        Connect.SETS(ss_1,_,_,_) = removeSet2(Connect.SETS(ss,crs,dc,outerConn), s1, s2);
+        sets = removeSet2(sets, s1, s2);
+        sets = addConnectSet(sets, Connect.STREAM(scs));
       then
-        Connect.SETS((Connect.STREAM(scs) :: ss_1),crs,dc,outerConn);
+        sets;
   end matchcontinue;
 end merge;
 
@@ -1390,49 +1889,48 @@ algorithm
   res := matchcontinue(inElem1, inElem2)
     local
       DAE.ComponentRef cr1, cr2;
-    case ((cr1, _), (cr2, _)) then Exp.crefSortFunc(cr2, cr1);
+    
+    case ((cr1, _), (cr2, _)) then ComponentReference.crefSortFunc(cr2, cr1);
   end matchcontinue;
 end equSetElementLess;
 
 protected function removeSet2 "function: removeSet2
   This function removes the two sets given in the second and third
   argument from the collection of sets given in the first argument."
-  input Connect.Sets inSets1;
+  input Connect.Sets inSets;
+  input Connect.Set inSet1;
   input Connect.Set inSet2;
-  input Connect.Set inSet3;
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue (inSets1,inSet2,inSet3)
+  outSets := matchcontinue (inSets,inSet1,inSet2)
     local
-      list<DAE.ComponentRef> crs,dc;
-      Connect.Sets ss_1;
       Connect.Set s,s1,s2;
       list<Connect.Set> ss;
-      list<Connect.OuterConnect> outerConn;
+      Connect.Sets sets;
 
-    case (Connect.SETS({},crs,dc,outerConn),_,_) 
-      then Connect.SETS({},crs,dc,outerConn);
+    case (Connect.SETS(setLst = {}),_,_)
+      then inSets;
 
-    case (Connect.SETS((s :: ss),crs,dc,outerConn),s1,s2)
+    case (Connect.SETS(setLst = (s :: ss)),s1,s2)
       equation
         true = setsEqual(s, s1);
-        ss_1 = removeSet(Connect.SETS(ss,crs,dc,outerConn), s2);
+        sets = removeSet(setConnectSets(inSets, ss), s2);
       then
-        ss_1;
+        sets;
 
-    case (Connect.SETS((s :: ss),crs,dc,outerConn),s1,s2)
+    case (Connect.SETS(setLst = (s :: ss)),s1,s2)
       equation
         true = setsEqual(s, s2);
-        ss_1 = removeSet(Connect.SETS(ss,crs,dc,outerConn), s1);
+        sets = removeSet(setConnectSets(inSets, ss), s1);
       then
-        ss_1;
+        sets;
 
-    case (Connect.SETS((s :: ss),crs,dc,outerConn),s1,s2)
-      local list<Connect.Set> ss_1;
+    case (Connect.SETS(setLst = (s :: ss)),s1,s2)
       equation
-        Connect.SETS(ss_1,_,_,_) = removeSet2(Connect.SETS(ss,crs,dc,outerConn), s1, s2);
+        sets = removeSet2(setConnectSets(inSets, ss), s1, s2);
+        sets = addConnectSet(sets, s);
       then
-        Connect.SETS((s :: ss_1),crs,dc,outerConn);
+        sets;
   end matchcontinue;
 end removeSet2;
 
@@ -1441,34 +1939,17 @@ protected function removeSet "function: removeSet
   input Connect.Sets inSets;
   input Connect.Set inSet;
   output Connect.Sets outSets;
+
+  list<Connect.Set> sl;
 algorithm
-  outSets:=
-  matchcontinue (inSets,inSet)
-    local
-      list<DAE.ComponentRef> crs,dc;
-      Connect.Set s,s1;
-      list<Connect.Set> ss,ss_1;
-      list<Connect.OuterConnect> outerConn;
-
-    case (Connect.SETS({},crs,dc,outerConn),_) then Connect.SETS({},crs,dc,outerConn);
-
-    case (Connect.SETS((s :: ss),crs,dc,outerConn),s1)
-      equation
-        true = setsEqual(s, s1);
-      then
-        Connect.SETS(ss,crs,dc,outerConn);
-
-    case (Connect.SETS((s :: ss),crs,dc,outerConn),s1)
-      equation
-        Connect.SETS(ss_1,_,_,_) = removeSet(Connect.SETS(ss,crs,dc,outerConn), s1);
-      then
-        Connect.SETS((s :: ss_1),crs,dc,outerConn);
-  end matchcontinue;
+  Connect.SETS(setLst = sl) := inSets;
+  sl := Util.listRemoveFirstOnTrue(inSet, setsEqual, sl);
+  outSets := setConnectSets(inSets, sl);
 end removeSet;
 
 protected function removeUnconnectedFlowVariable
   "This function searches for a flow variable that is unconnected, i.e. that is
-  alone in a connection set, and removed the set from the connection sets."
+  alone in a connection set, and removes the set from the connection sets."
   input DAE.ComponentRef inComponentRef;
   input Connect.Face inFace;
   input list<Connect.Set> inSets;
@@ -1479,12 +1960,15 @@ algorithm
       Connect.FlowSetElement fe;
       list<Connect.Set> sets;
       Connect.Set s;
+    
     case (_, _, {}) then {};
+    
     case (_, _, Connect.FLOW(tplExpComponentRefFaceLst = {fe}) :: sets)
       equation
         true = flowSetElementEqual(inComponentRef, inFace, fe);
       then
         sets;
+    
     case (_, _, s :: sets)
       equation
         sets = removeUnconnectedFlowVariable(inComponentRef, inFace, sets);
@@ -1492,6 +1976,35 @@ algorithm
         s :: sets;
   end matchcontinue;
 end removeUnconnectedFlowVariable;
+
+protected function removeStreamSetElement
+  "This function removes the given cref from a connection set."
+  input DAE.ComponentRef inCref;
+  input list<Connect.StreamSetElement> inElements;
+  output list<Connect.StreamSetElement> outElements;
+algorithm
+  outElements := Util.listRemoveFirstOnTrue(inCref, compareCrefStreamSet,
+    inElements);
+end removeStreamSetElement;
+        
+protected function compareCrefStreamSet
+  "Helper function to removeStreamSetElement. Checks if the cref in a stream set
+  element matches the given cref."
+  input DAE.ComponentRef inCref;
+  input Connect.StreamSetElement inElement;
+  output Boolean outRes;
+algorithm
+  outRes := matchcontinue(inCref, inElement)
+    local
+      DAE.ComponentRef cr;
+    case (_, (cr, _, _, _))
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
+      then
+        true;
+    else then false;
+  end matchcontinue;
+end compareCrefStreamSet;
 
 /*
   - Printing
@@ -1512,11 +2025,13 @@ algorithm
       list<Connect.Set> xs;
       list<DAE.ComponentRef> crs,dc;
       list<Connect.OuterConnect> outerConn;
+    
     case Connect.SETS(setLst = {}) then ();
-    case Connect.SETS((x :: xs),crs,dc,outerConn)
+    
+    case Connect.SETS(setLst = (x :: xs))
       equation
         printSet(x);
-        printSets(Connect.SETS(xs,crs,dc,outerConn));
+        printSets(setConnectSets(inSets, xs));
       then
         ();
   end matchcontinue;
@@ -1563,9 +2078,9 @@ algorithm
         s1 = Util.listMap(sets, printSetStr);
         s1_1 = Util.stringDelimitList(s1, ", ");
         s2 = printSetCrsStr(crs);
-        s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr), ",");
+        s3 = Util.stringDelimitList(Util.listMap(dc,ComponentReference.printComponentRefStr), ",");
         s4 = printOuterConnectsStr(outerConn);
-        res = System.stringAppendList({"Connect.SETS(\n\t",
+        res = stringAppendList({"Connect.SETS(\n\t",
           s1_1,", \n\t",
           s2,", \n\tdeleted comps: ",s3,", \n\touter connections:",s4,")\n"});
       then
@@ -1588,8 +2103,8 @@ algorithm
     case(Connect.OUTERCONNECT(prefix,cr1,io1,_,cr2,io2,_,_)::outerConn) equation
       s0 = PrefixUtil.printPrefixStr(prefix);
       s1 = printOuterConnectsStr(outerConn);
-      s2 = Exp.printComponentRefStr(cr1);
-      s3 = Exp.printComponentRefStr(cr2);
+      s2 = ComponentReference.printComponentRefStr(cr1);
+      s3 = ComponentReference.printComponentRefStr(cr2);
       str = "(" +& s0 +& ", " +& s2 +& "("+& Dump.unparseInnerouterStr(io1) +&"), " +& s3 +&"("+& Dump.unparseInnerouterStr(io2) +& ") ) ," +& s1;
     then str;
   end matchcontinue;
@@ -1603,28 +2118,29 @@ algorithm
     local
       list<String> strs;
       String s1,res;
-      list<Connect.EquSetElement> cs;
-    case Connect.EQU(expComponentRefLst = cs)
+      list<Connect.EquSetElement> csEqu;
+      list<Connect.FlowSetElement> csFlow;
+      list<Connect.StreamSetElement> csStream;
+    
+    case Connect.EQU(expComponentRefLst = csEqu)
       equation
-        strs = Util.listMap(Util.listMap(cs, Util.tuple21), Exp.printComponentRefStr);
+        strs = Util.listMap(Util.listMap(csEqu, Util.tuple21), ComponentReference.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tnon-flow set: {",s1,"}"});
+        res = stringAppendList({"\n\tnon-flow set: {",s1,"}"});
       then
         res;
-    case Connect.FLOW(tplExpComponentRefFaceLst = cs)
-      local list<Connect.FlowSetElement> cs;
+    case Connect.FLOW(tplExpComponentRefFaceLst = csFlow)
       equation
-        strs = Util.listMap(cs, printFlowRefStr);
+        strs = Util.listMap(csFlow, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tflow set: {",s1,"}"});
+        res = stringAppendList({"\n\tflow set: {",s1,"}"});
       then
         res;
-    case Connect.STREAM(tplExpComponentRefFaceLst = cs)
-      local list<Connect.StreamSetElement> cs;
+    case Connect.STREAM(tplExpComponentRefFaceLst = csStream)
       equation
-        strs = Util.listMap(cs, printStreamRefStr);
+        strs = Util.listMap(csStream, printStreamRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = System.stringAppendList({"\n\tstream set: {",s1,"}"});
+        res = stringAppendList({"\n\tstream set: {",s1,"}"});
       then
         res;        
   end matchcontinue;
@@ -1638,15 +2154,17 @@ algorithm
     local
       String s,res;
       DAE.ComponentRef c;
+    
     case ((c,Connect.INSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
+    
     case ((c,Connect.OUTSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");
       then
         res;
@@ -1661,17 +2179,17 @@ algorithm
     local
       String s,res;
       DAE.ComponentRef c;
-      Option<DAE.ComponentRef> optFlowCref;
       
-    case ((c,optFlowCref,Connect.INSIDE(),_))
+    case ((c,_,Connect.INSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
-    case ((c,optFlowCref,Connect.OUTSIDE(),_))
+    
+    case ((c,_,Connect.OUTSIDE(),_))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");
       then
         res;
@@ -1684,9 +2202,9 @@ protected function printSetCrsStr
   list<String> c_strs;
   String s;
 algorithm
-  c_strs := Util.listMap(crs, Exp.printComponentRefStr);
+  c_strs := Util.listMap(crs, ComponentReference.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
-  res := System.stringAppendList({"connect crs: {",s,"}"});
+  res := stringAppendList({"connect crs: {",s,"}"});
 end printSetCrsStr;
 
 public function componentFace
@@ -1704,14 +2222,14 @@ public function componentFace
   All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
   of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
   to corresponding inner ones."
-  input Env env;
+  input Env.Env env;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm
   outFace := matchcontinue (env,inIH,inComponentRef)
     local
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref_;
       DAE.Ident id;
       InnerOuter.InstHierarchy ih;
 
@@ -1723,7 +2241,7 @@ algorithm
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
       equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+         = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
@@ -1770,18 +2288,14 @@ So this is what till function will do, update type information on csets."
 algorithm 
   updatedEnv := matchcontinue(csets,typedRef)
     local
-      Connect.Sets cs1;
-      list<Connect.Set> arg1;
-      list<DAE.ComponentRef> arg2,arg2_2;
-      list<DAE.ComponentRef> arg3;
-      list<Connect.OuterConnect> arg4,arg4_2;
+      list<DAE.ComponentRef> c;
     
-    case((cs1 as Connect.SETS(arg1,arg2,arg3,arg4)),typedRef)
+    case(Connect.SETS(connection = c), typedRef)
       equation
-        //TODO: update types for rest of set(arg1,arg3,arg4)
-        arg2_2 = updateConnectionSetTypesCrefs(arg2,typedRef);
+        //TODO: update types for rest of set
+        c = updateConnectionSetTypesCrefs(c, typedRef);
       then
-        Connect.SETS(arg1,arg2_2,arg3,arg4);
+        setConnectionCrefs(csets, c);
     
     case(_,_)
       equation
@@ -1797,7 +2311,7 @@ helper function for updateConnectionSetTypes"
   input DAE.ComponentRef list2;
   output list<DAE.ComponentRef> list3;
 algorithm 
-  lsit3 := matchcontinue(list1,list2)
+  list3 := matchcontinue(list1,list2)
     local
       list<DAE.ComponentRef> cr1s,cr2s;
       DAE.ComponentRef cr1,cr2;
@@ -1806,7 +2320,7 @@ algorithm
     // found something, replace the cref in the list 
     case(cr1::cr1s, cr2)
       equation
-        true = Exp.crefEqual(cr1,cr2);
+        true = ComponentReference.crefEqual(cr1,cr2);
         cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
       then
         cr2::cr2s;
@@ -1818,6 +2332,223 @@ algorithm
         cr1::cr2s;
   end matchcontinue;
 end updateConnectionSetTypesCrefs;
+
+public function checkConnectorBalance
+  "Checks if a connector class is balanced or not, according to the rules in the
+  Modelica 3.2 specification."
+  input list<DAE.Var> inVars;
+  input Absyn.Path path;
+  input Absyn.Info info;
+algorithm
+  _ := matchcontinue(inVars, path, info)
+    local
+      Integer potentials, flows, streams;
+
+    // Only do balance checking if the checkconnect debug flag is set.
+    case (_, _, _)
+      equation
+        false = RTOpts.debugFlag("checkconnect");
+      then
+        ();
+
+    else
+      equation
+        (potentials, flows, streams) = countConnectorVars(inVars);
+        checkConnectorBalance2(potentials, flows, streams, path, info);
+        //print(Absyn.pathString(path) +& " has:\n\t" +&
+        //  intString(potentials) +& " potential variables\n\t" +&
+        //  intString(flows) +& " flow variables\n\t" +&
+        //  intString(streams) +& " stream variables\n\n");
+      then
+        ();
+  end matchcontinue;
+end checkConnectorBalance;
+
+protected function checkConnectorBalance2
+  input Integer inPotentialVars;
+  input Integer inFlowVars;
+  input Integer inStreamVars;
+  input Absyn.Path path;
+  input Absyn.Info info;
+algorithm
+  _ := matchcontinue(inPotentialVars, inFlowVars, inStreamVars, path, info)
+    local
+      String error_str, flow_str, potential_str, class_str; 
+
+    // The connector is balanced.
+    case (_, _, _, _, _)
+      equation
+        true = intEq(inPotentialVars, inFlowVars);
+        true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
+      then
+        ();
+
+    // Modelica 3.2 section 9.3.1:
+    // For each non-partial connector class the number of flow variables shall
+    // be equal to the number of variables that are neither parameter, constant,
+    // input, output, stream nor flow.
+    case (_, _, _, _, _)
+      equation
+        false = intEq(inPotentialVars, inFlowVars);
+        flow_str = intString(inFlowVars);
+        potential_str = intString(inPotentialVars);
+        class_str = Absyn.pathString(path);
+        error_str = stringAppendList({
+          "The number of potential variables (",
+          potential_str,
+          ") is not equal to the number of flow variables (",
+          flow_str, ")."});
+        Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
+          {class_str, error_str}, info);
+      then 
+        fail();
+
+    // Modelica 3.2 section 15.1:
+    // A stream connector must have exactly one scalar variable with the flow prefix.
+    case (_, _, _, _, _)
+      equation
+        false = intEq(inStreamVars, 0);
+        false = intEq(inFlowVars, 1);
+        flow_str = intString(inFlowVars);
+        class_str = Absyn.pathString(path);
+        error_str = stringAppendList({
+          "A stream connector must have exactly one flow variable, this connector has ", 
+          flow_str, " flow variables."}); 
+        Error.addSourceMessage(Error.UNBALANCED_CONNECTOR,
+          {class_str, error_str}, info);
+      then
+        fail(); 
+  end matchcontinue;
+end checkConnectorBalance2;
+
+protected function countConnectorVars
+  "Given a list of connector variables, this function counts how many potential,
+  flow and stream variables it contains."
+  input list<DAE.Var> inVars;
+  output Integer potentialVars;
+  output Integer flowVars;
+  output Integer streamVars;
+algorithm
+  (potentialVars, flowVars, streamVars) := matchcontinue(inVars)
+    local
+      DAE.Var v;
+      list<DAE.Var> rest, vars;
+      Integer n, p, f, s, p2, f2, s2;
+      String name;
+      DAE.Type ty, ty2;
+
+    case ({}) then (0, 0, 0);
+
+    // A connector inside a connector.
+    case ((v as DAE.TYPES_VAR(name = name, type_ = ty)) :: rest)
+      equation
+        // Check that it's a connector.
+        ty2 = Types.arrayElementType(ty);
+        true = Types.isComplexConnector(ty2);
+        // If we have an array of connectors, count how many they are.
+        n = Util.listFold(Types.getDimensionSizes(ty), intMul, 1);
+        // Count the number of different variables inside the connector, and
+        // then multiply those numbers with the dimensions of the array.
+        vars = Types.getConnectorVars(ty2);
+        (p2, f2, s2) = countConnectorVars(vars);
+        (p, f, s) = countConnectorVars(rest);
+      then
+        (p + n * p2, f + n * f2, s + n * s2);
+
+    // A flow variable.
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(flowPrefix = true))) :: rest)
+      equation
+        n = sizeOfVariable(v);
+        (p, f, s) = countConnectorVars(rest);
+      then
+        (p, f + n, s);
+
+    // A stream variable.
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(streamPrefix = true))) :: rest)
+      equation
+        n = sizeOfVariable(v);
+        (p, f, s) = countConnectorVars(rest);
+      then
+        (p, f, s + n);
+
+    // A potential variable.
+    case ((v as DAE.TYPES_VAR(attributes = DAE.ATTR(
+        direction = Absyn.BIDIR(),
+        parameter_ = SCode.VAR()))) :: rest)
+      equation
+        n = sizeOfVariable(v);
+        (p, f, s) = countConnectorVars(rest);
+      then
+        (p + n, f, s);
+
+    // Something else.
+    case _ :: rest
+      equation
+        (p, f, s) = countConnectorVars(rest);
+      then
+        (p, f, s);
+  end matchcontinue;
+end countConnectorVars;
+
+protected function sizeOfVariableList
+  "Calls sizeOfVariable on a list of variables, and adds up the results."
+  input list<DAE.Var> inVar;
+  output Integer outSize;
+
+  list<Integer> sizes;
+algorithm
+  sizes := Util.listMap(inVar, sizeOfVariable);
+  outSize := Util.listFold(sizes, intAdd, 0);
+end sizeOfVariableList;
+
+protected function sizeOfVariable
+  "Different types of variables have different size, for example arrays. This
+  function checks the size of one variable."
+  input DAE.Var inVar;
+  output Integer outSize;
+algorithm
+  outSize := matchcontinue(inVar)
+    local DAE.Type t;
+    case DAE.TYPES_VAR(type_ = t) then sizeOfVariable2(t);
+  end matchcontinue;
+end sizeOfVariable; 
+
+protected function sizeOfVariable2
+  "Helper function to sizeOfVariable."
+  input DAE.Type inType;
+  output Integer outSize;
+algorithm
+  outSize := matchcontinue(inType)
+    local
+      Integer n;
+      DAE.Type t;
+      list<DAE.Var> v;
+
+    // Scalar values consist of one element.
+    case ((DAE.T_INTEGER(_), _)) then 1;
+    case ((DAE.T_REAL(_), _)) then 1;
+    case ((DAE.T_STRING(_), _)) then 1;
+    case ((DAE.T_BOOL(_), _)) then 1;
+    case ((DAE.T_ENUMERATION(index = NONE()), _)) then 1;
+    // The size of an array is its dimension multiplied with the size of its type.
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = n), arrayType = t), _))
+      then n * sizeOfVariable2(t);
+    // The size of a complex type without an equalityConstraint (such as a
+    // record), is the sum of the sizes of its components.
+    case ((DAE.T_COMPLEX(complexVarLst = v, equalityConstraint = NONE()), _))
+      then sizeOfVariableList(v);
+    // The size of a complex type with an equalityConstraint function is
+    // determined by the size of the return value of that function.
+    case ((DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _))), _)) then n;
+    // Anything we forgot?
+    case t
+      equation
+        Debug.fprintln("failtrace", "- Inst.sizeOfVariable failed on " +&
+          Types.printTypeStr(t));
+      then
+        fail();
+  end matchcontinue;
+end sizeOfVariable2;
 
 end ConnectUtil;
 

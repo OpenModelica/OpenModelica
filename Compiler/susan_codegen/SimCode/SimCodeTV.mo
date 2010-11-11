@@ -40,7 +40,7 @@ package SimCode
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<DAE.Statement> algorithmAndEquationAsserts;
-      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
@@ -185,8 +185,8 @@ package SimCode
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
       list<DAE.ComponentRef> conditionVars;
-      list<DAELow.ReinitStatement> reinits;
-      Option<DAELow.WhenEquation> whenEq;
+      list<BackendDAE.WhenOperator> reinits;
+      Option<BackendDAE.WhenEquation> whenEq;
       list<tuple<DAE.Exp, Integer>> conditions;
     end SIM_WHEN_CLAUSE;
   end SimWhenClause;
@@ -242,7 +242,7 @@ package SimCode
   uniontype SimVar
     record SIMVAR
       DAE.ComponentRef name;
-      DAELow.VarKind varKind;
+      BackendDAE.VarKind varKind;
       String comment;
       String unit;
       String displayUnit;
@@ -346,11 +346,6 @@ package SimCode
     output Boolean isScalar;
   end crefIsScalar;
 
-  function crefSubs
-    input DAE.ComponentRef cref;
-    output list<DAE.Subscript> subs;
-  end crefSubs;
-  
   function buildCrefExpFromAsub
     input DAE.Exp cref;
     input list<DAE.Exp> subs;
@@ -402,7 +397,7 @@ package SimCode
 end SimCode;
 
 
-package DAELow
+package BackendDAE
 
   uniontype VarKind "- Variable kind"
     record VARIABLE end VARIABLE;
@@ -421,15 +416,25 @@ package DAELow
       DAE.Exp relation_;
     end ZERO_CROSSING;
   end ZeroCrossing;
-
-  uniontype ReinitStatement
+  
+  uniontype WhenOperator "- Reinit Statement"
     record REINIT
-      DAE.ComponentRef stateVar;
-      DAE.Exp value;
-
+      DAE.ComponentRef stateVar "State variable to reinit" ;
+      DAE.Exp value             "Value after reinit" ;
+      DAE.ElementSource source "origin of equation";
     end REINIT;
-    record EMPTY_REINIT end EMPTY_REINIT;
-  end ReinitStatement;
+
+    record ASSERT
+      DAE.Exp condition;
+      DAE.Exp message;
+      DAE.ElementSource source "the origin of the component/equation/algorithm";
+    end ASSERT;  
+  
+    record TERMINATE " The Modelica builtin terminate(msg)"
+      DAE.Exp message;
+      DAE.ElementSource source "the origin of the component/equation/algorithm";
+    end TERMINATE; 
+  end WhenOperator;
 
   uniontype WhenEquation
     record WHEN_EQ
@@ -440,7 +445,7 @@ package DAELow
     end WHEN_EQ;
   end WhenEquation;
   
-end DAELow;
+end BackendDAE;
 
 package System
 
@@ -686,6 +691,42 @@ package DAE
     end METARECORDCALL;
   end Exp;
   
+  uniontype Pattern "Patterns deconstruct expressions"
+    record PAT_WILD "_"
+    end PAT_WILD;
+    record PAT_CONSTANT "compare to this constant value using equality"
+      Option<ExpType> ty "so we can unbox if needed";
+      Exp exp;
+    end PAT_CONSTANT;
+    record PAT_AS "id as pat"
+      String id;
+      Option<ExpType> ty;
+      Pattern pat;
+    end PAT_AS;
+    record PAT_AS_FUNC_PTR "id as pat"
+      String id;
+      Pattern pat;
+    end PAT_AS_FUNC_PTR;
+    record PAT_META_TUPLE "(pat1,...,patn)"
+      list<Pattern> patterns;
+    end PAT_META_TUPLE;
+    record PAT_CALL_TUPLE "(pat1,...,patn)"
+      list<Pattern> patterns;
+    end PAT_CALL_TUPLE;
+    record PAT_CONS "head::tail"
+      Pattern head;
+      Pattern tail;
+    end PAT_CONS;
+    record PAT_CALL "RECORD(pat1,...,patn); all patterns are positional"
+      Absyn.Path name;
+      Integer index;
+      list<Pattern> patterns;
+    end PAT_CALL;
+    record PAT_SOME "SOME(pat)"
+      Pattern pat;
+    end PAT_SOME;
+  end Pattern;
+
   uniontype ComponentRef
     record CREF_QUAL
       Ident ident;
@@ -828,6 +869,11 @@ package DAE
       Exp exp;
       ElementSource source;
     end STMT_TUPLE_ASSIGN;
+    record STMT_ASSIGN_PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
+      Pattern lhs;
+      Exp rhs;
+      ElementSource source "the origin of the component/equation/algorithm";
+    end STMT_ASSIGN_PATTERN;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;
@@ -837,8 +883,8 @@ package DAE
     record STMT_FOR
       ExpType type_;
       Boolean iterIsArray;
-      Ident ident;
-      Exp exp;
+      Ident iter;
+      Exp range;
       list<Statement> statementLst;
       ElementSource source;
     end STMT_FOR;
@@ -854,6 +900,10 @@ package DAE
       list<Integer> helpVarIndices;
       ElementSource source;
     end STMT_WHEN;
+    record STMT_TERMINATE
+      Exp msg;
+      ElementSource source;
+    end STMT_TERMINATE;  
     record STMT_ASSERT
       Exp cond;
       Exp msg;
@@ -864,12 +914,17 @@ package DAE
     end STMT_RETURN;
     record STMT_MATCHCASES
       Absyn.MatchType matchType;
+      list<Exp> inputExps;
       list<Exp> caseStmt;
       ElementSource source;
     end STMT_MATCHCASES;
     record STMT_BREAK
       ElementSource source;
     end STMT_BREAK;
+    record STMT_FAILURE
+      list<Statement> body;
+      ElementSource source;
+    end STMT_FAILURE;
     record STMT_TRY
       list<Statement> tryBody;
       ElementSource source;
@@ -1052,29 +1107,33 @@ package Util
 end Util;
 
 
-package Exp
-
-	function crefHasScalarSubscripts
-		input DAE.ComponentRef cr;
-		output Boolean hasScalarSubs;
-	end crefHasScalarSubscripts;
+package ComponentReference
 
 	function crefStripLastSubs
 		input DAE.ComponentRef inComponentRef;
 		output DAE.ComponentRef outComponentRef;
 	end crefStripLastSubs;
 
-  function getEnumIndexfromCref
-    input DAE.ComponentRef inComponentRef;
-    output Integer outEnumIndex;
-  end getEnumIndexfromCref;
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
+
+end ComponentReference;
+
+package Expression
+
+	function crefHasScalarSubscripts
+		input DAE.ComponentRef cr;
+		output Boolean hasScalarSubs;
+	end crefHasScalarSubscripts;
 
   function typeof
     input DAE.Exp inExp;
     output DAE.ExpType outType;
   end typeof;
 
-end Exp;
+end Expression;
 
 package RTOpts
   function acceptMetaModelicaGrammar

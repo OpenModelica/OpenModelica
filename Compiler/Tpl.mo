@@ -267,7 +267,7 @@ algorithm
     case (txt, c :: chars )
       equation
         (lschars, chars, isline) = takeLineOrString(chars);
-        txt = writeLineOrStr(txt, string_char_list_string( c :: lschars), isline);
+        txt = writeLineOrStr(txt, stringCharListString( c :: lschars), isline);
         //Error txt = writeLineOrStr(txt, stringCharListString( str :: lschars), isline);
       then 
         writeChars(txt, chars);
@@ -629,10 +629,10 @@ algorithm
       BlockType bt;
       Text txt;
           
-    //empty iteration segment and 'empty' option is NONE, so do nothing
+    //empty iteration segment and 'empty' option is NONE(), so do nothing
     case (txt as MEM_TEXT(
             tokens = {},
-            blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE) )) :: _
+            blocksStack = (_, BT_ITER(options = ITER_OPTIONS(empty = NONE()) )) :: _
             ))
       then
         txt;
@@ -1193,7 +1193,7 @@ algorithm
     
     //concat ... i.e. text
     case (BT_ITER(options = ITER_OPTIONS(
-                              separator = NONE,
+                              separator = NONE(),
                               alignNum = 0,
                               wrapWidth = 0)), toks, nchars, isstart, aind)
       equation
@@ -1234,7 +1234,7 @@ algorithm
     
     //no separator and alignment and/or wrapping 
     case (BT_ITER(options = ITER_OPTIONS(
-                              separator = NONE,
+                              separator = NONE(),
                               alignNum = anum,
                               alignOfset = aoffset,
                               alignSeparator = asep,
@@ -1635,7 +1635,7 @@ This function renders a (memory-)text to a file."
   input String inFileName;
 
 algorithm
-  outString := matchcontinue (inText, inFileName)
+  _ := matchcontinue (inText, inFileName)
     local
       Text txt;
       String file, str;

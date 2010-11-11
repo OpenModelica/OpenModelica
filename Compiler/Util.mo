@@ -69,6 +69,11 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
+public uniontype Status "Used to signal success or failure of a function call"
+  record SUCCESS end SUCCESS;
+  record FAILURE end FAILURE;
+end Status;
+
 public uniontype DateTime
   record DATETIME
     Integer sec;
@@ -123,7 +128,7 @@ algorithm
     case({},_) then {};
     case ({elt},greaterThan) then {elt};
     case(lst,greaterThan) equation
-      middle = listLength(lst) / 2;
+      middle = intDiv(listLength(lst),2);
       (left,right) = listSplit(lst,middle);
       left = sort(left,greaterThan);
       right = sort(right,greaterThan);
@@ -201,17 +206,17 @@ algorithm
   flagVal :=
    matchcontinue(flag,arguments)
    local
-      String flag,arg,value;
+      String arg,value;
       list<String> args;
    case(flag,{}) then "";
    case(flag,arg::{})
       equation
-        0 = System.strcmp(flag,arg);
+        0 = stringCompare(flag,arg);
       then
         "";
    case(flag,arg::value::args)
       equation
-        0 = System.strcmp(flag,arg);
+        0 = stringCompare(flag,arg);
       then
         value;
    case(flag,arg::args)
@@ -643,6 +648,26 @@ algorithm
   outTypeALst:= (inTypeA::inTypeALst);
 end listCons;
 
+public function listConsOnSuccess
+"Performs the cons operation if the predicate succeeds."
+  input Type_a x;
+  input list<Type_a> xs;
+  input Predicate fn;
+  output list<Type_a> oxs;
+  replaceable type Type_a subtypeof Any;
+  partial function Predicate
+    input Type_a x;
+  end Predicate;
+algorithm
+  oxs := matchcontinue (x,xs,fn)
+    case (x,xs,fn)
+      equation
+        fn(x);
+      then x::xs;
+    case (_,xs,_) then xs;
+  end matchcontinue;
+end listConsOnSuccess;
+
 public function listCreate "function: listCreate
   Create a list from an element."
   input Type_a inTypeA;
@@ -858,8 +883,8 @@ public function applyAndAppend
   end FuncTypeType_aToType_b;
 algorithm
   outLst := matchcontinue(element, f, accLst)
+    local Type_b result;
     case(element, f, accLst)
-      local Type_b result;
       equation
         result = f(element);
         accLst = listAppend(accLst, {result});
@@ -884,8 +909,8 @@ public function applyAndCons
   end FuncTypeType_aToType_b;
 algorithm
   outLst := matchcontinue(element, f, accLst)
+    local Type_b result;
     case(element, f, accLst)
-      local Type_b result;
       equation
         result = f(element);
       then result::accLst;
@@ -940,9 +965,9 @@ the same type.
 
 See also listMap, arrayMap 
   "
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
@@ -953,11 +978,11 @@ algorithm
 end arrayMapNoCopy;
 
 protected function arrayMapNoCopyHelp1 "help function to arrayMap"
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
   replaceable type Type_a subtypeof Any;
   partial function FuncType
     input Type_a x;
@@ -1025,7 +1050,7 @@ Since it will update the array values the returned array must not have the same 
 
 See also listMap, arrayMapNoCopy 
   "
-  input Type_a[:] array;
+  input array<Type_a> array;
   input FuncType func;
   output Type_b[:] outArray;
   replaceable type Type_a subtypeof Any;
@@ -1041,7 +1066,7 @@ algorithm
 end arrayMap;
 
 protected function arrayMapHelp1 "help function to arrayMap"
-  input Type_a[:] array;
+  input array<Type_a> array;
   input Type_b[:] newArray;
   input FuncType func;
   input Integer pos "iterated 1..len";
@@ -1191,7 +1216,7 @@ function listMap_2_tail
     replaceable type Type_c subtypeof Any;
   end FuncTypeType_aToType_bType_c;
 algorithm
-  outLst := matchcontinue(inLst, fn, accumulator1, accumulator2)
+  (outTypeBLst,outTypeCLst) := matchcontinue(inLst, fn, accumulator1, accumulator2)
     local
       Type_a hd; Type_b hdChanged1; Type_c hdChanged2;
       list<Type_a> rest;  list<Type_b> l1, result1; list<Type_c> l2, result2;
@@ -1522,7 +1547,7 @@ function listMap2_tail
   input Type_b inTypeB;
   input Type_c inTypeC;
   input  list<Type_d> accumulator;
-  output list<Type_d> outTypeDLst;
+  output list<Type_d> outLst;
   replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cToType_d
     input Type_a inTypeA;
@@ -1597,7 +1622,7 @@ function listMap2r_tail
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
 algorithm
-  outLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
+  outTypeDLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
     local
       Type_a hd; Type_d hdChanged;
       list<Type_a> rest;  list<Type_d> l, result;
@@ -2350,7 +2375,7 @@ public function listMapFlat2_tail
     output list<Type_d> outTypeDLst;
   end FuncTypeType_aType_bType_cToType_d;
 algorithm
-  outTypeCLst:=
+  outTypeDLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC,accTypeDLst)
     local
       list<Type_d> f_1;
@@ -2378,7 +2403,7 @@ public function listListAppendLast "appends to the last element of a list of lis
   replaceable type Type_a subtypeof Any;
 algorithm
   outLst := matchcontinue(llst,lst)
-  local list<Type_a> lst1;
+    local list<Type_a> lst1;
     case({},lst) then {lst};
     case({lst1},lst) equation
       lst1 = listAppend(lst1,lst);
@@ -2393,7 +2418,7 @@ public function listListMap "function: listListMap
   Takes a list of lists and a function producing one value.
   The function is applied to each element of the lists resulting
   in a new list of lists.
-  Example: listListMap({ {1,2},{3},{4}},int_string) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }"
+  Example: listListMap({ {1,2},{3},{4}},intString) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }"
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<list<Type_b>> outTypeBLstLst;
@@ -2566,6 +2591,39 @@ algorithm
   end matchcontinue;
 end listFold;
 
+public function listFold1 "Like listFold, but relation takes an extra constant argument between the new element and the accumulated value"
+  input list<Type_a> inTypeALst;
+  input Func func;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  output Type_c outTypeC;
+  partial function Func
+    input Type_a inTypeA "current element";
+    input Type_b inTypeB "extra constant";
+    input Type_c inTypeC "accumulated value";
+    output Type_c outTypeC;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeC :=
+  matchcontinue (inTypeALst,func,inTypeB,inTypeC)
+    local
+      Type_b b;
+      Type_c c,c_1,c_2;
+      Type_a l;
+      list<Type_a> lst;
+    case ({},func,b,c) then c;
+    case ((l :: lst),func,b,c)
+      equation
+        c_1 = func(l, b, c);
+        c_2 = listFold1(lst, func, b, c_1);
+      then
+        c_2;
+  end matchcontinue;
+end listFold1;
+
 public function listFoldR "function: listFoldR
   Similar to listFold but reversed argument order in function."
   input list<Type_a> lst;
@@ -2577,7 +2635,7 @@ public function listFoldR "function: listFoldR
   partial function FoldFunc
     input Type_b foldArg;
     input Type_a iterated;
-    output Type_b foldArg;
+    output Type_b ofoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2585,7 +2643,6 @@ algorithm
     local
       Type_b foldArg1,foldArg2;
       Type_a l;
-      list<Type_a> lst;
     case ({},foldFunc,foldArg) then foldArg;
     case ((l :: lst),foldFunc,foldArg)
       equation
@@ -2685,7 +2742,7 @@ public function listFold_3 "function: listFold_3
     input Type_a iterated;
     input Type_c extraArg;
     input Type_d extraArg2;
-    output Type_b foldArg;
+    output Type_b ofoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2693,7 +2750,6 @@ algorithm
     local
       Type_b foldArg1,foldArg2;
       Type_a l;
-      list<Type_a> lst;
     case ({},foldFunc,foldArg,extraArg,extraArg2) then foldArg;
     case ((l :: lst),foldFunc,foldArg,extraArg,extraArg2)
       equation
@@ -2705,7 +2761,7 @@ algorithm
 end listFold_3;
 
 public function listlistFoldMap "function: listlistFoldMap
-  For example see Interactive.traverseExp."
+  For example see Interactive.traverseExpression."
   input list<list<Type_a>> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;
@@ -2738,7 +2794,7 @@ end listlistFoldMap;
 
 public function listFoldMap "function: listFoldMap
   author: PA
-  For example see Exp.traverseExp."
+  For example see Expression.traverseExpression."
   input list<Type_a> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;
@@ -2927,7 +2983,7 @@ public function listThreadMap32 "function: listThreadMap32
     output Type_e outTypeE;
   end FuncTypeType_aType_bType_cToType_dType_e;
 algorithm
-  outTypeCLst:=
+  (outTypeDLst,outTypeELst) :=
   matchcontinue (inTypeALst,inTypeBLst,inTypeCLst,inFuncTypeTypeATypeBTypeCToTypeDTypeE)
     local
       Type_d fr_d;
@@ -2954,7 +3010,7 @@ end listThreadMap32;
 public function listListThreadMap "function: listListThreadMap
   Takes two lists of lists and a function and threads (interleaves)
   and maps the elements  of the elements of the two lists creating a new list.
-  Example: listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}"
+  Example: listListThreadMap({{1,2}},{{3,4}},intAdd) => {{1+3, 2+4}}"
   input list<list<Type_a>> inTypeALst;
   input list<list<Type_b>> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
@@ -3076,6 +3132,43 @@ algorithm
         (f :: r);
   end matchcontinue;
 end listListThreadTuple;
+
+public function listThreadFold
+  "This is a combination of listThread and listFold that applies a function to
+  the heads of two lists with an extra argument that is updated and passed on."
+  input list<Type_a> inList_a;
+  input list<Type_b> inList_b;
+  input FuncType inFunc;
+  input Type_c inFoldValue;
+  output Type_c outFoldValue;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inA;
+    input Type_b inB;
+    input Type_c inC;
+    output Type_c outC;
+  end FuncType;
+algorithm
+  outFoldValue := matchcontinue(inList_a, inList_b, inFunc, inFoldValue)
+    local
+      Type_a a;
+      Type_b b;
+      Type_c c;
+      list<Type_a> rest_a;
+      list<Type_b> rest_b;
+    case ({}, {}, _, _) then inFoldValue;
+    case (a :: rest_a, b :: rest_b, _, _)
+      equation
+        c = inFunc(a, b, inFoldValue);
+        c = listThreadFold(rest_a, rest_b, inFunc, c);
+      then
+        c;
+  end matchcontinue;
+end listThreadFold;
 
 public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
 If all strings a empty or empty list return empty string.
@@ -3201,7 +3294,7 @@ public function listSelect2 "function listSelect1
   partial function FuncTypeType_aType_bToBoolean
     input Type_a inTypeA;
     input Type_b inTypeB;
-    input Type_c inTypeB;
+    input Type_c inTypeC;
     output Boolean outBoolean;
   end FuncTypeType_aType_bToBoolean;
 algorithm
@@ -3283,16 +3376,15 @@ protected function listPos "helper function to listPosition"
 algorithm
   outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
     local
-      Type_a x,y,i;
+      Type_a x,y;
       list<Type_a> ys;
-      Integer i_1,n;
+      Integer i,i_1,n;
     case (x,(y :: ys),i)
       equation
         equality(x = y);
       then
         i;
     case (x,(y :: ys),i)
-      local Integer i;
       equation
         failure(equality(x = y));
         i_1 = i + 1;
@@ -3324,17 +3416,16 @@ protected function listlistPos "helper function to listPosition"
 algorithm
   outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
     local
-      Type_a x,y,i;
+      Type_a x,y;
       list<Type_a> y1;
       list<list<Type_a>> ys;
-      Integer i_1,n;
+      Integer i,i_1,n;
     case (x,((y::{}):: ys),i)
       equation
         equality(x = y);
       then
         i;
     case (x,((y::{}) :: ys),i)
-      local Integer i;
       equation
         failure(equality(x = y));
         i_1 = i + 1;
@@ -3342,7 +3433,6 @@ algorithm
       then
         n;        
     case (x,((y1) :: ys),i)
-      local Integer i;
       equation
         //failure(equality(x = y1));
         //i_1 = i + 1;
@@ -3350,7 +3440,6 @@ algorithm
       then
         i;
     case (x,(y1 :: ys),i)
-      local Integer i;
       equation
         false = listPos2(x, y1);
         i_1 = i + 1;
@@ -3588,22 +3677,24 @@ public function listGetMemberOnTrue "function listGetmemberOnTrue
     function equalLength(string,string) returns true if the strings are of same length
     listGetMemberOnTrue(\"a\",{\"bb\",\"b\",\"ccc\"},equalLength) => \"b\""
   input Type_a inTypeA;
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
-  output Type_a outTypeA;
+  input list<Type_b> inTypeBLst;
+  input FuncType inFunc;
+  output Type_b outTypeB;
   replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aType_aToBoolean
-    input Type_a inTypeA1;
-    input Type_a inTypeA2;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a inTypeA;
+    input Type_b inTypeB;
     output Boolean outBoolean;
-  end FuncTypeType_aType_aToBoolean;
+  end FuncType;
 algorithm
-  outTypeA:=
-  matchcontinue (inTypeA,inTypeALst,inFuncTypeTypeATypeAToBoolean)
+  outTypeB:=
+  matchcontinue (inTypeA,inTypeBLst,inFunc)
     local
-      FuncTypeType_aType_aToBoolean p;
-      Type_a x,y,res;
-      list<Type_a> ys;
+      FuncType p;
+      Type_a x;
+      Type_b y,res;
+      list<Type_b> ys;
     case (_,{},p) then fail();
     case (x,(y :: ys),p)
       equation
@@ -3823,7 +3914,7 @@ then; listUnionOnTrue({1,2,3,4,5},{3,6,7},equal); => {1,2,3,4,5,6,7}
     partial function FuncTypeType_aType_aToType_b
     input list<Type_a> inTypeA1;
     input list<Type_a> inTypeA2;
-    input Type_c inTypeA2;
+    input Type_c inTypeC;
     output list<Type_a> outTypeA;
   end FuncTypeType_aType_aToType_b;
 algorithm outTypeALst := matchcontinue(inTypeALst1,inTypeALst2,inFunc,extArg)
@@ -3913,8 +4004,8 @@ public function listRemoveOnTrue "
 Go trough a list and when function is true, remove that element.
 "
   input Type_a inTypeALst1;
-  input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
+  input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
@@ -3924,26 +4015,63 @@ Go trough a list and when function is true, remove that element.
   end FuncTypeType_aType_aToBoolean;
 algorithm
   outTypeALst:=
-  matchcontinue (inTypeALst1,inTypeALst2,inFuncTypeTypeATypeAToBoolean3)
+  matchcontinue (inTypeALst1,inFuncTypeTypeATypeAToBoolean3,inTypeALst2)
     local
       list<Type_a> res,r1,xs,lst2;
       FuncTypeType_aType_aToBoolean p;
       Type_a x,y;
-    case (x,{},p) then {};
-    case (x,y::xs,p)
+    case (x,p,{}) then {};
+    case (x,p,y::xs)
       equation
          true = p(x,y);
-         res = listRemoveOnTrue(x, xs, p);
+         res = listRemoveOnTrue(x, p, xs);
       then
         res;
-    case (x,y::xs,p)
+    case (x,p,y::xs)
       equation
         false = p(x,y);
-        res = listRemoveOnTrue(x, xs, p);
+        res = listRemoveOnTrue(x, p, xs);
       then
         y::res;
   end matchcontinue;
 end listRemoveOnTrue;
+
+public function listRemoveFirstOnTrue
+  "Removes the first element from the list that matches the given element, using
+  a boolean function. Ex:
+    listRemoveFirstOnTrue(3, intEq, {2,3,4,3}) = {2,4,3}"
+  input Type_a inCompElement;
+  input FuncType inFunc;
+  input list<Type_b> inList;
+  output list<Type_b> outList;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+ 
+  partial function FuncType
+    input Type_a e1;
+    input Type_b e2;
+    output Boolean res;
+  end FuncType;
+algorithm
+  outList := matchcontinue(inCompElement, inFunc, inList)
+    local
+      Type_b e;
+      list<Type_b> rest;
+      
+    case (_, _, {}) then {};
+    case (_, _, e :: rest)
+      equation
+        true = inFunc(inCompElement, e);
+      then
+        rest;
+    case (_, _, e :: rest)
+      equation
+        rest = listRemoveFirstOnTrue(inCompElement, inFunc, rest);
+      then
+        e :: rest;
+  end matchcontinue;
+end listRemoveFirstOnTrue;
 
 public function listIntersectionIntN "provides same functionality as listIntersection, but for integer values between 1 and N
 The complexity in this case is O(n)"
@@ -3951,7 +4079,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -3961,8 +4089,8 @@ algorithm
 end listIntersectionIntN;
 
 protected function listIntersectionIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -3983,9 +4111,9 @@ end listIntersectionIntVec;
 
 protected function listSetPos "Help function to listIntersectionIntN"
   input list<Integer> intLst;
-  input Integer[:] arr;
+  input array<Integer> arr;
   input Integer v;
-  output Integer[:] outArr;
+  output array<Integer> outArr;
 algorithm
   outArr := matchcontinue(intLst,arr,v)
   local Integer i;
@@ -4007,7 +4135,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -4017,8 +4145,8 @@ algorithm
 end listUnionIntN;
 
 protected function listUnionIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -4043,7 +4171,7 @@ The complexity in this case is O(n)"
   input list<Integer> s2;
   input Integer N;
   output list<Integer> res;
-protected Integer[:] a1,a2;
+protected array<Integer> a1,a2;
 algorithm
   a1:= arrayCreate(N,0);
   a2:= arrayCreate(N,0);
@@ -4053,8 +4181,8 @@ algorithm
 end listSetDifferenceIntN;
 
 protected function listSetDifferenceIntVec " help function to listIntersectionIntN"
-  input Integer[:] a1;
-  input Integer[:] a2;
+  input array<Integer> a1;
+  input array<Integer> a2;
   input Integer indx;
   output list<Integer> res;
 algorithm
@@ -4078,8 +4206,8 @@ public function listIntersectionOnTrue "function: listIntersectionOnTrue
   It returns the intersection of the two lists, using the comparison function passed as
   argument to determine identity between two elements.
   Example:
-    given the function stringEqual(string,string) returning true if the strings are equal
-    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEqual) => {\"aa\"}"
+    given the function stringEq(string,string) returning true if the strings are equal
+    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEq) => {\"aa\"}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
@@ -4127,8 +4255,8 @@ public function listSetEqualOnTrue "function: listSetEqualOnTrue
   end CompareFunc;
 algorithm
    equal := matchcontinue(lst1,lst2,compare)
+     local list<Type_a> lst;
      case (lst1,lst2,compare)
-       local list<Type_a> lst;
        equation
        	lst = listIntersectionOnTrue(lst1,lst2,compare);
        	true = intEq(listLength(lst), listLength(lst1));
@@ -4355,7 +4483,7 @@ end listReplaceAtWithFill;
 public function listReduce "function: listReduce
   Takes a list and a function operating on two elements of the list.
   The function performs a reduction of the lists to a single value using the function.
-  Example: listReduce({1,2,3},int_add) => 6"
+  Example: listReduce({1,2,3},intAdd) => 6"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToType_a inFuncTypeTypeATypeAToTypeA;
   output Type_a outTypeA;
@@ -4443,16 +4571,16 @@ public function arrayReplaceAtWithFill "
     arrayReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input Type_a inTypeA1;
   input Integer inInteger2;
-  input Type_a[:] inTypeAArray3;
+  input array<Type_a> inTypeAArray3;
   input Type_a inTypeA4;
-  output Type_a[:] outTypeAArray;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeA1,inInteger2,inTypeAArray3,inTypeA4)
     local
       Integer alen,pos;
-      Type_a[:] res,arr,newarr,res_1;
+      array<Type_a> res,arr,newarr,res_1;
       Type_a x,fillv;
     case (x,pos,arr,fillv)
       equation
@@ -4481,29 +4609,29 @@ public function arrayExpand "function: arrayExpand
   Increases the number of elements of a list with n.
   Each of the new elements have the value v."
   input Integer n;
-  input Type_a[:] arr;
+  input array<Type_a> arr;
   input Type_a v;
-  output Type_a[:] newarr_1;
+  output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
   Integer len,newlen;
-  Type_a[:] newarr,newarr_1;
+  array<Type_a> newarr;
 algorithm
   len := arrayLength(arr);
   newlen := n + len;
-  newarr := fill(v, newlen);
+  newarr := arrayCreate(newlen, v);
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 
 public function arrayNCopy "function arrayNCopy
   Copeis n elements in src array into dest array
   The function fails if all elements can not be fit into dest array."
-  input Type_a[:] src;
-  input Type_a[:] dst;
+  input array<Type_a> src;
+  input array<Type_a> dst;
   input Integer n;
-  output Type_a[:] dst_1;
+  output array<Type_a> dst_1;
   replaceable type Type_a subtypeof Any;
   Integer n_1;
-  Type_a[:] dst_1;
+  array<Type_a> dst_1;
 algorithm
   n_1 := n - 1;
   dst_1 := arrayCopy2(src, dst, n_1);
@@ -4511,9 +4639,9 @@ end arrayNCopy;
 
 public function arrayAppend "Function: arrayAppend
 function for appending two arrays"
-  input Type_a[:] arr1;
-  input Type_a[:] arr2;
-  output Type_a[:] out;
+  input array<Type_a> arr1;
+  input array<Type_a> arr2;
+  output array<Type_a> out;
   replaceable type Type_a subtypeof Any;
   list<Type_a> l1,l2,l3;
 algorithm
@@ -4526,16 +4654,16 @@ end arrayAppend;
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
-  output Type_a[:] outTypeAArray;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2)
     local
       Integer srclen,dstlen;
-      Type_a[:] src,dst,dst_1;
+      array<Type_a> src,dst,dst_1;
     case (src,dst) /* src dst */
       equation
         srclen = arrayLength(src);
@@ -4556,16 +4684,16 @@ algorithm
 end arrayCopy;
 
 protected function arrayCopy2
-  input Type_a[:] inTypeAArray1;
-  input Type_a[:] inTypeAArray2;
+  input array<Type_a> inTypeAArray1;
+  input array<Type_a> inTypeAArray2;
   input Integer inInteger3;
-  output Type_a[:] outTypeAArray;
+  output array<Type_a> outTypeAArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
     local
-      Type_a[:] src,dst,dst_1,dst_2;
+      array<Type_a> src,dst,dst_1,dst_2;
       Type_a elt;
       Integer pos;
     case (src,dst,-1) then dst;  /* src dst current pos */
@@ -4632,6 +4760,17 @@ algorithm
     case ((_,b)) then b;
   end matchcontinue;
 end tuple22;
+
+public function optTuple22 "function: optTuple22
+  Takes an option tuple of two values and returns the second value.
+  Example: optTuple22(SOME(\"a\",1)) => 1"
+  input Option<tuple<Type_a, Type_b>> inTplTypeATypeB;
+  output Type_b outTypeB;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  SOME((_,outTypeB)) := inTplTypeATypeB;
+end optTuple22;
 
 public function tuple312 "
   Takes a tuple of three values and returns the tuple of the two first values.
@@ -4790,8 +4929,8 @@ algorithm
     local
       TypeA resA;
       TypeB resB;
-    case(true,resA,_) then ((SOME(resA),NONE));
-    case(false,_,resB) then ((NONE,SOME(resB)));
+    case(true,resA,_) then ((SOME(resA),NONE()));
+    case(false,_,resB) then ((NONE(),SOME(resB)));
   end matchcontinue;
 end if_t;
 
@@ -4808,34 +4947,33 @@ algorithm
   end matchcontinue;
 end stringContainsChar;
 
+/* adrpo 2010-10-27 this function is now in MetaModelica/RML!
 public function stringAppendList "function stringAppendList
   Takes a list of strings and appends them.
   Example: stringAppendList({\"foo\", \" \", \"bar\"}) => \"foo bar\""
   input list<String> inStringLst;
   output String outString;
 algorithm
-  // adrpo: MetaModelica will contain this function!
-  //        for now the code is in System.
-  outString := System.stringAppendList(inStringLst);
+  // adrpo: MetaModelica now contains this function.
+  outString := RML.stringAppendList(inStringLst);
   // yet another alternative implementation
   // outString := stringAppendList_tail(inStringLst, "");
-  /* alternative implementation
-  outString:=
-  matchcontinue (inStringLst)
-    local
-      String f,r_1,str;
-      list<String> r;
-    case {} then "";
-    case {f} then f;
-    case (f :: r)
-      equation
-        r_1 = stringAppendList(r);
-        str = stringAppend(f, r_1);
-      then
-        str;
-  end matchcontinue;
-  */
+  // alternative implementation
+  // outString:= matchcontinue (inStringLst)
+  //   local
+  //     String f,r_1,str;
+  //     list<String> r;
+  //   case {} then "";
+  //   case {f} then f;
+  //   case (f :: r)
+  //     equation
+  //       r_1 = stringAppendList(r);
+  //       str = stringAppend(f, r_1);
+  //     then
+  //       str;
+  // end matchcontinue;
 end stringAppendList;
+*/
 
 public function stringAppendList_tail "
 @author adrpo
@@ -4940,8 +5078,7 @@ protected function stringDelimitListAndSeparate2 "function: stringDelimitListAnd
   input Integer inInteger4;
   input Integer inInteger5;
 algorithm
-  outString:=
-  matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
+  _ := matchcontinue (inStringLst1,inString2,inString3,inInteger4,inInteger5)
     local
       String s,str1,str,f,sep1,sep2;
       list<String> r;
@@ -5012,17 +5149,16 @@ algorithm
       String fromChar,toChar;
     case (str,fromChar,toChar)
       equation
-        strList = string_list_string_char(str);
+        strList = stringListStringChar(str);
         resList = stringReplaceChar2(strList, fromChar, toChar);
-        res = string_char_list_string(resList);
+        res = stringCharListString(resList);
       then
         res;
-    case (strList,_,_)
-      local String strList;
+    case (_,_,_)
       equation
         print("- Util.stringReplaceChar failed\n");
       then
-        strList;
+        fail();
   end matchcontinue;
 end stringReplaceChar;
 
@@ -5040,23 +5176,23 @@ algorithm
     case ({},_,_) then {};
     case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
       equation
-        true = stringEqual(firstChar, fromChar);
+        true = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, "");
       then
         (res);
     
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        true = stringEqual(firstChar, fromChar);
+        true = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
-        charList2 = string_list_string_char(toChar);
+        charList2 = stringListStringChar(toChar);
         res = listAppend(charList2,res);
       then
         res;
 
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        false = stringEqual(firstChar, fromChar);
+        false = stringEq(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
       then
         (firstChar :: res);
@@ -5084,7 +5220,7 @@ algorithm
       String chr;
     case (str,chr)
       equation
-        chrList = string_list_string_char(str);
+        chrList = stringListStringChar(str);
         stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
       then
         stringList;
@@ -5100,34 +5236,32 @@ protected function stringSplitAtChar2
 algorithm
   outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
     local
-      list<String> chr_rest_1,chr_rest,chrList,rest,strList;
-      String res;
+      list<String> chr_rest_1,chr_rest,chrList,rest,strList,res;
       list<String> res_str;
-      String firstChar,chr;
+      String firstChar,chr,str;
     
     case ({},_,chr_rest)
       equation
         chr_rest_1 = listReverse(chr_rest);
-        res = string_char_list_string(chr_rest_1);
+        str = stringCharListString(chr_rest_1);
       then
-        {res};
+        {str};
     
     case ((firstChar :: rest),chr,chr_rest)
       equation
-        true = stringEqual(firstChar, chr);
+        true = stringEq(firstChar, chr);
         chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
-        res = string_char_list_string(chrList);
-        res_str = stringSplitAtChar2(rest, chr, {});
+        str = stringCharListString(chrList);
+        res = stringSplitAtChar2(rest, chr, {});
       then
-        (res :: res_str);
+        (str :: res);
     case ((firstChar :: rest),chr,chr_rest)
-      local list<String> res;
       equation
-        false = stringEqual(firstChar, chr);
+        false = stringEq(firstChar, chr);
         res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
         res;
-    case (strList,_,_)
+    case (_,_,_)
       equation
         print("- Util.stringSplitAtChar2 failed\n");
       then
@@ -5318,15 +5452,15 @@ end boolEqual;
 
 /*
 adrpo - 2007-02-19 this function already exists in MMC/RML
-public function stringEqual "function: stringEqual
+public function stringEq "function: stringEq
   Takes two strings and returns true if the strings are equal
-  Example: stringEqual(\"a\",\"a\") => true"
+  Example: stringEq(\"a\",\"a\") => true"
   input String inString1;
   input String inString2;
   output Boolean outBoolean;
 algorithm
   outBoolean:= inString1 ==& intString2;
-end stringEqual;
+end stringEq;
 */
 
 public function listFilter
@@ -5531,7 +5665,7 @@ public function applyOption "function: applyOption
   from the application of the function on the value.
   Example:
     applyOption(SOME(1), intString) => SOME(\"1\")
-    applyOption(NONE,    intString) => NONE"
+    applyOption(NONE(),    intString) => NONE"
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output Option<Type_b> outTypeBOption;
@@ -5549,7 +5683,7 @@ algorithm
       Type_b b;
       Type_a a;
       FuncTypeType_aToType_b rel;
-    case (NONE,_) then NONE;
+    case (NONE(),_) then NONE();
     case (SOME(a),rel)
       equation
         b = rel(a);
@@ -5576,7 +5710,7 @@ algorithm
   outString:=
   matchcontinue (inStringOption)
     local String s;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(s)) then s;
   end matchcontinue;
 end stringOption;
@@ -5588,11 +5722,7 @@ public function getOption "
   output Type_a unOption;
   replaceable type Type_a subtypeof Any;
 algorithm
-  unOption:=
-  matchcontinue (inOption)
-    local Type_a item;
-    case (SOME(item)) then item;
-  end matchcontinue;
+  SOME(unOption) := inOption;
 end getOption;
 
 public function getOptionOrDefault
@@ -5617,7 +5747,7 @@ public function genericOption "function: genericOption
   replaceable type Type_a subtypeof Any;
 algorithm unOption := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then {};
+    case (NONE()) then {};
     case (SOME(item)) then {item};
   end matchcontinue;
 end genericOption;
@@ -5632,7 +5762,7 @@ public function isNone
   replaceable type Type_a subtypeof Any;
 algorithm out := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then true;
+    case (NONE()) then true;
     case (_) then false;
   end matchcontinue;
 end isNone;
@@ -5647,20 +5777,20 @@ public function isSome
   replaceable type Type_a subtypeof Any;
 algorithm out := matchcontinue (inOption)
     local Type_a item;
-    case (NONE) then false;
+    case (NONE()) then false;
     case (_) then true;
   end matchcontinue;
 end isSome;
 
 public function makeOptIfNonEmptyList "function: stringOption
   author: BZ
-  Construct a Option<Type_a> if the list contains one and only one element. If more, error. On empty=>NONE"
+  Construct a Option<Type_a> if the list contains one and only one element. If more, error. On empty=>NONE()"
   input list<Type_a> unOption;
   output Option<Type_a> inOption;
   replaceable type Type_a subtypeof Any;
 algorithm inOption := matchcontinue (unOption)
     local Type_a item;
-    case ({}) then NONE;
+    case ({}) then NONE();
     case ({item}) then SOME(item);
   end matchcontinue;
 end makeOptIfNonEmptyList;
@@ -5760,6 +5890,58 @@ algorithm
   end matchcontinue;
 end listSplitOnTrue2;
 
+public function listSplitOnBoolList
+"Splits a list into two sublists depending on second list of bools"
+  input list<Type_a> lst;
+  input list<Boolean> blst;
+  output list<Type_a> tlst;
+  output list<Type_a> flst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (tlst,flst) := matchcontinue(lst,blst)
+  local Type_a l;
+    case({},{}) then ({},{});
+    case(l::lst,true::blst) equation
+      (tlst,flst) = listSplitOnBoolList(lst,blst);
+    then (l::tlst,flst);
+    case(l::lst,false::blst) equation
+      (tlst,flst) = listSplitOnBoolList(lst,blst);
+    then (tlst,l::flst);
+  end matchcontinue;
+end listSplitOnBoolList;
+
+public function listSplitOnFirstMatch
+  "This function splits a list when the given function first finds a matching
+  element. Ex:
+    listSplitOnFirstMatch({1,2,3,4,5}, isThree) => ({1,2}, {3,4,5})"
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  output list<Type_a> outList1;
+  output list<Type_a> outList2;
+
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a inElement;
+  end FuncType;
+algorithm
+  (outList1, outList2) := matchcontinue(inList, inFunc)
+    local
+      Type_a e;
+      list<Type_a> el, l1, l2;
+    case ({}, _) then ({}, {});
+    case (e :: el, _)
+      equation
+        inFunc(e);
+      then
+        ({}, e :: el);
+    case (e :: el, _)
+      equation
+        (l1, l2) = listSplitOnFirstMatch(el, inFunc);
+      then
+        (e :: l1, l2);
+  end matchcontinue;
+end listSplitOnFirstMatch;
+
 public function listSplitEqualParts "function: listSplitEqualParts
   Takes a list of values and an position value.
   The function returns the list splitted into two lists at the position given as argument.
@@ -5769,7 +5951,7 @@ public function listSplitEqualParts "function: listSplitEqualParts
   output list<list<Type_a>> outTypeALst1;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outTypeALst1,outTypeALst2):=
+  outTypeALst1 :=
   matchcontinue (inTypeALst,inInteger)
     local
       list<Type_a> a,b,c;
@@ -5800,7 +5982,7 @@ protected function listSplitEqualParts2 "function: listSplitEqualParts
   output list<list<Type_a>> outTypeALst1;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outTypeALst1,outTypeALst2):=
+  (outTypeALst1):=
   matchcontinue (inTypeALst,inInteger)
     local
       list<Type_a> a,b,c;
@@ -5811,7 +5993,7 @@ algorithm
       equation
         (c,b) = listSplit2(a, {}, divider);
         rec = listSplitEqualParts2(c,divider);
-        rec = listAppend({b},rec);
+        rec = b::rec;
         then
           rec;
   end matchcontinue;
@@ -5890,19 +6072,20 @@ algorithm
   (outTypeALst1,outTypeALst2):=
   matchcontinue (inTypeALst1,inTypeALst2,inInteger3)
     local
-      list<Type_a> a,b,c,d,rest;
+      list<Type_a> la,lb,c,d,rest;
+      Type_a a;
       Integer index,new_index;
-    case (a,b,index)
+    case (la,lb,index)
       equation
         (index == 0) = true;
+        lb = listReverse(lb);
       then
-        (a,b);
-    case ((a :: rest),b,index)
-      local Type_a a;
+        (la,lb);
+    case ((a :: la),lb,index)
       equation
         new_index = index - 1;
-        c = listAppend(b, {a});
-        (c,d) = listSplit2(rest, c, new_index);
+        c = a::lb;
+        (c,d) = listSplit2(la, c, new_index);
       then
         (c,d);
     case (_,_,_)
@@ -5922,7 +6105,7 @@ algorithm
 end intPositive;
 
 public function optionToList "function: optionToList
-  Returns an empty list for NONE and a list containing
+  Returns an empty list for NONE() and a list containing
   the element for SOME(element). To use with listAppend"
   input Option<Type_a> inTypeAOption;
   output list<Type_a> outTypeALst;
@@ -5931,13 +6114,13 @@ algorithm
   outTypeALst:=
   matchcontinue (inTypeAOption)
     local Type_a e;
-    case NONE then {};
+    case NONE() then {};
     case SOME(e) then {e};
   end matchcontinue;
 end optionToList;
 
 public function flattenOption "function: flattenOption
-  Returns the second argument if NONE or the element in SOME(element)"
+  Returns the second argument if NONE() or the element in SOME(element)"
   input Option<Type_a> inTypeAOption;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -5945,7 +6128,7 @@ public function flattenOption "function: flattenOption
 algorithm
   outTypeA := matchcontinue (inTypeAOption,inTypeA)
     local Type_a n,c;
-    case (NONE,n) then n;
+    case (NONE(),n) then n;
     case (SOME(c),n) then c;
   end matchcontinue;
 end flattenOption;
@@ -5966,7 +6149,7 @@ public function isEmptyString "function: isEmptyString
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := stringEqual(inString, "");
+  outBoolean := stringEq(inString, "");
 end isEmptyString;
 
 public function isNotEmptyString "function: isNotEmptyString
@@ -5974,7 +6157,7 @@ public function isNotEmptyString "function: isNotEmptyString
   input String inString;
   output Boolean outBoolean;
 algorithm
-  outBoolean := boolNot(stringEqual(inString, ""));
+  outBoolean := boolNot(stringEq(inString, ""));
 end isNotEmptyString;
 
 public function writeFileOrErrorMsg "function: writeFileOrErrorMsg
@@ -6038,11 +6221,11 @@ algorithm
       String a,b;
       Integer n1,n;
       list<String> l1,l2;
-    case ((a :: _),(b :: _),1) then stringEqual(a, b);
+    case ((a :: _),(b :: _),1) then stringEq(a, b);
     case ((a :: l1),(b :: l2),n)
       equation
         n1 = n - 1;
-        true = stringEqual(a, b);
+        true = stringEq(a, b);
         true = charListCompare(l1, l2, n1);
       then
         true;
@@ -6067,8 +6250,8 @@ algorithm
       String s1,s2;
     case (s1,s2,n)
       equation
-        clst1 = string_list_string_char(s1);
-        clst2 = string_list_string_char(s2);
+        clst1 = stringListStringChar(s1);
+        clst2 = stringListStringChar(s2);
         s1len = stringLength(s1);
         s2len = stringLength(s2);
         (s1len >= n) = true;
@@ -6113,24 +6296,23 @@ algorithm
   (outString1,outString2):=
   matchcontinue (inString)
     local
-      String file,pd,list_path,res,file_1,file_path,dir_path,current_dir,name;
+      String file,pd,path,res,file_1,file_path,dir_path,current_dir,name;
       String pd_chr;
-      list<String> list_path_1;
+      list<String> list_path_1,list_path;
     case (file_1)
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = string_list_string_char(pd); */
-        (list_path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
+        /* (pd_chr :: {}) = stringListStringChar(pd); */
+        (path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
         res = System.pwd();
       then
-        (res,list_path);
+        (res,path);
     case (file_1)
-      local list<String> list_path;
       equation
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        /* (pd_chr :: {}) = string_list_string_char(pd); */
+        /* (pd_chr :: {}) = stringListStringChar(pd); */
         list_path = stringSplitAtChar(file, pd);
         file_path = listLast(list_path);
         list_path_1 = listStripLast(list_path);
@@ -6180,7 +6362,7 @@ public function listProduct
   output list<list<Type_a>> outTypeALstLst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALstlst := matchcontinue (inTypeALstLst1, inTypeALstLst2)
+  outTypeALstLst := matchcontinue (inTypeALstLst1, inTypeALstLst2)
     local
       list<list<Type_a>> out;
     case (inTypeALstLst1, inTypeALstLst2)
@@ -6206,7 +6388,7 @@ public function listProduct_acc
   output list<list<Type_a>> outTypeALstLst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
+  outTypeALstLst :=
   matchcontinue (inTypeALst1, inTypeALst2, inTypeALstLst)
     local
       list<list<Type_a>> out, out1, out2, tail1, tail2;
@@ -6353,7 +6535,7 @@ algorithm
   end matchcontinue;
 end mulListIntegerOpt;
 
-public type StatefulBoolean = Boolean[:] "A single boolean value that can be updated (a destructive operation)";
+public type StatefulBoolean = array<Boolean> "A single boolean value that can be updated (a destructive operation)";
 
 public function makeStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"
@@ -6489,7 +6671,7 @@ public function strcmpBool "As strcmp, but has Boolean output as is expected by 
   input String s2;
   output Boolean b;
 algorithm
-  b := if_(System.strcmp(s1,s2) > 0, true, false);
+  b := if_(stringCompare(s1,s2) > 0, true, false);
 end strcmpBool;
 
 public function stringAppendReverse
@@ -6527,6 +6709,156 @@ algorithm
   end matchcontinue;
 end selectList;
 
+public function listMapOption
+"More efficient than: listMap(listMap(lst, getOption), fn)
+Also, does not fail if an element is NONE()
+"
+  input list<Option<Type_a>> lst;
+  input FuncTypeType_aToType_b fn;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeBLst := listMapOption_tail(lst, {}, fn);
+end listMapOption;
+
+protected function listMapOption_tail
+  input list<Option<Type_a>> lst;
+  input list<Type_b> acc;
+  input FuncTypeType_aToType_b fn;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeBLst := matchcontinue (lst, acc, fn)
+    local
+      Type_a x;
+      Type_b b;
+      list<Option<Type_a>> xs;
+    case ({}, acc, fn) then listReverse(acc);
+    case (SOME(x)::xs, acc, fn)
+      equation
+        b = fn(x);
+      then listMapOption_tail(xs, b::acc, fn);
+    case (NONE()::xs, acc, fn) then listMapOption_tail(xs, acc, fn);
+  end matchcontinue;
+end listMapOption_tail;
+
+public function listMapOption1
+"More efficient than: listMap1(listMap(lst, getOption), fn, arg)
+Also, does not fail if an element is NONE()
+"
+  input list<Option<Type_a>> lst;
+  input Func fn;
+  input Type_b b;
+  output list<Type_c> cl;
+  partial function Func
+    input Type_a a;
+    input Type_b b;
+    output Type_c c;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  cl := listMapOption1_tail(lst, {}, fn, b);
+end listMapOption1;
+
+protected function listMapOption1_tail
+  input list<Option<Type_a>> lst;
+  input list<Type_c> acc;
+  input Func fn;
+  input Type_b b;
+  output list<Type_c> cl;
+  partial function Func
+    input Type_a a;
+    input Type_b b;
+    output Type_c c;
+  end Func;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  cl := matchcontinue (lst, acc, fn, b)
+    local
+      Type_a a;
+      Type_c c;
+    case ({}, acc, fn, b) then listReverse(acc);
+    case (SOME(a)::lst, acc, fn, b)
+      equation
+        c = fn(a,b);
+      then listMapOption1_tail(lst, c::acc, fn, b);
+    case (NONE()::lst, acc, fn, b) then listMapOption1_tail(lst, acc, fn, b);
+  end matchcontinue;
+end listMapOption1_tail;
+
+public function listMapMap
+"More efficient than: listMap(listMap(lst, fn1), fn2)
+"
+  input list<Type_a> lst;
+  input F_a_b fn1;
+  input F_b_c fn2;
+  output list<Type_c> outLst;
+  partial function F_a_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end F_a_b;
+  partial function F_b_c
+    input Type_b inTypeA;
+    output Type_c outTypeC;
+  end F_b_c;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outLst := listMapMap_tail(lst, {}, fn1, fn2);
+end listMapMap;
+
+protected function listMapMap_tail
+"More efficient than: listMap(listMap(lst, fn1), fn2)
+"
+  input list<Type_a> lst;
+  input list<Type_c> acc;
+  input F_a_b fn1;
+  input F_b_c fn2;
+  output list<Type_c> outLst;
+  partial function F_a_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end F_a_b;
+  partial function F_b_c
+    input Type_b inTypeA;
+    output Type_c outTypeC;
+  end F_b_c;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outLst := matchcontinue (lst, acc, fn1, fn2)
+    local
+      Type_a a;
+      Type_b b;
+      Type_c c;
+      list<Type_a> xs;
+    case ({}, acc, fn1, fn2) then listReverse(acc);
+    case (a::xs, acc, fn1, fn2)
+      equation
+        b = fn1(a);
+        c = fn2(b);
+      then listMapMap_tail(xs, c::acc, fn1, fn2);
+  end matchcontinue;
+end listMapMap_tail;
+
 public function getCurrentDateTime
   output DateTime dt;
   Integer sec;
@@ -6540,5 +6872,22 @@ algorithm
   dt := DATETIME(sec,min,hour,mday,mon,year);
 end getCurrentDateTime;
 
-end Util;
+public function isSuccess
+  input Status status;
+  output Boolean bool;
+algorithm
+  bool := matchcontinue status
+    case SUCCESS() then true;
+    case FAILURE() then false;
+  end matchcontinue;
+end isSuccess;
 
+public function id
+  input A a;
+  output A oa;
+  replaceable type A subtypeof Any;
+algorithm
+  oa := a;
+end id;
+
+end Util;

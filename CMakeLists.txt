@@ -19,11 +19,11 @@ ENDIF(RUN_TESTS)
 
 # Subdirectorys
 ADD_SUBDIRECTORY(c_runtime)
-ADD_SUBDIRECTORY(modelica_parser)
-ADD_SUBDIRECTORY(flat_modelica_parser)
-ADD_SUBDIRECTORY(Compiler)
-ADD_SUBDIRECTORY(doc)
-ADD_SUBDIRECTORY(Examples)
+#ADD_SUBDIRECTORY(modelica_parser)
+#ADD_SUBDIRECTORY(flat_modelica_parser)
+#ADD_SUBDIRECTORY(Compiler)
+#ADD_SUBDIRECTORY(doc)
+#ADD_SUBDIRECTORY(Examples)
 
 # -------------------------------------------------------------
 # Models
@@ -35,3 +35,4 @@ SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
 #BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump)
 #BUILDMODEL(Simple ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump)
 #BUILDMODEL(CombiTable2DTest ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")
+#BUILDMODEL(AlgorithmForInClass ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")

@@ -47,8 +47,7 @@ package ModUtil
 public import Absyn;
 public import DAE;
 public import SCode;
-
-protected import Exp;
+protected import ComponentReference;
 protected import RTOpts;
 protected import Util;
 protected import Algorithm;
@@ -117,11 +116,13 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> el_1,el;
       Absyn.Path p;
-      Boolean b,bi,a;
+      Boolean b,bi;
       DAE.InlineType inl;
       list<list<Boolean>> bl;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
-      Integer i;
+      Integer i,a;
+      list<list<DAE.Exp>> es,es_1;
+      DAE.ExpType tp;
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation
         r(cr, rarg);
@@ -169,33 +170,29 @@ algorithm
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
     case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inlineType = inl))
-      local DAE.ExpType tp;
       equation
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
         DAE.CALL(p,el_1,b,bi,tp,inl);
-    case (str,r,rarg,DAE.ARRAY(ty = t,scalar = a,array = el))
+    case (str,r,rarg,DAE.ARRAY(ty = t,scalar = b,array = el))
       equation
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
-        DAE.ARRAY(t,a,el_1);
+        DAE.ARRAY(t,b,el_1);
     case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = ell))
-      local
-        list<list<DAE.Exp>> el,el_1;
-        Integer a;
       equation
-        el = Util.listListMap(ell, Util.tuple21);
+        es = Util.listListMap(ell, Util.tuple21);
         bl = Util.listListMap(ell, Util.tuple22);
-        el_1 = stringPrefixComponentRefsList(str, r, rarg, el);
-        ell_1 = Util.listListThreadTuple(el_1, bl);
+        es_1 = stringPrefixComponentRefsList(str, r, rarg, es);
+        ell_1 = Util.listListThreadTuple(es_1, bl);
       then
         DAE.MATRIX(t,a,ell_1);
-    case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e2))
+    case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e2))
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
-        DAE.RANGE(t,e1_1,NONE,e2_1);
+        DAE.RANGE(t,e1_1,NONE(),e2_1);
     case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3))
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
@@ -267,12 +264,12 @@ algorithm
       equation
         s_1 = stringAppend(str, s);
       then
-        DAE.CREF_IDENT(s_1,ty2,si);
+        ComponentReference.makeCrefIdent(s_1,ty2,si);
     case (str,DAE.CREF_QUAL(ident = s,subscriptLst = si,componentRef = cr, identType = ty2))
       equation
         s_1 = stringAppend(str, s);
       then
-        DAE.CREF_QUAL(s_1,ty2, si,cr);
+        ComponentReference.makeCrefQual(s_1,ty2, si,cr);
   end matchcontinue;
 end stringPrefixCref;
 
@@ -358,6 +355,7 @@ algorithm
       then
         DAE.COMP(n,daeLst,source,comment);
 
+/* TODO: FIXME: adrpo: Are these needed?
     case (str,dae1,
       DAE.FUNCTION(path = n,
       functions = (DAE.FUNCTION_DEF(body = daeLst)::funcDer),
@@ -382,6 +380,7 @@ algorithm
         daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
          DAE.FUNCTION(n,DAE.FUNCTION_EXT(daeLst,decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE(),source);
+*/
 
     case (str,dae,e) then e;
   end matchcontinue;
@@ -398,12 +397,13 @@ algorithm
       Option<DAE.Exp> e;
       list<DAE.Element> rest;
       DAE.VarKind vk;
+      DAE.Element el;
     case (cr,(DAE.VAR(componentRef = crv,
                       kind = DAE.PARAM(),
                       direction = vd,
                       binding = e) :: rest))
       equation
-        true = Exp.crefEqual(cr, crv);
+        true = ComponentReference.crefEqual(cr, crv);
       then
         ();
     case (cr,(DAE.VAR(componentRef = crv,
@@ -411,11 +411,10 @@ algorithm
                       direction = vd,
                       binding = e) :: rest))
       equation
-        true = Exp.crefEqual(cr, crv);
+        true = ComponentReference.crefEqual(cr, crv);
       then
         fail();
-    case (cr,(e :: rest))
-      local DAE.Element e;
+    case (cr,(el :: rest))
       equation
         isParameterDaelist(cr, rest);
       then
@@ -489,11 +488,11 @@ algorithm
   matchcontinue (inDAElist)
     local list<DAE.Element> daeLst_1,daeLst;
       DAE.FunctionTree funcs;
-    case DAE.DAE(daeLst,funcs)
+    case DAE.DAE(daeLst)
       equation
         daeLst_1 = stringPrefixElements("params->", daeLst, daeLst);
       then
-        DAE.DAE(daeLst_1,funcs);
+        DAE.DAE(daeLst_1);
   end matchcontinue;
 end stringPrefixParams;
 
@@ -509,7 +508,7 @@ algorithm
     local
       String str;
       Absyn.Path p;
-    case (NONE) then "";
+    case (NONE()) then "";
     case (SOME(p))
       equation
         str = pathString(p);
@@ -587,13 +586,13 @@ algorithm
     // ident vs. ident 
     case (Absyn.IDENT(id1),Absyn.IDENT(id2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
       then
         true;
     // qual ident vs. qual ident 
     case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
       equation
-        true = stringEqual(id1, id2);
+        true = stringEq(id1, id2);
         true = pathEqual(path1, path2);
       then
         true;    

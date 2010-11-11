@@ -416,7 +416,7 @@ protected function FindAngleBodyKey
   output list<String> key;
   output list<String> afterKey;
 algorithm
-  (body,afterKey) := matchcontinue(template)
+  (key,afterKey) := matchcontinue(template)
     local
       String char;
       list<String> rest, afterKey, out;
@@ -510,7 +510,7 @@ protected function CompileTemplate_Angles_CondBody
   output TemplateTree out;
   output String error;
 algorithm
-  out := matchcontinue(template,includes)
+  (out,error) := matchcontinue(template,includes)
     local
       String key,error1,error2,error3,body,firstChar;
       list<String> keyList1,keyList2,rest, template, body, afterBody, caseBody, shouldBeWhitespace;
@@ -573,7 +573,7 @@ protected function CompileTemplate_Angles_Body
   output TemplateTreeSequence out;
   output String error;
 algorithm
-  out := matchcontinue(key,template,includes)
+  (out,error) := matchcontinue(key,template,includes)
     local
       String key,sep,error;
       list<String> rest, template, body, afterBody;
@@ -804,7 +804,7 @@ protected function FindKeyAndBody
   output TemplateTreeSequence body;
   output TemplateTreeSequence afterBody;
 algorithm
-  (body,afterKey) := matchcontinue(template,scopeEndChar,includes)
+  (key,body,afterBody) := matchcontinue(template,scopeEndChar,includes)
     local
       String key;
       list<String> afterKey, afterBody, bodyAcc;

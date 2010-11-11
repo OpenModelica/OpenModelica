@@ -34,7 +34,7 @@ package InstSection
   package:     InstSection
   description: Model instantiation
 
-  RCS: $Id: InstSection.mo 6158 2010-09-21 10:13:14Z sjoelund.se $
+  RCS: $Id$
 
   This module is responsible for instantiation of Modelica equation
   and algorithm sections (including connect equations)."
@@ -52,14 +52,16 @@ public import SCode;
 
 protected import Algorithm;
 protected import Ceval;
+protected import ComponentReference;
 protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
-protected import Exp;
+protected import Expression;
+protected import ExpressionDump;
+protected import ExpressionSimplify;
 protected import Inst;
-protected import Interactive;
 protected import Lookup;
 protected import MetaUtil;
 protected import ModUtil;
@@ -74,21 +76,11 @@ protected import UnitAbsyn;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
-protected import DAEDump;
 protected import ErrorExt;
-
-public
-type Prefix = Prefix.Prefix "a prefix";
-
-public
-type Mod = DAE.Mod "a modification";
 
 public
 type Ident = DAE.Ident "an identifier";
 
-public
-type Env = Env.Env "an environment";
-  
 public
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
@@ -100,10 +92,10 @@ public function instEquation
   instEquationCommon with Inital set 
   to NON_INITIAL."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -111,7 +103,7 @@ public function instEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -127,11 +119,12 @@ algorithm
       ClassInf.State ci_state_1,ci_state;
       DAE.Mod mods;
       Prefix.Prefix pre;
-      SCode.EEquation eq;
+      SCode.EEquation eq,eqn;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      String str;
       
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,unrollForLoops,graph) /* impl */ 
       equation
@@ -140,7 +133,6 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
     case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl,unrollForLoops,graph)
-      local SCode.EEquation eqn; String str;
       equation 
         true = RTOpts.debugFlag("failtrace");
         str= SCode.equationStr(eqn);
@@ -156,10 +148,10 @@ protected function instEEquation
 "function: instEEquation 
   Instantiation of EEquation, used in for loops and if-equations."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -167,14 +159,14 @@ protected function instEEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache cache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;  
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
-  (outCache,outEnv,outIH,outDae,outSets,outState, outGraph) :=
+  (cache,outEnv,outIH,outDae,outSets,outState,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,unrollForLoops,inGraph)
     local
       DAE.DAElist dae;
@@ -185,7 +177,6 @@ algorithm
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
-      Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
@@ -209,10 +200,10 @@ public function instInitialEquation
   Instantiates initial equation by calling inst_equation_common with Inital 
   set to INITIAL."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.Equation inEquation;
@@ -220,9 +211,9 @@ public function instInitialEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
-  output DAE.DAElist outDAe;
+  output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -260,10 +251,10 @@ protected function instEInitialEquation
 "function: instEInitialEquation 
   Instantiates initial EEquation used in for loops and if equations "
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -271,7 +262,7 @@ protected function instEInitialEquation
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -310,10 +301,10 @@ protected function instEquationCommon
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -321,7 +312,7 @@ protected function instEquationCommon
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -341,10 +332,10 @@ protected function instEquationCommon2
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -353,7 +344,7 @@ protected function instEquationCommon2
   input ConnectionGraph.ConnectionGraph inGraph;
   input Integer errorCount;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -389,10 +380,10 @@ protected function instEquationCommonWork
   This function takes an equation from the source and generates DAE
   equations and connection sets."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.EEquation inEEquation;
@@ -400,7 +391,7 @@ protected function instEquationCommonWork
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -412,13 +403,13 @@ algorithm
     local
       list<DAE.Properties> props;
       Connect.Sets csets_1,csets;
-      DAE.DAElist dae,dae1,dae2,dae3;
+      DAE.DAElist dae,dae1,dae2,dae3,fdae,fdae1,fdae11,fdae2,fdae3;
       list<DAE.DAElist> dael;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
       list<Env.Frame> env,env_1,env_2;
       DAE.Mod mods,mod;
       Prefix.Prefix pre;
-      Absyn.ComponentRef c1,c2,cr;
+      Absyn.ComponentRef c1,c2,cr,cr1,cr2;
       SCode.Initial initial_;
       Boolean impl,cond;
       String n,i,s;
@@ -431,7 +422,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
       DAE.Type id_t;
       Values.Value v;
-      DAE.ComponentRef cr_1;
+      DAE.ComponentRef cr_1,cr_2;
       SCode.EEquation eqn,eq;
       Env.Cache cache;
       list<Values.Value> valList;
@@ -448,11 +439,23 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
-      DAE.DAElist fdae,fdae1,fdae11,fdae2,fdae3,dae2;
       DAE.FunctionTree funcs,funcs1;
       DAE.Const cnst;
       Boolean unrollForLoops;
       Absyn.Info info;
+      DAE.Element daeElt2;
+      list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
+      Integer i1,ipriority;
+      list<DAE.Element> daeElts,daeElts3;
+      String scope_str, eq_str;
+      DAE.DAElist trDae;
+      DAE.ComponentRef cr_,cr1_,cr2_;
+      DAE.ExpType t;
+      DAE.Properties tprop1,tprop2;
+      Real priority;
+      list<DAE.Exp> expl;
+      Absyn.FunctionArgs fargs;
+      DAE.Exp exp;
 
     /* connect statements */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph) 
@@ -485,8 +488,8 @@ algorithm
         // the functions definition\'s inparameters. This is done with
         // regard to the position of the input arguments.
         // Returns the output parameters from the function.
-        // (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/);
-        // (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true/* do vectorization*/);
+        // (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl,NONE(),true /*do vectorization*/);
+        // (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl,NONE(),true/* do vectorization*/);
         // (cache,e1_1,e2_1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,impl);
         //  (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
         //  (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
@@ -499,8 +502,6 @@ algorithm
 
     /* equality equations e1 = e2 */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
-      local
-        Option<Interactive.InteractiveSymbolTable> c1,c2;
       equation 
          // Do static analysis and constant evaluation of expressions. 
         // Gives expression and properties 
@@ -514,12 +515,12 @@ algorithm
         checkTupleCallEquationMessage(e1,e2,info);
 
         //  Returns the output parameters from the function.
-        (cache,e1_1,prop1,c1,fdae1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/,pre); 
-        (cache,e2_1,prop2,c2,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true/* do vectorization*/,pre);
+        (cache,e1_1,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),true /*do vectorization*/,pre,info); 
+        (cache,e2_1,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true/* do vectorization*/,pre,info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
          
-        (cache,e1_1,e2_1,prop1,fdae3) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre);
+        (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre,info);
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
         (cache,e2_2) = PrefixUtil.prefixExp(cache,env, ih, e2_1, pre);
         
@@ -529,8 +530,6 @@ algorithm
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
                           
-        dae = DAEUtil.joinDaeLst({dae,fdae1,fdae2,fdae3});
-                
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
@@ -546,16 +545,15 @@ algorithm
     /* if-equation         
        If the condition is constant this case will select the correct branch and remove the if-equation*/ 
      
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph)
       equation 
-        (cache, expl1,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),cnst)) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
+        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
-        dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
         
@@ -564,62 +562,58 @@ algorithm
     // a parameter without a binding, and which DAEUtil.ifEqToExpr can't handle.
     // If the model would have been instantiated one of the branches would have
     // been chosen, so this case therefore chooses one of the branches.
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph)
       equation
         true = OptManager.getOption("checkModel"); 
-        (cache, _,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
+        (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM)) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
-        dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
     /* initial if-equation 
     If the condition is constant this case will select the correct branch and remove the initial if-equation */ 
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.INITIAL(),impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph) 
       equation 
-        (cache, expl1,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),_)) = Types.propsAnd(props);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
+        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
-        dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
         // IF_EQUATION when condition is not constant 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph)
       equation 
-        (cache, expl1,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
-        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR)) = Types.propsAnd(props); 
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
+        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props); 
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
         
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,daeLLst,funcs1,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2,funcs),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
-        funcs = DAEUtil.joinAvlTrees(funcs1,funcs);
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)},funcs),fdae1); 
+        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl, graph);
+        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        dae = DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)}); 
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
         // Initial IF_EQUATION  when condition is not constant
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph)
       equation 
-        (cache, expl1,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props);
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,daeLLst,funcs1,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2,funcs),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
-        funcs = DAEUtil.joinAvlTrees(funcs1,funcs);        
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)},funcs),fdae1);
+        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
+        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        dae = DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
@@ -628,54 +622,49 @@ algorithm
          conditional expression.
          */ 
     case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
-      local DAE.Element daeElt2; list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec; Integer i1; list<DAE.Element> daeElts3;
       equation 
         checkForNestedWhen(eq);
-        (cache,e_1,prop1,_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,DAE.DAE(daeElts1,_),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _),funcs),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state, 
+        (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state, 
           SCode.EQ_WHEN(ee,eel,eex,NONE(),info), initial_, impl, graph);
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
-        lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,Exp.crefEqual);
+        lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
         //TODO: fix error reporting print(" listLength pre:" +& intString(i1) +& " post: " +& intString(listLength(lhsCrefs)) +& "\n");
         true = intEq(listLength(lhsCrefs),i1);
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);
-        funcs = DAEUtil.avlTreeNew(); 
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,SOME(daeElt2),source)},funcs),fdae1);
+        dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,SOME(daeElt2),source)});
       then
         (cache,env_2,ih,dae,csets,ci_state_2,graph);
                         
     case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
-      local list<DAE.ComponentRef> lhsCrefs; 
       equation 
         checkForNestedWhen(eq);
-        (cache,e_1,prop1,_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,DAE.DAE(daeElts1,funcs),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,Exp.printComponentRefStr),", ") +& "\n");
+        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE,source)},funcs),fdae1);
+        dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
     
     // Print error if when equations are nested.
     case (_, env, _, _, _, _, _, eq as SCode.EQ_WHEN(info = info), _, _, _)
-      local
-        String scope_str, eq_str;
       equation
         failure(checkForNestedWhen(eq));
         scope_str = Env.printEnvPathStr(env);
@@ -688,49 +677,47 @@ algorithm
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.   
 
     // Implicit range
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph)  
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el,info=info),initial_,impl,graph)  
       equation 
         (lst as {}) = SCode.findIteratorInEEquationLst(i,el);
-        Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
+        Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i},info);
       then
         fail();
         
      // for i loop ... end for; NOTE: This construct is encoded as range being Absyn.END()
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el, info=info),initial_,impl,graph) 
       equation 
         (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
         tpl=Util.listFirst(lst);
         e=rangeExpression(tpl);
-        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_,fdae1) = 
-          Static.elabExp(cache,env, e, impl, NONE,true, pre);
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_) = 
+          Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-        dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     /* for i in <expr> loop .. end for; */
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el,info=info),initial_,impl,graph) 
       equation 
-        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true, pre);
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.NO_MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-        dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
       
         // A for-equation with a parameter range without binding, which is ok when
         // doing checkModel. Use a range {1} to check that the loop can be
         // instantiated.
-    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el), initial_, impl, graph)
+    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el,info=info), initial_, impl, graph)
       equation
         true = OptManager.getOption("checkModel");
-        (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM), _, fdae1) =
-          Static.elabExp(cache, env, e, impl, NONE, true, pre);
+        (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM), _) =
+          Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         v = Values.ARRAY({Values.INTEGER(1)}, {1});
         (cache, dae, csets_1, graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
@@ -740,22 +727,22 @@ algorithm
 
       /* for i in <expr> loop .. end for; 
       where <expr> is not constant or parameter expression */  
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el,info=info),initial_,impl,graph)
       equation 
-        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = _),_), constFlag = DAE.C_VAR()),_,_) 
-          = Static.elabExp(cache,env, e, impl, NONE,true,pre);  
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = _),_), constFlag = DAE.C_VAR()),_)
+          = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // adrpo: the iterator is not in the environment, this would fail!
         // (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
-        //  = Lookup.lookupVar(cache,env, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Non-constant iteration bounds", "No suggestion"});
+        //  = Lookup.lookupVar(cache,env, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Non-constant iteration bounds", "No suggestion"}, info);
       then
         fail();
     /* assert statements*/
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,info = info),initial_,impl,graph)
       equation 
-        (cache,e1_1,prop1 as DAE.PROP((DAE.T_BOOL(_),_),_),_,fdae1) = Static.elabExp(cache,env, e1, impl, NONE,true,pre) "assert statement" ;
+        (cache,e1_1,prop1 as DAE.PROP((DAE.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
-        (cache,e2_1,prop2 as DAE.PROP((DAE.T_STRING(_),_),_),_,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true,pre);
+        (cache,e2_1,prop2 as DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);                
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre); 
@@ -763,132 +750,118 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        funcs = DAEUtil.avlTreeNew();
-        dae = DAEUtil.joinDaeLst({DAE.DAE({DAE.ASSERT(e1_2,e2_2,source)},funcs),fdae1,fdae2});
+        dae = DAE.DAE({DAE.ASSERT(e1_2,e2_2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
     /* terminate statements */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),initial_,impl,graph)
       equation 
-        (cache,e1_1,prop1 as DAE.PROP((DAE.T_STRING(_),_),_),_,fdae1) = Static.elabExp(cache,env, e1, impl, NONE,true,pre);
+        (cache,e1_1,prop1 as DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        funcs = DAEUtil.avlTreeNew();
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.TERMINATE(e1_2,source)},funcs),fdae1);
+        dae = DAE.DAE({DAE.TERMINATE(e1_2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
     /* reinit statement */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph)
-      local  DAE.DAElist trDae; list<DAE.Element> daeElts; 
-        DAE.ComponentRef cr_2; DAE.ExpType t; DAE.Properties tprop1,tprop2;
-        DAE.FunctionTree funcs;
       equation 
-        (cache,e1_1 as DAE.CREF(cr_1,t),tprop1,_,fdae1) = Static.elabCref(cache,env, cr, impl,false,pre) "reinit statement" ;
+        (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
         (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl);
-        (cache,e2_1,tprop2,_,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true,pre);
+        (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl);
         (e2_1,_) = Types.matchProp(e2_1,tprop2,tprop1,true);
-        (cache,e1_1,e2_1,tprop1,fdae3) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl,pre);
+        (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl,pre,info);
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        DAE.DAE(daeElts,funcs) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
+        DAE.DAE(daeElts) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         daeElts = Util.listMap(daeElts,makeDAEArrayEqToReinitForm);
-        dae = DAEUtil.joinDaeLst({DAE.DAE(daeElts,funcs),fdae1,fdae2,fdae3});
+        dae = DAE.DAE(daeElts);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
       
       /* Connections.root(cr) */  
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
-      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);    
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);    
             
       /* Connections.potentialRoot(cr) 
       TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real
       */     
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
-      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);        
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);        
          
          /* Connections.potentialRoot(cr,priority =prio ) - priority as named argument */
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
-      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
-        (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);             
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);             
 
         /* Connections.potentialRoot(cr,priority) - priority as positional argument*/
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.REAL(priority)}, {})),initial_,impl,graph)
-      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
-        (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
 
         /* Connections.potentialRoot(cr,priority) - priority as Integer positinal argument*/
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(priority)}, {})),initial_,impl,graph)
-      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Integer priority;
+              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(ipriority)}, {})),initial_,impl,graph)
       equation 
-        (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr_,t),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
-        graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(priority));
+        graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(ipriority));
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
 
         /*Connections.branch(cr1,cr2) */        
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,
               functionName = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {})),initial_,impl,graph)
-      local Absyn.ComponentRef cr1, cr2; DAE.ComponentRef cr1_, cr2_; DAE.ExpType t; 
       equation 
-        (cache,DAE.CREF(cr1_,t),_,_,fdae1) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre);
-        (cache,DAE.CREF(cr2_,t),_,_,fdae2) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre);
+        (cache,SOME((DAE.CREF(cr1_,t),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
+        (cache,SOME((DAE.CREF(cr2_,t),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
         (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
         (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
-        fdae = DAEUtil.joinDaes(fdae1,fdae2);
       then
-        (cache,env,ih,fdae,csets,ci_state,graph);
+        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(functionName = cr, functionArgs = fargs, info = info),initial_,impl,graph)
-      local DAE.ComponentRef cr_2; DAE.ExpType t; Absyn.Path path; list<DAE.Exp> expl; Absyn.FunctionArgs fargs;
-        DAE.Exp exp;
       equation 
-        (cache,exp,prop1,_,fdae1) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false,pre);
+        (cache,exp,prop1,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE(),false,pre,info);
         (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
 
@@ -896,11 +869,10 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae = instEquationNoRetCallVectorization(exp,source);
-        dae = DAEUtil.joinDaes(dae, fdae1);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
                
-    case (_,env,ih,_,_,_,_,eqn,_,impl,graph) 
+    case (_,env,ih,_,_,_,_,eqn,_,impl,graph)
       equation
         true = RTOpts.debugFlag("failtrace");
         s = SCode.equationStr(eqn);
@@ -952,7 +924,7 @@ algorithm
       equation
         s1 = Dump.printExpStr(left);
         s2 = Dump.printExpStr(right);
-        s = System.stringAppendList({s1," = ",s2,";"});
+        s = stringAppendList({s1," = ",s2,";"});
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY,{s},info);
       then fail();
     case (left as Absyn.TUPLE(crs),right,info)
@@ -960,7 +932,7 @@ algorithm
         failure(Absyn.CALL(_,_) = right);
         s1 = Dump.printExpStr(left);
         s2 = Dump.printExpStr(right);
-        s = System.stringAppendList({s1," = ",s2,";"});
+        s = stringAppendList({s1," = ",s2,";"});
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
       then fail();
   end matchcontinue;
@@ -976,15 +948,15 @@ algorithm
     DAE.DAElist dae1,dae2; 
     DAE.FunctionTree funcs;
     case(expCall as DAE.CALL(path=fn,expLst=expl),source) equation
-      funcs = DAEUtil.avlTreeNew();
-    then DAE.DAE({DAE.NORETCALL(fn,expl,source)},funcs);
-    case(DAE.ARRAY(ty,s,e::expl),source) equation
-      dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl),source);
-      dae2 = instEquationNoRetCallVectorization(e,source);
-      dae = DAEUtil.joinDaes(dae1,dae2);
-    then dae;
+      then DAE.DAE({DAE.NORETCALL(fn,expl,source)});
+    case(DAE.ARRAY(ty,s,e::expl),source)
+      equation
+        dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl),source);
+        dae2 = instEquationNoRetCallVectorization(e,source);
+        dae = DAEUtil.joinDaes(dae1,dae2);
+      then dae;
     case(DAE.ARRAY(ty,s,{}),source) equation
-    then DAEUtil.emptyDae;
+      then DAEUtil.emptyDae;
   end matchcontinue;
 end instEquationNoRetCallVectorization;
 
@@ -1004,7 +976,7 @@ algorithm outEqn := matchcontinue(inEq)
   case(DAE.DEFINE(cr,e,source)) then DAE.REINIT(cr,e,source);
   case(DAE.EQUEQUATION(cr,cr2,source))
     equation
-      t = Exp.crefLastType(cr2);
+      t = ComponentReference.crefLastType(cr2);
       then DAE.REINIT(cr,DAE.CREF(cr2,t),source);
   case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
 end matchcontinue;
@@ -1023,35 +995,34 @@ This function detect this case and elaborates expressions without vectorization.
   input DAE.Properties prop "To determine if array equation";
   input DAE.Properties prop2 "To determine if array equation";
   input Boolean impl;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outE1;
   output DAE.Exp outE2;
   output DAE.Properties oprop "If we have an expandable tuple";
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outE1,outE2,oprop,outDae) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,inPrefix)
+  (outCache,outE1,outE2,oprop) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,inPrefix,info)
     local Env.Cache cache;
       Boolean b1,b2,b3,b4; 
       DAE.DAElist fdae1,fdae2,dae;
       DAE.Exp elabedE1_2, elabedE2_2;
-      DAE.Properties prop1, prop2;
-      Prefix pre;
-    case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,pre) equation
+      DAE.Properties prop1;
+      Prefix.Prefix pre;
+    case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,pre,info) equation
       b3 = Types.isPropTupleArray(prop);
       b4 = Types.isPropTupleArray(prop2);
       true = boolOr(b3,b4);
-      true = Exp.containFunctioncall(elabedE2);
+      true = Expression.containFunctioncall(elabedE2);
       (e1,prop) = expandTupleEquationWithWild(e1,prop2,prop);
-      (cache,elabedE1_2,prop1,_,fdae1) = Static.elabExp(cache,env, e1, impl, NONE,false,pre);
+      (cache,elabedE1_2,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),false,pre,info);
       (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl);
-      (cache,elabedE2_2,prop2,_,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,false,pre);
+      (cache,elabedE2_2,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),false,pre,info);
       (cache, elabedE2_2, prop2) = Ceval.cevalIfConstant(cache, env, elabedE2_2, prop2, impl);
-      dae = DAEUtil.joinDaes(fdae1,fdae2);
       then
-        (cache,elabedE1_2,elabedE2_2,prop,dae);      
-    case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,_)
-    then (cache,elabedE1,elabedE2,prop,DAEUtil.emptyDae);      
+        (cache,elabedE1_2,elabedE2_2,prop);
+    case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,_,_)
+    then (cache,elabedE1,elabedE2,prop);
   end matchcontinue;
 end condenseArrayEquation;
 
@@ -1081,9 +1052,9 @@ algorithm
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE),fillValue) "types"; 
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types"; 
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
+      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's"; 
       aexpl = listAppend(aexpl,aexpl2);      
       lst = listAppend(lst,lst2);
       tupleConst = listAppend(tupleConst,tupleConst2);
@@ -1093,13 +1064,13 @@ algorithm
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions"; 
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE),NONE),fillValue) "types";  
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR),fillValue) "TupleConst's"; 
-      aexpl = listAppend({inExp},aexpl2);
-      lst = listAppend({propType},lst2); 
-      tupleConst = listAppend({DAE.SINGLE_CONST(tconst)},tupleConst2);
+      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";  
+      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's"; 
+      aexpl = inExp::aexpl2;
+      lst = propType::lst2; 
+      tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE((DAE.T_TUPLE(lst),NONE),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE((DAE.T_TUPLE(lst),NONE()),DAE.TUPLE_CONST(tupleConst)));
   case(inExp,propCall,propTuple)
     equation
       false = Types.isPropTuple(propCall);
@@ -1132,9 +1103,9 @@ protected function unroll "function: unroll
   the FOR clause by explicitly repeating the body of the loop once
   for each iteration."
   input Env.Cache inCache;
-  input Env inEnv;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input Env.Env inEnv;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input Ident inIdent;
@@ -1177,7 +1148,7 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
@@ -1193,7 +1164,7 @@ algorithm
       equation 
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* Use instEInitialEquation*/
@@ -1217,14 +1188,14 @@ protected function addForLoopScope
  adrpo NOTE: 
    The variability of the iterator SHOULD 
    be determined by the range constantness!"
-  input Env env;
+  input Env.Env env;
   input Ident iterName;
   input DAE.Type iterType;
   input SCode.Variability iterVariability;
   input Option<DAE.Const> constOfForIteratorRange; 
-  output Env newEnv;
+  output Env.Env newEnv;
 algorithm
-  newEnv := Env.openScope(env, false, SOME(Env.forScopeName), NONE);
+  newEnv := Env.openScope(env, false, SOME(Env.forScopeName),NONE());
   newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange); 
 end addForLoopScope;
 
@@ -1295,12 +1266,12 @@ algorithm
         dae;
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),source,initial_,impl)
       equation
-        e1_str = Exp.printExpStr(e1);
+        e1_str = ExpressionDump.printExpStr(e1);
         t1_str = Types.unparseType(t1);
-        e2_str = Exp.printExpStr(e2);
+        e2_str = ExpressionDump.printExpStr(e2);
         t2_str = Types.unparseType(t2);
-        s1 = System.stringAppendList({e1_str,"=",e2_str});
-        s2 = System.stringAppendList({t1_str,"=",t2_str});
+        s1 = stringAppendList({e1_str,"=",e2_str});
+        s2 = stringAppendList({t1_str,"=",t2_str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
         Debug.fprintln("failtrace", "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
@@ -1324,9 +1295,8 @@ algorithm
       DAE.DAElist dae; DAE.Exp e1,e2;
       SCode.Initial initial_;
       DAE.ComponentRef cr,c1_1,c2_1,c1,c2,assignedCr;
-      DAE.ExpType t,t1,t2,tp,ty,lsty,elabedType;
+      DAE.ExpType t,t1,t2,tp,ty,lsty,elabedType,ty22,ty2;
       list<Integer> ds;
-      tuple<DAE.TType, Option<Absyn.Path>> bc;
       DAE.DAElist dae1,dae2,decl;
       ClassInf.State cs;
       String n; list<DAE.Var> vs; 
@@ -1335,6 +1305,9 @@ algorithm
       Values.Value value;
       list<DAE.Element> dael;
       DAE.FunctionTree funcs;
+      Option<DAE.Type> bc;
+      DAE.EqualityConstraint ec;
+      DAE.AvlTree dav; 
 
     case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),source,initial_)
       equation 
@@ -1364,10 +1337,9 @@ algorithm
         dae;
 
 		/* array equations */
-		case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
-				local DAE.Type t;
+		case (e1,e2,(tt as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
 			equation
-				dae = instArrayEquation(e1, e2, t, source, initial_);
+				dae = instArrayEquation(e1, e2, tt, source, initial_);
 			then dae;
 
     /* tuples */
@@ -1404,28 +1376,23 @@ algorithm
         dae;
     /* -------------- */
     /* Complex types extending basic type */
-    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(bc)),_),source,initial_) 
+    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(tt)),_),source,initial_) 
       equation 
-        dae = instEqEquation2(e1, e2, bc, source, initial_);
+        dae = instEqEquation2(e1, e2, tt, source, initial_);
       then
-       dae;
+        dae;
   
   /* Complex equation for records on form e1 = e2, expand to equality over record elements*/
     case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),source,initial_) 
       then DAEUtil.emptyDae; 
     case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
-          (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,type_ = t) :: vs),
+          (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,type_ = tt) :: vs),
           complexTypeOption = bc, equalityConstraint = ec),p),source,initial_)
-      local
-        tuple<DAE.TType, Option<Absyn.Path>> t;
-        Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
-        DAE.ExpType ty22,ty2;
-        DAE.EqualityConstraint ec;
       equation 
-        ty2 = Types.elabType(t);
-        c1_1 = Exp.extendCref(c1,ty2, n, {});
-        c2_1 = Exp.extendCref(c2,ty2, n, {});
-        dae1 = instEqEquation2(DAE.CREF(c1_1,ty2), DAE.CREF(c2_1,ty2), t, source, initial_);
+        ty2 = Types.elabType(tt);
+        c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty2);
+        c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty2);
+        dae1 = instEqEquation2(DAE.CREF(c1_1,ty2), DAE.CREF(c2_1,ty2), tt, source, initial_);
         dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
@@ -1433,10 +1400,9 @@ algorithm
         
         // split a constant complex equation to its elements 
     case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(path=_,ty=ty)),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
-      local DAE.AvlTree dav; 
       equation
         elabedType = Types.elabType(tt);
-        true = Exp.equalTypes(elabedType,ty);        
+        true = Expression.equalTypes(elabedType,ty);        
         // adrpo: 2010-02-18, bug: https://openmodelica.org:8443/cb/issue/1175?navigation=true
         // DO NOT USE Ceval.MSG() here to generate messages 
         // as it will print error messages such as:
@@ -1445,21 +1411,18 @@ algorithm
         //   Error: Variable body.sequence_angleStates[1] not found in scope <global scope>
         //   Error: No constant value for variable body.sequence_angleStates[1] in scope <global scope>.
         // These errors happen because WE HAVE NO ENVIRONMENT, so we cannot lookup or ceval any cref!
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false, NONE, NONE, Ceval.NO_MSG());
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.NO_MSG());
         dael = assignComplexConstantConstruct(value,assignedCr,source);
-        dav = DAEUtil.avlTreeNew();
         //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav)); 
-      then DAE.DAE(dael,dav); 
+      then DAE.DAE(dael); 
         
    /* all other COMPLEX equations */
-   case (e1,e2, t as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
-     local DAE.Type t;     
-      equation        
-     dae = instComplexEquation(e1,e2,t,source,initial_);
-    then dae;
+   case (e1,e2, tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
+     equation        
+       dae = instComplexEquation(e1,e2,tt,source,initial_);
+     then dae;
    
-    case (e1,e2,t,source,initial_)
-      local tuple<DAE.TType, Option<Absyn.Path>> t;
+    else
       equation 
         Debug.fprintln("failtrace", "- InstSection.instEqEquation2 failed");
       then
@@ -1490,17 +1453,18 @@ input DAE.ElementSource source;
 output list<DAE.Element> eqns;
 algorithm 
   eqns := matchcontinue(constantValue,assigned,source)
-  local
-    DAE.ComponentRef cr,cr2,cr3;
-    Integer i,index;
-    Real r;
-    String s,n;
-    Boolean b; 
-    Absyn.Path p;    
-    list<String> names;
-    Values.Value v; 
-    list<Values.Value> vals,arrVals;
-    list<DAE.Element> eqnsArray,eqns2;
+    local
+      DAE.ComponentRef cr,cr2,cr3;
+      Integer i,index;
+      Real r;
+      String s,n;
+      Boolean b; 
+      Absyn.Path p;    
+      list<String> names;
+      Values.Value v; 
+      list<Values.Value> vals,arrVals;
+      list<DAE.Element> eqnsArray,eqns2;
+      DAE.ExpType tp;
     case(Values.RECORD(orderd = {},comp = {}),cr,source) then {};
     case(Values.RECORD(p, Values.RECORD(comp=_)::vals,n::names,index),cr,source)
       equation
@@ -1508,10 +1472,9 @@ algorithm
       then fail();
 
     case(Values.RECORD(p, (v as Values.ARRAY(valueLst = arrVals))::vals, n::names, index),cr,source)
-      local DAE.ExpType tp;
       equation
         tp = ValuesUtil.valueExpType(v);
-        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,tp,{}));
+        cr2 = ComponentReference.crefPrependIdent(cr,n,{},tp);
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
         eqns = listAppend(eqns,eqnsArray);
@@ -1519,7 +1482,7 @@ algorithm
         eqns;
     case(Values.RECORD(p, v::vals, n::names, index),cr,source)
       equation
-        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_INT,{}));
+        cr2 = ComponentReference.crefPrependIdent(cr,n,{},DAE.ET_INT());
         eqns2 = assignComplexConstantConstruct(v,cr2,source);
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqns = listAppend(eqns,eqns2);
@@ -1528,20 +1491,20 @@ algorithm
           
         // REAL
     case(Values.REAL(r),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL),DAE.RCONST(r),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()),DAE.RCONST(r),source)};
       
     case(Values.INTEGER(i),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT),DAE.ICONST(i),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT()),DAE.ICONST(i),source)};
         
     case(Values.STRING(s),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING),DAE.SCONST(s),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING()),DAE.SCONST(s),source)};
         
     case(Values.BOOL(b),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL),DAE.BCONST(b),source)};
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL()),DAE.BCONST(b),source)};
 
     case(constantValue,cr,source)
       equation
-        print(" failure to assign: "  +& Exp.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
+        print(" failure to assign: "  +& ComponentReference.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1565,7 +1528,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case((v  as Values.ARRAY(valueLst = arrVals))::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
       eqns2 = assignComplexConstantConstructToArray(arrVals,assigned,source,1);
       eqns = listAppend(eqns,eqns2);
     then 
@@ -1573,7 +1536,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
   case(v::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
-      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      assigned = ComponentReference.subscriptCref(assigned,{DAE.INDEX(DAE.ICONST(subPos))});
       eqns2 = assignComplexConstantConstruct(v,assigned,source);
       eqns = listAppend(eqns,eqns2);
       then 
@@ -1595,12 +1558,10 @@ algorithm
   outDae := matchcontinue (inExp1,inExp2,source,inInitial3)
     local DAE.Exp e1,e2;
       DAE.FunctionTree funcs;
-    case (e1,e2,source,SCode.NON_INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();
-    then DAE.DAE({DAE.EQUATION(e1,e2,source)},funcs); 
-    case (e1,e2,source,SCode.INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();  
-    then DAE.DAE({DAE.INITIALEQUATION(e1,e2,source)},funcs); 
+    case (e1,e2,source,SCode.NON_INITIAL())
+      then DAE.DAE({DAE.EQUATION(e1,e2,source)});
+    case (e1,e2,source,SCode.INITIAL())
+      then DAE.DAE({DAE.INITIALEQUATION(e1,e2,source)});
   end matchcontinue;
 end makeDaeEquation;
 
@@ -1616,12 +1577,10 @@ algorithm
   outDae := matchcontinue (inComponentRef,inExp,source,inInitial)
     local DAE.ComponentRef cr; DAE.Exp e2;
       DAE.FunctionTree funcs;
-    case (cr,e2,source,SCode.NON_INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();
-    then DAE.DAE({DAE.DEFINE(cr,e2,source)},funcs); 
-    case (cr,e2,source,SCode.INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();  
-    then DAE.DAE({DAE.INITIALDEFINE(cr,e2,source)},funcs); 
+    case (cr,e2,source,SCode.NON_INITIAL())
+      then DAE.DAE({DAE.DEFINE(cr,e2,source)});
+    case (cr,e2,source,SCode.INITIAL())
+      then DAE.DAE({DAE.INITIALDEFINE(cr,e2,source)});
   end matchcontinue;
 end makeDaeDefine;
 
@@ -1637,108 +1596,125 @@ algorithm
 	dae := matchcontinue(lhs, rhs, tp, source, initial_)
 		local
 			Boolean b1, b2;
-			list<Integer> ds;
+			list<DAE.Dimension> ds;
 			DAE.FunctionTree funcs;
-			DAE.Dimension dim;
+			DAE.Dimension dim, lhs_dim, rhs_dim;
+      list<DAE.Exp> lhs_idxs, rhs_idxs;
+      DAE.Type t;
+			String lhs_str, rhs_str, eq_str;
 			
 		/* Initial array equations with function calls => initial array equations */
 		case (lhs, rhs, tp, source, SCode.INITIAL())
 			equation
-				b1 = Exp.containVectorFunctioncall(lhs);
-				b2 = Exp.containVectorFunctioncall(rhs);
+				b1 = Expression.containVectorFunctioncall(lhs);
+				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
-				ds = Types.getDimensionSizes(tp);
-				lhs = Exp.simplify(lhs);
-				rhs = Exp.simplify(rhs);
-				funcs = DAEUtil.avlTreeNew();
+				ds = Types.getDimensions(tp);
+				lhs = ExpressionSimplify.simplify(lhs);
+				rhs = ExpressionSimplify.simplify(rhs);
 			then
-				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
+				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
 		/* Arrays with function calls => array equations */
 		case (lhs, rhs, tp, source, SCode.NON_INITIAL())
 			equation
-				b1 = Exp.containVectorFunctioncall(lhs);
-				b2 = Exp.containVectorFunctioncall(rhs);
+				b1 = Expression.containVectorFunctioncall(lhs);
+				b2 = Expression.containVectorFunctioncall(rhs);
 				true = boolOr(b1, b2);
-				ds = Types.getDimensionSizes(tp);
-				lhs = Exp.simplify(lhs);
-				rhs = Exp.simplify(rhs);
-				funcs = DAEUtil.avlTreeNew();
+				ds = Types.getDimensions(tp);
+				lhs = ExpressionSimplify.simplify(lhs);
+				rhs = ExpressionSimplify.simplify(rhs);
 			then
-				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
+				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 				
-    // Array dimension of known size.
+    // Array equation of any size, non-expanding case
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
-      local
-        DAE.Dimension lhs_dim, rhs_dim;
-        list<DAE.Exp> lhs_idxs, rhs_idxs;
-        DAE.Type t;
       equation
-        failure(equality(dim = DAE.DIM_UNKNOWN())); // adrpo: make sure the dimensions are known!
+        false = RTOpts.splitArrays();
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
-        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
-        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
 				
-    // Array dimension of known size.
+    // Array dimension of known size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
-      local
-        DAE.Dimension lhs_dim, rhs_dim;
-        list<DAE.Exp> lhs_idxs, rhs_idxs;
-        DAE.Type t;
       equation
-        equality(dim = DAE.DIM_UNKNOWN()); // adrpo: make sure the dimensions are known!
+        true = RTOpts.splitArrays();
+        true = Expression.dimensionKnown(dim);
+        // Expand along the first dimensions of the expressions, and generate an
+        // equation for each pair of elements.
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
+        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
+        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
+        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+      then
+        dae;
+				
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      equation
+        true = RTOpts.splitArrays();
+        true = Expression.dimensionKnown(dim);
+        true = Expression.isRange(lhs) or Expression.isRange(rhs);
+        ds = Types.getDimensions(tp);
+        lhs = ExpressionSimplify.simplify(lhs);
+        rhs = ExpressionSimplify.simplify(rhs);
+      then
+        DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
+
+    // Array dimension of unknown size, expanding case.
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      equation
+        true = RTOpts.splitArrays();
+        false = Expression.dimensionKnown(dim);
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
-        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
-        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
         dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
 				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.INITIAL())
-			local
-				String lhs_str, rhs_str, eq_str;
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.INITIAL())
 			equation
+        true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an initial array equation of dim 1
-			  funcs = DAEUtil.avlTreeNew();
+			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
 			then 
-				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({1}, lhs, rhs, source)}, funcs);
+				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)}); 
 
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.NON_INITIAL())
-			local
-				String lhs_str, rhs_str, eq_str;
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
 			equation
+         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
 			  true = OptManager.getOption("checkModel");
 			  // generate an array equation of dim 1
-			  funcs = DAEUtil.avlTreeNew();
+			  // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
 			then 
-				DAE.DAE({DAE.ARRAY_EQUATION({1}, lhs, rhs, source)}, funcs);
+				DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 				
-		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), _, _)
-			local
-				String lhs_str, rhs_str, eq_str;
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
 			equation
-        // It's ok with array equation of unknown size if checkModel is used.
+			  true = RTOpts.splitArrays();
+			  // It's ok with array equation of unknown size if checkModel is used.
 			  false = OptManager.getOption("checkModel");
-				lhs_str = Exp.printExpStr(lhs);
-				rhs_str = Exp.printExpStr(rhs);
-				eq_str = System.stringAppendList({lhs_str, "=", rhs_str});
+				lhs_str = ExpressionDump.printExpStr(lhs);
+				rhs_str = ExpressionDump.printExpStr(rhs);
+				eq_str = stringAppendList({lhs_str, "=", rhs_str});
 				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
 			then 
 				fail();
@@ -1787,9 +1763,9 @@ protected function unrollForLoop
 "@author: adrpo
  unroll for loops that contains when statements"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -1799,13 +1775,12 @@ protected function unrollForLoop
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
-  output DAE.DAElist outDae; 
 algorithm
-  (outCache,outStatement,outDae) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -1834,18 +1809,17 @@ algorithm
 	  // only one iterator  
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
-        (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_,fdae) = Static.elabExp(cache, env, e, impl, NONE, true, pre);
+        (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});        
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
-        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds";
-        (cache,stmts,dae) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
-        dae = DAEUtil.joinDaes(dae, fdae);
+        = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{}));
+        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds";
+        (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
 	  
     // multiple for iterators 
     //  for (i in a, j in b, k in c) loop 
@@ -1861,12 +1835,12 @@ algorithm
     //  end for;
     case (cache,env,ih,pre,(i,SOME(e))::(restIterators as _::_),sl,info,source,initial_,impl,unrollForLoops)
       equation
-        (cache,stmts,dae) = 
+        (cache,stmts) = 
            unrollForLoop(cache, env, ih, pre, {(i, SOME(e))},
               {SCode.ALG_FOR(restIterators, sl,NONE(),info)},
               info,source,initial_, impl,unrollForLoops);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
     // failure
     case (cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation
@@ -1884,9 +1858,9 @@ end unrollForLoop;
 protected function instForStatement 
 "Helper function for instStatement"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -1896,13 +1870,12 @@ protected function instForStatement
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model"; 
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
-  output DAE.DAElist outDae;
 algorithm
-  (outCache,outStatement,outDae) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -1931,19 +1904,19 @@ algorithm
       equation
         // check here that we have a when loop in the for statement.
         true = containsWhenStatements(sl);
-        (cache,stmts,dae) = unrollForLoop(cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = unrollForLoop(cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
         
     // for loops not containing ALG_WHEN
     case (cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
-        (cache,stmts,dae) = instForStatement_dispatch(cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instForStatement_dispatch(cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops);
         stmts = replaceLoopDependentCrefs(stmts, inIterators);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
 
   end matchcontinue;
 end instForStatement;
@@ -1961,28 +1934,27 @@ end replaceLoopDependentCrefs;
 
 protected function replaceLoopDependentCrefInExp
   "Helper function for replaceLoopDependentCrefs."
-  input DAE.Exp inExpr;
-  input Absyn.ForIterators inForIterators;
-  output DAE.Exp outExpr;
-  output Absyn.ForIterators outForIterators;
+  input tuple<DAE.Exp,Absyn.ForIterators> itpl;
+  output tuple<DAE.Exp,Absyn.ForIterators> otpl;
 algorithm
-  (outExpr, outForIterators) := matchcontinue(inExpr, inForIterators)
-    case (cr_exp as DAE.CREF(componentRef = cr), _)
-      local
-        DAE.Exp cr_exp;
-        DAE.ComponentRef cr;
-        DAE.ExpType cr_type;
-        list<DAE.Subscript> cref_subs;
-        list<DAE.Exp> exp_subs;
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp cr_exp;
+      DAE.ComponentRef cr;
+      DAE.ExpType cr_type;
+      list<DAE.Subscript> cref_subs;
+      list<DAE.Exp> exp_subs;
+      Absyn.ForIterators fi;
+    case ((cr_exp as DAE.CREF(componentRef = cr), fi))
       equation
-        cref_subs = Exp.crefSubs(cr);
-        exp_subs = Util.listMap(cref_subs, Exp.subscriptExp);
-        true = isSubsLoopDependent(exp_subs, inForIterators);
-        cr = Exp.crefStripSubs(cr);
-        cr_type = Exp.crefType(cr);
+        cref_subs = ComponentReference.crefSubs(cr);
+        exp_subs = Util.listMap(cref_subs, Expression.subscriptExp);
+        true = isSubsLoopDependent(exp_subs, fi);
+        cr = ComponentReference.crefStripSubs(cr);
+        cr_type = ComponentReference.crefLastType(cr);
       then
-        (DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), inForIterators);
-    case (_, _) then (inExpr, inForIterators);
+        ((DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), fi));
+    case itpl then itpl;
   end matchcontinue;
 end replaceLoopDependentCrefInExp;
 
@@ -1993,20 +1965,21 @@ protected function isSubsLoopDependent
   output Boolean loopDependent;
 algorithm
   loopDependent := matchcontinue(subscripts, iterators)
+    local
+      Absyn.Ident iter_name;
+      DAE.Exp iter_exp;
+      DAE.ComponentRef cref_;
+      Absyn.ForIterators rest_iters;
+      Boolean res;
     case (_, {}) then false;
     case (_, (iter_name, _) :: _)
-      local
-        Absyn.Ident iter_name;
-        DAE.Exp iter_exp;
       equation
-        iter_exp = DAE.CREF(DAE.CREF_IDENT(iter_name, DAE.ET_INT(), {}), DAE.ET_INT()); 
+        cref_ = ComponentReference.makeCrefIdent(iter_name, DAE.ET_INT(), {});
+        iter_exp = DAE.CREF(cref_, DAE.ET_INT()); 
         true = isSubsLoopDependentHelper(subscripts, iter_exp);
       then
         true;
     case (_, _ :: rest_iters)
-      local
-        Absyn.ForIterators rest_iters;
-        Boolean res;
       equation
         res = isSubsLoopDependent(subscripts, rest_iters);
       then
@@ -2028,7 +2001,7 @@ algorithm
     case ({}, _) then false;
     case (subscript :: rest, _)
       equation
-        true = Exp.expContains(subscript, iteratorExp);
+        true = Expression.expContains(subscript, iteratorExp);
       then true;
     case (subscript :: rest, _)
       equation
@@ -2041,9 +2014,9 @@ end isSubsLoopDependentHelper;
 protected function instForStatement_dispatch 
 "function for instantiating a for statement"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ForIterators inIterators;
   input list<SCode.Statement> inForBody;
   input Absyn.Info info;
@@ -2053,13 +2026,12 @@ protected function instForStatement_dispatch
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model"; 
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling";
-  output DAE.DAElist outDae;
 algorithm
-  (outCache,outStatement,outDae) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
+  (outCache,outStatements) := matchcontinue(inCache,inEnv,inIH,inPrefix,inIterators,inForBody,info,source,inInitial,inBool,unrollForLoops)
     local
 	    Env.Cache cache;
 	    list<Env.Frame> env,env_1;
-	    Prefix pre;
+	    Prefix.Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
 	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
@@ -2086,31 +2058,29 @@ algorithm
     // one iterator
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
-        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1,dae2) = instStatements(cache, env_1, ih, pre, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env_1, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     // multiple iterators
     case (cache,env,ih,pre,(i,SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation        
-        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,stmts,dae2) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, stmts, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
-    //  case (cache,env,pre,{(i,NONE)},sl,initial_,impl,unrollForLoops)
+        (cache,{stmt});
+    //  case (cache,env,pre,{(i,NONE())},sl,initial_,impl,unrollForLoops)
     //    equation       
     //      lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
     //      len=listLength(lst);
@@ -2134,35 +2104,33 @@ algorithm
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
-        // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1,dae2) = instStatements(cache,env_1,ih,pre,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env_1,ih,pre,sl,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
-    case (cache,env,ih,pre,(i,NONE)::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
+        (cache,{stmt});
+    case (cache,env,ih,pre,(i,NONE())::restIterators,sl,info,source,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl); 
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
-        // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_,dae1) = Static.elabExp(cache,env, e, impl, NONE, true,pre);
+        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
-        (cache,sl_1,dae2) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
   end matchcontinue;
 end instForStatement_dispatch;
 
@@ -2190,7 +2158,7 @@ algorithm
         dae = makeDaeEquation(lhs,rhs,source,initial_);
         // adrpo: TODO! FIXME! shouldn't we return the dae here??!!
       // PA: do not know, but at least return the functions.
-      then DAEUtil.extractFunctions(dae); 
+      then DAEUtil.emptyDae; 
 
     // adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
     //                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
@@ -2203,7 +2171,7 @@ algorithm
     case(lhs,rhs,tp,source,initial_)
       equation
         false = Types.isRecord(tp);
-        s = Exp.printExpStr(lhs) +& " = " +& Exp.printExpStr(rhs);
+        s = ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs);
         Error.addMessage(Error.ILLEGAL_EQUATION_TYPE,{s});
       then fail();
   end matchcontinue;
@@ -2218,13 +2186,11 @@ protected function makeComplexDaeEquation "Creates a DAE.COMPLEX_EQUATION for eq
 algorithm
   dae := matchcontinue(lhs,rhs,source,initial_)
   local DAE.FunctionTree funcs;
-    case(lhs,rhs,source,SCode.NON_INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();
-    then DAE.DAE({DAE.COMPLEX_EQUATION(lhs,rhs,source)},funcs);
+    case(lhs,rhs,source,SCode.NON_INITIAL())
+      then DAE.DAE({DAE.COMPLEX_EQUATION(lhs,rhs,source)});
 
-    case(lhs,rhs,source,SCode.INITIAL()) equation
-      funcs = DAEUtil.avlTreeNew();
-    then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)},funcs);
+    case(lhs,rhs,source,SCode.INITIAL())
+      then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)});
   end matchcontinue;
 end makeComplexDaeEquation;
 
@@ -2234,10 +2200,10 @@ public function instAlgorithm
   the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2245,7 +2211,7 @@ public function instAlgorithm
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2262,7 +2228,7 @@ algorithm
       list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       SCode.AlgorithmSection algSCode;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2275,10 +2241,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        (cache,statements_1,fdae) = instStatements(cache, env, ih, pre, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);        
+        (cache,statements_1) = instStatements(cache, env, ih, pre, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);        
         
-        funcs = DAEUtil.avlTreeNew();
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},funcs),fdae);
+        dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
@@ -2296,10 +2261,10 @@ public function instInitialAlgorithm
   in the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input SCode.AlgorithmSection inAlgorithm;
@@ -2307,7 +2272,7 @@ public function instInitialAlgorithm
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2324,11 +2289,10 @@ algorithm
       list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
       DAE.DAElist fdae,dae;
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph)
@@ -2336,10 +2300,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,statements_1,fdae) = instStatements(cache, env, ih, pre, statements, source, SCode.INITIAL(), impl, unrollForLoops);
+        (cache,statements_1) = instStatements(cache, env, ih, pre, statements, source, SCode.INITIAL(), impl, unrollForLoops);
         
-        funcs = DAEUtil.avlTreeNew();
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},funcs),fdae);
+        dae = DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
@@ -2355,9 +2318,9 @@ public function instStatements
 "function: instStatements 
   This function converts a list of algorithm statements."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input list<SCode.Statement> inAbsynAlgorithmLst;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -2365,9 +2328,8 @@ public function instStatements
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   output Env.Cache outCache;
   output list<DAE.Statement> outAlgorithmStatementLst;
-  output DAE.DAElist outDae "contain functions";
 algorithm 
-  (outCache,outAlgorithmStatementLst,outDae) := matchcontinue (inCache,inEnv,inIH,inPre,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops)
+  (outCache,outAlgorithmStatementLst) := matchcontinue (inCache,inEnv,inIH,inPre,inAbsynAlgorithmLst,source,initial_,inBoolean,unrollForLoops)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -2375,22 +2337,21 @@ algorithm
       SCode.Statement x;
       list<SCode.Statement> xs;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.DAElist dae,dae1,dae2;
       InstanceHierarchy ih;
 
     // empty case 
-    case (cache,env,ih,pre,{},source,initial_,impl,unrollForLoops) then (cache,{},DAEUtil.emptyDae);
+    case (cache,env,ih,pre,{},source,initial_,impl,unrollForLoops) then (cache,{});
 
     // general case       
     case (cache,env,ih,pre,(x :: xs),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,stmts1,dae1) = instStatement(cache, env, ih, pre, x, source, initial_, impl, unrollForLoops);
-        (cache,stmts2,dae2) = instStatements(cache, env, ih, pre, xs, source, initial_, impl, unrollForLoops);
-        dae = DAEUtil.joinDaes(dae1,dae2);
+        (cache,stmts1) = instStatement(cache, env, ih, pre, x, source, initial_, impl, unrollForLoops);
+        (cache,stmts2) = instStatements(cache, env, ih, pre, xs, source, initial_, impl, unrollForLoops);
         stmts = listAppend(stmts1, stmts2);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
   end matchcontinue;
 end instStatements;
 
@@ -2400,9 +2361,9 @@ function: instStatement
   in the Algorithm module to build a representation of it that can
   be used in the DAE output."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input SCode.Statement inAlgorithm;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
@@ -2410,53 +2371,75 @@ function: instStatement
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "more statements due to loop unrolling";
-  output DAE.DAElist outDae "contains functions";
 algorithm 
-  (outCache,outStatements,outDae) := matchcontinue (inCache,inEnv,inIH,inPre,inAlgorithm,source,initial_,inBoolean,unrollForLoops)
+  (outCache,outStatements) := matchcontinue (inCache,inEnv,inIH,inPre,inAlgorithm,source,initial_,inBoolean,unrollForLoops)
     local
       DAE.ComponentRef ce,ce_1;
       DAE.ExpType t;
-      DAE.Properties cprop,eprop,prop,msgprop,varprop,valprop;
+      DAE.Properties cprop,eprop,prop,prop1,prop2,msgprop,varprop,valprop;
       SCode.Accessibility acc;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
+      Absyn.Exp e,e1,e2,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
       Boolean impl,onlyCref,tupleExp;
-      list<DAE.Exp> expl_1,expl_2;
+      list<Absyn.Exp> absynExpList,inputExps,expl;
+      list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
+      Absyn.MatchType matchType;
       list<DAE.Properties> cprops, eprops;
-      list<Absyn.Exp> expl;
-      String s,i;
+      DAE.Type lt,rt;
+      String s,i,lhs_str,rhs_str,lt_str,rt_str;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<SCode.Statement> tb,fb,sl,elseWhenSt;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,el,elseWhenRest;
       SCode.Statement alg;
       Env.Cache cache;
-      Prefix pre; 
+      Prefix.Prefix pre; 
       Absyn.ForIterators forIterators;
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       InstanceHierarchy ih;
       Option<SCode.Comment> comment;
       Absyn.Info info;
       Absyn.Case case_;
+      list<Absyn.Exp> expList;
+      DAE.Type ty,t2;
+      DAE.Exp vb2,e2_2,e2_2_2; 
+      Absyn.ForIterators rangeList;
+      SCode.Statement absynStmt;
+      list<Absyn.Ident> tempLoopVarNames;
+      Absyn.ComponentRef c,c1,c2;
+      list<Absyn.ElementItem> declList,tempLoopVars;
+      list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
+      list<Absyn.ElementItem> elemList;
+      list<Absyn.Exp> varList;
+      Absyn.Exp left,right,lhsExp;
+      DAE.Exp unvectorisedExpl;
+      String alg_str, scope_str;
+      Absyn.ComponentRef callFunc;
+      Absyn.FunctionArgs callArgs;
+      Absyn.Exp aea;
+      list<DAE.Exp> eexpl;
+      Absyn.Path ap;
+      Boolean tuple_, builtin;
+      DAE.InlineType inline;
+      DAE.ExpType tp;
+      String str;
+      DAE.Pattern pattern;
 
     //------------------------------------------
     // Part of MetaModelica list extension. KS
     //------------------------------------------
     /* v := Array(...); */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList),info = info),source,initial_,impl,unrollForLoops)
-      local
-        list<Absyn.Exp> expList;
-        DAE.Type t2;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
 
         // If this is a list assignment, then the Array(...) expression should
         // be evaluated to DAE.LIST
 
-        (cache,cre,cprop,acc,_) = Static.elabCref(cache,env, cr, impl,false,pre);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         true = MetaUtil.isList(cprop);
 
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
@@ -2465,212 +2448,107 @@ algorithm
         // In case we have a nested list expression
         expList = MetaUtil.transformArrayNodesToListNodes(expList,{});
 
-        (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl,NONE(),true,pre,info);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
 
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
       then 
-        (cache,{stmt},DAEUtil.emptyDae);
-    //-----------------------------------------//
-
-    /* v := array(for-iterator); */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c),
-      // Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         value = Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,rangeList)),info=info),source,initial_,impl,unrollForLoops)
-      local
-        Absyn.Exp e1,vb;
-        Absyn.ForIterators rangeList;
-        Absyn.ComponentRef c;
-        list<Absyn.Ident> tempLoopVarNames;
-        list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
-        list<Absyn.ElementItem> tempLoopVars;
-        DAE.Exp vb2;
-      equation
-        // rangeList = {(id,e2)};
-        (tempLoopVarNames,tempLoopVars,tempLoopVarsInit) = createTempLoopVars(rangeList,{},{},{},1);
-
-        //Transform this function call into a number of nested for-loops
-        (vb_body,dae1) = createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,c);
-
-        vb_body = listAppend(tempLoopVarsInit,vb_body);
-        vb = Absyn.VALUEBLOCK(tempLoopVars,Absyn.VALUEBLOCKALGORITHMS(vb_body),Absyn.BOOL(true));
-        (cache,vb2,_,_,dae2) = Static.elabExp(cache,env,vb,impl,NONE,true,pre);
-
-        // _ := { ... }, this will be handled in Codegen.algorithmStatement
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_ASSIGN(DAE.ET_BOOL(),
-                                DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                                vb2,source);
-        dae = DAEUtil.joinDaes(dae1,dae2);                        
-      then
-        (cache,{stmt},dae);
-
-    /* v := Function(for-iterator); */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c1),
-      // Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         value = Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,rangeList)),comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      local
-        Absyn.Exp e1,vb;
-        Absyn.ForIterators rangeList;
-        SCode.Statement absynStmt;
-        list<Absyn.Ident> tempLoopVarNames;
-        Absyn.ComponentRef c1,c2;
-        list<Absyn.ElementItem> declList,tempLoopVars;
-        list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
-      equation
-        // rangeList = {(id,e2)};
-        (tempLoopVarNames,tempLoopVars,tempLoopVarsInit) = createTempLoopVars(rangeList,{},{},{},1);
-
-        // Create temporary array to store the result from the for-iterator construct
-        (cache,declList,dae1) = createForIteratorArray(cache,env,e1,rangeList,impl,pre);
-
-        declList = listAppend(declList,tempLoopVars);
-
-        // Create for-statements
-        (vb_body,dae2) = createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,Absyn.CREF_IDENT("VEC__",{}));
-
-        vb_body = listAppend(tempLoopVarsInit,vb_body);
-        vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
-        Absyn.CALL(c2,Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT("VEC__",{}))},{})));
-        absynStmt = SCode.ALG_ASSIGN(Absyn.CREF(c1),vb,comment,info);
-
-        (cache,stmts,dae3) = instStatement(cache,env,ih,pre,absynStmt,source,initial_,impl,unrollForLoops);
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
-      then
-        (cache,stmts,dae);
-
+        (cache,{stmt});
+   
     /* v := expr; */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e,info = info),source,initial_,impl,unrollForLoops) 
       equation     
-        (cache,cre,cprop,acc,dae1) = Static.elabCref(cache, env, cr, impl, false,pre);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
-        (cache,e_1,eprop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabExp(cache, env, e, impl,NONE(),true,pre,info);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
         /* der(x) := ... */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = 
           (e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) )),value = e,info = info),
           source,initial_,impl,unrollForLoops)
-      local
-        Absyn.Exp e2;
-        DAE.Exp e2_2,e2_2_2; 
       equation 
-        (cache,_,cprop,acc,dae) = Static.elabCref(cache,env, cr, impl,false,pre);
-        (cache,(e2_2 as DAE.CALL(path=_)),_,_,dae1) = Static.elabExp(cache,env, e2, impl, NONE,true,pre);
+        (cache,SOME((_,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
-        (cache,e_1,eprop,_,dae2) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW() ,initial_, source);
-        dae = DAEUtil.joinDaeLst({dae,dae1,dae2});
+        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW(), initial_, source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e, info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,cre,cprop,acc,dae1) = Static.elabCref(cache,env, cr, impl,false,pre);
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache,e_1,eprop,_,dae2) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(cre2, cprop, e_2, eprop, acc,initial_,source);
-        dae = DAEUtil.joinDaes(dae1,dae2);      
+        stmt = makeAssignment(cre2, cprop, e_2, eprop, acc, initial_, source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     // (v1,v2,..,vn) := func(...)
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info = info),source,initial_,impl,unrollForLoops)
       equation
         true = MetaUtil.onlyCrefExpressions(expl);
-        (cache,e_1,eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,_,dae2) = Static.elabExpList(cache, env, expl, impl, NONE,false,pre);
+        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
       // MetaModelica Matchcontinue - should come before the error message about tuple assignment
     case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt,dae) = createMatchStatement(cache,env,ih,pre,alg,impl);
-      then (cache,{stmt},dae);
+        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
+      then (cache,{stmt});
         
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = left, value = right, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      local
-        list<Absyn.ElementItem> elemList;
-        list<Absyn.Exp> varList;
-        Absyn.Exp left,right,lhsExp;
-        DAE.Type ty;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // Prevent infinite recursion
         failure(Absyn.MATCHEXP(matchTy=_) = right);
         failure(Absyn.VALUEBLOCK(result=_) = right);
-        expl = MetaUtil.extractListFromTuple(left,0);
-        onlyCref = MetaUtil.onlyCrefExpressions(expl);
-        tupleExp = MetaUtil.isTupleExp(right);
 
-        (cache,e_1,prop,_,dae1) = Static.elabExp(cache,env,right,impl,NONE(),true,pre);
-        ty = Util.if_(tupleExp,MetaUtil.fixMetaTuple(prop),Types.getPropType(prop));
-        (elemList,varList) = MetaUtil.extractOutputVarsType({ty},1,{},{});
-
-        true = (not onlyCref) or (listLength(varList)<>listLength(expl));
-        /*
-          lhs := rhs; is translated into (vars=list of temporary variables with types of rhs):
-          _ := matchcontinue ()
-            local vars
-            case ()
-              equation
-                vars = rhs;
-                _ := matchcontinue vars
-                case lhs then ();
-              then ();
-        */
-        
-        lhsExp = MetaUtil.createLhsExp(varList);
-        matchExp = Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},{Absyn.CASE(left,{},{},Absyn.TUPLE({}),NONE())},NONE());
-        vb = Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
-          {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,right),NONE(),info),Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),NONE(),info)}),
-          Absyn.BOOL(true));
-        // Debug.traceln("vb:" +& Dump.printExpStr(vb) +& "\n");
-        alg = SCode.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),vb,NONE(),info);
-        (cache,stmts,dae2) = instStatement(cache,env,ih,pre,alg,source,initial_,impl,unrollForLoops);
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then (cache,stmts,dae);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env,right,impl,NONE(),true,pre,info);
+        ty = Types.getPropType(prop);
+        (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
+        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source);
+      then (cache,{stmt});
         
     /* Tuple with rhs constant */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
-      local
-        DAE.Exp unvectorisedExpl;
       equation 
-        (cache,e_1,eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false, NONE, NONE, Ceval.MSG());
-        (cache,expl_2,cprops,_,dae2) = Static.elabExpList(cache,env, expl, impl, NONE,false,pre);
+        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG());
+        (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, SCode.RW(), initial_, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
 
     /* Tuple with lhs being a tuple NOT of crefs => Error */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e as Absyn.TUPLE(expressions = expl)),source,initial_,impl,unrollForLoops)
@@ -2681,83 +2559,95 @@ algorithm
       then
         fail();
         
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e1 as Absyn.TUPLE(expressions = expl),value = e2,info=info),source,initial_,impl,unrollForLoops)
+      equation
+        Absyn.CALL(functionArgs = _) = e2;
+        _ = Util.listMap(expl,Absyn.expCref);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
+        (cache,e_2,prop2,_) = Static.elabExp(cache,env,e2,impl,NONE(),false,pre,info);
+        lt = Types.getPropType(prop1);
+        rt = Types.getPropType(prop2);
+        false = Types.subtype(lt, rt);
+        lhs_str = ExpressionDump.printExpStr(e_1);
+        rhs_str = ExpressionDump.printExpStr(e_2);
+        lt_str = Types.unparseType(lt);
+        rt_str = Types.unparseType(rt);
+        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
+      then
+        fail();
+
     /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),source,initial_,impl,unrollForLoops)
-      equation 
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
+      equation
+        // failure(Absyn.CALL(functionArgs = _) = e);
         _ = Util.listMap(expl,Absyn.expCref);
         s = Dump.printExpStr(e);
-        Error.addMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s});
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
         fail();
         
     /* If statement*/
     case (cache,env,ih,pre,SCode.ALG_IF(boolExpr = e,trueBranch = tb,elseIfBranch = eib,elseBranch = fb,info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,e_1,prop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
-        (cache,tb_1 ,dae2)= instStatements(cache,env,ih,pre, tb, source, initial_,impl,unrollForLoops);
-        (cache,eib_1,dae3) = instElseIfs(cache,env,ih,pre, eib, source, initial_,impl,unrollForLoops);
-        (cache,fb_1,dae4) = instStatements(cache,env,ih,pre, fb, source, initial_,impl,unrollForLoops);
+        (cache,tb_1)= instStatements(cache,env,ih,pre, tb, source, initial_,impl,unrollForLoops);
+        (cache,eib_1) = instElseIfs(cache,env,ih,pre, eib, source, initial_,impl,unrollForLoops,info);
+        (cache,fb_1) = instStatements(cache,env,ih,pre, fb, source, initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeIf(e_2, prop, tb_1, eib_1, fb_1, source);
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4});
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* For loop */
     case (cache,env,ih,pre,SCode.ALG_FOR(iterators = forIterators,forBody = sl,info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,stmts,dae) = instForStatement(cache,env,ih,pre,forIterators,sl,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instForStatement(cache,env,ih,pre,forIterators,sl,info,source,initial_,impl,unrollForLoops);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
         
     /* While loop */
     case (cache,env,ih,pre,SCode.ALG_WHILE(boolExpr = e,whileBody = sl, info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
-        (cache,sl_1,dae2) = instStatements(cache,env,ih,pre,sl,source,initial_,impl,unrollForLoops);
+        (cache,sl_1) = instStatements(cache,env,ih,pre,sl,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhile(e_2, prop, sl_1, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     /* When clause without elsewhen */
     case (cache,env,ih,pre,SCode.ALG_WHEN_A(branches = {(e,sl)}, info = info),source,initial_,impl,unrollForLoops)
       equation 
         false = containsWhenStatements(sl);
-        (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,sl_1,dae2) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhenA(e_2, prop, sl_1, NONE(), source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* When clause with elsewhen branch */
     case (cache,env,ih,pre,SCode.ALG_WHEN_A(branches = (e,sl)::(elseWhenRest as _::_), comment = comment, info = info),source,initial_,impl,unrollForLoops)
       equation 
         false = containsWhenStatements(sl);
-        (cache,{stmt1},dae1) = instStatement(cache,env,ih,pre,SCode.ALG_WHEN_A(elseWhenRest,comment,info),source,initial_,impl,unrollForLoops);
-        (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,{stmt1}) = instStatement(cache,env,ih,pre,SCode.ALG_WHEN_A(elseWhenRest,comment,info),source,initial_,impl,unrollForLoops);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
-        (cache,sl_1,dae3) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeWhenA(e_2, prop, sl_1, SOME(stmt1), source);
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     // Check for nested when clauses, which are invalid.
     case (_,env,ih,_,alg as SCode.ALG_WHEN_A(branches = (_,sl)::_, info = info),_,_,_,_)
-      local
-        String alg_str, scope_str;
       equation
         true = containsWhenStatements(sl);
         alg_str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
@@ -2769,66 +2659,55 @@ algorithm
     case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,cond_1,cprop,_,dae1) = Static.elabExp(cache, env, cond, impl, NONE, true,pre);
+        (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
         (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl);
         (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);        
-        (cache,msg_1,msgprop,_,dae2) = Static.elabExp(cache, env, msg, impl, NONE, true,pre);
+        (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop, source);
-        dae = DAEUtil.joinDaes(dae1, dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* terminate(msg) */
     case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),
           functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,msg_1,msgprop,_,dae) = Static.elabExp(cache, env, msg, impl, NONE, true,pre);
+        (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTerminate(msg_2, msgprop, source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* reinit(variable,value) */
     case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
           functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
-        (cache,var_1,varprop,_,dae1) = Static.elabExp(cache, env, var, impl, NONE, true,pre);
+        (cache,var_1,varprop,_) = Static.elabExp(cache, env, var, impl,NONE(), true,pre,info);
         (cache, var_1, varprop) = Ceval.cevalIfConstant(cache, env, var_1, varprop, impl);
         (cache,var_2) = PrefixUtil.prefixExp(cache, env, ih, var_1, pre);
-        (cache,value_1,valprop,_,dae2) = Static.elabExp(cache, env, value, impl, NONE, true,pre);
+        (cache,value_1,valprop,_) = Static.elabExp(cache, env, value, impl,NONE(), true,pre,info);
         (cache, value_1, valprop) = Ceval.cevalIfConstant(cache, env, value_1, valprop, impl);
         (cache,value_2) = PrefixUtil.prefixExp(cache, env, ih, value_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeReinit(var_2, value_2, varprop, valprop, source);
-        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* generic NORETCALL */
     case (cache,env,ih,pre,(SCode.ALG_NORETCALL(functionCall = callFunc, functionArgs = callArgs, info = info)),source,initial_,impl,unrollForLoops)
-      local 
-        Absyn.ComponentRef callFunc;
-        Absyn.FunctionArgs callArgs;
-        Absyn.Exp aea;
-        list<DAE.Exp> eexpl;
-        Absyn.Path ap;
-        Boolean tuple_, builtin;
-        DAE.InlineType inline;
-        DAE.ExpType tp;
       equation
-        (cache, DAE.CALL(ap, eexpl, tuple_, builtin, tp, inline), varprop, _, dae) = 
-          Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl, NONE, true,pre); 
+        (cache, DAE.CALL(ap, eexpl, tuple_, builtin, tp, inline), varprop, _) = 
+          Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl,NONE(), true,pre,info); 
         ap = PrefixUtil.prefixPath(ap,pre);
         (cache,eexpl) = PrefixUtil.prefixExpList(cache, env, ih, eexpl, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,tuple_,builtin,tp,inline),source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
          
     /* break */
     case (cache,env,ih,pre,SCode.ALG_BREAK(comment = comment, info = info),source,initial_,impl,unrollForLoops)
@@ -2836,7 +2715,7 @@ algorithm
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_BREAK(source);
       then
-        (cache,{stmt},DAEUtil.emptyDae);
+        (cache,{stmt});
         
     /* return */
     case (cache,env,ih,pre,SCode.ALG_RETURN(comment = comment, info = info),source,initial_,impl,unrollForLoops)
@@ -2844,30 +2723,39 @@ algorithm
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_RETURN(source);
       then
-        (cache,{stmt},DAEUtil.emptyDae);
+        (cache,{stmt});
         
-        //------------------------------------------
-    // Part of MetaModelica extension. KS
     //------------------------------------------
+    // Part of MetaModelica extension.
+    //------------------------------------------
+    case (cache,env,ih,pre,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,sl_1) = instStatements(cache,env,ih,pre,sl,source,initial_,impl,unrollForLoops);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_FAILURE(sl_1,source);
+      then
+        (cache,{stmt});
+
     /* try */
     case (cache,env,ih,pre,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,sl_1,dae) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_TRY(sl_1,source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
         
     /* catch */
     case (cache,env,ih,pre,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,sl_1,dae) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
+        (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_CATCH(sl_1,source);
       then
-        (cache,{stmt},dae);
+        (cache,{stmt});
 
     /* throw */
     case (cache,env,ih,pre,SCode.ALG_THROW(comment = comment, info = info),source,initial_,impl,unrollForLoops)
@@ -2876,46 +2764,38 @@ algorithm
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_THROW(source);
       then
-        (cache,{stmt},DAEUtil.emptyDae);
+        (cache,{stmt});
 
     /* GOTO */
     case (cache,env,ih,pre,SCode.ALG_GOTO(labelName = s, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      local
-        String s;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_GOTO(s,source);
       then
-        (cache,{stmt},DAEUtil.emptyDae);
+        (cache,{stmt});
 
     case (cache,env,ih,pre,SCode.ALG_LABEL(labelName = s, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      local
-        String s;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_LABEL(s,source);
       then
-        (cache,{stmt},DAEUtil.emptyDae);
+        (cache,{stmt});
     
       // Helper statement for matchcontinue
-    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, switchCases = absynExpList, comment = comment, info = info),source,_,impl,unrollForLoops)
-      local
-        Absyn.MatchType matchType;
-        list<Absyn.Exp> absynExpList;
-        list<DAE.Exp> expExpList;
+    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, inputExps = inputExps, switchCases = expl, comment = comment, info = info),source,_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,expExpList,_,_,dae) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true,pre);
+        (cache,expl_1,_,_) = Static.elabExpList(cache,env, expl, impl,NONE(),true,pre,info);
+        (cache,inputExpsDAE,_,_) = Static.elabExpList(cache,env, inputExps, impl,NONE(),true,pre,info);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_MATCHCASES(matchType,expExpList,source);
-      then (cache,{stmt},dae);
+        stmt = DAE.STMT_MATCHCASES(matchType,inputExpsDAE,expl_1,source);
+      then (cache,{stmt});
 
     //------------------------------------------
         
     case (cache,env,ih,pre,alg,_,initial_,impl,unrollForLoops)
-      local String str;
       equation 
         true = RTOpts.debugFlag("failtrace");
         str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
@@ -2953,8 +2833,8 @@ algorithm
       equation
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
-        wilds = Util.listFill(DAE.CREF(DAE.WILD, DAE.ET_OTHER), wild_count);
-        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE), NONE), DAE.C_VAR), wild_count);
+        wilds = Util.listFill(DAE.CREF(DAE.WILD(), DAE.ET_OTHER()), wild_count);
+        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR()), wild_count);
      then Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     // Otherwise, call Algorithm.makeAssignment as usual.
     case (_, _, _, _, _, _, _)
@@ -3032,9 +2912,9 @@ protected function loopOverRange
   Unrolling a for loop is explicitly repeating 
   the body of the loop once for each iteration."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Ident inIdent;
   input Values.Value inValue;
   input list<SCode.Statement> inAlgItmLst;
@@ -3044,9 +2924,8 @@ protected function loopOverRange
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   output Env.Cache outCache;
   output list<DAE.Statement> outStatements "for statements can produce more statements than one by unrolling"; 
-  output DAE.DAElist outDae;
 algorithm 
-  (outCache,outStatements,outDae) :=
+  (outCache,outStatements) :=
   matchcontinue (inCache,inEnv,inIH,inPrefix,inIdent,inValue,inAlgItmLst,source,inInitial,inBoolean,unrollForLoops)
     local
       list<Env.Frame> env_1,env_2,env_3,env;
@@ -3066,7 +2945,7 @@ algorithm
 
     // handle empty      
     case (cache,_,_,_,_,Values.ARRAY(valueLst = {}),_,source,_,_,_) 
-      then (cache,{},DAEUtil.emptyDae); 
+      then (cache,{}); 
     
     /* array equation, use instAlgorithms */
     case (cache,env,ih,pre,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),
@@ -3074,16 +2953,15 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName),NONE());
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
-        (cache,stmts1,dae1) = instStatements(cache, env_2, ih, pre, algs, source, initial_, impl, unrollForLoops);
-        (cache,stmts2,dae2) = loopOverRange(cache, env, ih, pre, i, Values.ARRAY(rest,dims), algs, source, initial_, impl, unrollForLoops);
-        dae = DAEUtil.joinDaes(dae1, dae2);
+        (cache,stmts1) = instStatements(cache, env_2, ih, pre, algs, source, initial_, impl, unrollForLoops);
+        (cache,stmts2) = loopOverRange(cache, env, ih, pre, i, Values.ARRAY(rest,dims), algs, source, initial_, impl, unrollForLoops);
         stmts = listAppend(stmts1, stmts2);
       then
-        (cache,stmts,dae);
+        (cache,stmts);
         
     case (_,_,_,_,_,v,_,_,_,_,_)
       equation 
@@ -3109,7 +2987,7 @@ algorithm
 
     case (tpl as (acref,dimNum))
       equation
-        e=Absyn.RANGE(Absyn.INTEGER(1),NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
       then e;
   end matchcontinue;
 end rangeExpression;
@@ -3122,20 +3000,20 @@ protected function createMatchStatement
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy ih;
-  input Prefix pre;
+  input Prefix.Prefix pre;
   input SCode.Statement alg;
   input Boolean inBoolean;
+  input Integer numError;
   output Env.Cache outCache;
   output DAE.Statement outStmt;
-  output DAE.DAElist dae;
 algorithm
-  (outCache,outStmt,dae) := matchcontinue (cache,env,ih,pre,alg,inBoolean)
+  (outCache,outStmt) := matchcontinue (cache,env,ih,pre,alg,inBoolean,numError)
     local
       DAE.Properties cprop,eprop;
       DAE.Statement stmt;
       Env.Cache localCache;
       Env.Env localEnv;
-      Prefix localPre;
+      Prefix.Prefix localPre;
       Absyn.Exp exp,e;
       DAE.ComponentRef ce;
       DAE.Exp cre,e_1,e_2;
@@ -3146,57 +3024,31 @@ algorithm
       list<Absyn.Exp> expl;
       Absyn.Info info;
       DAE.ElementSource source;
+      String str1,str2;
       
-    // _ := matchcontinue(...) ...
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.WILD()), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
+    // (v1,v2,..,vn)|v|_ := matchcontinue(...). Part of MetaModelica extension. KS
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl,numError)
       equation
-        expl = {};
+        expl = MetaUtil.extractListFromTuple(exp, 0);
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
-        (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
-        source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
-        stmt = DAE.STMT_ASSIGN(
-                  DAE.ET_OTHER(),
-                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                  e_2,source);
-      then (localCache,stmt,dae);
-
-    // v1 := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
-      equation
-        expl = {Absyn.CREF(cr)};
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
-        (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
-        source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
-        stmt = DAE.STMT_ASSIGN(
-                  DAE.ET_OTHER(),
-                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
-                  e_2,source);
-      then
-        (localCache,stmt,dae);
-
-    // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expl), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
-      equation
-        //Absyn.CREF(cr) = Util.listFirst(expl);
-        //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
-        //(localCache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(localCache, localEnv, ih, cre, localPre);
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
+        (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl,NONE(),true,pre,info);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
         stmt = DAE.STMT_ASSIGN(
                  DAE.ET_OTHER(),
-                 DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
+                 DAE.CREF(DAE.WILD(),DAE.ET_OTHER()),
                  e_2,source);
       then
-        (localCache,stmt,dae);
+        (localCache,stmt);
 
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
       equation
-        Debug.fprintln("matchcase", "- InstSection.createMatchStatement failed");
+        true = numError == Error.getNumErrorMessages();
+        str1 = Dump.printExpStr(exp);
+        str2 = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str1,str2}, info);
       then fail();
+
   end matchcontinue;
 end createMatchStatement;
 
@@ -3205,10 +3057,10 @@ protected function instIfTrueBranches
  Initialise a list of if-equations,
  if, elseif-1 ... elseif-n."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Mod inMod;
-  input Prefix inPrefix;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input list<list<SCode.EEquation>> inTypeALst;
@@ -3216,15 +3068,14 @@ protected function instIfTrueBranches
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<list<DAE.Element>> outDaeLst;
-  output DAE.FunctionTree funcs "functions collected from the branches";
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outDaeLst,funcs,outSets,outState,outGraph):=
+  (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
@@ -3244,29 +3095,26 @@ algorithm
       list<DAE.Element> elts;
       DAE.FunctionTree funcs1,funcs2;
 
-    case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph) equation
-      funcs = DAEUtil.avlTreeNew() "new functiontree";      
+    case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph)
       then
-        (cache,env,ih,{},funcs,csets,ci_state,graph);
+        (cache,env,ih,{},csets,ci_state,graph);
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),false,impl,graph)
       equation
-        (cache,env_1,ih,DAE.DAE(elts,funcs1),csets_1,ci_state_1,graph) = 
+        (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) = 
            Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, e, impl, Inst.alwaysUnroll, graph);
-        (cache,env_2,ih,llb,funcs2,csets_2,ci_state_2,graph) = 
+        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) = 
            instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, false, impl, graph);
-        funcs = DAEUtil.joinAvlTrees(funcs1,funcs2); 
       then
-        (cache,env_2,ih,elts::llb,funcs,csets_2,ci_state_2,graph);
+        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
 
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),true,impl,graph)
       equation
-        (cache,env_1,ih,DAE.DAE(elts,funcs1),csets_1,ci_state_1,graph) = 
+        (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) = 
            Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEInitialEquation, e, impl, Inst.alwaysUnroll, graph);
-        (cache,env_2,ih,llb,funcs2,csets_2,ci_state_2,graph) = 
-           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);
-        funcs = DAEUtil.joinAvlTrees(funcs1,funcs2);                   
+        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) = 
+           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);         
       then
-        (cache,env_2,ih,elts::llb,funcs,csets_2,ci_state_2,graph);
+        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
 
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
       equation
@@ -3282,20 +3130,20 @@ protected function instElseIfs
 "function: instElseIfs
   This function helps instStatement to handle elseif parts."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Prefix inPre;
+  input Prefix.Prefix inPre;
   input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outTplExpExpTypesPropertiesAlgorithmStatementLstLst;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst,outDae) :=
-  matchcontinue (inCache,inEnv,inIH,inPre,inTplAbsynExpAbsynAlgorithmItemLstLst,source,initial_,inBoolean,unrollForLoops)
+  (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst) :=
+  matchcontinue (inCache,inEnv,inIH,inPre,inTplAbsynExpAbsynAlgorithmItemLstLst,source,initial_,inBoolean,unrollForLoops,info)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -3307,24 +3155,23 @@ algorithm
       list<SCode.Statement> l;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
       Env.Cache cache;
-      Prefix pre;
+      Prefix.Prefix pre;
       DAE.DAElist dae,dae1,dae2,dae3;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,pre,{},source,initial_,impl,unrollForLoops) then (cache,{},DAEUtil.emptyDae);
+    case (cache,env,ih,pre,{},source,initial_,impl,unrollForLoops,info) then (cache,{});
 
-    case (cache,env,ih,pre,((e,l) :: tail),source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,((e,l) :: tail),source,initial_,impl,unrollForLoops,info)
       equation
-        (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,stmts,dae2) = instStatements(cache, env, ih, pre, l, source, initial_, impl, unrollForLoops);
-        (cache,tail_1,dae3) = instElseIfs(cache,env,ih,pre,tail, source, initial_, impl, unrollForLoops);
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
+        (cache,stmts) = instStatements(cache, env, ih, pre, l, source, initial_, impl, unrollForLoops);
+        (cache,tail_1) = instElseIfs(cache,env,ih,pre,tail, source, initial_, impl, unrollForLoops,info);
       then
-        (cache,(e_2,prop,stmts) :: tail_1,dae);
+        (cache,(e_2,prop,stmts) :: tail_1);
 
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- InstSection.instElseIfs failed");
       then
@@ -3337,17 +3184,17 @@ protected function instConnect "
   Parameters and constants in connectors should generate appropriate assert statements.
   Hence, a DAE.Element list is returned as well."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3374,14 +3221,20 @@ algorithm
       SCode.Variability vt1,vt2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      list<Absyn.Subscript> subs1,subs2;
+      list<Absyn.ComponentRef> crefs1,crefs2;
+      list<DAE.Properties> props1,props2;
+      DAE.Const const;
+      Boolean b1,b2;
+      String s1,s2,s3,s4;
 
     // Check if either of the components are conditional components with
     // condition = false, in which case we should not instantiate the connection.
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
-        c1_1 = Exp.toExpCref(c1);
+        c1_1 = ComponentReference.toExpCref(c1);
         (cache, c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_1);
-        c2_1 = Exp.toExpCref(c2);
+        c2_1 = ComponentReference.toExpCref(c2);
         (cache, c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_1);
         true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
       then
@@ -3402,8 +3255,8 @@ algorithm
       equation
         ErrorExt.rollBack("expandableConnectors");        
         // Skip collection of dae functions here they can not be present in connector references
-        (cache,DAE.CREF(c1_1,t1),prop1,acc,_) = Static.elabCref(cache,env, c1, impl, false,pre);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc,_) = Static.elabCref(cache,env, c2, impl, false,pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false,pre,info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3416,7 +3269,7 @@ algorithm
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
         sets_1 = ConnectUtil.updateConnectionSetTypes(sets,c1_1);
         sets_2 = ConnectUtil.updateConnectionSetTypes(sets_1,c2_1);
-        // print("add connect(");print(Exp.printComponentRefStr(c1_2));print(", ");print(Exp.printComponentRefStr(c2_2));
+        // print("add connect(");print(ComponentReference.printComponentRefStr(c1_2));print(", ");print(ComponentReference.printComponentRefStr(c2_2));
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         // print("\n");
         (cache,_,ih,sets_3,dae,graph) =
@@ -3426,13 +3279,6 @@ algorithm
 
     // Case to display error for non constant subscripts in connectors
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
-      local
-        list<Absyn.Subscript> subs1,subs2;
-        list<Absyn.ComponentRef> crefs1,crefs2;
-        list<DAE.Properties> props1,props2;
-        DAE.Const const;
-        Boolean b1,b2;
-        String s1,s2,s3,s4;
       equation
         subs1 = Absyn.getSubsFromCref(c1);
         crefs1 = Absyn.getCrefsFromSubs(subs1);
@@ -3443,8 +3289,8 @@ algorithm
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c2);
         s1 = "connect("+&s1+&", "+&s2+&")";
-        checkConstantVariability(crefs1,cache,env,s1,pre);
-        checkConstantVariability(crefs2,cache,env,s1,pre);
+        checkConstantVariability(crefs1,cache,env,s1,pre,info);
+        checkConstantVariability(crefs2,cache,env,s1,pre,info);
       then
         fail();
 
@@ -3465,32 +3311,34 @@ Author BZ, 2009-09
   input Env.Cache cache;
   input Env.Env env;
   input String affectedConnector;
-  input Prefix inPrefix;
-algorithm props := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix)
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+algorithm
+  _ := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
   local
     Absyn.ComponentRef cr;
     Boolean b2;
     DAE.Properties prop;
     DAE.Const const;
-    Prefix pre;
-  case({},_,_,_,_) then ();
-  case(cr::inrefs,cache,env,affectedConnector,pre)
+    Prefix.Prefix pre;
+    String s1;
+  case({},_,_,_,_,_) then ();
+  case(cr::inrefs,cache,env,affectedConnector,pre,info)
     equation
-      (_,_,prop,_,_) = Static.elabCref(cache,env,cr,false,false,pre);
+      (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.elabTypePropToConst({prop});
       true = Types.isParameterOrConstant(const);
-      checkConstantVariability(inrefs,cache,env,affectedConnector,pre);
+      checkConstantVariability(inrefs,cache,env,affectedConnector,pre,info);
     then
       ();
-  case(cr::inrefs,cache,env,affectedConnector,pre)
-    local String s1;
+  case(cr::inrefs,cache,env,affectedConnector,pre,info)
     equation
-      (_,_,prop,_,_) = Static.elabCref(cache,env,cr,false,false,pre);
+      (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.elabTypePropToConst({prop});
       false = Types.isParameterOrConstant(const);
       //print(" error for: " +& affectedConnector +& " subscript: " +& Dump.printComponentRefStr(cr) +& " non constant \n");
       s1 = Dump.printComponentRefStr(cr);
-      Error.addMessage(Error.CONNECTOR_ARRAY_NONCONSTANT, {affectedConnector,s1});
+      Error.addSourceMessage(Error.CONNECTOR_ARRAY_NONCONSTANT, {affectedConnector,s1}, info);
     then
       ();
 end matchcontinue;
@@ -3500,17 +3348,17 @@ protected function connectExpandableConnectors
 "@author: adrpo
   this function handle the connections of expandable connectors"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -3549,8 +3397,8 @@ algorithm
     // both c1 and c2 are expandable
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
-        (cache,DAE.CREF(c1_1,t1),prop1,acc,_) = Static.elabCref(cache, env, c1, impl, false, pre);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc,_) = Static.elabCref(cache, env, c2, impl, false, pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache, env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache, env, c2, impl, false,pre,info);
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
@@ -3613,8 +3461,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
         // c2 is expandable
-        failure((_,_,_,_,_) = Static.elabCref(cache, env, c2, impl, false, pre));
-        (cache,DAE.CREF(c1_1,t1),prop1,acc,_) = Static.elabCref(cache, env, c1, impl, false, pre);        
+        (cache,NONE()) = Static.elabCref(cache, env, c2, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env,c1,impl,false,pre,info);
         // Debug.fprintln("expandable", 
         //   "connect(existing, expandable)(" +& 
         //      Dump.printComponentRefStr(c1) +& ", " +&
@@ -3628,7 +3476,7 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_IDENT(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
+        (cache,NONE()) = Static.elabCref(cache,env,c1,impl,false,pre,info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
         print("Error: The marked virtual expandable component reference in connect([" +& 
           Absyn.printComponentRefStr(c1) +& "], " +&
@@ -3641,8 +3489,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
-        (cache,DAE.CREF(c2_1,t2),prop2,acc2,_) = Static.elabCref(cache, env, c2, impl, false, pre);        
+        (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);        
 
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3665,7 +3513,7 @@ algorithm
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
         // elab expandable connector
-        (cache,DAE.CREF(c1_1,t1),prop1,_,_) = Static.elabCref(cache, env, c1_prefix, impl, false, pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache,env,c1_prefix,impl,false,pre,info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
@@ -3726,8 +3574,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
-        (cache,DAE.CREF(c2_1,t2),prop2,acc2,_) = Static.elabCref(cache, env, c2, impl, false, pre);        
+        (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3750,7 +3598,7 @@ algorithm
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
         // elab expandable connector
-        (cache,DAE.CREF(c1_1,t1),prop1,_,_) = Static.elabCref(cache, env, c1_prefix, impl, false, pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1_prefix, impl, false, pre, info);
         // lookup the expandable connector
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
@@ -3810,7 +3658,7 @@ algorithm
         //Debug.fprintln("expandable", "env: " +& Env.printEnvStr(env));
         
         // now it should be in the Env, fetch the info!
-        (cache,DAE.CREF(c1_1,t1),prop1,_,_) = Static.elabCref(cache, env, c1, impl, false, pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1, impl, false,pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
@@ -3826,7 +3674,7 @@ algorithm
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
            SCode.ATTR({}, flowPrefix1, streamPrefix1, acc1, vt1, dir1), 
-           false, NONE, {}, NONE, NONE(), 
+           false,NONE(), {},NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, false, source, true);
         
@@ -3845,8 +3693,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation        
         // both of these are OK
-        (cache,DAE.CREF(c1_1,t1),prop1,acc,_) = Static.elabCref(cache,env, c1, impl, false, pre);
-        (cache,DAE.CREF(c2_1,t2),prop2,acc,_) = Static.elabCref(cache,env, c2, impl, false, pre);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false,pre,info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false,pre,info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3920,11 +3768,11 @@ algorithm
     case (cache, topEnv, veCref as DAE.CREF_QUAL(componentRef = _), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       equation
         // get the last one 
-        currentName = Exp.crefLastIdent(veCref);
+        currentName = ComponentReference.crefLastIdent(veCref);
         // strip the last one
-        qualCref = Exp.crefStripLastIdent(veCref);
+        qualCref = ComponentReference.crefStripLastIdent(veCref);
         // strip the last subs
-        qualCref = Exp.crefStripLastSubs(qualCref);
+        qualCref = ComponentReference.crefStripLastSubs(qualCref);
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) = Lookup.lookupVar(cache, topEnv, qualCref);        
         
@@ -3954,10 +3802,10 @@ protected function connectExpandableVariables
   this function handle the connections of expandable connectors
   that contain components"
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;  
   input Connect.Sets inSets;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
   input Absyn.ComponentRef inComponentRefRight;
   input list<String> inVariablesUnion;
@@ -3965,7 +3813,7 @@ protected function connectExpandableVariables
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4096,8 +3944,8 @@ algorithm
 
     case (pre, sets, dae)
       equation
-        (dae,_) = DAEUtil.traverseDAE(dae, evalActualStream, sets);
-        (dae,_) = DAEUtil.traverseDAE(dae, evalInStream, sets);        
+        (dae,_,_) = DAEUtil.traverseDAE(dae, DAEUtil.emptyFuncTree, evalActualStream, sets);
+        (dae,_,_) = DAEUtil.traverseDAE(dae, DAEUtil.emptyFuncTree, evalInStream, sets);        
       then
         dae;
   end matchcontinue;
@@ -4107,21 +3955,19 @@ protected function evalActualStream
 "@author: adrpo
  this function evaluates the builtin operator actualStream.
  See Modelica Specification 3.2, page 177"
-  input DAE.Exp inExp;
-  input Connect.Sets inSets;
-  output DAE.Exp outExp;
-  output Connect.Sets outSets;
+  input tuple<DAE.Exp,Connect.Sets> itpl;
+  output tuple<DAE.Exp,Connect.Sets> otpl;
 algorithm
-  (outExp,outSets) := matchcontinue(inExp,inSets)
+  otpl := matchcontinue itpl
     local
-      DAE.Exp exp;
+      DAE.Exp exp,inExp;
       Connect.Sets sets;
       DAE.ComponentRef cref;
       Boolean result;
 
     // deal with actualStream
-    case (DAE.CALL(path=Absyn.IDENT("actualStream"),
-          expLst={DAE.CREF(componentRef = cref)}), sets)
+    case ((inExp as DAE.CALL(path=Absyn.IDENT("actualStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets))
       equation
         // Modelica Specification 3.2, page 177, Section: 15.3 Stream Operator actualStream
         // actualStream(port.h_outflow) = if port.m_flow > 0 then inStream(port.h_outflow)
@@ -4129,10 +3975,10 @@ algorithm
         // we need to retrieve the flow variable associated with the stream variable here
         // so that we can build the expression
         exp = inExp;
-      then (exp, sets);
+      then ((exp, sets));
     // no replacement needed
-    case (exp, sets)
-      then (exp, sets);
+    case ((exp, sets))
+      then ((exp, sets));
   end matchcontinue;
 end evalActualStream;
 
@@ -4140,21 +3986,19 @@ protected function evalInStream
 "@author: adrpo
  this function evaluates the builtin operator inStream.
  See Modelica Specification 3.2, page 176"
-  input DAE.Exp inExp;
-  input Connect.Sets inSets;
-  output DAE.Exp outExp;
-  output Connect.Sets outSets;
+  input tuple<DAE.Exp,Connect.Sets> itpl;
+  output tuple<DAE.Exp,Connect.Sets> otpl;
 algorithm
-  (outExp,outSets) := matchcontinue(inExp,inSets)
+  otpl := matchcontinue itpl
     local
-      DAE.Exp exp;
+      DAE.Exp exp,inExp;
       Connect.Sets sets;
       DAE.ComponentRef cref;
       Boolean result;
 
     // deal with inStream
-    case (DAE.CALL(path=Absyn.IDENT("inStream"),
-          expLst={DAE.CREF(componentRef = cref)}), sets)
+    case ((inExp as DAE.CALL(path=Absyn.IDENT("inStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets))
       equation
         // Modelica Specification 3.2, page 176, Section: 15.2 Stream Operator inStream and Connection Equations
         // N = 1, M = 0: unconnected stream
@@ -4167,10 +4011,9 @@ algorithm
         // // Additional equation to be generated
         // c1.h_outflow = m1.c.h_outflow;        
         exp = inExp;
-      then (exp, sets);
+      then ((exp, sets));
     // no replacement needed
-    case (exp, sets)
-      then (exp, sets);
+    case ((exp, sets)) then ((exp, sets));
   end matchcontinue;
 end evalInStream;
 
@@ -4231,17 +4074,18 @@ protected function checkConnectTypes
 algorithm
   _ := matchcontinue (env,inIH,inComponentRef1,inType2,inAttributes3,inComponentRef4,inType5,inAttributes6,io1,io2,info)
     local
-      String c1_str,c2_str;
+      String c1_str,c2_str,s1,s2,s3,s4,s1_1,s2_2,s0;
       DAE.ComponentRef c1,c2;
-      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
-      Boolean flow1,flow2,stream1,stream2,outer1,outer2;
+      Boolean flow1,flow2,b0,stream1,stream2,outer1,outer2;
       InstanceHierarchy ih;
+      DAE.Type t1,t2;
+      list<Integer> iLst1,iLst2;
     /* If two input connectors are connected they must have different faces */
     case (env,ih,c1,_,DAE.ATTR(direction = Absyn.INPUT()),c2,_,DAE.ATTR(direction = Absyn.INPUT()),io1,io2,info)
       equation
         InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_TWO_INPUTS, {c1_str,c2_str}, info);
       then
         fail();
@@ -4250,8 +4094,8 @@ algorithm
     case (env,ih,c1,_,DAE.ATTR(direction = Absyn.OUTPUT()),c2,_,DAE.ATTR(direction = Absyn.OUTPUT()),io1,io2,info)
       equation
         InnerOuter.assertDifferentFaces(env, ih, c1, c2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_TWO_OUTPUTS, {c1_str,c2_str}, info);
       then
         fail();
@@ -4271,24 +4115,24 @@ algorithm
       equation
         true = ModUtil.isPureOuter(io1);
         true = ModUtil.isPureOuter(io2);
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_OUTER_OUTER, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(flowPrefix = true),c2,_,DAE.ATTR(flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(flowPrefix = false),c2,_,DAE.ATTR(flowPrefix = true),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c2_str,c1_str}, info);
       then
         fail();
@@ -4302,46 +4146,42 @@ algorithm
 
     case (env,ih,c1,_,DAE.ATTR(streamPrefix = true, flowPrefix = false),c2,_,DAE.ATTR(streamPrefix = false, flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c1_str,c2_str}, info);
       then
         fail();
 
     case (env,ih,c1,_,DAE.ATTR(streamPrefix = false, flowPrefix = false),c2,_,DAE.ATTR(streamPrefix = true, flowPrefix = false),io1,io2,info)
       equation
-        c1_str = Exp.printComponentRefStr(c1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c1_str = ComponentReference.printComponentRefStr(c1);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c2_str,c1_str}, info);
       then
         fail();
     /* The type is not identical hence error */
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      local String s1,s2,s3,s4,s1_1,s2_2;
       equation
         (t1,_) = Types.flattenArrayType(t1);
         (t2,_) = Types.flattenArrayType(t2);
         false = Types.equivtypes(t1, t2) "we do not check arrays here";
         (s1,s1_1) = Types.printConnectorTypeStr(t1);
         (s2,s2_2) = Types.printConnectorTypeStr(t2);
-        s3 = Exp.printComponentRefStr(c1);
-        s4 = Exp.printComponentRefStr(c2);
+        s3 = ComponentReference.printComponentRefStr(c1);
+        s4 = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_INCOMPATIBLE_TYPES, {s3,s4,s3,s1_1,s4,s2_2}, info);
       then
         fail();
 
     /* Different dimensionality */
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      local
-        String s1,s2,s3,s4,s1_1,s2_2;
-        list<Integer> iLst1,iLst2;
       equation
         (t1,iLst1) = Types.flattenArrayType(t1);
         (t2,iLst2) = Types.flattenArrayType(t2);
         false = Util.isListEqualWithCompareFunc(iLst1,iLst2,intEq);
         false = (listLength(iLst1)+listLength(iLst2) ==0);
-        s1 = Exp.printComponentRefStr(c1);
-        s2 = Exp.printComponentRefStr(c2);
+        s1 = ComponentReference.printComponentRefStr(c1);
+        s2 = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT, {s1,s2}, info);
       then
         fail();
@@ -4350,13 +4190,12 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- InstSection.checkConnectTypes(" +&
-          Exp.printComponentRefStr(c1) +& " <-> " +&
-          Exp.printComponentRefStr(c2) +& " failed");
+          ComponentReference.printComponentRefStr(c1) +& " <-> " +&
+          ComponentReference.printComponentRefStr(c2) +& " failed");
       then
         fail();
 
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2,info)
-      local DAE.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
       equation
         true = RTOpts.debugFlag("failtrace");
         b0 = Types.equivtypes(t1, t2);
@@ -4365,14 +4204,14 @@ algorithm
         s2 = Util.if_(flow2,"flow "," ");
         Debug.trace("- InstSection.checkConnectTypes(");
         Debug.trace(s0);
-        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(ComponentReference.printComponentRefStr(c1));
         Debug.trace(" : ");
         Debug.trace(s1);
         Debug.trace(Types.unparseType(t1));
 
-        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(ComponentReference.printComponentRefStr(c1));
         Debug.trace(" <-> ");
-        Debug.trace(Exp.printComponentRefStr(c2));
+        Debug.trace(ComponentReference.printComponentRefStr(c2));
         Debug.trace(" : ");
         Debug.trace(s2);
         Debug.trace(Types.unparseType(t2));
@@ -4389,10 +4228,10 @@ public function connectComponents "
   the subcomponents and recursively connects them to each other.
   A DAE.Element list is returned for assert statements."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
   input DAE.Type inType6;
@@ -4408,7 +4247,7 @@ public function connectComponents "
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4432,20 +4271,29 @@ algorithm
       Boolean flowPrefix, streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
-      Absyn.InnerOuter io1,io2;
       Boolean c1outer,c2outer;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
       DAE.InlineType inlineType1, inlineType2;
+      Absyn.Path fpath1, fpath2;
+      Integer idim1,idim2;
+      DAE.Exp zeroVector;
+      list<DAE.Element> elements, breakDAEElements;
+      DAE.FunctionTree functions, equalityConstraintFunctions;
+      DAE.DAElist equalityConstraintDAE;
+      SCode.Class equalityConstraintFunction;
+      list<Boolean> bolist,bolist2;
+      list<DAE.Dimension> dims,dims2;
+      list<Integer> idims,idims2;
 
     /* connections to outer components */
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,false,io1,io2,graph,info)
       equation
         // print("Connecting components: " +& PrefixUtil.printPrefixStr(pre) +& "/" +&
-        //    Exp.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
-        //    Exp.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        //    ComponentReference.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
+        //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         true = InnerOuter.outerConnection(io1,io2);
         
         // The cref that is outer should not be prefixed
@@ -4466,8 +4314,8 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         // print("CONNECT: " +& PrefixUtil.printPrefixStr(pre) +& "/" +&
-        //    Exp.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
-        //    Exp.printComponentRefStr(c2_1) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        //    ComponentReference.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
+        //    ComponentReference.printComponentRefStr(c2_1) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         
         sets = ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then 
@@ -4494,7 +4342,7 @@ algorithm
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        dim_int = Exp.dimensionSize(dim1);
+        dim_int = Expression.dimensionSize(dim1);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4505,7 +4353,6 @@ algorithm
 
     /* Non-flow and Non-stream type Parameters and constants generate assert statements */
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
-      local list<Boolean> bolist,bolist2;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -4516,14 +4363,13 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        funcs = DAEUtil.avlTreeNew();
       then
         (cache,env,ih,sets,DAE.DAE({
           DAE.ASSERT(
             DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),DAE.CREF(c2_1,DAE.ET_REAL())),
             DAE.SCONST("automatically generated from connect"),
             source) // set the origin of the element
-          },funcs),graph);
+          }),graph);
 
     /* Same as above, but returns empty (removed conditional var) */
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
@@ -4590,7 +4436,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of two enumeration variables */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE),_),vt2,false,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE()),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE()),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
@@ -4610,8 +4456,8 @@ algorithm
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);
 
-        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        dim_int = Exp.dimensionSize(dim1);
+        true = Expression.dimensionsKnownAndEqual(dim1, dim2);
+        dim_int = Expression.dimensionSize(dim1);
 
         (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim_int,1,graph,info);
       then
@@ -4621,15 +4467,12 @@ algorithm
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,
                                 c2,f2,(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_),vt2,
                                 flowPrefix as false,streamPrefix as false,io1,io2,graph,info)
-      local
-        list<DAE.Dimension> dims,dims2;
-        list<Integer> idims,idims2;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         DAE.ET_ARRAY(_,dims) = Types.elabType(inType6);
         DAE.ET_ARRAY(_,dims2) = Types.elabType(inType9);
-        true = Util.isListEqualWithCompareFunc(dims, dims2, Exp.dimensionsKnownAndEqual);
+        true = Util.isListEqualWithCompareFunc(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4639,18 +4482,10 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of connectors with an equality constraint.*/
-    case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1,inlineType1))),_),vt1,
-                                c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2,inlineType2))),_),vt2,
+    case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,idim1,inlineType1))),_),vt1,
+                                c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,idim2,inlineType2))),_),vt2,
                                 flowPrefix as false, streamPrefix as false,io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),info)
-      local
-        Absyn.Path fpath1, fpath2;
-        Integer dim1, dim2;
-        DAE.Exp zeroVector;
-        list<DAE.Element> elements, breakDAEElements;
-        DAE.FunctionTree functions, equalityConstraintFunctions;
-        DAE.DAElist equalityConstraintDAE;
-        SCode.Class equalityConstraintFunction;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -4675,9 +4510,9 @@ algorithm
 
         // Add an edge to connection graph. The edge contains the 
         // dae to be added in the case where the edge is broken.
-        zeroVector = Exp.makeRealArrayOfZeros(dim1);
+        zeroVector = Expression.makeRealArrayOfZeros(idim1);
         breakDAEElements = 
-          {DAE.ARRAY_EQUATION({dim1}, zeroVector,
+          {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
                                  false, false, DAE.ET_REAL(), inlineType1), // use the inline type
                         source // set the origin of the element
@@ -4688,11 +4523,9 @@ algorithm
         // instantiate and add the equalityConstraint function to the dae function tree!
         (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
-        cache = Env.addCachedInstFunc(cache,fpath1);
-        (cache,env,ih,equalityConstraintDAE) = 
+        cache = Env.addCachedInstFuncGuard(cache,fpath1);
+        (cache,env,ih) = 
             Inst.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),pre,sets_1,equalityConstraintFunction,{});
-        equalityConstraintDAE = DAEUtil.addDaeFunction(equalityConstraintDAE);        
-        dae = DAEUtil.joinDaes(dae, equalityConstraintDAE); 
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4739,7 +4572,7 @@ algorithm
       equation
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
-        dim_int = Exp.dimensionSize(dim1);
+        dim_int = Expression.dimensionSize(dim1);
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
@@ -4755,12 +4588,12 @@ algorithm
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        c1_str = Exp.printComponentRefStr(c1);
+        c1_str = ComponentReference.printComponentRefStr(c1);
         t1_str = Types.unparseType(t1);
-        c2_str = Exp.printComponentRefStr(c2);
+        c2_str = ComponentReference.printComponentRefStr(c2);
         t2_str = Types.unparseType(t2);
-        c1_str = System.stringAppendList({c1_str," and ",c2_str});
-        t1_str = System.stringAppendList({t1_str," and ",t2_str});
+        c1_str = stringAppendList({c1_str," and ",c2_str});
+        t1_str = stringAppendList({t1_str," and ",t2_str});
         Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,t1_str},info);
       then
         fail();
@@ -4778,10 +4611,10 @@ protected function connectArrayComponents "
 Traverses arrays of complex connectors and calls connectComponents for each index
 "
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Prefix inPrefix3;
+  input Prefix.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
   input DAE.Type inType6;
@@ -4799,7 +4632,7 @@ Traverses arrays of complex connectors and calls connectComponents for each inde
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4815,28 +4648,27 @@ algorithm
       Connect.Face f1,f2;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
-      Integer dim1,dim2;
+      Integer dim2;
       DAE.DAElist dae,dae1,dae2;
       list<DAE.Var> l1,l2;
       Boolean flowPrefix,streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
-      Absyn.InnerOuter io1,io2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
         true = (dim1 == i);
-        c1 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c2 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
+        c1 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c2 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
       then (cache,env,ih,sets_1,dae,graph);
 
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
-        c11 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
-        c21 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
+        c11 = ComponentReference.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c21 = ComponentReference.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
         (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i+1,graph,info);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -4850,7 +4682,7 @@ protected function connectVars
   name to the current path and recursively connecting the components
   using the function connectComponents."
   input Env.Cache inCache;
-  input Env inEnv;
+  input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
   input DAE.ComponentRef inComponentRef3;
@@ -4866,7 +4698,7 @@ protected function connectVars
   input ConnectionGraph.ConnectionGraph inGraph;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env outEnv;
+  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
@@ -4883,7 +4715,6 @@ algorithm
       String n;
       DAE.Attributes attr1,attr2;
       Boolean flow1,flow2,stream1,stream2;
-      SCode.Variability vt1,vt2;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
@@ -4898,8 +4729,8 @@ algorithm
                          c2,f2,(DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(flowPrefix = flow2,streamPrefix=stream2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2,graph,info)
       equation
         ty_2 = Types.elabType(ty1);
-        c1_1 = Exp.extendCref(c1, ty_2, n, {});
-        c2_1 = Exp.extendCref(c2, ty_2, n, {});
+        c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty_2);
+        c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty_2);
         checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2, io1, io2, info);
         (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, Prefix.NOPRE(), c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, flow1, stream1, io1, io2, graph, info);
         (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2, vt2, io1, io2, graph, info);
@@ -4927,15 +4758,14 @@ algorithm
       list<Absyn.Ident> localAccVars1;
       list<Absyn.ElementItem> localAccVars2;
       list<Absyn.AlgorithmItem> localAccTempLoopInit;
+      Absyn.ForIterators restIdRange;
+      Absyn.Ident id2;
+      Integer n;
+      list<Absyn.ElementItem> elem;
+      list<Absyn.AlgorithmItem> elem2;
     case ({},localAccVars1,localAccVars2,localAccTempLoopInit,_)
       then (localAccVars1,localAccVars2,localAccTempLoopInit);
     case (_ :: restIdRange,localAccVars1,localAccVars2,localAccTempLoopInit,n)
-      local
-        Absyn.ForIterators restIdRange;
-        Absyn.Ident id2;
-        Integer n;
-        list<Absyn.ElementItem> elem;
-        list<Absyn.AlgorithmItem> elem2;
       equation
         id2 = stringAppend("LOOPVAR__",intString(n));
         localAccVars1 = listAppend(localAccVars1,{id2});
@@ -4964,10 +4794,8 @@ protected function createForIteratorAlgorithm
   input list<Absyn.Ident> tempLoopVars;
   input Absyn.ComponentRef arrayId;
   output list<Absyn.AlgorithmItem> outAlg;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outAlg,outDae) :=
-  matchcontinue (iterExp,rangeIdList,idList,tempLoopVars,arrayId)
+  (outAlg) := matchcontinue (iterExp,rangeIdList,idList,tempLoopVars,arrayId)
     local
       list<Absyn.AlgorithmItem> stmt1,stmt2,stmt3;
       Absyn.Ident id,tempLoopVar;
@@ -4975,10 +4803,10 @@ algorithm
       list<Absyn.Ident> localIdList,restTempLoopVars;
       Absyn.ComponentRef localArrayId;
       DAE.DAElist dae,dae1,dae2;
+      list<Absyn.Subscript> subList;
+      Absyn.Exp arrayRef;
+      Absyn.ForIterators rest;
     case (localIterExp,(id,SOME(rangeExp)) :: {},localIdList,tempLoopVar :: _,localArrayId)
-      local
-        list<Absyn.Subscript> subList;
-        Absyn.Exp arrayRef;
       equation
         subList = createArrayIndexing(localIdList,{});
         arrayRef = createArrayReference(localArrayId,subList);
@@ -4990,13 +4818,11 @@ algorithm
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
           Absyn.INTEGER(0)),NONE(),Absyn.dummyInfo)};
         stmt3 = listAppend(stmt2,stmt1);
-      then (stmt3,DAEUtil.emptyDae);
+      then (stmt3);
 
     case (localIterExp,(id,SOME(rangeExp)) :: rest,localIdList,tempLoopVar :: restTempLoopVars,localArrayId)
-      local
-        Absyn.ForIterators rest;
       equation
-        (stmt2,_) = createForIteratorAlgorithm(localIterExp,rest,localIdList,restTempLoopVars,localArrayId);
+        (stmt2) = createForIteratorAlgorithm(localIterExp,rest,localIdList,restTempLoopVars,localArrayId);
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
           Absyn.BINARY(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),Absyn.ADD(),Absyn.INTEGER(1))),NONE(),Absyn.dummyInfo)};
         stmt1 = listAppend(stmt1,stmt2);
@@ -5004,7 +4830,7 @@ algorithm
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
           Absyn.INTEGER(0)),NONE(),Absyn.dummyInfo)};
         stmt3 = listAppend(stmt2,stmt1);
-      then (stmt3,DAEUtil.emptyDae);
+      then (stmt3);
   end matchcontinue;
 end createForIteratorAlgorithm;
 
@@ -5018,48 +4844,49 @@ protected function createForIteratorArray
   input Absyn.Exp iterExp;
   input Absyn.ForIterators rangeIdList;
   input Boolean b;
-  input Prefix inPrefix;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ElementItem> outDecls;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDecls,outDae) := matchcontinue (cache,env,iterExp,rangeIdList,b,inPrefix)
-    case (localCache,localEnv,localIterExp,localRangeIdList,impl,pre)
-      local
-        Env.Env env2,localEnv;
-        Env.Cache localCache,cache2;
-        Absyn.ForIterators localRangeIdList;
-        list<Absyn.Subscript> subscriptList;
-        DAE.Type t;
-        Absyn.Path t2;
-        list<Absyn.ElementItem> ld;
-        list<SCode.Element> ld2;
-        list<tuple<SCode.Element, DAE.Mod>> ld_mod;
-        list<Absyn.ElementItem> decls;
-        Boolean impl;
-        Integer i;
-        Absyn.Exp localIterExp;
-        InstanceHierarchy ih;
-        DAE.DAElist dae,dae1,dae2;
-        Prefix pre;
-
+  (outCache,outDecls) := matchcontinue (cache,env,iterExp,rangeIdList,b,inPrefix,info)
+    local
+      Env.Env env2,localEnv;
+      Env.Cache localCache,cache2;
+      Absyn.ForIterators localRangeIdList;
+      list<Absyn.Subscript> subscriptList;
+      DAE.Type t;
+      Absyn.Path t2;
+      list<Absyn.ElementItem> ld;
+      list<SCode.Element> ld2;
+      list<tuple<SCode.Element, DAE.Mod>> ld_mod;
+      list<Absyn.ElementItem> decls;
+      Boolean impl;
+      Integer i;
+      Absyn.Exp localIterExp;
+      InstanceHierarchy ih;
+      DAE.DAElist dae,dae1,dae2;
+      Prefix.Prefix pre;
+      ClassInf.State temp;
+    case (localCache,localEnv,localIterExp,localRangeIdList,impl,pre,info)
       equation
-        (localCache,subscriptList,ld,dae1) = deriveArrayDimAndTempVars(localCache,localEnv,localRangeIdList,impl,{},{},pre);
+        (localCache,subscriptList,ld) = deriveArrayDimAndTempVars(localCache,localEnv,localRangeIdList,impl,{},{},pre,info);
 
         // Temporarily add the loop variables to the environment so that we can later
         // elaborate the main for-iterator construct expression, in order to get the array type
-        env2 = Env.openScope(localEnv, false, NONE(), NONE);
+        env2 = Env.openScope(localEnv, false, NONE(),NONE());
         ld2 = SCodeUtil.translateEitemlist(ld,false);
         ld2 = Inst.componentElts(ld2);
         ld_mod = Inst.addNomod(ld2);
-        (localCache,env2,ih,dae) = Inst.addComponentsToEnv(localCache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-        Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")), ld_mod, {}, {}, {}, impl);
-       (cache2,env2,ih,_,_,_,_,_,_) = Inst.instElementList(localCache,env2,ih,UnitAbsyn.noStore,
-        DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")),
-        ld_mod,{},impl,Inst.INNER_CALL,ConnectionGraph.EMPTY);
+        temp = ClassInf.UNKNOWN(Absyn.IDENT("temp"));
+        (localCache,env2,ih) = Inst.addComponentsToEnv(localCache, env2,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          Connect.emptySet, temp, ld_mod, {}, {}, {}, impl);
+        (cache2,env2,ih,_,_,_,_,_,_) = Inst.instElementList(localCache, env2, ih,
+          UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+          temp, ld_mod, {}, impl, Inst.INNER_CALL, ConnectionGraph.EMPTY);
 
-        (cache2,_,DAE.PROP(t,_),_,dae2) = Static.elabExp(cache2,env2,localIterExp,
-          impl,NONE(),false,pre);
+        (cache2,_,DAE.PROP(t,_),_) = Static.elabExp(cache2,env2,localIterExp,impl,NONE(),false,pre,info);
 
         t2 = convertType(t);
 
@@ -5068,9 +4895,8 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(t2,NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("VEC__",subscriptList,NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then (localCache,decls,dae);
+            info,NONE()))};
+      then (localCache,decls);
   end matchcontinue;
 end createForIteratorArray;
 
@@ -5084,35 +4910,33 @@ protected function deriveArrayDimAndTempVars
   input Boolean impl;
   input list<Absyn.Subscript> accList;
   input list<Absyn.ElementItem> accTempVars;
-  input Prefix inPrefix;
-  output Env.Cache cache;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
   output list<Absyn.Subscript> outList1;
   output list<Absyn.ElementItem> outList2;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (cache,outList1,outList2,outDae) := matchcontinue (cache,env,rangeList,impl,accList,accTempVars,inPrefix)
+  (outCache,outList1,outList2) := matchcontinue (cache,env,rangeList,impl,accList,accTempVars,inPrefix,info)
     local
       list<Absyn.Subscript> localAccList;
       list<Absyn.ElementItem> localAccTempVars;
       Env.Env localEnv;
       Env.Cache localCache;
-      Prefix pre;
-    case (localCache,_,{},_,localAccList,localAccTempVars,_) then (localCache,localAccList,localAccTempVars,DAEUtil.emptyDae);
-    case (localCache,localEnv,(id,SOME(e)) :: restList,localImpl,localAccList,localAccTempVars,pre)
-      local
-        Absyn.Exp e;
-        Absyn.ForIterators restList;
-        Boolean localImpl;
-        list<Absyn.Subscript> elem;
-        list<Absyn.ElementItem> elem2;
-        Integer i;
-        Absyn.Ident id;
-        DAE.Type t;
-        Absyn.Path t2;
-        DAE.DAElist dae,dae1,dae2;
-
+      Prefix.Prefix pre;
+      Absyn.Exp e;
+      Absyn.ForIterators restList;
+      Boolean localImpl;
+      list<Absyn.Subscript> elem;
+      list<Absyn.ElementItem> elem2;
+      Integer i;
+      Absyn.Ident id;
+      DAE.Type t;
+      Absyn.Path t2;
+      DAE.DAElist dae,dae1,dae2;
+    case (localCache,_,{},_,localAccList,localAccTempVars,_,info) then (localCache,localAccList,localAccTempVars);
+    case (localCache,localEnv,(id,SOME(e)) :: restList,localImpl,localAccList,localAccTempVars,pre,info)
       equation
-        (localCache,_,DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(i),t),NONE()),_),_,dae1) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false,pre);
+        (localCache,_,DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(i),t),NONE()),_),_) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false,pre,info);
         elem = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))};
         localAccList = listAppend(localAccList,elem);
         t2 = convertType(t);
@@ -5123,10 +4947,9 @@ algorithm
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(id,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
         localAccTempVars = listAppend(localAccTempVars,elem2);
-        (localCache,localAccList,localAccTempVars,dae2) =
-        deriveArrayDimAndTempVars(localCache,localEnv,restList,localImpl,localAccList,localAccTempVars,pre);
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then (localCache,localAccList,localAccTempVars,dae);
+        (localCache,localAccList,localAccTempVars) =
+        deriveArrayDimAndTempVars(localCache,localEnv,restList,localImpl,localAccList,localAccTempVars,pre,info);
+      then (localCache,localAccList,localAccTempVars);
   end matchcontinue;
 end deriveArrayDimAndTempVars;
 
@@ -5177,12 +5000,12 @@ algorithm
       Absyn.Exp rangeExp,localIterExp;
       list<Absyn.Ident> localIdList;
       Absyn.ComponentRef localArrayId;
+      list<Absyn.Subscript> subList;
+      Absyn.Exp arrayRef;
+      list<SCode.EEquation> eqList;
+      SCode.EEquation eq1,eq2;
+      Absyn.ForIterators rest;
     case (localIterExp,(id,SOME(rangeExp)) :: {},localIdList,localArrayId,info)
-      local
-        list<Absyn.Subscript> subList;
-        Absyn.Exp arrayRef;
-        list<SCode.EEquation> eqList;
-        SCode.EEquation eq1,eq2;
       equation
         subList = createArrayIndexing(localIdList,{});
         arrayRef = createArrayReference(localArrayId,subList);
@@ -5191,10 +5014,6 @@ algorithm
         eq2 = SCode.EQ_FOR(id,rangeExp,eqList,NONE(),info);
       then (eq2,DAEUtil.emptyDae);
     case (localIterExp,(id,SOME(rangeExp)) :: rest,localIdList,localArrayId,info)
-      local
-        Absyn.ForIterators rest;
-        list<SCode.EEquation> eqList;
-        SCode.EEquation eq1,eq2;
       equation
         (eq1,_) = createForIteratorEquations(localIterExp,rest,localIdList,localArrayId,info);
         eqList = {eq1};
@@ -5215,12 +5034,11 @@ algorithm
     local
       list<Absyn.Ident> localAccList;
       list<Absyn.ElementItem> localAccVars2;
+      Absyn.ForIterators restIdRange;
+      Absyn.Ident id;
     case ({},localAccList)
       then localAccList;
     case ((id,_) :: restIdRange,localAccList)
-      local
-        Absyn.ForIterators restIdRange;
-        Absyn.Ident id;
       equation
         localAccList = listAppend(localAccList,{id});
         localAccList = extractLoopVars(restIdRange,localAccList);
@@ -5240,12 +5058,11 @@ algorithm
   matchcontinue (idList,accList)
     local
       list<Absyn.Subscript> localAccList;
+      Absyn.Ident firstId;
+      Absyn.Subscript subExp;
+      list<Absyn.Ident> restId;
     case ({},localAccList) then localAccList;
     case (firstId :: restId,localAccList)
-      local
-        Absyn.Ident firstId;
-        Absyn.Subscript subExp;
-        list<Absyn.Ident> restId;
       equation
         subExp = Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(firstId,{})));
         localAccList = listAppend(localAccList,Util.listCreate(subExp));
@@ -5263,21 +5080,17 @@ protected function createArrayReference
 algorithm
   outExp :=
   matchcontinue (c,subList)
+    local
+      Absyn.Ident id;
+      list<Absyn.Subscript> sl,localSubList;
+      Absyn.ComponentRef c;
+      Absyn.Exp c2;
     case (Absyn.CREF_IDENT(id,sl),localSubList)
-      local
-        Absyn.Ident id;
-        list<Absyn.Subscript> sl,localSubList;
-        Absyn.Exp c2;
       equation
         sl = listAppend(sl,localSubList);
         c2 = Absyn.CREF(Absyn.CREF_IDENT(id,sl));
       then c2;
     case (Absyn.CREF_QUAL(id,sl,c),localSubList)
-      local
-        Absyn.Ident id;
-        list<Absyn.Subscript> sl,localSubList;
-        Absyn.ComponentRef c;
-        Absyn.Exp c2;
       equation
         sl = listAppend(sl,localSubList);
         c2 = Absyn.CREF(Absyn.CREF_QUAL(id,sl,c));
@@ -5317,9 +5130,9 @@ algorithm
     /* adrpo: these are completly wrong! 
               will result in equations 1 = 1!
     case (DAE.DIM_EXP(exp = _), _) then {DAE.ICONST(1)};
-    case (DAE.DIM_UNKNOWN, _) then {DAE.ICONST(1)};
+    case (DAE.DIM_UNKNOWN(), _) then {DAE.ICONST(1)};
     */
-    case (DAE.DIM_UNKNOWN, _)
+    case (DAE.DIM_UNKNOWN(), _)
       equation
         true = OptManager.getOption("checkModel");
         ints = Util.listIntRange(1); // try to make an array index of 1 when we don't know the dimension
@@ -5335,8 +5148,8 @@ protected function makeAsubIndex
   input DAE.Exp expr;
   output DAE.Exp asub;
 algorithm
-  asub := Exp.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
-  asub := Debug.bcallret1(Exp.isCrefScalar(asub), Exp.unliftExp, asub, asub);
+  asub := ExpressionSimplify.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
+  asub := Debug.bcallret1(Expression.isCrefScalar(asub), Expression.unliftExp, asub, asub);
 end makeAsubIndex;
 
 protected function makeEnumLiteralIndices
@@ -5348,20 +5161,20 @@ protected function makeEnumLiteralIndices
   output list<DAE.Exp> enumIndices;
 algorithm
   enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex, expr)
+    local
+      String l;
+      list<String> ls;
+      DAE.Exp e;
+      list<DAE.Exp> expl;
+      Absyn.Path enum_type_name;
+      Integer index;
     case (_, {}, _, _) then {};
     case (_, l :: ls, _, _)
-      local
-        String l;
-        list<String> ls;
-        DAE.Exp e;
-        list<DAE.Exp> expl;
-        Absyn.Path enum_type_name;
-        Integer index;
       equation
         enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
-        e = Exp.simplify(DAE.ASUB(expr, {e}));
-        e = Debug.bcallret1(Exp.isCref(e), Exp.unliftExp, e, e);
+        e = ExpressionSimplify.simplify(DAE.ASUB(expr, {e}));
+        e = Debug.bcallret1(Expression.isCref(e), Expression.unliftExp, e, e);
         index = enumIndex + 1;
         expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);
       then
@@ -5380,7 +5193,7 @@ algorithm
      DAE.ExpType t;
      case (cref as DAE.CREF(_,_)) then cref;
      case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) equation
-       cr = Exp.crefStripLastSubs(cr);
+       cr = ComponentReference.crefStripLastSubs(cr);
        then DAE.CREF(cr,t);
    end matchcontinue;
 end getVectorizedCref;
@@ -5391,11 +5204,11 @@ protected function checkForNestedWhen
   input SCode.EEquation inWhenEq;
 algorithm
   _ := matchcontinue(inWhenEq)
+    local
+      list<SCode.EEquation> el;
+      list<list<SCode.EEquation>> el2;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
     case SCode.EQ_WHEN(eEquationLst = el, tplAbsynExpEEquationLstLst = tpl_el)
-      local
-        list<SCode.EEquation> el;
-        list<list<SCode.EEquation>> el2;
-        list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
       equation
         checkForNestedWhenInEqList(el);
         el2 = Util.listMap(tpl_el, Util.tuple22);

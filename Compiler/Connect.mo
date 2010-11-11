@@ -30,8 +30,8 @@
  */
 
 package Connect
-" file:	 Connect.mo
-  package:      Connect
+" file:        Connect.mo
+  package:     Connect
   description: Connection set management
 
   RCS: $Id$
@@ -44,7 +44,6 @@ package Connect
   Connect.mo is called from Inst.mo and is responsible for
   creation of all connect-equations later passed to the DAE module
   in DAE.mo."
-
 
 public import DAE;
 public import Prefix;
@@ -63,7 +62,14 @@ end Face;
 
 type EquSetElement = tuple<DAE.ComponentRef, DAE.ElementSource>;
 type FlowSetElement = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
-type StreamSetElement = tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Face, DAE.ElementSource>;
+type StreamSetElement = tuple<DAE.ComponentRef, DAE.ComponentRef, Face, DAE.ElementSource>;
+
+// FlowStreamConnect models an association between a stream variable and a flow
+// variable, which is needed to implement the stream operators. The Sets type
+// have a list of these associations that are added when a connector is
+// instantiated, and when two streams are connected their associated flow
+// variables are looked up in that list.
+type StreamFlowConnect = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 
 public
 uniontype Set "A connection set is represented using the Set type."
@@ -100,6 +106,7 @@ uniontype Sets "The connection \'Sets\' contains
 					      It is registered in env by Inst.addConnnectionSetToEnv.";
 		list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
 		list<OuterConnect> outerConnects "connect statements to propagate upwards";
+    list<StreamFlowConnect> streamFlowConnects "list of stream-flow associations.";
   end SETS;
 end Sets;
 
@@ -116,7 +123,7 @@ uniontype OuterConnect
   end OUTERCONNECT;
 end OuterConnect;
 
-public constant Sets emptySet=SETS({},{},{},{});
+public constant Sets emptySet=SETS({},{},{},{},{});
 
 end Connect;
 

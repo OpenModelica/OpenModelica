@@ -66,6 +66,7 @@ void mmc_prim_set_real(struct mmc_real *p, double d)
 double mmc_prim_get_real(void *p)
 {
     union mmc_double_as_words u;
+    if ((0 == ((mmc_sint_t)p & 1))) return MMC_UNTAGFIXNUM(p);
     u.data[0] = MMC_REALDATA(p)[0];
     if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
       u.data[1] = MMC_REALDATA(p)[1];
@@ -279,6 +280,10 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   void *lhs_data, *rhs_data;
   struct record_description *lhs_desc,*rhs_desc;
 
+  if (lhs == rhs) {
+    return 1;
+  }
+
   if ((0 == ((mmc_sint_t)lhs & 1)) && (0 == ((mmc_sint_t)rhs & 1))) {
     return lhs == rhs;
   }
@@ -291,7 +296,10 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   }
 
   if (h_lhs == MMC_REALHDR) {
-    return mmc_prim_get_real(MMC_REALDATA(lhs)) == mmc_prim_get_real(MMC_REALDATA(rhs));;
+    double d1,d2;
+    d1 = mmc_prim_get_real(lhs);
+    d2 = mmc_prim_get_real(rhs);
+    return d1 == d2;
   }
   if (MMC_HDRISSTRING(h_lhs))
     return 0 == strcmp(MMC_STRINGDATA(lhs),MMC_STRINGDATA(rhs));
@@ -319,8 +327,12 @@ int mmc_boxes_equal(void* lhs, void* rhs)
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
     for (i=0; i<numslots; i++) {
-      if (0 == mmc_boxes_equal(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1))))
+      void *tlhs, *trhs;
+      tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
+      trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
+      if (0 == mmc_boxes_equal(tlhs,trhs)) {
         return 0;
+      }
     }
     return 1;
   }
@@ -348,13 +360,12 @@ int mmc_boxes_equal(void* lhs, void* rhs)
 }
 
 mmc__uniontype__metarecord__typedef__equal_rettype
-mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums,modelica_string pathString)
+mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
 {
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
   struct record_description* desc;
-  mmc__uniontype__metarecord__typedef__equal_rettype res;
 
   hdr = MMC_GETHDR(ut);
   numslots = MMC_HDRSLOTS(hdr);
@@ -362,8 +373,7 @@ mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums,mo
 
   if (numslots == fieldNums+1 && ctor == ex_ctor+3) { /* RECORD */
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(ut),1));
-    res = 0 == strcmp(pathString,desc->name);
-    return res;
+    return 1;
   } else {
     return 0;
   }
@@ -379,7 +389,7 @@ void printAny(void* any) /* For debugging */
   struct record_description *desc;
 
   if ((0 == ((mmc_sint_t)any & 1))) {
-    fprintf(stderr, "%d", (int) ((mmc_sint_t)any)>>1);
+    fprintf(stderr, "%ld", (long) ((mmc_sint_t)any)>>1);
     return;
   }
   
@@ -403,7 +413,7 @@ void printAny(void* any) /* For debugging */
   ctor = 255 & (hdr >> 2);
   
   if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
-    fprintf(stderr, "meta_array(");
+    fprintf(stderr, "MetaArray(");
     for (i=1; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       printAny(data);

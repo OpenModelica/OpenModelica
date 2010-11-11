@@ -47,10 +47,20 @@ extern "C" {
 typedef modelica_boolean boolAnd_rettype;
 typedef modelica_boolean boolOr_rettype;
 typedef modelica_boolean boolNot_rettype;
+typedef modelica_boolean boolEq_rettype;
+typedef modelica_string_t boolString_rettype;
 
-boolAnd_rettype boolAnd(modelica_boolean,modelica_boolean);
-boolOr_rettype boolOr(modelica_boolean,modelica_boolean);
-boolNot_rettype boolNot(modelica_boolean);
+#define boolAnd(X,Y) ((X) && (Y))
+#define boolOr(X,Y) ((X) || (Y))
+#define boolEq(X,Y) ((X) == (Y))
+#define boolNot(X) (!(X))
+#define boolString(X) ((char*)((X) ? "true" : "false"))
+
+modelica_metatype boxptr_boolAnd(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolOr(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolEq(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_boolNot(modelica_metatype);
+modelica_metatype boxptr_boolString(modelica_metatype);
 
 /* Integer Operations */
 typedef modelica_integer intAdd_rettype;
@@ -125,6 +135,15 @@ realPow_rettype realPow(modelica_real,modelica_real);
 realMax_rettype realMax(modelica_real,modelica_real);
 realMin_rettype realMin(modelica_real,modelica_real);
 
+modelica_metatype boxptr_realAdd(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realSub(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMul(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realDiv(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMod(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realPow(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMax(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realMin(modelica_metatype,modelica_metatype);
+
 typedef modelica_real realAbs_rettype;
 typedef modelica_real realNeg_rettype;
 typedef modelica_real realCos_rettype;
@@ -132,18 +151,20 @@ typedef modelica_real realSin_rettype;
 typedef modelica_real realAtan_rettype;
 typedef modelica_real realExp_rettype;
 typedef modelica_real realLn_rettype;
+typedef modelica_real realLog10_rettype;
 typedef modelica_real realFloor_rettype;
 typedef modelica_real realSqrt_rettype;
 
-realAbs_rettype realAbs(modelica_real);
-realNeg_rettype realNeg(modelica_real);
-realCos_rettype realCos(modelica_real);
-realSin_rettype realSin(modelica_real);
-realAtan_rettype realAtan(modelica_real);
-realExp_rettype realExp(modelica_real);
-realLn_rettype realLn(modelica_real);
-realFloor_rettype realFloor(modelica_real);
-realSqrt_rettype realSqrt(modelica_real);
+#define realAbs(X) fabs(X)
+#define realNeg(X) (-(X))
+#define realCos(X) cos(X)
+#define realSin(X) sin(X)
+#define realAtan(X) atan(X)
+#define realExp(X) exp(X)
+#define realLn(X) log(X)
+#define realLog10(X) log10(X)
+#define realFloor(X) floor(X)
+#define realSqrt(X) sqrt(X)
 
 typedef modelica_boolean realLt_rettype;
 typedef modelica_boolean realLe_rettype;
@@ -174,26 +195,42 @@ intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
 typedef modelica_integer stringInt_rettype;
+typedef modelica_integer stringHash_rettype;
+typedef modelica_integer stringHashDjb2_rettype;
+typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
 typedef modelica_string_t listStringCharString_rettype;
 typedef modelica_string_t stringAppendList_rettype;
+typedef modelica_string_const stringAppendListExt_rettype;
 typedef modelica_string_t stringAppend_rettype;
 typedef modelica_integer stringLength_rettype;
 typedef modelica_integer stringCompare_rettype;
-typedef modelica_boolean stringEqual_rettype;
+typedef modelica_boolean stringEq_rettype;
 typedef modelica_string_t stringGetStringChar_rettype;
 typedef modelica_string_t stringUpdateStringChar_rettype;
+typedef modelica_string_t stringCharListString_rettype;
 
 stringInt_rettype stringInt(modelica_string_t);
 stringListStringChar_rettype stringListStringChar(modelica_string_t);
 listStringCharString_rettype listStringCharString(modelica_metatype);
 stringAppendList_rettype stringAppendList(modelica_metatype);
-stringAppend_rettype stringAppend(modelica_string_t,modelica_string_t);
-stringLength_rettype stringLength(modelica_string_t);
+stringAppendListExt_rettype stringAppendListExt(modelica_metatype);
+stringAppend_rettype stringAppend(modelica_string_const,modelica_string_const);
+stringLength_rettype stringLength(modelica_string_const);
 stringCompare_rettype stringCompare(modelica_string_t,modelica_string_t);
-stringEqual_rettype stringEqual(modelica_string_t,modelica_string_t);
+stringEq_rettype stringEq(modelica_string_t,modelica_string_t);
 stringGetStringChar_rettype stringGetStringChar(modelica_string_t,modelica_integer);
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t, modelica_string_t, modelica_integer);
+#define stringCharListString(X) stringAppendList(X)
+stringHash_rettype stringHash(modelica_string_const);
+stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
+stringHashSdbm_rettype stringHashSdbm(modelica_string_const);
+
+modelica_metatype boxptr_stringEq(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_stringAppend(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_stringHash(modelica_metatype);
+modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
+modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
 
 /* List Operations */
 typedef modelica_metatype listReverse_rettype;
@@ -205,6 +242,7 @@ typedef modelica_metatype listNth_rettype;
 typedef modelica_metatype listRest_rettype;
 typedef modelica_integer listEmpty_rettype;
 typedef modelica_metatype listDelete_rettype;
+typedef modelica_metatype cons_rettype;
 
 listReverse_rettype listReverse(modelica_metatype);
 listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
@@ -215,6 +253,9 @@ listNth_rettype listNth(modelica_metatype, modelica_integer);
 listRest_rettype listRest(modelica_metatype);
 listEmpty_rettype listEmpty(modelica_metatype);
 listDelete_rettype listDelete(modelica_metatype, modelica_integer);
+
+#define cons(X,XS) mmc_mk_cons(X,XS)
+#define boxptr_cons(X,XS) mmc_mk_cons(X,XS)
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
@@ -251,6 +292,20 @@ void print(modelica_string_t);
 tick_rettype tick();
 mmc__clock_rettype mmc__clock();
 void equality(modelica_metatype, modelica_metatype);
+
+/* Weird RML stuff */
+typedef modelica_metatype getGlobalRoot_rettype;
+typedef modelica_integer valueConstructor_rettype;
+typedef modelica_boolean referenceEq_rettype;
+
+getGlobalRoot_rettype getGlobalRoot(int ix);
+void setGlobalRoot(int ix, modelica_metatype val);
+valueConstructor_rettype valueConstructor(modelica_metatype val);
+
+modelica_metatype boxptr_getGlobalRoot(modelica_metatype);
+void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_valueConstructor(modelica_metatype);
+#define referenceEq(X,Y) ((X) == (Y))
 
 #if defined(__cplusplus)
 }

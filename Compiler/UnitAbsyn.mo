@@ -1,4 +1,4 @@
-package UnitAbsyn " Copyright MathCore 2008-2009.
+encapsulated package UnitAbsyn " Copyright MathCore 2008-2009.
 author Peter Aronsson (peter.aronsson@mathcore.com)
 
 This module contains the datatypes for representing unit terms.
@@ -95,7 +95,7 @@ type UnitTerms = list<UnitTerm>;
 
 uniontype Store
   record STORE
-    Option<Unit>[:] storeVector;
+    array<Option<Unit>> storeVector;
     Integer numElts "Number of elements stored in vector" ;
   end STORE;
 end Store;

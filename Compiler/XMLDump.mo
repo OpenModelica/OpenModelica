@@ -47,7 +47,7 @@
 ///////////////////////////////////////////////////////
 // With a delaration like:                          ///
 // parameter Real a = 1;                            ///
-// the bindValue Optional value of the DAELow.VAR   ///
+// the bindValue Optional value of the BackendDAE.VAR   ///
 // record is everytime empty.  Why?                 ///
 ///////////////////////////////////////////////////////
 
@@ -79,23 +79,27 @@ package XMLDump
   RCS: $Id$"
 
 public import Absyn;
+public import BackendDAE;
 public import DAE;
 public import DAEEXT;
-public import DAELow;
 public import Values;
 public import SCode;
 public import RTOpts;
 
 protected import Algorithm;
+protected import BackendDAEUtil;
+protected import BackendDAETransform;
+protected import BackendVariable;
+protected import ComponentReference;
 protected import DAEUtil;
 protected import Dump;
-protected import Exp;
+protected import Expression;
+protected import ExpressionDump;
 protected import ModUtil;
 protected import Print;
 protected import Util;
 protected import DAEDump;
 protected import ValuesUtil;
-protected import System;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -117,7 +121,7 @@ protected import System;
         </ELEMENT>
         <ELEMENT>
           ...
-    2 - dumpCrefIdxLst to print a list of DAELow.CrefIndex:
+    2 - dumpCrefIdxLst to print a list of BackendDAE.CrefIndex:
         <ELEMENT ID=...>CrefIndex</ELEMENT>
         ...
     3 - dumpStrLst to print a list of String
@@ -254,7 +258,7 @@ protected import System;
   protected constant String HASH_TB_CREFS_LIST          = "hashTb";
   protected constant String HASH_TB_STRING_LIST_OLDVARS = "hashTbOldVars";
 
-  //All this constants below are used in the dumpDAELow method.
+  //All this constants below are used in the dumpBackendDAE method.
   protected constant String EQUATIONS          = "equations";
   protected constant String EQUATIONS_         = "Equations";
   protected constant String SIMPLE             = "simple";
@@ -431,16 +435,16 @@ on the value of the second input (the String content) prints:
   input String Content;
 algorithm
   _ := matchcontinue (absynPathLst,Content)
+    local
+      Integer len;
     case ({},_)
       then();
     case (absynPathLst,Content)
-      local Integer len;
       equation
         len = listLength(absynPathLst);
         len >= 1 = false;
       then ();
     case (absynPathLst,Content)
-      local Integer len;
       equation
         len = listLength(absynPathLst);
         len >= 1 = true;
@@ -485,15 +489,15 @@ is present the output is:
   input list<DAE.Algorithm> algs;
 algorithm
   _:= matchcontinue(algs)
+    local
+      Integer len;
     case {} then ();
     case algs
-      local Integer len;
       equation
         len = listLength(algs);
         len >= 1 = false;
     then();
     case algs
-      local Integer len;
       equation
         len = listLength(algs);
         len >= 1 = true;
@@ -522,17 +526,16 @@ algorithm
   _ := matchcontinue(algs,inAlgNo)
     local
       list<Algorithm.Statement> stmts;
-      Integer algNo;
+      Integer algNo,algNo_1;
     case({},_) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
-      local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
         Print.printBuf(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)}));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
-    then ();
+      then ();
   end matchcontinue;
 end dumpAlgorithms2;
 
@@ -547,22 +550,22 @@ the output is like:
   ...
 </Content>
 "
-  input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
+  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
   input String inContent;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
+    local
+      Integer len;
     case ({},_,_,_) then ();
     case (inMultiDimEquationLst,inContent,_,_)
-      local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = false;
       then();
     case (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
-      local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = true;
@@ -579,7 +582,7 @@ This is the help function of the dumpArrayEquns function.
 It takes the list of MultiDimEquation and print out the
 list in a XML format.
 The output, if the list is not empty is something like this:
-<ARRAY_EQUATION String=Exp.printExpStr(firstEquation)>
+<ARRAY_EQUATION String=ExpressionDump.printExpStr(firstEquation)>
   <MathML>
     <MATH>
       ...
@@ -587,7 +590,7 @@ The output, if the list is not empty is something like this:
   </MathML>
 </ARRAY_EQUATION>
 ...
-<ARRAY_EQUATION String=Exp.printExpStr(lastEquation)>
+<ARRAY_EQUATION String=ExpressionDump.printExpStr(lastEquation)>
   <MathML>
     <MATH>
       ...
@@ -595,7 +598,7 @@ The output, if the list is not empty is something like this:
   </MathML>
 </ARRAY_EQUATION>
 "
-  input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
+  input list<BackendDAE.MultiDimEquation> inMultiDimEquationLst;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
@@ -604,15 +607,15 @@ algorithm
     local
       String s1,s2,s;
       DAE.Exp e1,e2;
-      list<DAELow.MultiDimEquation> es;
+      list<BackendDAE.MultiDimEquation> es;
     case ({},_,_) then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=false))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," = ",s2,"\n"});
+        s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -626,24 +629,24 @@ algorithm
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(false));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(false))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(false))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," = ",s2,"\n"});
+        s = stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(false));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=true))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," - (",s2,") = 0\n"});
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -661,13 +664,13 @@ algorithm
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(true));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(true))
+    case ((BackendDAE.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(true))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        s = System.stringAppendList({s1," - (",s2,") = 0\n"});
+        s = stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
@@ -682,13 +685,13 @@ using an xml representation:
 <involvedEquation equationId=\"\"/>
 ...
 "
-  input list<DAELow.Value> inList;
+  input list<BackendDAE.Value> inList;
 algorithm
   _:=
   matchcontinue(inList)
       local
-        DAELow.Value el;
-        list<DAELow.Value> remList;
+        BackendDAE.Value el;
+        list<BackendDAE.Value> remList;
     case {} then ();
     case(el :: remList)
       equation
@@ -716,16 +719,16 @@ printed.
         DAE.Exp e;
         Values.Value b;
         DAE.Exp addMMLCode;
-  case(NONE,NONE,_)
+  case(NONE(),NONE(),_)
     equation
     then();
-  case(SOME(e),NONE,addMMLCode)
+  case(SOME(e),NONE(),addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
       dumpStrCloseTag(BIND_VALUE_EXPRESSION);
     then();
-  case(NONE,SOME(b),addMMLCode)
+  case(NONE(),SOME(b),addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
@@ -793,11 +796,11 @@ algorithm
   _:=
   matchcontinue (inIntegerLstLst,inInteger)
     local
-      DAELow.Value ni,i_1,i;
+      BackendDAE.Value ni,i_1,i;
       list<String> ls;
       String s;
-      list<DAELow.Value> l;
-      list<list<DAELow.Value>> lst;
+      list<BackendDAE.Value> l;
+      list<list<BackendDAE.Value>> lst;
     case ({},_) then ();
     case ((l :: lst),i)
       equation
@@ -818,7 +821,7 @@ This function prints a list from a list
 of array of CrefIndex elements in
 a XML format. See dumpCrefIdxLst for details.
 "
-  input array<list<DAELow.CrefIndex>> crefIdxLstArr;
+  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
   input String Content;
   input Integer inInteger;
 algorithm
@@ -848,7 +851,7 @@ The output is like:
 <Content>
 See dumpCrefIdxLst2 for details.
 "
-  input list<DAELow.CrefIndex> crefIdxLst;
+  input list<BackendDAE.CrefIndex> crefIdxLst;
   input String Content;
 algorithm
   _ := matchcontinue (crefIdxLst,Content)
@@ -878,20 +881,20 @@ information of the index of the element in the list
 and using an XML format like:
 <ELEMENT ID=...>CrefIndex</ELEMENT>
 "
-  input list<DAELow.CrefIndex> crefIdxLst;
+  input list<BackendDAE.CrefIndex> crefIdxLst;
 algorithm
   _:=
   matchcontinue (crefIdxLst)
       local
-        list<DAELow.CrefIndex> crefIndexList;
-        DAELow.CrefIndex crefIndex;
+        list<BackendDAE.CrefIndex> crefIndexList;
+        BackendDAE.CrefIndex crefIndex;
         Integer index_c;
         DAE.ComponentRef cref_c;
         String cref;
       case {}  then ();
-      case ((crefIndex as DAELow.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
+      case ((crefIndex as BackendDAE.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
       equation
-        cref=Exp.crefStr(cref_c);
+        cref=ComponentReference.crefStr(cref_c);
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_c));
         Print.printBuf(cref);
         dumpStrCloseTag(ELEMENT);
@@ -959,9 +962,9 @@ algorithm
 end dumpDAEInstDims2;
 
 
-public function dumpDAELow "
+public function dumpBackendDAE "
 
-  This function dumps the DAELow representaton to stdout as XML format.
+  This function dumps the BackendDAE representaton to stdout as XML format.
   The output is like:
 
 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE DAE SYSTEM \"http://home.dei.polimi.it/Projects/AutoEdit/DAE.xsd\">
@@ -997,78 +1000,75 @@ public function dumpDAELow "
   </ARRAY_OF_EQUATIONS>
 </DAE>
 
-The XML output could change depending on the content of the DAELow structure, in
+The XML output could change depending on the content of the BackendDAE structure, in
 particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
-  input DAELow.DAELow inDAELow;
-  input list<Absyn.Path> functionNames;
-  input list<DAE.Element> functions;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<DAE.Function> functions;
   input DAE.Exp addOriginalIncidenceMatrix;
   input DAE.Exp addSolvingInfo;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
-  _:=
-  matchcontinue (inDAELow,functionNames,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
-      list<DAELow.Var> vars,knvars,extvars;
+      list<BackendDAE.Var> vars,knvars,extvars;
 
       //Ordered Variables: state & algebraic variables.
-      DAELow.Variables vars_orderedVars;
+      BackendDAE.Variables vars_orderedVars;
       //VARIABLES record for vars.
-      list<DAELow.CrefIndex>[:] crefIdxLstArr_orderedVars;
-      list<DAELow.StringIndex>[:] strIdxLstArr_orderedVars;
-      DAELow.VariableArray varArr_orderedVars;
+      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_orderedVars;
+      list<BackendDAE.StringIndex>[:] strIdxLstArr_orderedVars;
+      BackendDAE.VariableArray varArr_orderedVars;
       Integer bucketSize_orderedVars;
       Integer numberOfVars_orderedVars;
 
       //Known Variables: constant & parameter variables.
-      DAELow.Variables vars_knownVars;
+      BackendDAE.Variables vars_knownVars;
       //VARIABLES record for vars.
-      list<DAELow.CrefIndex>[:] crefIdxLstArr_knownVars;
-      list<DAELow.StringIndex>[:] strIdxLstArr_knownVars;
-      DAELow.VariableArray varArr_knownVars;
+      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_knownVars;
+      list<BackendDAE.StringIndex>[:] strIdxLstArr_knownVars;
+      BackendDAE.VariableArray varArr_knownVars;
       Integer bucketSize_knownVars;
       Integer numberOfVars_knownVars;
 
       //External Object: external variables.
-      DAELow.Variables vars_externalObject;
+      BackendDAE.Variables vars_externalObject;
       //VARIABLES record for vars.
-      list<DAELow.CrefIndex>[:] crefIdxLstArr_externalObject;
-      list<DAELow.StringIndex>[:] strIdxLstArr_externalObject;
-      DAELow.VariableArray varArr_externalObject;
+      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_externalObject;
+      list<BackendDAE.StringIndex>[:] strIdxLstArr_externalObject;
+      BackendDAE.VariableArray varArr_externalObject;
       Integer bucketSize_externalObject;
       Integer numberOfVars_externalObject;
 
       //External Classes
-      DAELow.ExternalObjectClasses extObjCls;
+      BackendDAE.ExternalObjectClasses extObjCls;
 
-      DAELow.Value eqnlen;
+      BackendDAE.Value eqnlen;
       String eqnlen_str,s;
-      list<DAELow.Equation> eqnsl,reqnsl,ieqnsl;
+      list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
       list<String> ss;
-      list<DAELow.MultiDimEquation> ae_lst;
-      DAELow.EquationArray eqns,reqns,ieqns;
-      DAELow.MultiDimEquation[:] ae;
+      list<BackendDAE.MultiDimEquation> ae_lst;
+      BackendDAE.EquationArray eqns,reqns,ieqns;
+      BackendDAE.MultiDimEquation[:] ae;
       DAE.Algorithm[:] algs;
-      list<DAELow.ZeroCrossing> zc;
+      list<BackendDAE.ZeroCrossing> zc;
 
-      list<Absyn.Path> inFunctionNames;
-      list<DAE.Element> inFunctions;
+      list<DAE.Function> inFunctions;
 
       DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
-    case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
-                 vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
-                 vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctionNames,inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
+    case (BackendDAE.DAE(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
+                 _,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
-        vars    = DAELow.varList(vars_orderedVars);
-        knvars  = DAELow.varList(vars_knownVars);
-        extvars = DAELow.varList(vars_externalObject);
+        vars    = BackendDAEUtil.varList(vars_orderedVars);
+        knvars  = BackendDAEUtil.varList(vars_knownVars);
+        extvars = BackendDAEUtil.varList(vars_externalObject);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
@@ -1083,22 +1083,22 @@ algorithm
 
         dumpStrCloseTag(VARIABLES);
 
-        eqnsl  = DAELow.equationList(eqns);
+        eqnsl  = BackendDAEUtil.equationList(eqns);
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
-        reqnsl = DAELow.equationList(reqns);
+        reqnsl = BackendDAEUtil.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
-        ieqnsl = DAELow.equationList(ieqns);
+        ieqnsl = BackendDAEUtil.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
-        dumpFunctions(inFunctionNames,inFunctions);
-        dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
+        dumpFunctions(inFunctions);
+        dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
   end matchcontinue;
-end dumpDAELow;
+end dumpBackendDAE;
 
 
 public function dumpDAEVariableAttributes "
@@ -1231,23 +1231,23 @@ The output is:
   ...
 </Content>
 "
-  input list<DAELow.Equation> eqns;
+  input list<BackendDAE.Equation> eqns;
   input String inContent;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
-      local DAE.Exp addMMLCode;
+    local
+      DAE.Exp addMMLCode;
+      Integer len;
     case ({},_,_,_) then ();
     case (eqns,inContent,_,_)
-      local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
     case (eqns,inContent,addMMLCode,dumpResiduals)
-      local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = true;
@@ -1262,7 +1262,7 @@ end dumpEqns;
 protected function dumpEqns2 "
   Helper function to dumpEqns
 "
-  input list<DAELow.Equation> inEquationLst;
+  input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
@@ -1271,9 +1271,9 @@ algorithm
   matchcontinue (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
     local
       String es,is;
-      DAELow.Value index;
-      DAELow.Equation eqn;
-      list<DAELow.Equation> eqns;
+      BackendDAE.Value index;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns;
       DAE.Exp addMMLCode;
     case ({},_,_,_) then ();
     case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=false))
@@ -1283,12 +1283,12 @@ algorithm
       then ();
     case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=true))
       equation
-        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
-        //This should be done as above. The problem is that the DAELow.equationToResidualForm(eqn) method
+        //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //This should be done as above. The problem is that the BackendEquation.equationToResidualForm(eqn) method
         //is not working as expected, probably due to the fact that considers only scalar right hand side
         //part of equation, i.e. it works correctly if we have something like a = b (with a and b scalar)
         //thus obtaining a -b = 0.
-        //The DAELow.equationToResidualForm is not working properly when the right part of the equation is not
+        //The BackendEquation.equationToResidualForm is not working properly when the right part of the equation is not
         //a scalar. Cosidering the following equation: x = y - z will then results in obtaining the wrong
         //residual equation x - y - z and not x - (y - z).
         //Even if I didn't debug such a method I made some test via printing the equation that confirmed
@@ -1296,7 +1296,7 @@ algorithm
         //By the way, when all doubt will be clearified the follow line:
         dumpResidual(eqn, intString(index),addMMLCode);
         //will be substituted with:
-        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
       then ();
   end matchcontinue;
@@ -1306,7 +1306,7 @@ end dumpEqns2;
 public function dumpEquation "
 This function is necessary to print an equation element.
 Since in Modelica is possible to have different kind of
-equations, the DAELow representation of the OMC distinguish
+equations, the BackendDAE representation of the OMC distinguish
 between:
  - normal equations
  - array equations
@@ -1333,7 +1333,7 @@ For example, if the element is an Array of Equations:
   </ARRAY_EQUATION>
 </ARRAY_OF_EQUATIONS>
 "
-  input DAELow.Equation inEquation;
+  input BackendDAE.Equation inEquation;
   input String inIndexNumber;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -1342,18 +1342,18 @@ algorithm
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
       DAE.Exp e1,e2,e;
-      DAELow.Value indx,i;
+      BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       DAE.Exp addMMLCode;
 
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," = ",s2});
+        res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1367,36 +1367,36 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," = ",s2});
+        res = stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
       equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),System.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1410,23 +1410,23 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,">","&gt;");
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1441,23 +1441,23 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," := ",s2});
+        res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1471,16 +1471,16 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.ALGORITHM(index = i),indexS,_)
+    case (BackendDAE.ALGORITHM(index = i),indexS,_)
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
@@ -1529,7 +1529,7 @@ end dumpExp;
 
 public function dumpExp2
 "function: dumpExp2
-  Helper function to dumpExp. It can also
+  Helper function to dumpExpression. It can also
   be used if it's not necessary to print the headers
   (MathML and MATH tags)."
   input DAE.Exp inExp;
@@ -1537,7 +1537,7 @@ algorithm
   _:=
   matchcontinue (inExp)
     local
-      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       DAE.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
       Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
@@ -1547,6 +1547,7 @@ algorithm
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
+      list<list<tuple<DAE.Exp, Boolean>>> ebs;
     case (DAE.END())
     ////////////////////////////////////////////////
     //////    TO DO: ADD SUPPORT TO END     ////////
@@ -1558,10 +1559,9 @@ algorithm
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
       then ();
-    case (DAE.RCONST(real = x))
-      local Real x;
+    case (DAE.RCONST(real = rval))
       equation
-        dumpStrMathMLNumberAttr(realString(x),MathMLType,MathMLReal);
+        dumpStrMathMLNumberAttr(realString(rval),MathMLType,MathMLReal);
       then ();
     case (DAE.SCONST(string = s))
       equation
@@ -1581,7 +1581,7 @@ algorithm
       then ();
     case (DAE.CREF(componentRef = c,ty = t))
       equation
-        s = Exp.printComponentRefStr(c);
+        s = ComponentReference.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
     case (e as DAE.BINARY(e1,op,e2))
@@ -1719,7 +1719,6 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.ARRAY(array = es,ty=tp))//Array are dumped as vector
-      local DAE.ExpType tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
@@ -1741,19 +1740,17 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.MATRIX(scalar = es,ty=tp))
-      local list<list<tuple<DAE.Exp, Boolean>>> es;
-        DAE.ExpType tp; String s3;
+    case (DAE.MATRIX(scalar = ebs,ty=tp))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
-        dumpListSeparator(es, dumpRow, System.stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
+        dumpListSeparator(ebs, dumpRow, stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
         dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as DAE.RANGE(_,start,NONE,stop))
+    case (e as DAE.RANGE(_,start,NONE(),stop))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLInterval);
@@ -1815,7 +1812,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = tp,exp = e))
       equation
-        str = Exp.typeString(tp);
+        str = ExpressionDump.typeString(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("(");
@@ -1842,7 +1839,7 @@ algorithm
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.SIZE(exp = cr,sz = NONE))
+    case (DAE.SIZE(exp = cr,sz = NONE()))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -1852,7 +1849,6 @@ algorithm
       then  ();
       // MetaModelica list
     case (DAE.LIST(_,es))
-      local list<DAE.Exp> es;
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -1891,13 +1887,13 @@ of the '<stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_)/>' element.
 A possible enchancement would be to print the classes as
 xml Modelica classes.
 "
-input DAELow.ExternalObjectClasses cls;
+input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
   _ := matchcontinue(cls,Content)
    local
      Integer len;
-     DAELow.ExternalObjectClasses xs;
+     BackendDAE.ExternalObjectClasses xs;
     case ({},_) then ();
     case (xs,Content)
       equation
@@ -1927,19 +1923,19 @@ end ...
 </Content>
 ...
 "
-input DAELow.ExternalObjectClasses cls;
+input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
   _ := matchcontinue(cls,Content)
    local
-     DAELow.ExternalObjectClasses xs;
-     DAE.Element constr,destr;
+     BackendDAE.ExternalObjectClasses xs;
+     DAE.Function constr,destr;
      Absyn.Path path;
      String c;
      DAE.ElementSource source "the origin of the element";
 
     case ({},_) then ();
-    case (DAELow.EXTOBJCLASS(path,constr,destr,source)::xs,c)
+    case (BackendDAE.EXTOBJCLASS(path,constr,destr,source)::xs,c)
       equation
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(Absyn.pathString(path));Print.printBuf("\n  extends ExternalObject");
@@ -1976,21 +1972,18 @@ end dumpFlowStr;
 public function dumpFunctions "
 This function dumps a list of functions
 "
-  input list<Absyn.Path> inFunctionNames;
-  input list<DAE.Element> funcelems;
+  input list<DAE.Function> funcelems;
 algorithm
-  _:=
-  matchcontinue (inFunctionNames,funcelems)
-      local
-        String s;
-        list<Absyn.Path> names;
-    case ({},_) then();
-    case (names,funcelems)
+  _ := matchcontinue (funcelems)
+    local
+      String s;
+    case ({}) then();
+    case (funcelems)
       equation
         dumpStrOpenTag(FUNCTIONS);
-        dumpFunctions2(inFunctionNames,funcelems);
+        dumpFunctions2(funcelems);
         dumpStrCloseTag(FUNCTIONS);
-  then();
+      then();
   end matchcontinue;
 end dumpFunctions;
 
@@ -1998,23 +1991,18 @@ end dumpFunctions;
 public function dumpFunctions2 "
 Help function for dumpFunctions
 "
-  input list<Absyn.Path> inFunctionNames;
-  input list<DAE.Element> funcelems;
+  input list<DAE.Function> funcelems;
 algorithm
-  _:=
-  matchcontinue (inFunctionNames,funcelems)
-      local
-        Absyn.Path name;
-        DAE.Element fun;
-        list<Absyn.Path> rem_names;
-        list<DAE.Element> rem_fun;
-    case ({},_) then();
-    case (_,{}) then();
-    case (name::rem_names, fun :: rem_fun)
+  _ := matchcontinue (funcelems)
+    local
+      DAE.Function fun;
+      list<DAE.Function> rem_fun;
+    case {} then();
+    case (fun :: rem_fun)
       equation
-        dumpFunctions3(name,fun);
-        dumpFunctions2(rem_names,rem_fun);
-  then();
+        dumpFunctions3(fun);
+        dumpFunctions2(rem_fun);
+      then();
   end matchcontinue;
 end dumpFunctions2;
 
@@ -2022,19 +2010,20 @@ end dumpFunctions2;
 protected function dumpFunctions3 "
 Help function to dumpFunctions2
 "
-  input Absyn.Path name;
-  input DAE.Element fun;
+  input DAE.Function fun;
 algorithm
-  _:=
-  matchcontinue (name,fun)
-    case(name,fun)
+  _:= matchcontinue (fun)
+    local
+      Absyn.Path name;
+    case(fun)
       equation
-      Print.printBuf("\n<");Print.printBuf(FUNCTION);
-      Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
-      Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEDump.dumpFunctionStr(fun));
-      Print.printBuf("\"/>");
-    then();
-    case (_,_) then();
+        name = DAEUtil.functionName(fun);
+        Print.printBuf("\n<");Print.printBuf(FUNCTION);
+        Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
+        Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEDump.dumpFunctionStr(fun));
+        Print.printBuf("\"/>");
+      then();
+    case (_) then();
 /*
         dumpStrOpenTag(Function)
         dumpAttribute(name= Absyn.pathString(name));
@@ -2077,11 +2066,9 @@ algorithm
     local
       Absyn.Path s;
       list<Absyn.Path> remaining;
+      String fn_name_str,s_path;
   case ({}) then ();
   case (s :: remaining)
-    local
-      String fn_name_str;
-      String s_path;
     equation
       s_path = Absyn.pathString(s);
       fn_name_str = ModUtil.pathStringReplaceDot(s, "_");
@@ -2098,17 +2085,17 @@ end dumpFunctionNames2;
 
 function dumpFunctionsStr "
 This function returns the code of all the functions
-that are used in the DAELow model.
+that are used in the BackendDAE model.
 The functions are printed as Modelica code.
 "
-  input list<DAE.Element> inL;
+  input list<DAE.Function> inL;
   output String FuncsString;
 algorithm
   FuncsString :=
   matchcontinue(inL)
     local
-      DAE.Element el;
-      list<DAE.Element> rem;
+      DAE.Function el;
+      list<DAE.Function> rem;
       //case (_) then ();
       case {}  then "";
       case (el::rem)  then stringAppend(DAEDump.dumpFunctionStr(el),dumpFunctionsStr(rem));
@@ -2129,8 +2116,8 @@ This function dumps a matrix using an xml representation.
      ...
 </matrix>
 "
-  input DAELow.IncidenceMatrix m;
-  list<list<DAELow.Value>> m_1;
+  input BackendDAE.IncidenceMatrix m;
+  list<list<BackendDAE.Value>> m_1;
 algorithm
 /*  _:=
   matchcontinue(m)
@@ -2164,8 +2151,8 @@ algorithm
   _:=
   matchcontinue(m,rowIndex)
     local
-      list<DAELow.Value> row;
-      list<list<DAELow.Value>> rows;
+      list<BackendDAE.Value> row;
+      list<list<BackendDAE.Value>> rows;
     case ({},_) then ();
     case ((row :: rows),rowIndex)
       equation
@@ -2207,8 +2194,8 @@ algorithm
   matchcontinue (inIntegerLst)
     local
       String s;
-      DAELow.Value x;
-      list<DAELow.Value> xs;
+      BackendDAE.Value x;
+      list<BackendDAE.Value> xs;
     case ({}) then ();
     case ((x :: xs))
       equation
@@ -2234,20 +2221,20 @@ the kind of a variable, that could be:
  - Constant
  - ExternalObject:PathRef
 "
-  input DAELow.VarKind inVarKind;
+  input BackendDAE.VarKind inVarKind;
   output String outString;
 algorithm
   outString :=
   matchcontinue (inVarKind)
-    case DAELow.VARIABLE()     then (VARIABILITY_CONTINUOUS);
-    case DAELow.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
-    case DAELow.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
-    case DAELow.DUMMY_STATE()  then (VARIABILITY_CONTINUOUS_DUMMYSTATE);
-    case DAELow.DISCRETE()     then (VARIABILITY_DISCRETE);
-    case DAELow.PARAM()        then (VARIABILITY_PARAMETER);
-    case DAELow.CONST()        then (VARIABILITY_CONSTANT);
-    case DAELow.EXTOBJ(path)
-      local Absyn.Path path;
+    local Absyn.Path path;
+    case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
+    case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
+    case BackendDAE.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
+    case BackendDAE.DUMMY_STATE()  then (VARIABILITY_CONTINUOUS_DUMMYSTATE);
+    case BackendDAE.DISCRETE()     then (VARIABILITY_DISCRETE);
+    case BackendDAE.PARAM()        then (VARIABILITY_PARAMETER);
+    case BackendDAE.CONST()        then (VARIABILITY_CONSTANT);
+    case BackendDAE.EXTOBJ(path)
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathString(path))));
   end matchcontinue;
 end dumpKind;
@@ -2332,17 +2319,16 @@ the output is like:
 algorithm
   _:=
   matchcontinue (inLstExp,inContent,addMathMLCode)
+    local
+      Integer len;
+      String Lst;
     case ({},_,_) then ();
     case (inLstExp,inContent,_)
-      local
-        Integer len;equation
+      equation
         len = listLength(inLstExp);
         len >= 1 = false;
       then();
     case (inLstExp,inContent,addMathMLCode)
-      local
-        Integer len;
-        String Lst;
       equation
         len = listLength(inLstExp);
         len >= 1 = true;
@@ -2360,7 +2346,7 @@ This is the help function of the dumpLstExp function.
 It takes the list of DAE.Exp and print out the
 list in a XML format.
 The output, if the list is not empty is something like this:
-<ARRAY_EQUATION String=Exp.printExpStr(firstEquation)>
+<ARRAY_EQUATION String=ExpressionDump.printExpStr(firstEquation)>
   <MathML>
     <MATH>
       ...
@@ -2368,7 +2354,7 @@ The output, if the list is not empty is something like this:
   </MathML>
 </ARRAY_EQUATION>
 ...
-<ARRAY_EQUATION String=Exp.printExpStr(lastEquation)>
+<ARRAY_EQUATION String=ExpressionDump.printExpStr(lastEquation)>
   <MathML>
     <MATH>
       ...
@@ -2389,7 +2375,7 @@ algorithm
     case ({},_,_) then ();
     case ((e :: es),inContent,addMathMLCode)
       equation
-        s = Exp.printExpStr(e);
+        s = ExpressionDump.printExpStr(e);
         s = Util.xmlEscape(s);
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
         dumpExp(e,addMathMLCode);
@@ -2494,8 +2480,8 @@ public function dumpMatching
 "function: dumpMatching
   author: PA
   prints the matching information on stdout."
-  input Integer[:] v;
-  DAELow.Value len;
+  input array<Integer> v;
+  BackendDAE.Value len;
   String len_str;
 algorithm
    _:=
@@ -2518,15 +2504,15 @@ end dumpMatching;
 protected function dumpMatching2
 "function: dumpMatching2
   Helper function to dumpMatching."
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   input Integer inInteger;
 algorithm
   _:=
   matchcontinue (inIntegerArray,inInteger)
     local
-      DAELow.Value len,i_1,eqn,i;
+      BackendDAE.Value len,i_1,eqn,i;
       String s,s2;
-      DAELow.Value[:] v;
+      BackendDAE.Value[:] v;
     case (v,i)
       equation
         len = array_length(v);
@@ -2563,7 +2549,7 @@ end dumpMatching2;
 public function dumpOptExp "
 This function print to a new line the content of
 a Optional<DAE.Exp> in a XML element like:
-<Content =Exp.printExpStr(e)/>. It also print
+<Content =ExpressionDump.printExpStr(e)/>. It also print
 the content of the expression as MathML like:
 <MathML><MATH xmlns=...>DAE.Exp</MATH></MathML>.
 See dumpExp function for more details.
@@ -2624,7 +2610,7 @@ as one attribute of a within a specific XML element.
 It takes the optional Values.Value and element name
 as input an prints on a new line a string to the
 standard output like:
-<Content = \"Exp.printExpStr(ValuesUtil.valueExp(Optional<Values.Value>)/>
+<Content = \"ExpressionDump.printExpStr(ValuesUtil.valueExp(Optional<Values.Value>)/>
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
@@ -2635,10 +2621,10 @@ algorithm
     local
       Values.Value v;
       DAE.Exp addMMLCode;
-    case (NONE,_,_)  then ();
+    case (NONE(),_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,Exp.printExpStr(ValuesUtil.valueExp(v)));
+        dumpStrOpenTagAttr(Content,EXP_STRING,ExpressionDump.printExpStr(ValuesUtil.valueExp(v)));
         dumpExp(ValuesUtil.valueExp(v),addMMLCode);
         dumpStrCloseTag(Content);
       then ();
@@ -2682,25 +2668,23 @@ public function dumpSolvingInfo "
   "
   input DAE.Exp addOriginalIncidenceMatrix;
   input DAE.Exp addSolvingInfo;
-  input DAELow.DAELow inDAELow;
+  input BackendDAE.BackendDAE inBackendDAE;
 algorithm
   _:=
-  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inDAELow)
-      local DAELow.DAELow dlow;
-  case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_)
-    equation
-    then ();
-  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
+  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
     local
+      BackendDAE.BackendDAE dlow;
       list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
+      array<Integer> v1,v2;
       list<list<Integer>> comps;
+    case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_) then ();
+  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = DAELow.strongComponents(m, mT, v1, v2);
-      //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
+      (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
+      //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2712,13 +2696,9 @@ algorithm
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
   case (DAE.BCONST(bool=true),DAE.BCONST(bool=false),dlow)
-    local
-      list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
-      list<list<Integer>> comps;
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2726,16 +2706,12 @@ algorithm
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
   case (DAE.BCONST(bool=false),DAE.BCONST(bool=true),dlow)
-    local
-      list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
-      list<list<Integer>> comps;
     equation
-      m = DAELow.incidenceMatrix(dlow);
-      mT = DAELow.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
-      (comps) = DAELow.strongComponents(m, mT, v1, v2);
-      //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
+      m = BackendDAEUtil.incidenceMatrix(dlow);
+      mT = BackendDAEUtil.transposeMatrix(m);
+      (v1,v2,_,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT,(BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+      (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
+      //(blt_states,blt_no_states) = BackendDAE.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);
@@ -2772,7 +2748,7 @@ end dumpStrCloseTag;
 
 public function dumpStrFunctions "
 This function is used to print all the information of the functions
-are used in the DAELow model.
+are used in the BackendDAE model.
 The functions are printed using the inFunctions string containing the
 body of the functions.
 "
@@ -2822,7 +2798,7 @@ This function prints a list from a list
 of array of StringIndex elements in
 a XML format. See dumpStringIdxLst for details.
 "
-  input list<DAELow.StringIndex>[:] stringIdxLstArr;
+  input list<BackendDAE.StringIndex>[:] stringIdxLstArr;
   input String Content;
   input Integer inInteger;
 algorithm
@@ -2851,7 +2827,7 @@ The output is like:
 <StringList>
 See dumpStringIdxLst2 for details.
 "
-  input list<DAELow.StringIndex> stringIdxLst;
+  input list<BackendDAE.StringIndex> stringIdxLst;
   input String Content;
 algorithm
   _ := matchcontinue (stringIdxLst,Content)
@@ -2879,18 +2855,18 @@ information of the index of the element in the list
 and using an XML format like:
 <ELEMENT ID=...>StringIndex</ELEMENT>
 "
-  input list<DAELow.StringIndex> strIdxLst;
+  input list<BackendDAE.StringIndex> strIdxLst;
 algorithm
   _:=
   matchcontinue (strIdxLst)
       local
-        list<DAELow.StringIndex> stringIndexList;
-        DAELow.StringIndex stringIndex;
+        list<BackendDAE.StringIndex> stringIndexList;
+        BackendDAE.StringIndex stringIndex;
         String str_s;
         Integer index_s;
+        Boolean ver;
       case {} then ();
-      case ((stringIndex as DAELow.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
-        local Boolean ver;
+      case ((stringIndex as BackendDAE.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
       equation
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_s));
         Print.printBuf(str_s);
@@ -3074,7 +3050,7 @@ end dumpStrVoidTag;
 
 public function dumpSubscript "
 This function print an DAE.Subscript eventually
-using the Exp.printExpStr function.
+using the ExpressionDump.printExpStr function.
 "
   input DAE.Subscript inSubscript;
 algorithm
@@ -3088,12 +3064,12 @@ algorithm
         ();
     case (DAE.INDEX(exp = e1))
       equation
-        Print.printBuf(Exp.printExpStr(e1));
+        Print.printBuf(ExpressionDump.printExpStr(e1));
       then
         ();
     case (DAE.SLICE(exp = e1))
       equation
-        Print.printBuf(Exp.printExpStr(e1));
+        Print.printBuf(ExpressionDump.printExpStr(e1));
       then
         ();
   end matchcontinue;
@@ -3108,7 +3084,7 @@ This function output the Type of a variable, it could be:
  - String
  - Enum
  "
-  input DAELow.Type inType;
+  input BackendDAE.Type inType;
   output String outString;
 algorithm
   outString:=
@@ -3116,18 +3092,18 @@ algorithm
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
-    case DAELow.INT()    then VARTYPE_INTEGER;
-    case DAELow.REAL()   then VARTYPE_REAL;
-    case DAELow.BOOL()   then VARTYPE_BOOLEAN;
-    case DAELow.STRING() then VARTYPE_STRING;
-    case DAELow.ENUMERATION(stringLst = l)
+    case BackendDAE.INT()    then VARTYPE_INTEGER;
+    case BackendDAE.REAL()   then VARTYPE_REAL;
+    case BackendDAE.BOOL()   then VARTYPE_BOOLEAN;
+    case BackendDAE.STRING() then VARTYPE_STRING;
+    case BackendDAE.ENUMERATION(stringLst = l)
       equation
         s1 = Util.stringDelimitList(l, ", ");
         s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
         str = stringAppend(s2, ")");
       then
         str;
-    case DAELow.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
+    case BackendDAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
   end matchcontinue;
 end dumpTypeStr;
 
@@ -3158,7 +3134,7 @@ algorithm
     case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,"")
     equation
     /*
-      str= System.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
+      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
     then str;
     */
@@ -3188,7 +3164,7 @@ algorithm
       Print.printBuf("\">");
     then ();
       /*
-      str= System.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
+      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\"  stream=\"",streamPrefix,"\" comment=\"",comment,"\">"});
     then str;
     */
@@ -3210,8 +3186,8 @@ The output is very simple and is like:
 </ADDITIONAL_INFO>
 "
 
-  input list<DAELow.CrefIndex>[:] crefIdxLstArr;
-  input list<DAELow.StringIndex>[:] strIdxLstArr;
+  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
+  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
   input Integer i;
 algorithm
     _ := matchcontinue (crefIdxLstArr,strIdxLstArr,i)
@@ -3241,9 +3217,9 @@ is:
   </VariableList>
 </Content>
 "
-  input list<DAELow.Var> vars;
-  input list<DAELow.CrefIndex>[:] crefIdxLstArr;
-  input list<DAELow.StringIndex>[:] strIdxLstArr;
+  input list<BackendDAE.Var> vars;
+  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
+  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
   input String Content;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -3294,7 +3270,7 @@ the number of the output. This function is used for
 printing the content of a variable with no AdditionalInfo.
 See dumpVariable for more details on the XML output.
 "
-  input list<DAELow.Var> inVarLst;
+  input list<BackendDAE.Var> inVarLst;
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -3302,10 +3278,10 @@ algorithm
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
-      DAELow.Value indx,varno;
-      DAELow.Var v;
+      BackendDAE.Value indx,varno;
+      BackendDAE.Var v;
       DAE.ComponentRef cr,old_name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
       list<Absyn.Path> paths;
@@ -3313,8 +3289,8 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAELow.Var> xs;
-      DAELow.Type var_type;
+      list<BackendDAE.Var> xs;
+      BackendDAE.Type var_type;
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
@@ -3322,7 +3298,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case ({},_,_) then ();
-    case (((v as DAELow.VAR(varName = cr,
+    case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
                             varType = var_type,
@@ -3336,8 +3312,8 @@ algorithm
                             flowPrefix = flowPrefix,
                             streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+                     intString(indx),boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),
                      dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3361,9 +3337,9 @@ the number of the output. This function is used for
 printing the content of a variable with AdditionalInfo.
 See dumpVariable for more details on the XML output.
 "
-  input list<DAELow.Var> inVarLst;
-  input list<DAELow.CrefIndex>[:] crefIdxLstArr;
-  input list<DAELow.StringIndex>[:] strIdxLstArr;
+  input list<BackendDAE.Var> inVarLst;
+  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
+  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -3371,10 +3347,10 @@ algorithm
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
-      DAELow.Value indx,varno;
-      DAELow.Var v;
+      BackendDAE.Value indx,varno;
+      BackendDAE.Var v;
       DAE.ComponentRef cr,old_name;
-      DAELow.VarKind kind;
+      BackendDAE.VarKind kind;
       DAE.VarDirection dir;
       Option<DAE.Exp> e;
       list<Absyn.Path> paths;
@@ -3382,8 +3358,8 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<DAELow.Var> xs;
-      DAELow.Type var_type;
+      list<BackendDAE.Var> xs;
+      BackendDAE.Type var_type;
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
@@ -3391,7 +3367,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case ({},_,_,_,_) then ();
-    case (((v as DAELow.VAR(varName = cr,
+    case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
                             varType = var_type,
@@ -3405,8 +3381,8 @@ algorithm
                             flowPrefix = flowPrefix,
                             streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
+                        boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3433,21 +3409,21 @@ the zero crossing list. The output is:
 ...
 </ZeroCrossings>
 "
-  input list<DAELow.ZeroCrossing> zeroCross;
+  input list<BackendDAE.ZeroCrossing> zeroCross;
   input String inContent;
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (zeroCross,inContent,addMathMLCode)
+    local
+      Integer len;
     case ({},_,_) then ();
     case (zeroCross,inContent,_)
-      local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = false;
       then();
     case (zeroCross,inContent,addMathMLCode)
-      local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = true;
@@ -3481,19 +3457,19 @@ of the zero crossing elements in XML format. The output is:
   </stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_))>
 </stringAppend(ZERO_CROSSING,ELEMENT_)>
  "
-  input list<DAELow.ZeroCrossing> inZeroCrossingLst;
+  input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
   input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inZeroCrossingLst,addMathMLCode)
     local
       DAE.Exp e,addMMLCode;
-      list<DAELow.Value> eq,wc;
-      list<DAELow.ZeroCrossing> zcLst;
+      list<BackendDAE.Value> eq,wc;
+      list<BackendDAE.ZeroCrossing> zcLst;
     case ({},_) then ();
-    case (DAELow.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
+    case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
-        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,Exp.printExpStr(e));
+        dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,ExpressionDump.printExpStr(e));
         dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
         dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
@@ -3543,7 +3519,7 @@ function: printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Exp.printExp2Str(e, "",NONE(),NONE());
+  s := ExpressionDump.printExp2Str(e, "",NONE(),NONE());
 end printExpStr;
 
 public function relopSymbol  "
@@ -3568,7 +3544,7 @@ end relopSymbol;
 public function dumpResidual "
 This function is necessary to print an equation element as a residual.
 Since in Modelica is possible to have different kind of
-equations, the DAELow representation of the OMC distinguish
+equations, the BackendDAE representation of the OMC distinguish
 between:
  - normal equations
  - array equations
@@ -3595,7 +3571,7 @@ For example, if the element is an Array of Equations:
   </ARRAY_EQUATION>
 </ARRAY_OF_EQUATIONS>
 "
-  input DAELow.Equation inEquation;
+  input BackendDAE.Equation inEquation;
   input String inIndexNumber;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -3604,18 +3580,18 @@ algorithm
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
       DAE.Exp e1,e2,e;
-      DAELow.Value indx,i;
+      BackendDAE.Value indx,i;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
       DAE.Exp addMMLCode;
 
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," ( ",s2,") = 0"});
+        res = stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3633,36 +3609,36 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printExpStr(e1);
-        s2 = Exp.printExpStr(e2);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
         s1 = Util.xmlEscape(s1);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - ( ",s2, " ) = 0"});
+        res = stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+    case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
       equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),System.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - ( ",s2," ) := 0"});
+        res = stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3680,23 +3656,23 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3715,23 +3691,23 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printComponentRefStr(cr);
-        s2 = Exp.printExpStr(e2);
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = ExpressionDump.printExpStr(e2);
         s2 = Util.xmlEscape(s2);
         is = intString(i);
-        res = System.stringAppendList({s1," - (",s2,") := 0"});
+        res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -3745,16 +3721,16 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
-        s1 = Exp.printExpStr(e);
+        s1 = ExpressionDump.printExpStr(e);
         s1 = Util.xmlEscape(s1);
-        res = System.stringAppendList({s1," = 0"});
+        res = stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.ALGORITHM(index = i),indexS,_)
+    case (BackendDAE.ALGORITHM(index = i),indexS,_)
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
@@ -3799,7 +3775,7 @@ algorithm
     local Dump.Ident str,cmt;
     case (SOME(SCode.COMMENT(_,SOME(cmt))))
       equation
-        //str = System.stringAppendList({" \"",cmt,"\""});
+        //str = stringAppendList({" \"",cmt,"\""});
         str = cmt;
       then
         str;
