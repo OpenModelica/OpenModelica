@@ -2736,4 +2736,69 @@ algorithm
   end matchcontinue;
 end mergeVariables;
 
+public function traverseBackendDAEVars "function: traverseBackendDAEVars
+  author: Frenkel TUD
+
+  traverse all vars of a BackenDAE.Variables array.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.Variables inVariables;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  matchcontinue (inVariables,func,inTypeA)
+    local
+      array<Option<BackendDAE.Var>> varOptArr;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
+      equation
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEExpsArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,arrayLength(varOptArr),inTypeA);
+      then
+        ext_arg_1;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVars failed");
+      then
+        fail();        
+  end matchcontinue;
+end traverseBackendDAEVars;
+
+protected function traverseBackendDAEVar "function: traverseBackendDAEVar
+  author: Frenkel TUD
+  Helper traverseBackendDAEVars."
+  replaceable type Type_a subtypeof Any;  
+  input Option<BackendDAE.Var> inVar;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  matchcontinue (inVar,func,inTypeA)
+    local
+      BackendDAE.Var v;
+      Type_a ext_arg;
+    case (NONE(),func,inTypeA) then inTypeA;
+    case (SOME(v),func,inTypeA)
+      equation
+        ((_,ext_arg)) = func((v,inTypeA));
+      then
+        ext_arg;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
+      then
+        fail();          
+  end matchcontinue;
+end traverseBackendDAEVar;
+
 end BackendVariable;

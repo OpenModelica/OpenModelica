@@ -1969,12 +1969,11 @@ protected function varStateSelectHeuristicPrio3
   output Real prio;
 algorithm
   prio := matchcontinue(cr,vars)
-    local list<BackendDAE.Var> varLst,sameIdentVarLst; Real c,prio;
+    local Integer i; Real c,prio;
     case(cr,vars)
       equation
-        varLst = BackendDAEUtil.varList(vars);
-        sameIdentVarLst = Util.listSelect1(varLst,cr,varHasSameLastIdent);
-        c = intReal(listLength(sameIdentVarLst));
+        ((_,i)) = BackendVariable.traverseBackendDAEVars(vars,varHasSameLastIdent,(cr,0));
+        c = intReal(i);
         prio = c *. 0.01;
       then prio;
   end matchcontinue;
@@ -1985,17 +1984,21 @@ protected function varHasSameLastIdent
   Helper funciton to varStateSelectHeuristicPrio3.
   Returns true if the variable has the same name (the last identifier)
   as the variable name given as second argument."
-  input BackendDAE.Var v;
-  input DAE.ComponentRef cr;
-  output Boolean b;
+ input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Integer>> inTpl;
+ output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Integer>> outTpl;  
 algorithm
-  b := matchcontinue(v,cr)
-    local DAE.ComponentRef cr2; DAE.Ident id1,id2;
-    case(BackendDAE.VAR(varName=cr2 ),cr )
+  outTpl := matchcontinue(inTpl)
+    local 
+      DAE.ComponentRef cr,cr2;
+      DAE.Ident id1,id2;
+      BackendDAE.Var v;
+      Integer i;
+    case((v,(cr,i)))
       equation
+        cr2 = BackendVariable.varCref(v);
         true = ComponentReference.crefLastIdentEqual(cr,cr2);
-      then true;
-    case(_,_) then false;
+      then ((v,(cr,i+1)));
+    case inTpl then inTpl;
   end matchcontinue;
 end varHasSameLastIdent;
 
@@ -2012,9 +2015,7 @@ algorithm
       list<BackendDAE.Var> varLst,sameCompVarLst;
     case(cr,vars)
       equation
-        varLst = BackendDAEUtil.varList(vars);
-        sameCompVarLst = Util.listSelect1(varLst,cr,varInSameComponent);
-        _::_ = Util.listSelect(sameCompVarLst,BackendVariable.isDummyStateVar);
+        ((_,true)) = BackendVariable.traverseBackendDAEVars(vars,varInSameComponent,(cr,false));
       then -1.0;
     case(cr,vars) then 0.0;
   end matchcontinue;
@@ -2025,17 +2026,21 @@ protected function varInSameComponent
   Helper funciton to varStateSelectHeuristicPrio2.
   Returns true if the variable is defined in the same sub
   component as the variable name given as second argument."
-  input BackendDAE.Var v;
-  input DAE.ComponentRef cr;
-  output Boolean b;
+ input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Boolean>> inTpl;
+ output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,Boolean>> outTpl;  
 algorithm
-  b := matchcontinue(v,cr)
-    local DAE.ComponentRef cr2; DAE.Ident id1,id2;
-    case(BackendDAE.VAR(varName=cr2 ),cr )
+  outTpl := matchcontinue(inTpl)
+    local 
+      DAE.ComponentRef cr,cr2;
+      BackendDAE.Var v;
+    case((v,(cr,true))) then ((v,(cr,true)));
+    case((v,(cr,_)))
       equation
+        cr2 = BackendVariable.varCref(v);
+        true = BackendVariable.isDummyStateVar(v);
         true = ComponentReference.crefEqualNoStringCompare(ComponentReference.crefStripLastIdent(cr2),ComponentReference.crefStripLastIdent(cr));
-      then true;
-    case(_,_) then false;
+      then ((v,(cr,true)));
+    case inTpl then inTpl;
   end matchcontinue;
 end varInSameComponent;
 

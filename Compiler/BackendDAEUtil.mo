@@ -709,6 +709,7 @@ algorithm
   outBinTree := matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Var> v_lst;
+      list<DAE.ComponentRef> cr_lst;
       BackendDAE.BinTree bt;
       BackendDAE.Variables v,kn;
       BackendDAE.EquationArray e,re,ia;
@@ -717,55 +718,32 @@ algorithm
       BackendDAE.EventInfo ev;
     case (BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = re,initialEqs = ia,arrayEqs = ae,algorithms = al,eventInfo = ev))
       equation
-        v_lst = varList(v);
-        bt = statesDaelow2(v_lst, BackendDAE.emptyBintree);
+        cr_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarCrefFinder,{});
+        bt = treeAddList(BackendDAE.emptyBintree,cr_lst);
       then
         bt;
   end matchcontinue;
 end statesDaelow;
 
-protected function statesDaelow2
-"function: statesDaelow2
-  author: PA
-  Helper function to statesDaelow."
-  input list<BackendDAE.Var> inVarLst;
-  input BackendDAE.BinTree inBinTree;
-  output BackendDAE.BinTree outBinTree;
+protected function traversingisStateVarCrefFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
+ output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
 algorithm
-  outBinTree := matchcontinue (inVarLst,inBinTree)
+  outTpl:=
+  matchcontinue (inTpl)
     local
-      BackendDAE.BinTree bt;
-      DAE.ComponentRef cr;
       BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-
-    case ({},bt) then bt;
-
-    case ((v :: vs),bt)
+      list<DAE.ComponentRef> cr_lst;
+      DAE.ComponentRef cr;
+    case ((v,cr_lst))
       equation
-        BackendDAE.STATE() = BackendVariable.varKind(v);
+        true = BackendVariable.isStateVar(v);
         cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
-/*  is not realy a state
-    case ((v :: vs),bt)
-      equation
-        BackendDAE.DUMMY_STATE() = BackendVariable.varKind(v);
-        cr = BackendVariable.varCref(v);
-        bt = treeAdd(bt, cr, 0);
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
-*/
-    case ((v :: vs),bt)
-      equation
-        bt = statesDaelow2(vs, bt);
-      then
-        bt;
+      then ((v,cr::cr_lst));
+    case inTpl then inTpl; 
   end matchcontinue;
-end statesDaelow2;
+end traversingisStateVarCrefFinder;
 
 public function emptyVars
 "function: emptyVars
@@ -949,7 +927,7 @@ algorithm
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
       equation
-        SOME(elt) = arr[0 + 1];
+        SOME(elt) = arr[1];
       then
         {elt};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
@@ -1830,7 +1808,7 @@ algorithm
   outIntegerArray:=
   matchcontinue (inBackendDAE1,inIntegerArray2,inIncidenceMatrix3,inIncidenceMatrixT4,inIntegerArray5,inIntegerArray6)
     local
-      list<BackendDAE.Var> v_lst,statevar_lst;
+      list<BackendDAE.Var> statevar_lst;
       BackendDAE.BackendDAE dae;
       array<BackendDAE.Value> arr_1,arr;
       array<list<BackendDAE.Value>> m,mt;
@@ -1842,8 +1820,7 @@ algorithm
     
     case ((dae as BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr,m,mt,a1,a2)
       equation
-        v_lst = varList(v);
-        statevar_lst = Util.listSelect(v_lst, BackendVariable.isStateVar);
+        statevar_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarFinder,{});
         ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
       then
         arr_1;
@@ -1856,6 +1833,24 @@ algorithm
   end matchcontinue;
 end markStateEquations;
 
+protected function traversingisStateVarFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+    case ((v,v_lst))
+      equation
+        true = BackendVariable.isStateVar(v);
+      then ((v,v::v_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingisStateVarFinder;
+      
 protected function markStateEquation
 "function: markStateEquation
   This function is a helper function to mark_state_equations
@@ -4207,6 +4202,7 @@ protected function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsV
 
   Helper for traverseBackendDAEExps
 "
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.Variables inVariables;
   input FuncExpType func;
   input Type_a inTypeA;
@@ -4234,11 +4230,12 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVars;
 
-protected function traverseBackendDAEExpsArrayNoCopy "
+public function traverseBackendDAEExpsArrayNoCopy "
  help function to traverseBackendDAEExps
  author: Frenkel TUD"
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
   input array<Type_a> array;
   input FuncExpType func;
   input FuncArrayType arrayfunc;
@@ -4247,8 +4244,8 @@ protected function traverseBackendDAEExpsArrayNoCopy "
   input Type_b inTypeB;
   output Type_b outTypeB;
   partial function FuncExpType
-    input tuple<DAE.Exp, Type_b> inTpl;
-    output tuple<DAE.Exp, Type_b> outTpl;
+    input tuple<Type_c, Type_b> inTpl;
+    output tuple<Type_c, Type_b> outTpl;
   end FuncExpType;
   partial function FuncArrayType
     input Type_a inTypeB;
@@ -4256,8 +4253,8 @@ protected function traverseBackendDAEExpsArrayNoCopy "
     input Type_b inTypeA;
     output Type_b outTypeA;
     partial function FuncExpType
-     input tuple<DAE.Exp, Type_b> inTpl;
-      output tuple<DAE.Exp, Type_b> outTpl;
+     input tuple<Type_c, Type_b> inTpl;
+      output tuple<Type_c, Type_b> outTpl;
     end FuncExpType;
   end FuncArrayType;    
 algorithm
@@ -4280,6 +4277,7 @@ protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVa
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
   DAE.ET_OTHER is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
+  replaceable type Type_a subtypeof Any;  
   input Option<BackendDAE.Var> inVar;
   input FuncExpType func;
   input Type_a inTypeA;
