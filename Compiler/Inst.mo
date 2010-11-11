@@ -3784,6 +3784,7 @@ algorithm
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
+        false = listMember(Absyn.pathString(cn), {"tuple","array","Option","list"});
         cns = Absyn.pathString(cn);
         Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
       then fail();
@@ -6409,15 +6410,13 @@ protected function checkMultiplyDeclared
 algorithm
   alreadyDeclared := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
     local
-      list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
-      DAE.Mod mod;
+      list<Env.Frame> env_1,env2,env2_1,cenv,compenv;
       String n,n2;
       Boolean finalPrefix,repl,prot;
       SCode.Element oldElt;
       DAE.Mod oldMod;
       tuple<SCode.Element,DAE.Mod> newComp;
       Env.InstStatus instStatus;
-      Boolean alreadyDeclared;
       SCode.Class oldClass,newClass;
 
     case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
@@ -6581,7 +6580,7 @@ algorithm
         // add a warning and let it continue!
         s1 = SCode.unparseElementStr(oldElt);
         s2 = SCode.unparseElementStr(newElt);
-        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL(),{s1,s2}, aInfo);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,{s1,s2}, aInfo);
       then ();    
     
     // fail baby and add a source message!
@@ -6589,7 +6588,7 @@ algorithm
       equation
         s1 = SCode.unparseElementStr(oldElt);
         s2 = SCode.unparseElementStr(newElt);
-        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2}, aInfo);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,{s1,s2}, aInfo);
         //print(" *** error message added *** \n");
       then fail();        
   end matchcontinue;
@@ -6637,7 +6636,7 @@ algorithm
       equation
       s1 = SCode.printClassStr(oldCl);
       s2 = SCode.printClassStr(newCl);
-      Error.addMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT(),{s1,s2});
+      Error.addMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT,{s1,s2});
       //print(" *** error message added *** \n");
       then fail();
   end matchcontinue;
@@ -13654,7 +13653,6 @@ algorithm
       Absyn.ComponentRef c1,c2;
       list<Absyn.ComponentRef> cl1,cl2;
       Env.Env env,compenv,cenv;
-      Env.Cache cache;
       Integer i1,i2;
       list<Absyn.Subscript> ad;
       SCode.Accessibility acc;

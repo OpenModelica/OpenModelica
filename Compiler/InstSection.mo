@@ -566,7 +566,7 @@ algorithm
       equation
         true = OptManager.getOption("checkModel"); 
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM)) = Types.propsAnd(props);
+        (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM())) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
       then
@@ -716,7 +716,7 @@ algorithm
     case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el,info=info), initial_, impl, graph)
       equation
         true = OptManager.getOption("checkModel");
-        (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM), _) =
+        (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM()), _) =
           Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         v = Values.ARRAY({Values.INTEGER(1)}, {1});
@@ -1848,7 +1848,7 @@ algorithm
         // true = containsWhenStatements(sl);
         str = Dump.unparseAlgorithmStr(0, 
                SCode.statementToAlgorithmItem(SCode.ALG_FOR(inIterators, sl,NONE(),info)));
-        Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN(), {str}, info);
+        Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
         Debug.fprintln("failtrace", "- InstSection.unrollForLoop failed on: " +& str);
       then
         fail();

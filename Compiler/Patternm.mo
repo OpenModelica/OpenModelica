@@ -2668,8 +2668,8 @@ algorithm
     case (cache,env,_,_,info,lhs)
       equation
         s = Dump.printExpStr(lhs);
-        s = "Pattern had different number of elements: " +& s;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
+        s = "pattern " +& s;
+        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {s}, info);
       then fail();
   end match;
 end elabPatternTuple;
@@ -2717,9 +2717,8 @@ algorithm
     case (cache,env,callPath,_,_,info,lhs)
       equation
         failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
-        s = Dump.printExpStr(lhs);
-        s = "Call pattern is not a record deconstructor: " +& s;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
+        s = Absyn.pathString(callPath);
+        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_RECORD, {s}, info);
       then fail();
   end matchcontinue;
 end elabPatternCall;
@@ -2750,8 +2749,7 @@ algorithm
       equation
         s1 = Types.unparseType(ty1);
         s2 = Types.unparseType(ty2);
-        str = "Patternm.validPatternType failed: " +& s1 +& ", " +& s2;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+        Error.addSourceMessage(Error.META_TYPE_MISMATCH_PATTERN, {s1,s2}, info);
       then fail();
   end matchcontinue;
 end validPatternType;
@@ -2764,15 +2762,16 @@ protected function validUniontype
 algorithm
   _ := matchcontinue (path1,path2,info,lhs)
     local
-      String str;
+      String s1,s2;
     case (path1,path2,_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
       then ();
     else
       equation
-        str = "Deconstructor " +& Dump.printExpStr(lhs) +& " is not part of uniontype " +& Absyn.pathString(path2);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+        s1 = Absyn.pathString(path1);
+        s2 = Absyn.pathString(path2);
+        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s1,s2}, info);
       then fail();
   end matchcontinue;
 end validUniontype;

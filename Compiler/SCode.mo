@@ -1710,7 +1710,7 @@ protected function classDefEqual
          list<Equation> ieqns1,ieqns2;
          list<AlgorithmSection> algs1,algs2;
          list<AlgorithmSection> ialgs1,ialgs2;
-         list<Boolean> blst1,blst2,blst3,blst4,blst5,blst6,blst;
+         list<Boolean> blst0,blst1,blst2,blst3,blst4,blst5,blst6,blst;
          Absyn.ElementAttributes attr1,attr2;
          Absyn.TypeSpec tySpec1, tySpec2;
          Absyn.Path p1, p2;
@@ -1761,7 +1761,8 @@ protected function classDefEqual
          b2 = modEqual(mod1,mod2);
          // adrpo: ignore annotations!
          // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
-         blst = Util.listFlatten({{b1,b2},blst1,blst2,blst3,blst4,blst5/*,blst6*/});
+         blst0 = {b1,b2};
+         blst = Util.listFlatten({blst0,blst1,blst2,blst3,blst4,blst5/*,blst6*/});
          equal = Util.boolAndList(blst);
       then
         equal;

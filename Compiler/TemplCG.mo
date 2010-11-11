@@ -478,10 +478,12 @@ algorithm
   local
     String error;
     case (afterBody) then FindAngleSep2(afterBody,0);
-    case (afterBody) equation
-      error = flattenStringList(afterBody);
-      error = "FindAngleSep failed: " +& error;
-      Error.addMessage(Error.TEMPLCG_INVALID_TEMPLATE, {error}); then fail();
+    case (afterBody)
+      equation
+        error = flattenStringList(afterBody);
+        error = "FindAngleSep failed: " +& error;
+        Error.addMessage(Error.TEMPLCG_INVALID_TEMPLATE, {error});
+      then fail();
   end matchcontinue;
 end FindAngleSep;
 

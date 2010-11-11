@@ -6904,6 +6904,7 @@ algorithm
       Absyn.Modification mod;
       Absyn.ComponentRef class_,ident,subident;
       Absyn.Program p;
+      list<Absyn.ElementArg> elementArgLst;
     
     case (class_,ident,subident,p)
       equation
@@ -6913,8 +6914,8 @@ algorithm
         comps = getComponentsInClass(cdef);
         compelts = Util.listMap(comps, getComponentitemsInElement);
         compelts_1 = Util.listFlatten(compelts);
-        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = Util.listSelect1(compelts_1, name, componentitemNamed);
-        mod = getModificationValue(mod, subident);
+        {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        mod = getModificationValue(elementArgLst, subident);
         res = Dump.unparseModificationStr(mod);
       then
         res;

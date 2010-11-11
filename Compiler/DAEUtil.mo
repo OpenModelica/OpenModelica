@@ -2218,7 +2218,6 @@ algorithm
     local
       DAE.Exp e;
       list<DAE.ComponentRef> crefs1,crefs2;
-      DAE.ElementSource source "the element origin";
     case({},_) then {};
     case(e::inExps,source)
       equation

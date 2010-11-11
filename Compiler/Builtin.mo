@@ -3010,6 +3010,7 @@ algorithm
         env = Env.extendFrameT(env, "stringAppend", stringString2string);
         env = Env.extendFrameT(env, "stringUpdateStringChar", stringStringInteger2string);
         env = Env.extendFrameT(env, "stringEq", stringString2boolean);
+        env = Env.extendFrameT(env, "stringEqual", stringString2boolean);
         env = Env.extendFrameT(env, "stringCompare", stringString2int);
         env = Env.extendFrameT(env, "stringHash", string2int);
         env = Env.extendFrameT(env, "stringHashDjb2", string2int);

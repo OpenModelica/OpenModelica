@@ -285,6 +285,10 @@ public constant ErrorID META_NONE_CREF=5017;
 public constant ErrorID META_INVALID_PATTERN_NAMED_FIELD=5018;
 public constant ErrorID META_INVALID_LOCAL_ELEMENT=5019;
 public constant ErrorID META_INVALID_COMPLEX_TYPE=5020;
+public constant ErrorID META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE=5021;
+public constant ErrorID META_TYPE_MISMATCH_PATTERN=5022;
+public constant ErrorID META_DECONSTRUCTOR_NOT_RECORD=5023;
+
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -643,7 +647,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead."),
           (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s"),
           (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s"),
-          (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s<...>")
+          (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s<...>"),
+          (META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE,TRANSLATION(),ERROR(),"%s is not part of uniontype %s"),
+          (META_TYPE_MISMATCH_PATTERN,TRANSLATION(),ERROR(),"Type mismatch in pattern\nactual type:\n  %s\nexpected type:\n  %s"),
+          (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s")
 
           };
 

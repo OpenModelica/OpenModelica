@@ -761,8 +761,8 @@ Checks wheter a list contains a value or not."
   input list<Type_a> elems;
   input compareFunc f;
   partial function compareFunc
-    input Type_a inTypeA;
-    input Type_a inTypeA;
+    input Type_a inTypeA1;
+    input Type_a inTypeA2;
     output Boolean outTypeB;
   end compareFunc;
   output Boolean contains;

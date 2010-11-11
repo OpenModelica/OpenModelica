@@ -5637,8 +5637,7 @@ end algStmtAssignPattern;
 template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
 ::=
   match pat
-  /* NOTE: This comment needs to be present or the hasindex count is off in some other cases */
-  case PAT_WILD(__) then '/* WILD pattern: <%rhs%> */<%\n%>'
+  case PAT_WILD(__) then ""
   case p as PAT_CONSTANT(__)
     then
       let &unboxBuf = buffer ""
@@ -5673,12 +5672,13 @@ template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
         <%patternMatch(p,tvar,&varDecls,&assignments)%>
-        >>)
+        >>; empty /* increase the counter even if no output is produced */)
   case PAT_CALL_TUPLE(__)
     then
       (patterns |> p hasindex i1 =>
         let nrhs = '<%rhs%>.targ<%i1%>'
         patternMatch(p,nrhs,&varDecls,&assignments)
+        ; empty /* increase the counter even if no output is produced */
       )
   case PAT_CALL(__)
     then
@@ -5687,7 +5687,7 @@ template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
         <%patternMatch(p,tvar,&varDecls,&assignments)%>
-        >>); indexOffset=2%>
+        >>); indexOffset=2; empty /* increase the counter even if no output is produced */%>
       >>
   case p as PAT_AS_FUNC_PTR(__) then
     let &assignments += '*((modelica_fnptr*)&_<%p.id%>) = <%rhs%>;<%\n%>'

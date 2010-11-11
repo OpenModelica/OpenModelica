@@ -6850,22 +6850,22 @@ protected function elabCallBuiltin "function: elabCallBuiltin
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+  partial function handlerFunc
+    input Env.Cache inCache;
+    input list<Env.Frame> inEnvFrameLst;
+    input list<Absyn.Exp> inAbsynExpLst;
+    input list<Absyn.NamedArg> inNamedArgs;
+    input Boolean inBoolean;
+    input Prefix.Prefix inPrefix;
+    input Absyn.Info info;
+    output Env.Cache outCache;
+    output DAE.Exp outExp;
+    output DAE.Properties outProperties;
+  end handlerFunc;      
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inNamedArgs,inBoolean,inPrefix,info)
     local
-      partial function handlerFunc
-        input Env.Cache inCache;
-        input list<Env.Frame> inEnvFrameLst;
-        input list<Absyn.Exp> inAbsynExpLst;
-        input list<Absyn.NamedArg> inNamedArgs;
-        input Boolean inBoolean;
-        input Prefix.Prefix inPrefix;
-        input Absyn.Info info;
-        output Env.Cache outCache;
-        output DAE.Exp outExp;
-        output DAE.Properties outProperties;
-      end handlerFunc;
       handlerFunc handler;
       DAE.Exp exp;
       DAE.Properties prop;
