@@ -1,6 +1,0 @@
-model test
-
-equation
-a * b + c * d = 0;
-
-end test;
