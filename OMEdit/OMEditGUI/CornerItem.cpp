@@ -41,7 +41,7 @@ CornerItem::CornerItem(qreal x, qreal y, Qt::Corner corner, QGraphicsItem *paren
     this->mActivePen = QPen(Qt::red, 3);
     this->mHoverPen = QPen(Qt::darkRed, 3);
     updateCornerItem(x, y, corner);
-    setHovered();
+    setPassive();
 }
 
 void CornerItem::updateCornerItem(qreal x, qreal y, Qt::Corner corner)

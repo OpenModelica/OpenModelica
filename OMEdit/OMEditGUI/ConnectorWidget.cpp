@@ -40,14 +40,14 @@
 
 #include "ConnectorWidget.h"
 
-Connector::Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, QGraphicsItem *parent)
+Connector::Connector(Component *pComponent, GraphicsView *pParentView, QGraphicsItem *pParent)
 {
-    Q_UNUSED(parent);
-    this->mpParentGraphicsView = parentView;
+    Q_UNUSED(pParent);
+    this->mpParentGraphicsView = pParentView;
     this->setStartComponent(pComponent);
     setFlags(QGraphicsItem::ItemIsFocusable);
     this->setPos(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
-    this->scale(Helper::globalXScale, Helper::globalYScale);
+    this->scale(Helper::globalIconXScale, Helper::globalIconYScale);
     setZValue(-1.0);
     this->updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
     this->mEndComponentConnected = false;
@@ -55,15 +55,78 @@ Connector::Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, 
     this->drawConnector();
 }
 
+//! Constructor used to create a whole connector at once. Used when loading models.
+//! @param *pStartPort is a pointer to the start port.
+//! @param *pEndPort is a pointer to the end port.
+//! @param points is the point vector for the connector.
+//! @param *pParentView is a pointer to the GraphicsView the connector belongs to.
+//! @param *pParent is the parent of the port.
+Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *pParentView, QVector<QPointF> points,
+                     QGraphicsItem *pParent)
+{
+    Q_UNUSED(pParent);
+    setFlags(QGraphicsItem::ItemIsFocusable);
+    mpParentGraphicsView = pParentView;
+    setStartComponent(pStartPort);
+    setEndComponent(pEndPort);
+    setPos(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+    scale(Helper::globalIconXScale, Helper::globalIconYScale);
+    setZValue(-1.0);
+    mPoints = points;
+
+    //Setup the geometries vector based on the point geometry
+    for(int i=0; i != mPoints.size()-1; ++i)
+    {
+        if(mPoints[i].x() == mPoints[i+1].x())
+            mGeometries.push_back(Connector::VERTICAL);
+        else if(mPoints[i].y() == mPoints[i+1].y())
+            mGeometries.push_back(Connector::HORIZONTAL);
+        else
+            mGeometries.push_back(Connector::DIAGONAL);
+    }
+
+    mEndComponentConnected = true;
+    emit endComponentConnected();
+    this->setPassive();
+    connect(mpEndComponent->mpParentComponent, SIGNAL(componentDeleted()), SLOT(deleteMe()));
+
+    //Create the lines, so that drawConnector has something to work with
+    for(int i = 0; i != mPoints.size()-1; ++i)
+    {
+        ConnectorLine *tempLine = new ConnectorLine(mapFromScene(mPoints[i]).x(), mapFromScene(mPoints[i]).y(),
+                                                    mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(),
+                                                    i, this);
+
+        mpLines.push_back(tempLine);
+        tempLine->setConnected();
+        tempLine->setPassive();
+        connect(tempLine,SIGNAL(lineSelected(bool, int)),this,SLOT(doSelect(bool, int)));
+        connect(tempLine,SIGNAL(lineMoved(int)),this, SLOT(updateLine(int)));
+        connect(tempLine,SIGNAL(lineHoverEnter()),this,SLOT(setHovered()));
+        connect(tempLine,SIGNAL(lineHoverLeave()),this,SLOT(setUnHovered()));
+    }
+
+    this->drawConnector();
+
+    //Make all lines selectable and all lines except first and last movable
+    for(int i=1; i!=mpLines.size()-1; ++i)
+        mpLines[i]->setFlag(QGraphicsItem::ItemIsMovable, true);
+    for(int i=0; i!=mpLines.size(); ++i)
+        mpLines[i]->setFlag(QGraphicsItem::ItemIsSelectable, true);
+
+    mpStartComponent->mpParentComponent->addConnector(this);
+    mpEndComponent->mpParentComponent->addConnector(this);
+}
+
 void Connector::addPoint(QPointF point)
 {
     //! @todo make it better
     mPoints.append(point);
-    if(getNumberOfLines() == 0 && (fabs(mpStartComponent->getRotateAngle()) == 0 || fabs(mpStartComponent->getRotateAngle()) == 180))
+    if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 0 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 180))
     {
         mGeometries.push_back(Connector::HORIZONTAL);
     }
-    else if(getNumberOfLines() == 0 && (fabs(mpStartComponent->getRotateAngle()) == 90 || fabs(mpStartComponent->getRotateAngle()) == 270))
+    else if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 90 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 270))
     {
         mGeometries.push_back(Connector::VERTICAL);
     }
@@ -84,12 +147,12 @@ void Connector::addPoint(QPointF point)
         drawConnector();
 }
 
-void Connector::setStartComponent(ComponentAnnotation *pComponent)
+void Connector::setStartComponent(Component *pComponent)
 {
     this->mpStartComponent = pComponent;
 }
 
-void Connector::setEndComponent(ComponentAnnotation *pCompoent)
+void Connector::setEndComponent(Component *pCompoent)
 {
     this->mEndComponentConnected = true;
     this->mpEndComponent = pCompoent;
@@ -120,12 +183,12 @@ Connector::geometryType Connector::getGeometry(int lineNumber)
     return mGeometries[lineNumber];
 }
 
-ComponentAnnotation* Connector::getStartComponent()
+Component* Connector::getStartComponent()
 {
     return mpStartComponent;
 }
 
-ComponentAnnotation* Connector::getEndComponent()
+Component* Connector::getEndComponent()
 {
     return mpEndComponent;
 }
@@ -144,6 +207,50 @@ ConnectorLine* Connector::getLine(int line)
 bool Connector::isActive()
 {
     return mIsActive;
+}
+
+void Connector::updateConnectionAnnotationString()
+{
+    // if no end component connected then just simply return;
+    if (!getEndComponent())
+        return;
+
+    // create the annotation string
+    QString annotationString = "annotate=Line(";
+
+    // add the line points to annotation string
+    QString pointsString;
+    QStringList pointsList;
+    annotationString.append("points={");
+    foreach (QPointF point, mPoints)
+    {
+        pointsString.append("{").append(QString::number(point.x())).append(",");
+        pointsString.append(QString::number(point.y())).append("}");
+        pointsList.append(pointsString);
+        pointsString.clear();
+    }
+    annotationString.append(pointsList.join(","));
+    annotationString.append("}");
+
+    //! @todo add the line color annotation
+    //! @todo add the line pattern annotation
+    //! @todo add the line thickness annotation
+    //! @todo add the line smooth annotation
+    //! @todo add the line arrow annotation
+    //! @todo add the line visible annotation
+
+    annotationString.append(")");
+
+    QString startIconName = getStartComponent()->getParentComponent()->getName();
+    QString startIconCompName = getStartComponent()->mpComponentProperties->getName();
+    QString endIconName = getEndComponent()->getParentComponent()->getName();
+    QString endIconCompName = getEndComponent()->mpComponentProperties->getName();
+    MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+    pMainWindow->mpOMCProxy->updateConnection(startIconName + "." + startIconCompName,
+                                              endIconName + "." + endIconCompName,
+                                              mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                              annotationString);
 }
 
 void Connector::drawConnector(bool isRotated)
@@ -188,7 +295,7 @@ void Connector::drawConnector(bool isRotated)
             updateStartPoint(getStartComponent()->mapToScene(getStartComponent()->boundingRect().center()));
             updateEndPoint(getEndComponent()->mapToScene(getEndComponent()->boundingRect().center()));
         }
-        else if (mpStartComponent->getParentIcon()->isSelected() && mpEndComponent->getParentIcon()->isSelected())
+        else if (mpStartComponent->getParentComponent()->isSelected() && mpEndComponent->getParentComponent()->isSelected())
         {
             //Both components and connector are selected, so move whole connector along with components
             moveAllPoints(getStartComponent()->mapToScene(getStartComponent()->boundingRect().center()).x()-mPoints[0].x(),
@@ -478,9 +585,8 @@ void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     // make the connector selected
     this->setSelected(true);
 
-    QMenu menu(mpParentConnector->mpParentGraphicsView);
+    QMenu menu(mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction->setText("Delete Connection");
-    mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction->setShortcut(QKeySequence::Delete);
     menu.addAction(mpParentConnector->mpParentGraphicsView->mpCancelConnectionAction);
     menu.exec(event->screenPos());
 }

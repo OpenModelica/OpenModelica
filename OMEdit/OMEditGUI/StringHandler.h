@@ -42,6 +42,7 @@ class StringHandler
 public:
     StringHandler();
     ~StringHandler();
+    enum IconType {ICON, DIAGRAM};
     enum ModelicaClasses {MODEL, CLASS, CONNECTOR, RECORD, BLOCK, FUNCTION, PACKAGE, PRIMITIVE, TYPE, PARAMETER,
                           CONSTANT, PROTECTED};
     static QString getModelicaClassType(int type);

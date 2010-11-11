@@ -34,22 +34,23 @@
 #ifndef ICONPROPERTIES_H
 #define ICONPROPERTIES_H
 
-#include "IconAnnotation.h"
+#include "Component.h"
 
-class IconAnnotation;
+class Component;
 
 class IconProperties : public QDialog
 {
     Q_OBJECT
 public:
-    IconProperties(IconAnnotation *icon, QWidget *parent = 0);
+    IconProperties(Component *pComponent, QWidget *pParent = 0);
     ~IconProperties();
     void setUpForm();
 
-    IconAnnotation *mpIconAnnotation;
+    Component *mpComponent;
 private:
     QList<QLineEdit*> mParameterTextBoxesList;
     QLabel *mpPropertiesHeading;
+    QLabel *mpPixmapLabel;
     QFrame *mHorizontalLine;
     QTabWidget *mpPropertiesTabWidget;
     QWidget *mpGeneralTab;

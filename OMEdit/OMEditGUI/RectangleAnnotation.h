@@ -35,7 +35,7 @@
 #define RECTANGLEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "IconAnnotation.h"
+#include "Component.h"
 
 class OMCProxy;
 
@@ -57,10 +57,12 @@ private:
     QList<QPointF> mExtent;
     qreal mCornerRadius;
 public:
-    RectangleAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
+    RectangleAnnotation(QString shape, Component *pParent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawRectangleAnnotaion(QPainter *painter);
+
+    Component *mpCompnent;
 };
 
 #endif // RECTANGLEANNOTATION_H

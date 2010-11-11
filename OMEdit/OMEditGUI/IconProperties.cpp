@@ -33,14 +33,14 @@
 
 #include "IconProperties.h"
 
-IconProperties::IconProperties(IconAnnotation *icon, QWidget *parent)
-    : QDialog(parent, Qt::WindowTitleHint)
+IconProperties::IconProperties(Component *pComponent, QWidget *pParent)
+    : QDialog(pParent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Component Properties"));
     setAttribute(Qt::WA_DeleteOnClose);
     setMinimumSize(400, 300);
     setModal(true);
-    mpIconAnnotation = icon;
+    mpComponent = pComponent;
 
     setUpForm();
 }
@@ -54,6 +54,24 @@ void IconProperties::setUpForm()
 {
     mpPropertiesHeading = new QLabel(tr("Properties"));
     mpPropertiesHeading->setFont(QFont("", Helper::headingFontSize));
+
+    mpPixmapLabel = new QLabel;
+    mpPixmapLabel->setObjectName(tr("componentPixmap"));
+    mpPixmapLabel->setMaximumSize(QSize(86, 86));
+    mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
+
+    ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
+    LibraryComponent *libraryComponent;
+    libraryComponent = pProjectTabs->mpParentMainWindow->mpLibrary->getLibraryComponentObject(mpComponent->getClassName());
+
+    if (libraryComponent)
+    {
+        mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
+    }
+
+    QHBoxLayout *horizontalLayout = new QHBoxLayout;
+    horizontalLayout->addWidget(mpPropertiesHeading);
+    horizontalLayout->addWidget(mpPixmapLabel);
 
     mHorizontalLine = new QFrame();
     mHorizontalLine->setFrameShape(QFrame::HLine);
@@ -75,9 +93,9 @@ void IconProperties::setUpForm()
     mpComponentGroup = new QGroupBox(tr("Component"));
     QGridLayout *gridComponentLayout = new QGridLayout;
     mpIconNameLabel = new QLabel(tr("Name:"));
-    mpIconNameTextBox = new QLineEdit(mpIconAnnotation->getName());
+    mpIconNameTextBox = new QLineEdit(mpComponent->getName());
     mpIconCommentLabel = new QLabel(tr("Comment:"));
-    mpIconCommentTextBox = new QLineEdit(mpIconAnnotation->getClassName());
+    mpIconCommentTextBox = new QLineEdit(mpComponent->getClassName());
     //mpIconCommentTextBox->setText(mpIconAnnotation->getComment());
     gridComponentLayout->addWidget(mpIconNameLabel, 0, 0);
     gridComponentLayout->addWidget(mpIconNameTextBox, 0, 1);
@@ -107,9 +125,9 @@ void IconProperties::setUpForm()
     QGridLayout *gridParametersLayout = new QGridLayout;
     gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
-    for (int i = 0 ; i < mpIconAnnotation->mpIconParametersList.size() ; i++)
+    for (int i = 0 ; i < mpComponent->mpIconParametersList.size() ; i++)
     {
-        IconParameters *iconParameter = mpIconAnnotation->mpIconParametersList.at(i);
+        IconParameters *iconParameter = mpComponent->mpIconParametersList.at(i);
 
         QLabel *parameterLabel = new QLabel;
         parameterLabel->setText(iconParameter->getName());
@@ -144,7 +162,7 @@ void IconProperties::setUpForm()
 
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addWidget(mpPropertiesHeading, 0, 0);
+    mainLayout->addLayout(horizontalLayout, 0, 0);
     mainLayout->addWidget(mHorizontalLine, 1, 0);
     mainLayout->addWidget(mpPropertiesTabWidget, 2, 0);
     mainLayout->addWidget(mpButtonBox, 3, 0);
@@ -155,30 +173,30 @@ void IconProperties::setUpForm()
 void IconProperties::updateIconProperties()
 {
     QString iconName = mpIconNameTextBox->text().trimmed();
-    ProjectTab *pProjectTab = mpIconAnnotation->mpGraphicsView->mpParentProjectTab;
+    ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
     MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
 
     // update the component name if it is changed
-    if (mpIconAnnotation->getName() != iconName)
+    if (mpComponent->getName() != iconName)
     {
-        if (!mpIconAnnotation->mpGraphicsView->checkIconName(iconName))
+        if (!mpComponent->mpGraphicsView->checkComponentName(iconName))
         {
             pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
                                                                GUIMessages::SAME_COMPONENT_NAME));
         }
         else
         {
-            if (mpIconAnnotation->mpOMCProxy->renameComponent(pProjectTab->mModelNameStructure,
-                                                              mpIconAnnotation->getName(),
+            if (mpComponent->mpOMCProxy->renameComponent(pProjectTab->mModelNameStructure,
+                                                              mpComponent->getName(),
                                                               mpIconNameTextBox->text().trimmed()))
             {
                 // if renameComponent command is successful update the component with new name
-                mpIconAnnotation->updateName(mpIconNameTextBox->text().trimmed());
+                mpComponent->updateName(mpIconNameTextBox->text().trimmed());
             }
             else
             {
                 // if renameComponent command is unsuccessful print the error message
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(mpIconAnnotation->mpOMCProxy->getResult());
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(mpComponent->mpOMCProxy->getResult());
             }
         }
     }
@@ -187,31 +205,31 @@ void IconProperties::updateIconProperties()
     QString parameterNewValueString;
 
     // update the parameter if it is changed
-    for (int i = 0 ; i < mpIconAnnotation->mpIconParametersList.size() ; i++)
+    for (int i = 0 ; i < mpComponent->mpIconParametersList.size() ; i++)
     {
-        IconParameters *iconParameter = mpIconAnnotation->mpIconParametersList.at(i);
+        IconParameters *iconParameter = mpComponent->mpIconParametersList.at(i);
 
         if (mParameterTextBoxesList.at(i)->text().isEmpty())
         {
-            mpIconAnnotation->mpOMCProxy->setParameterValue(mpIconAnnotation->getClassName(),
+            mpComponent->mpOMCProxy->setParameterValue(mpComponent->getClassName(),
                                                             iconParameter->getName(),
                                                             iconParameter->getDefaultValue());
 
             parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
             parameterNewValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getDefaultValue());
-            mpIconAnnotation->updateParameterValue(parameterOldValueString, parameterNewValueString);
+            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
             iconParameter->setValue(iconParameter->getDefaultValue());
 
         }
         else
         {
-            mpIconAnnotation->mpOMCProxy->setParameterValue(mpIconAnnotation->getClassName(),
+            mpComponent->mpOMCProxy->setParameterValue(mpComponent->getClassName(),
                                                             iconParameter->getName(),
                                                             mParameterTextBoxesList.at(i)->text().trimmed());
 
             parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
             parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
-            mpIconAnnotation->updateParameterValue(parameterOldValueString, parameterNewValueString);
+            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
             iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
         }
     }

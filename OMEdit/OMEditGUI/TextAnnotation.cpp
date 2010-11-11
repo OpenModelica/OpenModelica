@@ -33,8 +33,8 @@
 
 #include "TextAnnotation.h"
 
-TextAnnotation::TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
-    : ShapeAnnotation(parent)
+TextAnnotation::TextAnnotation(QString shape, Component *pParent)
+    : ShapeAnnotation(pParent), mpComponent(pParent)
 {
     // initialize the Line Patterns map.
     this->mLinePatternsMap.insert("None", Qt::NoPen);
@@ -77,7 +77,7 @@ TextAnnotation::TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *pare
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
     int index = 0;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
         mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
@@ -155,8 +155,8 @@ TextAnnotation::TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *pare
     index = index + 1;
     this->mTextString = StringHandler::removeFirstLastQuotes(list.at(index));
 
-    checkNameString(parent);
-    checkParameterString(parent);
+    checkNameString();
+    checkParameterString();
 
     // 16 item of the list contains the font size.
     index = index + 1;
@@ -173,7 +173,12 @@ TextAnnotation::TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *pare
         this->mFontName = "Tahoma";
     }
 
-    this->mDefaultFontSize = 25;
+    //if item is Diagram view then dont change the font value
+    if (mpComponent->mType == StringHandler::DIAGRAM)
+        this->mDefaultFontSize = 15;
+    else
+        this->mDefaultFontSize = 25;
+
 }
 
 QRectF TextAnnotation::boundingRect() const
@@ -186,7 +191,6 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPainterPath path;
     QPointF p1 = this->mExtent.at(0);
     QPointF p2 = this->mExtent.at(1);
 
@@ -244,43 +248,51 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     painter->drawText(rect, Qt::AlignCenter, this->mTextString, &rect);
 }
 
-void TextAnnotation::checkNameString(QGraphicsItem *item)
+void TextAnnotation::checkNameString()
 {
     if (this->mTextString.contains("%name"))
     {
-        if (dynamic_cast<IconAnnotation*>(item))
-            this->mTextString = (dynamic_cast<IconAnnotation*>(item))->getName();
-        else if (dynamic_cast<InheritanceAnnotation*>(item))
-            this->mTextString = (dynamic_cast<InheritanceAnnotation*>(item))->getParentIcon()->getName();
-        else if (dynamic_cast<ComponentAnnotation*>(item))
-            this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->getParentIcon()->getName();
+        // if it is a root item the get name
+        if (!mpComponent->mpParentComponent)
+            mTextString = mpComponent->getName();
+        else if (!mpComponent->mpComponentProperties)
+            mTextString = mpComponent->getRootParentComponent()->getName();
+        else if (mpComponent->mpComponentProperties)
+            mTextString = mpComponent->mpComponentProperties->getName();
+
+//        if (dynamic_cast<IconAnnotation*>(item))
+//            this->mTextString = (dynamic_cast<IconAnnotation*>(item))->getName();
+//        else if (dynamic_cast<InheritanceAnnotation*>(item))
+//            this->mTextString = (dynamic_cast<InheritanceAnnotation*>(item))->getParentIcon()->getName();
+//        else if (dynamic_cast<ComponentAnnotation*>(item))
+//        {
+//            if (dynamic_cast<ComponentAnnotation*>(item)->mIconType == StringHandler::ICON)
+//                this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->getParentIcon()->getName();
+//            else if (dynamic_cast<ComponentAnnotation*>(item)->mIconType == StringHandler::DIAGRAM)
+//                this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->mpComponentProperties->getName();
+//        }
     }
 }
 
-void TextAnnotation::checkParameterString(QGraphicsItem *item)
+void TextAnnotation::checkParameterString()
 {
-    IconAnnotation *iconAnnotation;
     QString parameterString;
 
-    if (dynamic_cast<IconAnnotation*>(item))
+    foreach (IconParameters *parameter, mpComponent->mpIconParametersList)
     {
-        iconAnnotation = (dynamic_cast<IconAnnotation*>(item));
-        foreach (IconParameters *parameter, iconAnnotation->mpIconParametersList)
+        // paramter can be in form R=%R
+        parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
+        if (parameterString == mTextString)
         {
-            // paramter can be in form R=%R
-            parameterString = QString(parameter->getName()).append("=%").append(parameter->getName());
-            if (parameterString == this->mTextString)
-            {
-                this->mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
-                break;
-            }
-            // paramter can be in form %R
-            parameterString = QString("%").append(parameter->getName());
-            if (parameterString == this->mTextString)
-            {
-                this->mTextString = QString(parameter->getDefaultValue());
-                break;
-            }
+            mTextString = QString(parameter->getName()).append("=").append(parameter->getDefaultValue());
+            break;
+        }
+        // paramter can be in form %R
+        parameterString = QString("%").append(parameter->getName());
+        if (parameterString == mTextString)
+        {
+            mTextString = QString(parameter->getDefaultValue());
+            break;
         }
     }
 }

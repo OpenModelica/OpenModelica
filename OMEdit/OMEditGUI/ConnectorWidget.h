@@ -43,34 +43,36 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "ComponentAnnotation.h"
+#include "Component.h"
 
 class ConnectorLine;
 class GraphicsView;
-class ComponentAnnotation;
+class Component;
 
 class Connector : public QGraphicsWidget
 {
     Q_OBJECT
 public:
-    Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, QGraphicsItem *parent = 0);
+    Connector(Component *pComponent, GraphicsView *pParentView, QGraphicsItem *pParent = 0);
+    Connector(Component *pStartPort, Component *pEndPort, GraphicsView *pParentView, QVector<QPointF> points,
+              QGraphicsItem *pParent = 0);
 
     enum geometryType {VERTICAL, HORIZONTAL, DIAGONAL};
     GraphicsView *mpParentGraphicsView;
 
     void addPoint(QPointF point);
-    void setStartComponent(ComponentAnnotation *pComponent);
-    void setEndComponent(ComponentAnnotation *pCompoent);
+    void setStartComponent(Component *pComponent);
+    void setEndComponent(Component *pCompoent);
     int getNumberOfLines();
     Connector::geometryType getGeometry(int lineNumber);
-    ComponentAnnotation* getStartComponent();
-    ComponentAnnotation* getEndComponent();
+    Component* getStartComponent();
+    Component* getEndComponent();
     ConnectorLine* getLine(int line);
     bool isActive();
 private:
     ConnectorLine *mpConnectorLine;
-    ComponentAnnotation *mpStartComponent;
-    ComponentAnnotation *mpEndComponent;
+    Component *mpStartComponent;
+    Component *mpEndComponent;
     QVector<ConnectorLine*> mpLines;
     QVector<QPointF> mPoints;
     QVector<geometryType> mGeometries;
@@ -90,6 +92,7 @@ public slots:
     void setHovered();
     void setUnHovered();
     void deleteMe();
+    void updateConnectionAnnotationString();
 };
 
 class ConnectorLine : public QObject, public QGraphicsLineItem

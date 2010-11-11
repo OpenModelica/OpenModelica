@@ -49,21 +49,24 @@
 #include <QVBoxLayout>
 #include <QListWidgetItem>
 #include <QStringList>
+#include <QSvgGenerator>
+#include <QSvgRenderer>
 
 #include "mainwindow.h"
 #include "StringHandler.h"
-#include "Components.h"
 
 class MainWindow;
+class Component;
 class OMCProxy;
 class LibraryWidget;
 class ModelicaTree;
+class LibraryComponent;
 
 class ModelicaTreeNode : public QTreeWidgetItem
 {
 public:
     ModelicaTreeNode(QString text, QString tooltip, int type, QTreeWidget *parent = 0);
-    ~ModelicaTreeNode();
+    QIcon getModelicaNodeIcon(int type);
 
     int mType;
     QString mName;
@@ -97,38 +100,74 @@ public slots:
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
 };
 
+class LibraryTree : public QTreeWidget
+{
+    Q_OBJECT
+private:
+    QList<QString> mTreeList;
+
+    QAction *mShowComponentAction;
+    QAction *mViewDocumentationAction;
+
+public:
+    LibraryTree(LibraryWidget *pParent = 0);
+    ~LibraryTree();
+    void createActions();
+    void addModelicaStandardLibrary();
+    void loadModelicaLibraryHierarchy(QString value, QString prefixStr=QString());
+    void addClass(QString className, QString parentClassName=QString(), QString parentStructure=QString(), bool hasIcon=false);
+    bool isTreeItemLoaded(QTreeWidgetItem *item);
+
+    LibraryWidget *mpParentLibraryWidget;
+private slots:
+    void showLib(QTreeWidgetItem *item);
+    void showContextMenu(QPoint point);
+    void showComponent();
+    void viewDocumentation();
+protected:
+    virtual void mousePressEvent(QMouseEvent *event);
+};
+
 class LibraryWidget : public QWidget
 {
     Q_OBJECT
 public:
-    QTreeWidget *mpProjectsTree;
+    LibraryTree *mpLibraryTree;
     ModelicaTree *mpModelicaTree;
+    QTabWidget *mpLibraryTabs;
     //Member functions
     LibraryWidget(MainWindow *parent = 0);
-    void addModelicaStandardLibrary();
-    void loadModelicaLibraryHierarchy(QString value, QString prefixStr=QString());
-    void addClass(QString className, QString parentClassName=QString(), QString parentStructure=QString(), bool hasIcon=false);
-    void loadModel(QString path);
+    ~LibraryWidget();
     void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
-    void removeProject();
-    bool isTreeItemLoaded(QTreeWidgetItem *item);
-    void addGlobalIconObject(IconAnnotation* icon);
-    IconAnnotation* getGlobalIconObject(QString className);
+    void loadModel(QString path, QStringList modelsList);
+    void addComponentObject(LibraryComponent *libraryComponent);
+    Component* getComponentObject(QString className);
+    LibraryComponent* getLibraryComponentObject(QString className);
     void updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node = 0);
 
     MainWindow *mpParentMainWindow;
     ModelicaTreeNode *mSelectedModelicaNode;
+    QTreeWidgetItem *mSelectedLibraryNode;
 signals:
     void addModelicaTreeNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
-private slots:
-    void showLib(QTreeWidgetItem *item);
 private:
     //Member variables
-    QTreeWidget *mpTree;
     QVBoxLayout *mpGrid;
-    QList<QString> mTreeList;
-    QList<IconAnnotation*> mGlobalIconsList;
+    QList<LibraryComponent*> mComponentsList;
+};
+
+class LibraryComponent
+{
+public:
+    LibraryComponent(QString value, QString className, OMCProxy *omc);
+    ~LibraryComponent();
+    void generateSvg(QPainter *painter, Component *pComponent);
+    QPixmap getComponentPixmap(QSize size);
+
+    QString mClassName;
+    QByteArray mSvgByteArray;
+    Component *mpComponent;
 };
 
 #endif // LIBRARYWIDGET_H

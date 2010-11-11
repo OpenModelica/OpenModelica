@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += network xml core gui opengl
+QT += network xml core gui opengl webkit svg
 
 TARGET = OMEdit
 TEMPLATE = app
@@ -27,13 +27,9 @@ SOURCES += main.cpp\
     RectangleAnnotation.cpp \
     EllipseAnnotation.cpp \
     TextAnnotation.cpp \
-    IconAnnotation.cpp \
-    InheritanceAnnotation.cpp \
-    ComponentAnnotation.cpp \
     ComponentsProperties.cpp \
     CornerItem.cpp \
     ConnectorWidget.cpp \
-    Components.cpp \
     PlotWidget.cpp \
     ModelicaEditor.cpp \
     ../3Dpkg/VisualizationWidget.cpp \
@@ -52,7 +48,10 @@ SOURCES += main.cpp\
     ../Pltpkg2/compoundWidget.cpp \
     IconParameters.cpp \
     SimulationWidget.cpp \
-    IconProperties.cpp
+    IconProperties.cpp \
+    Component.cpp \
+    Transformation.cpp \
+    DocumentationWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -71,13 +70,9 @@ HEADERS  += mainwindow.h \
     RectangleAnnotation.h \
     EllipseAnnotation.h \
     TextAnnotation.h \
-    IconAnnotation.h \
-    InheritanceAnnotation.h \
-    ComponentAnnotation.h \
     ComponentsProperties.h \
     CornerItem.h \
     ConnectorWidget.h \
-    Components.h \
     PlotWidget.h \
     ModelicaEditor.h \
     ../3Dpkg/VisualizationWidget.h \
@@ -100,7 +95,10 @@ HEADERS  += mainwindow.h \
     ../Pltpkg2/compoundWidget.h \
     IconParameters.h \
     SimulationWidget.h \
-    IconProperties.h
+    IconProperties.h \
+    Component.h \
+    Transformation.h \
+    DocumentationWidget.h
 
 # -------For OMNIorb
 win32 {

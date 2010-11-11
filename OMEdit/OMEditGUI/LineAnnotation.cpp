@@ -33,8 +33,8 @@
 
 #include "LineAnnotation.h"
 
-LineAnnotation::LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
-    : ShapeAnnotation(parent)
+LineAnnotation::LineAnnotation(QString shape, Component *pParent)
+    : ShapeAnnotation(pParent), mpComponent(pParent)
 {
     // initialize the Line Patterns map.
     this->mLinePatternsMap.insert("None", Qt::NoPen);
@@ -55,7 +55,7 @@ LineAnnotation::LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *pare
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
     int index = 0;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
         mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
@@ -123,11 +123,11 @@ LineAnnotation::LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *pare
 
     // eighth item of list contains the smooth.
     index = index + 1;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
     }
-    else if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    else if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
     {
         this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
     }
@@ -143,34 +143,14 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPainterPath path;
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
-
-    if (this->mPoints.size() > 0)
-    {
-        for (int i = 0 ; i < this->mPoints.size() ; i++)
-        {
-            QPointF p1 = this->mPoints.at(i);
-            if (i == 0)
-                path.moveTo(p1.x(), p1.y());
-            if (this->mSmooth)
-            {
-
-            }
-            else
-            {
-                path.lineTo(p1.x(), p1.y());
-            }
-        }
-        painter->drawPath(path);
-        painter->strokePath(path, this->mLineColor);
-    }
+    drawLineAnnotaion(painter);
 }
 
 void LineAnnotation::drawLineAnnotaion(QPainter *painter)
 {
     QPainterPath path;
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+    //painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
 
     if (this->mPoints.size() > 0)
     {
@@ -179,6 +159,8 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
             QPointF p1 = this->mPoints.at(i);
             if (i == 0)
                 path.moveTo(p1.x(), p1.y());
+
+            //! @todo add the support for splines..........
             if (this->mSmooth)
             {
 
@@ -188,7 +170,6 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
                 path.lineTo(p1.x(), p1.y());
             }
         }
-        painter->drawPath(path);
         painter->strokePath(path, this->mLineColor);
     }
 }

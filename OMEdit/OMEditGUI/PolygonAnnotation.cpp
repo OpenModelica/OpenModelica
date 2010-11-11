@@ -33,8 +33,8 @@
 
 #include "PolygonAnnotation.h"
 
-PolygonAnnotation::PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
-    : ShapeAnnotation(parent)
+PolygonAnnotation::PolygonAnnotation(QString shape, Component *pParent)
+    : ShapeAnnotation(pParent), mpComponent(pParent)
 {
     // initialize the Line Patterns map.
     this->mLinePatternsMap.insert("None", Qt::NoPen);
@@ -68,7 +68,7 @@ PolygonAnnotation::PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
     int index = 0;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
         mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
@@ -151,11 +151,11 @@ PolygonAnnotation::PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem
 
     // eighth item of the list contains the corner radius.
     index = index + 1;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
     }
-    else if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    else if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
     {
         this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
     }
@@ -171,28 +171,7 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPainterPath path;
-
-    switch (this->mFillPattern)
-    {
-    case Qt::LinearGradientPattern:
-    case Qt::Dense1Pattern:
-    case Qt::RadialGradientPattern:
-        painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
-            break;
-    default:
-        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
-        break;
-    }
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
-
-    QVector<QPointF> points;
-    for (int i = 0 ; i < this->mPoints.size() ; i ++)
-        points.append(this->mPoints.at(i));
-
-    path.addPolygon(QPolygonF(points));
-    painter->drawPath(path);
-    painter->strokePath(path, this->mLineColor);
+    drawPolygonAnnotaion(painter);
 }
 
 void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
@@ -210,7 +189,7 @@ void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
         painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
         break;
     }
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
 
     QVector<QPointF> points;
     for (int i = 0 ; i < this->mPoints.size() ; i ++)

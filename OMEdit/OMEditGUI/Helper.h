@@ -48,8 +48,12 @@ public:
     static QString omcServerName;
     static QString omFileTypes;
     static QString omFileOpenText;
-    static qreal globalXScale;
-    static qreal globalYScale;
+    static int viewWidth;
+    static int viewHeight;
+    static qreal globalIconXScale;
+    static qreal globalIconYScale;
+    static qreal globalDiagramXScale;
+    static qreal globalDiagramYScale;
     static QString ModelicaSimulationMethods;
     static int treeIndentation;
     static QSize iconSize;
@@ -78,7 +82,11 @@ public:
         INCOMPATIBLE_CONNECTORS,
         SAVE_CHANGES,
         DELETE_FAIL,
-        ONLY_MODEL_ALLOWED
+        ONLY_MODEL_ALLOWED,
+        UNABLE_TO_LOAD_FILE,
+        DELETE_AND_LOAD,
+        REDEFING_EXISTING_MODELS,
+        INVALID_COMPONENT_ANNOTATIONS
     };
 
     static QString getMessage(int type);

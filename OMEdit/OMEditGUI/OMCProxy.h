@@ -59,9 +59,14 @@ private:
     QPushButton *mpSendButton;
     QTextEdit *mpTextEdit;
     QString mObjectRefFile;
+    QList<QString> mCommandsList;
 public:
     OMCProxy(MainWindow *pParent = 0);
     ~OMCProxy();
+    virtual bool eventFilter(QObject *object, QEvent *event);
+    void getPreviousCommand();
+    void getNextCommand();
+
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};
     int mAnnotationVersion;
@@ -84,22 +89,27 @@ public:
     QString getEnvironmentVar(QString name);
     void loadStandardLibrary();
     bool isStandardLibraryLoaded();
-    QStringList getClassNames(QString className);
+    QStringList getClassNames(QString className = QString());
     QStringList getPackages(QString packageName);
     bool isPackage(QString className);
     bool isWhat(int type, QString className);
+    int getClassRestriction(QString modelName);
     QList<IconParameters*> getParameters(QString className);
     QStringList getParameterNames(QString className);
     QString getParameterValue(QString className, QString parameter);
     bool setParameterValue(QString className, QString parameter, QString value);
     QString getIconAnnotation(QString className);
     QString getDiagramAnnotation(QString className);
+    int getConnectionCount(QString className);
+    QString getNthConnection(QString className, int num);
+    QString getNthConnectionAnnotation(QString className, int num);
     int getInheritanceCount(QString className);
     QString getNthInheritedClass(QString className, int num);
     QList<ComponentsProperties*> getComponents(QString className);
     QStringList getComponentAnnotations(QString className);
+    QString getDocumentationAnnotation(QString className);
     QString changeDirectory(QString directory);
-    QString loadFile(QString fileName);
+    bool loadFile(QString fileName);
     bool createClass(QString type, QString className);
     bool createSubClass(QString type, QString className, QString parentClassName);
     bool updateSubClass(QString parentClassName, QString modelText);
@@ -118,6 +128,7 @@ public:
     bool deleteComponent(QString name, QString modelName);
     bool renameComponent(QString modelName, QString oldName, QString newName);
     bool updateComponent(QString name, QString className, QString modelName, QString annotation);
+    bool updateConnection(QString from, QString to, QString modelName, QString annotation);
     bool addConnection(QString from, QString to, QString className);
     bool deleteConnection(QString from, QString to, QString className);
     bool instantiateModel(QString modelName);

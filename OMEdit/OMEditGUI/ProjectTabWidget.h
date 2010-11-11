@@ -46,14 +46,13 @@
 #include <QTabWidget>
 #include <map>
 
-#include "IconAnnotation.h"
-#include "ComponentAnnotation.h"
+#include "Component.h"
 #include "ConnectorWidget.h"
 #include "StringHandler.h"
 #include "ModelicaEditor.h"
 
 class ProjectTab;
-class IconAnnotation;
+class Component;
 class ComponentAnnotation;
 class Connector;
 
@@ -70,17 +69,18 @@ class GraphicsView : public QGraphicsView
     Q_OBJECT
 private:
     Connector *mpConnector;
-    QList<IconAnnotation*> mIconsList;
     void createActions();
     void createMenus();
 public:
     GraphicsView(ProjectTab *parent = 0);
     Connector *getConnector();
-    void addIconObject(IconAnnotation* icon);
-    void deleteIconObject(IconAnnotation* icon);
-    QString getUniqueIconName(QString iconName, int number = 1);
-    bool checkIconName(QString iconName);
+    void addComponentObject(Component *icon);
+    void deleteComponentObject(Component *icon);
+    Component* getComponentObject(QString componentName);
+    QString getUniqueComponentName(QString iconName, int number = 1);
+    bool checkComponentName(QString iconName);
 
+    QList<Component*> mComponentsList;
     bool mIsCreatingConnector;
     QVector<Connector *> mConnectorVector;
     ProjectTab *mpParentProjectTab;
@@ -98,7 +98,7 @@ signals:
     void keyPressRotateClockwise();
     void keyPressRotateAntiClockwise();
 public slots:
-    void addConnector(ComponentAnnotation *pComponent);
+    void addConnector(Component *pComponent);
     void removeConnector();
     void removeConnector(Connector* pConnector);
     void resetZoom();
@@ -137,10 +137,11 @@ private:
     QPushButton *mpModelicaModelButton;
     QPushButton *mpModelicaTextButton;
     ModelicaEditor *mpModelicaEditor;
-    GraphicsViewScroll *mpViewScrollArea;
     QList<ProjectTab*> mChildModelsList;
+    bool mReadOnly;
 public:
     ProjectTab(ProjectTabWidget *parent = 0);
+    ProjectTab(bool diagram, ProjectTabWidget *parent = 0);
     void updateTabName(QString name, QString nameStructure);
     //ProjectTab* getChild();
     void addChildModel(ProjectTab *model);
@@ -148,24 +149,32 @@ public:
     bool loadModelFromText(QString name);
     bool loadRootModel(QString model);
     bool loadSubModel(QString model);
+    void getModelComponents();
+    void getModelConnections();
+    void setReadOnly(bool readOnly);
+    bool isReadOnly();
 
     ProjectTab *mpParentModel;
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;
     GraphicsScene *mpGraphicsScene;
+    GraphicsViewScroll *mpViewScrollArea;
     QString mModelFileName;
     QString mModelName;
     QString mModelNameStructure;
     int mType;
+    int mIconType;
     bool mIsSaved;
     int mTabPosition;
 signals:
     void disableMainWindow(bool disable);
+    void updateAnnotations();
 public slots:
     void hasChanged();
     void showModelicaModel();
     void showModelicaText();
     bool ModelicaEditorTextChanged();
+    void updateModelAnnotations();
 };
 
 class MainWindow;
@@ -179,6 +188,7 @@ public:
     int addTab(ProjectTab *tab, QString tabName);
     void removeTab(int index);
     void disableTabs(bool disable);
+    void setSourceFile(QString modelName, QString modelFileName);
 
     MainWindow *mpParentMainWindow;
     bool mShowLines;
@@ -187,15 +197,16 @@ signals:
     void tabAdded();
     void tabRemoved();
 public slots:
-    void addProjectTab(ProjectTab *projectTab, QString modelName, int type);
+    void addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure, int type);
     void addNewProjectTab(QString modelName, QString modelStructure, int type);
+    void addDiagramViewTab(QTreeWidgetItem *item, int column);
     void saveProjectTab();
     void saveProjectTabAs();
     void saveProjectTab(int index, bool saveAs);
     bool saveModel(bool saveAs);
     bool closeProjectTab(int index);
     bool closeAllProjectTabs();
-    void loadModel();
+    void openModel();
     void resetZoom();
     void zoomIn();
     void zoomOut();

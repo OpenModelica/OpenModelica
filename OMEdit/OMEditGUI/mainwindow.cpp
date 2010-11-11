@@ -86,14 +86,14 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // Set the annotations version to 3.x
     if (!mExitApplication)
     {
-        mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION2X);
+        //mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION2X);
     }
     // Loads and adds the OM Standard Library into the Library Widget.
     splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
     // If there is an error while starting OMC then dont load the MSL
     if (!mExitApplication)
     {
-        mpLibrary->addModelicaStandardLibrary();
+        mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
     }
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
@@ -111,6 +111,14 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     plotdock->setWidget(mpPlotWidget);
     addDockWidget(Qt::RightDockWidgetArea, plotdock);
     plotdock->hide();
+
+    documentationdock = new QDockWidget(tr(" Documentation"), this);
+    documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    documentationdock->setContentsMargins(0, 1, 1, 1);
+    mpDocumentationWidget = new DocumentationWidget(this);
+    documentationdock->setWidget(mpDocumentationWidget);
+    addDockWidget(Qt::RightDockWidgetArea, documentationdock);
+    documentationdock->hide();
 
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
@@ -150,6 +158,7 @@ MainWindow::~MainWindow()
     delete menubar;
     delete statusBar;
     delete mpModelCreator;
+    delete mpLibrary;
 }
 
 //! Event triggered re-implemented method that closes the main window.
@@ -266,6 +275,10 @@ void MainWindow::createActions()
     plotAction = plotdock->toggleViewAction();
     plotAction->setIcon(QIcon(":/Resources/icons/plot.png"));
     plotAction->setText(tr("Plot Variables"));
+
+    documentationAction = documentationdock->toggleViewAction();
+    documentationAction->setIcon(QIcon(":/Resources/icons/plot.png"));
+    documentationAction->setText(tr("View Documentation"));
 }
 
 //! Creates the menus
@@ -312,12 +325,12 @@ void MainWindow::createMenus()
     menuFile->addAction(openAction);
     menuFile->addAction(saveAction);
     menuFile->addAction(saveAsAction);
-    menuFile->addAction(saveAllAction);
+    //menuFile->addAction(saveAllAction);
     menuFile->addSeparator();
     menuFile->addAction(closeAction);
 
-    menuEdit->addAction(undoAction);
-    menuEdit->addAction(redoAction);
+    //menuEdit->addAction(undoAction);
+    //menuEdit->addAction(redoAction);
     menuEdit->addSeparator();
     menuEdit->addAction(cutAction);
     menuEdit->addAction(copyAction);
@@ -332,6 +345,7 @@ void MainWindow::createMenus()
     menuView->addAction(messageAction);
     menuView->addAction(fileToolBar->toggleViewAction());
     menuView->addAction(editToolBar->toggleViewAction());
+    menuView->addAction(documentationAction);
     menuView->addSeparator();
     menuView->addAction(gridLinesAction);
     menuView->addAction(resetZoomAction);
@@ -376,12 +390,12 @@ void MainWindow::createToolbars()
     fileToolBar->addAction(openAction);
     fileToolBar->addAction(saveAction);
     fileToolBar->addAction(saveAsAction);
-    fileToolBar->addAction(saveAllAction);
+    //fileToolBar->addAction(saveAllAction);
 
     editToolBar = addToolBar(tr("Clipboard Toolbar"));
     editToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    editToolBar->addAction(undoAction);
-    editToolBar->addAction(redoAction);
+    //editToolBar->addAction(undoAction);
+    //editToolBar->addAction(redoAction);
     editToolBar->addAction(cutAction);
     editToolBar->addAction(copyAction);
     editToolBar->addAction(pasteAction);
@@ -510,6 +524,7 @@ void MainWindow::disableMainWindow(bool disable)
     mpProjectTabs->disableTabs(disable);
     mpMessageWidget->setDisabled(disable);
     mpPlotWidget->setDisabled(disable);
+    mpDocumentationWidget->setDisabled(disable);
 }
 
 /*

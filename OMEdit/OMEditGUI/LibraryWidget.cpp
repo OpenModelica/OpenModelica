@@ -53,11 +53,28 @@ ModelicaTreeNode::ModelicaTreeNode(QString text, QString tooltip, int type, QTre
 
     setText(0, mName);
     setToolTip(0, mNameStructure);
+    setIcon(0, getModelicaNodeIcon(mType));
 }
 
-ModelicaTreeNode::~ModelicaTreeNode()
+QIcon ModelicaTreeNode::getModelicaNodeIcon(int type)
 {
-
+    switch (type)
+    {
+    case StringHandler::MODEL:
+        return QIcon(":/Resources/icons/model-icon.png");
+    case StringHandler::CLASS:
+        return QIcon(":/Resources/icons/class-icon.png");
+    case StringHandler::CONNECTOR:
+        return QIcon(":/Resources/icons/connector-icon.png");
+    case StringHandler::RECORD:
+        return QIcon(":/Resources/icons/record-icon.png");
+    case StringHandler::BLOCK:
+        return QIcon(":/Resources/icons/block-icon.png");
+    case StringHandler::FUNCTION:
+        return QIcon(":/Resources/icons/function-icon.png");
+    case StringHandler::PACKAGE:
+        return QIcon(":/Resources/icons/package-icon.png");
+    }
 }
 
 ModelicaTree::ModelicaTree(LibraryWidget *parent)
@@ -65,7 +82,9 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
 {
     mpParentLibraryWidget = parent;
 
+    setFrameShape(QFrame::NoFrame);
     setHeaderLabel(tr("Modelica Files"));
+    setIconSize(Helper::iconSize);
     setColumnCount(1);
     setIndentation(Helper::treeIndentation);
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -81,7 +100,9 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
 
 ModelicaTree::~ModelicaTree()
 {
-
+    // delete all the items in the tree
+    for (int i = 0; i < topLevelItemCount(); ++i)
+        qDeleteAll(topLevelItem(i)->takeChildren());
 }
 
 void ModelicaTree::createActions()
@@ -115,14 +136,7 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
     for (int i = 0 ; i < count ; i++)
     {
         ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item->child(i));
-        pCurrentTab = pMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
-        if (pCurrentTab)
-        {
-            pMainWindow->mpProjectTabs->removeTab(pCurrentTab->mTabPosition);
-            emit nodeDeleted();
-        }
-        // Delete the node from list as well
-        mModelicaTreeNodesList.removeOne(treeNode);
+        deleteNode(treeNode);
     }
     // Delete the node from list as well
     mModelicaTreeNodesList.removeOne(item);
@@ -134,9 +148,7 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
         emit nodeDeleted();
     }
     // Delete the complete tree node now
-    if (item->childCount())
-        qDeleteAll(item->takeChildren());
-    delete item;
+    //delete item;
 }
 
 void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure)
@@ -171,11 +183,12 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
         isFound = true;
     }
-    // if the tab is closed by user then reopen it and set is current tab
+    // if the tab is closed by user then reopen it and set it as current tab
     if (!isFound)
     {
         //! @todo make it better load the model here and get the components required.
-        //pMainWindow->mpProjectTabs->addProjectTab(new ProjectTab(pMainWindow->mpProjectTabs), "model1234");
+        ProjectTab *newTab = new ProjectTab(pMainWindow->mpProjectTabs);
+        pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure, treeNode->mType);
     }
 }
 
@@ -199,10 +212,10 @@ void ModelicaTree::showContextMenu(QPoint point)
 
 void ModelicaTree::renameClass()
 {
-    RenameClassWidget *renameWidget = new RenameClassWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
-                                                            mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
-                                                            mpParentLibraryWidget->mpParentMainWindow);
-    renameWidget->show();
+    RenameClassWidget *widget = new RenameClassWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
+                                                      mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
+                                                      mpParentLibraryWidget->mpParentMainWindow);
+    widget->show();
 }
 
 void ModelicaTree::checkClass()
@@ -254,8 +267,13 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
 
     if (pMainWindow->mpOMCProxy->deleteClass(treeNode->mNameStructure))
     {
+        // print the message before deleting node,
+        // because after delete node is not available to print message :)
         pMainWindow->mpMessageWidget->printGUIInfoMessage(treeNode->mName + " deleted successfully.");
         deleteNode(treeNode);
+        if (treeNode->childCount())
+            qDeleteAll(treeNode->takeChildren());
+        delete treeNode;
         return true;
     }
     else
@@ -267,45 +285,53 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
     }
 }
 
-//! Constructor.
-//! @param parent defines a parent to the new instanced object.
-LibraryWidget::LibraryWidget(MainWindow *parent)
-    : QWidget(parent)
+LibraryTree::LibraryTree(LibraryWidget *pParent)
+    : QTreeWidget(pParent)
 {
-    mpParentMainWindow = parent;
+    mpParentLibraryWidget = pParent;
 
-    mpTree = new QTreeWidget(this);
-    mpTree->setHeaderLabel(tr("Modelica Standard Library"));
-    mpTree->setIndentation(Helper::treeIndentation);
-    mpTree->setDragEnabled(true);
-    mpTree->setIconSize(Helper::iconSize);
-    mpTree->setColumnCount(1);
-    mpTree->setExpandsOnDoubleClick(false);
+    setFrameShape(QFrame::NoFrame);
+    setHeaderLabel(tr("Modelica Standard Library"));
+    setIndentation(Helper::treeIndentation);
+    setDragEnabled(true);
+    setIconSize(Helper::iconSize);
+    setColumnCount(1);
+    setExpandsOnDoubleClick(false);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    createActions();
 
-    mpModelicaTree = new ModelicaTree(this);
+    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
+    connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+}
 
-    mpGrid = new QVBoxLayout(this);
-    mpGrid->setContentsMargins(0, 0, 0, 0);
-    mpGrid->addWidget(mpTree);
-    mpGrid->addWidget(mpModelicaTree);
+LibraryTree::~LibraryTree()
+{
+    // delete all the items in the tree
+    for (int i = 0; i < topLevelItemCount(); ++i)
+        qDeleteAll(topLevelItem(i)->takeChildren());
+}
 
-    setLayout(mpGrid);
+void LibraryTree::createActions()
+{
+    mShowComponentAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Show Component"), this);
+    connect(mShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
 
-    connect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
+    mViewDocumentationAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("View Documentation"), this);
+    connect(mViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
-void LibraryWidget::addModelicaStandardLibrary()
+void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
-    this->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
-    if (this->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
+    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
+    if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
         QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
         newTreePost->setText(0, QString("Modelica"));
         newTreePost->setToolTip(0, QString("Modelica"));
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-        this->mpTree->insertTopLevelItem(0, newTreePost);
+        insertTopLevelItem(0, newTreePost);
 //        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
 //        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
     }
@@ -314,15 +340,15 @@ void LibraryWidget::addModelicaStandardLibrary()
 //! Adds a whole tree structure hierarchy of OM Standard library to the library widget.
 //! @param value is the name of the class.
 //! @param prefixstr is the name of the parent hierarchy of the class.
-void LibraryWidget::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
+void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
 {
-    if (this->mpParentMainWindow->mpOMCProxy->isPackage(value))
+    if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isPackage(value))
     {
-        QStringList list = this->mpParentMainWindow->mpOMCProxy->getClassNames(value);
+        QStringList list = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames(value);
         prefixStr += value + ".";
         foreach (QString str, list)
         {
-            addClass(str, StringHandler::getSubStringFromDots(prefixStr), prefixStr, false);
+            addClass(str, StringHandler::getSubStringFromDots(prefixStr), prefixStr, true);
         }
     }
 
@@ -356,15 +382,17 @@ void LibraryWidget::loadModelicaLibraryHierarchy(QString value, QString prefixSt
 //! @param parentClassName is the name of the parent OM Class where the OM Class should be added.
 //! @param parentStructure is the name of the parent hierarchy of the OM Class where, used as a tooltip.
 //! @param hasIcon is the boolean value indicating whether the class has IconAnnotation or not.
-void LibraryWidget::addClass(QString className, QString parentClassName, QString parentStructure, bool hasIcon)
+void LibraryTree::addClass(QString className, QString parentClassName, QString parentStructure, bool hasIcon)
 {
-    mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(parentStructure + className));
+    mpParentLibraryWidget->mpParentMainWindow->statusBar->showMessage(QString("Loading: ")
+                                                                      .append(parentStructure + className));
     QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
     newTreePost->setText(0, QString(className));
     newTreePost->setToolTip(0, QString(parentStructure + className));
+
     // If Loaded class is package show treewidgetitem expand indicator
     // Remove if using load once library feature
-    if (mpParentMainWindow->mpOMCProxy->isPackage(parentStructure + className))
+    if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure + className))
     {
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         hasIcon = false;
@@ -372,19 +400,22 @@ void LibraryWidget::addClass(QString className, QString parentClassName, QString
 
     if (hasIcon)
     {
-        QString result = mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure + className);
-        Components *component = new Components(result, parentStructure + className, mpParentMainWindow->mpOMCProxy);
-        newTreePost->setIcon(0, QIcon(component->getIcon()));
-        addGlobalIconObject(component->mpIcon);
+        QString result;
+        result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure + className);
+        LibraryComponent *libComponent = new LibraryComponent(result, parentStructure + className,
+                                                              mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
+
+        newTreePost->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+        mpParentLibraryWidget->addComponentObject(libComponent);
     }
 
     if (parentClassName.isEmpty())
     {
-        mpTree->insertTopLevelItem(0, newTreePost);
+        insertTopLevelItem(0, newTreePost);
     }
     else
     {
-        QTreeWidgetItemIterator it(mpTree);
+        QTreeWidgetItemIterator it(this);
         while (*it)
         {
             if ((*it)->toolTip(0) == StringHandler::removeLastDot(parentStructure))
@@ -396,61 +427,19 @@ void LibraryWidget::addClass(QString className, QString parentClassName, QString
     }
 }
 
-void LibraryWidget::loadModel(QString fileName)
+bool LibraryTree::isTreeItemLoaded(QTreeWidgetItem *item)
 {
-    // load the file in OMC
-    this->mpParentMainWindow->mpOMCProxy->loadFile(fileName);
-
-    QStringList classesList = this->mpParentMainWindow->mpOMCProxy->getClassNames(tr(""));
-
-    foreach (QString model, classesList)
-    {
-        // if model is Modelica skip it.
-        if (model != tr("Modelica"))
-        {
-            this->addModelFiles(model, tr(""), tr(""));
-        }
-    }
-}
-
-void LibraryWidget::addModelicaNode(QString name, int type, QString parentName, QString parentStructure)
-{
-    emit addModelicaTreeNode(name, type, parentName, parentStructure);
-}
-
-void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QString parentStructure)
-{
-    if (parentFileName.isEmpty())
-        this->addModelicaNode(fileName, 1, parentFileName, parentStructure);
-    else
-    {
-        this->addModelicaNode(fileName, 1, parentFileName, parentStructure + tr("."));
-        fileName = parentFileName + tr(".") + fileName;
-    }
-
-    if (this->mpParentMainWindow->mpOMCProxy->isPackage(fileName))
-    {
-        QStringList classesList = this->mpParentMainWindow->mpOMCProxy->getClassNames(fileName);
-        foreach (QString file, classesList)
-        {
-            addModelFiles(file, fileName, fileName);
-        }
-    }
-}
-
-void LibraryWidget::removeProject()
-{
-    QTreeWidgetItem *newTreePost = mpProjectsTree->topLevelItem(0);
-    //mpProjectsTree->removeItemWidget(newTreePost, 0);
-    // delete the tree widget item because removeItemWidget will only remove it dont delete it.
-    delete newTreePost;
+    foreach (QString str, mTreeList)
+        if (str == item->toolTip(0))
+            return false;
+    return true;
 }
 
 //! Makes a library visible.
 //! @param item is the library to show.
 //! @param column is the position of the library name in the tree.
 //! @see hideAllLib()
-void LibraryWidget::showLib(QTreeWidgetItem *item)
+void LibraryTree::showLib(QTreeWidgetItem *item)
 {
     if (isTreeItemLoaded(item))
     {
@@ -459,7 +448,7 @@ void LibraryWidget::showLib(QTreeWidgetItem *item)
         setCursor(Qt::WaitCursor);
         loadModelicaLibraryHierarchy(item->toolTip(0));
         item->setExpanded(true);
-        this->mpParentMainWindow->statusBar->clearMessage();
+        mpParentLibraryWidget->mpParentMainWindow->statusBar->clearMessage();
         // Remove the wait cursor
         unsetCursor();
     }
@@ -483,27 +472,174 @@ void LibraryWidget::showLib(QTreeWidgetItem *item)
 //    unsetCursor();
 }
 
-bool LibraryWidget::isTreeItemLoaded(QTreeWidgetItem *item)
+void LibraryTree::showContextMenu(QPoint point)
 {
-    foreach (QString str, mTreeList)
-        if (str == item->toolTip(0))
-            return false;
-    return true;
-}
+    int adjust = 24;
+    QTreeWidgetItem *item = 0;
+    item = itemAt(point);
 
-void LibraryWidget::addGlobalIconObject(IconAnnotation *icon)
-{
-    mGlobalIconsList.append(icon);
-}
-
-IconAnnotation* LibraryWidget::getGlobalIconObject(QString className)
-{
-    foreach (IconAnnotation* icon, mGlobalIconsList)
+    if (item)
     {
-        if (icon->getClassName() == className)
-            return icon;
+        mpParentLibraryWidget->mSelectedLibraryNode = item;
+        QMenu menu(this);
+        menu.addAction(mShowComponentAction);
+        menu.addAction(mViewDocumentationAction);
+        point.setY(point.y() + adjust);
+        menu.exec(mapToGlobal(point));
     }
-    return NULL;
+}
+
+void LibraryTree::showComponent()
+{
+    ProjectTabWidget *pProjectTabs = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs;
+    pProjectTabs->addDiagramViewTab(mpParentLibraryWidget->mSelectedLibraryNode, 0);
+}
+
+void LibraryTree::viewDocumentation()
+{
+    MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
+    pMainWindow->documentationdock->show();
+    pMainWindow->mpDocumentationWidget->show(mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0));
+}
+
+void LibraryTree::mousePressEvent(QMouseEvent *event)
+{
+    QTreeWidget::mousePressEvent(event);
+
+    if ((event->button() == Qt::LeftButton))
+    {
+        QTreeWidgetItem *item = static_cast<QTreeWidgetItem*>(itemAt(event->pos()));
+        if (!item)
+            return;
+
+        // if item is package then return
+        if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
+            return;
+
+        QByteArray itemData;
+        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+        dataStream << item->toolTip(0);
+
+        QMimeData *mimeData = new QMimeData;
+        mimeData->setData("image/modelica-component", itemData);
+
+        qreal adjust = 35;
+        QDrag *drag = new QDrag(this);
+        drag->setMimeData(mimeData);
+
+        // get the component SVG to show on drag
+        LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(item->toolTip(0));
+
+        if (libraryComponent)
+        {
+            QPixmap pixmap = libraryComponent->getComponentPixmap(QSize(50, 50));
+            drag->setPixmap(pixmap);
+            drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
+        }
+        drag->exec(Qt::CopyAction);
+    }
+}
+
+//! Constructor.
+//! @param parent defines a parent to the new instanced object.
+LibraryWidget::LibraryWidget(MainWindow *parent)
+    : QWidget(parent)
+{
+    mpParentMainWindow = parent;
+
+    mpLibraryTabs = new QTabWidget;
+    mpLibraryTabs->setTabPosition(QTabWidget::South);
+
+    mpLibraryTree = new LibraryTree(this);
+    mpModelicaTree = new ModelicaTree(this);
+
+    mpLibraryTabs->addTab(mpLibraryTree, "Modelica Library");
+    mpLibraryTabs->addTab(mpModelicaTree, "Modelica Files");
+
+    mpGrid = new QVBoxLayout(this);
+    mpGrid->setContentsMargins(0, 0, 0, 0);
+    mpGrid->addWidget(mpLibraryTabs);
+
+    setLayout(mpGrid);
+}
+
+LibraryWidget::~LibraryWidget()
+{
+    // delete all the loaded components
+    foreach (LibraryComponent *libraryComponent, mComponentsList)
+    {
+        delete libraryComponent;
+    }
+    delete mpLibraryTree;
+    delete mpModelicaTree;
+    delete mpLibraryTabs;
+}
+
+void LibraryWidget::addModelicaNode(QString name, int type, QString parentName, QString parentStructure)
+{
+    emit addModelicaTreeNode(name, type, parentName, parentStructure);
+}
+
+void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QString parentStructure)
+{
+    if (parentFileName.isEmpty())
+    {
+        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName),
+                              parentFileName, parentStructure);
+        parentStructure = fileName;
+    }
+    else
+    {
+        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(parentStructure),
+                              parentFileName, StringHandler::removeLastWordAfterDot(parentStructure).append("."));
+    }
+
+    if (this->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure))
+    {
+        QStringList modelsList = this->mpParentMainWindow->mpOMCProxy->getClassNames(parentStructure);
+        foreach (QString model, modelsList)
+        {
+            addModelFiles(model, fileName, parentStructure + tr(".") + model);
+        }
+    }
+}
+
+void LibraryWidget::loadModel(QString path, QStringList modelsList)
+{
+    // load the file in OMC
+    mpParentMainWindow->mpOMCProxy->loadFile(path);
+
+    foreach (QString model, modelsList)
+    {
+        addModelFiles(model, tr(""), tr(""));
+    }
+    // make the modelica files tab visible in library widget dock window
+    mpLibraryTabs->setCurrentWidget(mpModelicaTree);
+}
+
+void LibraryWidget::addComponentObject(LibraryComponent *libraryComponent)
+{
+    mComponentsList.append(libraryComponent);
+}
+
+Component* LibraryWidget::getComponentObject(QString className)
+{
+    foreach (LibraryComponent *libraryComponent, mComponentsList)
+    {
+        if (libraryComponent->mClassName == className)
+            return libraryComponent->mpComponent;
+    }
+    return 0;
+}
+
+LibraryComponent* LibraryWidget::getLibraryComponentObject(QString className)
+{
+    foreach (LibraryComponent *libraryComponent, mComponentsList)
+    {
+        if (libraryComponent->mClassName == className)
+            return libraryComponent;
+    }
+    return 0;
 }
 
 void LibraryWidget::updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node)
@@ -535,4 +671,83 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
         ModelicaTreeNode *item = dynamic_cast<ModelicaTreeNode*>(treeNode->child(i));
         updateNodeText(item->mName, QString(textStructure).append(".").append(item->mName), item);
     }
+}
+
+LibraryComponent::LibraryComponent(QString value, QString className, OMCProxy *omc)
+{
+    mClassName = className;
+    mpComponent = new Component(value, className, omc);
+    if (mpComponent->mRectangle.width() < 1)
+        return;
+
+    QRectF rect = mpComponent->mRectangle;
+    qreal adjust = 22;
+    rect.setX(rect.x() - adjust);
+    rect.setY(rect.y() - adjust);
+    rect.setWidth(rect.width() + adjust);
+    rect.setHeight(rect.height() + adjust);
+
+
+    QByteArray byteArray;
+    QBuffer buffer(&byteArray);
+    buffer.open(QIODevice::WriteOnly);
+
+    QSvgGenerator svgGenerator;
+    svgGenerator.setOutputDevice(&buffer);
+    svgGenerator.setSize(QSize(rect.width(), rect.height()));
+    svgGenerator.setViewBox(rect);
+
+    QPainter painter;
+    painter.begin(&svgGenerator);
+    painter.scale(1.0, -1.0);
+
+    generateSvg(&painter, mpComponent);
+
+    painter.end();
+    mSvgByteArray = byteArray;
+    buffer.close();
+}
+
+LibraryComponent::~LibraryComponent()
+{
+    delete mpComponent;
+}
+
+void LibraryComponent::generateSvg(QPainter *painter, Component *pComponent)
+{
+    foreach (ShapeAnnotation *shape, pComponent->mpShapesList)
+    {
+        if (dynamic_cast<LineAnnotation*>(shape))
+            dynamic_cast<LineAnnotation*>(shape)->drawLineAnnotaion(painter);
+        if (dynamic_cast<PolygonAnnotation*>(shape))
+            dynamic_cast<PolygonAnnotation*>(shape)->drawPolygonAnnotaion(painter);
+        if (dynamic_cast<RectangleAnnotation*>(shape))
+            dynamic_cast<RectangleAnnotation*>(shape)->drawRectangleAnnotaion(painter);
+        if (dynamic_cast<EllipseAnnotation*>(shape))
+            dynamic_cast<EllipseAnnotation*>(shape)->drawEllipseAnnotaion(painter);
+    }
+
+    foreach (Component *inheritance, pComponent->mpInheritanceList)
+    {
+        generateSvg(painter, inheritance);
+    }
+
+    foreach (Component *component, pComponent->mpComponentsList)
+    {
+        painter->save();
+        painter->setTransform(component->mpTransformation->getLibraryTransformationMatrix());
+        generateSvg(painter, component);
+        painter->restore();
+    }
+}
+
+QPixmap LibraryComponent::getComponentPixmap(QSize size)
+{
+    QSvgRenderer svgRenderer(mSvgByteArray);
+    QPixmap pixmap(size);
+    pixmap.fill(QColor(Qt::transparent));
+    QPainter painter(&pixmap);
+    svgRenderer.render(&painter);
+    painter.end();
+    return pixmap;
 }

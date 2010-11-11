@@ -35,8 +35,7 @@
 #define TEXTANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "InheritanceAnnotation.h"
-#include "ComponentAnnotation.h"
+#include "Component.h"
 
 class OMCProxy;
 
@@ -61,13 +60,15 @@ private:
     bool mFontItalic;
     int mDefaultFontSize;
 public:
-    TextAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
+    TextAnnotation(QString shape, Component *pParent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
-    void checkNameString(QGraphicsItem *item);
-    void checkParameterString(QGraphicsItem *item);
+    void checkNameString();
+    void checkParameterString();
     QString getTextString();
     void setTextString(QString text);
+
+    Component *mpComponent;
 };
 
 #endif // TEXTANNOTATION_H

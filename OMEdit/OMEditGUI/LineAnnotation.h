@@ -35,7 +35,7 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "IconAnnotation.h"
+#include "Component.h"
 
 class OMCProxy;
 
@@ -52,10 +52,12 @@ private:
     QMap<QString, Qt::PenStyle> mLinePatternsMap;
     Qt::PenStyle mLinePattern;
 public:
-    LineAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
+    LineAnnotation(QString shape, Component *pParent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawLineAnnotaion(QPainter *painter);
+
+    Component *mpComponent;
 };
 
 #endif // LINEANNOTATION_H

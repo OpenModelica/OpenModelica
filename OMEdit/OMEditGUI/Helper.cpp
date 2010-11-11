@@ -34,14 +34,18 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
+QString Helper::applicationVersion = "1.0 beta";
 QString Helper::applicationIntroText = "Open Modelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEditor";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+int Helper::viewWidth = 2000;
+int Helper::viewHeight = 2000;
+qreal Helper::globalIconXScale = 0.15;
+qreal Helper::globalIconYScale = 0.15;
+qreal Helper::globalDiagramXScale = 1.0;
+qreal Helper::globalDiagramYScale = 1.0;
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::headingFontSize = 18;
@@ -86,4 +90,12 @@ QString GUIMessages::getMessage(int type)
         return "Unable to delete. Server error has occurred while trying to delete.";
     else if (type == ONLY_MODEL_ALLOWED)
         return "This item is not a model.";
+    else if (type == UNABLE_TO_LOAD_FILE)
+        return "Error has occurred while loading the file. Unable to load the file.";
+    else if (type == DELETE_AND_LOAD)
+        return "Delete the existing models before loading the file.";
+    else if (type == REDEFING_EXISTING_MODELS)
+        return "Redefing models '%1' which already exists.";
+    else if (type == INVALID_COMPONENT_ANNOTATIONS)
+        return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
 }

@@ -35,7 +35,7 @@
 #define POLYGONANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "IconAnnotation.h"
+#include "Component.h"
 
 class OMCProxy;
 
@@ -57,10 +57,12 @@ private:
     QList<QPointF> mPoints;
     bool mSmooth;
 public:
-    PolygonAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
+    PolygonAnnotation(QString shape, Component *pParent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawPolygonAnnotaion(QPainter *painter);
+
+    Component *mpComponent;
 };
 
 #endif // POLYGONANNOTATION_H

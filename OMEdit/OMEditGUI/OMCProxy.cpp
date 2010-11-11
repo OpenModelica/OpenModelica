@@ -58,6 +58,7 @@ OMCProxy::OMCProxy(MainWindow *pParent)
       mName(Helper::omcServerName) ,mResult("")
 {
     this->mpParentMainWindow = pParent;
+    this->mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
     this->mpOMCLogger = new QDialog();
     this->mpOMCLogger->setWindowFlags(Qt::WindowTitleHint);
     this->mpOMCLogger->setMinimumSize(640, 480);
@@ -65,11 +66,14 @@ OMCProxy::OMCProxy(MainWindow *pParent)
     this->mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - OMC Messages Log"));
     // Set the QTextEdit Box
     this->mpTextEdit = new QTextEdit();
+    this->mpTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    this->mpTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     this->mpTextEdit->setReadOnly(true);
     // Set the Layout
     QHBoxLayout *horizontallayout = new QHBoxLayout;
     horizontallayout->setContentsMargins(0, 0, 0, 0);
     mpExpressionTextBox = new QLineEdit;
+    mpExpressionTextBox->installEventFilter(this);
     mpSendButton = new QPushButton("Send");
     connect(mpSendButton, SIGNAL(pressed()), SLOT(sendCustomExpression()));
     horizontallayout->addWidget(mpExpressionTextBox);
@@ -90,6 +94,45 @@ OMCProxy::OMCProxy(MainWindow *pParent)
 OMCProxy::~OMCProxy()
 {
     delete mpOMCLogger;
+}
+
+bool OMCProxy::eventFilter(QObject *object, QEvent *event)
+{
+    if (mpExpressionTextBox->hasFocus())
+    {
+        if (event->type() == QEvent::KeyPress)
+        {
+            if (dynamic_cast<QKeyEvent*>(event)->key() == Qt::Key_Up)
+                getPreviousCommand();
+            else if (dynamic_cast<QKeyEvent*>(event)->key() == Qt::Key_Down)
+                getNextCommand();
+            else
+                return QObject::eventFilter(object, event);
+            return true;
+        }
+    }
+    else
+    {
+         // standard event processing
+         return QObject::eventFilter(object, event);
+     }
+
+}
+
+void OMCProxy::getPreviousCommand()
+{
+    mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
+    QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
+    mCommandsList.insert(0, tempCommand);
+    mCommandsList.removeLast();
+}
+
+void OMCProxy::getNextCommand()
+{
+    mpExpressionTextBox->setText(mCommandsList.at(0));
+    QString tempCommand = mCommandsList.at(0);
+    mCommandsList.append(tempCommand);
+    mCommandsList.removeFirst();
 }
 
 //! Starts the Open Modelica Compiler.
@@ -264,12 +307,13 @@ QString OMCProxy::getResult()
 
 void OMCProxy::logOMCMessages(QString expression)
 {
+    mCommandsList.append(expression);
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
     mpTextEdit->append(">>  " + expression);
 
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpTextEdit->append(">>  " + getResult());
-    mpTextEdit->append("");
+    mpTextEdit->insertPlainText("\n>>  " + getResult());
+    mpTextEdit->insertPlainText("\n");
 }
 
 QStringList OMCProxy::createPackagesList()
@@ -301,6 +345,7 @@ void OMCProxy::addPackage(QStringList *list, QString package, QString parentPack
 //! Opens the OMC Logger dialog.
 void OMCProxy::openOMCLogger()
 {
+    this->mpOMCLogger->raise();
     this->mpOMCLogger->show();
 }
 
@@ -376,7 +421,7 @@ bool OMCProxy::setAnnotationVersion(int version)
         return true;
     else
     {
-        setEnvironmentVar("OPENMODELICALIBRARY", QString(qApp->applicationDirPath()).append("/libraries/msl221"));
+        setEnvironmentVar("OPENMODELICALIBRARY", QString(Helper::OpenModelicaHome).append("/lib/omc/omlibrary/msl221"));
         mAnnotationVersion = OMCProxy::ANNOTATION_VERSION2X;
         return false;
     }
@@ -469,6 +514,28 @@ bool OMCProxy::isWhat(int type, QString className)
         return false;
 }
 
+int OMCProxy::getClassRestriction(QString modelName)
+{
+    sendCommand("getClassRestriction(" + modelName + ")");
+
+    if (getResult().toLower().contains("model"))
+        return StringHandler::MODEL;
+    else if (getResult().toLower().contains("class"))
+        return StringHandler::CLASS;
+    else if (getResult().toLower().contains("connector"))
+        return StringHandler::CONNECTOR;
+    else if (getResult().toLower().contains("record"))
+        return StringHandler::RECORD;
+    else if (getResult().toLower().contains("block"))
+        return StringHandler::BLOCK;
+    else if (getResult().toLower().contains("function"))
+        return StringHandler::FUNCTION;
+    else if (getResult().toLower().contains("package"))
+        return StringHandler::PACKAGE;
+    else
+        return 0;
+}
+
 QList<IconParameters*> OMCProxy::getParameters(QString className)
 {
     QList<IconParameters*> iconParametersList;
@@ -526,6 +593,36 @@ QString OMCProxy::getDiagramAnnotation(QString className)
     return getResult();
 }
 
+int OMCProxy::getConnectionCount(QString className)
+{
+    sendCommand("getConnectionCount(" + className + ")");
+    if (!getResult().isEmpty())
+    {
+        bool ok;
+        int result = getResult().toInt(&ok);
+        if (ok)
+            return result;
+        else
+            return 0;
+    }
+    else
+        return 0;
+}
+
+QString OMCProxy::getNthConnection(QString className, int num)
+{
+    QString number;
+    sendCommand("getNthConnection(" + className + ", " + number.setNum(num) + ")");
+    return getResult();
+}
+
+QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
+{
+    QString number;
+    sendCommand("getNthConnectionAnnotation(" + className + ", " + number.setNum(num) + ")");
+    return getResult();
+}
+
 int OMCProxy::getInheritanceCount(QString className)
 {
     sendCommand("getInheritanceCount(" + className + ")");
@@ -570,6 +667,12 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
     return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
 }
 
+QString OMCProxy::getDocumentationAnnotation(QString className)
+{
+    sendCommand("getDocumentationAnnotation(" + className + ")");
+    return getResult();
+}
+
 QString OMCProxy::changeDirectory(QString directory)
 {
     directory = directory.replace("\\", "/");
@@ -577,10 +680,13 @@ QString OMCProxy::changeDirectory(QString directory)
     return getResult();
 }
 
-QString OMCProxy::loadFile(QString fileName)
+bool OMCProxy::loadFile(QString fileName)
 {
     sendCommand("loadFile(\"" + fileName + "\")");
-    return getResult();
+    if (getResult().toLower().contains("true"))
+        return true;
+    else
+        return false;
 }
 
 bool OMCProxy::createClass(QString type, QString className)
@@ -734,6 +840,15 @@ bool OMCProxy::updateComponent(QString name, QString className, QString modelNam
 {
     sendCommand("updateComponent(" + name + "," + className + "," + modelName + "," + annotation + ")");
     if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::updateConnection(QString from, QString to, QString modelName, QString annotation)
+{
+    sendCommand("updateConnection(" + from + "," + to + "," + modelName + "," + annotation + ")");
+    if (getResult().contains("Ok"))
         return true;
     else
         return false;

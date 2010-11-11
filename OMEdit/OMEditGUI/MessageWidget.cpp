@@ -45,6 +45,8 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     : QTextEdit(pParent)
 {
     mpParentMainWindow = pParent;
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 }
 
 QSize MessageWidget::sizeHint() const

@@ -33,8 +33,8 @@
 
 #include "RectangleAnnotation.h"
 
-RectangleAnnotation::RectangleAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent)
-    : ShapeAnnotation(parent)
+RectangleAnnotation::RectangleAnnotation(QString shape, Component *pParent)
+    : ShapeAnnotation(pParent), mpCompnent(pParent)
 {
     // initialize the Line Patterns map.
     this->mLinePatternsMap.insert("None", Qt::NoPen);
@@ -73,7 +73,7 @@ RectangleAnnotation::RectangleAnnotation(QString shape, OMCProxy *omc, QGraphics
     this->mVisible = static_cast<QString>(list.at(0)).contains("true");
 
     int index = 0;
-    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    if (mpCompnent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
         mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
         mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
@@ -175,56 +175,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    QPainterPath path;
-    QPointF p1 = this->mExtent.at(0);
-    QPointF p2 = this->mExtent.at(1);
-
-    qreal left = qMin(p1.x(), p2.x());
-    qreal top = qMin(p1.y(), p2.y());
-    qreal width = fabs(p1.x() - p2.x());
-    qreal height = fabs(p1.y() - p2.y());
-
-    QRectF rect (left, top, width, height);
-
-    switch (this->mFillPattern)
-    {
-    case Qt::LinearGradientPattern:
-        {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.center().x(), rect.y());
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    case Qt::Dense1Pattern:
-        {
-            QLinearGradient gradient(rect.center().x(), rect.center().y(), rect.x(), rect.center().y());
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    case Qt::RadialGradientPattern:
-        {
-            QRadialGradient gradient(rect.center().x(), rect.center().y(), width);
-            gradient.setColorAt(0.0, this->mFillColor);
-            gradient.setColorAt(1.0, this->mLineColor);
-            gradient.setSpread(QGradient::ReflectSpread);
-            painter->setBrush(gradient);
-            break;
-        }
-    default:
-        painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
-        break;
-    }
-
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
-
-    path.addRect(rect);
-    painter->drawPath(path);
-    painter->strokePath(path, this->mLineColor);
+    drawRectangleAnnotaion(painter);
 }
 
 void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
@@ -274,7 +225,7 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
         break;
     }
 
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
+    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
 
     path.addRect(rect);
     painter->drawPath(path);

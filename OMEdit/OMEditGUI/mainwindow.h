@@ -56,6 +56,7 @@
 #include "SimulationWidget.h"
 #include "PlotWidget.h"
 #include "SplashScreen.h"
+#include "DocumentationWidget.h"
 
 class QGridLayout;
 class QHBoxLayout;
@@ -73,6 +74,7 @@ class LibraryWidget;
 class ModelCreator;
 class SimulationWidget;
 class PlotWidget;
+class DocumentationWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -91,6 +93,7 @@ public:
     PlotWidget *mpPlotWidget;
     ModelCreator *mpModelCreator;
     OMCProxy *mpOMCProxy;
+    DocumentationWidget *mpDocumentationWidget;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuNew;
@@ -127,6 +130,7 @@ public:
     QAction *gridLinesAction;
     QAction *simulationAction;
     QAction *plotAction;
+    QAction *documentationAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
@@ -134,6 +138,7 @@ public:
     QToolBar *simulationToolBar;
 
     QDockWidget *plotdock;
+    QDockWidget *documentationdock;
 
     bool mExitApplication;
 

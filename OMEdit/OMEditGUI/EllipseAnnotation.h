@@ -35,7 +35,7 @@
 #define ELLIPSEANNOTATION_H
 
 #include "ShapeAnnotation.h"
-#include "IconAnnotation.h"
+#include "Component.h"
 
 class OMCProxy;
 
@@ -54,10 +54,12 @@ private:
     qreal mThickness;
     QList<QPointF> mExtent;
 public:
-    EllipseAnnotation(QString shape, OMCProxy *omc, QGraphicsItem *parent = 0);
+    EllipseAnnotation(QString shape, Component *pParent = 0);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawEllipseAnnotaion(QPainter *painter);
+
+    Component *mpComponent;
 };
 
 #endif // ELLIPSEANNOTATION_H
