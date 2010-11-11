@@ -514,7 +514,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (NON_STREAM_OPERAND_IN_STREAM_OPERATOR, TRANSLATION(), ERROR(),
-          "Operand %s to operator %s in component %s is not a stream variable."),
+          "Operand %s to operator %s is not a stream variable."),
           (UNBALANCED_CONNECTOR, TRANSLATION(), WARNING(),
           "Connector %s is not balanced: %s"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),

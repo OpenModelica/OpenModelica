@@ -3855,7 +3855,7 @@ algorithm
           elabExp(cache, env, exp, impl, NONE(), true, pre, info);
         exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
         (tp, _) = Types.flattenArrayType(tp);
-        validateBuiltinStreamOperator(cache, env, exp_2, tp, "inStream", pre);
+        validateBuiltinStreamOperator(cache, env, exp_2, tp, "inStream", info);
         t = Types.elabType(tp);
         exp_2 = makeBuiltinCall("inStream", {exp_1}, t);
       then
@@ -3895,7 +3895,7 @@ algorithm
           elabExp(cache, env, exp, impl, NONE(), true, pre, info);
         exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
         (tp, _) = Types.flattenArrayType(tp);
-        validateBuiltinStreamOperator(cache, env, exp_2, tp, "actualStream", pre);
+        validateBuiltinStreamOperator(cache, env, exp_2, tp, "actualStream", info);
         t = Types.elabType(tp);
         exp_2 = makeBuiltinCall("actualStream", {exp_1}, t);
       then
@@ -3909,12 +3909,12 @@ protected function validateBuiltinStreamOperator
   input DAE.Exp inOperand;
   input DAE.Type inType;
   input String inOperator;
-  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inCache, inEnv, inOperand, inType, inOperator, inPrefix)
+  _ := matchcontinue(inCache, inEnv, inOperand, inType, inOperator, inInfo)
     local
       DAE.ComponentRef cr;
-      String pre_str, op_str;
+      String op_str;
     // Operand is a stream variable, ok!
     case (_, _, DAE.CREF(componentRef = cr), _, _, _)
       equation
@@ -3928,9 +3928,8 @@ algorithm
         (_, DAE.ATTR(streamPrefix = false), _, _, _, _, _, _, _) =
           Lookup.lookupVar(inCache, inEnv, cr);
         op_str = ComponentReference.printComponentRefStr(cr);
-        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
-          {op_str, inOperator, pre_str});
+        Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR, 
+          {op_str, inOperator}, inInfo);
       then
         fail();
     // Operand is not even a component reference, error!
@@ -3938,9 +3937,8 @@ algorithm
       equation
         false = Expression.isCref(inOperand);
         op_str = ExpressionDump.printExpStr(inOperand);
-        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
-          {op_str, inOperator, pre_str});
+        Error.addSourceMessage(Error.NON_STREAM_OPERAND_IN_STREAM_OPERATOR,
+          {op_str, inOperator}, inInfo);
       then
         fail();
   end matchcontinue;

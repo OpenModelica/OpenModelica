@@ -2339,29 +2339,15 @@ public function checkConnectorBalance
   input list<DAE.Var> inVars;
   input Absyn.Path path;
   input Absyn.Info info;
+
+  Integer potentials, flows, streams;
 algorithm
-  _ := matchcontinue(inVars, path, info)
-    local
-      Integer potentials, flows, streams;
-
-    // Only do balance checking if the checkconnect debug flag is set.
-    case (_, _, _)
-      equation
-        false = RTOpts.debugFlag("checkconnect");
-      then
-        ();
-
-    else
-      equation
-        (potentials, flows, streams) = countConnectorVars(inVars);
-        checkConnectorBalance2(potentials, flows, streams, path, info);
-        //print(Absyn.pathString(path) +& " has:\n\t" +&
-        //  intString(potentials) +& " potential variables\n\t" +&
-        //  intString(flows) +& " flow variables\n\t" +&
-        //  intString(streams) +& " stream variables\n\n");
-      then
-        ();
-  end matchcontinue;
+  (potentials, flows, streams) := countConnectorVars(inVars);
+  checkConnectorBalance2(potentials, flows, streams, path, info);
+  //print(Absyn.pathString(path) +& " has:\n\t" +&
+  //  intString(potentials) +& " potential variables\n\t" +&
+  //  intString(flows) +& " flow variables\n\t" +&
+  //  intString(streams) +& " stream variables\n\n");
 end checkConnectorBalance;
 
 protected function checkConnectorBalance2
@@ -2378,7 +2364,7 @@ algorithm
     // The connector is balanced.
     case (_, _, _, _, _)
       equation
-        true = intEq(inPotentialVars, inFlowVars);
+        true = intEq(inPotentialVars, inFlowVars) or not RTOpts.debugFlag("checkconnect");
         true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
       then
         ();
