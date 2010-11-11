@@ -54,7 +54,6 @@ protected import Absyn;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import Builtin;
 protected import ComponentReference;
 protected import Ceval;
 protected import ClassInf;
@@ -152,8 +151,8 @@ algorithm
         ((_,expcrefs2)) = traverseBackendDAEExpsEqns(eqns,checkBackendDAEExp,(allvars,expcrefs1));
         ((_,expcrefs3)) = traverseBackendDAEExpsEqns(reqns,checkBackendDAEExp,(allvars,expcrefs2));
         ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
-        ((_,expcrefs5)) = traverseBackendDAEExpsArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
-        //((_,expcrefs6)) = traverseBackendDAEExpsArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
+        ((_,expcrefs5)) = traverseBackendDAEArrayNoCopy(ae,checkBackendDAEExp,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),(allvars,expcrefs4));
+        //((_,expcrefs6)) = traverseBackendDAEArrayNoCopy(algs,checkBackendDAEExp,traverseAlgorithmExps,1,arrayLength(algs),(allvars,expcrefs5));
       then
         expcrefs5;
     
@@ -4185,8 +4184,8 @@ algorithm
         ext_arg_3 = traverseBackendDAEExpsEqns(eqns,func,ext_arg_2);
         ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_3);
         ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
-        ext_arg_6 = traverseBackendDAEExpsArrayNoCopy(ae,func,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),ext_arg_5);
-        ext_arg_7 = traverseBackendDAEExpsArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
+        ext_arg_6 = traverseBackendDAEArrayNoCopy(ae,func,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),ext_arg_5);
+        ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
       then
         ext_arg_7;
     case (_,_,_)
@@ -4219,7 +4218,7 @@ algorithm
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
       equation
-        ext_arg_1 = traverseBackendDAEExpsArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
+        ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
       then
         ext_arg_1;
     case (_,_,_)
@@ -4230,7 +4229,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVars;
 
-public function traverseBackendDAEExpsArrayNoCopy "
+public function traverseBackendDAEArrayNoCopy "
  help function to traverseBackendDAEExps
  author: Frenkel TUD"
   replaceable type Type_a subtypeof Any;
@@ -4267,10 +4266,10 @@ algorithm
     
     case(array,func,arrayfunc,pos,len,inTypeB) equation
       ext_arg_1 = arrayfunc(array[pos],func,inTypeB);
-      ext_arg_2 = traverseBackendDAEExpsArrayNoCopy(array,func,arrayfunc,pos+1,len,ext_arg_1);
+      ext_arg_2 = traverseBackendDAEArrayNoCopy(array,func,arrayfunc,pos+1,len,ext_arg_1);
     then ext_arg_2;
   end matchcontinue;
-end traverseBackendDAEExpsArrayNoCopy;
+end traverseBackendDAEArrayNoCopy;
 
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
@@ -4376,7 +4375,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
-      then traverseBackendDAEExpsArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
+      then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
@@ -4386,7 +4385,7 @@ algorithm
 end traverseBackendDAEExpsEqns;
 
 protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExpsOptEqn
-  author: PA
+  author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;  
   input Option<BackendDAE.Equation> inEquation;
@@ -4401,14 +4400,7 @@ algorithm
   outTypeA:=  matchcontinue (inEquation,func,inTypeA)
     local
       BackendDAE.Equation eqn;
-      DAE.Exp e1,e2,e;
-      list<DAE.Exp> expl,exps;
-      DAE.ExpType tp;
-      DAE.ComponentRef cr;
-      BackendDAE.Value ind;
-      BackendDAE.WhenEquation elsePart;
-      DAE.ElementSource source;
-     Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+     Type_a ext_arg_1;
     case (NONE(),func,inTypeA) then inTypeA;
     case (SOME(eqn),func,inTypeA)
       equation

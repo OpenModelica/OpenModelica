@@ -2758,7 +2758,7 @@ algorithm
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
     case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
       equation
-        ext_arg_1 = BackendDAEUtil.traverseBackendDAEExpsArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,arrayLength(varOptArr),inTypeA);
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,arrayLength(varOptArr),inTypeA);
       then
         ext_arg_1;
     case (_,_,_)

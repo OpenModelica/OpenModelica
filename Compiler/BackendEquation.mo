@@ -42,6 +42,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 
+protected import BackendDAEUtil;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -309,6 +310,66 @@ algorithm
     then (e1::expl1,ext_arg_3); 
   end matchcontinue;
 end traverseBackendDAEExpList;
+
+public function traverseBackendDAEEqns "function: traverseBackendDAEEqns
+  author: Frenkel TUD
+
+  traverses all equations of a BackendDAE.EquationArray.
+"
+  replaceable type Type_a subtypeof Any;  
+  input BackendDAE.EquationArray inEquationArray;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue (inEquationArray,func,inTypeA)
+    local
+      array<Option<BackendDAE.Equation>> equOptArr;
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
+      then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEOptEqn,1,arrayLength(equOptArr),inTypeA);
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqns failed");
+      then
+        fail();          
+  end matchcontinue;
+end traverseBackendDAEEqns;
+
+protected function traverseBackendDAEOptEqn "function: traverseBackendDAEOptEqn
+  author: Frenkel TUD 2010-11
+  Helper for traverseBackendDAEExpsEqns."
+  replaceable type Type_a subtypeof Any;  
+  input Option<BackendDAE.Equation> inEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=  matchcontinue (inEquation,func,inTypeA)
+    local
+      BackendDAE.Equation eqn;
+     Type_a ext_arg;
+    case (NONE(),func,inTypeA) then inTypeA;
+    case (SOME(eqn),func,inTypeA)
+      equation
+        ((_,ext_arg)) = func((eqn,inTypeA));
+      then
+        ext_arg;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqn failed");
+      then
+        fail();   
+  end matchcontinue;
+end traverseBackendDAEOptEqn;
 
 public function equationEqual "Returns true if two equations are equal"
   input BackendDAE.Equation e1;

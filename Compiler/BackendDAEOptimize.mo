@@ -344,33 +344,31 @@ protected Integer elimLevel;
 algorithm
  elimLevel := RTOpts.eliminationLevel();
  RTOpts.setEliminationLevel(2) "Full elimination";
- numEqns := countSimpleEquations2(BackendDAEUtil.equationList(eqns),0);
+ numEqns := BackendEquation.traverseBackendDAEEqns(eqns,countSimpleEquations2,0);
  RTOpts.setEliminationLevel(elimLevel);
 end countSimpleEquations;
 
 protected function countSimpleEquations2
-  input list<BackendDAE.Equation> eqns;
-  input Integer partialSum "to enable tail-recursion";
-  output Integer numEqns;
+    input tuple<BackendDAE.Equation, Integer> inTpl;
+    output tuple<BackendDAE.Equation, Integer> outTpl;
 algorithm
-  numEqns := matchcontinue(eqns,partialSum)
-  local BackendDAE.Equation e;
-    case({},partialSum) then partialSum;
-
-    case (e::eqns,partialSum) equation
+  outTpl := matchcontinue(inTpl)
+  local 
+    BackendDAE.Equation e;
+    Integer partialSum;
+    case ((e,partialSum))
+      equation
         (_,_,_) = simpleEquation(e,false);
-        partialSum = partialSum +1;
-    then countSimpleEquations2(eqns,partialSum);
+      then ((e,partialSum+1));
 
       // Swaped args in simpleEquation
-    case (e::eqns,partialSum) equation
+    case ((e,partialSum))
+      equation
       (_,_,_) = simpleEquation(e,true);
-      partialSum = partialSum +1;
-    then countSimpleEquations2(eqns,partialSum);
+      then ((e,partialSum+1));
 
       //Not simple eqn.
-    case (e::eqns,partialSum)
-    then countSimpleEquations2(eqns,partialSum);
+    case inTpl then inTpl;
   end matchcontinue;
 end countSimpleEquations2;
 
