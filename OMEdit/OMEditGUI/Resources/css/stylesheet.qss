@@ -3,7 +3,9 @@ QTreeWidget::branch {
     border-image: url(:/Resources/icons/vline.png) 0;
 }
 QTreeWidget::branch:has-siblings:adjoins-item {
-    border-image: url(:/Resources/icons/branch-more.png) 0;
+    /*border-image: url(:/Resources/icons/branch-more.png) 0;*/
+    border-image: url(:/Resources/icons/vline.png) 0;
+    image: url(:/Resources/icons/branch-more.png);
 }
 QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
     border-image: url(:/Resources/icons/branch-end.png) 0;
@@ -15,6 +17,9 @@ QTreeWidget::branch:has-children:!has-siblings:closed, QTreeWidget::branch:close
 QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:has-children:has-siblings  {
     border-image: none;
     image: url(:/Resources/icons/branch-open.png);
+}
+QTreeWidget::item {
+    height: 20px;
 }
 /* End of Library Widget Styles */
 
