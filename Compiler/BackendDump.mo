@@ -1121,7 +1121,7 @@ public function dumpMatching
 algorithm
   print("Matching\n");
   print("========\n");
-  len := array_length(v);
+  len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
   print(" variables and equations\n");
@@ -1142,7 +1142,7 @@ algorithm
       array<BackendDAE.Value> v;
     case (v,i)
       equation
-        len = array_length(v);
+        len = arrayLength(v);
         i_1 = i + 1;
         (len == i_1) = true;
         s = intString(i_1);
@@ -1157,7 +1157,7 @@ algorithm
         ();
     case (v,i)
       equation
-        len = array_length(v);
+        len = arrayLength(v);
         i_1 = i + 1;
         (len == i_1) = false;
         s = intString(i_1);

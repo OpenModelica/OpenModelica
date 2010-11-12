@@ -1876,7 +1876,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
-        v_indxs_1 = Util.listMap1(v_indxs, int_sub, 1);
+        v_indxs_1 = Util.listMap1(v_indxs, intSub, 1);
         eqns = Util.listMap1r(v_indxs_1, arrayNth, a1);
         ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
       then
@@ -3571,7 +3571,7 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: ascending index" ;
+        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),inEntrylst);
@@ -3587,7 +3587,7 @@ algorithm
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
         new_exp = Expression.applyExpSubscripts(new_exp,subs); 
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index";
+        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),entrylst1);

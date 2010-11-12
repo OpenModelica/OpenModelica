@@ -2515,7 +2515,7 @@ algorithm
       BackendDAE.Value[:] v;
     case (v,i)
       equation
-        len = array_length(v);
+        len = arrayLength(v);
         i_1 = i + 1;
         (len == i_1) = true;
         s = intString(i_1);
@@ -2529,7 +2529,7 @@ algorithm
         ();
     case (v,i)
       equation
-        len = array_length(v);
+        len = arrayLength(v);
         i_1 = i + 1;
         (len == i_1) = false;
         s = intString(i_1);

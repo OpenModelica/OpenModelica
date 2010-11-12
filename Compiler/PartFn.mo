@@ -737,7 +737,7 @@ algorithm
       DAE.Element el,el_1,el1,el1_1,el2,el2_1;
       list<DAE.Element> elts,elts_1;
       DAE.Function fn;
-      list<DAE.Function> cdr,cdr_1,dae;
+      list<DAE.Function> cdr,cdr_1;
       list<list<DAE.Element>> elm,elm_1;
       DAE.ComponentRef cref;
       DAE.VarKind kind;

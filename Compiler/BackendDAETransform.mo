@@ -280,7 +280,7 @@ algorithm
       equation
         newarr = arrayCreate(size, 0);
         newarr_1 = Util.arrayNCopy(arr, newarr, size);
-        vec = array_copy(newarr_1);
+        vec = arrayCopy(newarr_1);
       then
         vec;
     case (_)
@@ -1217,7 +1217,7 @@ algorithm
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
-        changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
+        changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
@@ -1353,7 +1353,7 @@ algorithm
    /* eqns dummy state */
     case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
-        eqns_1 = Util.listMap1(eqns, int_sub, 1);
+        eqns_1 = Util.listMap1(eqns, intSub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
         crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
@@ -1369,7 +1369,7 @@ algorithm
     // Never propagate fixed=true
     case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
-        eqns_1 = Util.listMap1(eqns, int_sub, 1);
+        eqns_1 = Util.listMap1(eqns, intSub, 1);
         eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
         crefs = Util.listDeleteMemberOnTrue(crefs, dummy, ComponentReference.crefEqualNoStringCompare);
@@ -1969,7 +1969,7 @@ protected function varStateSelectHeuristicPrio3
   output Real prio;
 algorithm
   prio := matchcontinue(cr,vars)
-    local Integer i; Real c,prio;
+    local Integer i; Real c;
     case(cr,vars)
       equation
         ((_,i)) = BackendVariable.traverseBackendDAEVars(vars,varHasSameLastIdent,(cr,0));
@@ -2268,7 +2268,7 @@ protected function statesAsAlgebraicVars "function: statesAsAlgebraicVars
   input BackendDAE.Variables vars;
   output BackendDAE.Variables v1_1;
   list<BackendDAE.Var> varlst,varlst_1;
-  BackendDAE.Variables v1,v1_1;
+  BackendDAE.Variables v1;
 algorithm
   varlst := BackendDAEUtil.varList(vars) "Creates a new set of BackendDAE.Variables from a BackendDAE.Var list" ;
   varlst_1 := statesAsAlgebraicVars2(varlst);

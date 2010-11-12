@@ -1663,7 +1663,7 @@ algorithm
   matchcontinue (inindex,dimlist)
     local
       list<Integer> index_lst,dim_lst;
-      Integer value,value1,index,dim;
+      Integer value1,index,dim;
     case ({},{}) then 0;
     case (index::{},_) then index;
     case (index::index_lst,dim::dim_lst)

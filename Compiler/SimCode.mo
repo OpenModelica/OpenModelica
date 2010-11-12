@@ -764,7 +764,6 @@ public function generateModelCodeFMU
   DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode simCode;
-  Real timeSimCode, timeTemplates;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, functions, outIndexedBackendDAE, dae2) :=
@@ -892,7 +891,6 @@ public function generateModelCode
   // DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode simCode;
-  Real timeSimCode, timeTemplates;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, functions, outIndexedBackendDAE, _) :=
@@ -1580,7 +1578,6 @@ algorithm
       array<list<Integer>> m,mt;
       Absyn.Path class_;
       // new variables
-      SimCode simCode;
       ModelInfo modelInfo;
       list<SimEqSystem> allEquations;
       list<SimEqSystem> allEquationsPlusWhen;

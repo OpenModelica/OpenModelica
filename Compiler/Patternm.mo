@@ -119,8 +119,8 @@ algorithm
         // Create pattern matrix. The as-bindings (  ... case (var1 as 3) ...)
         // are first collected in the fillMatrix function and then
         // assignments of these variables are added to the RightHandSide list
-        patMat = fill({},varListLength);
-        asBindings = fill({},listLength(rhsList));
+        patMat = arrayCreate(varListLength,{});
+        asBindings = arrayCreate(listLength(rhsList),{});
         (localCache,patMat,asBindings,_) =
         fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv,(1,{}),infoList);
         rhsList = addAsBindings(rhsList,arrayList(asBindings));	 // Add the as-bindings (assignments)

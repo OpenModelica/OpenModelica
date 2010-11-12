@@ -735,7 +735,7 @@ algorithm
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
 	                               x is inserted as negative value, since it is needed by debugging and index
 	                               reduction using dummy derivatives" ;
-        p_1 = Util.listMap1r(p, int_sub, 0);
+        p_1 = Util.listMap1r(p, intSub, 0);
         pStr = Util.listMap(p_1, intString);
       then
         pStr;

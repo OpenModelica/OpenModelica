@@ -254,7 +254,7 @@ algorithm
     case ({},Absyn.TUPLE({}) :: _,_,_) then {};
     
     // _ := ... then ..., not fail()
-    case ({Absyn.CREF(Absyn.WILD)},_,_,_) then {};
+    case ({Absyn.CREF(Absyn.WILD())},_,_,_) then {};
     
     case (firstLhs :: restLhs,firstRhs :: restRhs,localAccList,info)
       equation
@@ -828,7 +828,7 @@ algorithm
         localDfaEnv = listReverse(localDfaEnv);
       then (SOME(localDfaEnv),localCache);
     
-    case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv,info)
+    case (Absyn.CREF(Absyn.WILD()) :: restExps,localDfaEnv,localCache,localEnv,info)
       equation
         (res,localCache) = addVarsToDfaEnv2(restExps,localDfaEnv,localCache,localEnv,info);
       then (res,localCache);
@@ -1504,9 +1504,9 @@ protected function matchContinueToSwitch2
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> initialDfaEnv;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output list<Absyn.Exp> expr;
+  output list<Absyn.Exp> exprs;
 algorithm
-  (outCache, expr) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv, info)
+  (outCache, exprs) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv, info)
     local
       RenamedPatList firstCase;
       RenamedPatMatrix2 restCase;
@@ -1699,8 +1699,8 @@ function generatePathVarDeclarationsList
 algorithm
   (outCache,outDfaEnv,outEls,outAlgs) := matchcontinue(pats, inputVarList, cache, env, dfaEnv,info)
     local
-      list<Absyn.ElementItem> outEls, outEls1, outEls2, matchDecls;
-      list<Absyn.AlgorithmItem> outAlgs, outAlgs1, outAlgs2, matchAlgs;
+      list<Absyn.ElementItem> outEls1, outEls2, matchDecls;
+      list<Absyn.AlgorithmItem> outAlgs1, outAlgs2, matchAlgs;
       list<RenamedPat> rest;
       RenamedPat pat;
       list<Absyn.Exp> varList;
@@ -1768,7 +1768,7 @@ algorithm
     
     case (RP_EMPTYLIST(_), var, nequal,info) // Optimizes comparison with emptylist by not creating an empty list to compare with
       equation
-        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), info);
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listEmpty",{})), Absyn.FUNCTIONARGS({var}, {}));
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
@@ -1776,7 +1776,7 @@ algorithm
     
     case (RP_NONE(_), var, nequal,info) // Optimizes comparison with NONE() by not creating an empty option to compare with
       equation
-        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), info);
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("optionNone",{})), Absyn.FUNCTIONARGS({var}, {}));
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), info);
@@ -1784,9 +1784,9 @@ algorithm
     
     case (pat, var, nequal,info)
       equation
-        op = Util.if_(nequal, Absyn.NEQUAL, Absyn.EQUAL);
+        op = Util.if_(nequal, Absyn.NEQUAL(), Absyn.EQUAL());
         exp = getPatternExp(pat);
-        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), info);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.RELATION(var,op,exp), {alg}, {}, {}), NONE(), info);
       then {alg};
     
@@ -1811,7 +1811,7 @@ algorithm
     
     case (pathVar,(DAE.T_METARECORD(index=i),_),numFields,info)
       equation
-        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), info);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), info);
         fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields)}, {});
         exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("OpenModelicaInternal",{},Absyn.CREF_IDENT("uniontypeMetarecordTypedefEqual",{}))), fargs);
         exp = Absyn.LUNARY(Absyn.NOT(), exp);

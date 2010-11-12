@@ -367,10 +367,10 @@ algorithm
 	Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	int_sub(e,1) => e\' &
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	intSub(e,1) => e\' &
 	BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
-	int_sub(v,1) => v\' &
+	intSub(v,1) => v\' &
 	BackendDAE.vararray_nth(vararr,v\') => BackendDAE.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
 	let varexp = DAE.CREF(cr,DAE.ET_REAL) &
 	not ExpressionSolve.solve(e1,e2,varexp) => _ &

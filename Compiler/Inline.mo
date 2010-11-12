@@ -80,9 +80,9 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
-      BackendDAE.MultiDimEquation[:] arrayEqs;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
       list<BackendDAE.MultiDimEquation> mdelst;
-      Algorithm.Algorithm[:] algorithms;
+      array<Algorithm.Algorithm> algorithms;
       list<Algorithm.Algorithm> alglst;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
@@ -121,7 +121,7 @@ algorithm
     local
       Functiontuple fns;
       Integer i1,i2;
-      Option<BackendDAE.Equation>[:] eqarr,eqarr_1;
+      array<Option<BackendDAE.Equation>> eqarr,eqarr_1;
       list<Option<BackendDAE.Equation>> eqlst,eqlst_1;
     case(BackendDAE.EQUATION_ARRAY(i1,i2,eqarr),fns)
       equation
@@ -251,10 +251,10 @@ algorithm
   outVariables := matchcontinue(inVariables,inElementList)
     local
       Functiontuple fns;
-      list<BackendDAE.CrefIndex>[:] crefind;
-      list<BackendDAE.StringIndex>[:] strind;
+      array<list<BackendDAE.CrefIndex>> crefind;
+      array<list<BackendDAE.StringIndex>> strind;
       Integer i1,i2,i3,i4;
-      Option<BackendDAE.Var>[:] vararr,vararr_1;
+      array<Option<BackendDAE.Var>> vararr,vararr_1;
       list<Option<BackendDAE.Var>> varlst,varlst_1;
     case(BackendDAE.VARIABLES(crefind,strind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
       equation

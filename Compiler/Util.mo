@@ -4605,7 +4605,7 @@ algorithm
     case (x,pos,arr,fillv)
       equation
         //Replacing element out of range of array, create new array, and copy elts.
-        newarr = fill(fillv, pos);
+        newarr = arrayCreate(pos, fillv);
         res = arrayCopy(arr, newarr);
         res_1 = arrayUpdate(res, pos , x);
       then
@@ -4644,7 +4644,6 @@ public function arrayNCopy "function arrayNCopy
   output array<Type_a> dst_1;
   replaceable type Type_a subtypeof Any;
   Integer n_1;
-  array<Type_a> dst_1;
 algorithm
   n_1 := n - 1;
   dst_1 := arrayCopy2(src, dst, n_1);

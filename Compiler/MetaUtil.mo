@@ -828,7 +828,6 @@ algorithm
       Absyn.TypeSpec tSpec;
       list<Absyn.TypeSpec> tSpecList;
       String id,str;
-      DAE.Type t;
       list<DAE.Type> tList;
       Absyn.Path p;
     case ((DAE.T_INTEGER(_),_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
