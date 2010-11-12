@@ -235,6 +235,7 @@ public constant ErrorID TUPLE_ASSIGN_CREFS_ONLY=147;
 public constant ErrorID LOOKUP_FUNCTION_GOT_CLASS=148;
 public constant ErrorID NON_STREAM_OPERAND_IN_STREAM_OPERATOR = 149;
 public constant ErrorID UNBALANCED_CONNECTOR = 150;
+public constant ErrorID RESTRICTION_VIOLATION=151;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -421,6 +422,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "%s Invalid use of reserved attribute name %s as enumeration literal."),
           (UNEXCPECTED_FUNCTION_INPUTS_WARNING,TRANSLATION(), WARNING(),
           "Function %s has not the expected inputs. Expected inputs are %s."), 
+          (RESTRICTION_VIOLATION,TRANSLATION(),ERROR(),"Restriction violation: %s is a %s, not a %s"),
 					
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),

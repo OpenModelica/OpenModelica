@@ -3666,7 +3666,7 @@ algorithm
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
                     inst_dims_1, impl, callscope, graph, instSingleCref) "instantiate class in opened scope. " ;
-        ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
+        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
@@ -3699,7 +3699,7 @@ algorithm
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot,
                     inst_dims_1, impl, callscope, graph, instSingleCref) "instantiate class in opened scope. " ;
-        ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
+        ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);

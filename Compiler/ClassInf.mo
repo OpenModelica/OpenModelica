@@ -591,26 +591,24 @@ public function assertValid "function: assertValid
   `valid\'.  However, it prints an error message when it fails."
   input State inState;
   input SCode.Restriction inRestriction;
+  input Absyn.Info info;
 algorithm
-  _ := matchcontinue (inState,inRestriction)
+  _ := matchcontinue (inState,inRestriction,info)
     local
       State st;
       SCode.Restriction re;
-      String str;
-    case (st,re)
+      String str1,str2,str3;
+    case (st,re,info)
       equation
         valid(st, re);
       then
         ();
-    case (st,re)
+    case (st,re,info)
       equation
-        Print.printErrorBuf("# Restriction violation: ");
-        str = Absyn.pathString(getStateName(st));
-        Print.printErrorBuf(str);
-        Print.printErrorBuf(" is not a ");
-        str = SCode.restrString(re);
-        Print.printErrorBuf(str);
-        Print.printErrorBuf("\n");
+        str1 = Absyn.pathString(getStateName(st));
+        str2 = printStateStr(st);
+        str3 = SCode.restrString(re);
+        Error.addSourceMessage(Error.RESTRICTION_VIOLATION, {str1,str2,str3}, info);
       then
         fail();
   end matchcontinue;

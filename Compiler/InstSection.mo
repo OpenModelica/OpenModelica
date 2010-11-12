@@ -3041,6 +3041,16 @@ algorithm
       then
         (localCache,stmt);
 
+    case (localCache,localEnv,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
+      equation
+        true = numError == Error.getNumErrorMessages();
+        expl = MetaUtil.extractListFromTuple(exp, 0);
+        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
+        str1 = Dump.printExpStr(exp);
+        str2 = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str1,str2}, info);
+      then fail();
+
     case (_,_,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
       equation
         true = numError == Error.getNumErrorMessages();

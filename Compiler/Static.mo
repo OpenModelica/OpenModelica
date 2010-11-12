@@ -532,7 +532,7 @@ algorithm
     case (cache,env,Absyn.VALUEBLOCK(ld,body,res),impl,st,doVect,pre,info)
       equation
         // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
-        (cache,env,DAE.DAE(dae1_2Elts),b2) = addLocalDecls(cache,env,ld,impl);
+        (cache,env,DAE.DAE(dae1_2Elts),b2) = addLocalDecls(cache,env,ld,impl,info);
         (b1,cache) = fromValueblockBodyToAlgs(body,cache,env,pre);
         b1 = listAppend(b2,b1);
         //----------------------------------------------------------------------
@@ -13875,12 +13875,13 @@ protected function addLocalDecls
   input Env.Env env;
   input list<Absyn.ElementItem> els;
   input Boolean impl;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output DAE.DAElist dae;
   output list<Absyn.AlgorithmItem> algs;
 algorithm
-  (outCache,outEnv,dae,algs) := matchcontinue (cache,env,els,impl)
+  (outCache,outEnv,dae,algs) := matchcontinue (cache,env,els,impl,info)
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2;
@@ -13890,8 +13891,8 @@ algorithm
       Env.Env env2;
       ClassInf.State dummyFunc;
 
-    case (cache,env,{},impl) then (cache,env,DAEUtil.emptyDae,{});
-    case (cache,env,ld,impl)
+    case (cache,env,{},impl,info) then (cache,env,DAEUtil.emptyDae,{});
+    case (cache,env,ld,impl,info)
       equation
         env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName),NONE());
 
@@ -13905,11 +13906,9 @@ algorithm
         ld_mod = Inst.addNomod(ld2);
 
         dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
-
         (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           Connect.emptySet, dummyFunc, ld_mod, {}, {}, {}, impl);
-
         (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
@@ -13918,6 +13917,10 @@ algorithm
         // The instantiation of the components may have produced some equations
         (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);
       then (cache,env2,dae,algs);
+    else
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.addLocalDecls failed"},info);
+      then fail();
   end matchcontinue;
 end addLocalDecls;
 

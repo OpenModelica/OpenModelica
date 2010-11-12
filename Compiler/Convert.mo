@@ -45,6 +45,7 @@ public import DAE;
 
 // protected imports
 protected import ComponentReference;
+protected import Error;
 protected import Expression;
 
 
@@ -61,6 +62,10 @@ algorithm
       equation
         (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});
       then (outList,DAE.DAE(elts));
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"Convert.fromDAEEqsToAbsynAlg failed"});
+      then fail();
  end matchcontinue;
 end fromDAEEqsToAbsynAlg;
 
