@@ -1012,9 +1012,9 @@ the array will first be initialized with the result of the first call.
 assume the Indecies are in range 1,arrayLength(array). 
 
   "
-  input Type_a[:] array;
+  input array<Type_a> array;
   input list<Integer> lst;
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
   replaceable type Type_a subtypeof Any;
 algorithm
   outArray := arrayCreate(listLength(lst),array[1]);
@@ -1022,11 +1022,12 @@ algorithm
 end arraySelect;
 
 protected function arraySelectHelp "help function to arrayMap"
-  input Type_a[:] array;
+  input array<Type_a> array;
   input list<Integer> posistions;
-  input Type_a[:] inArray;
+  input array<Type_a> inArray;
   input Integer lstpos;
-  output Type_a[:] outArray;
+  output array<Type_a> outArray;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outArray := matchcontinue(array,posistions,inArray,lstpos)
     local 
@@ -1052,7 +1053,7 @@ See also listMap, arrayMapNoCopy
   "
   input array<Type_a> array;
   input FuncType func;
-  output Type_b[:] outArray;
+  output array<Type_b> outArray;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   partial function FuncType
@@ -1067,11 +1068,11 @@ end arrayMap;
 
 protected function arrayMapHelp1 "help function to arrayMap"
   input array<Type_a> array;
-  input Type_b[:] newArray;
+  input array<Type_b> newArray;
   input FuncType func;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
-  output Type_b[:] outArray;
+  output array<Type_b> outArray;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   partial function FuncType
@@ -1763,8 +1764,8 @@ algorithm
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5)
     local
-      Type_e f_1;
-      list<Type_e> r_1;
+      Type_i f_1;
+      list<Type_i> r_1;
       Type_a f;
       list<Type_a> r;
 

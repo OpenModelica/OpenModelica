@@ -1436,7 +1436,7 @@ algorithm
         s = Util.listMap(v3,intString);
         str = Util.stringDelimitList(s,",");
         Debug.fcall("markblocks",print,"Vars Indecies : " +& str +& "\n");
-        v4 = fill(0,listLength(comps1));
+        v4 = arrayCreate(listLength(comps1),0);
         v4 = markArray(v3,comps1,v4);
         (comps1,_) = splitBlocks2(comps1,v4,1);
         
@@ -1508,7 +1508,7 @@ algorithm
       equation
         i = Util.listlistPosition(var,vars);
         Debug.fcall("markblocks",print,"Var " +& intString(var) +& " at pos : " +& intString(i) +& "\n");
-        arr1 = fill(1,i+1);
+        arr1 = arrayCreate(i+1,1);
         arr = Util.arrayCopy(arr1,arr);
         arr = markArray(rest,vars,arr);
         s = Util.listMap(arrayList(arr),intString);

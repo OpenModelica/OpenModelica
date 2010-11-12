@@ -3034,6 +3034,7 @@ algorithm
         // Array Operations
         env = Env.extendFrameT(env, "arrayLength", marrayAny2int);
         env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);
+        env = Env.extendFrameT(env, "arrayNth", marrayAInt2A);
         env = Env.extendFrameT(env, "arrayCreate", intA2marrayA);
         env = Env.extendFrameT(env, "arrayList", marrayA2listA);
         env = Env.extendFrameT(env, "listArray", listA2marrayA);

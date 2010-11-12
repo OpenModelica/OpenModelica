@@ -3949,7 +3949,6 @@ algorithm
       DAE.Exp e;
       DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
       DAE.ExpType tp,tp1;
-      BackendDAE.Equation dlowEq;
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
@@ -7853,7 +7852,7 @@ algorithm
   arr := arrayCreate(1000, {});
   // lst := Util.listFill(NONE, 100);
   // emptyarr := listArray(lst);
-  emptyarr := fill(NONE(), 100);
+  emptyarr := arrayCreate(100, NONE());
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
 /*
@@ -8316,7 +8315,7 @@ algorithm
     local
       Key k;
       Value v;
-      Integer n,pos,len;
+      Integer n,len;
       array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)

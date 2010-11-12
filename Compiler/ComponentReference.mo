@@ -861,9 +861,10 @@ public function crefEqualReturn
   so returns the cref, otherwise fail."
   input DAE.ComponentRef cr;
   input DAE.ComponentRef cr2;
-  output DAE.ComponentRef cr;
+  output DAE.ComponentRef ocr;
 algorithm
   true := crefEqualNoStringCompare(cr, cr2);
+  ocr := cr;
 end crefEqualReturn;
 
 public function crefIsIdent
