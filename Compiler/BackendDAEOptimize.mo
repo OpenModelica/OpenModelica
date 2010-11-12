@@ -1453,7 +1453,7 @@ protected function splitBlocks2
 //function: splitBlocks2
 //author: wbraun 
   input list<list<Integer>> inIntegerLstLst;
-  input Integer[:] inIntegerArray;
+  input array<Integer> inIntegerArray;
   input Integer inPos;
   output list<list<Integer>> outIntegerLstLst1;
   output list<list<Integer>> outIntegerLstLst2;
@@ -1490,8 +1490,8 @@ protected function markArray
   // author : wbraun
   input list<Integer> inVars1;
   input list<list<Integer>> inVars2;
-  input Integer[:] inInt;
-  output Integer[:] outJacobian;
+  input array<Integer> inInt;
+  output array<Integer> outJacobian;
 algorithm
   outJacobian := matchcontinue(inVars1,inVars2,inInt)
     local
@@ -1500,7 +1500,7 @@ algorithm
       Integer var;
       list<Integer> intlst,ilst2;
       Integer i;
-      Integer[:] arr,arr1;
+      array<Integer> arr,arr1;
       list<String> s,s1;
       String str;
     case({},_,arr) then arr;      
@@ -1600,7 +1600,7 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjClasses, jacExtObjClasses;
       // end DAE
       
-      list<BackendDAE.Var> allVars, inputVars, paramVars, stateVars, derivedVariables;
+      list<BackendDAE.Var> allVars, derivedVariables;
       list<BackendDAE.Equation> solvedEquations, derivedEquations, derivedEquations2;
       list<DAE.Algorithm> derivedAlgorithms;
       list<tuple<Integer, DAE.ComponentRef>> derivedAlgorithmsLookUp;
@@ -2403,7 +2403,7 @@ algorithm
     case(DAE.STMT_IF(exp=exp, statementLst=statementLst, else_=DAE.NOELSE(), source=source)::restStatements, var, functions)
     equation
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions);
-      derivedStatements1 = {DAE.STMT_IF(exp, derivedStatements1, DAE.NOELSE, source)};
+      derivedStatements1 = {DAE.STMT_IF(exp, derivedStatements1, DAE.NOELSE(), source)};
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions);
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;

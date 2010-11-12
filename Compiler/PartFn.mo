@@ -75,7 +75,7 @@ algorithm
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
       array<BackendDAE.MultiDimEquation> arrayEqs;
-      DAE.Algorithm[:] algorithms;
+      array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
     /*case(dae,dlow)
@@ -106,14 +106,14 @@ end partEvalBackendDAE;
 protected function partEvalAlgs
 "function: partEvalAlgs
 	elabs an algorithm section in BackendDAE"
-	input DAE.Algorithm[:] inAlgorithms;
+	input array<DAE.Algorithm> inAlgorithms;
 	input list<DAE.Function> inElementList;
-	output DAE.Algorithm[:] outAlgorithms;
+	output array<DAE.Algorithm> outAlgorithms;
 	output list<DAE.Function> outElementList;
 algorithm
   (outAlgorithms,outElementList) := matchcontinue(inAlgorithms,inElementList)
     local
-      DAE.Algorithm[:] algarr,algarr_1;
+      array<DAE.Algorithm> algarr,algarr_1;
       list<DAE.Algorithm> alglst,alglst_1;
       list<DAE.Function> dae;
     case(algarr,dae)
@@ -206,9 +206,9 @@ algorithm
     local
       list<DAE.Function> dae;
       array<list<BackendDAE.CrefIndex>> crind;
-      list<BackendDAE.StringIndex>[:] strind;
+      array<list<BackendDAE.StringIndex>> strind;
       Integer bsi,nov,noe,asi;
-      Option<BackendDAE.Var>[:] varr,varr_1;
+      array<Option<BackendDAE.Var>> varr,varr_1;
       list<Option<BackendDAE.Var>> vlst,vlst_1;
     case(BackendDAE.VARIABLES(crind,strind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr),bsi,nov),dae)
       equation
@@ -286,7 +286,7 @@ algorithm
     local
       list<DAE.Function> dae;
       list<Option<BackendDAE.Equation>> eqlst;
-      Option<BackendDAE.Equation>[:] eqarr;
+      array<Option<BackendDAE.Equation>> eqarr;
       Integer num,size;
     case(BackendDAE.EQUATION_ARRAY(num,size,eqarr),dae)
       equation
@@ -1347,7 +1347,7 @@ algorithm
         fail();
     case((e as DAE.VAR(direction = DAE.INPUT())) :: cdr,inputs)
       equation
-        DAE.VAR(direction = DAE.INPUT) = Util.listFirst(cdr);
+        DAE.VAR(direction = DAE.INPUT()) = Util.listFirst(cdr);
         res = insertAfterInputs(cdr,inputs);
       then
         e :: res;

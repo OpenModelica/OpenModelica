@@ -3516,10 +3516,10 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
-        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE));
+        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
+          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         cref_1 = ComponentReference.crefPrependIdent(cref, "stateSelect",{},DAE.ET_OTHER());
         (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -3557,10 +3557,10 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
-        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE));
+        env3 = Env.openScope(env_1, encflag, SOME(n), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, Inst.INNER_CALL, ConnectionGraph.EMPTY,NONE());
+          ci_state, c, false, {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
         cref_1 = ComponentReference.crefPrependIdent(cref,attribute,{},DAE.ET_OTHER());
         (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -3623,7 +3623,7 @@ To get a correct Within-path with unknown input-path."
 algorithm op :=  matchcontinue(ip)
   local Absyn.Path path;
   case(path) equation path = Absyn.stripLast(path); then Absyn.WITHIN(path);
-  case(path) then Absyn.TOP;
+  case(path) then Absyn.TOP();
 end matchcontinue;
 end getWithinStatement;
 
@@ -3931,7 +3931,6 @@ algorithm
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
       list<Absyn.Path> allClassPaths;
-      Absyn.Path className;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       Interactive.InteractiveSymbolTable st;

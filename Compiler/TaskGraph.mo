@@ -307,7 +307,7 @@ algorithm
   _:=
   matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
-      Integer e_1,i,v_1,e,indx;
+      Integer e_1,i,v_1,e,indx,i;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
       list<BackendDAE.Var> varlst;
@@ -325,8 +325,7 @@ algorithm
       equation
         e_1 = e - 1 "Solving for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass2[e_1 + 1];
-        v_1 = v - 1 "v == variable no solved in this equation" ;
+        v_1 = ass2[e_1 + 1] - 1 "v == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
@@ -401,8 +400,8 @@ algorithm
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass2[e_1 + 1];
-        v_1 = v - 1 "v == variable no solved in this equation" ;
+        i = ass2[e_1 + 1];
+        v_1 = i - 1 "v == variable no solved in this equation" ;
         varlst = BackendDAEUtil.varList(vars);
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         true = BackendVariable.isNonStateVar(v);
@@ -487,7 +486,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
 "
   input list<DAE.Exp> expl;
   output VarTransform.VariableReplacements repl_1;
-  VarTransform.VariableReplacements repl,repl_1;
+  VarTransform.VariableReplacements repl;
 algorithm
   repl := VarTransform.emptyReplacements();
   repl_1 := makeResidualReplacements2(repl, expl, 0);
@@ -707,7 +706,7 @@ algorithm
     local
       BackendDAE.BackendDAE dae;
       array<Integer> ass1,ass2;
-      Integer tid,e_1,v_1,e;
+      Integer tid,e_1,v_1,e,i;
       DAE.Exp e1,e2;
       BackendDAE.Var v;
       DAE.ComponentRef cr,origname;
@@ -726,8 +725,8 @@ algorithm
       equation
         e_1 = e - 1;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass2[e_1 + 1];
-        v_1 = v - 1 "v == variable no solved in this equation" ;
+        i = ass2[e_1 + 1];
+        v_1 = i - 1 "v == variable no solved in this equation" ;
         ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = BackendVariable.vararrayNth(vararr, v_1);
         cr1 = Expression.extractCrefsFromExp(e1);
         cr2 = Expression.extractCrefsFromExp(e2);
@@ -977,7 +976,7 @@ algorithm
         print("TaskGraph.buildExpression(TUPLE) not impl. yet\n");
       then
         fail();
-    case (DAE.CAST(ty = t,exp = e))
+    case (DAE.CAST(exp = e))
       equation
         (t,s) = buildExpression(e);
       then

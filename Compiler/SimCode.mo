@@ -2538,7 +2538,6 @@ algorithm
       Option<BackendDAE.WhenEquation> whenEq;
       SimWhenClause simWhenClause;
       Integer nextIndex;
-      list<SimWhenClause> simWhenClauses;
     
     case ({}, _, _, _, _) then {};
     
@@ -2873,12 +2872,12 @@ algorithm
         SES_ALGORITHM(algStatements);
 
     // inverse Algorithm for single variable.
-    case (eqNum, BackendDAE.DAE(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2, helpVarInfo, false)
+    case (eqNum, BackendDAE.DAE(orderedVars = vars, orderedEqs = eqns,algorithms=algs),ass1,ass2, helpVarInfo, false)
       equation
         (BackendDAE.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
-        alg = alg[indx + 1];
+        alg = algs[indx + 1];
         algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
@@ -3304,7 +3303,6 @@ algorithm
       list<BackendDAE.Var> var_lst;
       list<DAE.ComponentRef> crefs,crefs1,tcrs;
       array<BackendDAE.MultiDimEquation> ae;
-      Boolean genDiscrete;
       String str_id,size_str,func_name,start_stmt,end_stmt;
       VarTransform.VariableReplacements repl;
       array<DAE.Algorithm> algorithms;
@@ -3422,7 +3420,6 @@ algorithm
     local
       list<DAE.Exp> rels;
       list<list<String>> values,values_1;
-      list<Integer> value_dims;
       list<String> values_2,ss;
       String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
       Integer disc_len,values_len;
@@ -3464,7 +3461,6 @@ algorithm
       list<BackendDAE.Var> var_lst;
       list<DAE.ComponentRef> crefs;
       array<BackendDAE.MultiDimEquation> ae;
-      Boolean genDiscrete;
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
       list<String> blockIdStrLst;
@@ -4584,7 +4580,7 @@ algorithm
       BackendDAE.Variables vars, vars_1,knvars,exvars;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns_1,eqns,se,ie;
-      BackendDAE.BackendDAE cont_subsystem_dae,dlow;
+      BackendDAE.BackendDAE cont_subsystem_dae;
       array<list<Integer>> m,m_1,mt_1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
@@ -4593,8 +4589,6 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
-      array<Integer> ass1,ass2;
-      list<list<Integer>> blocks;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Var dlowvar;
       SimVar simvar;
@@ -5055,7 +5049,6 @@ algorithm
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
-      Integer index;
       Option<DAE.Exp> initVal;
       Boolean isFixed;
       DAE.ExpType type_;
@@ -5312,7 +5305,7 @@ protected function generateHelpVarsInAlgorithms
 algorithm
   (outHelpVars,outAlgLst,n2) := matchcontinue(nextInd,inAlgLst)
     local
-      Integer nextInd,nextInd2,nextInd3;
+      Integer nextInd2,nextInd3;
       list<Algorithm.Statement> stmts, stmts2;
       list<Algorithm.Algorithm> rest,rest2;
       list<HelpVarInfo> helpvars1,helpvars2,helpvars;
@@ -5698,7 +5691,6 @@ algorithm
   (outString, helpVarLst) :=
   matchcontinue (whenEq,inBackendDAEWhenClauseLst,isElseWhen, nextHelpIndex)
     local
-      Boolean isElseWhen;
       Integer nextHelpInd, ind;
       Expression.ComponentRef cr;
       DAE.Exp exp;
@@ -5729,9 +5721,7 @@ protected function getConditionList
 algorithm
   conditionList := matchcontinue (whenClauseList, index)
     local
-      list<BackendDAE.WhenClause> whenClauseList;
       Integer ind;
-      list<DAE.Exp> conditionList;
       DAE.Exp e;
 
     case (whenClauseList, ind)
@@ -6306,7 +6296,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
 "
   input list<Expression.ComponentRef> crefs;
   output VarTransform.VariableReplacements repl_1;
-  VarTransform.VariableReplacements repl,repl_1;
+  VarTransform.VariableReplacements repl;
 algorithm
   repl := VarTransform.emptyReplacements();
   repl_1 := makeResidualReplacements2(repl, crefs, 0);
@@ -6333,7 +6323,7 @@ algorithm
     case (repl,{},_) then repl;
     case (repl,(cr :: crs),pos)
       equation
-        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN}), {DAE.INDEX(DAE.ICONST(pos))});
+        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()}), {DAE.INDEX(DAE.ICONST(pos))});
         repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(cref_, DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
@@ -7792,7 +7782,7 @@ end keyEqual;
 public
 uniontype HashTableCrefToSimVar
   record HASHTABLE
-    list<tuple<Key,Integer>>[:] hashTable " hashtable to translate Key to array indx" ;
+    array<list<tuple<Key,Integer>>> hashTable " hashtable to translate Key to array indx" ;
     ValueArray valueArr "Array of values" ;
     Integer bucketSize "bucket size" ;
     Integer numberOfEntries "number of entries in hashtable" ;
@@ -7804,7 +7794,7 @@ efficient manner"
   record VALUE_ARRAY
     Integer numberOfElements "number of elements in hashtable" ;
     Integer arrSize "size of crefArray" ;
-    Option<tuple<Key,Value>>[:] valueArray "array of values";
+    array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;
 
@@ -7817,9 +7807,9 @@ input HashTableCrefToSimVar inHash;
 output HashTableCrefToSimVar outHash;
 algorithm outHash := matchcontinue(inHash)
   local
-    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    array<list<tuple<Key,Integer>>> arg1,arg1_2;
     Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
-    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+    array<Option<tuple<Key,Value>>> arg23,arg23_2;
   case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
     equation
       arg1_2 = arrayCopy(arg1);
@@ -7840,9 +7830,9 @@ public function nullHashTable "
   Using the bucketsize 100 and array size 10.
 "
   output HashTableCrefToSimVar hashTable;
-  list<tuple<Key,Integer>>[:] arr;
+  array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
-  Option<tuple<Key,Value>>[:] emptyarr;
+  array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
   arr := fill({}, 0);
   emptyarr := listArray({});
@@ -7856,11 +7846,11 @@ public function emptyHashTable "
   Using the bucketsize 100 and array size 10.
 "
   output HashTableCrefToSimVar hashTable;
-  list<tuple<Key,Integer>>[:] arr;
+  array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
-  Option<tuple<Key,Value>>[:] emptyarr;
+  array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
-  arr := fill({}, 1000);
+  arr := arrayCreate(1000, {});
   // lst := Util.listFill(NONE, 100);
   // emptyarr := listArray(lst);
   emptyarr := fill(NONE(), 100);
@@ -7893,7 +7883,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -7973,7 +7963,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -8018,7 +8008,7 @@ algorithm
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       ValueArray varr_1,varr;
       list<tuple<Key,Integer>> indexes;
-      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
       String name_str;
       tuple<Key,Value> v,newv;
       Key key;
@@ -8061,10 +8051,10 @@ algorithm
   (value,indx):=
   matchcontinue (key,hashTable)
     local
-      Integer hval,hashindx,indx,indx_1,bsize,n;
+      Integer hval,hashindx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
-      list<tuple<Key,Integer>>[:] hashvec;
+      array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
       Key k;
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
@@ -8144,7 +8134,7 @@ algorithm
   tplLst :=
   matchcontinue (valueArray)
     local
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       tuple<Key,Value> elt;
       Integer lastpos,n,size;
       list<tuple<Key,Value>> lst;
@@ -8164,7 +8154,7 @@ algorithm
 end valueArrayList;
 
 protected function valueArrayList2 "Helper function to valueArrayList"
-  input Option<tuple<Key,Value>>[:] inVarOptionArray1;
+  input array<Option<tuple<Key,Value>>> inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<tuple<Key,Value>> outVarLst;
@@ -8173,7 +8163,7 @@ algorithm
   matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
     local
       tuple<Key,Value> v;
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
     case (arr,pos,lastpos)
@@ -8225,7 +8215,7 @@ algorithm
   matchcontinue (valueArray,entry)
     local
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
-      Option<tuple<Key,Value>>[:] arr_1,arr,arr_2;
+      array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
     case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
       equation
@@ -8268,8 +8258,8 @@ algorithm
   outValueArray:=
   matchcontinue (valueArray,pos,entry)
     local
-      Option<tuple<Key,Value>>[:] arr_1,arr;
-      Integer n,size,pos;
+      array<Option<tuple<Key,Value>>> arr_1,arr;
+      Integer n,size;
     case (VALUE_ARRAY(n,size,arr),pos,entry)
       equation
         (pos < size) = true;
@@ -8295,7 +8285,7 @@ algorithm
   outValueArray:=
   matchcontinue (valueArray,pos)
     local
-      Option<tuple<Key,Value>>[:] arr_1,arr;
+      array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size,pos;
     case (VALUE_ARRAY(n,size,arr),pos)
       equation
@@ -8327,7 +8317,7 @@ algorithm
       Key k;
       Value v;
       Integer n,pos,len;
-      Option<tuple<Key,Value>>[:] arr;
+      array<Option<tuple<Key,Value>>> arr;
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation

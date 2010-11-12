@@ -1018,8 +1018,8 @@ algorithm
       //Ordered Variables: state & algebraic variables.
       BackendDAE.Variables vars_orderedVars;
       //VARIABLES record for vars.
-      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_orderedVars;
-      list<BackendDAE.StringIndex>[:] strIdxLstArr_orderedVars;
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
+      array<list<BackendDAE.StringIndex>> strIdxLstArr_orderedVars;
       BackendDAE.VariableArray varArr_orderedVars;
       Integer bucketSize_orderedVars;
       Integer numberOfVars_orderedVars;
@@ -1027,8 +1027,8 @@ algorithm
       //Known Variables: constant & parameter variables.
       BackendDAE.Variables vars_knownVars;
       //VARIABLES record for vars.
-      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_knownVars;
-      list<BackendDAE.StringIndex>[:] strIdxLstArr_knownVars;
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr_knownVars;
+      array<list<BackendDAE.StringIndex>> strIdxLstArr_knownVars;
       BackendDAE.VariableArray varArr_knownVars;
       Integer bucketSize_knownVars;
       Integer numberOfVars_knownVars;
@@ -1036,8 +1036,8 @@ algorithm
       //External Object: external variables.
       BackendDAE.Variables vars_externalObject;
       //VARIABLES record for vars.
-      list<BackendDAE.CrefIndex>[:] crefIdxLstArr_externalObject;
-      list<BackendDAE.StringIndex>[:] strIdxLstArr_externalObject;
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr_externalObject;
+      array<list<BackendDAE.StringIndex>> strIdxLstArr_externalObject;
       BackendDAE.VariableArray varArr_externalObject;
       Integer bucketSize_externalObject;
       Integer numberOfVars_externalObject;
@@ -1051,8 +1051,8 @@ algorithm
       list<String> ss;
       list<BackendDAE.MultiDimEquation> ae_lst;
       BackendDAE.EquationArray eqns,reqns,ieqns;
-      BackendDAE.MultiDimEquation[:] ae;
-      DAE.Algorithm[:] algs;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
       list<BackendDAE.ZeroCrossing> zc;
 
       list<DAE.Function> inFunctions;
@@ -2512,7 +2512,7 @@ algorithm
     local
       BackendDAE.Value len,i_1,eqn,i;
       String s,s2;
-      BackendDAE.Value[:] v;
+      array<BackendDAE.Value> v;
     case (v,i)
       equation
         len = arrayLength(v);
@@ -2674,7 +2674,7 @@ algorithm
   matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inBackendDAE)
     local
       BackendDAE.BackendDAE dlow;
-      list<Integer>[:] m,mT;
+      array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
     case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_) then ();
@@ -2798,7 +2798,7 @@ This function prints a list from a list
 of array of StringIndex elements in
 a XML format. See dumpStringIdxLst for details.
 "
-  input list<BackendDAE.StringIndex>[:] stringIdxLstArr;
+  input array<list<BackendDAE.StringIndex>> stringIdxLstArr;
   input String Content;
   input Integer inInteger;
 algorithm
@@ -3186,8 +3186,8 @@ The output is very simple and is like:
 </ADDITIONAL_INFO>
 "
 
-  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
-  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
+  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input Integer i;
 algorithm
     _ := matchcontinue (crefIdxLstArr,strIdxLstArr,i)
@@ -3218,8 +3218,8 @@ is:
 </Content>
 "
   input list<BackendDAE.Var> vars;
-  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
-  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
+  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input String Content;
   input DAE.Exp addMathMLCode;
 algorithm
@@ -3338,8 +3338,8 @@ printing the content of a variable with AdditionalInfo.
 See dumpVariable for more details on the XML output.
 "
   input list<BackendDAE.Var> inVarLst;
-  input list<BackendDAE.CrefIndex>[:] crefIdxLstArr;
-  input list<BackendDAE.StringIndex>[:] strIdxLstArr;
+  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm

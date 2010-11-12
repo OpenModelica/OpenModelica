@@ -3239,7 +3239,7 @@ public function absIncidenceMatrix
   list<list<BackendDAE.Value>> lst,lst_1;
 algorithm
   lst := arrayList(m);
-  lst_1 := Util.listListMap(lst, int_abs);
+  lst_1 := Util.listListMap(lst, intAbs);
   res := listArray(lst_1);
 end absIncidenceMatrix;
 

@@ -67,7 +67,7 @@ algorithm
   fileName := matchcontinue(dlow, fileNamePrefix, flatModelicaStr)
     local
       String file, strIMatrix, strVariables, flatStr, strEquations;
-      list<String>[:] m;
+      array<list<String>> m;
     
     case (dlow, fileNamePrefix, flatStr)
       equation
@@ -177,7 +177,7 @@ end equationStr;
 
 protected function getIncidenceMatrix "function: getIncidenceMatrix
   gets the incidence matrix as a string"
-  input list<String>[:] m;
+  input array<list<String>> m;
   output String strIMatrix;
   Integer mlen;
   String mlen_str;
@@ -471,14 +471,14 @@ public function incidenceMatrix
   Calculates the incidence matrix, i.e. which
   variables are present in each equation."
   input BackendDAE.BackendDAE inBackendDAE;
-  output list<String>[:] outIncidenceMatrix;
+  output array<list<String>> outIncidenceMatrix;
 algorithm
   outIncidenceMatrix:=
   matchcontinue (inBackendDAE)
     local
       list<BackendDAE.Equation> eqnsl;
       list<list<String>> lstlst;
-      list<String>[:] arr;
+      array<list<String>> arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns))
