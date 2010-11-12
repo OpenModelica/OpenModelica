@@ -154,18 +154,18 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (this->mItemClicked)
     {
-        static qreal resizeFactorX = 1.0;
-        static qreal resizeFactorY = 1.0;
+        qreal resizeFactorX = 1.0;
+        qreal resizeFactorY = 1.0;
         switch (this->mCorner)
         {
         case Qt::TopLeftCorner:
             {
-                if ((this->mClickPos.x() < event->pos().x()) or (this->mClickPos.y() > event->pos().y()))
+                if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
                 {
                     resizeFactorX = this->mScaleDecrementBy;
                     resizeFactorY = this->mScaleDecrementBy;
                 }
-                else if ((this->mClickPos.x() > event->pos().x()) or (this->mClickPos.y() < event->pos().y()))
+                else if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
                 {
                     resizeFactorX = this->mScaleIncrementBy;
                     resizeFactorY = this->mScaleIncrementBy;
@@ -174,41 +174,44 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             }
         case Qt::TopRightCorner:
             {
-                if (this->mClickPos.x() < event->pos().x())
-                    resizeFactorX = this->mScaleIncrementBy;
-                else if (this->mClickPos.x() > event->pos().x())
+                if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
+                {
                     resizeFactorX = this->mScaleDecrementBy;
-
-                if (this->mClickPos.y() < event->pos().y())
-                    resizeFactorY = this->mScaleIncrementBy;
-                else if (this->mClickPos.y() > event->pos().y())
                     resizeFactorY = this->mScaleDecrementBy;
+                }
+                else if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
+                {
+                    resizeFactorX = this->mScaleIncrementBy;
+                    resizeFactorY = this->mScaleIncrementBy;
+                }
                 break;
             }
         case Qt::BottomLeftCorner:
             {
-                if (this->mClickPos.x() < event->pos().x())
+                if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
+                {
                     resizeFactorX = this->mScaleDecrementBy;
-                else if (this->mClickPos.x() > event->pos().x())
-                    resizeFactorX = this->mScaleIncrementBy;
-
-                if (this->mClickPos.y() < event->pos().y())
                     resizeFactorY = this->mScaleDecrementBy;
-                else if (this->mClickPos.y() > event->pos().y())
+                }
+                else if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
+                {
+                    resizeFactorX = this->mScaleIncrementBy;
                     resizeFactorY = this->mScaleIncrementBy;
+                }
                 break;
             }
         case Qt::BottomRightCorner:
             {
-                if (this->mClickPos.x() < event->pos().x())
-                    resizeFactorX = this->mScaleIncrementBy;
-                else if (this->mClickPos.x() > event->pos().x())
+                if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
+                {
                     resizeFactorX = this->mScaleDecrementBy;
-
-                if (this->mClickPos.y() < event->pos().y())
                     resizeFactorY = this->mScaleDecrementBy;
-                else if (this->mClickPos.y() > event->pos().y())
+                }
+                else if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
+                {
+                    resizeFactorX = this->mScaleIncrementBy;
                     resizeFactorY = this->mScaleIncrementBy;
+                }
                 break;
             }
         }

@@ -73,7 +73,6 @@ private:
     void createMenus();
 public:
     GraphicsView(ProjectTab *parent = 0);
-    Connector *getConnector();
     void addComponentObject(Component *icon);
     void deleteComponentObject(Component *icon);
     Component* getComponentObject(QString componentName);

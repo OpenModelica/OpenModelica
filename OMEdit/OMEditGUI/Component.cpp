@@ -331,19 +331,19 @@ void Component::createSelectionBox()
 
     mpTopLeftCornerItem = new CornerItem(x1, y2, Qt::TopLeftCorner, this);
     connect(mpTopLeftCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
-    connect(mpTopLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
+    connect(mpTopLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeComponent(qreal, qreal)));
     // create top right selection box
     mpTopRightCornerItem = new CornerItem(x2, y2, Qt::TopRightCorner, this);
     connect(mpTopRightCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
-    connect(mpTopRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
+    connect(mpTopRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeComponent(qreal, qreal)));
     // create bottom left selection box
     mpBottomLeftCornerItem = new CornerItem(x1, y1, Qt::BottomLeftCorner, this);
     connect(mpBottomLeftCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
-    connect(mpBottomLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
+    connect(mpBottomLeftCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeComponent(qreal, qreal)));
     // create bottom right selection box
     mpBottomRightCornerItem = new CornerItem(x2, y1, Qt::BottomRightCorner, this);
     connect(mpBottomRightCornerItem, SIGNAL(iconSelected()), this, SLOT(showSelectionBox()));
-    connect(mpBottomRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeIcon(qreal, qreal)));
+    connect(mpBottomRightCornerItem, SIGNAL(iconResized(qreal, qreal)), this, SLOT(resizeComponent(qreal, qreal)));
 }
 
 void Component::createActions()
@@ -459,10 +459,6 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         emit componentRotated(true);
         updateSelectionBox();
     }
-    else if (change == QGraphicsItem::ItemScaleHasChanged)
-    {
-        emit componentScaled();
-    }
     return value;
 }
 
@@ -499,6 +495,8 @@ void Component::updateSelectionBox()
 {
     qreal x1, y1, x2, y2;
     boundingRect().getCoords(&x1, &y1, &x2, &y2);
+
+
     if (rotation() == 0)
     {
         mpBottomLeftCornerItem->updateCornerItem(x1, y1, Qt::BottomLeftCorner);
@@ -559,6 +557,9 @@ void Component::addConnector(Connector *item)
 
     connect(this, SIGNAL(componentRotated(bool)), item, SLOT(drawConnector(bool)));
     connect(this, SIGNAL(componentRotated(bool)), item, SLOT(updateConnectionAnnotationString()));
+
+    connect(this, SIGNAL(componentScaled()), item, SLOT(drawConnector()));
+    connect(this, SIGNAL(componentScaled()), item, SLOT(updateConnectionAnnotationString()));
 }
 
 void Component::updateAnnotationString()
@@ -594,14 +595,12 @@ void Component::updateAnnotationString()
                                 annotationString);
 }
 
-void Component::resizeIcon(qreal resizeFactorX, qreal resizeFactorY)
+void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
 {
     if (resizeFactorX > 0 && resizeFactorY > 0)
     {
-        prepareGeometryChange();
-        //this->scale(resizeFactorX, resizeFactorY);
-        update();
-        //updateSelectionBox();
+        this->scale(resizeFactorX, resizeFactorY);
+        emit componentScaled();
     }
 }
 

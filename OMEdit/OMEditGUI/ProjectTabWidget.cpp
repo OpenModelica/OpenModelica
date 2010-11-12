@@ -66,6 +66,7 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
     this->scale(2.0, -2.0);
+    this->centerOn(this->sceneRect().center());
     this->createActions();
     this->createMenus();
 
@@ -190,11 +191,6 @@ void GraphicsView::dropEvent(QDropEvent *event)
     {
         event->ignore();
     }
-}
-
-Connector* GraphicsView::getConnector()
-{
-    return mpConnector;
 }
 
 void GraphicsView::addComponentObject(Component *component)
@@ -538,7 +534,7 @@ void GraphicsView::resetZoom()
 void GraphicsView::zoomIn()
 {
     //this->scale(1.15, 1.15);
-    this->scale(2.0, 2.0);
+    this->scale(1.12, 1.12);
 }
 
 //! Decreases zoom factor by 13.04% (1 - 1/1.15).
@@ -547,7 +543,7 @@ void GraphicsView::zoomIn()
 void GraphicsView::zoomOut()
 {
     //if (transform().m11() != 2.0 and transform().m22() != -2.0)
-    this->scale(0.5, 0.5);
+    this->scale(1/1.12, 1/1.12);
 }
 
 void GraphicsView::showGridLines(bool showLines)
@@ -883,8 +879,9 @@ void ProjectTab::getModelComponents()
         {
             // Check if the icon is already loaded.
             QString iconName;
-            iconName = mpGraphicsView->getUniqueComponentName(StringHandler::getLastWordAfterDot(
-                                                              componentProperties->getClassName()).toLower());
+//            iconName = mpGraphicsView->getUniqueComponentName(StringHandler::getLastWordAfterDot(
+//                                                              componentProperties->getClassName()).toLower());
+            iconName = componentProperties->getName();
 
             if (!oldComponent)
             {
@@ -909,7 +906,10 @@ void ProjectTab::getModelComponents()
         {
             newComponent->mTransformationString = componentsAnnotationsList.at(i);
             Transformation *transformation = new Transformation(newComponent);
-            newComponent->setTransform(transformation->getTransformationMatrix());
+            //newComponent->setTransform(transformation->getTransformationMatrix());
+            newComponent->setPos(transformation->mPositionX, transformation->mPositionY);
+            newComponent->setRotation(transformation->getRotateAngle());
+            //! @todo add the scaling code later on
         }
         i++;
     }

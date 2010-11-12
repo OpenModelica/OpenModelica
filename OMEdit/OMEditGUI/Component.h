@@ -143,8 +143,7 @@ signals:
 public slots:
     void updateAnnotationString();
     void showSelectionBox();
-    void resizeIcon(qreal resizeFactorX, qreal resizeFactorY);
-    //void renameIcon();
+    void resizeComponent(qreal resizeFactorX, qreal resizeFactorY);
     void deleteMe();
     void moveUp();
     void moveDown();

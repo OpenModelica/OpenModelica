@@ -86,7 +86,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // Set the annotations version to 3.x
     if (!mExitApplication)
     {
-        //mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION2X);
+        //mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION3X);
     }
     // Loads and adds the OM Standard Library into the Library Widget.
     splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
