@@ -1757,7 +1757,7 @@ algorithm
         // Prepare all needed variables
       	varlst = BackendDAEUtil.varList(v);
       	varlst1 = BackendDAEUtil.varList(kv);
-        states = Util.listSelect(varlst,BackendVariable.isStateVar);
+        states = BackendVariable.getAllStateVarFromVariables(v);
 	      states = Util.sort(states, BackendVariable.varIndexComparer);
 				inputvars = Util.listSelect(varlst1,BackendDAEUtil.isInput);
 	      inputvars = Util.sort(inputvars, BackendVariable.varIndexComparer);
@@ -1782,17 +1782,15 @@ algorithm
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquations(false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        derivedVariables = BackendDAEUtil.varList(v);
-        JacAVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
-        
+        JacAVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        JacAVars = listReverse(JacAVars);
         // create Matrix C and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquations(false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        derivedVariables = BackendDAEUtil.varList(v);
-        JacCVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
-        
+        JacCVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        JacAVars = listReverse(JacAVars);
         // Differentiate the System w.r.t states for matrices B and D
         Debug.fcall("linmodel",print,"Differentiate System w.r.t. inputs.\n");
         deriveddlow1 = BackendDAEOptimize.generateSymbolicJacobian(dlow, functions, comref_inputvars, states, inputvars, paramvars);
@@ -1803,17 +1801,15 @@ algorithm
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquations(false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        derivedVariables = BackendDAEUtil.varList(v);
-        JacBVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
-        
+        JacBVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        JacBVars = listReverse(JacBVars);
         // create Matrix D and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
         (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquations(false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         v = BackendVariable.daeVars(deriveddlow2);
-        derivedVariables = BackendDAEUtil.varList(v);
-        JacDVars =  Util.listMap(derivedVariables, dlowvarToSimvar);
-
+        JacDVars =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});
+        JacDVars = listReverse(JacDVars);
         LinearMats = {(JacAEquations,JacAVars,"A"),(JacBEquations,JacBVars,"B"),(JacCEquations,JacCVars,"C"),(JacDEquations,JacDVars,"D")};  
 
       then
@@ -1999,8 +1995,7 @@ algorithm
       list<BackendDAE.Var> vLst;
     case (daelow as BackendDAE.DAE(orderedVars = v),blocks,ass1,ass2,m,mT)
       equation
-      vLst = BackendDAEUtil.varList(v);
-      vLst = Util.listSelect(vLst,BackendDAEUtil.isVarDiscrete); // select all discrete vars.
+      vLst = BackendVariable.getAllDiscreteVarFromVariables(v); // select all discrete vars.
 			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
     then outString;
     case(_,_,_,_,_,_) equation
@@ -2464,21 +2459,38 @@ algorithm
   discreteModelVars := matchcontinue (dlow, mT)
     local
       BackendDAE.Variables v;
-      list<BackendDAE.Var> vLst;
       list<DAE.ComponentRef> vLst2;
     
     case (BackendDAE.DAE(orderedVars=v), mT)
       equation
-        vLst = BackendDAEUtil.varList(v);
         // select all discrete vars.
-        vLst = Util.listSelect(vLst, BackendDAEUtil.isVarDiscrete);
         // remove those vars that are solved in when equations
         //vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
         // replace var with cref
-        vLst2 = Util.listMap(vLst, BackendVariable.varCref);
+        vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
       then vLst2;
   end matchcontinue;
 end extractDiscreteModelVars;
+
+protected function traversingisVarDiscreteCrefFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
+ output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<DAE.ComponentRef> cr_lst;
+      DAE.ComponentRef cr;
+    case ((v,cr_lst))
+      equation
+        true = BackendDAEUtil.isVarDiscrete(v);
+        cr = BackendVariable.varCref(v);
+      then ((v,cr::cr_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingisVarDiscreteCrefFinder;  
 
 protected function varNotSolvedInWhen
   input BackendDAE.Var var;
@@ -3315,9 +3327,8 @@ algorithm
       equation
         // get equations and variables
         eqn_lst = BackendDAEUtil.equationList(eqn);
-        var_lst = BackendDAEUtil.varList(v);
         // get names from variables
-        crefs = Util.listMap(var_lst, BackendVariable.varCref);
+        crefs = BackendVariable.getAllCrefFromVariables(v);
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         crefs1 = Util.listAddElementFirst(ComponentReference.makeCrefIdent("shift",DAE.ET_REAL(),{}),crefs);
@@ -3536,8 +3547,8 @@ algorithm
     // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
     case (mixedEvent,_,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),BackendDAE.JAC_TIME_VARYING(),block_,helpVarInfo)
       equation
-        dlowVars = BackendDAEUtil.varList(v);
-        simVars = Util.listMap(dlowVars, dlowvarToSimvar);
+        simVars = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{});  
+        simVars = listReverse(simVars); 
         dlowEqs = BackendDAEUtil.equationList(eqn);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
@@ -3548,8 +3559,7 @@ algorithm
     case (mixedEvent,_,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),BackendDAE.JAC_NONLINEAR(),block_,helpVarInfo)
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
-        var_lst = BackendDAEUtil.varList(v);
-        crefs = Util.listMap(var_lst, BackendVariable.varCref);
+        crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -3559,8 +3569,7 @@ algorithm
     case (mixedEvent,_,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE(),BackendDAE.JAC_NO_ANALYTIC(),block_,helpVarInfo)
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
-        var_lst = BackendDAEUtil.varList(v);
-        crefs = Util.listMap(var_lst, BackendVariable.varCref);
+        crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
@@ -3727,7 +3736,7 @@ algorithm
         // get non relaxation equations
         block_1 = Util.listSelect1(block_,r,Util.listNotContains);
         // get names from variables
-        crefs = Util.listMap(var_lst, BackendVariable.varCref);
+        crefs = BackendVariable.getAllCrefFromVariables(v);
         // generade replacement from non residual eqns           
         repl = VarTransform.emptyReplacements();
         (repl_1,eqns) = getRelaxationReplacements(block_1,ass2,crefs,eqn_lst,repl);
@@ -3886,7 +3895,6 @@ algorithm
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       SimEqSystem reqn;
       BackendDAE.Variables v;
-      list<BackendDAE.Var> dlowVars;
       BackendDAE.EquationArray eqn;
       list<BackendDAE.Equation> dlowEqs;
       array<BackendDAE.MultiDimEquation> ae;      
@@ -3899,12 +3907,12 @@ algorithm
     
     case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
-        dlowVars = BackendDAEUtil.varList(v);
         dlowEqs = BackendDAEUtil.equationList(eqn);
 				m = BackendDAEUtil.incidenceMatrix(daelow);
         mT = BackendDAEUtil.transposeMatrix(m);      
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
-        simVars = Util.listMap(dlowVars, dlowvarToSimvar);
+        simVars = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{}); 
+        simVars = listReverse(simVars);
         (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
@@ -4165,7 +4173,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
-        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
+        solvedVars = BackendVariable.getAllCrefFromVariables(vars);
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
@@ -4178,7 +4186,7 @@ algorithm
       equation
         (BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) :: _) = BackendDAEUtil.equationList(eqns);
         alg = al[indx + 1];
-        solvedVars = Util.listMap(BackendDAEUtil.varList(vars),BackendVariable.varCref);
+        solvedVars = BackendVariable.getAllCrefFromVariables(vars);
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
@@ -4300,11 +4308,11 @@ algorithm
                                  eventInfo=ev)),
           ass1, ass2)
       equation
-        vars_lst = BackendDAEUtil.varList(vars);
         eqns_lst = BackendDAEUtil.equationList(eqns);
         se_lst = BackendDAEUtil.equationList(se);
         ie_lst = BackendDAEUtil.equationList(ie);
-        ie2_lst = generateInitialEquationsFromStart(vars_lst);
+        ie2_lst = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,{});
+        ie2_lst = listReverse(ie2_lst);
         eqns_lst = selectContinuousEquations(eqns_lst, 1, ass2, dlow);
 
         eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
@@ -4379,8 +4387,6 @@ algorithm
     local
       list<BackendDAE.Equation> initialEquationsTmp;
       list<BackendDAE.Equation> initialEquationsTmp2;
-      list<BackendDAE.Var> vars_lst;
-      list<BackendDAE.Var> knvars_lst;
       list<BackendDAE.Equation> eqns_lst;
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
@@ -4389,11 +4395,11 @@ algorithm
     case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs))
       equation
         // vars
-        vars_lst = BackendDAEUtil.varList(vars);
-        initialEquationsTmp2 = createInitialAssignmentsFromStart(vars_lst);
+        initialEquationsTmp2 = BackendVariable.traverseBackendDAEVars(vars,createInitialAssignmentsFromStart,{});
+        initialEquationsTmp2 = listReverse(initialEquationsTmp2);
         // kvars
-        knvars_lst = BackendDAEUtil.varList(knvars);
-        initialEquationsTmp = createInitialAssignmentsFromStart(knvars_lst);
+        initialEquationsTmp = BackendVariable.traverseBackendDAEVars(knvars,createInitialAssignmentsFromStart,{});
+        initialEquationsTmp = listReverse(initialEquationsTmp);
         initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
 
         initialEquations = Util.listMap1(initialEquationsTmp2,
@@ -4416,23 +4422,16 @@ algorithm
   parameterEquations := matchcontinue (dlow)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
-      list<BackendDAE.Var> vars_lst;
-      list<BackendDAE.Var> knvars_lst;
-      list<BackendDAE.Equation> eqns_lst;
-      BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
       array<Algorithm.Algorithm> algs;
     
-    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs))
+    case (BackendDAE.DAE(knownVars=knvars,algorithms=algs))
       equation
         // kvars params
-        knvars_lst = BackendDAEUtil.varList(knvars);
-        parameterEquationsTmp = createInitialParamAssignments(knvars_lst);
+        parameterEquationsTmp = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,{}); 
 
         parameterEquations = Util.listMap1(parameterEquationsTmp,
                                           dlowEqToSimEqSystem,algs);
-        //?? why is this reversed ???
-        parameterEquations = listReverse(parameterEquations);
       then
         parameterEquations;
     
@@ -4446,70 +4445,60 @@ algorithm
 end createParameterEquations;
 
 protected function createInitialAssignmentsFromStart
-  input list<BackendDAE.Var> vars;
-  output list<BackendDAE.Equation> initialEquations;
+ input tuple<BackendDAE.Var, list<BackendDAE.Equation>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Equation>> outTpl;
 algorithm
-  initialEquations := matchcontinue (vars)
+  outTpl:=
+  matchcontinue (inTpl)  
     local
+      BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
-      list<BackendDAE.Var> restVars;
+      list<BackendDAE.Equation> eqns;      
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef name;
       DAE.Exp startv;
       DAE.ElementSource source "the origin of the element";
 
-    case ({}) then {};
-
     // also add an assignment for variables that have non-constant
     // expressions, e.g. parameter values, as start.  NOTE: such start
     // attributes can then not be changed in the text file, since the initial
     // calc. will override those entries!    
-    case (BackendDAE.VAR(values=attr, varName=name, source=source) :: restVars)
+    case ((var as BackendDAE.VAR(values=attr, varName=name, source=source),eqns))
       equation
         startv = DAEUtil.getStartAttr(attr);
         false = Expression.isConst(startv);
         initialEquation = BackendDAE.SOLVED_EQUATION(name, startv, source);
-        initialEquations = createInitialAssignmentsFromStart(restVars);
       then
-        (initialEquation :: initialEquations);
+        ((var,initialEquation :: eqns));
     
-    case (_ :: restVars)
-      equation
-        initialEquations = createInitialAssignmentsFromStart(restVars);
-      then
-        initialEquations;
+    case (inTpl) then inTpl;
   end matchcontinue;
 end createInitialAssignmentsFromStart;
 
 protected function createInitialParamAssignments
-  input list<BackendDAE.Var> vars;
-  output list<BackendDAE.Equation> initialEquations;
+ input tuple<BackendDAE.Var, list<BackendDAE.Equation>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Equation>> outTpl;
 algorithm
-  initialEquations := matchcontinue (vars)
+  outTpl:=
+  matchcontinue (inTpl) 
     local
+      BackendDAE.Var var;
       BackendDAE.Equation initialEquation;
-      list<BackendDAE.Var> restVars;
+      list<BackendDAE.Equation> eqns; 
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef cr;
       DAE.Exp startv;
       DAE.Exp e;
       DAE.ElementSource source "the origin of the element";
 
-    case ({}) then {};
-    
-    case (BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source) :: restVars)
+    case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),eqns))
       equation
         false = Expression.isConst(e);
         initialEquation = BackendDAE.SOLVED_EQUATION(cr, e, source);
-        initialEquations = createInitialParamAssignments(restVars);
       then
-        (initialEquation :: initialEquations);
+        ((var,initialEquation :: eqns));
     
-    case (_ :: restVars)
-      equation
-        initialEquations = createInitialParamAssignments(restVars);
-      then
-        initialEquations;
+   case (inTpl) then inTpl;
   end matchcontinue;
 end createInitialParamAssignments;
 
@@ -4707,13 +4696,9 @@ algorithm
   varsOut :=
   matchcontinue (dlow)
     local
-      list<BackendDAE.Var> var_lst;
-      list<BackendDAE.Var> knvar_lst;
-      list<BackendDAE.Var> extvar_lst;
       BackendDAE.Variables vars;
       BackendDAE.Variables knvars;
       BackendDAE.Variables extvars;
-      SimVars varsTmp;
       BackendDAE.EquationArray ie;
       list<BackendDAE.Equation> ie_lst;
     case (BackendDAE.DAE(orderedVars = vars,
@@ -4721,17 +4706,12 @@ algorithm
                         externalObjects = extvars,
                         initialEqs=ie))
       equation
-        /* Extract from variable list */
-        var_lst = BackendDAEUtil.varList(vars);
-        varsOut = extractVarsFromList(var_lst);
+        /* Extract from variable list */  
+        varsOut = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{})); 
         /* Extract from known variable list */
-        knvar_lst = BackendDAEUtil.varList(knvars);
-        varsTmp = extractVarsFromList(knvar_lst);
-        varsOut = mergeVars(varsOut, varsTmp);
+        varsOut = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,varsOut);
         /* Extract from external object list */
-        extvar_lst = BackendDAEUtil.varList(extvars);
-        varsTmp = extractVarsFromList(extvar_lst);
-        varsOut = mergeVars(varsOut, varsTmp);
+        varsOut = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,varsOut);
         /* sort variables on index */
         varsOut = sortSimvarsOnIndex(varsOut);
         /* Index of algebraic and parameters need 
@@ -4746,11 +4726,10 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
-  input list<BackendDAE.Var> varList;
-  output SimVars varsOut;
+ input tuple<BackendDAE.Var, SimVars> inTpl;
+ output tuple<BackendDAE.Var, SimVars> outTpl;
 algorithm
-  varsOut :=
-  matchcontinue (varList)
+  outTpl:= matchcontinue (inTpl)      
     local
       BackendDAE.Var var;
       Expression.ComponentRef cr, origname;
@@ -4762,23 +4741,14 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<BackendDAE.Var> vs;
-      SimVars varsTmp1;
-      SimVars varsTmp2;
-      SimVars vars;
-    case ({})
-      then (SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{}));
-    case ((var :: vs))
+      SimVars vars,varsTmp1,varsTmp2;
+    case ((var,vars))
       equation
         varsTmp1 = extractVarFromVar(var);
-        varsTmp2 = extractVarsFromList(vs);
-        vars = mergeVars(varsTmp1, varsTmp2);
+        varsTmp2 = mergeVars(varsTmp1, vars);
       then
-        vars;
-    case ((_ :: vs))
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"extractVarsFromList failed"});
-      then
-        fail();
+        ((var,varsTmp2));
+    case (inTpl) then inTpl;
   end matchcontinue;
 end extractVarsFromList;
 
@@ -5483,11 +5453,11 @@ protected function generateInitialEquationsFromStart "function: generateInitialE
   fixed set to true is converted by this function. Fixed set to false
   means an initial guess, and is not considered here.
 "
-  input list<BackendDAE.Var> inBackendDAEVarLst;
-  output list<BackendDAE.Equation> outBackendDAEEquationLst;
+ input tuple<BackendDAE.Var, list<BackendDAE.Equation>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Equation>> outTpl;
 algorithm
-  outBackendDAEEquationLst:=
-  matchcontinue (inBackendDAEVarLst)
+  outTpl:=
+  matchcontinue (inTpl)      
     local
       list<BackendDAE.Equation> eqns;
       BackendDAE.Var v;
@@ -5495,23 +5465,18 @@ algorithm
       BackendDAE.VarKind kind;
       DAE.Exp startv;
       Option<DAE.VariableAttributes> attr;
-      list<BackendDAE.Var> vars;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
+      DAE.Exp e;
 
-    case ({}) then {};
-    case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)) :: vars)) /* add equations for variables with fixed = true */
+    case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)),eqns)) /* add equations for variables with fixed = true */
       equation
         true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
         startv = DAEUtil.getStartAttr(attr);
-        eqns = generateInitialEquationsFromStart(vars);
+        e = Expression.crefExp(cr);
       then
-        (BackendDAE.EQUATION(DAE.CREF(cr,DAE.ET_OTHER()),startv,source) :: eqns);
-    case ((_ :: vars))
-      equation
-        eqns = generateInitialEquationsFromStart(vars);
-      then
-        eqns;
+        ((v,BackendDAE.EQUATION(e,startv,source)::eqns));
+    case ((inTpl)) then inTpl;
   end matchcontinue;
 end generateInitialEquationsFromStart;
 
@@ -6519,8 +6484,7 @@ algorithm
       list<BackendDAE.Var> varLst, varLstDiscrete;
       BackendDAE.EquationArray eqns;
     case (dlow as BackendDAE.DAE(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
-      varLst = BackendDAEUtil.varList(vars);
-      varLstDiscrete = Util.listSelect(varLst,BackendDAEUtil.isVarDiscrete);
+      varLstDiscrete = BackendVariable.getAllDiscreteVarFromVariables(vars);
       vars2 = BackendDAEUtil.listVar(varLstDiscrete);
       (contBlocks,discBlocks,_) = splitOutputBlocks2(vars2,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
     then (contBlocks,discBlocks);
@@ -7011,6 +6975,25 @@ algorithm
              arrayCref);
   end matchcontinue;
 end dlowvarToSimvar;
+
+protected function traversingdlowvarToSimvar
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<SimVar>> inTpl;
+ output tuple<BackendDAE.Var, list<SimVar>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<SimVar> sv_lst;
+      SimVar sv;
+    case ((v,sv_lst))
+      equation
+        sv = dlowvarToSimvar(v);
+      then ((v,sv::sv_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingdlowvarToSimvar;
 
 protected function subsToScalar
 "Returns true if subscript results applied to variable or expression results in

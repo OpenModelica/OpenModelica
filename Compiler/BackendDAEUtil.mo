@@ -328,9 +328,7 @@ algorithm
   (outnx,outny,outnp,outng,outng_sample,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
   matchcontinue (inBackendDAE)
     local
-      list<BackendDAE.Var> varlst,knvarlst,extvarlst;
       BackendDAE.Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
-      String np_str;
       BackendDAE.Variables vars,knvars,extvars;
       list<BackendDAE.WhenClause> wc;
       list<BackendDAE.ZeroCrossing> zc;
@@ -339,15 +337,12 @@ algorithm
                  eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc,
                                         zeroCrossingLst = zc)))
       equation
-        varlst = varList(vars) "input variables are put in the known var list, but they should be counted by the ny counter.";
-        extvarlst = varList(extvars);
-        next = listLength(extvarlst);
-        knvarlst = varList(knvars);
-        (np,np_string,np_int, np_bool) = calculateParamSizes(knvarlst);
-        np_str = intString(np);
+        // input variables are put in the known var list, but they should be counted by the ny counter
+        next = BackendVariable.varsSize(extvars);
+        ((np,np_string,np_int, np_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateParamSizes,(0,0,0,0));
         (ng,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
-        (nx,ny,ny_string,ny_int, ny_bool) = calculateVarSizes(varlst, 0, 0, 0, 0, 0);
-        (nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool) = calculateVarSizes(knvarlst, nx, ny, ny_string, ny_int, ny_bool);
+        ((nx,ny,ny_string,ny_int, ny_bool)) = BackendVariable.traverseBackendDAEVars(vars,calculateVarSizes,(0, 0, 0, 0, 0));
+        ((nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateVarSizes,(nx, ny, ny_string, ny_int, ny_bool));
       then
         (nx_1,ny_1,np,ng,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
   end matchcontinue;
@@ -391,213 +386,120 @@ end calculateNumberZeroCrossings;
 protected function calculateParamSizes "function: calculateParamSizes
   author: PA
   Helper function to calculateSizes"
-  input list<BackendDAE.Var> inVarLst;
-  output Integer outInteger;
-  output Integer outInteger2;
-  output Integer outInteger3;
-  output Integer outInteger4;
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> outTpl;
 algorithm
-  (outInteger,outInteger2,outInteger3, outInteger4):=
-  matchcontinue (inVarLst)
+  outTpl :=
+  matchcontinue (inTpl)
     local
       BackendDAE.Value s1,s2,s3, s4;
       BackendDAE.Var var;
-      list<BackendDAE.Var> vs;
-    case ({}) then (0,0,0,0);
-    case ((var :: vs))
+    case ((var,(s1,s2,s3,s4)))
       equation
-        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = BackendVariable.isBoolParam(var);
       then
-        (s1,s2,s3,s4 + 1);  
-    case ((var :: vs))
+        ((var,(s1,s2,s3,s4 + 1)));  
+    case ((var,(s1,s2,s3,s4)))
       equation
-        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = BackendVariable.isIntParam(var);
       then
-        (s1,s2,s3 + 1,s4);
-    case ((var :: vs))
+        ((var,(s1,s2,s3 + 1,s4)));
+    case ((var,(s1,s2,s3,s4)))
       equation
-        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = BackendVariable.isStringParam(var);
       then
-        (s1,s2 + 1,s3,s4);
-    case ((var :: vs))
+        ((var,(s1,s2 + 1,s3,s4)));
+    case ((var,(s1,s2,s3,s4)))
       equation
-        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = BackendVariable.isParam(var);
       then
-        (s1 + 1,s2,s3,s4);
-    case ((_ :: vs))
-      equation
-        (s1,s2,s3,s4) = calculateParamSizes(vs);
-      then
-        (s1,s2,s3,s4);
-    case (_)
-      equation
-        print("- BackendDAE.calculateParamSizes failed\n");
-      then
-        fail();        
+        ((var,(s1 + 1,s2,s3,s4)));
+    case inTpl then inTpl;
   end matchcontinue;
 end calculateParamSizes;
 
 protected function calculateVarSizes "function: calculateVarSizes
   author: PA
   Helper function to calculateSizes"
-  input list<BackendDAE.Var> inVarLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input Integer inInteger4;
-  input Integer inInteger5;
-  input Integer inInteger6;
-
-  output Integer outInteger1;
-  output Integer outInteger2;
-  output Integer outInteger3;
-  output Integer outInteger4;
-  output Integer outInteger5;
-
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> outTpl;
 algorithm
-  (outInteger1,outInteger2,outInteger3, outInteger4,outInteger5):=
-  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6)
+  outTpl :=
+  matchcontinue (inTpl)      
     local
-      BackendDAE.Value nx,ny,ny_1,nx_2,ny_2,nx_1,nx_string,ny_string,ny_1_string,ny_2_string;
-      BackendDAE.Value ny_int, ny_1_int, ny_2_int, ny_bool, ny_1_bool, ny_2_bool;
+      BackendDAE.Value nx,ny,ny_string, ny_int, ny_bool;
       DAE.Flow flowPrefix;
-      list<BackendDAE.Var> vs;
+      BackendDAE.Var var;
+
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+      then
+        ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
+
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+      then
+        ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
+
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+      then
+        ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
+
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+      then
+        ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
     
-    case ({},nx,ny,ny_string, ny_int, ny_bool) then (nx,ny,ny_string,ny_int, ny_bool);
-
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
-
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1_int = ny_int + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
-      then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
-
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1_bool = ny_bool + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
-      then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
-
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1, ny_string, ny_int, ny_bool);
-      then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool); 
-    
-     case ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
-      then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-     case ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1_int = ny_int + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
      
-     case ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1_bool = ny_bool + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);     
+        ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
                  
-     case ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1, ny_string, ny_int, ny_bool);
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        nx_1 = nx + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx_1, ny, ny_string, ny_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.STATE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx+1,ny,ny_string, ny_int,ny_bool)));
 
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
-      equation
-        ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
-      equation
-        ny_1_int = ny_int + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1_bool = ny_bool + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);   
+        ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
-      equation
-        ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1,ny_string, ny_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny,ny_1_string, ny_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.INT(),flowPrefix = flowPrefix) :: vs),nx, ny, ny_string, ny_int, ny_bool)
-      equation
-         ny_1_int = ny_int + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
-      equation
-        ny_1_bool = ny_bool + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);  
+        ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1,ny_string, ny_int, ny_bool);
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool); 
+        ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((_ :: vs),nx,ny,ny_string, ny_int, ny_bool)
-      equation
-        (nx_1,ny_1,ny_1_string, ny_1_int, ny_1_bool) = calculateVarSizes(vs, nx, ny,ny_string,ny_int, ny_bool);
-      then
-        (nx_1,ny_1,ny_1_string, ny_1_int, ny_1_bool);
-        
-    case (_,_,_,_,_,_)
-      equation
-        print("- BackendDAE.calculateVarSizes failed\n");
-      then
-        fail();
+    case inTpl then inTpl;
   end matchcontinue;
 end calculateVarSizes;
 
@@ -1819,7 +1721,7 @@ algorithm
     
     case ((dae as BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr,m,mt,a1,a2)
       equation
-        statevar_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarFinder,{});
+        statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
         ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
       then
         arr_1;
@@ -1831,25 +1733,7 @@ algorithm
         fail();
   end matchcontinue;
 end markStateEquations;
-
-protected function traversingisStateVarFinder
-"autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
- output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> v_lst;
-    case ((v,v_lst))
-      equation
-        true = BackendVariable.isStateVar(v);
-      then ((v,v::v_lst));
-    case inTpl then inTpl; 
-  end matchcontinue;
-end traversingisStateVarFinder;
-      
+     
 protected function markStateEquation
 "function: markStateEquation
   This function is a helper function to mark_state_equations
@@ -4130,22 +4014,29 @@ protected function makeZeroReplacements "
   v -> 0, for all variables"
   input BackendDAE.Variables vars;
   output VarTransform.VariableReplacements repl;
-  protected list<BackendDAE.Var> varLst;
 algorithm
-  varLst := varList(vars);
-  repl := Util.listFold(varLst,makeZeroReplacement,VarTransform.emptyReplacements());
+  repl := BackendVariable.traverseBackendDAEVars(vars,makeZeroReplacement,VarTransform.emptyReplacements());
 end makeZeroReplacements;
 
 protected function makeZeroReplacement "helper function to makeZeroReplacements.
 Creates replacement Var-> 0"
-  input BackendDAE.Var var;
-  input VarTransform.VariableReplacements repl;
-  output VarTransform.VariableReplacements outRepl;
-  protected
-  DAE.ComponentRef cr;
+  input tuple<BackendDAE.Var, VarTransform.VariableReplacements> inTpl;
+  output tuple<BackendDAE.Var, VarTransform.VariableReplacements> outTpl;
 algorithm
-  cr :=  BackendVariable.varCref(var);
-  outRepl := VarTransform.addReplacement(repl,cr,DAE.RCONST(0.0));
+  outTpl:=
+  matchcontinue (inTpl)
+    local    
+     BackendDAE.Var var;
+     DAE.ComponentRef cr;
+     VarTransform.VariableReplacements repl,repl1;
+    case ((var,repl))
+      equation
+        cr =  BackendVariable.varCref(var);
+        repl1 = VarTransform.addReplacement(repl,cr,DAE.RCONST(0.0));
+      then
+        ((var,repl1));
+    case inTpl then inTpl;
+  end matchcontinue;          
 end makeZeroReplacement;
 
 /*************************************************
@@ -4247,10 +4138,10 @@ public function traverseBackendDAEArrayNoCopy "
     output tuple<Type_c, Type_b> outTpl;
   end FuncExpType;
   partial function FuncArrayType
-    input Type_a inTypeB;
+    input Type_a inTypeA;
     input FuncExpType func;
-    input Type_b inTypeA;
-    output Type_b outTypeA;
+    input Type_b inTypeB;
+    output Type_b outTypeB;
     partial function FuncExpType
      input tuple<Type_c, Type_b> inTpl;
      output tuple<Type_c, Type_b> outTpl;
@@ -4291,11 +4182,11 @@ public function traverseBackendDAEArrayNoCopyWithStop "
     output tuple<Type_c, Boolean, Type_b> outTpl;
   end FuncExpTypeWithStop;
   partial function FuncArrayTypeWithStop
-    input Type_a inTypeB;
+    input Type_a inTypeA;
     input FuncExpTypeWithStop func;
-    input Type_b inTypeA;
+    input Type_b inTypeB;
     output Boolean outBoolean;
-    output Type_b outTypeA;
+    output Type_b outTypeB;
     partial function FuncExpTypeWithStop
      input tuple<Type_c, Type_b> inTpl;
       output tuple<Type_c, Boolean, Type_b> outTpl;

@@ -2801,4 +2801,80 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVar;
 
+public function getAllCrefFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<DAE.ComponentRef> cr_lst;
+algorithm
+  cr_lst := traverseBackendDAEVars(inVariables,traversingVarCrefFinder,{});
+end getAllCrefFromVariables;
+
+protected function traversingVarCrefFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
+ output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<DAE.ComponentRef> cr_lst;
+      DAE.ComponentRef cr;
+    case ((v,cr_lst))
+      equation
+        cr = varCref(v);
+      then ((v,cr::cr_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingVarCrefFinder;
+
+public function getAllDiscreteVarFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+algorithm
+  v_lst := traverseBackendDAEVars(inVariables,traversingisisVarDiscreteFinder,{});
+end getAllDiscreteVarFromVariables;
+
+protected function traversingisisVarDiscreteFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+    case ((v,v_lst))
+      equation
+        true = BackendDAEUtil.isVarDiscrete(v);
+      then ((v,v::v_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingisisVarDiscreteFinder;
+
+public function getAllStateVarFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+algorithm
+  v_lst := traverseBackendDAEVars(inVariables,traversingisStateVarFinder,{});
+end getAllStateVarFromVariables;
+
+protected function traversingisStateVarFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
+ output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> v_lst;
+    case ((v,v_lst))
+      equation
+        true = isStateVar(v);
+      then ((v,v::v_lst));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingisStateVarFinder;
+
 end BackendVariable;
