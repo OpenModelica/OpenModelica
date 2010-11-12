@@ -581,6 +581,7 @@ algorithm
     case (META_LIST(p),SCode.R_TYPE()) then ();
     case (META_OPTION(p),SCode.R_TYPE()) then ();
     case (META_RECORD(p),SCode.R_TYPE()) then ();
+    case (META_ARRAY(p),SCode.R_TYPE()) then ();
     case (UNIONTYPE(p),SCode.R_TYPE()) then ();    
 
   end matchcontinue;
