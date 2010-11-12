@@ -886,14 +886,14 @@ algorithm
     case ((FRAME(optName = SOME(id)) :: rest))
       equation
         false = listMember(id,implicitScopeNames);
-        SOME(path) = getEnvPath(rest);
+        SOME(path) = getEnvPathNoImplicitScope(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
     case (FRAME(optName = SOME(id))::rest)
       equation
         false = listMember(id,implicitScopeNames);
-        NONE() = getEnvPath(rest);
+        NONE() = getEnvPathNoImplicitScope(rest);
       then SOME(Absyn.IDENT(id));
     case (_) then NONE();
   end matchcontinue;

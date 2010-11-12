@@ -84,6 +84,7 @@ protected import ExpressionDump;
 protected import Print;
 protected import Util;
 protected import RTOpts;
+protected import System;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import OptManager;
@@ -1374,6 +1375,29 @@ algorithm
 
   end matchcontinue;
 end setVarInput;
+
+protected function setVarType "Sets a DAE.Var's type"
+  input Var v;
+  input Type ty;
+  output Var outV;
+algorithm
+  outV := matchcontinue(v,ty)
+    local
+      Ident name;
+      Boolean f,p,streamPrefix;
+      Type tp;
+      Binding bind;
+      SCode.Accessibility a;
+      SCode.Variability v;
+      Absyn.InnerOuter io;
+      Option<DAE.Const> cnstForRange;
+      Absyn.Direction d;
+    
+    case (DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,tp,bind,cnstForRange),ty)
+    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,ty,bind,cnstForRange);
+
+  end matchcontinue;
+end setVarType;
 
 public function semiEquivTypes " function semiEquivTypes
 This function checks whether two types are semi-equal...
@@ -3917,12 +3941,13 @@ public function vectorizableType "function: vectorizableType
   input DAE.Exp inExp;
   input Type inExpType;
   input Type inExpectedType;
+  input Option<Absyn.Path> fnPath;
   output DAE.Exp outExp;
   output Type outType;
   output list<DAE.Dimension> outArrayDimLst;
   output PolymorphicBindings outBindings;
 algorithm
-  (outExp,outType,outArrayDimLst,outBindings) := vectorizableType2(inExp,inExpType,inExpType,{},inExpectedType);
+  (outExp,outType,outArrayDimLst,outBindings) := vectorizableType2(inExp,inExpType,inExpType,{},inExpectedType,fnPath);
 end vectorizableType;
 
 protected function vectorizableType2
@@ -3931,12 +3956,13 @@ protected function vectorizableType2
   input Type inCurrentType;
   input list<DAE.Dimension> inArrayDimLst;
   input Type inExpectedType;
+  input Option<Absyn.Path> fnPath;
   output DAE.Exp outExp;
   output Type outType;
   output list<DAE.Dimension> outArrayDimLst;
   output PolymorphicBindings outBindings;
 algorithm
-  (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType)
+  (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType,fnPath)
     local
       DAE.Exp e_1,e;
       Type e_type_1,e_type,expected_type,expected_type_vectorized,e_type_elt,current_type;
@@ -3946,16 +3972,16 @@ algorithm
       list<DAE.Dimension> dims;
       Option<Integer> iOpt;
       list<Option<Integer>> iOptLst;
-    case (e,e_type,current_type,dims,expected_type)
+    case (e,e_type,current_type,dims,expected_type,fnPath)
       equation
         expected_type_vectorized = liftArrayListDims(expected_type, dims);
-        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, {}, true);
+        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, fnPath, {}, true);
       then
         (e_1,e_type_1,dims,polymorphicBindings);
-    case (e,e_type,(DAE.T_ARRAY(arrayType = current_type, arrayDim = dim),_),dims,expected_type)
+    case (e,e_type,(DAE.T_ARRAY(arrayType = current_type, arrayDim = dim),_),dims,expected_type,fnPath)
       equation
         dims = listAppend(dims, {dim});
-        (e_1,e_type_1,dims,polymorphicBindings) = vectorizableType2(e, e_type, current_type, dims, expected_type);
+        (e_1,e_type_1,dims,polymorphicBindings) = vectorizableType2(e, e_type, current_type, dims, expected_type, fnPath);
       then
         (e_1,e_type_1,dims,polymorphicBindings);
   end matchcontinue;
@@ -5297,6 +5323,7 @@ bind polymorphic variabled. Used when elaborating calls."
   input DAE.Exp exp;
   input Type actual;
   input Type expected;
+  input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
   input PolymorphicBindings polymorphicBindings;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
@@ -5304,38 +5331,38 @@ bind polymorphic variabled. Used when elaborating calls."
   output PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outBindings):=
-  matchcontinue (exp,actual,expected,polymorphicBindings,printFailtrace)
+  matchcontinue (exp,actual,expected,envPath,polymorphicBindings,printFailtrace)
     local
       DAE.Exp e,e_1;
       DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
       String id,id1,id2;
 
-    case (exp,actual,expected,polymorphicBindings,printFailtrace)
+    case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
         false = RTOpts.acceptMetaModelicaGrammar();
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,polymorphicBindings,printFailtrace)
+    case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         {} = getAllInnerTypesOfType(expected, isPolymorphic);
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,polymorphicBindings,_)
+    case (exp,actual,expected,envPath,polymorphicBindings,_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
-        polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);
+        polymorphicBindings = subtypePolymorphic(actual,expected,envPath,polymorphicBindings);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " and bindings " +& polymorphicBindingsStr(polymorphicBindings) +& " (OK)\n");
       then
         (exp,actual,polymorphicBindings);
-    case (e,e_type,expected_type,_,true)
+    case (e,e_type,expected_type,_,_,true)
       equation
         printFailure("types", "matchTypePolymorphic", e, e_type, expected_type);
       then fail();
@@ -5805,6 +5832,7 @@ possible)."
   output PolymorphicBindings solvedBindings;
   PolymorphicBindings unsolvedBindings;
 algorithm
+  // print("solvePoly " +& Absyn.optPathString(path) +& " " +& polymorphicBindingsStr(bindings) +& "\n");
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
   checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, path);
 end solvePolymorphicBindings;
@@ -5910,21 +5938,29 @@ algorithm
       list<DAE.FuncArg> args1,args2;
       DAE.InlineType inline1,inline2;
       Option<Absyn.Path> op1;
+      Boolean fromOtherFunction;
     case ((ty1 as (DAE.T_POLYMORPHIC(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC(id2),_))::tys2,solvedBindings)
       equation
         false = id1 ==& id2;
-        solvedBindings = addPolymorphicBinding(id1,ty2,solvedBindings);
-      then (ty2::tys2, solvedBindings);
+        // If we have $X,Y,..., bind $X = Y instead of Y = $X
+        fromOtherFunction = System.stringFind(id1,"$") <> -1;
+        id = Util.if_(fromOtherFunction, id1, id2);
+        ty = Util.if_(fromOtherFunction, ty2, ty1); // Lookup from one id to the other type
+        failure(_ = polymorphicBindingsLookup(id, solvedBindings));
+        solvedBindings = addPolymorphicBinding(id,ty,solvedBindings);
+      then (ty::tys2, solvedBindings);
 
     case ((ty1 as (DAE.T_POLYMORPHIC(id),_))::tys1,ty2::tys2,solvedBindings)
       equation
         failure(isPolymorphic(ty2));
+        failure(_ = polymorphicBindingsLookup(id, solvedBindings));
         solvedBindings = addPolymorphicBinding(id,ty2,solvedBindings);
       then (ty2::tys2, solvedBindings);
     
     case (ty1::tys1,(ty2 as (DAE.T_POLYMORPHIC(id),_))::tys2,solvedBindings)
       equation
         failure(isPolymorphic(ty1));
+        failure(_ = polymorphicBindingsLookup(id, solvedBindings));
         solvedBindings = addPolymorphicBinding(id,ty1,solvedBindings);
       then (ty1::tys2, solvedBindings);
     
@@ -6070,80 +6106,83 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
 "
   input Type actual;
   input Type expected;
+  input Option<Absyn.Path> envPath;
   input PolymorphicBindings bindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := matchcontinue (actual,expected,bindings)
+  outBindings := matchcontinue (actual,expected,envPath,bindings)
     local
-      String id;
+      String id,prefix;
       Type ty,ty1,ty2;
       list<FuncArg> farg1,farg2;
       list<Type> tList1,tList2,tys;
       Absyn.Path path,path1,path2;
       list<String> ids;
-    case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
+    case (actual,(DAE.T_POLYMORPHIC(id),_),envPath,bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);
-    case ((DAE.T_POLYMORPHIC(id),_),expected,bindings)
+    case ((DAE.T_POLYMORPHIC(id),_),expected,envPath,bindings)
       then addPolymorphicBinding("$$" +& id,expected,bindings);
-    case ((DAE.T_BOXED(ty1),_),ty2,bindings)
+    case ((DAE.T_BOXED(ty1),_),ty2,envPath,bindings)
       equation
         ty1 = unboxedType(ty1);
-      then subtypePolymorphic(ty1,ty2,bindings);
-    case (ty1,(DAE.T_BOXED(ty2),_),bindings)
+      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+    case (ty1,(DAE.T_BOXED(ty2),_),envPath,bindings)
       equation
         ty2 = unboxedType(ty2);
-      then subtypePolymorphic(ty1,ty2,bindings);
-    case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_),bindings) then bindings;
-    case ((DAE.T_INTEGER(_),_),(DAE.T_INTEGER(_),_),bindings) then bindings;
-    case ((DAE.T_REAL(_),_),(DAE.T_INTEGER(_),_),bindings) then bindings;
-    case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_),bindings) then bindings;
-    case ((DAE.T_BOOL(_),_),(DAE.T_BOOL(_),_),bindings) then bindings;
-    case ((DAE.T_META_ARRAY(ty1),_),(DAE.T_META_ARRAY(ty2),_),bindings)
-      then subtypePolymorphic(ty1,ty2,bindings);
-    case ((DAE.T_LIST(ty1),_),(DAE.T_LIST(ty2),_),bindings)
-      then subtypePolymorphic(ty1,ty2,bindings);
-    case ((DAE.T_METAOPTION(ty1),_),(DAE.T_METAOPTION(ty2),_),bindings)
-      then subtypePolymorphic(ty1,ty2,bindings);
-    case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_),bindings)
-      then subtypePolymorphicList(tList1,tList2,bindings);
-    case ((DAE.T_TUPLE(tList1),_),(DAE.T_TUPLE(tList2),_),bindings)
-      then subtypePolymorphicList(tList1,tList2,bindings);
-    case ((DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_UNIONTYPE(_),SOME(path2)),bindings)
+      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+    case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_),envPath,bindings) then bindings;
+    case ((DAE.T_INTEGER(_),_),(DAE.T_INTEGER(_),_),envPath,bindings) then bindings;
+    case ((DAE.T_REAL(_),_),(DAE.T_INTEGER(_),_),envPath,bindings) then bindings;
+    case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_),envPath,bindings) then bindings;
+    case ((DAE.T_BOOL(_),_),(DAE.T_BOOL(_),_),envPath,bindings) then bindings;
+    case ((DAE.T_META_ARRAY(ty1),_),(DAE.T_META_ARRAY(ty2),_),envPath,bindings)
+      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+    case ((DAE.T_LIST(ty1),_),(DAE.T_LIST(ty2),_),envPath,bindings)
+      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+    case ((DAE.T_METAOPTION(ty1),_),(DAE.T_METAOPTION(ty2),_),envPath,bindings)
+      then subtypePolymorphic(ty1,ty2,envPath,bindings);
+    case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_),envPath,bindings)
+      then subtypePolymorphicList(tList1,tList2,envPath,bindings);
+    case ((DAE.T_TUPLE(tList1),_),(DAE.T_TUPLE(tList2),_),envPath,bindings)
+      then subtypePolymorphicList(tList1,tList2,envPath,bindings);
+    case ((DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_UNIONTYPE(_),SOME(path2)),envPath,bindings)
       equation
         true = Absyn.pathEqual(path1,path2);
       then bindings;
     // MM Function Reference. sjoelund
-    case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),bindings)
+    case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),envPath,bindings)
       equation
-        true = Absyn.pathEqual(path1,path2); // Don't rename the result type for recursive calls...
+        true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
         tList1 = Util.listMap(farg1, Util.tuple22);
         tList2 = Util.listMap(farg2, Util.tuple22);
-        bindings = subtypePolymorphicList(tList1,tList2,bindings);
-        bindings = subtypePolymorphic(ty1,ty2,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
+        bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
 
-    case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),bindings)
+    case ((DAE.T_FUNCTION(_,_,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),envPath,bindings)
       equation
-        false = Absyn.pathEqual(path1,path2);
+        false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
+        prefix = "$" +& Absyn.pathString(path1) +& ".";
+        ((ty as (DAE.T_FUNCTION(farg1,ty1,_),_),_)) = traverseType((actual,prefix),prefixTraversedPolymorphicType);
         tList1 = Util.listMap(farg1, Util.tuple22);
         tList2 = Util.listMap(farg2, Util.tuple22);
-        bindings = subtypePolymorphicList(tList1,tList2,bindings);
-        bindings = subtypePolymorphic(ty1,ty2,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
+        bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
-    case ((DAE.T_NOTYPE(),_),ty2,bindings)
+    case ((DAE.T_NOTYPE(),_),ty2,envPath,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = Util.listMap(tys, polymorphicTypeName);
         bindings = Util.listFold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
-    case ((DAE.T_ANYTYPE(_),_),ty2,bindings)
+    case ((DAE.T_ANYTYPE(_),_),ty2,envPath,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = Util.listMap(tys, polymorphicTypeName);
         bindings = Util.listFold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
 
-    case (actual,expected,_)
+    case (actual,expected,_,_)
       equation
         // print("subtypePolymorphic failed: " +& unparseType(actual) +& " and " +& unparseType(expected) +& "\n");
       then fail();
@@ -6157,18 +6196,19 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
 "
   input list<Type> actual;
   input list<Type> expected;
+  input Option<Absyn.Path> envPath;
   input PolymorphicBindings bindings;
   output PolymorphicBindings outBindings;
 algorithm
-  outBindings := matchcontinue (actual,expected,bindings)
+  outBindings := matchcontinue (actual,expected,envPath,bindings)
     local
       Type ty1,ty2;
       list<Type> tList1,tList2;
-    case ({},{},bindings) then bindings;
-    case (ty1::tList1,ty2::tList2,bindings)
+    case ({},{},envPath,bindings) then bindings;
+    case (ty1::tList1,ty2::tList2,envPath,bindings)
       equation
-        bindings = subtypePolymorphic(ty1,ty2,bindings);
-        bindings = subtypePolymorphicList(tList1,tList2,bindings);
+        bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
       then bindings;
   end matchcontinue;
 end subtypePolymorphicList;
@@ -6267,5 +6307,202 @@ algorithm
     else false;
   end match;
 end isFunctionType;
+
+protected function prefixTraversedPolymorphicType
+  input tuple<Type,String> tpl;
+  output tuple<Type,String> otpl;
+algorithm
+  otpl := match tpl
+    local
+      String id,prefix;
+    case (((DAE.T_POLYMORPHIC(id),_),prefix))
+      equation
+        id = prefix +& id;
+      then (((DAE.T_POLYMORPHIC(id),NONE()),prefix));
+    else tpl;
+  end match;
+end prefixTraversedPolymorphicType;
+
+public function traverseType
+  input tuple<Type,A> tpl;
+  input Func fn;
+  output tuple<Type,A> otpl;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<Type,A> tpl;
+    output tuple<Type,A> otpl;
+  end Func;
+algorithm
+  otpl := match (tpl,fn)
+    local
+      list<Type> tys;
+      Type ty;
+      DAE.Dimension ad;
+      A a;
+      Option<Absyn.Path> op;
+      String str;
+      Integer index;
+      list<Var> vars;
+      Absyn.Path path;
+      EqualityConstraint eq;
+      ClassInf.State state;
+      list<DAE.FuncArg> farg;
+      DAE.InlineType il;
+    case (((DAE.T_INTEGER(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_REAL(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_STRING(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_BOOL(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_ENUMERATION(index=_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_NORETCALL(),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_NOTYPE(),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_ANYTYPE(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_UNIONTYPE(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_BOXED(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_POLYMORPHIC(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_ARRAY(ad,ty),op),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_ARRAY(ad,ty),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_LIST(ty),op),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_LIST(ty),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_METAOPTION(ty),op),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_METAOPTION(ty),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_META_ARRAY(ty),op),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_META_ARRAY(ty),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_METATUPLE(tys),op),a),_)
+      equation
+        (tys,a) = traverseTupleType(tys,a,fn);
+        ty = (DAE.T_METATUPLE(tys),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_TUPLE(tys),op),a),_)
+      equation
+        (tys,a) = traverseTupleType(tys,a,fn);
+        ty = (DAE.T_TUPLE(tys),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_METARECORD(path,index,vars),op),a),_)
+      equation
+        (vars,a) = traverseVarTypes(vars,a,fn);
+        ty = (DAE.T_METARECORD(path,index,vars),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_COMPLEX(state,vars,NONE(),eq),op),a),_)
+      equation
+        (vars,a) = traverseVarTypes(vars,a,fn);
+        ty = (DAE.T_COMPLEX(state,vars,NONE(),eq),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_COMPLEX(state,vars,SOME(ty),eq),op),a),_)
+      equation
+        (vars,a) = traverseVarTypes(vars,a,fn);
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_COMPLEX(state,vars,SOME(ty),eq),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case (((DAE.T_FUNCTION(farg,ty,il),op),a),_)
+      equation
+        (farg,a) = traverseFuncArg(farg,a,fn);
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = (DAE.T_FUNCTION(farg,ty,il),op);
+        tpl = fn((ty,a));
+      then tpl;
+    case ((ty,_),_)
+      equation
+        str = "Types.traverseType not implemented correctly: " +& unparseType(ty);
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+      then fail();
+  end match;
+end traverseType;
+
+protected function traverseTupleType
+  input list<Type> tys;
+  input A a;
+  input Func fn;
+  output list<Type> otys;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<Type,A> tpl;
+    output tuple<Type,A> otpl;
+  end Func;
+algorithm
+  (otys,oa) := match (tys,a,fn)
+    local
+      Type ty;
+    case ({},a,fn) then ({},a);
+    case (ty::tys,a,fn)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        (tys,a) = traverseTupleType(tys,a,fn);
+      then (ty::tys,a);
+  end match;
+end traverseTupleType;
+
+protected function traverseVarTypes
+  input list<DAE.Var> vars;
+  input A a;
+  input Func fn;
+  output list<DAE.Var> ovars;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<Type,A> tpl;
+    output tuple<Type,A> otpl;
+  end Func;
+algorithm
+  (ovars,oa) := match (vars,a,fn)
+    local
+      DAE.Var var;
+      DAE.Type ty;
+    case ({},a,fn) then ({},a);
+    case (var::vars,a,fn)
+      equation
+        ty = getVarType(var);
+        ((ty,a)) = traverseType((ty,a),fn);
+        var = setVarType(var,ty);
+        (vars,a) = traverseVarTypes(vars,a,fn);
+      then (var::vars,a);
+  end match;
+end traverseVarTypes;
+
+protected function traverseFuncArg
+  input list<tuple<String,Type>> args;
+  input A a;
+  input Func fn;
+  output list<tuple<String,Type>> oargs;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<Type,A> tpl;
+    output tuple<Type,A> otpl;
+  end Func;
+algorithm
+  (oargs,oa) := match (args,a,fn)
+    local
+      DAE.Type ty;
+      String b;
+    case ({},a,fn) then ({},a);
+    case ((b,ty)::args,a,fn)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        (args,a) = traverseFuncArg(args,a,fn);
+      then ((b,ty)::args,a);
+  end match;
+end traverseFuncArg;
 
 end Types;

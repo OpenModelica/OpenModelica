@@ -8996,6 +8996,8 @@ protected function addDefaultArgs "adds default values (from slots) to argument 
 This is needed because when generating C-code all arguments must be present in the function call.
 
 If in future C++ code is generated instead, this is not required, since C++ allows default values for arguments.
+Not true: Mutable default values still need to be constructed. C++ only helps
+if we also enforce all input args immutable.
 "
   input Env.Cache inCache;
   input Env.Env env;
@@ -10107,7 +10109,7 @@ algorithm
         
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
-        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,polymorphicBindings,false);
+        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
       then
         (cache, SLOT((id,tp),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
 
@@ -10205,7 +10207,7 @@ algorithm
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(), true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         (cache,slots_1,clist,polymorphicBindings) =
         elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
         newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
@@ -10218,7 +10220,7 @@ algorithm
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
-        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt);
+        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         (cache,slots_1,clist,_) =
           elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
         newslots = fillSlot(farg, e_2, ds, slots_1, checkTypes,pre,info);
@@ -10243,7 +10245,7 @@ algorithm
       equation
         /* FAILTRACE REMOVE
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
-        failure((_,_,_) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false));
+        failure((_,_,_) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false,fnPath));
         Debug.fprint("failtrace", "elabPositionalInputArgs failed, expected type:");
         Debug.fprint("failtrace", Types.unparseType(vt));
         Debug.fprint("failtrace", " found type");
@@ -10316,7 +10318,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,NONE(), true,pre,info);
         vt = findNamedArgType(id, farg);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         slots_1 = fillSlot((id,vt), e_2, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,pre,info);
@@ -10328,7 +10330,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,NONE(), true,pre,info);
         vt = findNamedArgType(id, farg);
-        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt);
+        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
         slots_1 = fillSlot((id,vt), e_2, ds, slots, checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, polymorphicBindings,pre,info);
