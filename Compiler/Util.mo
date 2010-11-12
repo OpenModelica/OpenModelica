@@ -851,7 +851,7 @@ public function listAppendElt "function: listAppendElt
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:= listAppend(inTypeALst, {inTypeA});
+  outTypeALst := listReverse(inTypeA::inTypeALst);
   /*
   matchcontinue (inTypeA,inTypeALst)
     local
@@ -887,7 +887,7 @@ algorithm
     case(element, f, accLst)
       equation
         result = f(element);
-        accLst = listAppend(accLst, {result});
+        accLst = listReverse(result::accLst);
       then accLst;
   end matchcontinue;
 end applyAndAppend;
@@ -2385,12 +2385,16 @@ algorithm
       FuncTypeType_aType_bType_cToType_d fn;
       Type_b extraarg;
       Type_c extraarg1;
+    
+    // reverse at the end
     case ({},_,_,_,accTypeDLst) then listReverse(accTypeDLst);
+    
+    // accumulate in front
     case ((f :: r),fn,extraarg,extraarg1,accTypeDLst)
       equation
-        f_1 = fn(f, extraarg,extraarg1);
+        f_1 = fn(f, extraarg, extraarg1);
         accTypeDLst = listAppend(f_1,accTypeDLst);
-        r_1 = listMapFlat2_tail(r, fn, extraarg,extraarg1, accTypeDLst);
+        r_1 = listMapFlat2_tail(r, fn, extraarg, extraarg1, accTypeDLst);
       then
         r_1;
   end matchcontinue;
@@ -2403,14 +2407,22 @@ public function listListAppendLast "appends to the last element of a list of lis
   replaceable type Type_a subtypeof Any;
 algorithm
   outLst := matchcontinue(llst,lst)
-    local list<Type_a> lst1;
+    local 
+      list<Type_a> lst1;
+    
     case({},lst) then {lst};
-    case({lst1},lst) equation
-      lst1 = listAppend(lst1,lst);
-    then {lst1};
-    case (lst1::llst,lst) equation
-      llst = listListAppendLast(llst,lst);
-    then lst1::llst;
+    
+    case({lst1},lst) 
+      equation
+        lst1 = listAppend(lst1,lst);
+      then 
+        {lst1};
+    
+    case (lst1::llst,lst) 
+      equation
+        llst = listListAppendLast(llst,lst);
+    then 
+      lst1::llst;
   end matchcontinue;
 end listListAppendLast;
 
@@ -4459,7 +4471,7 @@ algorithm
         (numfills > 1) = true;
         numfills_1 = numfills - 1;
         res = listFill(fillv, numfills_1);
-        res_1 = listAppend(res, {x});
+        res_1 = listReverse(x::res);
       then
         res_1;
     case (x,n,(y :: ys),fillv)
@@ -5548,14 +5560,21 @@ algorithm
       list<Type_a> vl_1,vl;
       Type_a v;
       FuncTypeType_aTo cond;
-    case ({},_,accTypeALst) then accTypeALst;
+    
+    // reverse at the end!
+    case ({},_,accTypeALst) 
+      then 
+        listReverse(accTypeALst);
+    
+    // add to front if the condition works
     case ((v :: vl), cond, accTypeALst)
       equation
         cond(v);
-        accTypeALst = listAppend(accTypeALst, {v});
-        vl_1 = listFilter_tail(vl, cond, accTypeALst);
+        vl_1 = listFilter_tail(vl, cond, v::accTypeALst);
       then
         (vl_1);
+    
+    // filter out and move along
     case ((v :: vl),cond, accTypeALst)
       equation
         failure(cond(v));
@@ -5585,18 +5604,23 @@ algorithm outTypeALst := matchcontinue (inTypeALst,inFuncTypeTypeATo,accTypeALst
       list<Type_a> vl_1,vl;
       Type_a v;
       FuncTypeType_aTo cond;
-    case ({},_,accTypeALst,extraArg) then accTypeALst;
-    case ((v :: vl), cond, accTypeALst,extraArg)
+    
+    // reverse at the end
+    case ({},_,accTypeALst,extraArg) then listReverse(accTypeALst);
+    
+    // accumulate in front
+    case ((v :: vl), cond, accTypeALst, extraArg)
       equation
         cond(v,extraArg);
-        accTypeALst = listAppend(accTypeALst, {v});
-        vl_1 = listFilter1_tail(vl, cond, accTypeALst,extraArg);
+        vl_1 = listFilter1_tail(vl, cond, v::accTypeALst, extraArg);
       then
         (vl_1);
-    case ((v :: vl),cond, accTypeALst,extraArg)
+    
+    // jump over
+    case ((v :: vl),cond, accTypeALst, extraArg)
       equation
         failure(cond(v,extraArg));
-        vl_1 = listFilter1_tail(vl, cond, accTypeALst,extraArg);
+        vl_1 = listFilter1_tail(vl, cond, accTypeALst, extraArg);
       then
         vl_1;
   end matchcontinue;
@@ -5636,20 +5660,24 @@ public function listFilterBoolean_tail
     output Boolean result;
   end FuncTypeType_aToBoolean;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALst,inFuncTypeTypeAToBoolean,accTypeALst)
+  outTypeALst := matchcontinue (inTypeALst,inFuncTypeTypeAToBoolean,accTypeALst)
     local
       list<Type_a> vl_1,vl;
       Type_a v;
       FuncTypeType_aToBoolean cond;
-    case ({}, _, accTypeALst) then accTypeALst;
+    
+    // reverse at the end
+    case ({}, _, accTypeALst) then listReverse(accTypeALst);
+    
+    // accumulate in front
     case ((v :: vl), cond, accTypeALst)
       equation
         true = cond(v);
-        accTypeALst = listAppend(accTypeALst, {v});
-        vl_1 = listFilterBoolean_tail(vl, cond, accTypeALst);
+        vl_1 = listFilterBoolean_tail(vl, cond, v::accTypeALst);
       then
         (vl_1);
+    
+    // jump over
     case ((v :: vl), cond, accTypeALst)
       equation
         false = cond(v);
