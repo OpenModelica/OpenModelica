@@ -322,8 +322,9 @@ public function find "finds a unit in the UnitAbsyn.Store given an index"
   output UnitAbsyn.Unit unit;
 algorithm
   unit := matchcontinue(index,st)
-  local array<Option<UnitAbsyn.Unit>> vector; Integer indx;
-    UnitAbsyn.Unit unit;
+    local
+      array<Option<UnitAbsyn.Unit>> vector;
+      Integer indx;
     case(index,UnitAbsyn.STORE(vector,indx)) equation
       SOME(unit) = vector[index];
     then unit;
@@ -375,11 +376,11 @@ copied from Util.mo in OpenModelica
   output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
   Integer len,newlen;
-  array<Type_a> newarr,newarr_1;
+  array<Type_a> newarr;
 algorithm
   len := arrayLength(arr);
   newlen := n + len;
-  newarr := fill(v, newlen);
+  newarr := arrayCreate(newlen, v);
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 
@@ -763,11 +764,11 @@ and add to the store."
   input UnitAbsyn.Store store;
   output UnitAbsyn.Store outStore;
 protected
-  Integer nextElement, storeSize;
+  Integer nextElement, storeSz;
 algorithm
-  storeSize := storeSize(store);
-  (outStore,_,nextElement) := createTypeParameterLocations2(store,HashTable.emptyHashTable(),1,storeSize+1);
-   outStore := addUnspecifiedStores((nextElement -storeSize) -1,outStore);
+  storeSz := storeSize(store);
+  (outStore,_,nextElement) := createTypeParameterLocations2(store,HashTable.emptyHashTable(),1,storeSz+1);
+   outStore := addUnspecifiedStores((nextElement -storeSz) -1,outStore);
 end createTypeParameterLocations;
 
 protected function addUnspecifiedStores " adds n unspecified"
@@ -891,7 +892,7 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
 algorithm
   (terms,outStore) := matchcontinue(env,dae,ht,store)
     local DAE.Exp e1,e2; UnitAbsyn.UnitTerm ut1,ut2;
-      list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
+      list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;
       list<DAE.Element> elts;
       DAE.FunctionTree funcs;
@@ -948,7 +949,7 @@ algorithm
       Real r;
       DAE.Operator op;
       Integer indx,i;
-      UnitAbsyn.UnitTerm ut,ut1,ut2;
+      UnitAbsyn.UnitTerm ut1,ut2;
       String s1,crStr;
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;

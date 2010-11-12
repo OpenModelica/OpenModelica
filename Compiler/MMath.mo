@@ -20,11 +20,11 @@ algorithm
   r := matchcontinue(r1,r2)
   local Integer i1,i2,i3,i4,ri1,ri2,d;
     case(RATIONAL(i1,i2),RATIONAL(i3,i4)) equation
-      ri1 =  i1*i4 + i3*i2;
+      ri1 = i1*i4 + i3*i2;
       ri2 = i2*i4;
       d = intGcd(ri1,ri2);
-      ri1 = ri1 / d;
-      ri2 = ri2 / d;
+      ri1 = intDiv(ri1, d);
+      ri2 = intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
   end matchcontinue;
 end addRational;
@@ -62,8 +62,8 @@ algorithm
       ri1 =  i1*i4 - i3*i2;
       ri2 = i2*i4;
       d = intGcd(ri1,ri2);
-      ri1 = ri1 / d;
-      ri2 = ri2 / d;
+      ri1 = intDiv(ri1, d);
+      ri2 = intDiv(ri2, d);
     then normalizeZero(RATIONAL(ri1,ri2));
   end matchcontinue;
 end subRational;
@@ -79,8 +79,8 @@ algorithm
       ri1 = i1*i3;
       ri2 = i2*i4;
       d = intGcd(ri1,ri2);
-      ri1 = ri1 / d;
-      ri2 = ri2 / d;
+      ri1 = intDiv(ri1,d);
+      ri2 = intDiv(ri2,d);
    then normalizeZero(RATIONAL(ri1,ri2));
   end matchcontinue;
 end multRational;
@@ -96,8 +96,8 @@ algorithm
       ri1 = i1*i4;
       ri2 = i3*i2;
       d = intGcd(ri1,ri2);
-      ri1 = ri1 / d;
-      ri2 = ri2 / d;
+      ri1 = intDiv(ri1, d);
+      ri2 = intDiv(ri2, d);
    then normalizeZero(RATIONAL(ri1,ri2));
   end matchcontinue;
 end divRational;
@@ -108,7 +108,6 @@ public function intGcd "returns the greatest common divisor for two Integers"
   output Integer i;
 algorithm
   i := matchcontinue(i1,i2)
-  local Integer i1,i2;
     case(i1,0) then i1;
     case(i1,i2) then intGcd(i2,intMod(i1,i2));
   end matchcontinue;

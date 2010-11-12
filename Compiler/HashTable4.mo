@@ -86,7 +86,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
+  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(hashFunc,Expression.expEqual,ExpressionDump.printExpStr,ComponentReference.printComponentRefStr));
 end emptyHashTableSized;
 
 end HashTable4;

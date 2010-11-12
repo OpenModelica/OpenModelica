@@ -370,19 +370,7 @@ protected function getEcho
   if result should be printed or not."
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue ()
-    local
-      list<Env.Frame> env;
-      Boolean res;
-      InteractiveSymbolTable st;
-    case ()
-      equation
-        0 = Settings.getEcho();
-      then
-        false;
-    case () then true;
-  end matchcontinue;
+  outBoolean := 0 <> Settings.getEcho();
 end getEcho;
 
 public function typeCheckFunction

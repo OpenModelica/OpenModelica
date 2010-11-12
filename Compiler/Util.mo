@@ -2684,7 +2684,7 @@ public function listFold_2 "function: listFold_2
     input Type_b foldArg;
     input Type_c extraArg;
     input Type_a iterated;
-    output Type_b foldArg;
+    output Type_b ofoldArg;
   end FoldFunc;
 algorithm
   res:=
@@ -2692,7 +2692,6 @@ algorithm
     local
       Type_b foldArg1,foldArg2;
       Type_a l;
-      list<Type_a> lst;
     case ({},foldFunc,foldArg,extraArg) then foldArg;
     case ((l :: lst),foldFunc,foldArg,extraArg)
       equation
@@ -6844,7 +6843,7 @@ public function listMapMap
     output Type_b outTypeB;
   end F_a_b;
   partial function F_b_c
-    input Type_b inTypeA;
+    input Type_b inTypeB;
     output Type_c outTypeC;
   end F_b_c;
   replaceable type Type_a subtypeof Any;

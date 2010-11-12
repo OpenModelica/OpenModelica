@@ -1373,7 +1373,7 @@ protected function updateDeducedUnits "updates the deduced units in each DAE.VAR
 algorithm
   outDae := matchcontinue(callScope,store,dae)
   local UnitAbsyn.Store st; HashTable.HashTable ht; Integer indx;
-    Option<UnitAbsyn.Unit>[:] vec;
+    array<Option<UnitAbsyn.Unit>> vec;
     String unitStr;
     UnitAbsyn.Unit unit;
     Option<DAE.VariableAttributes> varOpt;
@@ -2178,7 +2178,7 @@ algorithm
             instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre, csets, ci_state_1, comp, inst_dims, impl,callscope,graph);
         
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
-        eqConstraint = equalityConstraint(env_2, els);
+        eqConstraint = equalityConstraint(env_2, els, info);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
         ty2 = (DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys),NONE());
@@ -2961,9 +2961,10 @@ protected function equalityConstraint
     corresponding DAE.EqualityConstraint."
   input Env.Env inEnv;
   input list<SCode.Element> inCdefelts;
+  input Absyn.Info info;
   output DAE.EqualityConstraint outResult;
 algorithm
-  outResult := matchcontinue(inEnv,inCdefelts)
+  outResult := matchcontinue(inEnv,inCdefelts,info)
   local
       list<SCode.Element> tail, els;
       String name;
@@ -2976,15 +2977,14 @@ algorithm
       DAE.InlineType inlineType;
       SCode.Class classDef;
       
-    case(env, {})
-      then NONE();
+    case(env,{},_) then NONE();
     case(env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(),
-         classDef = SCode.PARTS(elementLst = els))) :: _)
+         classDef = SCode.PARTS(elementLst = els))) :: _, info)
       equation
         SOME(path) = Env.getEnvPath(env);
         path = Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
         /*(cache, env,_) = implicitFunctionTypeInstantiation(cache, env, classDef);
-        (cache, types,_) = Lookup.lookupFunctionsInEnv(cache, env, path);
+        (cache, types,_) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         length = listLength(types);
         print("type count: ");
         print(intString(length));
@@ -2996,8 +2996,8 @@ algorithm
         // adrpo: get the inline type of the function
         inlineType = isInlineFunc2(classDef);
       then SOME((path, dimension, inlineType));
-    case(env, _ :: tail)
-      then equalityConstraint(env, tail);
+    case(env, _ :: tail, info)
+      then equalityConstraint(env, tail, info);
   end matchcontinue;
 end equalityConstraint;
 
@@ -3319,7 +3319,7 @@ algorithm
         // oh, the horror of backtracking! we need this to make sure that this case failed BEFORE or AFTER it went into instBasictypeBaseclass         
         (cache,ih,store,dae2,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims, info, stopInst);
         // Search for equalityConstraint
-        eqConstraint = equalityConstraint(env, els);
+        eqConstraint = equalityConstraint(env, els, info);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,env,ih,store,dae,csets1,ci_state,tys,bc,NONE(),eqConstraint,graph); 
@@ -3624,7 +3624,7 @@ algorithm
         UnitParserExt.rollback(); // print("rollback for "+&className+&"\n");
 
         // Search for equalityConstraint
-        eqConstraint = equalityConstraint(env5, els);
+        eqConstraint = equalityConstraint(env5, els, info);
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
@@ -10437,7 +10437,7 @@ algorithm
         outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       varPos = setFunctionInputIndex(elemDecl,name,1);
     then
-      (varPos,DAE.ZERO_DERIVATIVE)::outconds;
+      (varPos,DAE.ZERO_DERIVATIVE())::outconds;
         
     case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption=_)))::subs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
     equation
@@ -10506,9 +10506,9 @@ algorithm
     equation
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE()))) // zeroderivative
-  then (inputVar,DAE.ZERO_DERIVATIVE);
+  then (inputVar,DAE.ZERO_DERIVATIVE());
 
-  case(_) then ("",DAE.ZERO_DERIVATIVE);
+  case(_) then ("",DAE.ZERO_DERIVATIVE());
   end matchcontinue;
 end extractNameAndExp;
 

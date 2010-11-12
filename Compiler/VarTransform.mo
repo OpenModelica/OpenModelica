@@ -1176,8 +1176,6 @@ algorithm
   matchcontinue (invHt,src,dst)
     local
       HashTable3.HashTable invHt_1;
-      DAE.ComponentRef src;
-      DAE.Exp dst;
       list<DAE.ComponentRef> dests;
     case (invHt,src,dst) equation
       dests = Expression.extractCrefsFromExp(dst);
@@ -1204,9 +1202,7 @@ algorithm
   outInvHt:=
   matchcontinue (invHt,src,dst)
     local
-      HashTable3.HashTable invHt_1,invHt;
-      DAE.ComponentRef src;
-      DAE.ComponentRef dst;
+      HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> srcs;
     case (invHt,src,dst)
       equation

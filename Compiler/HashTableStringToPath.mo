@@ -74,7 +74,7 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,size/10,(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,intDiv(size,10),(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
 end emptyHashTableSized;
 
 end HashTableStringToPath;

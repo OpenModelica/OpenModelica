@@ -74,7 +74,7 @@ algorithm
     // Is consistent?
     case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) 
       equation
-        (UnitAbsyn.CONSISTENT,_,st2) = checkTerm(tm1,st1);
+        (UnitAbsyn.CONSISTENT(),_,st2) = checkTerm(tm1,st1);
         (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
       then(st);
      
@@ -105,7 +105,7 @@ public function isComplete "returns true if the store is complete, else false"
 algorithm
   (complete,stout) := matchcontinue(st)
     local 
-      Option<UnitAbsyn.Unit>[:] vector; Integer indx;
+      array<Option<UnitAbsyn.Unit>> vector; Integer indx;
       list<Option<UnitAbsyn.Unit>> lst;
       Boolean comp;
       UnitAbsyn.Store st2;
@@ -190,7 +190,7 @@ algorithm
          (res1,su1,st2) = checkTerm(ut1,st1);
          (res2,su2,st3) = checkTerm(ut2,st2);
          su3 = mulSpecUnit(su1,su2);
-         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
        then(res4,su3,st3);
      
      case (UnitAbsyn.DIV(ut1,ut2,_),st1) 
@@ -198,7 +198,7 @@ algorithm
          (res1,su1,st2) = checkTerm(ut1,st1);
          (res2,su2,st3) = checkTerm(ut2,st2);
          su3 = divSpecUnit(su1,su2);
-         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT());
        then(res4,su3,st3);
      
      case (UnitAbsyn.EQN(ut1,ut2,_),st1) 
@@ -211,13 +211,13 @@ algorithm
      
      case (UnitAbsyn.LOC(loc,_),st1) 
        equation
-         (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
-       then(UnitAbsyn.CONSISTENT,UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
+         (UnitAbsyn.UNSPECIFIED()) = UnitAbsynBuilder.find(loc,st1);
+       then(UnitAbsyn.CONSISTENT(),UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
      
      case (UnitAbsyn.LOC(loc,_),st1) 
        equation
          (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
-       then(UnitAbsyn.CONSISTENT,su1,st1);
+       then(UnitAbsyn.CONSISTENT(),su1,st1);
      
      case (UnitAbsyn.POW(ut1,expo1,_),st1) 
        equation
@@ -241,9 +241,9 @@ protected
   UnitAbsyn.UnitCheckResult incon;
 algorithm
   resout := matchcontinue(res1,res2,res3)
-    case(UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT) then UnitAbsyn.CONSISTENT;
-    case(UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT,incon) then incon;
-    case(UnitAbsyn.CONSISTENT,incon,_) then incon;
+    case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT()) then UnitAbsyn.CONSISTENT();
+    case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),incon) then incon;
+    case(UnitAbsyn.CONSISTENT(),incon,_) then incon;
     case(incon,_,_) then incon;
     case(_,_,_) equation
       Debug.fprint("failtrace", "UnitChecker::chooseResult() failed\n");
@@ -322,7 +322,7 @@ algorithm
         false = hasUnknown(su2);
         true = isSpecUnitEq(su1,su2);
       then
-        (UnitAbsyn.CONSISTENT,st1);
+        (UnitAbsyn.CONSISTENT(),st1);
     
     // No unknown, but different on the sides
     case(su1,su2,st1) 
@@ -339,11 +339,11 @@ algorithm
         (loc1,su4) = getUnknown(su3);
         st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
       then
-        (UnitAbsyn.CONSISTENT,st2);
+        (UnitAbsyn.CONSISTENT(),st2);
     
     // Unknowns are cancelling each other out
     case(_,_,st1)
-      then(UnitAbsyn.CONSISTENT,st1);
+      then(UnitAbsyn.CONSISTENT(),st1);
   end matchcontinue;
 end unifyunits;
 
@@ -674,8 +674,8 @@ algorithm
       UnitAbsyn.Store st2;
       UnitAbsyn.SpecUnit su2,su3;
     
-    case (UnitAbsyn.UNSPECIFIED,st)
-      then (UnitAbsyn.UNSPECIFIED,st);
+    case (UnitAbsyn.UNSPECIFIED(),st)
+      then (UnitAbsyn.UNSPECIFIED(),st);
     
     case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),st) 
       equation
@@ -822,7 +822,7 @@ algorithm
       list<MMath.Rational> unitvec;
       UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
     
-    case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED,name,loc,expo)
+    case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED(),name,loc,expo)
       then (UnitAbsyn.SPECUNIT((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::params,unitvec));
     
     case (su2,UnitAbsyn.SPECIFIED(sunorm),name,loc,expo) 
@@ -904,7 +904,7 @@ algorithm
       UnitAbsyn.SpecUnit u1,u2;
       String str1,str2;
     
-    case (UnitAbsyn.CONSISTENT) 
+    case (UnitAbsyn.CONSISTENT()) 
       equation
         print("\n---\nThe system of units is consistent.\n---\n");
       then ();

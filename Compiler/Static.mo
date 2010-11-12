@@ -1898,7 +1898,7 @@ algorithm
     case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect,pre,info)
       equation
         p = Absyn.crefToPath(cref);
-        (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p);
+        (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
         (cache,args,_,_,tty as (_,SOME(p)),_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, pre, info);
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
@@ -8665,7 +8665,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
       equation
         false = Util.getStatefulBoolean(stopElab);
-        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn)
+        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn, info)
         "PR. A function can have several types. Taking an array with
          different dimensions as parameter for example. Because of this we
          cannot just lookup the function name and trust that it
@@ -8710,7 +8710,7 @@ algorithm
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, with -one- candidate */
       equation
-        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn);
+        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn, info);
         (cache,args_1,constlist,restype,functype,vect_dims,slots) =
           elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
@@ -8733,7 +8733,7 @@ algorithm
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, with candidates */
       equation
-        (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn, info);
 
         t_lst = Util.listMap(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
@@ -8756,7 +8756,7 @@ algorithm
     
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* no matching type found, no candidates. */
       equation
-        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env,fn);
+        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env,fn,info);
         fn_str = Absyn.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = fn_str +& " in component " +& pre_str;
@@ -9435,7 +9435,7 @@ algorithm
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},pre,info);
         dims = slotsVectorizable(newslots);
-        polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info);
+        polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,p);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
         t = (DAE.T_FUNCTION(params,restype,isInline),p);
         t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
@@ -10486,7 +10486,7 @@ algorithm
       Absyn.ComponentRef c;
       Boolean impl;
       Env.Cache cache;
-      Boolean doVect,isBuiltinFunc;
+      Boolean doVect,isBuiltinFn;
       DAE.ExpType et;
       Absyn.InnerOuter io;
       DAE.DAElist dae,dae1,dae2;
@@ -10553,18 +10553,18 @@ algorithm
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
-        (cache, isBuiltinFunc, path) = isBuiltinFunc(cache,path,pre);
+        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
+        (cache, isBuiltinFn, path) = isBuiltinFunc(cache,path,pre);
         {t} = typelist;
         (tt,optPath) = t;
-        t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE() there";
+        t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "builtin functions store NONE() there";
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = ComponentReference.toExpCref(c);
-        exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFunc));
+        exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn));
         // This is not done by lookup - only elabCall. So we should do it here.
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE(),true);
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
         (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO())));
 

@@ -1498,10 +1498,11 @@ public function lookupFunctionsInEnv
   input Env.Cache cache;
   input Env.Env env;
   input Absyn.Path id;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (cache,env,id)
+  (outCache,outTypesTypeLst) := matchcontinue (cache,env,id,info)
     local
       Env.Frame f;
       list<DAE.Type> res;
@@ -1511,16 +1512,16 @@ algorithm
       String str;
       
     /* Builtin operators are looked up in top frame directly */
-    case (cache,env,(id as Absyn.IDENT(name = str)))
+    case (cache,env,(id as Absyn.IDENT(name = str)),info)
       equation
         _ = Static.elabBuiltinHandler(str) "Check for builtin operators" ;
         (cache,env as {Env.FRAME(clsAndVars = ht,types = httypes)}) = Builtin.initialEnv(cache);
-        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str);
+        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str, info);
       then
         (cache,res);
 
     /* Check for special builtin operators that can not be represented in environment like for instance cardinality.*/
-    case (cache,_,id as Absyn.IDENT(name = str))
+    case (cache,_,id as Absyn.IDENT(name = str),_)
       equation
         _ = Static.elabBuiltinHandlerGeneric(str);
         (cache,env) = Builtin.initialEnv(cache);
@@ -1528,20 +1529,20 @@ algorithm
       then
         (cache,res);
 
-    case (cache,env,id)
+    case (cache,env,id,info)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = id);
-        (cache,res) = lookupFunctionsInEnv2(cache,env,id,false);
+        (cache,res) = lookupFunctionsInEnv2(cache,env,id,false,info);
       then (cache,res);
 
-    case (cache,env,Absyn.FULLYQUALIFIED(id))
+    case (cache,env,Absyn.FULLYQUALIFIED(id),info)
       equation
         f = Env.topFrame(env);
-        (cache,res) = lookupFunctionsInEnv2(cache,{f},id,true);
+        (cache,res) = lookupFunctionsInEnv2(cache,{f},id,true,info);
       then (cache,res);
 
-    case (cache,_,_) then (cache,{});
-    case (_,_,id)
+    case (cache,_,_,_) then (cache,{});
+    case (_,_,id,_)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
@@ -1557,10 +1558,11 @@ protected function lookupFunctionsInEnv2
   input Env.Env inEnv;
   input Absyn.Path inPath;
   input Boolean followedQual "cannot pop frames if we followed a qualified path at any point";
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath,followedQual)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath,followedQual,info)
     local
       Absyn.Path id,iid,path;
       Option<String> sid;
@@ -1578,14 +1580,14 @@ algorithm
       DAE.DAElist dae;
       
     /* Simple name, search frame */
-    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),followedQual)
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str),followedQual,info)
       equation
-        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str);
+        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str, info);
       then
         (cache,res);
 
     /* Simple name, if class with restriction function found in frame instantiate to get type. */
-    case (cache, f::fs, id as Absyn.IDENT(name = str),followedQual)
+    case (cache, f::fs, id as Absyn.IDENT(name = str),followedQual,info)
       equation
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
@@ -1597,12 +1599,12 @@ algorithm
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_)
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
          
-        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str);
+        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str, info);
       then
         (cache,res);
 
     /* For qualified function names, e.g. Modelica.Math.sin */
-    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),followedQual)
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),followedQual,info)
       equation
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
@@ -1615,21 +1617,21 @@ algorithm
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {});
-        (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true);
+        (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true, info);
       then
         (cache,res);
 
     /* Did not match. Search next frame. */
-    case (cache,Env.FRAME(isEncapsulated = false)::fs,id,false)
+    case (cache,Env.FRAME(isEncapsulated = false)::fs,id,false,info)
       equation
-        (cache,res) = lookupFunctionsInEnv2(cache, fs, id, false);
+        (cache,res) = lookupFunctionsInEnv2(cache, fs, id, false, info);
       then
         (cache,res);
     
-    case (cache,Env.FRAME(isEncapsulated = true)::env,id as Absyn.IDENT(name = str),false)
+    case (cache,Env.FRAME(isEncapsulated = true)::env,id as Absyn.IDENT(name = str),false,info)
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,res) = lookupFunctionsInEnv2(cache, env, id, true);
+        (cache,res) = lookupFunctionsInEnv2(cache, env, id, true, info);
       then
         (cache,res);
 
@@ -1797,11 +1799,12 @@ protected function lookupFunctionsInFrame
   input Env.AvlTree inBinTree2;
   input Env.Env inEnv3;
   input SCode.Ident inIdent4;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
   (outCache,outTypesTypeLst):=
-  matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
+  matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4,info)
     local
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       Env.AvlTree httypes;
@@ -1817,27 +1820,27 @@ algorithm
       DAE.DAElist dae;
       SCode.Restriction restr;
 
-    case (cache,ht,httypes,env,id) /* Classes and vars Types */
+    case (cache,ht,httypes,env,id,_) /* Classes and vars Types */
       equation
         Env.TYPE(tps) = Env.avlTreeGet(httypes, id);
       then
         (cache,tps);
 
-    case (cache,ht,httypes,env,id) /* MetaModelica Partial Function. sjoelund */
+    case (cache,ht,httypes,env,id,_) /* MetaModelica Partial Function. sjoelund */
       equation
         Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
       then
         (cache,{(tty, SOME(Absyn.IDENT(id)))});
 
-    case (cache,ht,httypes,env,id)
+    case (cache,ht,httypes,env,id,info)
       equation
         Env.VAR(_,_,_,_) = Env.avlTreeGet(ht, id);
-        Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
+        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, info);
       then
         fail();
 
     /* Records, create record constructor function*/
-    case (cache,ht,httypes,env,id)
+    case (cache,ht,httypes,env,id,_)
       equation
         Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv) = Env.avlTreeGet(ht, id);
         (cache,_,ftype) = buildRecordType(cache,env,cdef);
@@ -1845,7 +1848,7 @@ algorithm
         (cache,{ftype});
 
     /* Found class that is function, instantiate to get type*/
-    case (cache,ht,httypes,env,id)
+    case (cache,ht,httypes,env,id,info)
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
@@ -1853,12 +1856,12 @@ algorithm
         (cache,env_1,_) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
         
-        (cache,tps) = lookupFunctionsInEnv2(cache,env_1,Absyn.IDENT(id),true);
+        (cache,tps) = lookupFunctionsInEnv2(cache,env_1,Absyn.IDENT(id),true,info);
       then
         (cache,tps);
 
      /* Found class that is is external object*/
-     case (cache,ht,httypes,env,id)
+     case (cache,ht,httypes,env,id,info)
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
           true = Inst.classIsExternalObject(cdef);
@@ -2146,7 +2149,7 @@ algorithm
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true);
+        (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true,Absyn.dummyInfo);
       then
         (cache,true);
     case (cache,path) then (cache,false);

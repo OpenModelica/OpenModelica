@@ -5801,11 +5801,12 @@ Solves by doing iterations until a valid state is found (or no change is
 possible)."
   input PolymorphicBindings bindings;
   input Absyn.Info info;
+  input Option<Absyn.Path> path;
   output PolymorphicBindings solvedBindings;
   PolymorphicBindings unsolvedBindings;
 algorithm
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
-  checkValidBindings(bindings, solvedBindings, unsolvedBindings, info);
+  checkValidBindings(bindings, solvedBindings, unsolvedBindings, info, path);
 end solvePolymorphicBindings;
 
 protected function checkValidBindings
@@ -5814,17 +5815,19 @@ protected function checkValidBindings
   input PolymorphicBindings solvedBindings;
   input PolymorphicBindings unsolvedBindings;
   input Absyn.Info info;
+  input Option<Absyn.Path> path;
 algorithm
-  _ := matchcontinue (bindings, solvedBindings, unsolvedBindings, info)
+  _ := matchcontinue (bindings, solvedBindings, unsolvedBindings, info, path)
     local
-      String bindingsStr, solvedBindingsStr, unsolvedBindingsStr;
-    case (_,_,{},_) then ();
-    case (bindings, solvedBindings, unsolvedBindings,info)
+      String bindingsStr, solvedBindingsStr, unsolvedBindingsStr, pathStr;
+    case (_,_,{},_,_) then ();
+    case (bindings, solvedBindings, unsolvedBindings,info,path)
       equation
+        pathStr = Absyn.optPathString(path);
         bindingsStr = polymorphicBindingsStr(bindings);
         solvedBindingsStr = polymorphicBindingsStr(solvedBindings);
         unsolvedBindingsStr = polymorphicBindingsStr(unsolvedBindings);
-        Error.addSourceMessage(Error.META_UNSOLVED_POLYMORPHIC_BINDINGS, {bindingsStr,solvedBindingsStr,unsolvedBindingsStr},info);
+        Error.addSourceMessage(Error.META_UNSOLVED_POLYMORPHIC_BINDINGS, {pathStr,bindingsStr,solvedBindingsStr,unsolvedBindingsStr},info);
       then fail();
   end matchcontinue;
 end checkValidBindings;
@@ -6049,6 +6052,7 @@ algorithm
         tys = Util.listMap(args, Util.tuple22);
         tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
         ty::tys = Util.listMap(tys, unboxedType);
+        ty = boxIfUnboxedType(ty);
         names = Util.listMap(args, Util.tuple21);
         args = Util.listThreadTuple(names,tys);
         ty = (DAE.T_FUNCTION(args,ty,inline),op);

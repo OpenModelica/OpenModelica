@@ -551,15 +551,15 @@ algorithm
       Option<String> errOpt;
       list<String> chars;
       LineInfo linfo;
-      TplAbsyn.TemplPackage templPackage;
+      TplAbsyn.TemplPackage tplPackage;
     case (file)
         equation
           (chars, linfo, errOpt) = openFile(file);
           linfo = parseErrorPrevPositionOpt(chars, linfo, linfo, errOpt, true);
-          (chars, linfo, templPackage) = templPackage(chars, linfo);
+          (chars, linfo, tplPackage) = templPackage(chars, linfo);
           (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
           printAndFailIfError(linfo);
-        then templPackage;
+        then tplPackage;
     
     case (file) 
       equation
@@ -624,17 +624,17 @@ algorithm
       LineInfo linfo;
       list<TplAbsyn.ASTDef> astDefs;
       TplAbsyn.PathIdent pid;
-      TplAbsyn.TemplPackage templPackage;
+      TplAbsyn.TemplPackage tplPackage;
       list<tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef>> templateDefs;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> astTypes;  
     case (packageName, isUnqualifiedImport, astDefs)
       equation
         file = TplAbsyn.pathIdentString(packageName) +& ".tpl";
         (chars, linfo, errOpt) = openFile(file);
-        (chars, linfo, templPackage) = templPackage(chars, linfo);
+        (chars, linfo, tplPackage) = templPackage(chars, linfo);
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
         TplAbsyn.TEMPL_PACKAGE(templateDefs = templateDefs) 
-          = TplAbsyn.fullyQualifyTemplatePackage(templPackage);
+          = TplAbsyn.fullyQualifyTemplatePackage(tplPackage);
         astTypes = Util.listMap(templateDefs, templateDefToAstDefType);        
         astDefs = TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes) :: astDefs;        
       then (astDefs, linfo, errOpt);            
