@@ -209,7 +209,7 @@ modelica_metatype boxptr_intNeg(modelica_metatype i)
 
 modelica_metatype boxptr_intReal(modelica_metatype i)
 {
-  return mmc_mk_rcon(-(mmc__unbox__integer(i)));
+  return mmc_mk_rcon(mmc__unbox__integer(i));
 }
 
 modelica_metatype boxptr_intString(modelica_metatype i)
@@ -324,6 +324,11 @@ realString_rettype realString(modelica_real r)
     init_modelica_string(&res, buffer);
   }
   return res;
+}
+
+modelica_metatype boxptr_realString(modelica_metatype r)
+{
+  return mmc_mk_scon(realString(mmc_prim_get_real(r)));
 }
 
 modelica_metatype boxptr_realAdd(modelica_metatype r1, modelica_metatype r2)

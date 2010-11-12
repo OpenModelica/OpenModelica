@@ -186,6 +186,8 @@ typedef modelica_string_t realString_rettype;
 realInt_rettype realInt(modelica_real);
 realString_rettype realString(modelica_real);
 
+modelica_metatype boxptr_realString(modelica_metatype);
+
 /* String Character Conversion */
 typedef modelica_integer stringCharInt_rettype;
 typedef modelica_string_t intStringChar_rettype;
