@@ -414,7 +414,7 @@ protected function traverseBackendDAEOptEqnWithStop "function: traverseBackendDA
     output tuple<BackendDAE.Equation, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeA:=  matchcontinue (inEquation,func,inTypeA)
+  (outBoolean,outTypeA):=  matchcontinue (inEquation,func,inTypeA)
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg;
