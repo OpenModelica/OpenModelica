@@ -208,6 +208,7 @@ end emptyCache;
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
 public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
 public constant String valueBlockScopeName="$valueblock scope$" "a unique scope used by valueblocks";
+public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,valueBlockScopeName};
 
 // functions for dealing with the environment
 
@@ -864,6 +865,39 @@ algorithm
     case (_) then NONE();
   end matchcontinue;
 end getEnvPath;
+
+public function getEnvPathNoImplicitScope "function: getEnvPath
+  This function returns all partially instantiated parents as an Absyn.Path
+  option I.e. it collects all identifiers of each frame until it reaches
+  the topmost unnamed frame. If the environment is only the topmost frame,
+  NONE() is returned."
+  input Env inEnv;
+  output Option<Absyn.Path> outAbsynPathOption;
+algorithm
+  outAbsynPathOption := matchcontinue (inEnv)
+    local
+      Ident id;
+      Absyn.Path path,path_1;
+      Env rest;
+    case ((FRAME(optName = SOME(id)) :: rest))
+      equation
+        true = listMember(id,implicitScopeNames);
+      then getEnvPathNoImplicitScope(rest);
+    case ((FRAME(optName = SOME(id)) :: rest))
+      equation
+        false = listMember(id,implicitScopeNames);
+        SOME(path) = getEnvPath(rest);
+        path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
+      then
+        SOME(path_1);
+    case (FRAME(optName = SOME(id))::rest)
+      equation
+        false = listMember(id,implicitScopeNames);
+        NONE() = getEnvPath(rest);
+      then SOME(Absyn.IDENT(id));
+    case (_) then NONE();
+  end matchcontinue;
+end getEnvPathNoImplicitScope;
 
 public function joinEnvPath "function: joinEnvPath
   Used to join an Env with an Absyn.Path (probably an IDENT)"

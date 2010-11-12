@@ -1103,17 +1103,16 @@ algorithm
   end matchcontinue;
 end lookupVarInternal;
 
-protected function frameIsImplAddedScope "returns true if the frame is a for-loop scope or
-a valueblock scope.
-This is indicated by the name of the frame which should be 
-Env.forScopeName or Env.valueBlockScopeName"
+protected function frameIsImplAddedScope
+"returns true if the frame is a for-loop scope or a valueblock scope.
+This is indicated by the name of the frame."
   input Env.Frame f;
   output Boolean b;
 algorithm
   b := matchcontinue(f)
     local String name;
     case(Env.FRAME(optName=SOME(name))) equation
-      true = name ==& Env.forScopeName or name ==& Env.valueBlockScopeName or name ==& Env.forIterScopeName;
+      true = listMember(name, Env.implicitScopeNames);
     then true;
     case(_) then false;
   end matchcontinue;
