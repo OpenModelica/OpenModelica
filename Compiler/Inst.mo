@@ -4139,11 +4139,20 @@ algorithm
     case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
       equation
         (cache,(c as SCode.CLASS(name = _)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        false = SCode.isFunction(c);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,cenv,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,csets,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY);
         localAccTypes = ty::localAccTypes;
         (cache,env,ih,localAccTypes,csets,_) =
         instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes,csets);
       then (cache,env,ih,localAccTypes,csets,oDA);
+
+    case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
+      equation
+        (cache,ty,_) = Lookup.lookupType(cache,env,cn,NONE()) "For functions, etc";
+        localAccTypes = ty::localAccTypes;
+        (cache,env,ih,localAccTypes,csets,_) =
+        instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes,csets);
+      then (cache,env,ih,localAccTypes,csets,NONE());
 
     case (cache,env,ih, (tSpec as Absyn.TCOMPLEX(p,_,_)) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
       equation
