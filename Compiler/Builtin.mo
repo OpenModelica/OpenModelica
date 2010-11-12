@@ -2005,6 +2005,9 @@ protected constant DAE.Type void2string =(
 protected constant DAE.Type a2void =(
           DAE.T_FUNCTION({("x1",typeA)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
 
+protected constant DAE.Type stringBoxed2void =(
+          DAE.T_FUNCTION({("msg",DAE.T_STRING_DEFAULT),("val",DAE.T_BOXED_DEFAULT)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
+
 protected constant DAE.Type void2int =(
           DAE.T_FUNCTION({},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
 
@@ -3044,6 +3047,7 @@ algorithm
         // Misc Operations
         env = Env.extendFrameT(env, "if_exp", boolBoxedBoxed2boxed);
         env = Env.extendFrameT(env, "printAny", a2void);
+        env = Env.extendFrameT(env, "debug_print", stringBoxed2void);
         env = Env.extendFrameT(env, "tick", void2int);
         env = Env.extendFrameT(env, "equality", AA2void);
         // There is a C function called clock which does not return a double...

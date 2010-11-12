@@ -1377,11 +1377,11 @@ algorithm
 end setVarInput;
 
 protected function setVarType "Sets a DAE.Var's type"
-  input Var v;
+  input Var var;
   input Type ty;
   output Var outV;
 algorithm
-  outV := matchcontinue(v,ty)
+  outV := matchcontinue(var,ty)
     local
       Ident name;
       Boolean f,p,streamPrefix;
