@@ -851,7 +851,7 @@ public function listAppendElt "function: listAppendElt
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst := listReverse(inTypeA::inTypeALst);
+  outTypeALst := listAppend(inTypeALst, {inTypeA});
   /*
   matchcontinue (inTypeA,inTypeALst)
     local
@@ -887,7 +887,7 @@ algorithm
     case(element, f, accLst)
       equation
         result = f(element);
-        accLst = listReverse(result::accLst);
+        accLst = listAppend(accLst, {result});
       then accLst;
   end matchcontinue;
 end applyAndAppend;
@@ -1139,12 +1139,14 @@ algorithm
       TypeB hdChanged;
       list<TypeA> rest;
       list<TypeB> l, result;
+    
+    // revese at the end
     case ({}, l, _) then listReverse(l);
+    // accumulate in front
     case (hd::rest, l, fn)
       equation
         hdChanged = fn(hd);
-        l = hdChanged::l;
-        result = listMap_impl_2(rest, l, fn);
+        result = listMap_impl_2(rest, hdChanged::l, fn);
     then
         result;
   end matchcontinue;

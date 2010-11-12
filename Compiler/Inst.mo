@@ -317,6 +317,10 @@ algorithm
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae2);
         dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
+        
+        // let the GC collect these as they are used only by Inst!
+        setGlobalRoot(instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
       then
         (cache,env_2,ih,dae2);
 
@@ -374,6 +378,10 @@ algorithm
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE())});
         //System.stopTimer();
         //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
+
+        // let the GC collect these as they are used only by Inst!
+        setGlobalRoot(instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
       then
         (cache, env_2, ih, dae);
 

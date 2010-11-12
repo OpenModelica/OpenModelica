@@ -889,13 +889,13 @@ public function generateModelCode
   
   list<String> includes;
   list<Function> functions;
-  DAE.DAElist dae2;
+  // DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode simCode;
   Real timeSimCode, timeTemplates;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  (libs, includes, functions, outIndexedBackendDAE, dae2) :=
+  (libs, includes, functions, outIndexedBackendDAE, _) :=
     createFunctions(program, dae, indexedBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
@@ -1623,15 +1623,23 @@ algorithm
         extObjInfo = createExtObjInfo(dlow2);
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
+        //print("Here1\n");
         allEquations = createEquations(false, false, true, false, dlow2, ass1, ass2, comps, helpVarInfo);
+        //print("Here2\n");
         allEquationsPlusWhen = createEquations(true, false, true, false, dlow2, ass1, ass2, comps, helpVarInfo);
+        //print("Here3\n");
         stateContEquations = createEquations(false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        //print("Here4\n");
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
+        //print("Here5\n");
         nonStateContEquations = createEquations(false, false, true, false, dlow2, ass1, ass2,
                                                 contBlocks, helpVarInfo);
+        //print("Here6\n");
         nonStateDiscEquations = createEquations(false, useZerocrossing(), true, false, dlow2, ass1, ass2,
                                                 discBlocks, helpVarInfo);
+        //print("Here7\n");
         initialEquations = createInitialEquations(dlow2);
+        //print("Here8\n");
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
@@ -3119,7 +3127,7 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
+        ae1 = listArray(mdelst);
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
@@ -3174,6 +3182,7 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
+        // print("Mixed\n");
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
         ae1 = listArray(mdelst);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
@@ -4287,6 +4296,7 @@ algorithm
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
       list<tuple<BackendDAE.Equation, list<DAE.Exp>>> divexplst;
+      list<SimEqSystem> resEqus1,resEqus2,resEqus3,resEqus4; 
     
     case ((dlow as BackendDAE.DAE(orderedVars=vars,
                                  knownVars=knvars,
@@ -4306,19 +4316,24 @@ algorithm
         eqns_lst = selectContinuousEquations(eqns_lst, 1, ass2, dlow);
 
         eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
+        eqns_lst = Util.listFilter(eqns_lst, failUnlessResidual);
+        resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);        
+        
         se_lst = Util.listMap(se_lst, BackendEquation.equationToResidualForm);
+        se_lst = Util.listFilter(se_lst, failUnlessResidual);
+        resEqus2 = Util.listMap1(se_lst, dlowEqToSimEqSystem,al);
+        
         ie_lst = Util.listMap(ie_lst, BackendEquation.equationToResidualForm);
+        ie_lst = Util.listFilter(ie_lst, failUnlessResidual);
+        resEqus3 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
+        
         ie2_lst = Util.listMap(ie2_lst, BackendEquation.equationToResidualForm);
-
-        residualEquationsTmp = listAppend(eqns_lst, se_lst);
-        residualEquationsTmp = listAppend(residualEquationsTmp, ie_lst);
-        residualEquationsTmp = listAppend(residualEquationsTmp, ie2_lst);
-
-        residualEquationsTmp = Util.listFilter(residualEquationsTmp,
-                                               failUnlessResidual);
-
-        residualEquations = Util.listMap1(residualEquationsTmp,
-                                         dlowEqToSimEqSystem,al);
+        ie2_lst = Util.listFilter(ie2_lst, failUnlessResidual);
+        resEqus4 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
+        
+        residualEquations = listAppend(resEqus1, resEqus2);
+        residualEquations = listAppend(residualEquations, resEqus3);
+        residualEquations = listAppend(residualEquations, resEqus4);
       then
         residualEquations;
     
