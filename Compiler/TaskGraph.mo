@@ -307,7 +307,7 @@ algorithm
   _:=
   matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
-      Integer e_1,i,v_1,e,indx,i;
+      Integer e_1,i,v_1,e,indx;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
       list<BackendDAE.Var> varlst;

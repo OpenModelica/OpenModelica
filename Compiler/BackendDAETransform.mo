@@ -170,9 +170,10 @@ algorithm
         ae = listArray(ae_lst);    
         einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
         dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc);   
-        m_1 = BackendDAEUtil.incidenceMatrix(dae_1) "Rerun matching to get updated assignments and incidence matrices
-                                    TODO: instead of rerunning: find out which equations are removed
-                                    and remove those from assignments and incidence matrix." ;
+        m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL()) 
+        "Rerun matching to get updated assignments and incidence matrices
+         TODO: instead of rerunning: find out which equations are removed
+               and remove those from assignments and incidence matrix.";
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
         nvars = arrayLength(m_1);
         neqns = arrayLength(mt_1);
@@ -304,8 +305,7 @@ public function assignmentsCreate
   list<BackendDAE.Value> lst;
   array<BackendDAE.Value> arr;
 algorithm
-  lst := Util.listFill(0, memsize);
-  arr := listArray(lst) "  array_create(memsize,v) => arr &" ;
+  arr := arrayCreate(memsize, 0);
   outAssignments := BackendDAE.ASSIGNMENTS(n,memsize,arr);
 end assignmentsCreate;
 

@@ -781,7 +781,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", BackendDump.dumpIncidenceMatrixT, mT);

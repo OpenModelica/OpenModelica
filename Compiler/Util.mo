@@ -449,23 +449,24 @@ public function listFill_tail
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeA,inInteger, accumulator)
+  outTypeALst := matchcontinue (inTypeA,inInteger, accumulator)
     local
       Type_a a;
       Integer n_1,n;
       list<Type_a> res;
+    
     case(a,n,_)
       equation
         true = n < 0;
         print("Internal Error, negative value to Util.listFill_tail\n");
       then {};
+        
     case (a,0,accumulator) then accumulator;
+    
     case (a,n,accumulator)
       equation
         n_1 = n - 1;
-        accumulator = a::accumulator;
-        res = listFill_tail(a, n_1, accumulator);
+        res = listFill_tail(a, n_1, a::accumulator);
       then
         res;
   end matchcontinue;
@@ -1007,11 +1008,9 @@ end arrayMapNoCopyHelp1;
 
 public function arraySelect 
 "Takes an array and a list with index and output a new array with the indexed elements. 
-Since it will update the array values the returned array must not have the same type, 
-the array will first be initialized with the result of the first call.
-assume the Indecies are in range 1,arrayLength(array). 
-
-  "
+ Since it will update the array values the returned array must not have the same type, 
+ the array will first be initialized with the result of the first call.
+ assume the Indecies are in range 1,arrayLength(array)."
   input array<Type_a> array;
   input list<Integer> lst;
   output array<Type_a> outArray;
@@ -1046,11 +1045,13 @@ algorithm
   end matchcontinue;
 end arraySelectHelp;
 
-public function arrayMap "Takes an array and a function over the elements of the array, which is applied for each element.
-Since it will update the array values the returned array must not have the same type, the array will first be initialized with the result of the first call. 
-
-See also listMap, arrayMapNoCopy 
-  "
+public function arrayMap 
+"@author: unkwnown, adrpo
+  Takes an array and a function over the elements of the array, which is applied for each element.
+  Since it will update the array values the returned array must not have the same type, the array 
+  will first be initialized with the result of the first call if it exists. 
+  If the input array is empty use listArray->listMap->arrayList way. 
+  See also listMap, arrayMapNoCopy"
   input array<Type_a> array;
   input FuncType func;
   output array<Type_b> outArray;
@@ -1060,10 +1061,28 @@ See also listMap, arrayMapNoCopy
     input Type_a x;
     output Type_b y;
   end FuncType;
-protected Type_b initElt;
-algorithm
-  initElt := func(array[1]);
-  outArray := arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
+protected 
+  Type_b initElt;
+algorithm    
+  outArray := matchcontinue(array, func)
+    // if the array is empty, use list transformations to fix the types!
+    case (array, func)
+      equation
+        true = intEq(0, arrayLength(array));
+        // apply listMap on the empty array
+        outArray = listArray(listMap(arrayList(array), func));
+      then
+        outArray;
+    // otherwise, use the first element to create the new array
+    case (array, func)
+      equation
+        false = intEq(0, arrayLength(array));
+        initElt = func(array[1]);
+        outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
+      then
+        outArray;
+        
+  end matchcontinue;
 end arrayMap;
 
 protected function arrayMapHelp1 "help function to arrayMap"
@@ -6918,5 +6937,103 @@ public function id
 algorithm
   oa := a;
 end id;
+
+public function absIntegerList
+"@author: adrpo
+  Applies absolute value to all entries in the given list."
+  input list<Integer> inLst;
+  output list<Integer> outLst;
+algorithm
+  outLst := listMap(inLst, intAbs);
+end absIntegerList;
+
+/*
+public function arrayMap "function: arrayMap
+  Takes a list and a function over the elements of the array, which is applied
+  for each element, producing a new array.
+  Example: arrayMap({1,2,3}, intString) => { \"1\", \"2\", \"3\"}"
+  input array<Type_a> inTypeAArr;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
+  output array<Type_b> outTypeBArr;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+protected
+  array<Type_b> outTypeBArr;
+  Type_b elB;
+  Type_a elA;
+  Integer sizeOfArr;
+algorithm  
+  // get the size
+  sizeOfArr := arrayLength(inTypeAArr);
+  // get the first elment of the input array
+  elA := arrayGet(inTypeAArr, 1);
+  // apply the function and transform it to Type_b
+  elB := inFuncTypeTypeAToTypeB(elA);
+  // create an array populated with the first element trasformed 
+  outTypeBArr := arrayCreate(sizeOfArr, elA);
+  // set all the other elements on the array!
+  outTypeBArr := arrayMapDispatch(inTypeAArr,inFuncTypeTypeAToTypeB,1,sizeOfArr,outTypeBArr);
+end arrayMap;
+
+protected function arrayMapDispatch
+"@author: adrpo
+  Calculates the incidence matrix as an array of list of integers"
+  input array<Type_a> inTypeAArr;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
+  input Integer index;
+  input Integer sizeOfArr;
+  input array<Type_b> accTypeBArr;
+  output array<Type_b> outTypeBArr;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outIncidenceArray := matchcontinue (inTypeAArr, inFuncTypeAToTypeB, index, sizeOfArr, accTypeBArr)
+    local
+      array<Type_a> aArr;
+      array<Type_b> bArr;
+      Integer i,n;
+      Type_a elA;
+      Type_b elB;
+    
+    // i = n (we reach the end)
+    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
+      equation
+        false = intLt(i, n);
+      then 
+        bArr;
+    
+    // i < n 
+    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
+      equation
+        true = intLt(i, n);
+        // get the element from the input array
+        elA = arrayGet(aArr, i + 1);
+        // transform the element
+        elB = inFuncTypeAToTypeB(elA);
+        // put it in the array
+        iArr = arrayUpdate(bArr, i+1, elB);
+        iArr = arrayMapDispatch(iArr, inFuncTypeAToTypeB, i + 1, n, bArr);
+      then
+        iArr;
+    
+    // failure!
+    case (aArr, inFuncTypeAToTypeB, i, n, bArr)
+      equation
+        print("- Util.arrayMapDispatch failed\n");
+      then
+        fail();
+  end matchcontinue;
+end arrayMapDispatch;
+*/
 
 end Util;

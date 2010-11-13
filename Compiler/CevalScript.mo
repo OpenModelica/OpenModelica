@@ -356,7 +356,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqnarr,complexEqns = BackendDAE.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = BackendDAECreate.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as BackendDAE.DAE(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
-        m = BackendDAEUtil.incidenceMatrix(daelow);
+        m = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
         mt = BackendDAEUtil.transposeMatrix(m);
         // jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false);
         jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, m, mt,false);
@@ -3748,7 +3748,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -3779,7 +3779,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
         (comps) = BackendDAETransform.strongComponents(m, mT, ass1, ass2);

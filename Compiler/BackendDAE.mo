@@ -360,6 +360,12 @@ public
 type Value = Integer "- Value" ;
 
 public
+uniontype IndexType
+  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE; 
+  record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
+end IndexType; 
+
+public
 type IncidenceMatrix = array<list<Integer>>;
 
 public

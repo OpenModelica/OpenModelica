@@ -759,7 +759,7 @@ algorithm
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
-        m_3 = BackendDAEUtil.incidenceMatrix(dlow1_1);
+        m_3 = BackendDAEUtil.incidenceMatrix(dlow1_1, BackendDAE.NORMAL());
         mT_3 = BackendDAEUtil.transposeMatrix(m_3);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
@@ -1016,7 +1016,7 @@ algorithm
         dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
-        m_1 = BackendDAEUtil.incidenceMatrix(dlow_1);
+        m_1 = BackendDAEUtil.incidenceMatrix(dlow_1, BackendDAE.NORMAL());
         mT_1 = BackendDAEUtil.transposeMatrix(m_1);
         nvars = arrayLength(m_1);
         neqns = arrayLength(mT_1);
@@ -1417,7 +1417,7 @@ algorithm
         dlow = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,ev,eoc);
      
         // figure out new matching and the strong components  
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),functionTree);
         Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);

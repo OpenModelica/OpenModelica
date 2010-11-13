@@ -659,8 +659,7 @@ public function emptyVars
 algorithm
   arr := arrayCreate(10, {});
   arr2 := arrayCreate(10, {});
-  lst := Util.listFill(NONE(), 10);
-  emptyarr := listArray(lst);
+  emptyarr := arrayCreate(10, NONE());
   outVariables := BackendDAE.VARIABLES(arr,arr2,BackendDAE.VARIABLE_ARRAY(0,10,emptyarr),10,0);
 end emptyVars;
 
@@ -676,31 +675,32 @@ end emptyAliasVariables;
 
 public function equationList "function: equationList
   author: PA
-
-  Transform the expandable BackendDAE.Equation array to a list of Equations.
-"
+  Transform the expandable BackendDAE.Equation array to a list of Equations."
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
-  outEquationLst:=
-  matchcontinue (inEquationArray)
+  outEquationLst := matchcontinue (inEquationArray)
     local
       array<Option<BackendDAE.Equation>> arr;
       BackendDAE.Equation elt;
       BackendDAE.Value lastpos,n,size;
       list<BackendDAE.Equation> lst;
+    
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = 0,equOptArr = arr)) then {};
+    
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = 1,equOptArr = arr))
       equation
         SOME(elt) = arr[0 + 1];
       then
         {elt};
+    
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
       equation
         lastpos = n - 1;
         lst = equationList2(arr, 0, lastpos);
       then
         lst;
+    
     case (_)
       equation
         print("- BackendDAEUtil.equationList failed\n");
@@ -708,27 +708,6 @@ algorithm
         fail();
   end matchcontinue;
 end equationList;
-
-public function listEquation "function: listEquation
-  author: PA
-  Transform the a list of Equations into an expandable BackendDAE.Equation array."
-  input list<BackendDAE.Equation> lst;
-  output BackendDAE.EquationArray outEquationArray;
-  BackendDAE.Value len,size;
-  Real rlen,rlen_1;
-  array<Option<BackendDAE.Equation>> optarr,eqnarr,newarr;
-  list<Option<BackendDAE.Equation>> eqn_optlst;
-algorithm
-  len := listLength(lst);
-  rlen := intReal(len);
-  rlen_1 := rlen *. 1.4;
-  size := realInt(rlen_1);
-  optarr := arrayCreate(size, NONE());
-  eqn_optlst := Util.listMap(lst, Util.makeOption);
-  eqnarr := listArray(eqn_optlst);
-  newarr := Util.arrayCopy(eqnarr, optarr);
-  outEquationArray := BackendDAE.EQUATION_ARRAY(len,size,newarr);
-end listEquation;
 
 protected function equationList2 "function: equationList2
   author: PA
@@ -764,6 +743,27 @@ algorithm
   end matchcontinue;
 end equationList2;
 
+public function listEquation "function: listEquation
+  author: PA
+  Transform the a list of Equations into an expandable BackendDAE.Equation array."
+  input list<BackendDAE.Equation> lst;
+  output BackendDAE.EquationArray outEquationArray;
+protected
+  BackendDAE.Value len,size;
+  Real rlen,rlen_1;
+  array<Option<BackendDAE.Equation>> optarr,eqnarr,newarr;
+  list<Option<BackendDAE.Equation>> eqn_optlst;
+algorithm
+  len := listLength(lst);
+  rlen := intReal(len);
+  rlen_1 := rlen *. 1.4;
+  size := realInt(rlen_1);
+  optarr := arrayCreate(size, NONE());
+  eqn_optlst := Util.listMap(lst, Util.makeOption);
+  eqnarr := listArray(eqn_optlst);
+  newarr := Util.arrayCopy(eqnarr, optarr);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(len,size,newarr);
+end listEquation;
 
 public function varList
 "function: varList
@@ -2750,7 +2750,12 @@ algorithm
   end matchcontinue;
 end getEquationBlock;
 
-
+public function getNumberOfEquationArray 
+  input BackendDAE.EquationArray inEqArr "equation array";
+  output Integer noOfElements "number of elements";
+algorithm
+  BackendDAE.EQUATION_ARRAY(numberOfElement = noOfElements) := inEqArr;
+end getNumberOfEquationArray;
 
 /******************************************************************
  stuff to calculate incidence matrix
@@ -2763,13 +2768,14 @@ end getEquationBlock;
 
 public function incidenceMatrix
 "function: incidenceMatrix
-  author: PA
-  Calculates the incidence matrix, i.e. which variables are present
-  in each equation."
+  author: PA, adrpo
+  Calculates the incidence matrix, i.e. which variables are present in each equation.
+  You can ask for absolute indexes or normal (negative for der) via the IndexType"
   input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
 algorithm
-  outIncidenceMatrix := matchcontinue (inBackendDAE)
+  outIncidenceMatrix := matchcontinue (inBackendDAE, inIndexType)
     local
       list<BackendDAE.Equation> eqnsl;
       list<list<BackendDAE.Value>> lstlst;
@@ -2777,14 +2783,19 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wc;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
+      Integer numberOfEqs;
+    
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
-        eqnsl = equationList(eqns);
-        lstlst = incidenceMatrix2(vars, eqnsl, wc);
-        arr = listArray(lstlst);
+        // get the size
+        numberOfEqs = getNumberOfEquationArray(eqns);
+        // create the array to hold the incidence matrix
+        arr = arrayCreate(numberOfEqs, {});
+        arr = incidenceMatrixDispatch(vars, eqns, wc, arr, 0, numberOfEqs, inIndexType);
       then
         arr;
-    case (_)
+    
+    case (_, inIndexType)
       equation
         print("- BackendDAEUtil.incidenceMatrix failed\n");
       then
@@ -2792,41 +2803,77 @@ algorithm
   end matchcontinue;
 end incidenceMatrix;
 
-protected function incidenceMatrix2
-"function: incidenceMatrix2
-  author: PA
-  Helper function to incidenceMatrix
-  Calculates the incidence matrix as a list of list of integers"
-  input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Equation> inEquationLst;
-  input list<BackendDAE.WhenClause> inWhenClause;
-  output list<list<Integer>> outIntegerLstLst;
+public function applyIndexType
+"@author: adrpo
+  Applies absolute value to all entries in the given list."
+  input list<Integer> inLst;
+  input BackendDAE.IndexType inIndexType;
+  output list<Integer> outLst;
 algorithm
-  outIntegerLstLst := matchcontinue (inVariables,inEquationLst,inWhenClause)
+  outLst := matchcontinue(inLst, inIndexType)
+    
+    // leave as it is 
+    case (inLst, BackendDAE.NORMAL()) then inLst;
+    
+    // transform to absolute indexes
+    case (inLst, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
+    
+  end matchcontinue;
+end applyIndexType;  
+
+protected function incidenceMatrixDispatch
+"@author: adrpo
+  Calculates the incidence matrix as an array of list of integers"
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.EquationArray inEqsArr;
+  input list<BackendDAE.WhenClause> inWhenClause;
+  input array<list<Integer>> inIncidenceArray;
+  input Integer index;
+  input Integer numberOfEqs;
+  input BackendDAE.IndexType inIndexType;
+  output array<list<Integer>> outIncidenceArray;
+algorithm
+  outIncidenceArray := matchcontinue (inVariables, inEqsArr, inWhenClause, inIncidenceArray, index, numberOfEqs, inIndexType)
     local
       list<list<BackendDAE.Value>> lst;
       list<BackendDAE.Value> row;
       BackendDAE.Variables vars;
       BackendDAE.Equation e;
-      list<BackendDAE.Equation> eqns;
+      BackendDAE.EquationArray eqArr;
       list<BackendDAE.WhenClause> wc;
+      array<list<Integer>> iArr;
+      Integer i,n;
     
-    case (_,{},_) then {};
-    
-    case (vars,(e :: eqns),wc)
+    // i = n (we reach the end)
+    case (vars, eqArr, wc, iArr, i, n, inIndexType)
       equation
-        lst = incidenceMatrix2(vars, eqns, wc);
+        false = intLt(i, n);
+      then 
+        iArr;
+    
+    // i < n 
+    case (vars, eqArr, wc, iArr, i, n, inIndexType)
+      equation
+        true = intLt(i, n);
+        // get the equation
+        e = equationNth(eqArr, i);
+        // compute the row
         row = incidenceRow(vars, e, wc);
+        // only absolute indexes?
+        row = applyIndexType(row, inIndexType);
+        // put it in the array
+        iArr = arrayUpdate(iArr, i+1, row);
+        iArr = incidenceMatrixDispatch(vars, eqArr, wc, iArr, i + 1, n, inIndexType);
       then
-        (row :: lst);
+        iArr;
     
-    case (_,_,_)
+    case (vars, eqArr, wc, iArr, i, n, inIndexType)
       equation
-        print("- BackendDAEUtil.incidenceMatrix2 failed\n");
+        print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
       then
         fail();
   end matchcontinue;
-end incidenceMatrix2;
+end incidenceMatrixDispatch;
 
 public function incidenceRow
 "function: incidenceRow

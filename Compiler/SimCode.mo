@@ -833,7 +833,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
@@ -959,7 +959,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", BackendDump.dump, dlow);
-        m = BackendDAEUtil.incidenceMatrix(dlow);
+        m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
@@ -3098,8 +3098,7 @@ algorithm
       BackendDAE.Variables vars_1,vars,knvars,exvars;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns_1,eqns,se,ie;
-      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow;
-      array<list<Integer>> m,m_1,mt_1;
+      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow; 
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       String s;
@@ -3121,8 +3120,8 @@ algorithm
       list<String> dlstr;
       BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
       array<Integer> v1,v2,v1_1,v2_1;
-      BackendDAE.IncidenceMatrix m_2,m_3;
-      BackendDAE.IncidenceMatrixT mT_2,mT_3;
+      BackendDAE.IncidenceMatrix m_2,m_3,m;
+      BackendDAE.IncidenceMatrixT mT_2,mT_3,mt;
       list<list<Integer>> comps,comps_1;
       list<Integer> comps_flat;
       list<list<Integer>> r,t;
@@ -3131,11 +3130,11 @@ algorithm
     // create always a linear system of equations 
     case (genDiscrete,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
+        //print("\ncreateOdeSystem -> Linear: ...\n");
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
@@ -3144,11 +3143,10 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         // Jacobian of a Linear System is always linear 
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
@@ -3160,11 +3158,11 @@ algorithm
     // mixed system of equations, continuous part only
     case (false,false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
+        //print("\ncreateOdeSystem -> Mixed: cont\n");
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -3174,11 +3172,10 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
+        mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         equations_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
@@ -3187,12 +3184,11 @@ algorithm
     // mixed system of equations, both continous and discrete eqns
     case (true,false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
+        // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");        
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
-        // print("Mixed\n");
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -3202,12 +3198,11 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
+        mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
         simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
@@ -3219,12 +3214,12 @@ algorithm
     // continuous system of equations try tearing algorithm
     case (genDiscrete,false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
+         //print("\ncreateOdeSystem -> Tearing: ...\n");
         // check tearing
         true = RTOpts.debugFlag("tearing");
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
@@ -3232,10 +3227,9 @@ algorithm
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        mt = BackendDAEUtil.transposeMatrix(m);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
@@ -3251,11 +3245,11 @@ algorithm
     /* continuous system of equations */
     case (genDiscrete,false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
+        //print("\ncreateOdeSystem -> Cont sys: ...\n");
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae1 = listArray(mdelst);        
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);      
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
@@ -3264,17 +3258,17 @@ algorithm
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
-        m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
         equations_;
     case (_,_,_,_,_,_,_)
       equation
+        print("Failure: ...\n");
         Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem failed"});
       then
         fail();
@@ -3529,10 +3523,9 @@ algorithm
       equation
         // check Relaxation
         true = RTOpts.debugFlag("relaxation");
-        m = BackendDAEUtil.incidenceMatrix(d);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(d, m_1, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        m = BackendDAEUtil.incidenceMatrix(d, BackendDAE.ABSOLUTE());
+        mt_1 = BackendDAEUtil.transposeMatrix(m);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(d, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
@@ -3908,8 +3901,8 @@ algorithm
     case (block_ as _::_::_,mixedEvent,daelow as BackendDAE.DAE(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
       equation
         dlowEqs = BackendDAEUtil.equationList(eqn);
-				m = BackendDAEUtil.incidenceMatrix(daelow);
-        mT = BackendDAEUtil.transposeMatrix(m);      
+				m = BackendDAEUtil.incidenceMatrix(daelow, BackendDAE.NORMAL());
+        mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
         simVars = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,{}); 
         simVars = listReverse(simVars);
@@ -4125,11 +4118,10 @@ algorithm
         re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re); 
         subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
-         m = BackendDAEUtil.incidenceMatrix(subsystem_dae);
-        m_1 = BackendDAEUtil.absIncidenceMatrix(m);
-        mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        mt_1 = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac1 = BackendDAEUtil.calculateJacobian(vars, eqns, ae, m_1, mt_1,false);
+        jac1 = BackendDAEUtil.calculateJacobian(vars, eqns, ae, m, mt_1,false);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);
         equations_ = createOdeSystem2(mixedEvent, genDiscrete, subsystem_dae, jac1, jac_tp, block_,helpVarInfo);             
       then
@@ -5252,8 +5244,7 @@ algorithm
     case	(helpvars,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
       removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
-        (helpvars1,algLst,_) = generateHelpVarsInAlgorithms(listLength(helpvars),arrayList(algorithms));
-        algorithms2 = listArray(algLst);
+        (helpvars1,algorithms2,_) = generateHelpVarsInAlgorithms(listLength(helpvars),algorithms);
       then (listAppend(helpvars,helpvars1),BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
         removedEqs,initialEqs,arrayEqs,algorithms2,eventInfo,extObjClasses));
     case (_,_)
@@ -5265,26 +5256,64 @@ algorithm
   end matchcontinue;
 end generateHelpVarsForWhenStatements;
 
-protected function generateHelpVarsInAlgorithms
+protected function generateHelpVarsInAlgorithmsDispatch
   input Integer nextInd "Index of next help variable";
-  input list<Algorithm.Algorithm> inAlgLst;
+  input array<Algorithm.Algorithm> inAlgArr;
+  input Integer index;
+  input Integer sizeOfArr;
+  input array<Algorithm.Algorithm> accAlgArr;
   output list<HelpVarInfo> outHelpVars;
-  output list<Algorithm.Algorithm> outAlgLst;
+  output array<Algorithm.Algorithm> outAlgArr;
   output Integer n2;
 algorithm
-  (outHelpVars,outAlgLst,n2) := matchcontinue(nextInd,inAlgLst)
+  (outHelpVars,outAlgArr,n2) := matchcontinue(nextInd, inAlgArr, index, sizeOfArr, accAlgArr)
     local
-      Integer nextInd2,nextInd3;
+      list<HelpVarInfo> helpVars,helpVars1,helpVars2;
+      Integer i, n, nextInd1, nextInd2;
       list<Algorithm.Statement> stmts, stmts2;
-      list<Algorithm.Algorithm> rest,rest2;
-      list<HelpVarInfo> helpvars1,helpvars2,helpvars;
-    case (nextInd, {}) then ({},{},nextInd);
-    case (nextInd, (DAE.ALGORITHM_STMTS(stmts))::rest)
+    
+    // stop the loop
+    case (nextInd, inAlgArr, i, n, accAlgArr)
       equation
-        (helpvars1,rest2,nextInd2) = generateHelpVarsInAlgorithms(nextInd,rest);
-        (helpvars2,stmts2,nextInd3) = generateHelpVarsInStatements(nextInd2,stmts);
-        helpvars = listAppend(helpvars1,helpvars2);
-      then (helpvars,DAE.ALGORITHM_STMTS(stmts2)::rest2,nextInd3);
+        false = intLt(i, n);
+      then
+        ({}, accAlgArr, nextInd);    
+    
+    // loop body
+    case (nextInd, inAlgArr, i, n, accAlgArr)
+      equation
+        true = intLt(i, n);
+        //  get the element
+        DAE.ALGORITHM_STMTS(stmts) = arrayGet(inAlgArr, i+1);
+        (helpVars1,stmts2,nextInd1) = generateHelpVarsInStatements(nextInd,stmts);
+        accAlgArr = arrayUpdate(accAlgArr, i+1, DAE.ALGORITHM_STMTS(stmts2));        
+        (helpVars2,accAlgArr,nextInd2) = generateHelpVarsInAlgorithmsDispatch(nextInd1, inAlgArr, i + 1, n, accAlgArr);
+        helpVars = listAppend(helpVars1,helpVars2);
+      then 
+        (helpVars,accAlgArr,nextInd);
+  end matchcontinue;
+end generateHelpVarsInAlgorithmsDispatch;
+
+protected function generateHelpVarsInAlgorithms
+  input Integer nextInd "Index of next help variable";
+  input array<Algorithm.Algorithm> inAlgArr;
+  output list<HelpVarInfo> outHelpVars;
+  output array<Algorithm.Algorithm> outAlgArr;
+  output Integer n2;
+algorithm
+  (outHelpVars,outAlgArr,n2) := matchcontinue(nextInd,inAlgArr)
+    local
+      Integer nextInd;
+      array<Algorithm.Algorithm> outArr;
+      list<HelpVarInfo> helpVars;
+        
+    case (nextInd, inAlgArr)
+      equation
+        outArr = arrayCopy(inAlgArr);
+        (helpVars,outArr,nextInd) = generateHelpVarsInAlgorithmsDispatch(nextInd, inAlgArr, 0, arrayLength(inAlgArr), outArr);
+      then 
+        (helpVars,outArr,nextInd);
+    
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"generateHelpVarsInAlgorithms failed"});
@@ -5447,12 +5476,10 @@ algorithm
 end selectContinuousEquations;
 
 protected function generateInitialEquationsFromStart "function: generateInitialEquationsFromStart
-
   This function generates equations from the expressions in the start
   attributes of variables. Only variables with a start value and
   fixed set to true is converted by this function. Fixed set to false
-  means an initial guess, and is not considered here.
-"
+  means an initial guess, and is not considered here."
  input tuple<BackendDAE.Var, list<BackendDAE.Equation>> inTpl;
  output tuple<BackendDAE.Var, list<BackendDAE.Equation>> outTpl;
 algorithm
@@ -7821,23 +7848,21 @@ algorithm
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,0,emptyarr),0,0);
 end nullHashTable;
 */
+
 public function emptyHashTable "
   author: PA
-
   Returns an empty HashTable.
-  Using the bucketsize 100 and array size 10.
-"
+  Using the bucketsize 100 and array size 10."
   output HashTableCrefToSimVar hashTable;
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
 algorithm
   arr := arrayCreate(1000, {});
-  // lst := Util.listFill(NONE, 100);
-  // emptyarr := listArray(lst);
   emptyarr := arrayCreate(100, NONE());
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
+
 /*
 public function isEmpty "Returns true if hashtable is empty"
   input HashTableCrefToSimVar hashTable;
