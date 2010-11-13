@@ -183,7 +183,6 @@ void SimulationWidget::simulate()
         progressBar.show();
         progressBar.setValue(endtime/2);
 
-        mpParentMainWindow->mpOMCProxy->changeDirectory(QString(Helper::OpenModelicaHome).append("\\tmp"));
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Enable to simulate the Model '" +

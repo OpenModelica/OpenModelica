@@ -48,6 +48,7 @@ public:
     static QString omcServerName;
     static QString omFileTypes;
     static QString omFileOpenText;
+    static QString tmpPath;
     static int viewWidth;
     static int viewHeight;
     static qreal globalIconXScale;

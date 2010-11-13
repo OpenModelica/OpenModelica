@@ -252,6 +252,15 @@ bool OMCProxy::startServer()
         mHasInitialized = false;
         return false;
     }
+   QDir dir;
+   if (!dir.exists(Helper::tmpPath)) {
+     if (!dir.mkdir(Helper::tmpPath)) {
+       QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                              QString("Failed to create temp dir ").append(Helper::tmpPath), "OK");
+       return false;
+     }
+   }
+   changeDirectory(Helper::tmpPath);
    return true;
 }
 

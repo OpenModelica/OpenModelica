@@ -40,6 +40,13 @@ QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEditor";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
+#ifdef WIN32
+QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/tmp/OMEdit"));
+#else
+// Linux users don't have write access to /usr/tmp/OMEdit
+// Don't randomize the path as then it becomes annoying to remove all dirs
+QString Helper::tmpPath = QString("/tmp/OMEdit");
+#endif
 int Helper::viewWidth = 2000;
 int Helper::viewHeight = 2000;
 qreal Helper::globalIconXScale = 0.15;
