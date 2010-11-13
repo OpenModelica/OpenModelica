@@ -2428,164 +2428,11 @@ algorithm
       String str;
       DAE.Pattern pattern;
 
-    //------------------------------------------
-    // Part of MetaModelica list extension. KS
-    //------------------------------------------
-    /* v := Array(...); */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList),info = info),source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(info = _),source,initial_,impl,unrollForLoops)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,stmts) = instAssignment(cache,env,ih,pre,inAlgorithm,source,initial_,impl,unrollForLoops,Error.getNumErrorMessages());
+      then (cache,stmts);
 
-        // If this is a list assignment, then the Array(...) expression should
-        // be evaluated to DAE.LIST
-
-        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
-        true = MetaUtil.isList(cprop);
-
-        (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
-
-        // In case we have a nested list expression
-        expList = MetaUtil.transformArrayNodesToListNodes(expList,{});
-
-        (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl,NONE(),true,pre,info);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
-      then 
-        (cache,{stmt});
-   
-    /* v := expr; */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e,info = info),source,initial_,impl,unrollForLoops) 
-      equation     
-        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
-        (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
-        (cache,e_1,eprop,_) = Static.elabExp(cache, env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
-      then
-        (cache,{stmt});
-
-        /* der(x) := ... */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = 
-          (e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) )),value = e,info = info),
-          source,initial_,impl,unrollForLoops)
-      equation 
-        (cache,SOME((_,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
-        (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
-        (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW(), initial_, source);
-      then
-        (cache,{stmt});
-
-    // v[i] := expr (in e.g. for loops)
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e, info = info),source,initial_,impl,unrollForLoops)
-      equation 
-        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
-        (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(cre2, cprop, e_2, eprop, acc, initial_, source);
-      then
-        (cache,{stmt});
-
-    // (v1,v2,..,vn) := func(...)
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info = info),source,initial_,impl,unrollForLoops)
-      equation
-        true = MetaUtil.onlyCrefExpressions(expl);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
-        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
-      then
-        (cache,{stmt});
-
-      // MetaModelica Matchcontinue - should come before the error message about tuple assignment
-    case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
-      then (cache,{stmt});
-        
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = left, value = right, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        // Prevent infinite recursion
-        failure(Absyn.MATCHEXP(matchTy=_) = right);
-        failure(Absyn.VALUEBLOCK(result=_) = right);
-
-        (cache,e_1,prop,_) = Static.elabExp(cache,env,right,impl,NONE(),true,pre,info);
-        ty = Types.getPropType(prop);
-        (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
-        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source);
-      then (cache,{stmt});
-        
-    /* Tuple with rhs constant */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
-      equation 
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG());
-        (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
-        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
-        eprops = Types.propTuplePropList(eprop);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, SCode.RW(), initial_, source);
-      then
-        (cache,stmts);
-
-    /* Tuple with lhs being a tuple NOT of crefs => Error */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e as Absyn.TUPLE(expressions = expl)),source,initial_,impl,unrollForLoops)
-      equation 
-        failure(_ = Util.listMap(expl,Absyn.expCref));
-        s = Dump.printExpStr(e);
-        Error.addMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s});
-      then
-        fail();
-        
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = e1 as Absyn.TUPLE(expressions = expl),value = e2,info=info),source,initial_,impl,unrollForLoops)
-      equation
-        Absyn.CALL(functionArgs = _) = e2;
-        _ = Util.listMap(expl,Absyn.expCref);
-        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
-        (cache,e_2,prop2,_) = Static.elabExp(cache,env,e2,impl,NONE(),false,pre,info);
-        lt = Types.getPropType(prop1);
-        rt = Types.getPropType(prop2);
-        false = Types.subtype(lt, rt);
-        lhs_str = ExpressionDump.printExpStr(e_1);
-        rhs_str = ExpressionDump.printExpStr(e_2);
-        lt_str = Types.unparseType(lt);
-        rt_str = Types.unparseType(rt);
-        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
-      then
-        fail();
-
-    /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
-      equation
-        // failure(Absyn.CALL(functionArgs = _) = e);
-        _ = Util.listMap(expl,Absyn.expCref);
-        s = Dump.printExpStr(e);
-        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
-      then
-        fail();
-        
     /* If statement*/
     case (cache,env,ih,pre,SCode.ALG_IF(boolExpr = e,trueBranch = tb,elseIfBranch = eib,elseBranch = fb,info = info),source,initial_,impl,unrollForLoops)
       equation 
@@ -5275,5 +5122,237 @@ algorithm
         fail();
   end matchcontinue;
 end checkForNestedWhenInEq;
+
+protected function instAssignment
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy ih;
+  input Prefix.Prefix inPre;
+  input SCode.Statement alg;
+  input DAE.ElementSource source;
+  input SCode.Initial initial_;
+  input Boolean impl;
+  input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  input Integer numError;
+  output Env.Cache outCache;
+  output list<DAE.Statement> stmts "more statements due to loop unrolling";
+algorithm
+  (outCache,stmts) := matchcontinue (inCache,inEnv,ih,inPre,alg,source,initial_,impl,unrollForLoops,numError)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      DAE.Exp e_1;
+      DAE.Properties eprop;
+      Prefix.Prefix pre;
+      Absyn.Exp var;
+      Absyn.Exp value;
+      Absyn.Info info;
+      DAE.Statement stmt;
+      String str;
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,_)
+      equation
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
+        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops);
+      then (cache,stmts);
+
+      // MetaModelica Matchcontinue
+    case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops,_)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
+      then (cache,{stmt});
+        
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,numError)
+      equation
+        true = numError == Error.getNumErrorMessages();
+        failure((_,_,_,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info));
+        str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
+        Error.addSourceMessage(Error.ASSIGN_RHS_ELABORATION,{str},info);
+      then fail();
+  end matchcontinue;
+end instAssignment;
+
+protected function instAssignment2
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPre;
+  input Absyn.Exp var;
+  input DAE.Exp value;
+  input DAE.Properties props;
+  input Absyn.Info info;
+  input DAE.ElementSource source;
+  input SCode.Initial initial_;
+  input Boolean inBoolean;
+  input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  output Env.Cache outCache;
+  output list<DAE.Statement> stmts "more statements due to loop unrolling";
+algorithm
+  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,source,initial_,inBoolean,unrollForLoops)
+    local
+      DAE.ComponentRef ce,ce_1;
+      DAE.ExpType t;
+      DAE.Properties cprop,eprop,prop,prop1,prop2,msgprop,varprop,valprop;
+      SCode.Accessibility acc;
+      DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
+      DAE.Statement stmt, stmt1;
+      list<Env.Frame> env,env_1;
+      Absyn.ComponentRef cr;
+      Absyn.Exp e,e1,e2,cond,msg, assignComp,var,elseWhenC,vb,matchExp;
+      Boolean impl,onlyCref,tupleExp;
+      list<Absyn.Exp> absynExpList,inputExps,expl;
+      list<DAE.Exp> expl_1,expl_2,inputExpsDAE;
+      Absyn.MatchType matchType;
+      list<DAE.Properties> cprops, eprops;
+      DAE.Type lt,rt;
+      String s,i,lhs_str,rhs_str,lt_str,rt_str;
+      list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
+      list<SCode.Statement> tb,fb,sl,elseWhenSt;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,el,elseWhenRest;
+      SCode.Statement alg;
+      Env.Cache cache;
+      Prefix.Prefix pre; 
+      Absyn.ForIterators forIterators;
+      DAE.DAElist dae,dae1,dae2,dae3,dae4;
+      InstanceHierarchy ih;
+      Option<SCode.Comment> comment;
+      Absyn.Info info;
+      Absyn.Case case_;
+      list<Absyn.Exp> expList;
+      DAE.Type ty,t2;
+      DAE.Exp vb2,e2_2,e2_2_2; 
+      Absyn.ForIterators rangeList;
+      SCode.Statement absynStmt;
+      list<Absyn.Ident> tempLoopVarNames;
+      Absyn.ComponentRef c,c1,c2;
+      list<Absyn.ElementItem> declList,tempLoopVars;
+      list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
+      list<Absyn.ElementItem> elemList;
+      list<Absyn.Exp> varList;
+      Absyn.Exp left,right,lhsExp;
+      DAE.Exp unvectorisedExpl;
+      String alg_str, scope_str;
+      Absyn.ComponentRef callFunc;
+      Absyn.FunctionArgs callArgs;
+      Absyn.Exp aea;
+      list<DAE.Exp> eexpl;
+      Absyn.Path ap;
+      Boolean tuple_, builtin;
+      DAE.InlineType inline;
+      DAE.ExpType tp;
+      String str;
+      DAE.Pattern pattern;
+   
+    /* v := expr; */
+    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops) 
+      equation     
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
+        (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
+        (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
+      then
+        (cache,{stmt});
+
+        /* der(x) := ... */
+    case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+      equation 
+        (cache,SOME((_,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
+        (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW(), initial_, source);
+      then
+        (cache,{stmt});
+
+    // v[i] := expr (in e.g. for loops)
+    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+      equation 
+        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = makeAssignment(cre2, cprop, e_2, eprop, acc, initial_, source);
+      then
+        (cache,{stmt});
+
+    // (v1,v2,..,vn) := func(...)
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+      equation
+        true = MetaUtil.onlyCrefExpressions(expl);
+        (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
+      then
+        (cache,{stmt});
+
+    case (cache,env,ih,pre,left,e_1,prop,info,source,initial_,impl,unrollForLoops)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        ty = Types.getPropType(prop);
+        (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
+        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = DAE.STMT_ASSIGN_PATTERN(pattern,e_1,source);
+      then (cache,{stmt});
+        
+    /* Tuple with rhs constant */
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+      equation 
+        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG());
+        (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
+        eprops = Types.propTuplePropList(eprop);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, SCode.RW(), initial_, source);
+      then
+        (cache,stmts);
+
+    /* Tuple with lhs being a tuple NOT of crefs => Error */
+    case (cache,env,ih,pre,e as Absyn.TUPLE(expressions = expl),_,_,info,source,initial_,impl,unrollForLoops)
+      equation 
+        failure(_ = Util.listMap(expl,Absyn.expCref));
+        s = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s}, info);
+      then
+        fail();
+        
+    case (cache,env,ih,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,info,source,initial_,impl,unrollForLoops)
+      equation
+        DAE.CALL(path = _) = e_2;
+        _ = Util.listMap(expl,Absyn.expCref);
+        (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
+        lt = Types.getPropType(prop1);
+        rt = Types.getPropType(prop2);
+        false = Types.subtype(lt, rt);
+        lhs_str = ExpressionDump.printExpStr(e_1);
+        rhs_str = ExpressionDump.printExpStr(e_2);
+        lt_str = Types.unparseType(lt);
+        rt_str = Types.unparseType(rt);
+        Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,{lhs_str,rhs_str,lt_str,rt_str}, info);
+      then
+        fail();
+
+    /* Tuple with rhs not CALL or CONSTANT => Error */
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,_,info,source,initial_,impl,unrollForLoops)
+      equation
+        // failure(Absyn.CALL(functionArgs = _) = e);
+        _ = Util.listMap(expl,Absyn.expCref);
+        s = ExpressionDump.printExpStr(e_1);
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
+      then
+        fail();
+  end matchcontinue;
+end instAssignment2;
 
 end InstSection;

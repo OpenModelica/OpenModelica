@@ -261,6 +261,7 @@ public constant ErrorID INCONSISTENT_UNITS=517;
 public constant ErrorID CONSISTENT_UNITS=518;
 public constant ErrorID INCOMPLETE_UNITS=519;
 public constant ErrorID INCOMPATIBLE_TYPES_FUNC=520;
+public constant ErrorID ASSIGN_RHS_ELABORATION=521;
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -465,6 +466,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (WRONG_NO_OF_ARGS,TRANSLATION(),ERROR(),"Wrong number of arguments to %s"),
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s in component %s"),
+          (ASSIGN_RHS_ELABORATION,TRANSLATION(),ERROR(),
+          "Failed to elaborate rhs of %s"),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
           "der operator applied to constant expression der(%s)"),
           (ARGUMENT_MUST_BE_INTEGER_OR_REAL,TRANSLATION(),ERROR(),
