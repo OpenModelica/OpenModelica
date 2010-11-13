@@ -1069,8 +1069,7 @@ algorithm
     case (array, func)
       equation
         true = intEq(0, arrayLength(array));
-        // apply listMap on the empty array
-        outArray = listArray(listMap(arrayList(array), func));
+        outArray = listArray({});
       then
         outArray;
     // otherwise, use the first element to create the new array

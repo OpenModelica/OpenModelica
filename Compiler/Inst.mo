@@ -2083,7 +2083,6 @@ algorithm
       Env.Cache cache;
       Real t1,t2,time; Boolean b;
       Option<Absyn.ElementAttributes> oDA;
-      DAE.EqualityConstraint equalityConstraint;
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -2209,7 +2208,7 @@ algorithm
         // Debug.fprint("insttr", implstr);
         // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
-        (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph)
+        (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph)
           = instClassdef(cache,env,ih,store, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl, callscope, graph,instSingleCref,info);
         // t2 = clock();
         // time = t2 -. t1;
@@ -2218,7 +2217,7 @@ algorithm
         // Debug.fprintln("insttr", " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
         cache = Env.addCachedEnv(cache,n,env_1);
       then
-        (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph);
+        (cache,env_1,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph);
 
     // failure
     case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,_,graph,_)

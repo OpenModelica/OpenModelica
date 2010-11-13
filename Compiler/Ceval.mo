@@ -1173,6 +1173,7 @@ algorithm
       DAE.Function func;
     
     // Try cevalFunction first
+    /*
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,_,msg)
       equation
         (cache,false) = Static.isExternalObjectFunction(cache,env,funcpath);
@@ -1180,6 +1181,7 @@ algorithm
         (cache,newval) = cevalFunction(cache, env, funcpath, vallst, impl, msg);
       then
         (cache,newval,st);
+    */
 
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)

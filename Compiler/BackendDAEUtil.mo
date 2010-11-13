@@ -4401,7 +4401,7 @@ protected function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEE
 
   Helper function to traverseBackendDAEExpsEqn
 "
-  replaceable type Type_b subtypeof Any;
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.MultiDimEquation inMultiDimEquation;
   input FuncExpType func;  
   input Type_a inTypeA;
