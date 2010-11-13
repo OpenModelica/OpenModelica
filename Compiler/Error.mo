@@ -1032,5 +1032,20 @@ algorithm
   end matchcontinue;
 end fixFilenameForTestsuite;
 
+public function assertion
+"Used to make compiler-internal assertions. These messages are not meant
+to be shown to a user, but rather to show internal error messages."
+  input Boolean b;
+  input String message;
+algorithm
+  _ := match (b,message)
+    case (true,_) then ();
+    else
+      equation
+        addMessage(INTERNAL_ERROR, {message});
+      then fail();
+  end match;
+end assertion;
+
 end Error;
 

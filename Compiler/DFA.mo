@@ -1465,7 +1465,6 @@ end printSimpleArcs;
 public function matchContinueToSwitch
   input Absyn.MatchType matchType;
   input RenamedPatMatrix2 patMat;
-  input list<list<Absyn.ElementItem>> caseLocalDecls;
   input list<Absyn.Exp> inputVarList; // matchcontinue (var1,var2,...)
   input list<Absyn.ElementItem> declList;
   input list<Absyn.Exp> resVarList;
@@ -1485,7 +1484,7 @@ protected
 algorithm
   (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv, info);
   Util.SUCCESS() := checkShadowing(declList,invalidDecls,Util.SUCCESS());
-  (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
+  (outCache, cases) := matchContinueToSwitch2(patMat, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
   alg := Absyn.ALG_MATCHCASES(matchType,inputVarList,cases);
   algItem := Absyn.ALGORITHMITEM(alg, NONE(), info);
   expr := Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS({algItem}),Absyn.BOOL(true));
@@ -1493,7 +1492,6 @@ end matchContinueToSwitch;
 
 protected function matchContinueToSwitch2
   input RenamedPatMatrix2 patMat;
-  input list<list<Absyn.ElementItem>> caseLocalDecls;
   input list<Absyn.Exp> inputVarList;
   input list<Absyn.Exp> resVarList;
   input RightHandList rhlist;
@@ -1506,7 +1504,7 @@ protected function matchContinueToSwitch2
   output Env.Cache outCache;
   output list<Absyn.Exp> exprs;
 algorithm
-  (outCache, exprs) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv, info)
+  (outCache, exprs) := matchcontinue (patMat, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv, info)
     local
       RenamedPatList firstCase;
       RenamedPatMatrix2 restCase;
@@ -1524,34 +1522,34 @@ algorithm
       list<list<Absyn.AlgorithmItem>> caseAlgs;
       list<String> dfaEnvIdents;
     
-    case ({}, {}, _, _, {}, NONE(), localCache, _, _, _, _) then (localCache, {});
+    case ({}, _, _, {}, NONE(), localCache, _, _, _, _) then (localCache, {});
     
-    case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _, info)
+    case ({}, _, _, {}, SOME(RIGHTHANDSIDE(localList,body,result,_)), localCache, _, _, _, info)
       equation
-        Util.SUCCESS() = checkShadowing(firstDecls,invalidDecls,Util.SUCCESS());
+        Util.SUCCESS() = checkShadowing(localList,invalidDecls,Util.SUCCESS());
         exp2 = createListFromExpression(result,resVarList);
         algs3 = createLastAssignments(resVarList,exp2,info);
         algs = {};
-        els = firstDecls;
+        els = localList;
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
       then (localCache, {expr});
     
-    case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info)
+    case (firstCase :: restCase, inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info)
       equation
         dfaEnv = initialDfaEnv;
-        Util.SUCCESS() = checkShadowing(firstDecls,invalidDecls,Util.SUCCESS());
+        Util.SUCCESS() = checkShadowing(localList,invalidDecls,Util.SUCCESS());
 
         exp2 = createListFromExpression(result,resVarList);
 
         // Create the assignments that assign the return variables
         algs3 = createLastAssignments(resVarList,exp2,info);
         (localCache, dfaEnv, els, algs) = generatePathVarDeclarationsList(firstCase, inputVarList, localCache, localEnv, dfaEnv, info);
-        els = listAppend(els, firstDecls);
+        els = listAppend(els, localList);
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
-        (cache, exp2) = matchContinueToSwitch2(restCase, restDecls, inputVarList, resVarList, restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info);
+        (cache, exp2) = matchContinueToSwitch2(restCase, inputVarList, resVarList, restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info);
       then (cache, expr :: exp2);
     
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("matchcase", "- DFA.matchContinueToSwitch2 failed");
       then fail();

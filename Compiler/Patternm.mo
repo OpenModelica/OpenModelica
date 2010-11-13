@@ -790,7 +790,6 @@ algorithm
         // Get the pattern matrix, etc.
         (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv,info);
         Absyn.MATCHEXP(matchTy=matchType,cases=cases) = localMatchCont;
-        caseLocalDeclList = Util.listMap(cases, getCaseDecls);
         patMat2 = arrayList(patMat);
 
         // A small fix.
@@ -815,56 +814,10 @@ algorithm
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
         patMat2 = Util.listlistTranspose(patMat2);
-        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,elseRhSide,localCache,localEnv,info);
+        // Error.assertion(listLength(patMat2) == listLength(cases), "Patternm.matchmain didn't get a correct matrix");
+        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,inputVarList,declList,localResultVarList,rhList2,elseRhSide,localCache,localEnv,info);
       then (localCache, expr);
-    /*
 
-    case (localMatchCont,localResultVarList,localCache,localEnv)
-      equation
-        // Get the pattern matrix, etc.
-        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) =
-        ASTtoMatrixForm(localMatchCont,localCache,localEnv);
-        patMat2 = arrayList(patMat);
-
-        // A small fix.
-        patMat2 = DFA.matrixFix(patMat2);
-
-        // -------------------
-        // ---Type Checking---
-        // -------------------
-        // Two sorts of type checkings are performed:
-        // - The type of the input variables are looked up
-        //   and matched against the patterns in each case clause
-        // - The type of the return variables are looked up
-        //   and matched against the return expression of each case clause
-        // Check to make sure that the number of patterns in each case-clause
-        // equals the number of input variables is done in the function fillMatrix
-        // -------------
-        //typeCheck1(localCache,localEnv,patMat2,inputVarList);
-        //typeCheck2(localCache,localEnv,rhList2,localResultVarList);
-        // -------------
-
-        // Start the pattern matching
-        // The rhList version is a "light" version of the rightHandSides so that
-        // we do not have to carry around a lot of extra code in the pattern match algorithm
-        (dfaState,stampTemp,_) = matchFuncHelper(patMat2,rhList,DFA.STATE({}),1,{});
-        //print("Done with the matching");
-        nCases = listLength(rhList);
-        dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp,nCases);
-
-        // Light version or not ---------------------
-        // In a light version state labels will not be generated.
-        // Light versions are generated when there is only one case-clause
-        // which is the case for instance when we have rhs pattern matching
-        // such as (_,var1,5) = func(...);
-        lightVs = Util.if_((nCases == 1),true,false);
-        //-------------------------------------------
-
-        // Transform the DFA into a valueblock with nested if-elseif-else statements.
-        (localCache,expr) =
-        DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2,lightVs);
-      then (localCache,expr);
-    */
     case (exp,_,_,_,_)
       equation
 				true = RTOpts.debugFlag("matchcase");
