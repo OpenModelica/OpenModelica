@@ -5303,7 +5303,6 @@ protected function generateHelpVarsInAlgorithms
 algorithm
   (outHelpVars,outAlgArr,n2) := matchcontinue(nextInd,inAlgArr)
     local
-      Integer nextInd;
       array<Algorithm.Algorithm> outArr;
       list<HelpVarInfo> helpVars;
         

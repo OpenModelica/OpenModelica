@@ -1101,7 +1101,7 @@ protected function arrayMapHelp1 "help function to arrayMap"
 algorithm
   outArray := matchcontinue(array,newArray,func,pos,len)
     local 
-      Type_a newElt;
+      Type_b newElt;
     
     case(array,newArray,func,pos,len) equation 
       true = pos > len;
