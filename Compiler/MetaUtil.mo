@@ -534,7 +534,7 @@ algorithm
     case(Absyn.ELEMENT(_,_,_,_,spec as Absyn.CLASSDEF(_,cl as Absyn.CLASS(_,_,_,_,r,_,_)),_,_))
       then r;
     case(_)
-      then Absyn.R_UNKNOWN;
+      then Absyn.R_UNKNOWN();
   end matchcontinue;
 end getRestriction;
 

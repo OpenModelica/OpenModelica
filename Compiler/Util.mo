@@ -7036,4 +7036,18 @@ algorithm
 end arrayMapDispatch;
 */
 
+public function listConsOption
+  input Option<A> oa;
+  input list<A> lst;
+  output list<A> olst;
+  replaceable type A subtypeof Any;
+algorithm
+  olst := match (oa,lst)
+    local
+      A a;
+    case (SOME(a),lst) then a::lst;
+    else lst;
+  end match;
+end listConsOption;
+
 end Util;

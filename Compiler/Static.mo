@@ -106,6 +106,7 @@ protected import Lookup;
 protected import Mod;
 protected import ModUtil;
 protected import OptManager;
+protected import Patternm;
 protected import Print;
 protected import System;
 protected import Types;
@@ -532,7 +533,7 @@ algorithm
     case (cache,env,Absyn.VALUEBLOCK(ld,body,res),impl,st,doVect,pre,info)
       equation
         // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
-        (cache,env,DAE.DAE(dae1_2Elts),b2) = addLocalDecls(cache,env,ld,impl,info);
+        (cache,SOME((env,DAE.DAE(dae1_2Elts),b2))) = addLocalDecls(cache,env,ld,impl,info);
         (b1,cache) = fromValueblockBodyToAlgs(body,cache,env,pre);
         b1 = listAppend(b2,b1);
         //----------------------------------------------------------------------
@@ -609,6 +610,12 @@ algorithm
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);
        // ----------------------------------
+
+      // Pattern matching has its own module that handles match expressions
+    case (cache,env,e as Absyn.MATCHEXP(matchTy = _),impl,st,doVect,pre,info)
+      equation
+        (cache,exp,prop,st) = Patternm.elabMatchExpression(cache,env,e,impl,st,doVect,pre,info,Error.getNumErrorMessages());
+      then (cache,exp,prop,st);
 
     case (cache,env,e,_,_,_,pre,info)
       equation
@@ -710,7 +717,7 @@ algorithm
   end matchcontinue;
 end fromValueblockBodyToAlgs;
 
-protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
  Converts equations to algorithm assignments.
  Matchcontinue expressions may contain statements that you won't find
  in a normal equation section. For instance:
@@ -13869,7 +13876,7 @@ algorithm
       DAE.NO_INLINE());
 end makeBuiltinCall;
 
-protected function addLocalDecls
+public function addLocalDecls
 "Adds local declarations to the environment and returns the DAE"
   input Env.Cache cache;
   input Env.Env env;
@@ -13877,21 +13884,21 @@ protected function addLocalDecls
   input Boolean impl;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Env.Env outEnv;
-  output DAE.DAElist dae;
-  output list<Absyn.AlgorithmItem> algs;
+  output Option<Env.Env,DAE.DAElist,list<Absyn.AlgorithmItem>> tpl;
 algorithm
-  (outCache,outEnv,dae,algs) := matchcontinue (cache,env,els,impl,info)
+  (outCache,tpl) := matchcontinue (cache,env,els,impl,info)
     local
       list<Absyn.ElementItem> ld;
       list<SCode.Element> ld2;
       list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
-      DAE.DAElist dae1;
+      DAE.DAElist dae,dae1;
       list<DAE.Element> dae1_2Elts;
       Env.Env env2;
       ClassInf.State dummyFunc;
+      list<Absyn.AlgorithmItem> algs;
+      String str;
 
-    case (cache,env,{},impl,info) then (cache,env,DAEUtil.emptyDae,{});
+    case (cache,env,{},impl,info) then (cache,SOME((env,DAEUtil.emptyDae,{})));
     case (cache,env,ld,impl,info)
       equation
         env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName),NONE());
@@ -13900,7 +13907,7 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld,false);
 
         // Filter out the components (just to be sure)
-        ld2 = Inst.componentElts(ld2);
+        ({},{},{},ld2) = Inst.splitElts(ld2);
 
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
@@ -13916,11 +13923,18 @@ algorithm
 
         // The instantiation of the components may have produced some equations
         (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);
-      then (cache,env2,dae,algs);
+      then (cache,SOME((env2,dae,algs)));
+    case (cache,env,ld,impl,info)
+      equation
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
+        (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
+        str = Util.stringDelimitList(Util.listMap(ld2, SCode.printElementStr),", ");
+        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
+      then (cache,NONE());
     else
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.addLocalDecls failed"},info);
-      then fail();
+      then (cache,NONE());
   end matchcontinue;
 end addLocalDecls;
 

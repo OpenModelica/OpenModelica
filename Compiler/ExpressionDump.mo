@@ -55,6 +55,7 @@ public type Var = DAE.ExpVar;
 
 // protected imports
 protected import ComponentReference;
+protected import Dump;
 protected import Expression;
 protected import RTOpts;
 protected import Util;
@@ -560,6 +561,7 @@ algorithm
       Boolean b;
       list<DAE.Exp> aexpl;
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
+      Absyn.MatchType matchTy;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -872,6 +874,13 @@ algorithm
     
     case (DAE.VALUEBLOCK(_,_,_,_), _, _, _) then "#valueblock#";
     
+    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es), _, _, _)
+      equation
+        s1 = Dump.printMatchType(matchTy);
+        s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
+        s = stringAppendList({s1,s2,"\n","#cases#\n","end ",s1});
+      then s;
+
     case (e, _, _, _)
       equation
         // debug_print("unknown expression - printExp2Str: ", e);
@@ -1716,6 +1725,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
       DAE.Exp ae1;
       Boolean b;
+      Absyn.MatchType matchTy;
     
     case (DAE.ICONST(integer = i),_)
       equation
@@ -2026,6 +2036,17 @@ algorithm
         Print.printBuf("#VALUEBLOCK#");
       then
         ();
+
+    case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es), _)
+      equation
+        Print.printBuf(Dump.printMatchType(matchTy));
+        Print.printBuf(" (");
+        printList(es, printExp, ",");
+        Print.printBuf(") \n");
+        Print.printBuf("    #cases#\n");
+        Print.printBuf("  end ");
+        Print.printBuf(Dump.printMatchType(matchTy));
+      then ();
 
     case (e,_)
       equation

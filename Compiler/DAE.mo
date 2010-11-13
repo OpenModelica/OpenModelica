@@ -672,6 +672,7 @@ public constant Type T_BOOL_BOXED    = (T_BOXED((T_BOOL({}),NONE())),NONE());
 public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
 public constant Type T_LIST_DEFAULT = (T_LIST((T_NOTYPE(),NONE())),NONE());
 public constant Type T_NONE_DEFAULT = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
+public constant Type T_NOTYPE_DEFAULT = (T_NOTYPE(),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
@@ -1163,10 +1164,27 @@ uniontype Exp "Expressions
     list<String> fieldNames;
     Integer index; //Index in the uniontype
   end METARECORDCALL;
+  
+  record MATCHEXPRESSION
+    Absyn.MatchType matchType;
+    list<Exp> inputs;
+    list<Element> localDecls;
+    list<MatchCase> cases;
+    ExpType et;
+  end MATCHEXPRESSION;
 
   /* --- */
 
 end Exp;
+
+public uniontype MatchCase
+  record CASE
+    list<Pattern> patterns "ELSE is handled by not doing pattern-matching";
+    list<Element> localDecls;
+    list<Statement> body;
+    Option<Exp> result;
+  end CASE;
+end MatchCase;
 
 public uniontype Pattern "Patterns deconstruct expressions"
   record PAT_WILD "_"
@@ -1199,6 +1217,10 @@ public uniontype Pattern "Patterns deconstruct expressions"
     Integer index;
     list<Pattern> patterns;
   end PAT_CALL;
+  record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
+    Absyn.Path name;
+    list<tuple<Pattern,String,ExpType>> patterns;
+  end PAT_CALL_NAMED;
   record PAT_SOME "SOME(pat)"
     Pattern pat;
   end PAT_SOME;

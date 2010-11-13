@@ -4341,31 +4341,32 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__)         then integer
-  case e as RCONST(__)         then real
-  case e as SCONST(__)         then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as BCONST(__)         then if bool then "(1)" else "(0)"
-  case e as ENUM_LITERAL(__)   then index
-  case e as CREF(__)           then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as BINARY(__)         then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as UNARY(__)          then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as LBINARY(__)        then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as LUNARY(__)         then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as RELATION(__)       then daeExpRelation(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as IFEXP(__)          then daeExpIf(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as CALL(__)           then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as ARRAY(__)          then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as MATRIX(__)         then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as CAST(__)           then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as ASUB(__)           then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as SIZE(__)           then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as REDUCTION(__)      then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as VALUEBLOCK(__)     then daeExpValueblock(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as LIST(__)           then daeExpList(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as CONS(__)           then daeExpCons(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as META_TUPLE(__)     then daeExpMetaTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as META_OPTION(__)    then daeExpMetaOption(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as METARECORDCALL(__) then daeExpMetarecordcall(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as ICONST(__)          then integer
+  case e as RCONST(__)          then real
+  case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as BCONST(__)          then if bool then "(1)" else "(0)"
+  case e as ENUM_LITERAL(__)    then index
+  case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as BINARY(__)          then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as UNARY(__)           then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as LBINARY(__)         then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as LUNARY(__)          then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as RELATION(__)        then daeExpRelation(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as IFEXP(__)           then daeExpIf(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as VALUEBLOCK(__)      then daeExpValueblock(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as LIST(__)            then daeExpList(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as CONS(__)            then daeExpCons(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as META_TUPLE(__)      then daeExpMetaTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as META_OPTION(__)     then daeExpMetaOption(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as METARECORDCALL(__)  then daeExpMetarecordcall(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as MATCHEXPRESSION(__) then daeExpMatch(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   else "UNKNOWN_EXP"
 end daeExp;
 
@@ -5160,7 +5161,7 @@ case exp as VALUEBLOCK(__) then
   let &preExpRes = buffer "" /*BUFD*/
   let &varDeclsInner = buffer "" /*BUFD*/
   let &ignore = buffer ""
-  let _ = (valueblockVars(exp) |> var =>
+  let _ = (elementVars(localDecls) |> var =>
       varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
     )
   let resType = expTypeModelica(ty)
@@ -5182,6 +5183,73 @@ case exp as VALUEBLOCK(__) then
       >>
   res
 end daeExpValueblock;
+
+template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp
+case exp as MATCHEXPRESSION(__) then
+  let &preExpInner = buffer ""
+  let &preExpRes = buffer ""
+  let &varDeclsInput = buffer ""
+  let &varDeclsInner = buffer ""
+  let &ignore = buffer ""
+  let ignore2 = (elementVars(localDecls) |> var =>
+      varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
+    )
+  let prefix = 'tmp<%System.tmpTick()%>'
+  let &preExpInput = buffer ""
+  let &expInput = buffer ""
+  let ignore3 = (inputs |> exp hasindex i0 =>
+    let decl = '<%prefix%>_in<%i0%>'
+    let &varDeclsInput += '<%expTypeFromExpModelica(exp)%> <%decl%>;<%\n%>'
+    let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
+    ""; empty)
+  let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
+  let ix = tempDecl('int', &varDeclsInner)
+  let done = tempDecl('int', &varDeclsInner)
+  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "throw 1" case MATCH(__) then "break"
+  let &preExp +=
+      <<
+      { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */
+        <%varDeclsInput%>
+        <%preExpInput%>
+        <%expInput%>
+        {
+          <%varDeclsInner%>
+          <%preExpInner%>
+          for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) <% match exp.matchType case MATCHCONTINUE(__) then "try " %>{
+            switch (<%ix%>) {
+            <% cases |> c as CASE(__) hasindex i0 =>
+            let &varDeclsCaseInner = buffer ""
+            let &preExpCaseInner = buffer ""
+            let &assignments = buffer ""
+            let &preRes = buffer ""
+            let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%prefix%>_in<%i0%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+            let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
+            let caseRes = match c.result case SOME(e) then daeExp(e,context,&preRes,&varDeclsCaseInner)
+            let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
+            <<case <%i0%>: {
+              <%varDeclsCaseInner%>
+              <%preExpCaseInner%>
+              <%patternMatching%> 
+              /* Pattern matching succeeded */
+              <%assignments%>
+              <%stmts%>
+              <% if c.result then '<%preRes%><%res%> = <%caseRes%>;<%\n%>' else 'throw 1;<%\n%>'%>
+              <%done%> = 1;
+              break;
+            }<%\n%>
+            >>
+            %>
+            }
+          }<% match exp.matchType case MATCHCONTINUE(__) then " catch (int ex) {}" %>
+          if (!<%done%>) throw 1;
+        }
+      }
+      >>
+  res
+end daeExpMatch;
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
@@ -5253,7 +5321,7 @@ case META_TUPLE(__) then
       daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     ;separator=", ")
   let tmp = tempDecl("modelica_metatype", &varDecls /*BUFC*/)
-  let &preExp += '<%tmp%> = mmc_mk_box<%start%>0, <%args%>);<%\n%>'
+  let &preExp += '<%tmp%> = mmc_mk_box<%start%>0<%if args then ", "%><%args%>);<%\n%>'
   tmp
 end daeExpMetaTuple;
 
@@ -5631,10 +5699,10 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     let &assignments = buffer ""
     let expPart = daeExp(rhs, context, &preExp, &varDecls)
     <<<%preExp%>
-    <%patternMatch(lhs,expPart,&varDecls,&assignments)%><%assignments%>>>
+    <%patternMatch(lhs,expPart,"throw 1",&varDecls,&assignments)%><%assignments%>>>
 end algStmtAssignPattern;
 
-template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
+template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls, Text &assignments)
 ::=
   match pat
   case PAT_WILD(__) then ""
@@ -5646,62 +5714,70 @@ template patternMatch(Pattern pat, Text rhs, Text &varDecls, Text &assignments)
         else rhs
       )
       <<<%unboxBuf%><%match p.exp
-        case c as ICONST(__) then 'if (<%c.integer%> != <%urhs%>) throw 1;<%\n%>'
-        case c as RCONST(__) then 'if (<%c.real%> != <%urhs%>) throw 1;<%\n%>'
-        case c as SCONST(__) then 'if (strcmp("<%c.string%>", <%urhs%>) != 0) throw 1;<%\n%>'
-        case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) throw 1;<%\n%>'
-        case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) throw 1;<%\n%>'
-        case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) throw 1;<%\n%>'
+        case c as ICONST(__) then 'if (<%c.integer%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as RCONST(__) then 'if (<%c.real%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as SCONST(__) then 'if (strcmp("<%c.string%>", <%urhs%>) != 0) <%onPatternFail%>;<%\n%>'
+        case c as BCONST(__) then 'if (<%c.bool%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
+        case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
+        case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         else 'UNKNOWN_CONSTANT_PATTERN'
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
-    <<if (optionNone(<%rhs%>)) throw 1;
+    <<if (optionNone(<%rhs%>)) <%onPatternFail%>;
     <%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), 1));
-    <%patternMatch(p.pat,tvar,&varDecls,&assignments)%>>>
+    <%patternMatch(p.pat,tvar,onPatternFail,&varDecls,&assignments)%>>>
   case PAT_CONS(__) then
     let tvarHead = tempDecl("modelica_metatype", &varDecls)
     let tvarTail = tempDecl("modelica_metatype", &varDecls)
-    <<if (listEmpty(<%rhs%>)) throw 1;
+    <<if (listEmpty(<%rhs%>)) <%onPatternFail%>;
     <%tvarHead%> = MMC_CAR(<%rhs%>);
     <%tvarTail%> = MMC_CDR(<%rhs%>);
-    <%patternMatch(head,tvarHead,&varDecls,&assignments)%><%patternMatch(tail,tvarTail,&varDecls,&assignments)%>>>
+    <%patternMatch(head,tvarHead,onPatternFail,&varDecls,&assignments)%><%patternMatch(tail,tvarTail,onPatternFail,&varDecls,&assignments)%>>>
   case PAT_META_TUPLE(__)
     then
       (patterns |> p hasindex i1 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
-        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
         >>; empty /* increase the counter even if no output is produced */)
   case PAT_CALL_TUPLE(__)
     then
       (patterns |> p hasindex i1 =>
         let nrhs = '<%rhs%>.targ<%i1%>'
-        patternMatch(p,nrhs,&varDecls,&assignments)
+        patternMatch(p,nrhs,onPatternFail,&varDecls,&assignments)
         ; empty /* increase the counter even if no output is produced */
       )
+  case PAT_CALL_NAMED(__)
+    then
+      <<<%patterns |> (p,n,t) =>
+        let tvar = tempDecl(expTypeModelica(t), &varDecls)
+        <<<%tvar%> = <%rhs%>.<%n%>;
+        <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
+        >>%>
+      >>
   case PAT_CALL(__)
     then
-      <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) throw 1;
+      <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;
        <%(patterns |> p hasindex i0 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
-        <%patternMatch(p,tvar,&varDecls,&assignments)%>
+        <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
         >>); indexOffset=2; empty /* increase the counter even if no output is produced */%>
       >>
   case p as PAT_AS_FUNC_PTR(__) then
     let &assignments += '*((modelica_fnptr*)&_<%p.id%>) = <%rhs%>;<%\n%>'
-    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    <<<%patternMatch(p.pat,rhs,onPatternFail,&varDecls,&assignments)%>
     >>
   case p as PAT_AS(ty = NONE()) then
     let &assignments += '_<%p.id%> = <%rhs%>;<%\n%>'
-    <<<%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    <<<%patternMatch(p.pat,rhs,onPatternFail,&varDecls,&assignments)%>
     >>
   case p as PAT_AS(ty = SOME(et)) then
     let &unboxBuf = buffer ""
     let &assignments += '_<%p.id%> = <%unboxVariable(rhs, et, &unboxBuf, &varDecls)%>;<%\n%>'
     <<<%&unboxBuf%>
-    <%patternMatch(p.pat,rhs,&varDecls,&assignments)%>
+    <%patternMatch(p.pat,rhs,onPatternFail,&varDecls,&assignments)%>
     >>
   else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
 end patternMatch;

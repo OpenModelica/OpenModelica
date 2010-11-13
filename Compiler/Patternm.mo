@@ -40,19 +40,30 @@ package Patternm
   matchcontinue expression."
 
 public import Absyn;
+public import ClassInf;
 public import DAE;
 public import DFA;
 public import Env;
 public import SCode;
 public import Debug;
 public import Dump;
+public import InnerOuter;
+public import Interactive;
+public import Prefix;
 public import RTOpts;
 public import Types;
 
 protected import ComponentReference;
+protected import DAEUtil;
+protected import Expression;
 protected import ExpressionDump;
 protected import Error;
+protected import Inst;
+protected import InstSection;
 protected import Lookup;
+protected import MetaUtil;
+protected import SCodeUtil;
+protected import Static;
 protected import Util;
 
 //Some type simplifications
@@ -2565,6 +2576,11 @@ algorithm
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
       then (cache,DAE.PAT_CALL_TUPLE(patterns));
 
+    case (cache,env,lhs as Absyn.CALL(fcr,fargs),(DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)),SOME(utPath)),info)
+      equation
+        (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
+      then (cache,pattern);
+
     case (cache,env,lhs as Absyn.CALL(fcr,fargs),(DAE.T_UNIONTYPE(_),SOME(utPath)),info)
       equation
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
@@ -2590,8 +2606,7 @@ algorithm
     case (cache,env,lhs,ty,info)
       equation
         str = Dump.printExpStr(lhs);
-        str = "- Patternm.elabPattern failed: " +& str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+        Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
   end match;
 end elabPattern2;
@@ -2651,6 +2666,7 @@ algorithm
       list<DAE.Type> fieldTypeList;
       list<DAE.Var> fieldVarList;
       list<DAE.Pattern> patterns;
+      list<tuple<DAE.Pattern,String,DAE.ExpType>> namedPatterns;
     case (cache,env,callPath,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,info,lhs)
       equation
         (cache,t as (DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
@@ -2667,6 +2683,24 @@ algorithm
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns));
+    case (cache,env,callPath,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,info,lhs)
+      equation
+        (cache,t as (DAE.T_FUNCTION(funcResultType = (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),complexVarLst=fieldVarList),_)),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
+        true = Absyn.pathEqual(fqPath,utPath2);
+
+        fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
+        fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
+        
+        numPosArgs = listLength(funcArgs);
+        (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
+
+        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
+        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
+        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+        namedPatterns = Util.listThread3Tuple(patterns, fieldNameList, Util.listMap(fieldTypeList,Types.elabType));
+        namedPatterns = Util.listFilter(namedPatterns, filterEmptyPattern);
+      then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
     case (cache,env,callPath,_,_,info,lhs)
       equation
         failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
@@ -2759,5 +2793,301 @@ algorithm
       then "*PATTERN*";
   end matchcontinue;
 end patternStr;
+
+public function elabMatchExpression
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Exp matchExp;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> inSt;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  input Integer numError;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,outExp,outProperties,outSt) := matchcontinue (cache,env,matchExp,impl,inSt,performVectorization,inPrefix,info,numError)
+    local
+      Absyn.MatchType matchTy;
+      Absyn.Exp inExp;
+      list<Absyn.Exp> inExps;
+      list<Absyn.ElementItem> decls;
+      list<Absyn.Case> cases;
+      list<Absyn.AlgorithmItem> b2;
+      list<DAE.Element> matchDecls;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Prefix.Prefix pre;
+      list<DAE.Exp> elabExps;
+      list<DAE.MatchCase> elabCases;
+      list<DAE.Type> tys;
+      DAE.Properties prop;
+      list<DAE.Properties> elabProps;
+      DAE.Type resType;
+      DAE.ExpType et;
+      String str;
+    case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),impl,st,performVectorization,pre,info,numError)
+      equation
+        (cache,SOME((env,DAE.DAE(matchDecls),b2))) = Static.addLocalDecls(cache,env,decls,impl,info);
+        inExps = MetaUtil.extractListFromTuple(inExp, 0);
+        Error.assertion(Util.isListEmpty(b2), "A local declaration caused an equation to be added; this is not handled in OMC.",info);
+        (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
+        tys = Util.listMap(elabProps, Types.getPropType);
+        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
+        prop = DAE.PROP(resType,DAE.C_VAR());
+        et = Types.elabType(resType);
+      then (cache,DAE.MATCHEXPRESSION(matchTy,elabExps,matchDecls,elabCases,et),prop,st);
+    else
+      equation
+        true = numError == Error.getNumErrorMessages();
+        str = Dump.printExpStr(matchExp);
+        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str}, info);
+      then fail();
+  end matchcontinue;
+end elabMatchExpression;
+
+protected function elabMatchCases
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Case> cases;
+  input list<DAE.Type> tys;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean performVectorization;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output list<DAE.MatchCase> elabCases;
+  output DAE.Type resType;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+protected
+  list<DAE.Exp> resExps;
+  list<DAE.Type> resTypes;
+algorithm
+  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tys,impl,st,performVectorization,pre,info,{},{});
+  (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
+end elabMatchCases;
+
+protected function elabMatchCases2
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Case> cases;
+  input list<DAE.Type> tys;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean performVectorization;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  input list<DAE.Exp> accExps "Order does matter";
+  input list<DAE.Type> accTypes "Order does not matter";
+  output Env.Cache outCache;
+  output list<DAE.MatchCase> elabCases;
+  output list<DAE.Exp> resExps;
+  output list<DAE.Type> resTypes;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,elabCases,resExps,resTypes,outSt) := matchcontinue (cache,env,cases,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
+    local
+      Absyn.Case case_;
+      list<Absyn.Case> rest;
+      DAE.MatchCase elabCase;
+      list<DAE.MatchCase> elabCases;
+      Option<DAE.Type> optType;
+      Option<DAE.Exp> optExp;
+    case (cache,env,{},tys,impl,st,performVectorization,pre,info,accExps,accTypes) then (cache,{},listReverse(accExps),accTypes,st);
+    case (cache,env,case_::rest,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
+      equation
+        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre,info);
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,info,Util.listConsOption(optExp,accExps),Util.listConsOption(optType,accTypes));
+      then (cache,elabCase::elabCases,accExps,accTypes,st);
+  end matchcontinue;
+end elabMatchCases2;
+
+protected function elabMatchCase
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Case acase;
+  input list<DAE.Type> tys;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean performVectorization;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.MatchCase elabCase;
+  output Option<DAE.Exp> resExp;
+  output Option<DAE.Type> resType;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,elabCase,resExp,resType,outSt) := matchcontinue (cache,env,acase,tys,impl,st,performVectorization,pre,info)
+    local
+      list<Absyn.Case> rest;
+      Absyn.Exp result,pattern;
+      list<Absyn.Exp> patterns;
+      list<DAE.Pattern> elabPatterns;
+      DAE.MatchCase case_;
+      Option<DAE.Exp> elabResult;
+      list<DAE.Element> caseDecls;
+      list<Absyn.EquationItem> eq1;
+      list<Absyn.AlgorithmItem> b2,eqAlgs;
+      list<SCode.Statement> algs;
+      list<DAE.Statement> body;
+      list<Absyn.ElementItem> decls;
+      Absyn.Info patternInfo;
+    case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result),tys,impl,st,performVectorization,pre,info)
+      equation
+        (cache,SOME((env,DAE.DAE(caseDecls),b2))) = Static.addLocalDecls(cache,env,decls,impl,info);
+        Error.assertion(Util.isListEmpty(b2), "A local declaration caused an equation to be added; this is not handled in OMC.",info);
+        patterns = MetaUtil.extractListFromTuple(pattern, 0);
+        patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
+        (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
+        (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
+        algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
+        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, Inst.neverUnroll);
+        (cache,elabResult,resType,st) = elabResultExp(cache,env,result,impl,st,performVectorization,pre,patternInfo);
+      then (cache,DAE.CASE(elabPatterns, caseDecls, body, elabResult),elabResult,resType,st);
+
+      // ELSE is the same as CASE, but without pattern
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result),_,impl,st,performVectorization,pre,info)
+      equation
+        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(Absyn.TUPLE({}),info,decls,eq1,result,NONE()),{},impl,st,performVectorization,pre,info); 
+      then (cache,elabCase,elabResult,resType,st);
+        
+  end matchcontinue;
+end elabMatchCase;
+
+protected function elabResultExp
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Exp exp;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  input Boolean performVectorization;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<DAE.Exp> resExp;
+  output Option<DAE.Type> resType;
+  output Option<Interactive.InteractiveSymbolTable> outSt;
+algorithm
+  (outCache,resExp,resType,outSt) := match (cache,env,exp,impl,st,performVectorization,pre,info)
+    local
+      DAE.Exp elabExp;
+      DAE.Properties prop;
+      DAE.Type ty;
+      list<Absyn.Exp> es;
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
+      then (cache,NONE(),NONE(),st);
+    case (cache,env,Absyn.TUPLE(es),impl,st,performVectorization,pre,info)
+      equation
+        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        ty = Types.getPropType(prop);
+        (elabExp,ty) = Types.matchType(elabExp, ty, DAE.T_BOXED_DEFAULT, false);
+      then (cache,SOME(elabExp),SOME(ty),st);
+    case (cache,env,exp,impl,st,performVectorization,pre,info)
+      equation
+        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        ty = Types.getPropType(prop);
+      then (cache,SOME(elabExp),SOME(ty),st);
+  end match;
+end elabResultExp;
+
+protected function fixCaseReturnTypes
+  input list<DAE.MatchCase> cases;
+  input list<DAE.Exp> exps;
+  input list<DAE.Type> tys;
+  input Absyn.Info info;
+  output list<DAE.MatchCase> outCases;
+  output DAE.Type ty;
+algorithm
+  (outCases,ty) := matchcontinue (cases,exps,tys,info)
+    local
+      DAE.Type resType;
+      String str;
+    case (cases,{},{},info) then (cases,(DAE.T_NORETCALL(),NONE()));
+    case (cases,exps,tys,info)
+      equation
+        (exps,ty) = Types.listMatchSuperType(exps,tys,true);
+        cases = fixCaseReturnTypes2(cases,exps,info);
+      then (cases,ty);
+    else
+      equation
+        tys = Util.listUnionOnTrue(tys, {}, Types.equivtypes);
+        str = stringAppendList(Util.listMap1r(Util.listMap(tys, Types.unparseType), stringAppend, "\n  "));
+        Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
+      then fail();
+  end matchcontinue;
+end fixCaseReturnTypes;
+
+protected function fixCaseReturnTypes2
+  input list<DAE.MatchCase> cases;
+  input list<DAE.Exp> exps;
+  input Absyn.Info info;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := matchcontinue (cases,exps,info)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> decls;
+      list<DAE.Statement> body;
+      DAE.Exp exp;
+      DAE.MatchCase case_;
+    case ({},{},_) then {};
+    
+    case (DAE.CASE(patterns,decls,body,SOME(_))::cases,exp::exps,info)
+      equation
+        cases = fixCaseReturnTypes2(cases,exps,info);
+      then DAE.CASE(patterns,decls,body,SOME(exp))::cases;
+    
+    case ((case_ as DAE.CASE(result=NONE()))::cases,exps,info)
+      equation
+        cases = fixCaseReturnTypes2(cases,exps,info);
+      then case_::cases;
+    
+    else
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Patternm.fixCaseReturnTypes2 failed"}, info);
+      then fail();
+  end matchcontinue;
+end fixCaseReturnTypes2;
+
+public function traverseCases
+  replaceable type A subtypeof Any;
+  input list<DAE.MatchCase> cases;
+  input FuncExpType func;
+  input A a;
+  output list<DAE.MatchCase> outCases;
+  output A oa;
+  partial function FuncExpType
+    input tuple<DAE.Exp, A> inTpl;
+    output tuple<DAE.Exp, A> outTpl;
+  end FuncExpType;
+algorithm
+  (outCases,oa) := match (cases,func,a)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> decls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+    case ({},_,a) then ({},a);
+    case (DAE.CASE(patterns,decls,body,result)::cases,_,a)
+      equation
+        (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
+        ((result,a)) = Expression.traverseExpOpt(result,func,a);
+        (cases,a) = traverseCases(cases,func,a); 
+      then (DAE.CASE(patterns,decls,body,result)::cases,a);
+  end match;
+end traverseCases;
+
+protected function filterEmptyPattern
+  input tuple<DAE.Pattern,String,DAE.ExpType> tpl;
+algorithm
+  _ := match tpl
+    case ((DAE.PAT_WILD(),_,_)) then fail();
+    else ();
+  end match;
+end filterEmptyPattern;
 
 end Patternm;

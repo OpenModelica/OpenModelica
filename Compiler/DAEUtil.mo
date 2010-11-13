@@ -5005,26 +5005,26 @@ algorithm
   end matchcontinue;
 end splitElements_dispatch;
 
-public function matchValueblock
-"Used together with getMatchingExps"
-  input DAE.Exp inExpr;
-  output list<DAE.Exp> outExprLst;
+public function collectLocalDecls
+"Used to traverse expressions and collect all local declarations"
+  input tuple<DAE.Exp,list<DAE.Element>> tpl;
+  output tuple<DAE.Exp,list<DAE.Element>> otpl;
 algorithm
-  outExprLst := matchcontinue (inExpr)
+  otpl := matchcontinue (tpl)
     local
-      list<DAE.Exp> res, exps, exps2;
-      DAE.Exp e,resE;
-      list<DAE.Element> ld;
-      list<DAE.Statement> body;
-    case e as DAE.VALUEBLOCK(localDecls = ld,body = body,result = resE)
+      DAE.Exp e;
+      list<DAE.Element> ld1,ld2,ld;
+    case ((e as DAE.VALUEBLOCK(localDecls = ld1),ld2))
       equation
-        exps = getAllExps(ld);
-        exps2 = Algorithm.getAllExpsStmts(body);
-        exps = listAppend(exps,exps2);
-        res = Expression.getMatchingExpsList(resE::exps,matchValueblock);
-      then e::res;
+        ld = listAppend(ld1,ld2);
+      then ((e,ld));
+    case ((e as DAE.MATCHEXPRESSION(localDecls = ld1),ld2))
+      equation
+        ld = listAppend(ld1,ld2);
+      then ((e,ld));
+    else tpl;
   end matchcontinue;
-end matchValueblock;
+end collectLocalDecls;
 
 public function getUniontypePaths
 "Traverses DAE elements to find all Uniontypes, and return the paths
@@ -5063,7 +5063,7 @@ algorithm
     case elements
       equation
         exps = getAllExpsFunctions(elements);
-        exps = Expression.getMatchingExpsList(exps, matchValueblock);
+        ((_,els1)) = Expression.traverseExpList(exps, collectLocalDecls, {});
         els1 = getDAEDeclsFromValueblocks(exps);
         els2 = getFunctionsElements(elements);
         els = listAppend(els1, els2);
@@ -5111,6 +5111,10 @@ algorithm
       list<DAE.Element> els1,els2;
     case {} then {};
     case DAE.VALUEBLOCK(localDecls = els1)::rest
+      equation
+        els2 = getDAEDeclsFromValueblocks(rest);
+      then listAppend(els1,els2);
+    case DAE.MATCHEXPRESSION(localDecls = els1)::rest
       equation
         els2 = getDAEDeclsFromValueblocks(rest);
       then listAppend(els1,els2);
@@ -5236,6 +5240,10 @@ algorithm
       DAE.Exp exp;
       list<Absyn.Path> acc;
     case ((exp as DAE.VALUEBLOCK(localDecls = decls),acc))
+      equation
+        acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
+      then ((exp,acc));
+    case ((exp as DAE.MATCHEXPRESSION(localDecls = decls),acc))
       equation
         acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
       then ((exp,acc));

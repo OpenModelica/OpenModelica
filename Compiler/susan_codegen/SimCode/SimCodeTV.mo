@@ -325,10 +325,10 @@ package SimCode
   constant Context contextFunction;
   constant Context contextOther;  
 
-  function valueblockVars
-    input DAE.Exp valueblock;
+  function elementVars
+    input list<DAE.Element> ld;
     output list<Variable> vars;
-  end valueblockVars;
+  end elementVars;
   
   function crefSubIsScalar
     input DAE.ComponentRef cref;
@@ -689,8 +689,24 @@ package DAE
       list<String> fieldNames;
       Integer index;
     end METARECORDCALL;
+    record MATCHEXPRESSION
+      Absyn.MatchType matchType;
+      list<Exp> inputs;
+      list<Element> localDecls;
+      list<MatchCase> cases;
+      ExpType et;
+    end MATCHEXPRESSION;
   end Exp;
   
+  uniontype MatchCase
+    record CASE
+      list<Pattern> patterns "ELSE is handled by not doing pattern-matching";
+      list<Element> localDecls;
+      list<Statement> body;
+      Option<Exp> result;
+    end CASE;
+  end MatchCase;
+
   uniontype Pattern "Patterns deconstruct expressions"
     record PAT_WILD "_"
     end PAT_WILD;
@@ -722,6 +738,10 @@ package DAE
       Integer index;
       list<Pattern> patterns;
     end PAT_CALL;
+    record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
+      Absyn.Path name;
+      list<tuple<Pattern,String,ExpType>> patterns;
+    end PAT_CALL_NAMED;
     record PAT_SOME "SOME(pat)"
       Pattern pat;
     end PAT_SOME;

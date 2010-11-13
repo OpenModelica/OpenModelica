@@ -5215,6 +5215,8 @@ algorithm
     case (e :: _, ty :: _,printFailtrace)
       equation
         st = Util.listReduce(typeList, superType);
+        st = superType(st,st);
+        st = unboxedType(st);
         elist = listMatchSuperType2(elist,typeList,st,printFailtrace);
       then (elist, st);
     case (_,_,_)
@@ -5304,6 +5306,12 @@ algorithm
       equation
         true = Absyn.pathEqual(path1,path2);
       then t1;
+
+    case ((DAE.T_INTEGER(_),_),(DAE.T_REAL(_),_))
+      then DAE.T_REAL_DEFAULT;
+
+    case ((DAE.T_REAL(_),_),(DAE.T_INTEGER(_),_))
+      then DAE.T_REAL_DEFAULT;
 
     case (t1,t2)
       equation

@@ -5156,11 +5156,13 @@ algorithm
       then (cache,stmts);
 
       // MetaModelica Matchcontinue
+      /*
     case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops,_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
       then (cache,{stmt});
+      */
         
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,numError)
       equation

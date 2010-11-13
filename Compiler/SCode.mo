@@ -2785,5 +2785,25 @@ algorithm
   end matchcontinue;
 end isComponentWithDirection;
 
+public function isComponent
+  input Element elt;
+  output Boolean b;
+algorithm
+  b := matchcontinue (elt)
+    case (COMPONENT(attributes = _)) then true;
+    else false;        
+  end matchcontinue;
+end isComponent;
+
+public function isNotComponent
+  input Element elt;
+  output Boolean b;
+algorithm
+  b := matchcontinue (elt)
+    case (COMPONENT(attributes = _)) then false;
+    else true;
+  end matchcontinue;
+end isNotComponent;
+
 end SCode;
 

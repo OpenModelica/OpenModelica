@@ -290,7 +290,7 @@ public constant ErrorID META_INVALID_COMPLEX_TYPE=5020;
 public constant ErrorID META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE=5021;
 public constant ErrorID META_TYPE_MISMATCH_PATTERN=5022;
 public constant ErrorID META_DECONSTRUCTOR_NOT_RECORD=5023;
-
+public constant ErrorID META_MATCHEXP_RESULT_TYPES=5024;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -644,7 +644,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_RECORD_FOUND_FAILURE,TRANSLATION(),ERROR(),"In metarecord call %s: %s"),
           (META_INVALID_PATTERN,TRANSLATION(),ERROR(),"Invalid pattern: %s"),
           (META_MATCH_INPUT_OUTPUT_NON_CREF,TRANSLATION(),ERROR(),"Only component references are valid as %s of a match expression. Got %s."),
-          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s := %s"),
+          (META_MATCH_GENERAL_FAILURE,TRANSLATION(),ERROR(),"Failed to elaborate match expression %s"),
           (TUPLE_ASSIGN_CREFS_ONLY,TRANSLATION(),ERROR(),"Tuple assignment only allowed for tuple of component references in lhs (in %s)"),
           (META_CONS_TYPE_MATCH,TRANSLATION(),ERROR(),"Failed to match types of cons expression %s. The head has type %s and the tail %s."),
           (LOOKUP_FUNCTION_GOT_CLASS,TRANSLATION(),ERROR(),"Looking for a function %s but found a %s."),
@@ -655,7 +655,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s<...>"),
           (META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE,TRANSLATION(),ERROR(),"%s is not part of uniontype %s"),
           (META_TYPE_MISMATCH_PATTERN,TRANSLATION(),ERROR(),"Type mismatch in pattern\nactual type:\n  %s\nexpected type:\n  %s"),
-          (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s")
+          (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s"),
+          (META_MATCHEXP_RESULT_TYPES,TRANSLATION(),ERROR(),"Match expression has mismatched result types:%s")
 
           };
 
@@ -1040,12 +1041,13 @@ public function assertion
 to be shown to a user, but rather to show internal error messages."
   input Boolean b;
   input String message;
+  input Absyn.Info info;
 algorithm
-  _ := match (b,message)
-    case (true,_) then ();
+  _ := match (b,message,info)
+    case (true,_,_) then ();
     else
       equation
-        addMessage(INTERNAL_ERROR, {message});
+        addSourceMessage(INTERNAL_ERROR, {message}, info);
       then fail();
   end match;
 end assertion;

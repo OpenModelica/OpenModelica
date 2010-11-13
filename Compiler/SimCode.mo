@@ -438,22 +438,14 @@ public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextOther                  = OTHER();
 
 
-public function valueblockVars
+public function elementVars
 "Used by templates to get a list of variables from a valueblock."
-  input DAE.Exp valueblock;
+  input list<DAE.Element> ld;
   output list<Variable> vars;
 algorithm
-  vars :=
-  matchcontinue (valueblock)
-    local
-      list<DAE.Element> ld;
-    case (DAE.VALUEBLOCK(localDecls=ld))
-      equation
-        ld = Util.listFilter(ld, isVarQ);
-        vars = Util.listMap(ld, daeInOutSimVar);
-      then vars;
-  end matchcontinue;
-end valueblockVars;
+  ld := Util.listFilter(ld, isVarQ);
+  vars := Util.listMap(ld, daeInOutSimVar);
+end elementVars;
 
 public function crefSubIsScalar
 "Used by templates to determine if a component reference's subscripts are
