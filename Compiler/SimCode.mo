@@ -357,7 +357,7 @@ uniontype SimEqSystem
     SimEqSystem cont;
     list<SimVar> discVars;
     list<SimEqSystem> discEqs;
-    list<String> values;
+    list<Integer> values;
     list<Integer> value_dims;
   end SES_MIXED;
   record SES_WHEN
@@ -3113,7 +3113,7 @@ algorithm
       Integer numValues;
       list<SimVar> simVarsDisc;
       list<SimEqSystem> discEqs;
-      list<String> values;
+      list<Integer> values;
       list<Integer> value_dims;
       SimEqSystem equation_;      
       String dstr,dstr1,dstr2;
@@ -3184,7 +3184,7 @@ algorithm
     // mixed system of equations, both continous and discrete eqns
     case (true,false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,helpVarInfo)
       equation
-        // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");        
+        // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
@@ -3195,18 +3195,20 @@ algorithm
         vars_1 = BackendDAEUtil.listVar(cont_var1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);        
+        eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
         cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
         mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt, true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
         simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
+        // adrpo: TODO! FIXME! THIS FUNCTION is madness!
+        //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
       then
         {SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims)};
@@ -3417,19 +3419,20 @@ protected function extractValuesAndDims
   input list<BackendDAE.Var> inBackendDAEVarLst2;
   input list<BackendDAE.Equation> inBackendDAEEquationLst3;
   input list<BackendDAE.Var> inBackendDAEVarLst4;
-  output list<String> valuesRet;
+  output list<Integer> valuesRet;
   output list<Integer> value_dims;
 algorithm
   (valuesRet, value_dims) :=
   matchcontinue (inBackendDAEEquationLst1,inBackendDAEVarLst2,inBackendDAEEquationLst3,inBackendDAEVarLst4)
     local
       list<DAE.Exp> rels;
-      list<list<String>> values,values_1;
-      list<String> values_2,ss;
+      list<list<Integer>> values,values_1;
+      list<Integer> values_2,ss;
       String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
       Integer disc_len,values_len;
       list<BackendDAE.Equation> cont_e,disc_e;
       list<BackendDAE.Var> cont_v,disc_v;
+    
     case (cont_e,cont_v,disc_e,disc_v)
       equation
         rels = mixedCollectRelations(cont_e, disc_e);
@@ -5871,42 +5874,37 @@ end mixedCollectRelations2;
 
 protected function generateMixedDiscreteCombinationValues "function generateMixedDiscreteCombinationValues
   author: PA
-
-  Generates all combinations of the values given as argument
-"
-  input list<list<String>> inStringLstLst;
-  output list<list<String>> outStringLstLst;
+  Generates all combinations of the values given as argument"
+  input list<list<Integer>> inStringLstLst;
+  output list<list<Integer>> outStringLstLst;
 algorithm
-  outStringLstLst:=
-  matchcontinue (inStringLstLst)
+  outStringLstLst := matchcontinue (inStringLstLst)
     local
-      list<String> value;
-      list<list<String>> values_1,values;
-    case ({value}) then {value};  /* values */
+      list<Integer> value;
+      list<list<Integer>> values_1,values;
+    
+    case ({value}) then {value};
+    
     case (values)
       equation
-        values_1 = generateMixedDiscreteCombinationValues1(values) "&
-	Util.list_strip_last(values\') => values\'\'" ;
+        values_1 = generateMixedDiscreteCombinationValues1(values);
       then
         values_1;
   end matchcontinue;
 end generateMixedDiscreteCombinationValues;
 
 protected function generateMixedDiscreteCombinationValues1
-  input list<list<String>> inStringLstLst;
-  output list<list<String>> outStringLstLst;
+  input list<list<Integer>> inStringLstLst;
+  output list<list<Integer>> outStringLstLst;
 algorithm
-  outStringLstLst:=
-  matchcontinue (inStringLstLst)
+  outStringLstLst := matchcontinue (inStringLstLst)
     local
-      list<list<String>> value_1,values_1,values_2,values;
-      list<String> value;
-    case ({value}) /* values */
-      equation
-        value_1 = Util.listMap(value, Util.listCreate);
-      then
-        value_1;
-    case ((value :: values))
+      list<list<Integer>> value_1,values_1,values_2,values;
+      list<Integer> value;
+    
+    case (values as {value}) then values;
+    
+    case (value :: values)
       equation
         values_1 = generateMixedDiscreteCombinationValues1(values);
         values_2 = generateMixedDiscreteCombinationValues2(value, values_1);
@@ -5915,24 +5913,23 @@ algorithm
   end matchcontinue;
 end generateMixedDiscreteCombinationValues1;
 
-protected function generateMixedDiscreteCombinationValues2 "function generateMixedDiscreteCombinationValues2
+protected function generateMixedDiscreteCombinationValues2 "
+function generateMixedDiscreteCombinationValues2
   author: PA
-
-  Helper function to generate_mixed_discrete_combination_values.
-  Insert a list of values producing all combinations with given list of list
-  of values.
-"
-  input list<String> inStringLst;
-  input list<list<String>> inStringLstLst;
-  output list<list<String>> outStringLstLst;
+  Helper function to generateMixedDiscreteCombinationValues.
+  Insert a list of values producing all combinations with given list of list of values."
+  input list<Integer> inStringLst;
+  input list<list<Integer>> inStringLstLst;
+  output list<list<Integer>> outStringLstLst;
 algorithm
-  outStringLstLst:=
-  matchcontinue (inStringLst,inStringLstLst)
+  outStringLstLst := matchcontinue (inStringLst,inStringLstLst)
     local
-      list<list<String>> lst,lst_1,lst2,res;
-      String s;
-      list<String> ss;
+      list<list<Integer>> lst,lst_1,lst2,res;
+      Integer s;
+      list<Integer> ss;
+    
     case ({},lst) then {};
+    
     case ((s :: ss),lst) 
       equation
         lst_1 = Util.listMap1(lst, Util.listCons, s);
@@ -5944,31 +5941,31 @@ algorithm
 end generateMixedDiscreteCombinationValues2;
 
 protected function generateMixedDiscretePossibleValues2 "function: generateMixedDiscretePossibleValues2
-
-  Helper function to generate_mixed_discrete_possible_values.
-"
+  Helper function to generateMixedDiscretePossibleValues."
   input list<DAE.Exp> inExpExpLst;
   input list<BackendDAE.Var> inBackendDAEVarLst;
   input Integer inInteger;
-  output list<list<String>> outStringLstLst;
+  output list<list<Integer>> outStringLstLst;
   output list<Integer> outIntegerLst;
 algorithm
-  (outStringLstLst,outIntegerLst):=
-  matchcontinue (inExpExpLst,inBackendDAEVarLst,inInteger)
+  (outStringLstLst,outIntegerLst) := matchcontinue (inExpExpLst,inBackendDAEVarLst,inInteger)
     local
       Integer cg_id;
-      list<list<String>> values;
+      list<list<Integer>> values;
       list<Integer> dims;
       list<DAE.Exp> rels;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
+    
     case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
+    
     case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
         BackendDAE.BOOL() = BackendVariable.varType(v);
         (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
       then
-        (({"1.0","0.0"} :: values),(2 :: dims));
+        ({1,0} :: values, 2 :: dims);
+    
     case (rels,(v :: vs),_)
       equation
         BackendDAE.INT() = BackendVariable.varType(v);
@@ -7491,10 +7488,11 @@ algorithm
       list<DAE.ComponentRef> crefs;
       SimEqSystem cont,cont1;
       list<SimEqSystem> discEqs,discEqs1;
-      list<String> values;
+      list<Integer> values;
       list<Integer> value_dims;
       list<tuple<DAE.Exp, Integer>> conditions;
       list<DAE.Exp> divLst,divLst1,divLst2;
+    
     case (SES_RESIDUAL(exp = e),inDlowMode)
       equation
         (e,divLst) = addDivExpErrorMsgtoExp(e,inDlowMode);

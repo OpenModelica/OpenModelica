@@ -172,7 +172,7 @@ package SimCode
       SimEqSystem cont;
       list<SimVar> discVars;
       list<SimEqSystem> discEqs;
-      list<String> values;
+      list<Integer> values;
       list<Integer> value_dims;
     end SES_MIXED;
     record SES_WHEN

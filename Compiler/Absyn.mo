@@ -2174,6 +2174,8 @@ algorithm outPaths := matchcontinue(path)
       String n;
       Path p;
       list<String> strings;
+      
+    case (IDENT(name = n)) then {n};
     case (FULLYQUALIFIED(path = p)) then pathToStringList(p);
     case (QUALIFIED(name = n,path = p))
       equation
@@ -2181,7 +2183,6 @@ algorithm outPaths := matchcontinue(path)
         strings = listAppend(strings,{n});
         then
           strings;
-    case (IDENT(name = n)) then {n};
 end matchcontinue;
 end pathToStringList;
 

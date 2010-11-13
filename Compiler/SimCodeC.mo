@@ -8855,7 +8855,7 @@ end lm_210;
 
 protected function lm_211
   input Tpl.Text in_txt;
-  input list<String> in_items;
+  input list<Integer> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -8871,10 +8871,10 @@ algorithm
     case ( txt,
            i_it :: rest )
       local
-        list<String> rest;
-        String i_it;
+        list<Integer> rest;
+        Integer i_it;
       equation
-        txt = Tpl.writeStr(txt, i_it);
+        txt = Tpl.writeStr(txt, intString(i_it));
         txt = Tpl.nextIter(txt);
         txt = lm_211(txt, rest);
       then txt;
@@ -8882,7 +8882,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<String> rest;
+        list<Integer> rest;
       equation
         txt = lm_211(txt, rest);
       then txt;
@@ -9027,7 +9027,7 @@ algorithm
       local
         list<Integer> i_value__dims;
         list<SimCode.SimEqSystem> i_discEqs;
-        list<String> i_values;
+        list<Integer> i_values;
         list<SimCode.SimVar> i_discVars;
         SimCode.SimEqSystem i_cont;
         Tpl.Text i_discLoc2;
