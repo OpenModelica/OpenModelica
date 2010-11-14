@@ -45,32 +45,32 @@ public function waitforconnect
   input Integer inInteger;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=Socket_waitforconnect(inInteger) annotation(Library = "omcruntime");
 end waitforconnect;
 
 public function handlerequest
   input Integer inInteger;
   output String outString;
 
-  external "C" ;
+  external "C" outString=Socket_handlerequest(inInteger) annotation(Library = "omcruntime");
 end handlerequest;
 
 public function sendreply
   input Integer inInteger;
   input String inString;
 
-  external "C" ;
+  external "C" Socket_sendreply(inInteger,inString) annotation(Library = "omcruntime");
 end sendreply;
 
 public function close
   input Integer inInteger;
 
-  external "C" ;
+  external "C" Socket_close(inInteger) annotation(Library = "omcruntime");
 end close;
 
 public function cleanup
 
-  external "C" ;
+  external "C" Socket_cleanup() annotation(Library = "omcruntime");
 end cleanup;
-end Socket;
 
+end Socket;

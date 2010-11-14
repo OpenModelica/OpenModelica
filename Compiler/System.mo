@@ -101,7 +101,7 @@ public function strncmp
   input Integer len;
   output Integer outInteger;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outInteger=System_strncmp(inString1,inString2,len) annotation(Library = "omcruntime");
 end strncmp;
 
 
@@ -133,7 +133,7 @@ public function strtok
   input String inString2;
   output list<String> outStringLst;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outStringLst=System_strtok(inString1,inString2) annotation(Library = "omcruntime");
 end strtok;
 
 public function setCCompiler

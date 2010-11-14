@@ -197,6 +197,11 @@ intString_rettype intString(modelica_integer i)
   return res;
 }
 
+modelica_metatype boxptr_intEq(modelica_metatype i1, modelica_metatype i2)
+{
+  return mmc_mk_icon(i1 == i2);
+}
+
 modelica_metatype boxptr_intAbs(modelica_metatype i)
 {
   return mmc_mk_icon(abs(mmc__unbox__integer(i)));
@@ -215,160 +220,6 @@ modelica_metatype boxptr_intReal(modelica_metatype i)
 modelica_metatype boxptr_intString(modelica_metatype i)
 {
   return mmc_mk_scon(intString(mmc__unbox__integer(i)));
-}
-
-/* Real Operations */
-realAdd_rettype realAdd(modelica_real r1, modelica_real r2)
-{
-  return r1+r2;
-}
-
-realSub_rettype realSub(modelica_real r1, modelica_real r2)
-{
-  return r1-r2;
-}
-
-realMul_rettype realMul(modelica_real r1, modelica_real r2)
-{
-  return r1*r2;
-}
-
-realDiv_rettype realDiv(modelica_real r1, modelica_real r2)
-{
-  return r1/r2;
-}
-
-realMod_rettype realMod(modelica_real r1, modelica_real r2)
-{
-  return fmod(r1,r2);
-}
-
-realPow_rettype realPow(modelica_real r1, modelica_real r2)
-{
-  return pow(r1,r2);
-}
-
-realMax_rettype realMax(modelica_real r1, modelica_real r2)
-{
-  return r1 > r2 ? r1 : r2;
-}
-
-realMin_rettype realMin(modelica_real r1, modelica_real r2)
-{
-  return r1 < r2 ? r1 : r2;
-}
-
-realLt_rettype realLt(modelica_real r1, modelica_real r2)
-{
-  return r1 < r2;
-}
-
-realLe_rettype realLe(modelica_real r1, modelica_real r2)
-{
-  return r1 <= r2;
-}
-
-realEq_rettype realEq(modelica_real r1, modelica_real r2)
-{
-  return r1 == r2;
-}
-
-realNe_rettype realNe(modelica_real r1, modelica_real r2)
-{
-  return r1 != r2;
-}
-
-realGe_rettype realGe(modelica_real r1, modelica_real r2)
-{
-  return r1 >= r2;
-}
-
-realGt_rettype realGt(modelica_real r1, modelica_real r2)
-{
-  return r1 > r2;
-}
-
-realInt_rettype realInt(modelica_real r)
-{
-  return (modelica_integer) r;
-}
-
-realString_rettype realString(modelica_real r)
-{
-  /* 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
-   * Add safety margin. */
-  static char buffer[32];
-  modelica_string_t res;
-  if (isinf(r) && r < 0)
-    init_modelica_string(&res, "-inf");
-  else if (isinf(r))
-    init_modelica_string(&res, "inf");
-  else if (isnan(r))
-    init_modelica_string(&res, "NaN");
-  else {
-    char* endptr;
-    int ix = snprintf(buffer, 32, "%.16g", r);
-    long ignore;
-    if (ix < 0)
-      throw 1;
-    errno = 0;
-    /* If it looks like an integer, we need to append .0 so it looks like real */
-    ignore = strtol(buffer,&endptr,10);
-    if (errno == 0 && *endptr == '\0') {
-      if (ix > 30)
-        throw 1;
-      buffer[ix++] = '.';
-      buffer[ix++] = '0';
-      buffer[ix] = '\0';
-    }
-    init_modelica_string(&res, buffer);
-  }
-  return res;
-}
-
-modelica_metatype boxptr_realString(modelica_metatype r)
-{
-  return mmc_mk_scon(realString(mmc_prim_get_real(r)));
-}
-
-modelica_metatype boxptr_realAdd(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1)+mmc_prim_get_real(r2));
-}
-
-modelica_metatype boxptr_realSub(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1)-mmc_prim_get_real(r2));
-}
-
-modelica_metatype boxptr_realMul(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1)*mmc_prim_get_real(r2));
-}
-
-modelica_metatype boxptr_realDiv(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1)/mmc_prim_get_real(r2));
-}
-
-modelica_metatype boxptr_realMod(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(fmod(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
-}
-
-modelica_metatype boxptr_realPow(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(pow(mmc_prim_get_real(r1),mmc_prim_get_real(r2)));
-}
-
-modelica_metatype boxptr_realMax(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1) > mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
-}
-
-modelica_metatype boxptr_realMin(modelica_metatype r1, modelica_metatype r2)
-{
-  return mmc_mk_rcon(mmc_prim_get_real(r1) < mmc_prim_get_real(r2) ? mmc_prim_get_real(r1) : mmc_prim_get_real(r2));
 }
 
 /* String Character Conversion */
@@ -688,6 +539,16 @@ listNth_rettype listNth(modelica_metatype lst, modelica_integer i)
   return listGet(lst,i+1);
 }
 
+modelica_metatype boxptr_listGet(modelica_metatype lst, modelica_metatype i)
+{
+  return listGet(lst,MMC_UNTAGFIXNUM(i));
+}
+
+modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
+{
+  return listGet(lst,MMC_UNTAGFIXNUM(i)+1);
+}
+
 listRest_rettype listRest(modelica_metatype lst)
 {
   if (MMC_NILTEST(lst))
@@ -811,6 +672,16 @@ arrayAdd_rettype arrayAdd(modelica_metatype arr, modelica_metatype val)
   }
   resp[nelts] = val;
   return res;
+}
+
+arrayNth_rettype arrayNth(modelica_metatype arr, modelica_integer ix)
+{
+  return arrayGet(arr, ix+1);
+}
+
+modelica_metatype boxptr_arrayNth(modelica_metatype arr, modelica_metatype ix)
+{
+  return arrayGet(arr, MMC_UNTAGFIXNUM(ix)+1);
 }
 
 /* Misc Operations */

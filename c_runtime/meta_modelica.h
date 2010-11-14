@@ -154,6 +154,7 @@ void mmc__unbox(modelica_metatype box, void* res);
 typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int);
 
+void debug__print(const char*,void*); /* For debugging */
 void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */
 

@@ -527,7 +527,7 @@ end applyReplacementsExp;
 
 public function emptyReplacementsArray "create an array of n empty replacements"
   input Integer n;
-  output VariableReplacements[:] repl;
+  output array<VariableReplacements> repl;
 algorithm
   repl := listArray(emptyReplacementsArray2(n));
 end emptyReplacementsArray;

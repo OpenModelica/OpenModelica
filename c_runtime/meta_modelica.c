@@ -379,6 +379,12 @@ mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
   }
 }
 
+void debug__print(const char* prefix, void* any)
+{
+  fprintf(stderr, "%s", prefix);
+  printAny(any);
+}
+
 void printAny(void* any) /* For debugging */
 {
   mmc_uint_t hdr;
