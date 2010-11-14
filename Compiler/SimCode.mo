@@ -4296,8 +4296,6 @@ algorithm
           ass1, ass2)
       equation
         eqns_lst = BackendDAEUtil.equationList(eqns);
-        se_lst = BackendDAEUtil.equationList(se);
-        ie_lst = BackendDAEUtil.equationList(ie);
         ie2_lst = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,{});
         ie2_lst = listReverse(ie2_lst);
         eqns_lst = selectContinuousEquations(eqns_lst, 1, ass2, dlow);
@@ -4306,11 +4304,13 @@ algorithm
         eqns_lst = Util.listFilter(eqns_lst, failUnlessResidual);
         resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);        
         
-        se_lst = Util.listMap(se_lst, BackendEquation.equationToResidualForm);
+        se_lst = BackendEquation.traverseBackendDAEEqns(se,BackendDAEUtil.traverseequationToResidualForm,{});
+        se_lst = listReverse(se_lst);
         se_lst = Util.listFilter(se_lst, failUnlessResidual);
         resEqus2 = Util.listMap1(se_lst, dlowEqToSimEqSystem,al);
         
-        ie_lst = Util.listMap(ie_lst, BackendEquation.equationToResidualForm);
+        ie_lst = BackendEquation.traverseBackendDAEEqns(ie,BackendDAEUtil.traverseequationToResidualForm,{});
+        ie_lst = listReverse(ie_lst);
         ie_lst = Util.listFilter(ie_lst, failUnlessResidual);
         resEqus3 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
         

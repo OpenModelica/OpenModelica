@@ -3389,7 +3389,7 @@ algorithm
   outTplIntegerIntegerEquationLstOption:=
   matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,differentiateIfExp)
     local
-      list<BackendDAE.Equation> eqn_lst,eqn_lst_1;
+      list<BackendDAE.Equation> eqn_lst;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -3397,14 +3397,33 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
     case (vars,eqns,ae,m,mt,differentiateIfExp)
       equation
-        eqn_lst = equationList(eqns);
-        eqn_lst_1 = Util.listMap(eqn_lst, BackendEquation.equationToResidualForm);
-        SOME(jac) = calculateJacobianRows(eqn_lst_1, vars, ae, m, mt,differentiateIfExp);
+        eqn_lst = BackendEquation.traverseBackendDAEEqns(eqns,traverseequationToResidualForm,{});
+        eqn_lst = listReverse(eqn_lst);
+        SOME(jac) = calculateJacobianRows(eqn_lst, vars, ae, m, mt,differentiateIfExp);
       then
         SOME(jac);
     case (_,_,_,_,_,_) then NONE();  /* no analythic jacobian available */
   end matchcontinue;
 end calculateJacobian;
+
+public function traverseequationToResidualForm "function: traverseequationToResidualForm
+  author: Frenkel TUD 2010-11
+  helper for calculateJacobian"
+  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;  
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Equation eqn,reqn;
+    case ((eqn,eqns))
+      equation
+        reqn = BackendEquation.equationToResidualForm(eqn);
+      then
+        ((eqn,reqn::eqns));
+    case (inTpl) then inTpl;
+  end matchcontinue;
+end traverseequationToResidualForm;
 
 protected function calculateJacobianRows "function: calculateJacobianRows
   author: PA
@@ -3696,15 +3715,17 @@ algorithm
   outBoolean:=
   matchcontinue (inBackendDAE)
     local
-      list<BackendDAE.Equation> eqn_lst;
       Boolean res;
       BackendDAE.BackendDAE dae;
-      BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray eqns;
-    case ((dae as BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = eqns)))
+    case ((dae as BackendDAE.DAE(orderedEqs = eqns)))
       equation
-        eqn_lst = equationList(eqns);
-        res = rhsConstant2(eqn_lst, dae);
+        0 = equationSize(eqns);
+      then
+        true;
+    case ((dae as BackendDAE.DAE(orderedEqs = eqns)))
+      equation
+        ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(dae,false));
       then
         res;
   end matchcontinue;
@@ -3713,16 +3734,16 @@ end rhsConstant;
 protected function rhsConstant2 "function: rhsConstant2
   author: PA
   Helper function to rhsConstant, traverses equation list."
-  input list<BackendDAE.Equation> inEquationLst;
-  input BackendDAE.BackendDAE inBackendDAE;
-  output Boolean outBoolean;
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.BackendDAE,Boolean>> inTpl;
+  output tuple<BackendDAE.Equation, Boolean, tuple<BackendDAE.BackendDAE,Boolean>> outTpl;  
 algorithm
-  outBoolean := matchcontinue (inEquationLst,inBackendDAE)
+  outTpl := matchcontinue (inTpl)
     local
       DAE.ExpType tp;
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
-      Boolean res;
+      Boolean b,res;
       list<BackendDAE.Equation> rest;
+      BackendDAE.Equation eqn;
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables vars;
       BackendDAE.Value indx_1,indx;
@@ -3730,38 +3751,34 @@ algorithm
       list<DAE.Exp> expl;
       array<BackendDAE.MultiDimEquation> arreqn;
 
-    case ({},_) then true;
     // check rhs for for EQUATION nodes.
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest),(dae as BackendDAE.DAE(orderedVars = vars)))
+    case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(dae as BackendDAE.DAE(orderedVars = vars),b)))
       equation
         tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = getEqnsysRhsExp(new_exp, vars);
-        true = Expression.isConst(rhs_exp);
-        res = rhsConstant2(rest, dae);
+        res = Expression.isConst(rhs_exp);
       then
-        res;
+        ((eqn,res,(dae,b and res)));
     // check rhs for for ARRAY_EQUATION nodes. check rhs for for RESIDUAL_EQUATION nodes.
-    case ((BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: rest),(dae as BackendDAE.DAE(orderedVars = vars,arrayEqs = arreqn)))
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),(dae as BackendDAE.DAE(orderedVars = vars,arrayEqs = arreqn),b)))
       equation
         indx_1 = indx - 1;
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = arreqn[indx + 1];
         tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         rhs_exp = getEqnsysRhsExp(new_exp, vars);
-        true = Expression.isConst(rhs_exp);
-        res = rhsConstant2(rest, dae);
+        res = Expression.isConst(rhs_exp);
       then
-        res;
+        ((eqn,res,(dae,b and res)));
 
-    case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest),(dae as BackendDAE.DAE(orderedVars = vars))) /* check rhs for for RESIDUAL_EQUATION nodes. */
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(dae as BackendDAE.DAE(orderedVars = vars),b))) /* check rhs for for RESIDUAL_EQUATION nodes. */
       equation
         rhs_exp = getEqnsysRhsExp(e, vars);
-        true = Expression.isConst(rhs_exp);
-        res = rhsConstant2(rest, dae);
+        res = Expression.isConst(rhs_exp);
       then
-        res;
-    case (_,_) then false;
+        ((eqn,res,(dae,b and res)));
+    case ((eqn,(dae,b))) then ((eqn,true,(dae,b)));
   end matchcontinue;
 end rhsConstant2;
 
