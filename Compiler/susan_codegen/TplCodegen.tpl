@@ -10,8 +10,6 @@ template mmPackage(MMPackage it) ::=
     <<
     package <%pathIdent(name)%>
 
-    protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {}); 
-
     public import Tpl;
 
     <%mmDeclarations |> it => mmDeclaration(it);separator="\n"%>

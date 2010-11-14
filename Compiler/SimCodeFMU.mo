@@ -1,7 +1,5 @@
 package SimCodeFMU
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import SimCode;
@@ -42,15 +40,15 @@ algorithm
         Tpl.Text i_guid;
       equation
         ret_1 = System.getUUIDStr();
-        i_guid = Tpl.writeStr(emptyTxt, ret_1);
-        txt_2 = fmuModelDescriptionFile(emptyTxt, i_simCode, Tpl.textString(i_guid));
+        i_guid = Tpl.writeStr(Tpl.emptyTxt, ret_1);
+        txt_2 = fmuModelDescriptionFile(Tpl.emptyTxt, i_simCode, Tpl.textString(i_guid));
         Tpl.textFile(txt_2, "modelDescription.xml");
-        txt_3 = fmumodel_identifierFile(emptyTxt, i_simCode, Tpl.textString(i_guid));
-        txt_4 = Tpl.writeStr(emptyTxt, i_fileNamePrefix);
+        txt_3 = fmumodel_identifierFile(Tpl.emptyTxt, i_simCode, Tpl.textString(i_guid));
+        txt_4 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
         txt_4 = Tpl.writeTok(txt_4, Tpl.ST_STRING("_FMU.cpp"));
         Tpl.textFile(txt_3, Tpl.textString(txt_4));
-        txt_5 = fmuMakefile(emptyTxt, i_simCode);
-        txt_6 = Tpl.writeStr(emptyTxt, i_fileNamePrefix);
+        txt_5 = fmuMakefile(Tpl.emptyTxt, i_simCode);
+        txt_6 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
         txt_6 = Tpl.writeTok(txt_6, Tpl.ST_STRING("_FMU.makefile"));
         Tpl.textFile(txt_5, Tpl.textString(txt_6));
       then txt;
@@ -169,20 +167,20 @@ algorithm
         Tpl.Text i_modelName;
         Tpl.Text i_fmiVersion;
       equation
-        i_fmiVersion = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("1.0"));
-        i_modelName = SimCodeC.dotPath(emptyTxt, i_modelInfo_name);
-        i_modelIdentifier = Tpl.writeStr(emptyTxt, i_fileNamePrefix);
-        i_description = emptyTxt;
-        i_author = emptyTxt;
-        i_version = emptyTxt;
-        i_generationTool = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("OpenModelica Compiler "));
+        i_fmiVersion = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("1.0"));
+        i_modelName = SimCodeC.dotPath(Tpl.emptyTxt, i_modelInfo_name);
+        i_modelIdentifier = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
+        i_description = Tpl.emptyTxt;
+        i_author = Tpl.emptyTxt;
+        i_version = Tpl.emptyTxt;
+        i_generationTool = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("OpenModelica Compiler "));
         ret_7 = Settings.getVersionNr();
         i_generationTool = Tpl.writeStr(i_generationTool, ret_7);
         ret_9 = Util.getCurrentDateTime();
-        i_generationDateAndTime = xsdateTime(emptyTxt, ret_9);
-        i_variableNamingConvention = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("structured"));
-        i_numberOfContinuousStates = Tpl.writeStr(emptyTxt, intString(i_vi_numStateVars));
-        i_numberOfEventIndicators = Tpl.writeStr(emptyTxt, intString(i_vi_numZeroCrossings));
+        i_generationDateAndTime = xsdateTime(Tpl.emptyTxt, ret_9);
+        i_variableNamingConvention = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("structured"));
+        i_numberOfContinuousStates = Tpl.writeStr(Tpl.emptyTxt, intString(i_vi_numStateVars));
+        i_numberOfEventIndicators = Tpl.writeStr(Tpl.emptyTxt, intString(i_vi_numZeroCrossings));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("fmiVersion=\""));
         txt = Tpl.writeText(txt, i_fmiVersion);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -950,11 +948,11 @@ algorithm
         Tpl.Text i_variability;
         Tpl.Text i_valueReference;
       equation
-        i_valueReference = Tpl.writeStr(emptyTxt, i_offset);
+        i_valueReference = Tpl.writeStr(Tpl.emptyTxt, i_offset);
         i_valueReference = Tpl.writeStr(i_valueReference, intString(i_index));
-        i_variability = getVariablity(emptyTxt, i_varKind);
-        i_description = fun_36(emptyTxt, i_comment);
-        i_alias = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("noAlias"));
+        i_variability = getVariablity(Tpl.emptyTxt, i_varKind);
+        i_description = fun_36(Tpl.emptyTxt, i_comment);
+        i_alias = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("noAlias"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("name=\""));
         txt = SimCodeC.crefStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -1207,8 +1205,8 @@ protected
   Tpl.Text i_displayUnit__;
   Tpl.Text i_unit__;
 algorithm
-  i_unit__ := fun_41(emptyTxt, i_unit);
-  i_displayUnit__ := fun_42(emptyTxt, i_displayUnit);
+  i_unit__ := fun_41(Tpl.emptyTxt, i_unit);
+  i_displayUnit__ := fun_42(Tpl.emptyTxt, i_displayUnit);
   out_txt := Tpl.writeText(txt, i_unit__);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" "));
   out_txt := Tpl.writeText(out_txt, i_displayUnit__);
@@ -1716,13 +1714,13 @@ algorithm
       equation
         ret_1 = intAdd(i_varInfo_numAlgVars, i_varInfo_numParams);
         ret_2 = intAdd(i_varInfo_numStateVars, ret_1);
-        i_numberOfReals = Tpl.writeStr(emptyTxt, intString(ret_2));
+        i_numberOfReals = Tpl.writeStr(Tpl.emptyTxt, intString(ret_2));
         ret_4 = intAdd(i_varInfo_numIntAlgVars, i_varInfo_numIntParams);
-        i_numberOfIntegers = Tpl.writeStr(emptyTxt, intString(ret_4));
+        i_numberOfIntegers = Tpl.writeStr(Tpl.emptyTxt, intString(ret_4));
         ret_6 = intAdd(i_varInfo_numStringAlgVars, i_varInfo_numStringParamVars);
-        i_numberOfStrings = Tpl.writeStr(emptyTxt, intString(ret_6));
+        i_numberOfStrings = Tpl.writeStr(Tpl.emptyTxt, intString(ret_6));
         ret_8 = intAdd(i_varInfo_numBoolAlgVars, i_varInfo_numBoolParams);
-        i_numberOfBooleans = Tpl.writeStr(emptyTxt, intString(ret_8));
+        i_numberOfBooleans = Tpl.writeStr(Tpl.emptyTxt, intString(ret_8));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "// define model size\n",
                                     "#define NUMBER_OF_STATES "
@@ -1918,7 +1916,7 @@ algorithm
         String i_comment;
         Tpl.Text i_description;
       equation
-        i_description = fun_59(emptyTxt, i_comment);
+        i_description = fun_59(Tpl.emptyTxt, i_comment);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
         txt = SimCodeC.crefStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_ "));
@@ -2054,8 +2052,8 @@ protected
   Tpl.Text i_eqPart;
   Tpl.Text i_varDecls;
 algorithm
-  i_varDecls := emptyTxt;
-  i_eqPart := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  i_varDecls := Tpl.emptyTxt;
+  i_eqPart := Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   (i_eqPart, i_varDecls) := lm_62(i_eqPart, i_initialEquations, i_varDecls);
   i_eqPart := Tpl.popIter(i_eqPart);
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -2257,14 +2255,14 @@ algorithm
         Tpl.Text i_libsStr;
         Tpl.Text i_dirExtra;
       equation
-        i_dirExtra = fun_66(emptyTxt, i_modelInfo_directory);
-        i_libsStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_dirExtra = fun_66(Tpl.emptyTxt, i_modelInfo_directory);
+        i_libsStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_libsStr = lm_67(i_libsStr, i_makefileParams_libs);
         i_libsStr = Tpl.popIter(i_libsStr);
         str_3 = Tpl.textString(i_dirExtra);
-        i_libsPos1 = fun_68(emptyTxt, str_3, i_libsStr);
+        i_libsPos1 = fun_68(Tpl.emptyTxt, str_3, i_libsStr);
         str_5 = Tpl.textString(i_dirExtra);
-        i_libsPos2 = fun_69(emptyTxt, str_5, i_libsStr);
+        i_libsPos2 = fun_69(Tpl.emptyTxt, str_5, i_libsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "# Makefile generated by OpenModelica\n",
                                     "\n",

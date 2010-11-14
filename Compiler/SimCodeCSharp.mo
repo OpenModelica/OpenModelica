@@ -1,7 +1,5 @@
 package SimCodeCSharp
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import SimCode;
@@ -35,8 +33,8 @@ algorithm
         Tpl.Text txt_1;
         Tpl.Text txt_0;
       equation
-        txt_0 = simulationFile(emptyTxt, i_simCode);
-        txt_1 = dotPath(emptyTxt, i_modelInfo_name);
+        txt_0 = simulationFile(Tpl.emptyTxt, i_simCode);
+        txt_1 = dotPath(Tpl.emptyTxt, i_modelInfo_name);
         txt_1 = Tpl.writeTok(txt_1, Tpl.ST_STRING(".cs"));
         Tpl.textFile(txt_0, Tpl.textString(txt_1));
       then txt;
@@ -134,7 +132,7 @@ algorithm
         txt = modelDataMembers(txt, i_modelInfo, i_simCode);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        i_fbody = simulationFunctionsBody(emptyTxt, i_simCode);
+        i_fbody = simulationFunctionsBody(Tpl.emptyTxt, i_simCode);
         str_1 = Tpl.textString(i_fbody);
         txt = fun_14(txt, str_1, i_fbody);
         txt = Tpl.softNewLine(txt);
@@ -778,13 +776,13 @@ algorithm
         Tpl.Text i_fname;
       equation
         System.tmpTickReset(1);
-        i_fname = underscorePath(emptyTxt, i_name);
-        i_retType = fun_24(emptyTxt, i_outVars);
-        i_retVar = fun_25(emptyTxt, i_outVars, i_simCode);
-        i_varInits = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(1, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_fname = underscorePath(Tpl.emptyTxt, i_name);
+        i_retType = fun_24(Tpl.emptyTxt, i_outVars);
+        i_retVar = fun_25(Tpl.emptyTxt, i_outVars, i_simCode);
+        i_varInits = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(1, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_varInits = lm_26(i_varInits, i_variableDeclarations, i_simCode);
         i_varInits = Tpl.popIter(i_varInits);
-        i_bodyPart = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_bodyPart = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_bodyPart = lm_27(i_bodyPart, i_body, i_simCode);
         i_bodyPart = Tpl.popIter(i_bodyPart);
         txt = Tpl.writeText(txt, i_retType);
@@ -961,9 +959,9 @@ algorithm
         Tpl.Text i_preDimsExp;
         Tpl.Text i_varName;
       equation
-        i_varName = crefStr(emptyTxt, i_var_name, i_simCode);
-        i_preDimsExp = emptyTxt;
-        i_instDimsInit = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_varName = crefStr(Tpl.emptyTxt, i_var_name, i_simCode);
+        i_preDimsExp = Tpl.emptyTxt;
+        i_instDimsInit = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_instDimsInit, i_preDimsExp) = lm_31(i_instDimsInit, i_var_instDims, i_simCode, i_preDimsExp);
         i_instDimsInit = Tpl.popIter(i_instDimsInit);
         txt = Tpl.writeText(txt, i_preDimsExp);
@@ -1871,14 +1869,14 @@ algorithm
                                     "private static readonly SimVarInfo[] VariableInfosStatic = new[] {\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
-        txt_0 = varInfos(emptyTxt, "State", i_vars_stateVars, false, i_simCode);
-        txt_1 = varInfos(emptyTxt, "StateDer", i_vars_derivativeVars, false, i_simCode);
-        txt_2 = varInfos(emptyTxt, "Algebraic", i_vars_algVars, false, i_simCode);
-        txt_3 = varInfos(emptyTxt, "AlgebraicInt", i_vars_intAlgVars, false, i_simCode);
-        txt_4 = varInfos(emptyTxt, "AlgebraicBool", i_vars_boolAlgVars, false, i_simCode);
-        txt_5 = varInfos(emptyTxt, "Parameter", i_vars_paramVars, true, i_simCode);
-        txt_6 = varInfos(emptyTxt, "ParameterInt", i_vars_intParamVars, true, i_simCode);
-        txt_7 = varInfos(emptyTxt, "ParameterBool", i_vars_boolParamVars, true, i_simCode);
+        txt_0 = varInfos(Tpl.emptyTxt, "State", i_vars_stateVars, false, i_simCode);
+        txt_1 = varInfos(Tpl.emptyTxt, "StateDer", i_vars_derivativeVars, false, i_simCode);
+        txt_2 = varInfos(Tpl.emptyTxt, "Algebraic", i_vars_algVars, false, i_simCode);
+        txt_3 = varInfos(Tpl.emptyTxt, "AlgebraicInt", i_vars_intAlgVars, false, i_simCode);
+        txt_4 = varInfos(Tpl.emptyTxt, "AlgebraicBool", i_vars_boolAlgVars, false, i_simCode);
+        txt_5 = varInfos(Tpl.emptyTxt, "Parameter", i_vars_paramVars, true, i_simCode);
+        txt_6 = varInfos(Tpl.emptyTxt, "ParameterInt", i_vars_intParamVars, true, i_simCode);
+        txt_7 = varInfos(Tpl.emptyTxt, "ParameterBool", i_vars_boolParamVars, true, i_simCode);
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING_LIST({
                                                                      ",\n",
                                                                      "\n"
@@ -1903,14 +1901,14 @@ algorithm
                                     "private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NYI +NYB + NP + NPI + NPB] {\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
-        txt_8 = fun_47(emptyTxt, i_vars_stateVars, i_simCode);
-        txt_9 = fun_48(emptyTxt, i_vars_derivativeVars, i_simCode);
-        txt_10 = fun_49(emptyTxt, i_vars_algVars, i_simCode);
-        txt_11 = fun_50(emptyTxt, i_vars_intAlgVars, i_simCode);
-        txt_12 = fun_51(emptyTxt, i_vars_boolAlgVars, i_simCode);
-        txt_13 = fun_52(emptyTxt, i_vars_paramVars, i_simCode);
-        txt_14 = fun_53(emptyTxt, i_vars_intParamVars, i_simCode);
-        txt_15 = fun_54(emptyTxt, i_vars_boolParamVars, i_simCode);
+        txt_8 = fun_47(Tpl.emptyTxt, i_vars_stateVars, i_simCode);
+        txt_9 = fun_48(Tpl.emptyTxt, i_vars_derivativeVars, i_simCode);
+        txt_10 = fun_49(Tpl.emptyTxt, i_vars_algVars, i_simCode);
+        txt_11 = fun_50(Tpl.emptyTxt, i_vars_intAlgVars, i_simCode);
+        txt_12 = fun_51(Tpl.emptyTxt, i_vars_boolAlgVars, i_simCode);
+        txt_13 = fun_52(Tpl.emptyTxt, i_vars_paramVars, i_simCode);
+        txt_14 = fun_53(Tpl.emptyTxt, i_vars_intParamVars, i_simCode);
+        txt_15 = fun_54(Tpl.emptyTxt, i_vars_boolParamVars, i_simCode);
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = smf_55(txt, txt_8);
         txt = smf_56(txt, txt_9);
@@ -2244,8 +2242,8 @@ algorithm
         Tpl.Text txt_1;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (txt_1, i_preExp) = daeExp(emptyTxt, i_v, SimCode.contextOther, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (txt_1, i_preExp) = daeExp(Tpl.emptyTxt, i_v, SimCode.contextOther, i_preExp, i_simCode);
         str_2 = Tpl.textString(txt_1);
         txt = fun_67(txt, str_2, i_simCode, i_sv_name, i_sv_index, i_arrName);
       then txt;
@@ -3074,8 +3072,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("helpVars["));
@@ -3385,9 +3383,9 @@ algorithm
         Tpl.Text i_e1;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_e1, i_preExp) = daeExp(emptyTxt, i_exp1, SimCode.contextOther, i_preExp, i_simCode);
-        (i_e2, i_preExp) = daeExp(emptyTxt, i_exp2, SimCode.contextOther, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_e1, i_preExp) = daeExp(Tpl.emptyTxt, i_exp1, SimCode.contextOther, i_preExp, i_simCode);
+        (i_e2, i_preExp) = daeExp(Tpl.emptyTxt, i_exp2, SimCode.contextOther, i_preExp, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"));
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("var _zen = zeroCrossingEnabled["));
@@ -3421,9 +3419,9 @@ algorithm
         Tpl.Text i_eStart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_eStart, i_preExp) = daeExp(emptyTxt, i_start, SimCode.contextOther, i_preExp, i_simCode);
-        (i_eInterval, i_preExp) = daeExp(emptyTxt, i_interval, SimCode.contextOther, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_eStart, i_preExp) = daeExp(Tpl.emptyTxt, i_start, SimCode.contextOther, i_preExp, i_simCode);
+        (i_eInterval, i_preExp) = daeExp(Tpl.emptyTxt, i_interval, SimCode.contextOther, i_preExp, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("{"));
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("var _zen = zeroCrossingEnabled["));
@@ -3557,8 +3555,8 @@ algorithm
         Tpl.Text i_valueExp;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_valueExp, i_preExp) = daeExp(emptyTxt, i_value, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_valueExp, i_preExp) = daeExp(Tpl.emptyTxt, i_value, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = cref(txt, i_stateVar, i_simCode);
@@ -3714,8 +3712,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_weq_right, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_weq_right, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
         txt = preCref(txt, i_weq_left, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = cref(txt, i_weq_left, i_simCode);
@@ -3947,8 +3945,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, SimCode.contextSimulationNonDiscrete, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, SimCode.contextSimulationNonDiscrete, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("initialResiduals[_i++] = "));
@@ -4055,8 +4053,8 @@ algorithm
         Tpl.Text i_preExp;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, SimCode.contextSimulationDiscrete, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("res["));
@@ -4430,7 +4428,7 @@ protected
   Tpl.Text txt_0;
 algorithm
   (out_txt, out_i_preExp) := daeExp(txt, i_exp, i_context, i_preExp, i_simCode);
-  txt_0 := expTypeFromExp(emptyTxt, i_exp);
+  txt_0 := expTypeFromExp(Tpl.emptyTxt, i_exp);
   str_1 := Tpl.textString(txt_0);
   out_txt := fun_121(out_txt, str_1);
 end daeExpToReal;
@@ -4477,8 +4475,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExpToReal(emptyTxt, i_eq_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExpToReal(Tpl.emptyTxt, i_eq_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeText(txt, i_aname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
@@ -4555,8 +4553,8 @@ algorithm
         Tpl.Text i_preExp;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExpToReal(emptyTxt, i_it, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExpToReal(Tpl.emptyTxt, i_it, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeText(txt, i_bname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
@@ -4971,7 +4969,7 @@ algorithm
         DAE.Exp i_e;
         Tpl.Text i_hInit;
       equation
-        (i_hInit, i_preExp) = daeExp(emptyTxt, i_e, i_context, i_preExp, i_simCode);
+        (i_hInit, i_preExp) = daeExp(Tpl.emptyTxt, i_e, i_context, i_preExp, i_simCode);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("H["));
         i_preExp = Tpl.writeStr(i_preExp, intString(i_hidx));
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("] = "));
@@ -5026,8 +5024,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExpToReal(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExpToReal(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = cref(txt, i_cref, i_simCode);
@@ -5069,12 +5067,12 @@ algorithm
         Tpl.Text i_uid;
       equation
         ret_1 = System.tmpTick();
-        i_uid = Tpl.writeStr(emptyTxt, intString(ret_1));
+        i_uid = Tpl.writeStr(Tpl.emptyTxt, intString(ret_1));
         ret_3 = listLength(i_vars);
-        i_size = Tpl.writeStr(emptyTxt, intString(ret_3));
-        i_aname = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("A"));
+        i_size = Tpl.writeStr(Tpl.emptyTxt, intString(ret_3));
+        i_aname = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("A"));
         i_aname = Tpl.writeText(i_aname, i_uid);
-        i_bname = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("b"));
+        i_bname = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("b"));
         i_bname = Tpl.writeText(i_bname, i_uid);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("var "));
         txt = Tpl.writeText(txt, i_aname);
@@ -5135,14 +5133,14 @@ algorithm
         Tpl.Text i_uid;
       equation
         ret_1 = System.tmpTick();
-        i_uid = Tpl.writeStr(emptyTxt, intString(ret_1));
-        i_contEqs = equation_(emptyTxt, i_cont, i_context, i_simCode);
+        i_uid = Tpl.writeStr(Tpl.emptyTxt, intString(ret_1));
+        i_contEqs = equation_(Tpl.emptyTxt, i_cont, i_context, i_simCode);
         ret_4 = listLength(i_discVars);
-        i_numDiscVarsStr = Tpl.writeStr(emptyTxt, intString(ret_4));
+        i_numDiscVarsStr = Tpl.writeStr(Tpl.emptyTxt, intString(ret_4));
         ret_6 = listLength(i_values);
-        i_valuesLenStr = Tpl.writeStr(emptyTxt, intString(ret_6));
-        i_preDisc = emptyTxt;
-        i_discLoc2 = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_valuesLenStr = Tpl.writeStr(Tpl.emptyTxt, intString(ret_6));
+        i_preDisc = Tpl.emptyTxt;
+        i_discLoc2 = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_discLoc2, i_preDisc) = lm_127(i_discLoc2, i_discEqs, i_simCode, i_preDisc, i_context);
         i_discLoc2 = Tpl.popIter(i_discLoc2);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("// *** mixed_equation_system("));
@@ -5261,12 +5259,12 @@ algorithm
         Tpl.Text i_helpIf;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        i_helpIf = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" || ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_preExp = Tpl.emptyTxt;
+        i_helpIf = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" || ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_helpIf, i_preExp) = lm_132(i_helpIf, i_conditions, i_simCode, i_preExp, i_context);
         i_helpIf = Tpl.popIter(i_helpIf);
-        i_preExp2 = emptyTxt;
-        (i_rightExp, i_preExp2) = daeExp(emptyTxt, i_right, i_context, i_preExp2, i_simCode);
+        i_preExp2 = Tpl.emptyTxt;
+        (i_rightExp, i_preExp2) = daeExp(Tpl.emptyTxt, i_right, i_context, i_preExp2, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
@@ -5656,7 +5654,7 @@ algorithm
         DAE.Exp i_exp;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
+        i_preExp = Tpl.emptyTxt;
         (txt, i_preExp) = daeExp(txt, i_exp, SimCode.contextFunction, i_preExp, i_simCode);
       then txt;
 
@@ -5667,7 +5665,7 @@ algorithm
         DAE.Exp i_exp;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
+        i_preExp = Tpl.emptyTxt;
         (txt, i_preExp) = daeExp(txt, i_exp, SimCode.contextFunction, i_preExp, i_simCode);
       then txt;
 
@@ -6015,8 +6013,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_e, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_e, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeText(txt, i_expPart);
@@ -6032,8 +6030,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         (txt, i_preExp) = scalarLhsCref(txt, i_exp1, i_context, i_preExp, i_simCode);
@@ -6053,9 +6051,9 @@ algorithm
         Tpl.Text i_expPart1;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart1, i_preExp) = daeExp(emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
-        (i_expPart2, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart1, i_preExp) = daeExp(Tpl.emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
+        (i_expPart2, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeText(txt, i_expPart1);
@@ -6076,9 +6074,9 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
-        (i_spec, i_preExp) = daeExpCrefRhsIndexSpec(emptyTxt, i_subs, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        (i_spec, i_preExp) = daeExpCrefRhsIndexSpec(Tpl.emptyTxt, i_subs, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeStr(txt, i_componentRef_ident);
@@ -6099,8 +6097,8 @@ algorithm
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("ArrayCopy("));
@@ -6121,8 +6119,8 @@ algorithm
         Tpl.Text i_condExp;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_condExp, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_condExp, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
@@ -6152,9 +6150,9 @@ algorithm
         Tpl.Text i_identTypeShort;
         Tpl.Text i_identType;
       equation
-        i_identType = expType(emptyTxt, i_type__, i_iterIsArray);
-        i_identTypeShort = expTypeShort(emptyTxt, i_type__);
-        i_stmtStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_identType = expType(Tpl.emptyTxt, i_type__, i_iterIsArray);
+        i_identTypeShort = expTypeShort(Tpl.emptyTxt, i_type__);
+        i_stmtStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_stmtStr = lm_150(i_stmtStr, i_statementLst, i_simCode, i_context);
         i_stmtStr = Tpl.popIter(i_stmtStr);
         (txt, i_stmtStr) = algStmtForRange_impl(txt, i_rng, i_iter, Tpl.textString(i_identType), Tpl.textString(i_identTypeShort), i_stmtStr, i_context, i_simCode);
@@ -6180,8 +6178,8 @@ algorithm
         Tpl.Text i_var;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_var, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_var, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("for(;;) {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeText(txt, i_preExp);
@@ -6254,8 +6252,8 @@ algorithm
         Tpl.Text i_stepValue;
         Tpl.Text i_stepVar;
       equation
-        i_stepVar = emptyTxt;
-        (i_stepValue, i_preExp) = daeExp(emptyTxt, i_eo, i_context, i_preExp, i_simCode);
+        i_stepVar = Tpl.emptyTxt;
+        (i_stepValue, i_preExp) = daeExp(Tpl.emptyTxt, i_eo, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         (txt, i_stepVar) = tempDecl(txt, i_type, i_stepVar);
@@ -6372,11 +6370,11 @@ algorithm
         Tpl.Text i_stopVar;
         Tpl.Text i_iterName;
       equation
-        i_iterName = Tpl.writeStr(emptyTxt, i_iterator);
-        i_stopVar = emptyTxt;
-        i_preExp = emptyTxt;
-        (i_startValue, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
-        (i_stopValue, i_preExp) = daeExp(emptyTxt, i_range, i_context, i_preExp, i_simCode);
+        i_iterName = Tpl.writeStr(Tpl.emptyTxt, i_iterator);
+        i_stopVar = Tpl.emptyTxt;
+        i_preExp = Tpl.emptyTxt;
+        (i_startValue, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        (i_stopValue, i_preExp) = daeExp(Tpl.emptyTxt, i_range, i_context, i_preExp, i_simCode);
         (txt, i_stopVar, i_preExp) = fun_153(txt, i_expOption, i_body, i_startValue, i_iterName, i_stopValue, i_stopVar, i_type, i_simCode, i_preExp, i_context);
       then txt;
 
@@ -6532,8 +6530,8 @@ algorithm
         Tpl.Text i_condExp;
         Tpl.Text i_preExp;
       equation
-        i_preExp = emptyTxt;
-        (i_condExp, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        i_preExp = Tpl.emptyTxt;
+        (i_condExp, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("else {\n"));
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
@@ -7242,7 +7240,7 @@ algorithm
         DAE.Exp i_exp;
         Tpl.Text i_expPart;
       equation
-        (i_expPart, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        (i_expPart, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         (txt, i_preExp) = fun_167(txt, i_dim, i_simCode, i_preExp, i_context, i_expPart);
       then (txt, i_preExp);
 
@@ -7342,9 +7340,9 @@ algorithm
         Tpl.Text i_arrName;
       equation
         ret_1 = ComponentReference.crefStripLastSubs(i_cr);
-        i_arrName = contextCref(emptyTxt, ret_1, i_context, i_simCode);
+        i_arrName = contextCref(Tpl.emptyTxt, ret_1, i_context, i_simCode);
         ret_3 = ComponentReference.crefSubs(i_cr);
-        (i_spec, i_preExp) = daeExpCrefRhsIndexSpec(emptyTxt, ret_3, i_context, i_preExp, i_simCode);
+        (i_spec, i_preExp) = daeExpCrefRhsIndexSpec(Tpl.emptyTxt, ret_3, i_context, i_preExp, i_simCode);
         txt = Tpl.writeText(txt, i_arrName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".Array1Spec("));
         txt = Tpl.writeText(txt, i_spec);
@@ -7363,7 +7361,7 @@ algorithm
         Tpl.Text i_arrName;
       equation
         ret_1 = ComponentReference.crefStripLastSubs(i_cr);
-        i_arrName = contextCref(emptyTxt, ret_1, i_context, i_simCode);
+        i_arrName = contextCref(Tpl.emptyTxt, ret_1, i_context, i_simCode);
         txt = Tpl.writeText(txt, i_arrName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         ret_2 = ComponentReference.crefSubs(i_cr);
@@ -7556,7 +7554,7 @@ algorithm
         String str_1;
         Tpl.Text i_box;
       equation
-        (i_box, i_preExp) = daeExpCrefRhsArrayBox(emptyTxt, i_ecr, i_context, i_preExp, i_simCode);
+        (i_box, i_preExp) = daeExpCrefRhsArrayBox(Tpl.emptyTxt, i_ecr, i_context, i_preExp, i_simCode);
         str_1 = Tpl.textString(i_box);
         (txt, i_preExp) = fun_173(txt, str_1, i_box, i_ecr_ty, i_preExp, i_simCode, i_context, i_cr);
       then (txt, i_preExp);
@@ -7713,10 +7711,10 @@ algorithm
         Tpl.Text i_arrType;
         Tpl.Text i_tmpArr;
       equation
-        i_tmpArr = emptyTxt;
+        i_tmpArr = Tpl.emptyTxt;
         ret_2 = listLength(i_dims);
-        i_arrType = expTypeArray(emptyTxt, i_aty, ret_2);
-        i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_arrType = expTypeArray(Tpl.emptyTxt, i_aty, ret_2);
+        i_dimsValuesStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_dimsValuesStr = lm_175(i_dimsValuesStr, i_dims);
         i_dimsValuesStr = Tpl.popIter(i_dimsValuesStr);
         ret_4 = SimCode.cref2simvar(i_ecr_componentRef, i_simCode);
@@ -8029,8 +8027,8 @@ algorithm
         Tpl.Text i_baseSub;
         Tpl.Text i_constSum;
       equation
-        i_constSum = Tpl.writeStr(emptyTxt, intString(i_index));
-        (i_baseSub, i_constSum, i_preExp) = asubSubsripts(emptyTxt, i_dims, i_subs, i_constSum, i_context, i_preExp, i_simCode);
+        i_constSum = Tpl.writeStr(Tpl.emptyTxt, intString(i_index));
+        (i_baseSub, i_constSum, i_preExp) = asubSubsripts(Tpl.emptyTxt, i_dims, i_subs, i_constSum, i_context, i_preExp, i_simCode);
         txt = representationArrayName(txt, i_varKind, i_type__);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         txt = Tpl.writeText(txt, i_constSum);
@@ -8358,7 +8356,7 @@ algorithm
         list<DAE.Dimension> i_dimsRest;
         Tpl.Text i_ds;
       equation
-        i_ds = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING("*")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_ds = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING("*")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_ds = lm_188(i_ds, i_dimsRest);
         i_ds = Tpl.popIter(i_ds);
         i_constSum = Tpl.writeTok(i_constSum, Tpl.ST_STRING("-("));
@@ -8411,7 +8409,7 @@ algorithm
         list<DAE.Dimension> i_dimsRest;
         Tpl.Text i_subStr;
       equation
-        (i_subStr, i_preExp) = daeExp(emptyTxt, i_s, i_context, i_preExp, i_simCode);
+        (i_subStr, i_preExp) = daeExp(Tpl.emptyTxt, i_s, i_context, i_preExp, i_simCode);
         (txt, i_preExp, i_constSum) = fun_189(txt, i_dimsRest, i_simCode, i_preExp, i_context, i_subsRest, i_subStr, i_constSum);
       then (txt, i_constSum, i_preExp);
 
@@ -8563,8 +8561,8 @@ protected
   Tpl.Text i_arrayType;
 algorithm
   ret_1 := listLength(i_subs);
-  i_arrayType := expTypeArray(emptyTxt, i_ty, ret_1);
-  i_dimsValuesStr := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  i_arrayType := expTypeArray(Tpl.emptyTxt, i_ty, ret_1);
+  i_dimsValuesStr := Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   (i_dimsValuesStr, out_i_preExp) := lm_193(i_dimsValuesStr, i_subs, i_simCode, i_preExp, i_context);
   i_dimsValuesStr := Tpl.popIter(i_dimsValuesStr);
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("(*ASR"));
@@ -8701,8 +8699,8 @@ protected
   Tpl.Text i_e2;
   Tpl.Text i_e1;
 algorithm
-  (i_e1, out_i_preExp) := daeExp(emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
-  (i_e2, out_i_preExp) := daeExp(emptyTxt, i_exp2, i_context, out_i_preExp, i_simCode);
+  (i_e1, out_i_preExp) := daeExp(Tpl.emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
+  (i_e2, out_i_preExp) := daeExp(Tpl.emptyTxt, i_exp2, i_context, out_i_preExp, i_simCode);
   out_txt := fun_195(txt, i_it, i_e2, i_e1);
 end daeExpBinary;
 
@@ -8782,7 +8780,7 @@ public function daeExpUnary
 protected
   Tpl.Text i_e;
 algorithm
-  (i_e, out_i_preExp) := daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+  (i_e, out_i_preExp) := daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
   out_txt := fun_197(txt, i_it, i_e);
 end daeExpUnary;
 
@@ -9147,9 +9145,9 @@ protected
   Tpl.Text i_e2;
   Tpl.Text i_e1;
 algorithm
-  (i_e1, out_i_preExp) := daeExp(emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
-  (i_e2, out_i_preExp) := daeExp(emptyTxt, i_exp2, i_context, out_i_preExp, i_simCode);
-  (txt_2, i_e1, i_e2, out_i_preExp) := daeExpSimRelation(emptyTxt, i_context, i_op, i_e1, i_e2, out_i_preExp);
+  (i_e1, out_i_preExp) := daeExp(Tpl.emptyTxt, i_exp1, i_context, i_preExp, i_simCode);
+  (i_e2, out_i_preExp) := daeExp(Tpl.emptyTxt, i_exp2, i_context, out_i_preExp, i_simCode);
+  (txt_2, i_e1, i_e2, out_i_preExp) := daeExpSimRelation(Tpl.emptyTxt, i_context, i_op, i_e1, i_e2, out_i_preExp);
   str_3 := Tpl.textString(txt_2);
   out_txt := fun_200(txt, str_3, i_e2, i_e1, i_op);
 end daeExpRelation;
@@ -9275,7 +9273,7 @@ public function SimRelationSimple
 protected
   Tpl.Text i_res;
 algorithm
-  i_res := emptyTxt;
+  i_res := Tpl.emptyTxt;
   out_i_preExp := Tpl.writeTok(i_preExp, Tpl.ST_STRING("// RELATION( "));
   out_i_preExp := Tpl.writeText(out_i_preExp, i_e1);
   out_i_preExp := Tpl.writeStr(out_i_preExp, i_op);
@@ -9328,7 +9326,7 @@ public function SimRelationEqual
 protected
   Tpl.Text i_res;
 algorithm
-  i_res := emptyTxt;
+  i_res := Tpl.emptyTxt;
   out_i_preExp := Tpl.writeTok(i_preExp, Tpl.ST_STRING("// RELATION( "));
   out_i_preExp := Tpl.writeText(out_i_preExp, i_e1);
   out_i_preExp := Tpl.writeStr(out_i_preExp, i_op);
@@ -9396,13 +9394,13 @@ protected
   Tpl.Text i_resVar;
   Tpl.Text i_condExp;
 algorithm
-  (i_condExp, out_i_preExp) := daeExp(emptyTxt, i_cond, i_context, i_preExp, i_simCode);
-  i_resVar := emptyTxt;
-  i_preExpThen := emptyTxt;
-  (i_eThen, i_preExpThen) := daeExp(emptyTxt, i_then__, i_context, i_preExpThen, i_simCode);
-  i_preExpElse := emptyTxt;
-  (i_eElse, i_preExpElse) := daeExp(emptyTxt, i_else__, i_context, i_preExpElse, i_simCode);
-  txt_6 := expTypeFromExpArrayIf(emptyTxt, i_then__);
+  (i_condExp, out_i_preExp) := daeExp(Tpl.emptyTxt, i_cond, i_context, i_preExp, i_simCode);
+  i_resVar := Tpl.emptyTxt;
+  i_preExpThen := Tpl.emptyTxt;
+  (i_eThen, i_preExpThen) := daeExp(Tpl.emptyTxt, i_then__, i_context, i_preExpThen, i_simCode);
+  i_preExpElse := Tpl.emptyTxt;
+  (i_eElse, i_preExpElse) := daeExp(Tpl.emptyTxt, i_else__, i_context, i_preExpElse, i_simCode);
+  txt_6 := expTypeFromExpArrayIf(Tpl.emptyTxt, i_then__);
   (out_i_preExp, i_resVar) := tempDecl(out_i_preExp, Tpl.textString(txt_6), i_resVar);
   out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING_LIST({
                                                  ";\n",
@@ -9482,7 +9480,7 @@ algorithm
         DAE.Exp i_e2;
         Tpl.Text i_var2;
       equation
-        (i_var2, i_preExp) = daeExp(emptyTxt, i_e2, i_context, i_preExp, i_simCode);
+        (i_var2, i_preExp) = daeExp(Tpl.emptyTxt, i_e2, i_context, i_preExp, i_simCode);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
         txt = Tpl.writeText(txt, i_var2);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("!=0.0 ? "));
@@ -9687,9 +9685,9 @@ algorithm
         Tpl.Text i_msg;
         Tpl.Text i_var1;
       equation
-        (i_var1, i_preExp) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_simCode);
+        (i_var1, i_preExp) = daeExp(Tpl.emptyTxt, i_e1, i_context, i_preExp, i_simCode);
         ret_2 = Util.escapeModelicaStringToCString(i_string);
-        i_msg = Tpl.writeStr(emptyTxt, ret_2);
+        i_msg = Tpl.writeStr(Tpl.emptyTxt, ret_2);
         (txt, i_preExp) = fun_207(txt, i_e2, i_msg, i_simCode, i_preExp, i_context, i_var1);
       then (txt, i_preExp);
 
@@ -9827,7 +9825,7 @@ algorithm
         list<DAE.Exp> i_expLst;
         Tpl.Text i_argStr;
       equation
-        i_argStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_argStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_argStr, i_preExp) = lm_209(i_argStr, i_expLst, i_simCode, i_preExp, i_context);
         i_argStr = Tpl.popIter(i_argStr);
         i_preExp = underscorePrefix(i_preExp, i_builtin);
@@ -9851,10 +9849,10 @@ algorithm
         Tpl.Text i_funName;
         Tpl.Text i_argStr;
       equation
-        i_argStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_argStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_argStr, i_preExp) = lm_210(i_argStr, i_expLst, i_simCode, i_preExp, i_context);
         i_argStr = Tpl.popIter(i_argStr);
-        i_funName = underscorePath(emptyTxt, i_path);
+        i_funName = underscorePath(Tpl.emptyTxt, i_path);
         txt = underscorePrefix(txt, i_builtin);
         txt = Tpl.writeText(txt, i_funName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
@@ -9974,8 +9972,8 @@ algorithm
         Tpl.Text i_params;
         Tpl.Text i_arrayVar;
       equation
-        i_arrayVar = emptyTxt;
-        i_params = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_arrayVar = Tpl.emptyTxt;
+        i_params = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_params, i_preExp) = lm_213(i_params, i_a_array, i_simCode, i_preExp, i_context);
         i_params = Tpl.popIter(i_params);
         (i_preExp, i_arrayVar) = tempDecl(i_preExp, "var", i_arrayVar);
@@ -10248,7 +10246,7 @@ algorithm
         DAE.ExpType i_ty;
         Tpl.Text i_tmp;
       equation
-        i_tmp = emptyTxt;
+        i_tmp = Tpl.emptyTxt;
         (i_preExp, i_tmp) = tempDecl(i_preExp, "var", i_tmp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = new "));
         i_preExp = expTypeArray(i_preExp, i_ty, 2);
@@ -10266,7 +10264,7 @@ algorithm
         DAE.ExpType i_ty;
         Tpl.Text i_tmp;
       equation
-        i_tmp = emptyTxt;
+        i_tmp = Tpl.emptyTxt;
         (i_preExp, i_tmp) = tempDecl(i_preExp, "var", i_tmp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = new "));
         i_preExp = expTypeArray(i_preExp, i_ty, 2);
@@ -10290,8 +10288,8 @@ algorithm
         Tpl.Text i_matArr;
         Tpl.Text i_tmp;
       equation
-        i_tmp = emptyTxt;
-        i_matArr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        i_tmp = Tpl.emptyTxt;
+        i_matArr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_matArr, i_preExp) = lm_219(i_matArr, i_m_scalar, i_simCode, i_preExp, i_context);
         i_matArr = Tpl.popIter(i_matArr);
         (i_preExp, i_tmp) = tempDecl(i_preExp, "var", i_tmp);
@@ -10408,7 +10406,7 @@ algorithm
         DAE.Exp i_exp;
         Tpl.Text i_expVar;
       equation
-        (i_expVar, i_preExp) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_simCode);
+        (i_expVar, i_preExp) = daeExp(Tpl.emptyTxt, i_exp, i_context, i_preExp, i_simCode);
         txt = fun_222(txt, i_ty, i_expVar);
       then (txt, i_preExp);
 

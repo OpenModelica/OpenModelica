@@ -365,7 +365,7 @@ protected
 
 constant MatchingExp imlicitTxtMExp = BIND_MATCH(imlicitTxt);
 
-constant Ident emptyTxt = "emptyTxt";
+constant Ident emptyTxt = "Tpl.emptyTxt";
 constant Ident errorIdent = "!error!";
 
 constant Tpl.IterOptions defaultIterOptions 

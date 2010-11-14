@@ -1,7 +1,5 @@
 package TplCodegen
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import TplAbsyn;
@@ -63,8 +61,6 @@ algorithm
         txt = pathIdent(txt, i_name);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\n",
-                                    "protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});\n",
                                     "\n",
                                     "public import Tpl;\n",
                                     "\n"
