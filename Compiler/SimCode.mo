@@ -2611,7 +2611,7 @@ algorithm
   simWhenClause := matchcontinue (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
     local
       DAE.Exp cond;
-      input list<BackendDAE.WhenClause> wc;
+      list<BackendDAE.WhenClause> wc;
       list<BackendDAE.WhenOperator> reinits;
       list<DAE.ComponentRef> conditionVars;
       Integer index_;

@@ -179,7 +179,7 @@ protected function removeSimpleEquations2
     output DAE.Exp e1;
     output DAE.Exp e2;
     output DAE.ElementSource source;
-  end FuncTypeSimpleEquation;  
+  end FuncTypeSimpleEquation;
 algorithm
   (outEqns,outSimpleEqns,outMvars,outRepl,outExtendLst,outReplc) := matchcontinue (eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc)
     local
@@ -205,7 +205,7 @@ algorithm
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);      
+      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
     then

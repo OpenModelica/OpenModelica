@@ -4203,18 +4203,20 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path);
-        (cache,paths) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        // (cache,paths) = cevalGenerateFunctionDAEs(cache, path, env, {});
         // print(Absyn.pathString(path) +& ": " +& Util.stringDelimitList(Util.listMap(paths, Absyn.pathString), ", ") +& "\n");
-        paths = Util.listSetDifference(paths, {path});
+        // paths = Util.listSetDifference(paths, {path});
 
         // The list of functions is not ordered, so we need to filter out the main function...
         funcs = Env.getFunctionTree(cache);
         // print("Avilable functions: " +& DAEDump.dumpFunctionNamesStr(funcs) +& "\n");
         mainFunction = DAEUtil.getNamedFunction(path, funcs);
-        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
-        uniontypePaths = DAEUtil.getUniontypePaths(d, {});
+        // d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
+        d = DAEUtil.getFunctionList(funcs);
+        d = Util.listSetDifference(d, {mainFunction});
+        uniontypePaths = DAEUtil.getUniontypePaths(Util.if_(RTOpts.debugFlag("cheat"),{},d), {});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
-
+        
         SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
         compileModel(pathstr, {}, "", "", "");
       then

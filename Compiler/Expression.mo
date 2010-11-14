@@ -5796,7 +5796,7 @@ public function arrayContainWholeDimension
 algorithm
   wholedim := matchcontinue(inDim)
     local
-      input list<DAE.Dimension> rest_dims;
+      list<DAE.Dimension> rest_dims;
     case ({}) then false;
     case (DAE.DIM_UNKNOWN() :: rest_dims) then true;
     case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);

@@ -4372,9 +4372,13 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
           daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
         ;separator=", ")
-      <<
-      (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-      >>
+      match arrayType
+        case "metatype_array" then
+          'arrayGet(<%arrName%>,<%dimsValuesStr%>)'
+        else
+          <<
+          (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+          >>
     else
       // The array subscript denotes a slice
       let arrName = contextArrayCref(cr, context)
@@ -5180,9 +5184,13 @@ template arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context cont
   let dimsValuesStr = (subs |> exp =>
       daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     ;separator=", ")
-  <<
-  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-  >>
+  match arrayType
+    case "metatype_array" then
+      'arrayGet(<%arrName%>,<%dimsValuesStr%>)'
+    else
+      <<
+      (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+      >>
 end arrayScalarRhs;
 
 template daeExpList(Exp exp, Context context, Text &preExp /*BUFP*/,

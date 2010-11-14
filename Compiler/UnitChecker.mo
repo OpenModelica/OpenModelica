@@ -818,7 +818,7 @@ protected function mulSpecUnitWithNorm
 algorithm
   suout := matchcontinue(suin,normunit,name,loc,expo)
     local
-      input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
       list<MMath.Rational> unitvec;
       UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
     
