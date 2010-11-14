@@ -42,6 +42,7 @@ extern void Print_printErrorBuf(const char* str)
 
 extern void Print_printBuf(const char* str)
 {
+  //fprintf(stderr, "Print_writeBuf %s\n", str);
   if (PrintImpl__printBuf(str))
     throw 1;
 }
@@ -91,6 +92,13 @@ extern void Print_printBufSpace(int numSpace)
 extern void Print_printBufNewLine(void)
 {
   if (PrintImpl__printBufNewLine())
+    throw 1;
+}
+
+extern void Print_writeBuf(const char* filename)
+{
+  //fprintf(stderr, "Print_writeBuf %s: %s\n", filename, buf);
+  if (PrintImpl__writeBuf(filename))
     throw 1;
 }
 

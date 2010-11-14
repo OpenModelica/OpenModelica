@@ -79,4 +79,8 @@ extern int RTOpts_getNoSimplify() {
   return noSimplify;
 }
 
+extern int RTOpts_acceptMetaModelicaGrammar() {
+  return acceptedGrammar == GRAMMAR_METAMODELICA;
+}
+
 }

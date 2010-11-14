@@ -73,4 +73,28 @@ extern const char* System_stringFindString(const char* str, const char* searchSt
   return strdup(found);
 }
 
+extern void System_realtimeTick(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) throw 1;
+  rt_tick(ix);
+}
+
+extern double System_realtimeTock(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) throw 1;
+  return rt_tock(ix);
+}
+
+static modelica_integer tmp_tick_no = 0;
+
+extern int System_tmpTick()
+{
+  return tmp_tick_no++;
+}
+
+extern void System_tmpTickReset(int start)
+{
+  tmp_tick_no = start;
+}
+
 }

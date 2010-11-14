@@ -527,13 +527,13 @@ end getHasInnerOuterDefinitions;
 
 public function tmpTick "returns a tick that can be reset"
 output Integer tickNo;
-  external "C" annotation(Library = "omcruntime");
+  external "C" tickNo = System_tmpTick() annotation(Library = "omcruntime");
 end tmpTick;
 
 public function tmpTickReset "resets the tick so it restarts on start
 "
 input Integer start;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_tmpTickReset(start) annotation(Library = "omcruntime");
 end tmpTickReset;
 
 public function getSendDataLibs
@@ -562,7 +562,7 @@ public function realtimeTick
 "Tock returns the time since the last tock; undefined if tick was never called.
 The clock index is 0-15. The function fails if the number is out of range."
   input Integer clockIndex;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_realtimeTick(clockIndex) annotation(Library = "omcruntime");
 end realtimeTick;
 
 public function realtimeTock
@@ -570,7 +570,7 @@ public function realtimeTock
 The clock index is 0-15. The function fails if the number is out of range."
   input Integer clockIndex;
   output Real outTime;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outTime = System_realtimeTock(clockIndex) annotation(Library = "omcruntime");
 end realtimeTock;
 
 function resetTimer
