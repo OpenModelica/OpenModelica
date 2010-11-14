@@ -595,7 +595,7 @@ algorithm
 
     case (cache,env,e,_,_,_,pre,info)
       equation
-        ///* FAILTRACE REMOVE
+        /* FAILTRACE REMOVE
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabExp failed: ");
 
@@ -606,7 +606,7 @@ algorithm
         //Debug.traceln("\n env : ");
         //Debug.traceln(Env.printEnvStr(env));
         //Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
-        //*/
+        */
       then
         fail();
   end matchcontinue;

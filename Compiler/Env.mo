@@ -1326,7 +1326,6 @@ algorithm
 
     case(inCache,id,env)
       equation
-
         SOME(path) = getEnvPath(env);
         outCache = cacheAdd(path,inCache,env);
       then outCache;
@@ -1335,8 +1334,8 @@ algorithm
       equation
         // this should be placed in the global environment
         // how do we do that??
-        Debug.fprintln("env", "<<<< Env.addCachedEnv - failed to add env to cache for: " +&
-            printEnvPathStr(env) +& " [" +& id +& "]");
+        true = RTOpts.debugFlag("env");
+        Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
       then inCache;
 
   end matchcontinue;
