@@ -97,4 +97,54 @@ extern void System_tmpTickReset(int start)
   tmp_tick_no = start;
 }
 
+extern const char* System_getSendDataLibs()
+{
+  return LDFLAGS_SENDDATA;
+}
+
+extern const char* System_getCCompiler()
+{
+  return strdup(cc);
+}
+
+extern const char* System_getCXXCompiler()
+{
+  return strdup(cxx);
+}
+
+extern const char* System_getLinker()
+{
+  return strdup(linker);
+}
+
+extern const char* System_getLDFlags()
+{
+  return strdup(ldflags);
+}
+
+extern const char* System_getCFlags()
+{
+  return strdup(cflags);
+}
+
+extern const char* System_getExeExt()
+{
+  return CONFIG_EXE_EXT;
+}
+
+extern const char* System_getDllExt()
+{
+  return CONFIG_DLL_EXT;
+}
+
+extern const char* System_os()
+{
+  return CONFIG_OS;
+}
+
+extern const char* System_trim(const char* str, const char* chars_to_remove)
+{
+  return SystemImpl__trim(str,chars_to_remove);
+}
+
 }

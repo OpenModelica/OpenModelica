@@ -88,7 +88,7 @@ end setInstallationDirectoryPath;
 public function getInstallationDirectoryPath
   output String outString;
 
-  external "C" ;
+  external "C"  outString=Settings_getInstallationDirectoryPath() annotation(Library = "omcruntime");
 end getInstallationDirectoryPath;
 
 public function setPlotCommand

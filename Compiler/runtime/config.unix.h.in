@@ -1,3 +1,26 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
 #define LDFLAGS_SENDDATA "@LIBSENDDATA_LDFLAGS@ -lpthread"
+#define CONFIG_EXE_EXT ""
+#define CONFIG_DLL_EXT ".so"
+
+#if defined(__sparc__)
+  #define DEFAULT_LINKER "g++ -G"
+#elif defined(__APPLE_CC__)
+  #define DEFAULT_LINKER "g++ -single_module -dynamiclib -flat_namespace"
+#elif defined(__x86_64__)
+  /* -fPIC needed on x86_64! */
+  #define DEFAULT_LINKER "g++ -shared -export-dynamic -fPIC"
+#else
+  #define DEFAULT_LINKER "g++ -shared -export-dynamic"
+#endif
+
+#ifdef __APPLE_CC__
+  #define DEFAULT_CFLAGS "-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define CONFIG_OS "OSX"
+#else
+  #define DEFAULT_CFLAGS "-march=native -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define CONFIG_OS "linux"
+#endif
+
+#define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"

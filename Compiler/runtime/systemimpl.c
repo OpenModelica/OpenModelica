@@ -89,6 +89,76 @@ extern "C" {
 #include "rtopts.h"
 #include "errorext.h"
 
+static char *cc     = (char*) DEFAULT_CC;
+static char *cxx    = (char*) DEFAULT_CXX;
+static char *linker = (char*) DEFAULT_LINKER;
+static char *cflags = (char*) DEFAULT_CFLAGS;
+static char *ldflags= (char*) DEFAULT_LDFLAGS;
+
+/*
+ * Common implementations
+ */
+
+static int set_cc(char *str)
+{
+  size_t len = strlen(str);
+  if (cc != NULL && cc != DEFAULT_CC) {
+    free(cc);
+  }
+  cc = (char*)malloc(len+1);
+  if (cc == NULL) return -1;
+  memcpy(cc,str,len+1);
+  return 0;
+}
+
+static int set_cxx(char *str)
+{
+  size_t len = strlen(str);
+  if (cxx != NULL && cxx != DEFAULT_CXX) {
+    free(cxx);
+  }
+  cxx = (char*)malloc(len+1);
+  if (cxx == NULL) return -1;
+  memcpy(cxx,str,len+1);
+  return 0;
+}
+
+static int set_linker(char *str)
+{
+  size_t len = strlen(str);
+  if (linker != NULL && linker != DEFAULT_LINKER) {
+    free(linker);
+  }
+  linker = (char*)malloc(len+1);
+  if (linker == NULL) return -1;
+  memcpy(linker,str,len+1);
+  return 0;
+}
+
+static int set_cflags(char *str)
+{
+  size_t len = strlen(str);
+  if (cflags != NULL && cflags != DEFAULT_CFLAGS) {
+    free(cflags);
+  }
+  cflags = (char*)malloc(len+1);
+  if (cflags == NULL) return -1;
+  memcpy(cflags,str,len+1);
+  return 0;
+}
+
+static int set_ldflags(char *str)
+{
+  size_t len = strlen(str);
+  if (ldflags != NULL && ldflags != DEFAULT_LDFLAGS) {
+    free(ldflags);
+  }
+  ldflags = (char*)malloc(len+1);
+  if (ldflags == NULL) return -1;
+  memcpy(ldflags,str,len+1);
+  return 0;
+}
+
 static modelica_integer SystemImpl__regularFileExists(const char* str)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -193,6 +263,49 @@ static modelica_integer SystemImpl__writeFile(const char* filename, const char* 
   fflush(file);
   fclose(file);
   return 0;
+}
+
+static int str_contain_char( const char* chars, const char chr)
+{
+  int length_of_chars = strlen(chars);
+  int i;
+  for(i = 0; i < length_of_chars; i++)
+    {
+      if(chr == chars[i])
+        return 1;
+    }
+  return 0;
+}
+
+// Trim left (step -1) or right (step +1)
+static const char* trimStep(const char* str, const char* chars_to_be_removed, int step)
+{
+  while ( *str && str_contain_char(chars_to_be_removed,*str) ) {
+    str += step;
+  }
+  return str;
+}
+
+static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
+{
+  int length;
+  char *res;
+  const char *str2;
+  
+  //fprintf(stderr, "trimming '%s' with '%s'\n", str, chars_to_be_removed);
+  str = trimStep(str, chars_to_be_removed, 1);
+  //fprintf(stderr, "trim left '%s'\n", str);
+  length = strlen(str);
+  if (length) // It is safe to go backwards in the string because we know there is at least 1 char that stops it
+    str2 = trimStep(str+length, chars_to_be_removed, -1);
+  else
+    str2 = str;
+  //fprintf(stderr, "trim right '%s'\n", str2);
+  length = str2 - str;
+  res = (char*) malloc(length+1);
+  strncpy(res,str,length);
+  res[length] = '\0';
+  return res;
 }
 
 #ifdef __cplusplus

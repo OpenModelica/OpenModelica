@@ -28,36 +28,16 @@
  *
  */
 
+#include "settingsimpl.c"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "config.h"
+extern "C" {
 
-/* malloc.h is in sys in Mac OS */
-#ifdef __APPLE_CC__
-#include <sys/malloc.h>
-#else /* Linux or Windows here */
-#include <malloc.h>
-#endif
-
-#ifdef WIN32
-#include <Windows.h>
-#endif
-
-char* compileCommand = 0;
-char* compilePath = 0;
-char* tempDirectoryPath = 0;
-char* plotCommand = 0;
-
-int echo = 1; //true
-
-char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
-
-// Do not free or modift the returned variable. It's part of the environment!
-static const char* SettingsImpl__getInstallationDirectoryPath() {
-  const char *path = getenv("OPENMODELICAHOME");
+const char* Settings_getInstallationDirectoryPath()
+{
+  const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
-    return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
-  return path;
+    throw 1;
+  return strdup(path);
+}
+
 }

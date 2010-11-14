@@ -51,12 +51,6 @@ static modelica_integer last_ptr_index = -1;
 /* use this one to output messages depending on flags! */
 int check_debug_flag(char const* strdata);
 
-static char * cc=NULL;
-static char * cxx=NULL;
-static char * linker=NULL;
-static char * cflags=NULL;
-static char * ldflags=NULL;
-
 /*
 #if defined(_MSC_VER)
 #define inline __inline
@@ -69,70 +63,6 @@ static inline modelica_integer alloc_ptr();
 static inline void free_ptr(modelica_integer index);
 static void free_library(modelica_ptr_t lib);
 static void free_function(modelica_ptr_t func);
-
-/*
- * Common implementations
- */
-
-static int set_cc(char *str)
-{
-  size_t len = strlen(str);
-  if (cc != NULL) {
-    free(cc);
-  }
-  cc = (char*)malloc(len+1);
-  if (cc == NULL) return -1;
-  memcpy(cc,str,len+1);
-  return 0;
-}
-
-static int set_cxx(char *str)
-{
-  size_t len = strlen(str);
-  if (cxx != NULL) {
-    free(cxx);
-  }
-  cxx = (char*)malloc(len+1);
-  if (cxx == NULL) return -1;
-  memcpy(cxx,str,len+1);
-  return 0;
-}
-
-static int set_linker(char *str)
-{
-  size_t len = strlen(str);
-  if (linker != NULL) {
-    free(linker);
-  }
-  linker = (char*)malloc(len+1);
-  if (linker == NULL) return -1;
-  memcpy(linker,str,len+1);
-  return 0;
-}
-
-static int set_cflags(char *str)
-{
-  size_t len = strlen(str);
-  if (cflags != NULL) {
-    free(cflags);
-  }
-  cflags = (char*)malloc(len+1);
-  if (cflags == NULL) return -1;
-  memcpy(cflags,str,len+1);
-  return 0;
-}
-
-static int set_ldflags(char *str)
-{
-  size_t len = strlen(str);
-  if (ldflags != NULL) {
-    free(ldflags);
-  }
-  ldflags = (char*)malloc(len+1);
-  if (ldflags == NULL) return -1;
-  memcpy(ldflags,str,len+1);
-  return 0;
-}
 
 RML_BEGIN_LABEL(System__regularFileExists)
 {
@@ -264,18 +194,6 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
 }
 RML_END_LABEL
 
-int str_contain_char( const char* chars, const char chr)
-{
-  int length_of_chars = strlen(chars);
-  int i;
-  for(i = 0; i < length_of_chars; i++)
-    {
-      if(chr == chars[i])
-        return 1;
-    }
-  return 0;
-}
-
 RML_BEGIN_LABEL(System__configureCommandLine)
 {
   rmlA0 = (void*) mk_scon(CONFIGURE_COMMANDLINE);
@@ -289,37 +207,9 @@ RML_BEGIN_LABEL(System__trim)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *chars_to_be_removed = RML_STRINGDATA(rmlA1);
-  int length=strlen(str);
-  char *res = malloc(length+1);
-  int i;
-  int start_pos = 0;
-  int end_pos = length - 1;
-  if(length > 1)
-  {
-    strncpy(res,str,length);
-    for(i=0; i < length; i++ ) {
-      if(str_contain_char(chars_to_be_removed,res[start_pos]))
-        start_pos++;
-      if(str_contain_char(chars_to_be_removed,res[end_pos]))
-        end_pos--;
-      if (start_pos == end_pos) break;
-    }
-    res[length] = '\0';
-    if(start_pos <= end_pos) {
-      res[end_pos+1] = '\0';
-      rmlA0 = (void*) mk_scon(&res[start_pos]);
-    } else {
-      rmlA0 = (void*) mk_scon("");
-    }
-  } else {
-    if (length == 0 || str_contain_char(chars_to_be_removed,str[0]))
-      rmlA0 = (void*) mk_scon("");
-    else
-      rmlA0 = (void*) mk_scon(str);
-  }
-
+  char *res = SystemImpl__trim(str,chars_to_be_removed);
+  rmlA0 = (void*) mk_scon(res);
   free(res);
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1184,35 +1074,8 @@ void System_5finit(void)
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
 
-  set_cc("g++");
-  set_cxx("g++");
-#if defined(__x86_64__)
-  /* -fPIC needed on x86_64! */
-  set_linker("g++ -shared -export-dynamic -fPIC");
-#else
-  set_linker("g++ -shared -export-dynamic");
-#endif
-
-#if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
-  /*
-   * if we are on i386 or x86_64 or compiling with
-   * Visual Studio then use the SSE instructions,
-   * not the normal i387 FPU
-   */
-  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
-#else
-  set_cflags("${MODELICAUSERCFLAGS}");
-#endif
-  set_ldflags("-lc_runtime");
   path = getenv("PATH");
 }
-
-RML_BEGIN_LABEL(System__getSendDataLibs)
-{
-  rmlA0 = (void*) mk_scon("-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 RML_BEGIN_LABEL(System__isSameFile)
 {
@@ -1242,33 +1105,6 @@ RML_BEGIN_LABEL(System__isSameFile)
   else {
     RML_TAILCALLK(rmlFC);
   }
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__os)
-{
-  char *envvalue;
-  envvalue = getenv("OS");
-  if (envvalue == NULL) {
-     rmlA0 = (void*) mk_scon("Windows_NT");
-  } else {
-      rmlA0 = (void*) mk_scon(envvalue);
-  }
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getExeExt)
-{
-  rmlA0 = (void*) mk_scon(".exe");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getDllExt)
-{
-  rmlA0 = (void*) mk_scon(".dll");
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -1867,35 +1703,7 @@ void System_5finit(void)
 
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
-
-  set_cc("g++");
-  set_cxx("g++");
-#if defined(__sparc__)
-  set_linker("g++ -G");
-#elif defined(__APPLE_CC__)
-  set_linker("g++ -single_module -dynamiclib -flat_namespace");
-#elif defined(__x86_64__)
-  /* -fPIC needed on x86_64! */
-  set_linker("g++ -shared -export-dynamic -fPIC");
-#else
-  set_linker("g++ -shared -export-dynamic");
-#endif
-
-  /* GCC knows best how to optimize for this CPU */
-#ifdef __APPLE_CC__
-  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
-#else
-  set_cflags("-march=native -mfpmath=sse ${MODELICAUSERCFLAGS}");
-#endif
-  set_ldflags("-lc_runtime");
 }
-
-RML_BEGIN_LABEL(System__getSendDataLibs)
-{
-  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 /**
  * Author BZ
@@ -2130,31 +1938,6 @@ RML_BEGIN_LABEL(System__isSameFile)
   else {
     RML_TAILCALLK(rmlFC);
   }
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__os)
-{
-#ifdef __APPLE_CC__
-  rmlA0 = (void*) mk_scon("OSX");
-#else
-  rmlA0 = (void*) mk_scon("linux");
-#endif
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getExeExt)
-{
-  rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getDllExt)
-{
-  rmlA0 = (void*) mk_scon(".so");
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2724,3 +2507,30 @@ RML_BEGIN_LABEL(System__getTimerStackIndex)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getSendDataLibs)
+{
+  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getExeExt)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_EXE_EXT);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getDllExt)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_DLL_EXT);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__os)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_OS);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

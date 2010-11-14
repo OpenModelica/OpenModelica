@@ -47,11 +47,12 @@ public function removeFirstAndLastChar
 end removeFirstAndLastChar;
 
 public function trim
-  input String inString1;
-  input String inString2;
+"removes chars in charsToRemove from inString"
+  input String inString;
+  input String charsToRemove;
   output String outString;
 
-  external "C";
+  external "C" outString=System_trim(inString,charsToRemove) annotation(Library = "omcruntime");
 end trim;
 
 public function trimChar
@@ -59,7 +60,7 @@ public function trimChar
   input String inString2;
   output String outString;
 
-  external "C" ;
+  external "C" outString=System_trimChar(inString1,inString2) annotation(Library = "omcruntime");
 end trimChar;
 
 public function strcmp
@@ -144,19 +145,19 @@ end setCCompiler;
 public function getCCompiler
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getCCompiler() annotation(Library = "omcruntime");
 end getCCompiler;
 
 public function setCFlags
   input String inString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setCCompiler(inString) annotation(Library = "omcruntime");
 end setCFlags;
 
 public function getCFlags
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getCFlags() annotation(Library = "omcruntime");
 end getCFlags;
 
 public function setCXXCompiler
@@ -168,7 +169,7 @@ end setCXXCompiler;
 public function getCXXCompiler
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getCXXCompiler() annotation(Library = "omcruntime");
 end getCXXCompiler;
 
 public function setLinker
@@ -180,7 +181,7 @@ end setLinker;
 public function getLinker
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getLinker() annotation(Library = "omcruntime");
 end getLinker;
 
 public function setLDFlags
@@ -192,19 +193,19 @@ end setLDFlags;
 public function getLDFlags
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getLDFlags() annotation(Library = "omcruntime");
 end getLDFlags;
 
 public function getExeExt
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getExeExt() annotation(Library = "omcruntime");
 end getExeExt;
 
 public function getDllExt
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getDllExt() annotation(Library = "omcruntime");
 end getDllExt;
 
 public function loadLibrary
@@ -479,7 +480,7 @@ Why it returns linux for OSX, we have no clue. But it does, so let's
 document it.
 "
   output String str;
-  external "C" annotation(Library = "omcruntime");
+  external "C" str = System_os() annotation(Library = "omcruntime");
 end os;
 
 public function compileCFile
@@ -539,7 +540,7 @@ end tmpTickReset;
 public function getSendDataLibs
 "Returns a string containing the compiler flags used for SENDDATALIBS"
   output String sendDataLibs;
-  external "C" annotation(Library = "omcruntime");
+  external "C" sendDataLibs=System_getSendDataLibs() annotation(Library = "omcruntime");
 end getSendDataLibs;
 
 public function userIsRoot

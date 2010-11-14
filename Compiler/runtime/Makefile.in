@@ -32,11 +32,11 @@ IDL	= @IDLCMD@
 CFLAGS	+=  @CFLAGS@
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
-SRC	= RTOpts_rml.c socketimpl.c Print_rml.c System_rml.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c Database.c
+SRC	= RTOpts_rml.c socketimpl.c Print_rml.c System_rml.c Settings_rml.c dynload.c SimulationResults.c IOStreamExt_rml.c rtclock.c Database.c
 
 CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp Error_rml.cpp optmanager.cpp systemimplmisc.cpp dynload_try.o $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
-OMC_OBJ = Error_omc.o Print_omc.o RTOpts_omc.o System_omc.o ErrorMessage.o systemimplmisc.o rtclock.o
+OMC_OBJ = Error_omc.o Print_omc.o RTOpts_omc.o System_omc.o Settings_omc.o IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o rtclock.o
 
 all: runtime.a install
 .PHONY: all install
@@ -57,18 +57,21 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 omc_communication_impl.o: omc_communication.h
 corbaimpl.o: omc_communication.h
 dynload.o: systemimpl.h ../Absyn.h ../Values.h dynload_try.h
-systemimpl.o : config.unix.h
 Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
 Error_rml.o : errorext.cpp
 Error_omc.o : errorext.cpp
-System_rml.o : systemimpl.c config.unix.h
-System_omc.o : systemimpl.c config.unix.h
+System_rml.o : systemimpl.c config.unix.h config.h
+System_omc.o : systemimpl.c config.unix.h config.h
 RTOpts_rml.o : rtoptsimpl.c
 RTOpts_omc.o : rtoptsimpl.c
+IOStreamExt_rml.o : IOStreamExt.c
+IOStreamExt_omc.o : IOStreamExt.c
+Settings_rml.o : settingsimpl.c
+Settings_omc.o : settingsimpl.c
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
 
-Makefile: Makefile.in
+Makefile: Makefile.in config.unix.h.in
 	cd $(top_builddir) && ./config.status

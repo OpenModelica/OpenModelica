@@ -666,6 +666,7 @@ public constant Type T_BOXED_DEFAULT = (T_BOXED((T_NOTYPE(),NONE())),NONE());
 public constant Type T_LIST_DEFAULT = (T_LIST((T_NOTYPE(),NONE())),NONE());
 public constant Type T_NONE_DEFAULT = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
 public constant Type T_NOTYPE_DEFAULT = (T_NOTYPE(),NONE());
+public constant Type T_NORETCALL_DEFAULT = (T_NORETCALL(),NONE());
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
