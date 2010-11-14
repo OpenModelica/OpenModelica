@@ -42,11 +42,11 @@ void Error_addMessage(int errorID, const char* msg_type, const char* severity, c
   std::list<std::string> tokens;
   if (error_on) {
     while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
-      tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
+      const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
+      tokens.push_back(string(token));
       tokenlst=MMC_CDR(tokenlst);
     }
     add_message(errorID,msg_type,severity,message,tokens);
-    printf(" Adding message, size: %ld, %s\n",errorMessageQueue.size(),message);
   }
 }
 
