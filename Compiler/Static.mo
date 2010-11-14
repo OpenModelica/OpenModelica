@@ -72,6 +72,7 @@ public import SCode;
 public import SCodeUtil;
 public import Values;
 public import Prefix;
+public import Util;
 
 public type Ident = String;
 
@@ -107,7 +108,6 @@ protected import Patternm;
 protected import Print;
 protected import System;
 protected import Types;
-protected import Util;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import PrefixUtil;
@@ -8827,7 +8827,7 @@ algorithm
   end matchcontinue;
 end elabCallArgsMetarecord;
 
-protected function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
+public function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
   input Env.Cache inCache;
   input Env.Env env;

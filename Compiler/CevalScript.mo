@@ -1807,10 +1807,16 @@ algorithm
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {DAE.CODE(Absyn.C_TYPENAME(path),_)}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
+        (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
         (cache,_) = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {DAE.CODE(Absyn.C_TYPENAME(path),_)}),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "loadModel"),
