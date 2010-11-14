@@ -816,60 +816,6 @@ algorithm
   end matchcontinue;
 end constructorCallTypeToNamesAndTypes;
 
-public function typeConvert "function: typeConvert"
-  input DAE.Type t;
-  output Absyn.TypeSpec outType;
-algorithm
-  outType :=
-  matchcontinue (t)
-    local
-      Absyn.TypeSpec tSpec;
-      list<Absyn.TypeSpec> tSpecList;
-      String id,str;
-      list<DAE.Type> tList;
-      Absyn.Path p;
-    case ((DAE.T_INTEGER(_),_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
-    case ((DAE.T_BOOL(_),_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
-    case ((DAE.T_STRING(_),_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
-    case ((DAE.T_REAL(_),_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE());
-    case ((DAE.T_BOXED(t),_)) then typeConvert(t);
-    /*case (DAE.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s;
-      equation
-      then Absyn.TPATH(Absyn.IDENT(s),NONE()); */
-    case ((DAE.T_LIST(t),_))
-      equation
-        tSpec = typeConvert(t);
-        tSpecList = {tSpec};
-      then Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecList,NONE());
-    case ((DAE.T_METAOPTION(t),_))
-      equation
-        tSpec = typeConvert(t);
-        tSpecList = {tSpec};
-      then Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecList,NONE());
-    case ((DAE.T_METATUPLE(tList),_))
-      equation
-        tSpecList = Util.listMap(tList,typeConvert);
-      then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
-
-    case ((DAE.T_POLYMORPHIC(id),_)) then Absyn.TPATH(Absyn.IDENT(id),NONE());
-
-    case ((DAE.T_META_ARRAY(t),_))
-      equation
-        tSpec = typeConvert(t);
-        tSpecList = {tSpec};
-      then Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecList,NONE());
-
-    case ((_,SOME(p)))
-      then Absyn.TPATH(p,NONE());
-    case t
-      equation
-        str = Types.unparseType(t);
-        str = "MetaUtil.typeConvert failed: " +& str;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
-end typeConvert;
-
 public function fixUniontype
   input ClassInf.State st;
   input Option<DAE.Type> t;
@@ -891,53 +837,6 @@ algorithm
     case (_,t,_) then t;
   end matchcontinue;
 end fixUniontype;
-
-public function extractOutputVarsType
-  input list<DAE.Type> inList;
-  input Integer cnt;
-  input list<Absyn.ElementItem> accList1;
-  input list<Absyn.Exp> accList2;
-  output list<Absyn.ElementItem> outList1;
-  output list<Absyn.Exp> outList2;
-algorithm
-  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
-    local
-      list<Absyn.ElementItem> localAccList1;
-      list<DAE.Type> rest;
-      list<Absyn.Exp> localAccList2;
-      Integer localCnt;
-      DAE.Type ty;
-      Absyn.TypeSpec tSpec;
-      Absyn.Ident n1,n2;
-      Absyn.ElementItem elem1;
-      Absyn.Exp elem2;
-    case ({},localCnt,localAccList1,localAccList2)
-      then (listReverse(localAccList1),listReverse(localAccList2));
-    case ({(DAE.T_TUPLE(rest),_)},1,{},{})
-      equation
-        (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
-      then (localAccList1,localAccList2);
-    case (ty :: rest, localCnt,localAccList1,localAccList2)
-      equation
-        tSpec = typeConvert(ty);
-        n1 = "var";
-        n2 = stringAppend(n1,intString(localCnt));
-        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
-            Absyn.dummyInfo,NONE()));
-        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
-        localAccList1 = elem1::localAccList1;
-        localAccList2 = elem2::localAccList2;
-        (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);
-    case (ty::_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- MetaUtil.extractOutputVarsType failed: " +& Types.unparseType(ty));
-      then fail();
-  end matchcontinue;
-end extractOutputVarsType;
 
 public function createLhsExp "function: createLhsExp"
   input list<Absyn.Exp> inList;
