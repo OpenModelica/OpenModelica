@@ -872,8 +872,6 @@ algorithm
       then
         s;
     
-    case (DAE.VALUEBLOCK(_,_,_,_), _, _, _) then "#valueblock#";
-    
     case (DAE.MATCHEXPRESSION(matchType=matchTy,inputs=es), _, _, _)
       equation
         s1 = Dump.printMatchType(matchTy);
@@ -2028,12 +2026,6 @@ algorithm
         Print.printBuf("(");
         printList(args, printExp, ",");
         Print.printBuf(")");
-      then
-        ();
-
-    case (DAE.VALUEBLOCK(_,_,_,_),_)
-      equation
-        Print.printBuf("#VALUEBLOCK#");
       then
         ();
 

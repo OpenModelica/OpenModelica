@@ -41,16 +41,17 @@ package Patternm
 
 public import Absyn;
 public import ClassInf;
+public import Connect;
+public import ConnectionGraph;
 public import DAE;
 public import Env;
 public import SCode;
-public import Debug;
 public import Dump;
 public import InnerOuter;
 public import Interactive;
 public import Prefix;
-public import RTOpts;
 public import Types;
+public import UnitAbsyn;
 
 protected import ComponentReference;
 protected import DAEUtil;
@@ -493,7 +494,6 @@ algorithm
       list<Absyn.Exp> inExps;
       list<Absyn.ElementItem> decls;
       list<Absyn.Case> cases;
-      list<Absyn.AlgorithmItem> b2;
       list<DAE.Element> matchDecls;
       Option<Interactive.InteractiveSymbolTable> st;
       Prefix.Prefix pre;
@@ -507,9 +507,8 @@ algorithm
       String str;
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),impl,st,performVectorization,pre,info,numError)
       equation
-        (cache,SOME((env,DAE.DAE(matchDecls),b2))) = Static.addLocalDecls(cache,env,decls,impl,info);
+        (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
         inExps = MetaUtil.extractListFromTuple(inExp, 0);
-        Error.assertion(Util.isListEmpty(b2), "A local declaration caused an equation to be added; this is not handled in OMC.",info);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
         tys = Util.listMap(elabProps, Types.getPropType);
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
@@ -608,15 +607,14 @@ algorithm
       Option<DAE.Exp> elabResult;
       list<DAE.Element> caseDecls;
       list<Absyn.EquationItem> eq1;
-      list<Absyn.AlgorithmItem> b2,eqAlgs;
+      list<Absyn.AlgorithmItem> eqAlgs;
       list<SCode.Statement> algs;
       list<DAE.Statement> body;
       list<Absyn.ElementItem> decls;
       Absyn.Info patternInfo;
     case (cache,env,Absyn.CASE(pattern=pattern,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result),tys,impl,st,performVectorization,pre,info)
       equation
-        (cache,SOME((env,DAE.DAE(caseDecls),b2))) = Static.addLocalDecls(cache,env,decls,impl,info);
-        Error.assertion(Util.isListEmpty(b2), "A local declaration caused an equation to be added; this is not handled in OMC.",info);
+        (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
         patterns = Util.if_(listLength(tys)==1, {pattern}, patterns);
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
@@ -766,5 +764,65 @@ algorithm
     else ();
   end match;
 end filterEmptyPattern;
+
+protected function addLocalDecls
+"Adds local declarations to the environment and returns the DAE"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.ElementItem> els;
+  input String scopeName;
+  input Boolean impl;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<Env.Env,DAE.DAElist> tpl;
+algorithm
+  (outCache,tpl) := matchcontinue (cache,env,els,scopeName,impl,info)
+    local
+      list<Absyn.ElementItem> ld;
+      list<SCode.Element> ld2;
+      list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
+      DAE.DAElist dae,dae1;
+      list<DAE.Element> dae1_2Elts;
+      Env.Env env2;
+      ClassInf.State dummyFunc;
+      list<Absyn.AlgorithmItem> algs;
+      String str;
+
+    case (cache,env,{},scopeName,impl,info) then (cache,SOME((env,DAEUtil.emptyDae)));
+    case (cache,env,ld,scopeName,impl,info)
+      equation
+        env2 = Env.openScope(env, false, SOME(scopeName),NONE());
+
+        // Tranform declarations such as Real x,y; to Real x; Real y;
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
+
+        // Filter out the components (just to be sure)
+        ({},{},{},ld2) = Inst.splitElts(ld2);
+
+        // Transform the element list into a list of element,NOMOD
+        ld_mod = Inst.addNomod(ld2);
+
+        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
+        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          Connect.emptySet, dummyFunc, ld_mod, {}, {}, {}, impl);
+        (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
+          cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
+          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
+      then (cache,SOME((env2,dae1)));
+    case (cache,env,ld,scopeName,impl,info)
+      equation
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
+        (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
+        str = Util.stringDelimitList(Util.listMap(ld2, SCode.printElementStr),", ");
+        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
+      then (cache,NONE());
+    else
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Patternm.addLocalDecls failed"},info);
+      then (cache,NONE());
+  end matchcontinue;
+end addLocalDecls;
 
 end Patternm;

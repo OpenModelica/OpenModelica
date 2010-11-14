@@ -63,8 +63,6 @@ package Static
   The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 public import Absyn;
-public import ConnectionGraph;
-public import Convert;
 public import DAE;
 public import Env;
 public import Interactive;
@@ -100,7 +98,6 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Inst;
-protected import InstSection;
 protected import InnerOuter;
 protected import Lookup;
 protected import Mod;
@@ -110,7 +107,6 @@ protected import Patternm;
 protected import Print;
 protected import System;
 protected import Types;
-protected import UnitAbsyn;
 protected import Util;
 protected import ValuesUtil;
 protected import DAEUtil;
@@ -260,7 +256,6 @@ algorithm
       list<list<Absyn.Exp>> ess;
       Integer d1,d2;
       Absyn.CodeNode cn;
-      Absyn.ValueblockBody body;
       list<Absyn.ElementItem> ld;
       list<Absyn.AlgorithmItem> b1,b2;
       list<DAE.Statement> b_alg;
@@ -530,25 +525,6 @@ algorithm
       then
         (cache,DAE.CODE(cn,tp_1),DAE.PROP(tp,DAE.C_CONST()),st);
         
-    case (cache,env,Absyn.VALUEBLOCK(ld,body,res),impl,st,doVect,pre,info)
-      equation
-        // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
-        (cache,SOME((env,DAE.DAE(dae1_2Elts),b2))) = addLocalDecls(cache,env,ld,impl,info);
-        (b1,cache) = fromValueblockBodyToAlgs(body,cache,env,pre);
-        b1 = listAppend(b2,b1);
-        //----------------------------------------------------------------------
-        (cache,b_alg) = InstSection.instStatements(cache, env, 
-            InnerOuter.emptyInstHierarchy, 
-            Prefix.NOPRE(), SCodeUtil.translateClassdefAlgorithmitems(b1), DAE.emptyElementSource, SCode.NON_INITIAL(), true, Inst.neverUnroll);
-        // debug_print("before -> res",res);
-        (cache,res2,prop as DAE.PROP(tp,_),st) = elabExp(cache,env,res,impl,st,doVect,pre,info);
-        // debug_print("after -> res",res2);
-        tp_1 = Types.elabType(tp);
-        // debug_print("end",tp_1);
-        // TODO: PA: I do not know which dae:s to collect here. It should collect all dae:s that comes from
-        // elaborating expressions (since they can contain function calls and that is what we want to collect)
-      then (cache,DAE.VALUEBLOCK(tp_1,dae1_2Elts,b_alg,res2),prop,st);
-
        //-------------------------------------
        // Part of the MetaModelica extension. KS
    case (cache,env,Absyn.ARRAY(es),impl,st,doVect,pre,info)
@@ -692,30 +668,6 @@ algorithm
   end matchcontinue;
 end elabListExp;
 /* ------------------------------- */
-
-public function fromValueblockBodyToAlgs
-  input Absyn.ValueblockBody body;
-  input Env.Cache cache;
-  input Env.Env env;
-  input Prefix.Prefix inPrefix;
-  output list<Absyn.AlgorithmItem> outAlgs;
-  output Env.Cache outCache;
-algorithm
-  (outAlgs,outCache) := matchcontinue (body,cache,env,inPrefix)
-    local
-      list<Absyn.AlgorithmItem> algs1,algs2,eqAlgs,algs;
-      list<Absyn.EquationItem> eq1;
-      Prefix.Prefix pre;
-    case (Absyn.VALUEBLOCKALGORITHMS(algs1),cache,_,_)
-      then (algs1,cache);
-    case (Absyn.VALUEBLOCKMATCHCASE(algs1,eq1,algs2),cache,env,pre)
-      equation
-        (cache,eqAlgs) = fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
-        algs = listAppend(eqAlgs,algs2);
-        algs = listAppend(algs1,algs);
-      then (algs,cache);
-  end matchcontinue;
-end fromValueblockBodyToAlgs;
 
 public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
  Converts equations to algorithm assignments.
@@ -13875,68 +13827,6 @@ algorithm
   call := DAE.CALL(Absyn.IDENT(name), args, false, true, result_type,
       DAE.NO_INLINE());
 end makeBuiltinCall;
-
-public function addLocalDecls
-"Adds local declarations to the environment and returns the DAE"
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.ElementItem> els;
-  input Boolean impl;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Option<Env.Env,DAE.DAElist,list<Absyn.AlgorithmItem>> tpl;
-algorithm
-  (outCache,tpl) := matchcontinue (cache,env,els,impl,info)
-    local
-      list<Absyn.ElementItem> ld;
-      list<SCode.Element> ld2;
-      list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
-      DAE.DAElist dae,dae1;
-      list<DAE.Element> dae1_2Elts;
-      Env.Env env2;
-      ClassInf.State dummyFunc;
-      list<Absyn.AlgorithmItem> algs;
-      String str;
-
-    case (cache,env,{},impl,info) then (cache,SOME((env,DAEUtil.emptyDae,{})));
-    case (cache,env,ld,impl,info)
-      equation
-        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName),NONE());
-
-        // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
-
-        // Filter out the components (just to be sure)
-        ({},{},{},ld2) = Inst.splitElts(ld2);
-
-        // Transform the element list into a list of element,NOMOD
-        ld_mod = Inst.addNomod(ld2);
-
-        dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
-          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-          Connect.emptySet, dummyFunc, ld_mod, {}, {}, {}, impl);
-        (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
-          cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
-          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
-
-        // The instantiation of the components may have produced some equations
-        (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);
-      then (cache,SOME((env2,dae,algs)));
-    case (cache,env,ld,impl,info)
-      equation
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
-        (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
-        str = Util.stringDelimitList(Util.listMap(ld2, SCode.printElementStr),", ");
-        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
-      then (cache,NONE());
-    else
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.addLocalDecls failed"},info);
-      then (cache,NONE());
-  end matchcontinue;
-end addLocalDecls;
 
 protected function unevaluatedFunctionVariability
   "In a function we might have input arguments with unknown dimensions, and in

@@ -50,7 +50,6 @@ ComponentReference.mo \
 Connect.mo \
 Constants.mo \
 ConnectionGraph.mo \
-Convert.mo \
 DAE.mo \
 DAEUtil.mo \
 DAEDump.mo \

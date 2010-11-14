@@ -277,9 +277,6 @@ algorithm
       Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, {(s,SOME(ae2))}));
 
     case(DAE.END()) then Absyn.END();
-    case(DAE.VALUEBLOCK(_,_,_,_)) equation
-      print("unelab of VALUEBLOCK not impl. yet");
-    then fail();
   end matchcontinue;
 end unelabExp;
 
@@ -3346,7 +3343,6 @@ algorithm
       Integer iscalar_1,iscalar;
       Ident id_1,id,str;
       list<DAE.Element> localDecls;
-      list<DAE.Statement> statements;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
       DAE.InlineType  inl;
@@ -3569,15 +3565,6 @@ algorithm
       then
         ((e,ext_arg_2));
     // ---------------------
-
-    case ((e as DAE.VALUEBLOCK(ty = tp, localDecls = localDecls, body = statements, result = e1)),rel,ext_arg)
-      equation
-        // Don't traverse the local declarations; we don't store bindings there (yet)
-        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
-        (statements,(_,ext_arg_2)) = DAEUtil.traverseDAEEquationsStmts(statements,traverseSubexpressionsHelper,(rel,ext_arg_1));
-        ((e,ext_arg_3)) = rel((DAE.VALUEBLOCK(tp,localDecls,statements,e1_1),ext_arg_2));
-      then
-        ((e,ext_arg_3));
 
     case ((e as DAE.MATCHEXPRESSION(matchTy,expl,localDecls,cases,tp)),rel,ext_arg)
       equation
@@ -3922,13 +3909,6 @@ algorithm
       then
         ((DAE.REDUCTION(path,e1_1,id,e2_1),ext_arg_2));
     
-    // TODO: maybe traverse also the statements
-    case ((e as DAE.VALUEBLOCK(ty = tp,localDecls=localDecls,body=body,result = e1)),rel,ext_arg)
-      equation
-        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
-      then
-        ((DAE.VALUEBLOCK(tp,localDecls,body,e1_1),ext_arg_1));  
-          
     // MetaModelica list
     case ((e as DAE.CONS(tp,e1,e2)),rel,ext_arg)
       equation

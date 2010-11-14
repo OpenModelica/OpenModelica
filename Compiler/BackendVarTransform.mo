@@ -592,14 +592,6 @@ algorithm
       then
         (DAE.STMT_LABEL(str,source):: es_1); 
     
-    case ((DAE.STMT_MATCHCASES(matchType=matchType,inputExps=inputExps,caseStmt=expExpLst,source=source)::es),repl)
-      equation
-        inputExps = Util.listMap2(inputExps,VarTransform.replaceExp,repl,NONE());
-        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl,NONE());
-        es_1 = replaceStatementLst(es, repl);
-      then
-        (DAE.STMT_MATCHCASES(matchType,inputExps,expExpLst_1,source):: es_1);
-    
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);

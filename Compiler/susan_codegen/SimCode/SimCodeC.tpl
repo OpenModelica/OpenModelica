@@ -3703,7 +3703,6 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFC*/)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFC*/)
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFC*/)
-  case s as STMT_MATCHCASES(__)     then algStmtMatchcases(s, context, &varDecls /*BUFC*/)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFC*/)
   case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFC*/)
@@ -4043,53 +4042,6 @@ template algStmtMatchcasesVarDeclsAndAssign(list<Exp> expList, Context context, 
     ; separator = "\n")
 end algStmtMatchcasesVarDeclsAndAssign;
 
-template algStmtMatchcases(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
- "Generates a matchcases algorithm statement."
-::=
-match stmt
-case STMT_MATCHCASES(__) then
-  let loopVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
-  let doneVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
-  let &inVarDecl = buffer ""
-  let &inVarAssign = buffer ""
-  let &inVarPreExp = buffer ""
-  let inVarAssignLoop = algStmtMatchcasesVarDeclsAndAssign(inputExps, context, &inVarDecl, &inVarAssign, &inVarPreExp)
-  let numCases = listLength(caseStmt)
-  <<
-
-  <%doneVar%> = 0;
-  <%inVarDecl%>
-  <%inVarPreExp%>
-  <%inVarAssign%>
-  for (<%loopVar%>=0; 0==<%doneVar%> && <%loopVar%><<%numCases%>; <%loopVar%>++) {
-    <%inVarAssignLoop%>
-    <% match matchType case MATCHCONTINUE(__) then 'try { /* matchcontinue */' else '{' %>
-      switch (<%loopVar%>) {
-        <%caseStmt |> e hasindex i0 =>
-          let &preExp = buffer "" /*BUFD*/
-          // the exp always seems to be a valueblock whose result should not be
-          // used
-          let _ = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-          <<
-          case <%i0%>: {
-            <%preExp%>
-            <%doneVar%> = 1;
-            break;
-          };
-          >>
-        ;separator="\n"%>
-      } /* end match switch */
-    <% match matchType case MATCHCONTINUE(__) then
-    <<
-    } catch (int i) { /* matchcontinue */
-    }
-    >>else '}' %>
-  } /* end match for */
-  if (0 == <%doneVar%>) throw 1; /* Didn't end in a valid state */
-  >>
-end algStmtMatchcases;
-
-
 template algStmtFailure(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a failure() algorithm statement."
 ::=
@@ -4360,7 +4312,6 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  case e as VALUEBLOCK(__)      then daeExpValueblock(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as LIST(__)            then daeExpList(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as CONS(__)            then daeExpCons(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as META_TUPLE(__)      then daeExpMetaTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -5149,40 +5100,6 @@ template daeExpReductionStartValue(String reduction_op, String type)
   case "product" then "1"
   else "UNKNOWN_REDUCTION"
 end daeExpReductionStartValue;
-
-
-template daeExpValueblock(Exp exp, Context context, Text &preExp /*BUFP*/,
-                          Text &varDecls /*BUFP*/)
- "Generates code for a valueblock expression."
-::=
-match exp
-case exp as VALUEBLOCK(__) then
-  let &preExpInner = buffer "" /*BUFD*/
-  let &preExpRes = buffer "" /*BUFD*/
-  let &varDeclsInner = buffer "" /*BUFD*/
-  let &ignore = buffer ""
-  let _ = (elementVars(localDecls) |> var =>
-      varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
-    )
-  let resType = expTypeModelica(ty)
-  let res = tempDecl(expTypeModelica(ty), &preExp /*BUFC*/)
-  let stmts = (body |> stmt =>
-      algStatement(stmt, context, &varDeclsInner /*BUFC*/)
-    ;separator="\n")
-  let expPart = daeExp(result, context, &preExpRes /*BUFC*/,
-                     &varDeclsInner /*BUFC*/)
-  let &preExp +=
-      <<
-      {
-        <%varDeclsInner%>
-        <%preExpInner%>
-        <%stmts%>
-        <%preExpRes%>
-        <%res%> = <%expPart%>;
-      }
-      >>
-  res
-end daeExpValueblock;
 
 template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a match expression."

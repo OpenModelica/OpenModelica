@@ -3879,13 +3879,6 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (x :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_MATCHCASES(matchType = matchType, inputExps = expl1,caseStmt=expl2, source = source)) :: xs),func,extraArg)
-      equation
-        (expl1, extraArg) = traverseDAEExpList(expl1,func,extraArg);
-        (expl2, extraArg) = traverseDAEExpList(expl2,func,extraArg);
-        (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (DAE.STMT_MATCHCASES(matchType,expl1,expl2,source) :: xs_1,extraArg);
-        
     case ((x :: xs),func,extraArg)
       equation
         str = DAEDump.ppStatementStr(x);
@@ -5014,10 +5007,6 @@ algorithm
     local
       DAE.Exp e;
       list<DAE.Element> ld1,ld2,ld;
-    case ((e as DAE.VALUEBLOCK(localDecls = ld1),ld2))
-      equation
-        ld = listAppend(ld1,ld2);
-      then ((e,ld));
     case ((e as DAE.MATCHEXPRESSION(localDecls = ld1),ld2))
       equation
         ld = listAppend(ld1,ld2);
@@ -5110,10 +5099,6 @@ algorithm
       list<DAE.Exp> rest;
       list<DAE.Element> els1,els2;
     case {} then {};
-    case DAE.VALUEBLOCK(localDecls = els1)::rest
-      equation
-        els2 = getDAEDeclsFromValueblocks(rest);
-      then listAppend(els1,els2);
     case DAE.MATCHEXPRESSION(localDecls = els1)::rest
       equation
         els2 = getDAEDeclsFromValueblocks(rest);
@@ -5239,10 +5224,6 @@ algorithm
       list<DAE.Element> decls;
       DAE.Exp exp;
       list<Absyn.Path> acc;
-    case ((exp as DAE.VALUEBLOCK(localDecls = decls),acc))
-      equation
-        acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
-      then ((exp,acc));
     case ((exp as DAE.MATCHEXPRESSION(localDecls = decls),acc))
       equation
         acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);

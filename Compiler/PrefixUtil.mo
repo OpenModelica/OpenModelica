@@ -775,14 +775,6 @@ algorithm
       then
         (cache,DAE.REDUCTION(fcn,exp_1,id,iterexp_1));
 
-    case (cache,env,ih,DAE.VALUEBLOCK(t,localDecls = lDecls,body = statements,result = exp),p)
-      equation
-        (cache,lDecls) = prefixDecls(cache, env, ih, lDecls, {}, p);
-        (cache,statements) = prefixStatements(cache, env, ih, statements, {}, p);
-        (cache,exp) = prefixExp(cache, env, ih, exp, p);
-      then
-        (cache,DAE.VALUEBLOCK(t,lDecls,statements,exp));
-
     // MetaModelica extension. KS
     case (cache,env,ih,DAE.LIST(t,es),p)
       equation

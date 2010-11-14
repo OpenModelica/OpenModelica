@@ -1301,7 +1301,6 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case CODE(__)       then "CODE_NOT_IMPLEMENTED"
   case REDUCTION(__)  then "REDUCTION_NOT_IMPLEMENTED"
   case END(__)        then "END_NOT_IMPLEMENTED"
-  case VALUEBLOCK(__) then "VALUEBLOCK_NOT_IMPLEMENTED"
   case LIST(__)       then "LIST_NOT_IMPLEMENTED"
   case CONS(__)       then "CONS_NOT_IMPLEMENTED"
   // META_TUPLE

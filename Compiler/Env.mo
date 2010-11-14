@@ -207,8 +207,9 @@ end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
 public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
-public constant String valueBlockScopeName="$valueblock scope$" "a unique scope used by valueblocks";
-public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,valueBlockScopeName};
+public constant String matchScopeName="$match scope$" "a unique scope used by match expressions";
+public constant String caseScopeName="$case scope$" "a unique scope used by match expressions; to be removed when local decls are deprecated";
+public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,matchScopeName,caseScopeName};
 
 // functions for dealing with the environment
 

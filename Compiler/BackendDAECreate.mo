@@ -1751,12 +1751,6 @@ algorithm
     case(vars, DAE.STMT_THROW(source=_)) then ({}, {});
     case(vars, DAE.STMT_GOTO(source=_)) then ({}, {});
     case(vars, DAE.STMT_LABEL(source=_)) then ({}, {});
-     case(vars, DAE.STMT_MATCHCASES(inputExps = expl,caseStmt=inputs2))
-      equation
-        inputs1 = Util.listFlatten(Util.listMap1(expl,BackendDAEUtil.statesAndVarsExp,vars));
-        inputs3 = Util.listFlatten(Util.listMap1(inputs2,BackendDAEUtil.statesAndVarsExp,vars));
-        inputs = Util.listListUnionOnTrue({inputs1, inputs3}, Expression.expEqual);
-      then (inputs,{});        
     case(_, _)
       equation
         Debug.fprintln("failtrace", "- BackendDAECreate.lowerStatementInputsOutputs failed\n");

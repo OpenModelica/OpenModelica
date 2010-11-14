@@ -569,13 +569,6 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_LABEL;
 
-  record STMT_MATCHCASES "match[continue] helper"
-    Absyn.MatchType matchType;
-    list<Exp> inputExps "for now these are idents; they should be full expressions (but the cases are not split into matching and assignments...)";
-    list<Exp> caseStmt;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end STMT_MATCHCASES;
-
   //-----
 
 end Statement;
@@ -1126,13 +1119,6 @@ uniontype Exp "Expressions
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;
-
-	record VALUEBLOCK "Valueblock expression"
-	  ExpType ty;
-    list<Element> localDecls; // TODO: Do this in a better way
-    list<Statement> body;
-		Exp result;
-  end VALUEBLOCK;
 
   /* Part of MetaModelica extension. KS */
   record LIST "MetaModelica list"

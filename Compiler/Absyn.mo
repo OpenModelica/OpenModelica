@@ -812,27 +812,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     list<Exp> exps;
   end LIST;
 
-  record VALUEBLOCK "valueblock expression"
-    list<ElementItem> localDecls "local decls";
-    ValueblockBody body "block body";
-    Exp result "block end result";
-  end VALUEBLOCK;
-
 end Exp;
-
-public
-uniontype ValueblockBody "body of a valueblock"
-   record VALUEBLOCKALGORITHMS
-      list<AlgorithmItem> algorithmBody "algorithm body";
-   end VALUEBLOCKALGORITHMS;
-
-   record VALUEBLOCKMATCHCASE "a case in a {match,matchcontinue} expression"
-      list<AlgorithmItem> patternMatching "does pattern matching against the input variables";
-      list<EquationItem>  equationBody "need to be translated from equations to algorithms";
-      list<AlgorithmItem> resultAssignments "assigns the result to the result variables";
-   end VALUEBLOCKMATCHCASE;
-end ValueblockBody;
-
 
 uniontype Case "case in match or matchcontinue"
   record CASE
@@ -2616,8 +2596,6 @@ algorithm
 
     case (CODE(_),_) then {};
 
-    case (VALUEBLOCK(body = _),_) then {};
-
     case (AS(exp = e1),checkSubs) then getCrefFromExp(e1,checkSubs);
     case (CONS(e1,e2),checkSubs)
       equation
@@ -2635,7 +2613,6 @@ algorithm
         res;
 
     case (MATCHEXP(matchTy = _),checkSubs) then fail();
-    case (VALUEBLOCK(localDecls = _),checkSubs) then fail();
 
     case (e1,_)
       equation

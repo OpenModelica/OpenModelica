@@ -662,12 +662,6 @@ package DAE
       Exp range;
     end REDUCTION;
     record END end END;
-    record VALUEBLOCK
-      ExpType ty;
-      list<Element> localDecls;
-      list<Statement> body;
-      Exp result;	
-    end VALUEBLOCK;  
     record LIST
       ExpType ty;
       list<Exp> valList;
@@ -932,12 +926,6 @@ package DAE
     record STMT_RETURN
       ElementSource source;
     end STMT_RETURN;
-    record STMT_MATCHCASES
-      Absyn.MatchType matchType;
-      list<Exp> inputExps;
-      list<Exp> caseStmt;
-      ElementSource source;
-    end STMT_MATCHCASES;
     record STMT_BREAK
       ElementSource source;
     end STMT_BREAK;

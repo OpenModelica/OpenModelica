@@ -940,13 +940,6 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_CATCH(stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_MATCHCASES(matchType,inputExps,elst,source) :: cdr,dae)
-      equation
-        (elst_1,dae) = elabExpList(elst,dae);
-        (inputExps,dae) = elabExpList(inputExps,dae);
-        (cdr_1,dae) = elabStmts(cdr,dae);
-      then
-        (DAE.STMT_MATCHCASES(matchType,inputExps,elst_1,source) :: cdr_1,dae);
     case(stmt :: cdr,dae)
       equation
         (cdr_1,dae) = elabStmts(cdr,dae);
@@ -1668,13 +1661,6 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_CATCH(stmts_1,source) :: cdr_1;
-    case(DAE.STMT_MATCHCASES(matchType,inputExps,elst,source) :: cdr,dae,p,inputs,current)
-      equation
-        inputExps = Util.listMap1(inputExps,handleExpList2,(p,inputs,dae,current));
-        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
-      then
-        DAE.STMT_MATCHCASES(matchType,inputExps,elst_1,source) :: cdr_1;
     case(stmt :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);

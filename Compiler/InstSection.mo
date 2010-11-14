@@ -2630,18 +2630,6 @@ algorithm
       then
         (cache,{stmt});
     
-      // Helper statement for matchcontinue
-    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, inputExps = inputExps, switchCases = expl, comment = comment, info = info),source,_,impl,unrollForLoops)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,expl_1,_,_) = Static.elabExpList(cache,env, expl, impl,NONE(),true,pre,info);
-        (cache,inputExpsDAE,_,_) = Static.elabExpList(cache,env, inputExps, impl,NONE(),true,pre,info);
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_MATCHCASES(matchType,inputExpsDAE,expl_1,source);
-      then (cache,{stmt});
-
-    //------------------------------------------
-        
     case (cache,env,ih,pre,alg,_,initial_,impl,unrollForLoops)
       equation 
         true = RTOpts.debugFlag("failtrace");

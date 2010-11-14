@@ -7135,15 +7135,6 @@ algorithm
       then (txt, i_preExp);
 
     case ( txt,
-           DAE.VALUEBLOCK(ty = _),
-           _,
-           i_preExp,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("VALUEBLOCK_NOT_IMPLEMENTED"));
-      then (txt, i_preExp);
-
-    case ( txt,
            DAE.LIST(ty = _),
            _,
            i_preExp,

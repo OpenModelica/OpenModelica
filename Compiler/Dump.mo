@@ -4498,22 +4498,6 @@ algorithm
       then
         s;
     
-    case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKALGORITHMS(algs),result)
-      equation
-        s1 = printExpStr(result);
-        s2 = unparseAlgorithmStrLst(4 /* Exp doesn't get i input  make a guess :( */, algs, "\n");
-        s = "valueblock(\n  " +& s2 +& ", result=" +& s1 +& ")";
-      then s;
-
-    case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(patternMatching,equationBody,resultAssignments),result)
-      equation
-        s1 = printExpStr(result);
-        s2 = unparseAlgorithmStrLst(2, patternMatching, "\n");
-        s3 = unparseEquationitemStrLst(2, equationBody, "\n");
-        s4 = unparseAlgorithmStrLst(2, resultAssignments, "\n");
-        s = "valueblock(\n" +& s2 +& "\n" +& s3 +& "\n" +& s4 +& ")";
-      then s;
-    
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;

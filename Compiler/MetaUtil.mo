@@ -42,12 +42,10 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import Debug;
-public import Env;
 public import SCode;
 public import SCodeUtil;
 
 protected import Error;
-protected import Lookup;
 protected import RTOpts;
 protected import Types;
 protected import Util;

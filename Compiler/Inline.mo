@@ -901,12 +901,6 @@ algorithm
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
         DAE.STMT_CATCH(stmts_1,source);
-    case(DAE.STMT_MATCHCASES(matchType,inputExps,explst,source),fns)
-      equation
-        inputExps = Util.listMap1(inputExps,inlineExp,fns);
-        explst_1 = Util.listMap1(explst,inlineExp,fns);
-      then
-        DAE.STMT_MATCHCASES(matchType,inputExps,explst_1,source);
     case(stmt,_) then stmt;
   end matchcontinue;
 end inlineStatement;
