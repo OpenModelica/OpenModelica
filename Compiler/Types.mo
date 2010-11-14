@@ -4225,7 +4225,7 @@ algorithm
         e_1 = DAE.META_TUPLE(elist);
         tys2 = Util.listFill(ty2, listLength(tys1));
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-      then
+       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
 
       /*
@@ -5187,6 +5187,7 @@ algorithm
     case ((DAE.T_METATUPLE(tys),_))
       equation
         tys = Util.listMap(tys, unboxedType);
+        tys = Util.listMap(tys, boxIfUnboxedType);
       then ((DAE.T_METATUPLE(tys),NONE()));
     case ((DAE.T_META_ARRAY(ty),_))
       equation
@@ -5273,26 +5274,22 @@ algorithm
 
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
-        type_list1 = Util.listMap(type_list1, unboxedType);
-        type_list2 = Util.listMap(type_list2, unboxedType);
+        type_list1 = Util.listMap(type_list1, boxIfUnboxedType);
+        type_list2 = Util.listMap(type_list2, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
-        type_list1 = Util.listMap(type_list1, unboxedType);
-        type_list2 = Util.listMap(type_list2, unboxedType);
+        type_list1 = Util.listMap(type_list1, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
-        type_list1 = Util.listMap(type_list1, unboxedType);
-        type_list2 = Util.listMap(type_list2, unboxedType);
+        type_list2 = Util.listMap(type_list2, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
-        type_list1 = Util.listMap(type_list1, unboxedType);
-        type_list2 = Util.listMap(type_list2, unboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
 
@@ -5510,7 +5507,6 @@ algorithm
     case ((DAE.T_METATUPLE(tys),_),prefix,bindings,info)
       equation
         tys = Util.listMap3(tys, fixPolymorphicRestype2, prefix, bindings, info);
-        tys = Util.listMap(tys, unboxedType);
       then ((DAE.T_METATUPLE(tys),NONE()));
     case ((DAE.T_TUPLE(tys),_),prefix,bindings,info)
       equation
@@ -5991,6 +5987,12 @@ algorithm
         ty1 = (DAE.T_LIST(ty1),NONE());
       then (ty1::tys2,solvedBindings);
 
+    case ((DAE.T_META_ARRAY(ty1),_)::tys1,(DAE.T_META_ARRAY(ty2),_)::tys2,solvedBindings)
+      equation
+        ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
+        ty1 = (DAE.T_META_ARRAY(ty1),NONE());
+      then (ty1::tys2,solvedBindings);
+
     case ((DAE.T_METATUPLE(tys1),_)::_,(DAE.T_METATUPLE(tys2),_)::rest,solvedBindings)
       equation
         (tys1,solvedBindings) = solveBindingsThread(tys1,tys2,false,solvedBindings);
@@ -6003,6 +6005,7 @@ algorithm
         tys1 = Util.listMap(args1, Util.tuple22);
         tys2 = Util.listMap(args2, Util.tuple22);
         (ty1::tys1,solvedBindings) = solveBindingsThread(ty1::tys1,ty2::tys2,false,solvedBindings);
+        tys1 = Util.listMap(tys1, boxIfUnboxedType);
         args1 = Util.listThreadTuple(names1,tys1);
         ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
       then (ty1::rest,solvedBindings);
@@ -6095,15 +6098,14 @@ algorithm
     case ((DAE.T_METATUPLE(tys),_),_)
       equation
         tys = replaceSolvedBindings(tys,solvedBindings,false);
-        tys = Util.listMap(tys, unboxedType);
         ty = (DAE.T_METATUPLE(tys),NONE());
       then ty;
     case ((DAE.T_FUNCTION(args,ty,inline),op),solvedBindings)
       equation
         tys = Util.listMap(args, Util.tuple22);
         tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
-        ty::tys = Util.listMap(tys, unboxedType);
-        ty = boxIfUnboxedType(ty);
+        tys = Util.listMap(tys, unboxedType);
+        ty::tys = Util.listMap(tys, boxIfUnboxedType);
         names = Util.listMap(args, Util.tuple21);
         args = Util.listThreadTuple(names,tys);
         ty = (DAE.T_FUNCTION(args,ty,inline),op);

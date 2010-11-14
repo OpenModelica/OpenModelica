@@ -1780,7 +1780,7 @@ algorithm
       equation
         (_,{v_indx}) = BackendVariable.getVar(cr, vars);
         v_indx_1 = v_indx - 1;
-        failure(eqn = a1[v_indx_1 + 1]);
+        failure(_ = a1[v_indx_1 + 1]);
         print("-  BackendDAEUtil.markStateEquation index = ");
         str = intString(v_indx);
         print(str);
