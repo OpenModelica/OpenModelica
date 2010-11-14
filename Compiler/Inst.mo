@@ -3435,6 +3435,7 @@ algorithm
       Absyn.ElementAttributes DA;
       Absyn.Path fq_class;
       DAE.Type ty;
+      Absyn.TypeSpec tSpec;
       
     // This rule describes how to instantiate a class definition
 	  // that extends a basic type. (No equations or algorithms allowed)
@@ -3788,12 +3789,12 @@ algorithm
       then fail();
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=cn),modifications=mod),
+          SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs),modifications=mod),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        false = listMember(Absyn.pathString(cn), {"tuple","array","Option","list"});
-        cns = Absyn.pathString(cn);
+        false = listMember((Absyn.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
+        cns = Dump.unparseTypeSpec(tSpec);
         Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
       then fail();
 

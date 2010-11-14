@@ -774,7 +774,7 @@ protected function addLocalDecls
   input Boolean impl;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Option<Env.Env,DAE.DAElist> tpl;
+  output Option<tuple<Env.Env,DAE.DAElist>> tpl;
 algorithm
   (outCache,tpl) := matchcontinue (cache,env,els,scopeName,impl,info)
     local
