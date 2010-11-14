@@ -2803,15 +2803,20 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     int in_<%fname%>(type_description * inArgs, type_description * outVar);
     >>
   if outVars then <<
-  <%outVars |> VARIABLE(__) => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
+  <%outVars |> _ => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
   typedef struct <%fname%>_rettype<%boxStr%>_s 
   {
-    <%outVars |> var as VARIABLE(__) =>
-      let dimStr = match ty case ET_ARRAY(__) then
+    <%outVars |> var hasindex i1 =>
+      match var
+      case VARIABLE(__) then
+        let dimStr = match ty case ET_ARRAY(__) then
           '[<%arrayDimensions |> dim => dimension(dim) ;separator=", "%>]'
-      let typeStr = if boxed then varTypeBoxed(var) else varType(var) 
-      '<%typeStr%> targ<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
-    ;separator="\n"%>
+        let typeStr = if boxed then varTypeBoxed(var) else varType(var) 
+        '<%typeStr%> targ<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
+      case FUNCTION_PTR(__) then
+        'modelica_fnptr targ<%i1%>; /* <%name%> */'
+      ;separator="\n"
+    %>
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
 
@@ -3418,21 +3423,20 @@ match var
 case var as FUNCTION_PTR(__) then
   let typelist = (args |> arg => mmcVarType(arg) ;separator=", ")
   let rettype = '<%name%>_rettype'
-  match ty
-    case ET_NORETCALL() then
+  match tys
+    case {} then
       let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%><%\n%>;'
       'void(*_<%name%>)(<%typelist%>);<%\n%>'
     else
       let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
-    <<
-    #define <%rettype%>_1 targ1
-    typedef struct <%rettype%>_s
-    {
-      <%args |> arg hasindex i1 => 
-        <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
-    } <%rettype%>;
-    <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
-    >>
+      <<
+      <% tys |> arg hasindex i1 => '#define <%rettype%>_<%i1%> targ<%i1%>' ; separator="\n" %>
+      typedef struct <%rettype%>_s
+      {
+        <% tys |> ty hasindex i1 => 'modelica_<%mmcExpTypeShort(ty)%> targ<%i1%>;' ; separator="\n" %> 
+      } <%rettype%>;
+      <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
+      >>
   end match
 end functionArg;
   
@@ -5684,11 +5688,12 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   case PAT_CALL(__)
     then
       <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;
-       <%(patterns |> p hasindex i0 =>
+      <%(patterns |> p hasindex i0 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
-        >>); indexOffset=2; empty /* increase the counter even if no output is produced */%>
+        >>); indexOffset=2; empty /* increase the counter even if no output is produced */
+      %>
       >>
   case p as PAT_AS_FUNC_PTR(__) then
     let &assignments += '*((modelica_fnptr*)&_<%p.id%>) = <%rhs%>;<%\n%>'

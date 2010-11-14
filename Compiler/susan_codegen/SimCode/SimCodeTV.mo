@@ -122,7 +122,7 @@ package SimCode
 
     record FUNCTION_PTR
       String name;
-      DAE.ExpType ty;
+      list<DAE.ExpType> tys;
       list<Variable> args;
     end FUNCTION_PTR;
   end Variable;

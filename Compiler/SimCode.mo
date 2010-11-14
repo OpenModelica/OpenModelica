@@ -313,7 +313,7 @@ uniontype Variable
 
   record FUNCTION_PTR
     String name;
-    DAE.ExpType ty;
+    list<DAE.ExpType> tys;
     list<Variable> args;
   end FUNCTION_PTR;
 end Variable;
@@ -1049,7 +1049,7 @@ algorithm
     local
       String name;
     /* Yes, they are VARIABLE, not FUNCTION_PTR. */
-    case FUNCTION_PTR(ty = _)
+    case FUNCTION_PTR(tys = _)
       then true;
     case _ then false;
   end matchcontinue;
@@ -1341,17 +1341,30 @@ algorithm
       DAE.ComponentRef cref_;
       list<Types.FuncArg> args;
       DAE.Type res_ty;
-      DAE.ExpType res_exp_ty;
+      list<DAE.ExpType> etys;
       list<Variable> var_args;
+      list<DAE.Type> tys;
+    
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _)))
+      equation
+        var_args = Util.listMap(args, typesSimFunctionArg);
+        etys = Util.listMap(tys, Types.elabType);
+      then
+        FUNCTION_PTR(name, etys, var_args);
+
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _)))
+      equation
+        var_args = Util.listMap(args, typesSimFunctionArg);
+      then
+        FUNCTION_PTR(name, {}, var_args);
     
     case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _)))
       equation
-        //expType = Types.elabType(tty);
-        res_exp_ty = Types.elabType(res_ty);
+        expType = Types.elabType(res_ty);
         var_args = Util.listMap(args, typesSimFunctionArg);
       then
-        FUNCTION_PTR(name, res_exp_ty, var_args);
-    
+        FUNCTION_PTR(name, {expType}, var_args);
+
     case ((name,tty))
       equation
         expType = Types.elabType(tty);
