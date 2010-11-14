@@ -4225,7 +4225,6 @@ algorithm
         e_1 = DAE.META_TUPLE(elist);
         tys2 = Util.listFill(ty2, listLength(tys1));
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
-        tys_1 = Util.listMap(tys_1, boxIfUnboxedType);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
 
@@ -5274,18 +5273,26 @@ algorithm
 
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, unboxedType);
+        type_list2 = Util.listMap(type_list2, unboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, unboxedType);
+        type_list2 = Util.listMap(type_list2, unboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, unboxedType);
+        type_list2 = Util.listMap(type_list2, unboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, unboxedType);
+        type_list2 = Util.listMap(type_list2, unboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
 

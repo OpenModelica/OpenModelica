@@ -56,7 +56,6 @@ DAEUtil.mo \
 DAEDump.mo \
 Derive.mo \
 Debug.mo \
-DFA.mo \
 Dump.mo \
 DumpGraphviz.mo \
 Env.mo \

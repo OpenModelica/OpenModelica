@@ -2839,76 +2839,6 @@ algorithm
   end matchcontinue;
 end rangeExpression;
 
-/* MetaModelica Language Extension */
-protected function createMatchStatement
-"function: createMatchStatement
-  Author: KS
-  Function called by instStatement"
-  input Env.Cache cache;
-  input Env.Env env;
-  input InstanceHierarchy ih;
-  input Prefix.Prefix pre;
-  input SCode.Statement alg;
-  input Boolean inBoolean;
-  input Integer numError;
-  output Env.Cache outCache;
-  output DAE.Statement outStmt;
-algorithm
-  (outCache,outStmt) := matchcontinue (cache,env,ih,pre,alg,inBoolean,numError)
-    local
-      DAE.Properties cprop,eprop;
-      DAE.Statement stmt;
-      Env.Cache localCache;
-      Env.Env localEnv;
-      Prefix.Prefix localPre;
-      Absyn.Exp exp,e;
-      DAE.ComponentRef ce;
-      DAE.Exp cre,e_1,e_2;
-      Boolean impl;
-      SCode.Accessibility acc;
-      Absyn.ComponentRef cr;
-      DAE.ExpType t;
-      list<Absyn.Exp> expl;
-      Absyn.Info info;
-      DAE.ElementSource source;
-      String str1,str2;
-      
-    // (v1,v2,..,vn)|v|_ := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl,numError)
-      equation
-        expl = MetaUtil.extractListFromTuple(exp, 0);
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl,NONE(),true,pre,info);
-        (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
-        source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
-        stmt = DAE.STMT_ASSIGN(
-                 DAE.ET_OTHER(),
-                 DAE.CREF(DAE.WILD(),DAE.ET_OTHER()),
-                 e_2,source);
-      then
-        (localCache,stmt);
-
-    case (localCache,localEnv,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
-      equation
-        true = numError == Error.getNumErrorMessages();
-        expl = MetaUtil.extractListFromTuple(exp, 0);
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        str1 = Dump.printExpStr(exp);
-        str2 = Dump.printExpStr(e);
-        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str1,str2}, info);
-      then fail();
-
-    case (_,_,_,_,SCode.ALG_ASSIGN(assignComponent = exp, value = e as Absyn.MATCHEXP(matchTy=_), info = info),_,numError)
-      equation
-        true = numError == Error.getNumErrorMessages();
-        str1 = Dump.printExpStr(exp);
-        str2 = Dump.printExpStr(e);
-        Error.addSourceMessage(Error.META_MATCH_GENERAL_FAILURE, {str1,str2}, info);
-      then fail();
-
-  end matchcontinue;
-end createMatchStatement;
-
 protected function instIfTrueBranches
 "Author: BZ, 2008-09
  Initialise a list of if-equations,
@@ -5154,15 +5084,6 @@ algorithm
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
         (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops);
       then (cache,stmts);
-
-      // MetaModelica Matchcontinue
-      /*
-    case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops,_)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt) = createMatchStatement(cache,env,ih,pre,alg,impl,Error.getNumErrorMessages());
-      then (cache,{stmt});
-      */
         
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,numError)
       equation
