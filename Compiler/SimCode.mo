@@ -577,11 +577,11 @@ algorithm
     
     case (cref, _)
       equation
-        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
+        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL(), {});
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false,NONE());
   end matchcontinue;
 end cref2simvar;
 
