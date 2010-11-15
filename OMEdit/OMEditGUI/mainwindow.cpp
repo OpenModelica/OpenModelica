@@ -173,6 +173,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         // Close the OMC Connection
         this->mpOMCProxy->stopServer();
         delete mpOMCProxy;
+        // Close the Library Loader OMC Connection
+        this->mpLibrary->mpLibraryLoaderOMCProxy->stopServer();
+        delete this->mpLibrary->mpLibraryLoaderOMCProxy;
         event->accept();
     }
     else
@@ -255,6 +258,9 @@ void MainWindow::createActions()
     zoomInAction = new QAction(QIcon(":/Resources/icons/zoomIn.png"), tr("Zoom In"), this);
 
     zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
+
+    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
 
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
@@ -408,9 +414,12 @@ void MainWindow::createToolbars()
     viewToolBar = addToolBar(tr("View Toolbar"));
     viewToolBar->setAllowedAreas(Qt::TopToolBarArea);
     viewToolBar->addAction(gridLinesAction);
+    viewToolBar->addSeparator();
     viewToolBar->addAction(resetZoomAction);
     viewToolBar->addAction(zoomInAction);
     viewToolBar->addAction(zoomOutAction);
+    viewToolBar->addSeparator();
+    viewToolBar->addAction(checkModelAction);
 }
 
 //! Open Simulation Window
@@ -511,6 +520,16 @@ void MainWindow::openOMShell()
 
     QProcess *process = new QProcess();
     process->start(omShellPath);
+}
+
+void MainWindow::checkModel()
+{
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    if (pCurrentTab)
+    {
+        CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure, this);
+        widget->show();
+    }
 }
 
 void MainWindow::disableMainWindow(bool disable)

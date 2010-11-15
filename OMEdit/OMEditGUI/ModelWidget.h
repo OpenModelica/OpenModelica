@@ -151,4 +151,18 @@ public slots:
     void renameClass();
 };
 
+class CheckModelWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    CheckModelWidget(QString name, QString nameStructure, MainWindow *pParent = 0);
+
+    MainWindow *mpParentMainWindow;
+private:
+    QString mName;
+    QString mNameStructure;
+    QLabel *mpCheckResultLabel;
+    QPushButton *mpOkButton;
+};
+
 #endif // MODELWIDGET_H

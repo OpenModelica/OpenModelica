@@ -40,11 +40,13 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpDocumentationViewer = new DocumentationViewer(this);
     mpHeadingLabel = new QLabel;
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize - 5));
+    mpHeadingLabel->setAlignment(Qt::AlignTop);
 
     mpPixmapLabel = new QLabel;
     mpPixmapLabel->setObjectName(tr("componentPixmap"));
     mpPixmapLabel->setMaximumSize(QSize(86, 86));
     mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
+    mpPixmapLabel->setAlignment(Qt::AlignCenter);
 
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpPixmapLabel);
@@ -75,6 +77,7 @@ void DocumentationWidget::show(QString className)
     QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
     documentation = StringHandler::removeFirstLastCurlBrackets(documentation);
     documentation = StringHandler::removeFirstLastQuotes(documentation);
+    documentation = documentation.replace("\\\"", "\"");
     mpDocumentationViewer->setHtml(documentation);
     setVisible(true);
 }
@@ -82,8 +85,47 @@ void DocumentationWidget::show(QString className)
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     : QWebView(pParent)
 {
+    mpParent = pParent;
+    // set page font settings
     settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
     settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
+    // set page links settings
+    page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 
-    mpParent = pParent;
+    connect(this, SIGNAL(linkClicked(QUrl)), SLOT(ProcessRequest(QUrl)));
+}
+
+void DocumentationViewer::ProcessRequest(QUrl url)
+{
+    //! @todo
+    /* Send all http requests to desktop services for now. If we need to display web pages then we will change it,
+       but for now else portion is never reached. */
+
+    // if url contains http or mailto: send it to desktop services
+    if ((url.toString().toLower().contains("http")) or (url.toString().toLower().contains("mailto:")))
+    {
+        QDesktopServices::openUrl(url);
+    }
+    // if it is normal http request then check if its not redirected to https
+    else
+    {
+        QNetworkAccessManager* accessManager = page()->networkAccessManager();
+        QNetworkRequest request(url);
+        QNetworkReply* reply = accessManager->get(request);
+        connect(reply, SIGNAL(finished()), SLOT(requestFinished()));
+    }
+}
+
+void DocumentationViewer::requestFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(const_cast<QObject*>(sender()));
+    QUrl possibleRedirectedUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+
+    //if the url contains https
+    if (possibleRedirectedUrl.toString().contains("https"))
+        QDesktopServices::openUrl(possibleRedirectedUrl);
+    else
+        this->load(reply->url());
+
+    reply->deleteLater();
 }

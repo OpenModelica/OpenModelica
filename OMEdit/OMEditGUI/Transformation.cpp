@@ -222,3 +222,18 @@ qreal Transformation::getRotateAngle()
 {
     return mRotateAngle;
 }
+
+qreal Transformation::getScale()
+{
+    return mScale;
+}
+
+qreal Transformation::getPositionX()
+{
+    return mPositionX;
+}
+
+qreal Transformation::getPositionY()
+{
+    return mPositionY;
+}

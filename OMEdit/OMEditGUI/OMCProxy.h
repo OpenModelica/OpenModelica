@@ -48,12 +48,12 @@ class OMCProxy : public QObject
 {
     Q_OBJECT
 private:
-    static OMCProxy *mpInstance;
     OmcCommunication_var mOMC;
     bool mHasInitialized;
     bool mIsStandardLibraryLoaded;
     QString mName;
     QString mResult;
+    bool mDisplayErrors;
     QDialog *mpOMCLogger;
     QLineEdit *mpExpressionTextBox;
     QPushButton *mpSendButton;
@@ -61,7 +61,7 @@ private:
     QString mObjectRefFile;
     QList<QString> mCommandsList;
 public:
-    OMCProxy(MainWindow *pParent = 0);
+    OMCProxy(MainWindow *pParent = 0, bool displayErrors = true);
     ~OMCProxy();
     virtual bool eventFilter(QObject *object, QEvent *event);
     void getPreviousCommand();
@@ -136,6 +136,7 @@ public:
     bool plot(QString modelName, QString plotVariables);
     bool plotParametric(QString modelName, QString plotVariables);
     bool visualize(QString modelName);
+    QString checkModel(QString modelName);
 public slots:
     void openOMCLogger();
     void catchException();

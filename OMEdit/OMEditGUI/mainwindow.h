@@ -123,11 +123,12 @@ public:
     QAction *pasteAction;
     QAction *omcLoggerAction;
     QAction *openOMShellAction;
+    QAction *gridLinesAction;
     QAction *resetZoomAction;
     QAction *zoomInAction;
     QAction *zoomOutAction;
+    QAction *checkModelAction;
     QAction *closeAction;
-    QAction *gridLinesAction;
     QAction *simulationAction;
     QAction *plotAction;
     QAction *documentationAction;
@@ -153,6 +154,7 @@ private slots:
     void openNewFunction();
     void openNewPackage();
     void openOMShell();
+    void checkModel();
 public slots:
     void disableMainWindow(bool disable);
 private:

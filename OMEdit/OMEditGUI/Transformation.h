@@ -45,7 +45,8 @@ class Transformation
 {
 private:
     bool mVisible;
-
+    qreal mPositionX;
+    qreal mPositionY;
     qreal mScale;
     qreal mAspectRatio;
     bool mFlipHorizontal;
@@ -65,9 +66,9 @@ public:
     QTransform getTransformationMatrix();
     QTransform getLibraryTransformationMatrix();
     qreal getRotateAngle();
-
-    qreal mPositionX;
-    qreal mPositionY;
+    qreal getScale();
+    qreal getPositionX();
+    qreal getPositionY();
 };
 
 #endif // TRANSFORMATION_H

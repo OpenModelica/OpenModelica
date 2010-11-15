@@ -86,9 +86,9 @@ public:
     LibraryWidget *mpParentLibraryWidget;
 private:
     QList<ModelicaTreeNode*> mModelicaTreeNodesList;
-    QAction *mRenameAction;
-    QAction *mCheckModelAction;
-    QAction *mDeleteAction;
+    QAction *mpRenameAction;
+    QAction *mpDeleteAction;
+    QAction *mpCheckModelAction;
 signals:
     void nodeDeleted();
 public slots:
@@ -96,8 +96,18 @@ public slots:
     void openProjectTab(QTreeWidgetItem *item, int column);
     void showContextMenu(QPoint point);
     void renameClass();
-    void checkClass();
+    void checkModel();
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
+};
+
+class LibraryTreeNode : public QTreeWidgetItem
+{
+public:
+    LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent = 0);
+
+    QString mName;
+    QString mParentName;
+    QString mNameStructure;
 };
 
 class LibraryTree : public QTreeWidget
@@ -105,25 +115,31 @@ class LibraryTree : public QTreeWidget
     Q_OBJECT
 private:
     QList<QString> mTreeList;
+    bool mItemExpandCollapseClicked;
 
-    QAction *mShowComponentAction;
-    QAction *mViewDocumentationAction;
-
+    QAction *mpShowComponentAction;
+    QAction *mpViewDocumentationAction;
 public:
     LibraryTree(LibraryWidget *pParent = 0);
     ~LibraryTree();
     void createActions();
     void addModelicaStandardLibrary();
     void loadModelicaLibraryHierarchy(QString value, QString prefixStr=QString());
-    void addClass(QString className, QString parentClassName=QString(), QString parentStructure=QString(), bool hasIcon=false);
+    void addClass(QList<LibraryTreeNode*> *tempPackageNodesList, QList<LibraryTreeNode*> *tempNonPackageNodesList,
+                  QString className, QString parentClassName=QString(), QString parentStructure=QString(),
+                  bool hasIcon=false);
+    void addNodes(QList<LibraryTreeNode*> nodes);
     bool isTreeItemLoaded(QTreeWidgetItem *item);
+    static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
 
     LibraryWidget *mpParentLibraryWidget;
 private slots:
-    void showLib(QTreeWidgetItem *item);
+    void expandLib(QTreeWidgetItem *item);
+    void collapseLib(QTreeWidgetItem *item);
     void showContextMenu(QPoint point);
     void showComponent();
     void viewDocumentation();
+    void loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className);
 protected:
     virtual void mousePressEvent(QMouseEvent *event);
 };
@@ -135,6 +151,7 @@ public:
     LibraryTree *mpLibraryTree;
     ModelicaTree *mpModelicaTree;
     QTabWidget *mpLibraryTabs;
+    OMCProxy *mpLibraryLoaderOMCProxy;
     //Member functions
     LibraryWidget(MainWindow *parent = 0);
     ~LibraryWidget();
@@ -168,6 +185,21 @@ public:
     QString mClassName;
     QByteArray mSvgByteArray;
     Component *mpComponent;
+};
+
+class LibraryLoader : public QThread
+{
+    Q_OBJECT
+public:
+    LibraryLoader(QTreeWidgetItem *treeNode, QString className, LibraryTree *pParent = 0);
+
+    LibraryTree *mpParentLibraryTree;
+    QTreeWidgetItem *mTreeNode;
+    QString mClassName;
+protected:
+    void run();
+signals:
+    void loadLibraryComponent(QTreeWidgetItem *treeNode, QString className);
 };
 
 #endif // LIBRARYWIDGET_H

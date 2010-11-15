@@ -59,6 +59,7 @@ public:
 
     enum geometryType {VERTICAL, HORIZONTAL, DIAGONAL};
     GraphicsView *mpParentGraphicsView;
+    QVector<ConnectorLine*> mpLines;
 
     void addPoint(QPointF point);
     void setStartComponent(Component *pComponent);
@@ -73,7 +74,6 @@ private:
     ConnectorLine *mpConnectorLine;
     Component *mpStartComponent;
     Component *mpEndComponent;
-    QVector<ConnectorLine*> mpLines;
     QVector<QPointF> mPoints;
     QVector<geometryType> mGeometries;
     bool mEndComponentConnected;

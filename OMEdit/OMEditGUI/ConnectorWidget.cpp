@@ -531,21 +531,12 @@ void ConnectorLine::setHovered()
 //! Defines what shall happen if a mouse key is pressed while hovering a connector line.
 void ConnectorLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if(event->button() == Qt::LeftButton)
-    {
-        mOldPos = this->pos();
-    }
     QGraphicsLineItem::mousePressEvent(event);
 }
 
 //! Defines what shall happen if a mouse key is released while hovering a connector line.
 void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-//    if((this->pos() != mOldPos) and (event->button() == Qt::LeftButton))
-//    {
-//        mpParentGUIConnector->mpParentGraphicsView->undoStack->newPost();
-//        mpParentGUIConnector->mpParentGraphicsView->undoStack->registerModifiedConnector(mOldPos, this->pos(), mpParentGUIConnector, getLineNumber());
-//    }
     QGraphicsLineItem::mouseReleaseEvent(event);
 }
 

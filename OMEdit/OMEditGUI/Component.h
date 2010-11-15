@@ -114,6 +114,8 @@ public:
     QList<Component*> mpComponentsList;
     QList<IconParameters*> mpIconParametersList;
     bool mIsLibraryComponent;
+    QPointF mOldPosition;
+    bool isMousePressed;
 
     bool parseAnnotationString(Component *item, QString value);
     QRectF boundingRect() const;
@@ -136,6 +138,7 @@ public:
 signals:
     void componentClicked(Component*);
     void componentMoved();
+    void componentPositionChanged();
     void componentDeleted();
     void componentSelected();
     void componentRotated(bool isRotated);

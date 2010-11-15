@@ -165,7 +165,13 @@ void GraphicsView::dropEvent(QDropEvent *event)
     dataStream >> className;
 
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-    if (!pMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, className))
+
+    // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
+    if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CLASS, className) or
+        pMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, className) or
+        pMainWindow->mpOMCProxy->isWhat(StringHandler::BLOCK, className) or
+        pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, className) or
+        pMainWindow->mpOMCProxy->isWhat(StringHandler::RECORD, className))
     {
         // Check if the icon is already loaded.
         Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(className);
@@ -209,12 +215,12 @@ void GraphicsView::deleteComponentObject(Component *component)
 {
     // First Remove the Connector associated to this icon
     int i = 0;
-    while(i != mConnectorVector.size())
+    while(i != mConnectorsVector.size())
     {
-        if((mConnectorVector[i]->getStartComponent()->getParentComponent()->getName() == component->getName()) or
-           (mConnectorVector[i]->getEndComponent()->getParentComponent()->getName() == component->getName()))
+        if((mConnectorsVector[i]->getStartComponent()->getParentComponent()->getName() == component->getName()) or
+           (mConnectorsVector[i]->getEndComponent()->getParentComponent()->getName() == component->getName()))
         {
-            this->removeConnector(mConnectorVector[i]);
+            this->removeConnector(mConnectorsVector[i]);
             i = 0;   //Restart iteration if map has changed
         }
         else
@@ -288,7 +294,42 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     {
         mpConnector->addPoint(this->mapToScene(event->pos()));
     }
+    if ((event->button() == Qt::LeftButton) && (!this->mIsCreatingConnector))
+    {
+        // save the position of all components
+        foreach (Component *component, mComponentsList)
+        {
+            component->mOldPosition = component->pos();
+            component->isMousePressed = true;
+        }
+    }
     QGraphicsView::mousePressEvent(event);
+}
+
+void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
+{
+    if ((event->button() == Qt::LeftButton) && (!this->mIsCreatingConnector))
+    {
+        // if component position is changed then update annotations
+        foreach (Component *component, mComponentsList)
+        {
+            if (component->mOldPosition != component->pos())
+            {
+                component->updateAnnotationString();
+                // if there are any connectors associated to component update their annotations as well.
+                foreach (Connector *connector, mConnectorsVector)
+                {
+                    if ((connector->getStartComponent()->mpParentComponent == component) or
+                        (connector->getEndComponent()->mpParentComponent == component))
+                    {
+                        connector->updateConnectionAnnotationString();
+                    }
+                }
+            }
+            component->isMousePressed = false;
+        }
+    }
+    QGraphicsView::mouseReleaseEvent(event);
 }
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
@@ -428,7 +469,7 @@ void GraphicsView::addConnector(Component *pComponent)
                     this->mpConnector->updateEndPoint(newPos);
                     pComponent->getParentComponent()->addConnector(this->mpConnector);
                     this->mpConnector->setEndComponent(pComponent);
-                    this->mConnectorVector.append(mpConnector);
+                    this->mConnectorsVector.append(mpConnector);
                     // add the connection annotation to OMC
                     mpConnector->updateConnectionAnnotationString();
                     pMainWindow->mpMessageWidget->printGUIInfoMessage("Conncted: (" + startIconName + "." + startIconCompName +
@@ -437,7 +478,9 @@ void GraphicsView::addConnector(Component *pComponent)
                 else
                 {
                     removeConnector();
+                    //! @todo make the error message better
                     pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
+                    pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
                     // remove the connection from model
                     pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
                                                               endIconName + "." + endIconCompName,
@@ -460,11 +503,11 @@ void GraphicsView::removeConnector()
     else
     {
         int i = 0;
-        while(i != mConnectorVector.size())
+        while(i != mConnectorsVector.size())
         {
-            if(mConnectorVector[i]->isActive())
+            if(mConnectorsVector[i]->isActive())
             {
-                this->removeConnector(mConnectorVector[i]);
+                this->removeConnector(mConnectorsVector[i]);
                 i = 0;   //Restart iteration if map has changed
             }
             else
@@ -483,15 +526,15 @@ void GraphicsView::removeConnector(Connector* pConnector)
     bool doDelete = false;
     int i;
 
-    for(i = 0; i != mConnectorVector.size(); ++i)
+    for(i = 0; i != mConnectorsVector.size(); ++i)
     {
-        if(mConnectorVector[i] == pConnector)
+        if(mConnectorsVector[i] == pConnector)
         {
             scene()->removeItem(pConnector);
             doDelete = true;
             break;
         }
-        if(mConnectorVector.empty())
+        if(mConnectorsVector.empty())
             break;
     }
     if(doDelete)
@@ -515,7 +558,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
             pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
         }
         delete pConnector;
-        mConnectorVector.remove(i);
+        mConnectorsVector.remove(i);
     }
 }
 
@@ -559,6 +602,17 @@ void GraphicsView::selectAll()
     foreach (Component *icon, mComponentsList)
     {
         icon->setSelected(true);
+    }
+
+    // Select all connectors
+    foreach (Connector *connector, mConnectorsVector)
+    {
+        // just make one line of connector selected, it will make the whole connector selected
+        foreach (ConnectorLine *connectorLine, connector->mpLines)
+        {
+            connectorLine->setSelected(true);
+            break;
+        }
     }
 }
 
@@ -907,8 +961,9 @@ void ProjectTab::getModelComponents()
             newComponent->mTransformationString = componentsAnnotationsList.at(i);
             Transformation *transformation = new Transformation(newComponent);
             //newComponent->setTransform(transformation->getTransformationMatrix());
-            newComponent->setPos(transformation->mPositionX, transformation->mPositionY);
+            newComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
             newComponent->setRotation(transformation->getRotateAngle());
+            //newComponent->scale(transformation->getScale(), transformation->getScale());
             //! @todo add the scaling code later on
         }
         i++;
@@ -995,6 +1050,7 @@ void ProjectTab::getModelConnections()
         }
         // create a connector now
         Connector *pConnector = new Connector(pStartPort, pEndPort, mpGraphicsView, points);
+        mpGraphicsView->mConnectorsVector.append(pConnector);
         mpGraphicsView->scene()->addItem(pConnector);
     }
 }
@@ -1070,6 +1126,21 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
             SLOT(addDiagramViewTab(QTreeWidgetItem*,int)));
 }
 
+ProjectTabWidget::~ProjectTabWidget()
+{
+    // delete all the tabs opened currently
+    while(count() > 0)
+    {
+        delete dynamic_cast<ProjectTab*>(this->widget(count() - 1));
+    }
+
+    // delete all the removed tabs as well.
+    foreach (ProjectTab *pCurrentTab, mRemovedTabsList)
+    {
+        delete pCurrentTab;
+    }
+}
+
 //! Returns a pointer to the currently active project tab
 ProjectTab* ProjectTabWidget::getCurrentTab()
 {
@@ -1081,6 +1152,18 @@ ProjectTab* ProjectTabWidget::getTabByName(QString name)
     for (int i = 0; i < this->count() ; i++)
     {
         ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(this->widget(i));
+        if (pCurrentTab->mModelNameStructure == name)
+        {
+            return pCurrentTab;
+        }
+    }
+    return 0;
+}
+
+ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
+{
+    foreach (ProjectTab *pCurrentTab, mRemovedTabsList)
+    {
         if (pCurrentTab->mModelNameStructure == name)
         {
             return pCurrentTab;
@@ -1102,6 +1185,17 @@ int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 void ProjectTabWidget::removeTab(int index)
 {
     mpParentMainWindow->disableMainWindow(false);
+    // if tab is saved and user is just closing it then save it to mRemovedTabsList, so that we can open it later on
+    ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
+    if (pCurrentTab->mIsSaved)
+    {
+        mRemovedTabsList.append(pCurrentTab);
+    }
+    else
+    {
+        // delete the tab if user dont save it, becasue removetab only removes the widget don't delete it
+        delete pCurrentTab;
+    }
     QTabWidget::removeTab(index);
     emit tabRemoved();
 }
@@ -1143,12 +1237,18 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
     projectTab->mIsSaved = true;
     projectTab->mModelName = modelName;
     projectTab->mModelNameStructure = modelStructure;
+    projectTab->mModelFileName = mpParentMainWindow->mpOMCProxy->getSourceFile(modelStructure);
     projectTab->mType = type;
     projectTab->mTabPosition = addTab(projectTab, modelName);
     projectTab->setReadOnly(false);
     projectTab->getModelComponents();
     projectTab->getModelConnections();
     setCurrentWidget(projectTab);
+    /* when we add the models and connections to the model, GraphicsView hasChanged will be called
+       which mark the model as not saved, so just make it save again manually. */
+//    QString tabName = tabText(currentIndex());
+//    tabName.chop(1);
+//    setTabText(currentIndex(), tabName);
 }
 
 //! Adds a ProjectTab object (a new tab) to itself.
@@ -1240,6 +1340,11 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
                 tabName.chop(1);
                 setTabText(index, tabName);
                 pCurrentTab->mIsSaved = true;
+                MessageWidget *pMessageWidget = mpParentMainWindow->mpMessageWidget;
+                pMessageWidget->printGUIInfoMessage(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
+                                                    .arg(StringHandler::getModelicaClassType(pCurrentTab->mType))
+                                                    .arg(pCurrentTab->mModelName)
+                                                    .arg(pCurrentTab->mModelFileName));
             }
         }
     }
@@ -1397,7 +1502,7 @@ void ProjectTabWidget::openModel()
         return;
 
     // create new OMC instance and load the file in it
-    OMCProxy *omc = new OMCProxy(mpParentMainWindow);
+    OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
     // if error in loading file
     if (!omc->loadFile(fileName))
     {
@@ -1476,10 +1581,7 @@ void ProjectTabWidget::enableViewToolbar()
 {
     if (!mToolBarEnabled)
     {
-        mpParentMainWindow->gridLinesAction->setEnabled(true);
-        mpParentMainWindow->resetZoomAction->setEnabled(true);
-        mpParentMainWindow->zoomInAction->setEnabled(true);
-        mpParentMainWindow->zoomOutAction->setEnabled(true);
+        mpParentMainWindow->viewToolBar->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -1488,10 +1590,7 @@ void ProjectTabWidget::disableViewToolbar()
 {
     if (mToolBarEnabled and (count() == 0))
     {
-        mpParentMainWindow->gridLinesAction->setEnabled(false);
-        mpParentMainWindow->resetZoomAction->setEnabled(false);
-        mpParentMainWindow->zoomInAction->setEnabled(false);
-        mpParentMainWindow->zoomOutAction->setEnabled(false);
+        mpParentMainWindow->viewToolBar->setEnabled(false);
         mToolBarEnabled = false;
     }
 }

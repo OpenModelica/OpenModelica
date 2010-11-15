@@ -514,7 +514,6 @@ RenameClassWidget::RenameClassWidget(QString name, QString nameStructure, MainWi
     mpParentMainWindow = parent;
 
     this->setWindowTitle(QString(Helper::applicationName).append(" - Rename ").append(name));
-    this->setMaximumSize(300, 100);
     this->setMinimumSize(300, 100);
     this->setModal(true);
 
@@ -586,4 +585,33 @@ void RenameClassWidget::renameClass()
                              tr("OK"));
         return;
     }
+}
+
+CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWindow *pParent)
+    : QDialog(pParent, Qt::WindowTitleHint), mName(name), mNameStructure(nameStructure)
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    mpParentMainWindow = pParent;
+
+    setWindowTitle(QString(Helper::applicationName).append(" - Check Model - ").append(name));
+    setMinimumSize(300, 100);
+    setModal(true);
+
+    mpCheckResultLabel = new QLabel(tr(""));
+    mpCheckResultLabel->setText(StringHandler::removeFirstLastQuotes(
+                                mpParentMainWindow->mpOMCProxy->checkModel(mNameStructure)));
+    // Create the button
+    mpOkButton = new QPushButton(tr("OK"));
+    connect(mpOkButton, SIGNAL(pressed()), SLOT(close()));
+
+    // Create a layout
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->setAlignment(Qt::AlignCenter);
+    buttonLayout->addWidget(mpOkButton);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    mainLayout->addWidget(mpCheckResultLabel);
+    mainLayout->addLayout(buttonLayout);
+
+    setLayout(mainLayout);
 }

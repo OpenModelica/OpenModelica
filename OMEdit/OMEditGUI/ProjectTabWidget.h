@@ -81,7 +81,7 @@ public:
 
     QList<Component*> mComponentsList;
     bool mIsCreatingConnector;
-    QVector<Connector *> mConnectorVector;
+    QVector<Connector*> mConnectorsVector;
     ProjectTab *mpParentProjectTab;
     QAction *mpCancelConnectionAction;
     QAction *mpRotateIconAction;
@@ -112,6 +112,7 @@ protected:
     virtual void drawBackground(QPainter *painter, const QRectF &rect);
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void contextMenuEvent(QContextMenuEvent *event);
@@ -182,8 +183,10 @@ class ProjectTabWidget : public QTabWidget
     Q_OBJECT
 public:
     ProjectTabWidget(MainWindow *parent = 0);
+    ~ProjectTabWidget();
     ProjectTab* getCurrentTab();
     ProjectTab* getTabByName(QString name);
+    ProjectTab* getRemovedTabByName(QString name);
     int addTab(ProjectTab *tab, QString tabName);
     void removeTab(int index);
     void disableTabs(bool disable);
@@ -192,6 +195,7 @@ public:
     MainWindow *mpParentMainWindow;
     bool mShowLines;
     bool mToolBarEnabled;
+    QList<ProjectTab*> mRemovedTabsList;
 signals:
     void tabAdded();
     void tabRemoved();

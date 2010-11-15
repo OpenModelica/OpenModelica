@@ -107,14 +107,14 @@ ModelicaTree::~ModelicaTree()
 
 void ModelicaTree::createActions()
 {
-    mRenameAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Rename"), this);
-    connect(mRenameAction, SIGNAL(triggered()), SLOT(renameClass()));
+    mpRenameAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Rename"), this);
+    connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameClass()));
 
-    mCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
-    connect(mCheckModelAction, SIGNAL(triggered()), SLOT(checkClass()));
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
 
-    mDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
-    connect(mDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
+    mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
+    connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
 }
 
 ModelicaTreeNode* ModelicaTree::getNode(QString name)
@@ -172,12 +172,16 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
 
 void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
 {
+    Q_UNUSED(column);
+    // set the cursor to wait cursor
+    setCursor(Qt::WaitCursor);
+
     bool isFound = false;
     // if the clicked item is model
     ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item);
     ProjectTab *pCurrentTab;
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
-    pCurrentTab = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
+    pCurrentTab = pMainWindow->mpProjectTabs->getTabByName(treeNode->mNameStructure);
     if (pCurrentTab)
     {
         pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
@@ -186,10 +190,24 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     // if the tab is closed by user then reopen it and set it as current tab
     if (!isFound)
     {
+        pCurrentTab = pMainWindow->mpProjectTabs->getRemovedTabByName(treeNode->mNameStructure);
+        if (pCurrentTab)
+        {
+            pMainWindow->mpProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
+            pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
+            pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
+            isFound = true;
+        }
+    }
+    // if the tab is found in current tabs and removed tabs then user has loaded a new model, just open it then
+    if (!isFound)
+    {
         //! @todo make it better load the model here and get the components required.
         ProjectTab *newTab = new ProjectTab(pMainWindow->mpProjectTabs);
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure, treeNode->mType);
     }
+    // unset the cursor
+    unsetCursor();
 }
 
 void ModelicaTree::showContextMenu(QPoint point)
@@ -202,9 +220,9 @@ void ModelicaTree::showContextMenu(QPoint point)
     {
         mpParentLibraryWidget->mSelectedModelicaNode = dynamic_cast<ModelicaTreeNode*>(item);
         QMenu menu(mpParentLibraryWidget);
-        menu.addAction(mRenameAction);
-        menu.addAction(mCheckModelAction);
-        menu.addAction(mDeleteAction);
+        menu.addAction(mpRenameAction);
+        menu.addAction(mpDeleteAction);
+        menu.addAction(mpCheckModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -218,9 +236,12 @@ void ModelicaTree::renameClass()
     widget->show();
 }
 
-void ModelicaTree::checkClass()
+void ModelicaTree::checkModel()
 {
-
+    CheckModelWidget *widget = new CheckModelWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
+                                                    mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
+                                                    mpParentLibraryWidget->mpParentMainWindow);
+    widget->show();
 }
 
 bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
@@ -285,9 +306,21 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
     }
 }
 
+LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent)
+    : QTreeWidgetItem(parent)
+{
+    mName = text;
+    mParentName = parentName;
+    mNameStructure = tooltip;
+
+    setText(0, mName);
+    setToolTip(0, mNameStructure);
+}
+
 LibraryTree::LibraryTree(LibraryWidget *pParent)
     : QTreeWidget(pParent)
 {
+    mItemExpandCollapseClicked = false;
     mpParentLibraryWidget = pParent;
 
     setFrameShape(QFrame::NoFrame);
@@ -300,7 +333,8 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     createActions();
 
-    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandLib(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)), SLOT(collapseLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
 }
 
@@ -313,11 +347,11 @@ LibraryTree::~LibraryTree()
 
 void LibraryTree::createActions()
 {
-    mShowComponentAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Show Component"), this);
-    connect(mShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
+    mpShowComponentAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Show Component"), this);
+    connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
 
-    mViewDocumentationAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("View Documentation"), this);
-    connect(mViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
+    mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("View Documentation"), this);
+    connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -332,6 +366,13 @@ void LibraryTree::addModelicaStandardLibrary()
         newTreePost->setToolTip(0, QString("Modelica"));
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         insertTopLevelItem(0, newTreePost);
+
+        // get the Icon for Modelica tree node
+        LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, tr("Modelica"), this);
+        libraryLoader->start(QThread::HighestPriority);
+        while (libraryLoader->isRunning())
+            qApp->processEvents();
+
 //        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
 //        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
     }
@@ -342,15 +383,22 @@ void LibraryTree::addModelicaStandardLibrary()
 //! @param prefixstr is the name of the parent hierarchy of the class.
 void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
 {
+    QList<LibraryTreeNode*> tempPackageNodesList;
+    QList<LibraryTreeNode*> tempNonPackageNodesList;
+
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isPackage(value))
     {
         QStringList list = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames(value);
         prefixStr += value + ".";
         foreach (QString str, list)
         {
-            addClass(str, StringHandler::getSubStringFromDots(prefixStr), prefixStr, true);
+            addClass(&tempPackageNodesList, &tempNonPackageNodesList, str,
+                     StringHandler::getSubStringFromDots(prefixStr), prefixStr, true);
         }
     }
+
+    addNodes(tempPackageNodesList);
+    addNodes(tempNonPackageNodesList);
 
     /*
         Open the Following code and comment the above if loading library once.
@@ -382,47 +430,57 @@ void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
 //! @param parentClassName is the name of the parent OM Class where the OM Class should be added.
 //! @param parentStructure is the name of the parent hierarchy of the OM Class where, used as a tooltip.
 //! @param hasIcon is the boolean value indicating whether the class has IconAnnotation or not.
-void LibraryTree::addClass(QString className, QString parentClassName, QString parentStructure, bool hasIcon)
+void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
+                           QList<LibraryTreeNode *> *tempNonPackageNodesList, QString className,
+                           QString parentClassName, QString parentStructure, bool hasIcon)
 {
     mpParentLibraryWidget->mpParentMainWindow->statusBar->showMessage(QString("Loading: ")
                                                                       .append(parentStructure + className));
-    QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
-    newTreePost->setText(0, QString(className));
-    newTreePost->setToolTip(0, QString(parentStructure + className));
+    LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName,
+                                                       QString(parentStructure + className), (QTreeWidget*)0);
 
     // If Loaded class is package show treewidgetitem expand indicator
     // Remove if using load once library feature
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure + className))
     {
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-        hasIcon = false;
+        //hasIcon = false;
+        tempPackageNodesList->append(newTreePost);
+    }
+    else
+    {
+        tempNonPackageNodesList->append(newTreePost);
     }
 
     if (hasIcon)
     {
-        QString result;
-        result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure + className);
-        LibraryComponent *libComponent = new LibraryComponent(result, parentStructure + className,
-                                                              mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
-
-        newTreePost->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
-        mpParentLibraryWidget->addComponentObject(libComponent);
+        LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, parentStructure + className, this);
+        libraryLoader->start(QThread::HighestPriority);
+        while (libraryLoader->isRunning())
+            qApp->processEvents();
     }
+}
 
-    if (parentClassName.isEmpty())
+void LibraryTree::addNodes(QList<LibraryTreeNode *> nodes)
+{
+    qSort(nodes.begin(), nodes.end(), sortNodesAscending);
+    foreach (LibraryTreeNode *node, nodes)
     {
-        insertTopLevelItem(0, newTreePost);
-    }
-    else
-    {
-        QTreeWidgetItemIterator it(this);
-        while (*it)
+        if (node->mParentName.isEmpty())
         {
-            if ((*it)->toolTip(0) == StringHandler::removeLastDot(parentStructure))
+            insertTopLevelItem(0, node);
+        }
+        else
+        {
+            QTreeWidgetItemIterator it(this);
+            while (*it)
             {
-                (*it)->addChild(newTreePost);
+                if ((*it)->toolTip(0) == StringHandler::removeLastWordAfterDot(node->mNameStructure))
+                {
+                    (*it)->addChild(node);
+                }
+                ++it;
             }
-            ++it;
         }
     }
 }
@@ -435,12 +493,17 @@ bool LibraryTree::isTreeItemLoaded(QTreeWidgetItem *item)
     return true;
 }
 
-//! Makes a library visible.
-//! @param item is the library to show.
-//! @param column is the position of the library name in the tree.
-//! @see hideAllLib()
-void LibraryTree::showLib(QTreeWidgetItem *item)
+bool LibraryTree::sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2)
 {
+    return node1->mName.toLower() < node2->mName.toLower();
+}
+
+//! Makes a library expand.
+//! @param item is the library to show.
+//! @see collapseLib(QTreeWidgetItem *item)
+void LibraryTree::expandLib(QTreeWidgetItem *item)
+{
+    mItemExpandCollapseClicked = true;
     if (isTreeItemLoaded(item))
     {
         mTreeList.append(item->toolTip(0));
@@ -472,6 +535,15 @@ void LibraryTree::showLib(QTreeWidgetItem *item)
 //    unsetCursor();
 }
 
+//! Makes a library collapse.
+//! @param item is the library to show.
+//! @see collapseLib(QTreeWidgetItem *item)
+void LibraryTree::collapseLib(QTreeWidgetItem *item)
+{
+    Q_UNUSED(item);
+    mItemExpandCollapseClicked = true;
+}
+
 void LibraryTree::showContextMenu(QPoint point)
 {
     int adjust = 24;
@@ -482,8 +554,8 @@ void LibraryTree::showContextMenu(QPoint point)
     {
         mpParentLibraryWidget->mSelectedLibraryNode = item;
         QMenu menu(this);
-        menu.addAction(mShowComponentAction);
-        menu.addAction(mViewDocumentationAction);
+        menu.addAction(mpShowComponentAction);
+        menu.addAction(mpViewDocumentationAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -502,9 +574,27 @@ void LibraryTree::viewDocumentation()
     pMainWindow->mpDocumentationWidget->show(mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0));
 }
 
+void LibraryTree::loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className)
+{
+    QString result;
+    result = mpParentLibraryWidget->mpLibraryLoaderOMCProxy->getIconAnnotation(className);
+    LibraryComponent *libComponent = new LibraryComponent(result, className,
+                                                          mpParentLibraryWidget->mpLibraryLoaderOMCProxy);
+
+    treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+    mpParentLibraryWidget->addComponentObject(libComponent);
+}
+
 void LibraryTree::mousePressEvent(QMouseEvent *event)
 {
     QTreeWidget::mousePressEvent(event);
+
+    // if user has clicked on the expand/collapse button then return simply.
+    if (mItemExpandCollapseClicked)
+    {
+        mItemExpandCollapseClicked = false;
+        return;
+    }
 
     if ((event->button() == Qt::LeftButton))
     {
@@ -513,8 +603,8 @@ void LibraryTree::mousePressEvent(QMouseEvent *event)
             return;
 
         // if item is package then return
-        if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
-            return;
+//        if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
+//            return;
 
         QByteArray itemData;
         QDataStream dataStream(&itemData, QIODevice::WriteOnly);
@@ -559,6 +649,10 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
     mpGrid->addWidget(mpLibraryTabs);
+
+    // create an OMC Instance for library loading thread
+    mpLibraryLoaderOMCProxy = new OMCProxy(mpParentMainWindow, false);
+    mpLibraryLoaderOMCProxy->loadStandardLibrary();
 
     setLayout(mpGrid);
 }
@@ -750,4 +844,19 @@ QPixmap LibraryComponent::getComponentPixmap(QSize size)
     svgRenderer.render(&painter);
     painter.end();
     return pixmap;
+}
+
+LibraryLoader::LibraryLoader(QTreeWidgetItem *treeNode, QString className, LibraryTree *pParent)
+{
+    mTreeNode = treeNode;
+    mClassName = className;
+    mpParentLibraryTree = pParent;
+
+    connect(this, SIGNAL(loadLibraryComponent(QTreeWidgetItem*,QString)),
+            mpParentLibraryTree, SLOT(loadingLibraryComponent(QTreeWidgetItem*,QString)));
+}
+
+void LibraryLoader::run()
+{
+    emit loadLibraryComponent(mTreeNode, mClassName);
 }

@@ -163,7 +163,9 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
 {
     mpParentComponent = pParent;
     mClassName = pComponent->mClassName;
-    mpOMCProxy = pComponent->mpOMCProxy;
+    /* make sure you dont use the OMC instance of pComponent, since it has the library loader instance and
+       not the main instance */
+    mpOMCProxy = mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     mAnnotationString = pComponent->mAnnotationString;
 
     // Assing the Graphics View of this component to passed component. In order to avoid exceptions
@@ -435,8 +437,6 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         {
             setSelectionBoxPassive();
             unsetCursor();
-            // update the annotation if user has changed something
-            updateAnnotationString();
             disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
             disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
@@ -453,10 +453,19 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit componentMoved();
+        // if user has changed the postion using the keyboard then update annotations
+        // if user changes the position with mouse we handle it in mouse events of graphicsview
+        if (!isMousePressed)
+        {
+            updateAnnotationString();
+            // update connectors annotations that are associated to this component
+            emit componentPositionChanged();
+        }
     }
     else if (change == QGraphicsItem::ItemRotationHasChanged)
     {
         emit componentRotated(true);
+        updateAnnotationString();
         updateSelectionBox();
     }
     return value;
@@ -553,7 +562,7 @@ void Component::updateSelectionBox()
 void Component::addConnector(Connector *item)
 {
     connect(this, SIGNAL(componentMoved()), item, SLOT(drawConnector()));
-    connect(this, SIGNAL(componentMoved()), item, SLOT(updateConnectionAnnotationString()));
+    connect(this, SIGNAL(componentPositionChanged()), item, SLOT(updateConnectionAnnotationString()));
 
     connect(this, SIGNAL(componentRotated(bool)), item, SLOT(drawConnector(bool)));
     connect(this, SIGNAL(componentRotated(bool)), item, SLOT(updateConnectionAnnotationString()));

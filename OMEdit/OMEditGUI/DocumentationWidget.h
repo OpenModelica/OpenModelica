@@ -34,7 +34,7 @@
 #ifndef DOCUMENTATIONWIDGET_H
 #define DOCUMENTATIONWIDGET_H
 
-#include <QtWebKit/QWebView>
+#include <QtWebKit>
 
 #include "mainwindow.h"
 
@@ -57,10 +57,14 @@ public:
 
 class DocumentationViewer : public QWebView
 {
+    Q_OBJECT
 public:
     DocumentationViewer(DocumentationWidget *pParent);
 
     DocumentationWidget *mpParent;
+public slots:
+    void ProcessRequest(QUrl url);
+    void requestFinished();
 };
 
 #endif // DOCUMENTATIONWIDGET_H

@@ -34,10 +34,10 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "1.0 beta";
+QString Helper::applicationVersion = "0.0.2";
 QString Helper::applicationIntroText = "Open Modelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
-QString Helper::omcServerName = "OMEditor";
+QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
 #ifdef WIN32
@@ -61,48 +61,55 @@ QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 
 QString GUIMessages::getMessage(int type)
 {
-    if (type == SAME_COMPONENT_NAME)
+    switch (type)
+    {
+    case SAME_COMPONENT_NAME:
         return "A Component with the same name already exists. Please choose another Name.";
-    else if (type == SAME_PORT_CONNECT)
+    case SAME_PORT_CONNECT:
         return "You can not connect a port to itself.";
-    else if (type == NO_OPEN_MODEL)
+    case NO_OPEN_MODEL:
         return "There is no open Model to simulate.";
-    else if (type == NO_SIMULATION_STARTTIME)
+    case NO_SIMULATION_STARTTIME:
         return "Simulation Start Time is not defined. Default value (0) will be used.";
-    else if (type == NO_SIMULATION_STOPTIME)
+    case NO_SIMULATION_STOPTIME:
         return "Simulation Stop Time is not defined.";
-    else if (type == SIMULATION_STARTTIME_LESSTHAN_STOPTIME)
+    case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
         return "Simulation Start Time should be less than Stop Time.";
-    else if (type == ENTER_NAME)
+    case ENTER_NAME:
         return "Please enter %1 Name.";
-    else if (type == MODEL_ALREADY_EXISTS)
+    case MODEL_ALREADY_EXISTS:
         return "%1 %2 already exits %3.";
-    else if (type == ITEM_ALREADY_EXISTS)
+    case ITEM_ALREADY_EXISTS:
         return "An item with the same name alresady exists. Please try some other name.";
-    else if (type == OPEN_MODELICA_HOME_NOT_FOUND)
+    case OPEN_MODELICA_HOME_NOT_FOUND:
         return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
-    else if (type == ERROR_OCCURRED)
+    case ERROR_OCCURRED:
         return "Following Error has occurred. \n\n %1.";
-    else if (type == ERROR_IN_MODELICA_TEXT)
+    case ERROR_IN_MODELICA_TEXT:
         return "Following Errors are found in Modelica Text. \n\n %1.";
-    else if (type == UNDO_OR_FIX_ERRORS)
+    case UNDO_OR_FIX_ERRORS:
         return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
-    else if (type == NO_OPEN_MODELICA_KEYWORDS)
+    case NO_OPEN_MODELICA_KEYWORDS:
         return "Please make sure you are not using any Open Modelica Keywords like (model, package, record, class etc.)";
-    else if (type == INCOMPATIBLE_CONNECTORS)
+    case INCOMPATIBLE_CONNECTORS:
         return "Incompatible types for the connectors.";
-    else if (type == SAVE_CHANGES)
+    case SAVE_CHANGES:
         return "Do you want to save your changes before closing?";
-    else if (type == DELETE_FAIL)
+    case DELETE_FAIL:
         return "Unable to delete. Server error has occurred while trying to delete.";
-    else if (type == ONLY_MODEL_ALLOWED)
+    case ONLY_MODEL_ALLOWED:
         return "This item is not a model.";
-    else if (type == UNABLE_TO_LOAD_FILE)
+    case UNABLE_TO_LOAD_FILE:
         return "Error has occurred while loading the file. Unable to load the file.";
-    else if (type == DELETE_AND_LOAD)
+    case DELETE_AND_LOAD:
         return "Delete the existing models before loading the file.";
-    else if (type == REDEFING_EXISTING_MODELS)
+    case REDEFING_EXISTING_MODELS:
         return "Redefing models '%1' which already exists.";
-    else if (type == INVALID_COMPONENT_ANNOTATIONS)
+    case INVALID_COMPONENT_ANNOTATIONS:
         return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
+    case SAVED_MODEL:
+        return "Saved %1 %2. File : '%3'";
+    default:
+        return "";
+    }
 }

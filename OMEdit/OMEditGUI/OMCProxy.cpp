@@ -53,9 +53,9 @@
 //! @param mHasInitialized is the boolean variable used for checking server intialization.
 //! @param mIsStandardLibraryLoaded is the boolean variable used for checking OM Standard Library intialization.
 //! @param mResult contains the result obtained from OMC.
-OMCProxy::OMCProxy(MainWindow *pParent)
+OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     : mOMC(0), mHasInitialized(false), mIsStandardLibraryLoaded(false),
-      mName(Helper::omcServerName) ,mResult("")
+      mName(Helper::omcServerName) ,mResult(""), mDisplayErrors(displayErrors)
 {
     this->mpParentMainWindow = pParent;
     this->mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
@@ -187,7 +187,11 @@ bool OMCProxy::startServer()
 
         // Check the IOR file created by omc.exe
         QFile objectRefFile;
-        QString fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString().remove(":"));
+        QString fileIdentifier;
+        if (mDisplayErrors)
+            fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString().remove(":"));
+        else
+            fileIdentifier = QString("temp-").append(qApp->sessionId().append(QTime::currentTime().toString().remove(":")));
 
         #ifdef WIN32 // Win32
             objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(this->mName).append(fileIdentifier));
@@ -238,17 +242,23 @@ bool OMCProxy::startServer()
     }
     catch(std::exception &e)
     {
-        QString msg = e.what();
-        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              msg.append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
+        if (mDisplayErrors)
+        {
+            QString msg = e.what();
+            QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                                  msg.append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
+        }
         mHasInitialized = false;
         return false;
     }
     catch (CORBA::Exception&)
     {
-        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              QString("Unable to communicate with ").append(Helper::applicationName).append(" server.")
-                              .append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
+        if (mDisplayErrors)
+        {
+            QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                                  QString("Unable to communicate with ").append(Helper::applicationName).append(" server.")
+                                  .append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
+        }
         mHasInitialized = false;
         return false;
     }
@@ -295,11 +305,15 @@ void OMCProxy::sendCommand(QString expression)
         // if the command is quit() and we get exception just simply quit
         if (expression == "quit()")
             return;
-        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
-                              .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
+
         removeObjectRefFile();
-        restartApplication();
+        if (mDisplayErrors)
+        {
+            QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                                  QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
+                                  .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
+            restartApplication();
+        }
     }
 }
 
@@ -360,11 +374,15 @@ void OMCProxy::openOMCLogger()
 
 void OMCProxy::catchException()
 {
-    QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                          QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
-                          .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
     removeObjectRefFile();
-    restartApplication();
+    if (mDisplayErrors)
+    {
+        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
+                              QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
+                              .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
+
+        restartApplication();
+    }
 }
 
 void OMCProxy::sendCustomExpression()
@@ -505,12 +523,32 @@ bool OMCProxy::isPackage(QString className)
 
 bool OMCProxy::isWhat(int type, QString className)
 {
-    if (type == StringHandler::MODEL)
+    switch (type)
+    {
+    case StringHandler::MODEL:
         sendCommand("isModel(" + className + ")");
-    else if (type == StringHandler::PACKAGE)
-        sendCommand("isPackage(" + className + ")");
-    else if (type == StringHandler::CONNECTOR)
+        break;
+    case StringHandler::CLASS:
+        sendCommand("isClass(" + className + ")");
+        break;
+    case StringHandler::CONNECTOR:
         sendCommand("isConnector(" + className + ")");
+        break;
+    case StringHandler::RECORD:
+        sendCommand("isRecord(" + className + ")");
+        break;
+    case StringHandler::BLOCK:
+        sendCommand("isBlock(" + className + ")");
+        break;
+    case StringHandler::FUNCTION:
+        sendCommand("isFunction(" + className + ")");
+        break;
+    case StringHandler::PACKAGE:
+        sendCommand("isPackage(" + className + ")");
+        break;
+    default:
+        return false;
+    }
 
     if (getResult().contains("true"))
         return true;
@@ -919,4 +957,10 @@ bool OMCProxy::visualize(QString modelName)
         return true;
     else
         return false;
+}
+
+QString OMCProxy::checkModel(QString modelName)
+{
+    sendCommand("checkModel(" + modelName + ")");
+    return getResult();
 }

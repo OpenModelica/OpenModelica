@@ -87,7 +87,8 @@ public:
         UNABLE_TO_LOAD_FILE,
         DELETE_AND_LOAD,
         REDEFING_EXISTING_MODELS,
-        INVALID_COMPONENT_ANNOTATIONS
+        INVALID_COMPONENT_ANNOTATIONS,
+        SAVED_MODEL
     };
 
     static QString getMessage(int type);
