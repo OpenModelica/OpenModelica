@@ -343,7 +343,7 @@ end moFiles;
 
 public function time
   output Real outReal;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outReal=System_time() annotation(Library = "omcruntime");
 end time;
 
 public function hash
