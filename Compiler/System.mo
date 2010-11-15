@@ -43,7 +43,7 @@ public function removeFirstAndLastChar
   input String inString;
   output String outString;
 
-  external "C";
+  external "C" outString=System_removeFirstAndLastChar(inString) annotation(Library = "omcruntime");
 end removeFirstAndLastChar;
 
 public function trim
@@ -76,7 +76,7 @@ public function strcmp
   input String inString2;
   output Integer outInteger;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outInteger=System_strcmp(inString1,inString2) annotation(Library = "omcruntime");
 end strcmp;
 
 public function stringFind "locates substring searchStr in str. If succeeds return position, otherwise return -1"
@@ -92,7 +92,7 @@ public function stringFindString "locates substring searchStr in str. If succeed
   input String searchStr;
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_stringFindString(str,searchStr) annotation(Library = "omcruntime");
 end stringFindString;
 
 public function strncmp
@@ -118,14 +118,14 @@ public function toupper
   input String inString;
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_toupper(inString) annotation(Library = "omcruntime");
 end toupper;
 
 public function tolower
   input String inString;
   output String outString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_tolower(inString) annotation(Library = "omcruntime");
 end tolower;
 
 public function strtok
@@ -139,7 +139,7 @@ end strtok;
 public function setCCompiler
   input String inString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setCCompiler(inString) annotation(Library = "omcruntime");
 end setCCompiler;
 
 public function getCCompiler
@@ -151,7 +151,7 @@ end getCCompiler;
 public function setCFlags
   input String inString;
 
-  external "C" System_setCCompiler(inString) annotation(Library = "omcruntime");
+  external "C" System_setCFlags(inString) annotation(Library = "omcruntime");
 end setCFlags;
 
 public function getCFlags
@@ -163,7 +163,7 @@ end getCFlags;
 public function setCXXCompiler
   input String inString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setCXXCompiler(inString) annotation(Library = "omcruntime");
 end setCXXCompiler;
 
 public function getCXXCompiler
@@ -175,7 +175,7 @@ end getCXXCompiler;
 public function setLinker
   input String inString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setLinker(inString) annotation(Library = "omcruntime");
 end setLinker;
 
 public function getLinker
@@ -187,7 +187,7 @@ end getLinker;
 public function setLDFlags
   input String inString;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_LDFlags(inString) annotation(Library = "omcruntime");
 end setLDFlags;
 
 public function getLDFlags
@@ -212,7 +212,7 @@ public function loadLibrary
   input String inLib;
   output Integer outLibHandle;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outLibHandle=System_loadLibrary(inLib) annotation(Library = "omcruntime");
 end loadLibrary;
 
 public function lookupFunction
@@ -220,19 +220,19 @@ public function lookupFunction
   input String inFunc;
   output Integer outFuncHandle;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" outFuncHandle=System_lookupFunction(inLibHandle,inFunc) annotation(Library = "omcruntime");
 end lookupFunction;
 
 public function freeFunction
   input Integer inFuncHandle;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_freeFunction(inFuncHandle) annotation(Library = "omcruntime");
 end freeFunction;
 
 public function freeLibrary
   input Integer inLibHandle;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_freeLibrary(inLibHandle) annotation(Library = "omcruntime");
 end freeLibrary;
 
 public function sendData
@@ -247,42 +247,42 @@ public function sendData
   input String yLabel;
   input Boolean points;
   input String range;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_sendData(inString1,inString2,title,legend,grid,logX,logY,xLabel,yLabel,points,range) annotation(Library = "omcruntime");
 end sendData;
 
 public function enableSendData
   input Boolean enable;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_enableSendData(enable) annotation(Library = "omcruntime");
 end enableSendData;
 
 public function setDataPort
   input Integer port;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setDataPort(port) annotation(Library = "omcruntime");
 end setDataPort;
 
 public function setVariableFilter
   input String variables;
   output Boolean b;
-  external "C" annotation(Library = "omcruntime");
+  external "C" b=System_setVariableFilter(variables) annotation(Library = "omcruntime");
 end setVariableFilter;
 
 public function sendData2
   input String inString1;
   input String inString2;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_sendData2(inString1,inString2) annotation(Library = "omcruntime");
 end sendData2;
 
 public function writeFile
 "This function will write to the file given by first argument the given string"
   input String fileNameToWrite "a filename where to write the data";
   input String stringToBeWritten "the data";
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_writeFile(fileNameToWrite,stringToBeWritten) annotation(Library = "omcruntime");
 end writeFile;
 
 public function appendFile
   input String inString1;
   input String inString2;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_appendFile(inString1,inString2) annotation(Library = "omcruntime");
 end appendFile;
 
 public function readFile
@@ -295,30 +295,30 @@ end readFile;
 public function getVariableNames
   input String modelname;
   output String variables;
-  external "C" annotation(Library = "omcruntime");
+  external "C" variables=System_getVariableNames(modelname) annotation(Library = "omcruntime");
 end getVariableNames;
 
 public function systemCall
   input String inString;
   output Integer outInteger;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outInteger=System_systemCall(inString) annotation(Library = "omcruntime");
 end systemCall;
 
 public function cd
   input String inString;
   output Integer outInteger;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outInteger=System_cd(inString) annotation(Library = "omcruntime");
 end cd;
 
 public function pwd
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_pwd() annotation(Library = "omcruntime");
 end pwd;
 
 public function readEnv "Reads the environment variable given as string, fails if variable not found"
   input String inString;
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_readEnv(inString) annotation(Library = "omcruntime");
 end readEnv;
 
 public function setEnv ""
@@ -326,19 +326,19 @@ public function setEnv ""
   input String value;
   input Boolean overwrite "is always true on Windows, so recommended to always call it using true";
   output Integer outInteger;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outInteger=System_setEnv(varName,value,overwrite) annotation(Library = "omcruntime");
 end setEnv;
 
 public function subDirectories
   input String inString;
   output list<String> outStringLst;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outStringLst=System_subDirectories(inString) annotation(Library = "omcruntime");
 end subDirectories;
 
 public function moFiles
   input String inString;
   output list<String> outStringLst;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outStringLst=System_moFiles(inString) annotation(Library = "omcruntime");
 end moFiles;
 
 public function time
@@ -346,20 +346,14 @@ public function time
   external "C" outReal=System_time() annotation(Library = "omcruntime");
 end time;
 
-public function hash
-  input String inString;
-  output Integer outInteger;
-  external "C" outInteger = System_hash(inString) annotation(Library = "omcruntime");
-end hash;
-
 public function pathDelimiter
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_pathDelimiter() annotation(Library = "omcruntime");
 end pathDelimiter;
 
 public function groupDelimiter
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_groupDelimiter() annotation(Library = "omcruntime");
 end groupDelimiter;
 
 public function regularFileExists
@@ -371,35 +365,35 @@ end regularFileExists;
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
   input String fileName;
   output Integer res;
-  external "C" annotation(Library = "omcruntime");
+  external "C" res=System_removeFile(fileName) annotation(Library = "omcruntime");
 end removeFile;
 
 public function getPackageFileNames
   input String inString1;
   input String inString2;
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getPackageFileNames(inString1,inString2) annotation(Library = "omcruntime");
 end getPackageFileNames;
 
 public function directoryExists
   input String inString;
   output Boolean outBool;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outBool=System_directoryExists(inString) annotation(Library = "omcruntime");
 end directoryExists;
 
 public function platform
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_platform() annotation(Library = "omcruntime");
 end platform;
 
 public function getClassnamesForSimulation
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_getClassnamesForSimulation() annotation(Library = "omcruntime");
 end getClassnamesForSimulation;
 
 public function setClassnamesForSimulation
   input String inString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setClassnamesForSimulation(inString) annotation(Library = "omcruntime");
 end setClassnamesForSimulation;
 
 public function getVariableValue
@@ -407,7 +401,7 @@ public function getVariableValue
   input list<Real> timeValues;
   input list<Real> varValues;
   output Real outValue;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outValue=System_getVariableValue(timeStamp,timeValues,varValues) annotation(Library = "omcruntime");
 end getVariableValue;
 
 public function getFileModificationTime
@@ -420,7 +414,7 @@ public function getFileModificationTime
 "
   input  String       fileName;
   output Option<Real> outValue;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outValue=System_getFileModificationTime(fileName) annotation(Library = "omcruntime");
 end getFileModificationTime;
 
 public function getCurrentTime
@@ -428,7 +422,7 @@ public function getCurrentTime
  this system function returns current time elapsed
  since the Epoch (00:00:00 UTC, January 1, 1970)."
   output Real outValue;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outValue=System_getCurrentTime() annotation(Library = "omcruntime");
 end getCurrentTime;
 
 public function getCurrentDateTime
@@ -449,25 +443,25 @@ returns current time in format Www Mmm dd hh:mm:ss yyyy
 using the asctime() function in time.h (libc)
 "
   output String timeStr;
-  external "C" annotation(Library = "omcruntime");
+  external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
 
 public function isSameFile "Checks if two filenames points to the same file"
   input String fileName1;
   input String fileName2;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_isSameFile(fileName1,fileName2) annotation(Library = "omcruntime");
 end isSameFile;
 
 public function isIdenticalFile "Checks if two filenames points to the exact same file"
   input String fileName1;
   input String fileName2;
   output Boolean same;
-  external "C" annotation(Library = "omcruntime");
+  external "C" same=System_isIdenticalFile(fileName1,fileName2) annotation(Library = "omcruntime");
 end isIdenticalFile;
 
 public function windowsNewline "returns /r/n, since MetaModelica has a bug for representing this as a literal"
 output String str;
-external "C" annotation(Library = "omcruntime");
+external "C" str=System_windowsNewline() annotation(Library = "omcruntime");
 end windowsNewline;
 
 public function os "Returns a string with the operating system name
@@ -485,13 +479,13 @@ end os;
 
 public function compileCFile
   input String inString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_compileCFile(inString) annotation(Library = "omcruntime");
 end compileCFile;
 
 public function readFileNoNumeric
   input String inString;
   output String outString;
-  external "C" annotation(Library = "omcruntime");
+  external "C" outString=System_readFileNoNumeric(inString) annotation(Library = "omcruntime");
 end readFileNoNumeric;
 
 public function setHasExpandableConnectors
@@ -499,7 +493,7 @@ public function setHasExpandableConnectors
  sets the external flag that signals the
  presence of expandable connectors in a model"
   input Boolean hasExpandable;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setHasExpandableConnectors(hasExpandable) annotation(Library = "omcruntime");
 end setHasExpandableConnectors;
 
 public function getHasExpandableConnectors
@@ -507,7 +501,7 @@ public function getHasExpandableConnectors
  retrieves the external flag that signals the
  presence of expandable connectors in a model"
   output Boolean hasExpandable;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_getHasExpandableConnectors() annotation(Library = "omcruntime");
 end getHasExpandableConnectors;
 
 public function setHasInnerOuterDefinitions
@@ -515,7 +509,7 @@ public function setHasInnerOuterDefinitions
  sets the external flag that signals the presence
  of inner/outer comoponent definitions in a model"
   input Boolean hasInnerOuterDefinitions;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_setHasInnerOuterDefinitions(hasInnerOuterDefinitions) annotation(Library = "omcruntime");
 end setHasInnerOuterDefinitions;
 
 public function getHasInnerOuterDefinitions
@@ -523,7 +517,7 @@ public function getHasInnerOuterDefinitions
  retrieves the external flag that signals the presence
  of inner/outer comoponent definitions in a model"
   output Boolean hasInnerOuterDefinitions;
-  external "C" annotation(Library = "omcruntime");
+  external "C" hasInnerOuterDefinitions=System_getHasInnerOuterDefinitions() annotation(Library = "omcruntime");
 end getHasInnerOuterDefinitions;
 
 public function tmpTick "returns a tick that can be reset"
@@ -548,7 +542,7 @@ public function userIsRoot
 Used by main to disable running omc as root as it is very dangerous.
 Consider opening a socket and letting anyone run system() commands without authentication. As root."
   output Boolean isRoot;
-  external "C" annotation(Library = "omcruntime");
+  external "C" isRoot=System_userIsRoot() annotation(Library = "omcruntime");
 end userIsRoot;
 
 public function configureCommandLine
@@ -556,7 +550,7 @@ public function configureCommandLine
 On the platforms that don't configure options, like OMDev, the returned string
 is more generic and does not contain a date."
   output String cmdLine;
-  external "C" annotation(Library = "omcruntime");
+  external "C" cmdLine=System_configureCommandLine() annotation(Library = "omcruntime");
 end configureCommandLine;
 
 public function realtimeTick
@@ -577,21 +571,21 @@ end realtimeTock;
 function resetTimer
 "@autor: adrpo
   this function will reset the timer to 0."
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_resetTimer() annotation(Library = "omcruntime");
 end resetTimer;
 
 function startTimer
 "@autor: adrpo
   this function will start counting the time
   that should be aggregated."
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_startTimer() annotation(Library = "omcruntime");
 end startTimer;
 
 function stopTimer
 "@autor: adrpo
   this function will stop counting the time
   that should be aggregated."
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_stopTimer() annotation(Library = "omcruntime");
 end stopTimer;
 
 function getTimerIntervalTime
@@ -608,7 +602,7 @@ function getTimerIntervalTime
      stop2) call getTimerIntervalTime -> (stop2-start2)
    stop1)  call getTimerIntervalTime -> (stop1-start1)"
   output Real timerIntervalTime;
-  external "C" annotation(Library = "omcruntime");
+  external "C" timerIntervalTime=System_getTimerIntervalTime() annotation(Library = "omcruntime");
 end getTimerIntervalTime;
 
 function getTimerCummulatedTime
@@ -627,7 +621,7 @@ function getTimerCummulatedTime
      getTimerCummulatedTime = 
        stop3-start3 + stop2-start2 + stop1-start1."
   output Real timerCummulatedTime;
-  external "C" annotation(Library = "omcruntime");
+  external "C" timerCummulatedTime=System_getTimerCummulatedTime() annotation(Library = "omcruntime");
 end getTimerCummulatedTime;
 
 function getTimerElapsedTime
@@ -638,7 +632,7 @@ function getTimerElapsedTime
     (start1, (start2, (start3, stop3), stop2) ...
     getTimerSinceFirstStartTime = timeNow-start1."
   output Real timerElapsedTime;
-  external "C" annotation(Library = "omcruntime");
+  external "C" timerElapsedTime=System_getTimerElapsedTime() annotation(Library = "omcruntime");
 end getTimerElapsedTime;
 
 function getTimerStackIndex
@@ -655,13 +649,13 @@ function getTimerStackIndex
         stop2) index 1
      stop1) index 0"
   output Integer stackIndex;
-  external "C" annotation(Library = "omcruntime");
+  external "C" stackIndex=System_getTimerStackIndex() annotation(Library = "omcruntime");
 end getTimerStackIndex;
 
 
 public function getUUIDStr "creates the Globally Unique IDentifier and return it as String"
   output String uuidStr;
-  external "C" annotation(Library = "omcruntime");
+  external "C" uuidStr=System_getUUIDStr() annotation(Library = "omcruntime");
 end getUUIDStr;
 
 public function basename
