@@ -6674,7 +6674,6 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
-
   end matchcontinue;
 end getCalledFunctionsInFunction;
 

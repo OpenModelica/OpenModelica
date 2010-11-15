@@ -4207,24 +4207,46 @@ algorithm
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");
-        (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
+        false = RTOpts.debugFlag("generateCodeCheat");
+        funcs = Env.getFunctionTree(cache); 
+        // First check if the main function exists... If it does not it might be an interactive function...
+        mainFunction = DAEUtil.getNamedFunction(path, funcs);
         pathstr = generateFunctionName(path);
-        // (cache,paths) = cevalGenerateFunctionDAEs(cache, path, env, {});
-        // print(Absyn.pathString(path) +& ": " +& Util.stringDelimitList(Util.listMap(paths, Absyn.pathString), ", ") +& "\n");
-        // paths = Util.listSetDifference(paths, {path});
+        paths = cevalGenerateFunctionDAEs(funcs, path,  {});
 
         // The list of functions is not ordered, so we need to filter out the main function...
         funcs = Env.getFunctionTree(cache);
-        // print("Avilable functions: " +& DAEDump.dumpFunctionNamesStr(funcs) +& "\n");
-        mainFunction = DAEUtil.getNamedFunction(path, funcs);
-        // d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
         d = DAEUtil.getFunctionList(funcs);
         d = Util.listSetDifference(d, {mainFunction});
-        uniontypePaths = DAEUtil.getUniontypePaths(Util.if_(RTOpts.debugFlag("cheat"),{},d), {});
+        uniontypePaths = DAEUtil.getUniontypePaths(d,{});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
         
         SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
         compileModel(pathstr, {}, "", "", "");
+      then
+        (cache, pathstr);
+
+    // Cheat if we want to generate code for Main.main
+    // * Don't do dependency analysis of what functions to generate; just generate all of them
+    // * Don't generate extra code for unreferenced MetaRecord types (for external functions)
+    //   This could be an annotation instead anyway.
+    // * Don't compile the generated files
+    case (cache, env, path)
+      equation
+        false = RTOpts.debugFlag("nogen");
+        true = RTOpts.debugFlag("generateCodeCheat");
+        funcs = Env.getFunctionTree(cache); 
+        // First check if the main function exists... If it does not it might be an interactive function...
+        mainFunction = DAEUtil.getNamedFunction(path, funcs);
+        pathstr = generateFunctionName(path);
+        
+        // The list of functions is not ordered, so we need to filter out the main function...
+        funcs = Env.getFunctionTree(cache);
+        d = DAEUtil.getFunctionList(funcs);
+        d = Util.listSetDifference(d, {mainFunction});
+        metarecordTypes = {};
+        
+        SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
       then
         (cache, pathstr);
 
@@ -4245,15 +4267,12 @@ protected function cevalGenerateFunctionDAEs "function: cevalGenerateFunctionStr
   Generates a function with the given path, and all functions that are called
   within that function. The two string lists contains names of functions and
   records already generated, which won\'t be generated again."
-  input Env.Cache inCache;
+  input DAE.FunctionTree funcs;
   input Absyn.Path inPath;
-  input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
-  output Env.Cache outCache;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
-  (outCache,outAbsynPathLst):=
-  matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
+  outAbsynPathLst := matchcontinue (funcs,inPath,inAbsynPathLst)
     local
       Absyn.Path gfmember,path;
       list<Env.Frame> env,env_1,env_2;
@@ -4265,39 +4284,34 @@ algorithm
       Env.Cache cache;
 
     // If getmember succeeds, path is in generated functions list, so do nothing
-    case (cache,path,env,gflist)
+    case (funcs,path,gflist)
       equation
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
-        (cache,gflist);
+        gflist;
 
     // If getmember fails, path is not in generated functions list, hence generate it
-    case (cache,path,env,gflist)
+    case (funcs,path,gflist)
       equation
         false = RTOpts.debugFlag("nogen");
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs starting*/");
-        (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs instantiating*/");
-        (cache,env_2,_) =
-        Inst.implicitFunctionInstantiation(
-           cache, env_1, InnerOuter.emptyInstHierarchy,
-           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
-        calledfuncs = SimCode.getCalledFunctionsInFunction(path, gflist, Env.getFunctionTree(cache));
+        calledfuncs = SimCode.getCalledFunctionsInFunction(path, gflist, funcs);
         gflist = path :: gflist; // In case the function is recursive
         calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
-        (cache,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
+        gflist = cevalGenerateFunctionDAEsList(funcs,calledfuncs,gflist);
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs prefixing dae */");
       then
-        (cache,gflist);
+        gflist;
     
     // failure
-    case (_,path,env,_)
+    case (funcs,path,_)
       equation
         true = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
@@ -4307,7 +4321,7 @@ algorithm
         fail();
 
     // failtrace
-    case (_,path,env,_)
+    case (_,path,_)
       equation
         true = RTOpts.debugFlag("failtrace");
         false = RTOpts.debugFlag("nogen");
@@ -4321,15 +4335,12 @@ end cevalGenerateFunctionDAEs;
 
 protected function cevalGenerateFunctionDAEsList "function: cevalGenerateFunctionStrList
   Generates code for several functions."
-  input Env.Cache inCache;
+  input DAE.FunctionTree funcs;
   input list<Absyn.Path> inAbsynPathLst1;
-  input Env.Env inEnv2;
   input list<Absyn.Path> inAbsynPathLst3;
-  output Env.Cache outCache;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
-  (outCache,outAbsynPathLst):=
-  matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
+  outAbsynPathLst := matchcontinue (funcs,inAbsynPathLst1,inAbsynPathLst3)
     local
       list<Env.Frame> env;
       list<Absyn.Path> gflist,gflist_1,gflist_2,rest;
@@ -4339,13 +4350,13 @@ algorithm
       Env.Cache cache;
       list<String> libs_1,libs_2;
       DAE.DAElist d,d1,d2;
-    case (cache,{},env,gflist) then (cache,gflist);
-    case (cache,(first :: rest),env,gflist)
+    case (funcs,{},gflist) then gflist;
+    case (funcs,(first :: rest),gflist)
       equation
-        (cache,gflist_1) = cevalGenerateFunctionDAEs(cache,first,env,gflist);
-        (cache,gflist_2) = cevalGenerateFunctionDAEsList(cache,rest,env,gflist_1);
+        gflist_1 = cevalGenerateFunctionDAEs(funcs,first,gflist);
+        gflist_2 = cevalGenerateFunctionDAEsList(funcs,rest,gflist_1);
       then
-        (cache,gflist_2);
+        gflist_2;
   end matchcontinue;
 end cevalGenerateFunctionDAEsList;
 
