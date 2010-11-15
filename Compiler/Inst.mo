@@ -4914,7 +4914,7 @@ algorithm
       ClassInf.State ci_state;
       Boolean impl;
       Env.Cache cache;
-      output InstanceHierarchy ih;
+      InstanceHierarchy ih;
       String name;
       Absyn.Info info;
 

@@ -651,7 +651,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_STRICT_RML_MATCH_IN_OUT,TRANSLATION(),ERROR(),"%s. Strict RML enforces match expression input and output to be the same as the function's."),
           (META_NONE_CREF,TRANSLATION(),ERROR(),"NONE is not acceptable syntax. Use NONE() instead."),
           (META_INVALID_PATTERN_NAMED_FIELD,TRANSLATION(),ERROR(),"Invalid named fields: %s"),
-          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components are allowed in local declarations, got: %s"),
+          (META_INVALID_LOCAL_ELEMENT,TRANSLATION(),ERROR(),"Only components without direction are allowed in local declarations, got: %s"),
           (META_INVALID_COMPLEX_TYPE,TRANSLATION(),ERROR(),"Invalid complex type name: %s"),
           (META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE,TRANSLATION(),ERROR(),"%s is not part of uniontype %s"),
           (META_TYPE_MISMATCH_PATTERN,TRANSLATION(),ERROR(),"Type mismatch in pattern\nactual type:\n  %s\nexpected type:\n  %s"),

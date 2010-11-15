@@ -2826,7 +2826,9 @@ end listlistFoldMap;
 
 public function listFoldMap "function: listFoldMap
   author: PA
-  For example see Expression.traverseExpression."
+  For example see Expression.traverseExpression.
+  This should be called listMapFold...
+"
   input list<Type_a> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;

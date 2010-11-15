@@ -779,7 +779,7 @@ algorithm
   (outCache,tpl) := matchcontinue (cache,env,els,scopeName,impl,info)
     local
       list<Absyn.ElementItem> ld;
-      list<SCode.Element> ld2;
+      list<SCode.Element> ld2,ld3,ld4;
       list<tuple<SCode.Element, DAE.Mod>> ld_mod;      
       DAE.DAElist dae,dae1;
       list<DAE.Element> dae1_2Elts;
@@ -797,7 +797,7 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld,false);
 
         // Filter out the components (just to be sure)
-        ({},{},{},ld2) = Inst.splitElts(ld2);
+        true = Util.listFold(Util.listMap1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
 
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
@@ -811,13 +811,30 @@ algorithm
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
           impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
       then (cache,SOME((env2,dae1)));
+      
     case (cache,env,ld,scopeName,impl,info)
       equation
         ld2 = SCodeUtil.translateEitemlist(ld,false);
         (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
-        str = Util.stringDelimitList(Util.listMap(ld2, SCode.printElementStr),", ");
+        str = Util.stringDelimitList(Util.listMap(ld2, SCode.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
+      
+    case (cache,env,ld,scopeName,impl,info)
+      equation
+        env2 = Env.openScope(env, false, SOME(scopeName),NONE());
+
+        // Tranform declarations such as Real x,y; to Real x; Real y;
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
+
+        // Filter out the components (just to be sure)
+        ld3 = Util.listSelect1(ld2, Absyn.INPUT(), SCode.isComponentWithDirection);
+        ld4 = Util.listSelect1(ld2, Absyn.OUTPUT(), SCode.isComponentWithDirection);
+        (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
+        str = Util.stringDelimitList(Util.listMap(ld2, SCode.unparseElementStr),", ");
+        Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
+      then (cache,NONE());
+      
     else
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Patternm.addLocalDecls failed"},info);
