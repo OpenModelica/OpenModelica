@@ -48,6 +48,7 @@ modpar: $(SRCHSRCDIR)
 	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
 clean:
+	rm -f $(ALLMO)
 	for d in ../runtime/ ../../Parser/ ../modpar/; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
