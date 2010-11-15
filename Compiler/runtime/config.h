@@ -35,9 +35,9 @@
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL
-#if defined(__MINGW32)
+#if defined(__MINGW32__)
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for OMDev"
-#else defined(_MSC_VER)
+#elif defined(_MSC_VER)
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #endif
 

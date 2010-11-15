@@ -281,6 +281,7 @@ algorithm
         txt = functionlinearmodel(txt, i_modelInfo);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
 
     case ( txt,
@@ -9452,8 +9453,10 @@ algorithm
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "}\n",
-                                       "#endif"
-                                   }, false));
+                                       "#endif\n",
+                                       "\n"
+                                   }, true));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
 end simulationFunctionsHeaderFile;
 
 protected function fun_224
@@ -10122,8 +10125,10 @@ algorithm
                                        "#ifdef __cplusplus\n",
                                        "}\n",
                                        "#endif\n",
-                                       "#endif"
-                                   }, false));
+                                       "#endif\n",
+                                       "\n"
+                                   }, true));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
 end functionsHeaderFile;
 
 protected function lm_240

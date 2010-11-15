@@ -149,7 +149,9 @@ case SIMCODE(__) then
   
   <%functionlinearmodel(modelInfo)%>
   
+  <%\n%> 
   >>
+  /* adrpo: leave a newline at the end of file to get rid of the warning */
 end simulationFile;
 
 template simulationFileHeader(SimCode simCode)
@@ -2264,7 +2266,10 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   <%functionHeaders(functions)%>
   }
   #endif
+  
+  <%\n%> 
   >>
+  /* adrpo: leave a newline at the end of file to get rid of the warning */
 end simulationFunctionsHeaderFile;
 
 
@@ -2416,7 +2421,10 @@ template functionsHeaderFile(String filePrefix,
   }
   #endif
   #endif
+  
+  <%\n%> 
   >>
+  /* adrpo: leave a newline at the end of file to get rid of the warning */
 end functionsHeaderFile;
 
 template functionsMakefile(FunctionCode fnCode)
