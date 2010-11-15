@@ -1635,8 +1635,8 @@ algorithm
       Connect.Face face;
     case (_, _, (cr, face, _))
       equation
-        Static.eqCref(cr, inComponentRef);
         true = faceEqual(face, inFace);
+        Static.eqCref(cr, inComponentRef);
       then
         true;
     case (_, _, _) then false;
@@ -1737,8 +1737,8 @@ algorithm
       list<Connect.StreamSetElement> cs;
     case ((c1, _, f1, _) :: _, c2, f2)
       equation
-        Static.eqCref(c1, c2);
         true = faceEqual(f1, f2);
+        Static.eqCref(c1, c2);
       then ();
     case (_ :: cs, c2, f2)
       equation

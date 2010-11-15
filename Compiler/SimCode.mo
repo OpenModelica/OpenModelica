@@ -3214,7 +3214,7 @@ algorithm
         discEqs = extractDiscEqs(disc_eqn, disc_var);
         // adrpo: TODO! FIXME! THIS FUNCTION is madness!
         //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
-        (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
+        (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var); // ({1,0},{2});
       then
         {SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims)};
     
