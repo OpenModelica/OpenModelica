@@ -4274,6 +4274,53 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithStop;
 
+public function traverseBackendDAEArrayNoCopyWithUpdate "
+ help function to traverseBackendDAEExps
+ author: Frenkel TUD"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  input array<Type_a> inArray;
+  input FuncExpTypeWithUpdate func;
+  input FuncArrayTypeWithUpdate arrayfunc;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_b inTypeB;
+  output array<Type_a> outArray;
+  output Type_b outTypeB;
+  partial function FuncExpType
+    input tuple<Type_c, Type_b> inTpl;
+    output tuple<Type_c, Type_b> outTpl;
+  end FuncExpType;
+  partial function FuncArrayTypeWithUpdate
+    input Type_a inTypeA;
+    input FuncExpType func;
+    input Type_b inTypeB;
+    output Type_a outTypeA;
+    output Type_b outTypeB;
+    partial function FuncExpTypeWithUpdate
+     input tuple<Type_c, Type_b> inTpl;
+     output tuple<Type_c, Type_b> outTpl;
+    end FuncExpTypeWithUpdate;
+  end FuncArrayTypeWithUpdate;    
+algorithm
+  (outArray,outTypeB) := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
+    local 
+      array<Type_a> array;
+      Type_a new_a;
+      Type_b ext_arg_1,ext_arg_2;
+    case(array,_,_,pos,len,inTypeB) equation 
+      true = pos > len;
+    then (array,inTypeB);
+    
+    case(array,func,arrayfunc,pos,len,inTypeB) equation
+      (new_a,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
+      array = arrayUpdate(array,pos,new_a);
+      (array,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdate(array,func,arrayfunc,pos+1,len,ext_arg_1);
+    then (array,ext_arg_2);
+  end matchcontinue;
+end traverseBackendDAEArrayNoCopyWithUpdate;
+
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
