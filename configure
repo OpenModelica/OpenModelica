@@ -607,6 +607,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+RML_TRACE
 EXE
 QMAKE
 LIBSENDDATA_LDFLAGS
@@ -676,6 +677,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_rml_trace
 with_static_lpsolve
 with_CORBA
 with_MICO
@@ -1298,6 +1300,12 @@ fi
 if test -n "$ac_init_help"; then
 
   cat <<\_ACEOF
+
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+Enables RML -trace support, default=no
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2152,6 +2160,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -3648,6 +3657,22 @@ if test -z "$rmlinc" ; then
 $as_echo "no" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if the user wants RML -trace support" >&5
+$as_echo_n "checking if the user wants RML -trace support... " >&6; }
+RML_TRACE=",-ftrace"
+# Check whether --enable-rml-trace was given.
+if test "${enable_rml_trace+set}" = set; then :
+  enableval=$enable_rml_trace; test "xno" = x"$enableval" && RML_TRACE=""
+fi
+
+if test -z "$RMLTRACE" ; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 fi
 
