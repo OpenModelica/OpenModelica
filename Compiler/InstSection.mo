@@ -4040,7 +4040,6 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
       DAE.Dimension dim1,dim2;
-      Integer dim_int;
       DAE.DAElist dae, dae2;
       list<DAE.Var> l1,l2;
       Boolean flowPrefix, streamPrefix;
@@ -4053,7 +4052,7 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.InlineType inlineType1, inlineType2;
       Absyn.Path fpath1, fpath2;
-      Integer idim1,idim2;
+      Integer idim1,idim2,dim_int;
       DAE.Exp zeroVector;
       list<DAE.Element> elements, breakDAEElements;
       DAE.FunctionTree functions, equalityConstraintFunctions;
@@ -4106,23 +4105,6 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         sets_1 = ConnectUtil.addFlow(sets, c1_1, f1, c2_1, f2, source);
-      then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-
-    /* flow - with arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,c2,f2,
-                                      (DAE.T_ARRAY(arrayType = t2),_),vt2,true,false,io1,io2,graph,info)
-      equation
-        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
-        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        dim_int = Expression.dimensionSize(dim1);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addArrayFlow(sets, c1_1, f1, c2_1, f2, dim_int, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
@@ -4224,9 +4206,10 @@ algorithm
         (cache, env, ih, sets_1, DAEUtil.emptyDae, graph);
 
     /* Connection of arrays of complex types */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,
-                                c2,f2,(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_),vt2,
-                                flowPrefix as false, streamPrefix as false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,
+        c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,
+        c2,f2,(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_),vt2,
+        flowPrefix as false, streamPrefix as false,io1,io2,graph,info)
       equation
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);
@@ -4239,20 +4222,23 @@ algorithm
         (cache,env,ih,sets_1,dae,graph);
 
     /* Connection of arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,
-                                c2,f2,(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_),vt2,
-                                flowPrefix as false,streamPrefix as false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,
+        c1, f1, t1 as (DAE.T_ARRAY(arrayType = _), _), vt1,
+        c2, f2, t2 as (DAE.T_ARRAY(arrayType = _), _), vt2,
+        flowPrefix,streamPrefix,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        DAE.ET_ARRAY(_,dims) = Types.elabType(inType6);
-        DAE.ET_ARRAY(_,dims2) = Types.elabType(inType9);
+
+        dims = Types.getDimensions(t1);
+        dims2 = Types.getDimensions(t2);
         true = Util.isListEqualWithCompareFunc(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        sets_1 = ConnectUtil.addMultiArrayEqu(sets, c1_1, c2_1, dims, source);
+        sets_1 = ConnectUtil.addArray(sets, c1_1, f1, dims, c2_1, f2, dims2,
+          source, flowPrefix, streamPrefix);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
@@ -4340,24 +4326,7 @@ algorithm
         sets_1 = ConnectUtil.addStream(sets, c1_1, f1, c2_1, f2, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-        
-    /* stream - with arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,c2,
-                                   f2,(DAE.T_ARRAY(arrayType = t2),_),vt2,false,true,io1,io2,graph,info)
-      equation
-        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
-        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
-        dim_int = Expression.dimensionSize(dim1);
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addArrayStream(sets, c1_1, f1, c2_1, f2, dim_int, source);
-      then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);        
-
+       
     /* Error */
     case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,io1,io2,_,info)
       equation

@@ -565,36 +565,157 @@ public function addArrayFlow "function: addArrayFlow
   input Connect.Sets ss;
   input DAE.ComponentRef r1;
   input Connect.Face d1;
+  input list<DAE.Dimension> dims1;
   input DAE.ComponentRef r2;
   input Connect.Face d2;
-  input Integer dsize;
+  input list<DAE.Dimension> dims2;
   input DAE.ElementSource source "the element origin";
   output Connect.Sets outSets;
-  Connect.Set s1,s2;
-  Connect.Sets ss_1;
 algorithm
-  outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
-    local
-      Connect.Sets s,ss_1,ss_2;
-      DAE.ComponentRef r1_1,r2_1;
-      Integer i_1,i;
-      Connect.Set s1,s2;
-
-    case (s,_,_,_,_,0,source) then s;
-    case (ss,r1,d1,r2,d2,i,source)
-      equation
-        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
-        i_1 = i - 1;
-        s1 = findFlowSet(ss, r1_1, d1, source);
-        s2 = findFlowSet(ss, r2_1, d2, source);
-        ss_1 = merge(ss, s1, s2);
-        ss_2 = addArrayFlow(ss_1, r1, d1, r2, d2, i_1, source);
-      then
-        ss_2;
-  end matchcontinue;
+  dims1 := Util.listMap(dims1, reverseEnumType);
+  dims2 := Util.listMap(dims2, reverseEnumType);
+  outSets := addArray_impl(ss, r1, d1, dims1, r2, d2, dims2, source, addFlow);
 end addArrayFlow;
 
+public function addArray
+  "Connects two arrays of connectors. Dispatches to the correct function
+  depending on whether the flow or stream prefix is set."
+  input Connect.Sets inSets;
+  input DAE.ComponentRef inCref1;
+  input Connect.Face inFace1;
+  input list<DAE.Dimension> inDims1;
+  input DAE.ComponentRef inCref2;
+  input Connect.Face inFace2;
+  input list<DAE.Dimension> inDims2;
+  input DAE.ElementSource source;
+  input Boolean flowPrefix;
+  input Boolean streamPrefix;
+  output Connect.Sets outSets;
+algorithm
+  outSets := match(inSets, inCref1, inFace1, inDims1, 
+      inCref2, inFace2, inDims2, source, flowPrefix, streamPrefix)
+    case (_, _, _, _, _, _, _, _, false, false)
+      then addArrayEqu(inSets, inCref1, inFace1, inDims1, 
+        inCref2, inFace2, inDims2, source);
+    case (_, _, _, _, _, _, _, _, true, false)
+      then addArrayFlow(inSets, inCref1, inFace1, inDims1,
+        inCref2, inFace2, inDims2, source);
+    case (_, _, _, _, _, _, _, _, false, true)
+      then addArrayStream(inSets, inCref1, inFace1, inDims1,
+        inCref2, inFace2, inDims2, source);
+  end match;
+end addArray;
+
+protected function addArray_impl
+  "This function connects two arrays by subscripting the component references
+  and calling the given function on them, i.e. addFlow or addStream."
+  input Connect.Sets inSets;
+  input DAE.ComponentRef inCref1;
+  input Connect.Face inFace1;
+  input list<DAE.Dimension> inDims1;
+  input DAE.ComponentRef inCref2;
+  input Connect.Face inFace2;
+  input list<DAE.Dimension> inDims2;
+  input DAE.ElementSource source;
+  input FuncType inAddFunc;
+  output Connect.Sets outSets;
+
+  partial function FuncType
+    input Connect.Sets inSets;
+    input DAE.ComponentRef inCref1;
+    input Connect.Face inFace1;
+    input DAE.ComponentRef inCref2;
+    input Connect.Face inFace2;
+    input DAE.ElementSource source;
+    output Connect.Sets outSets;
+  end FuncType;
+algorithm
+  outSets := matchcontinue(inSets, inCref1, inFace1, inDims1, 
+      inCref2, inFace2, inDims2, source, inAddFunc)
+    local
+      Connect.Sets cs;
+      DAE.ComponentRef cr1, cr2;
+      DAE.Exp idx1, idx2;
+      DAE.Dimension dim1, dim2;
+      list<DAE.Dimension> rest_dims1, rest_dims2;
+
+    case (_, _, _, {}, _, _, {}, _, _)
+      equation
+        cs = inAddFunc(inSets, inCref1, inFace1, inCref2, inFace2, source);
+      then
+        cs;
+
+    case (_, _, _, dim1 :: rest_dims1, _, _, dim2 :: rest_dims2, _, _)
+      equation
+        (idx1, dim1) = getNextIndex(dim1);
+        (idx2, dim2) = getNextIndex(dim2);
+        cr1 = ComponentReference.replaceCrefSliceSub(inCref1, {DAE.INDEX(idx1)});
+        cr2 = ComponentReference.replaceCrefSliceSub(inCref2, {DAE.INDEX(idx2)});
+        cs = addArray_impl(inSets, cr1, inFace1, rest_dims1, cr2, inFace2,
+          rest_dims2, source, inAddFunc);
+        cs = addArray_impl(cs, inCref1, inFace1, dim1 :: rest_dims1, inCref2,
+          inFace2, dim2 :: rest_dims2, source, inAddFunc);
+      then
+        cs;
+
+    else then inSets;
+  end matchcontinue;
+end addArray_impl;
+
+public function reverseEnumType
+  "Reverses the order of the literals in an enumeration dimension, or just
+  returns the given dimension if it's not an enumeration. This is used by
+  getNextIndex that starts from the end, so that it can take the first literal
+  in the list instead of the last (more efficient)."
+  input DAE.Dimension inDim;
+  output DAE.Dimension outDim;
+algorithm
+  outDim := match(inDim)
+    local
+      Absyn.Path p;
+      list<String> lits;
+      Integer dim_size;
+    case DAE.DIM_ENUM(p, lits, dim_size)
+      equation
+        lits = listReverse(lits);
+      then DAE.DIM_ENUM(p, lits, dim_size);
+    else then inDim;
+  end match;
+end reverseEnumType;
+
+public function getNextIndex
+  "Returns the next index given a dimension, and updates the dimension. Fails
+  when there are no indices left."
+  input DAE.Dimension inDim;
+  output DAE.Exp outNextIndex;
+  output DAE.Dimension outDim;
+algorithm
+  (outNextIndex, outDim) := match(inDim)
+    local
+      Integer new_idx, dim_size;
+      Absyn.Path p, ep;
+      String l;
+      list<String> l_rest;
+
+    case DAE.DIM_INTEGER(integer = 0) then fail();
+    case DAE.DIM_ENUM(size = 0) then fail();
+
+    case DAE.DIM_INTEGER(integer = new_idx)
+      equation
+        dim_size = new_idx - 1;
+      then
+        (DAE.ICONST(new_idx), DAE.DIM_INTEGER(dim_size));
+
+    // Assumes that the enum has been reversed with reverseEnumType.
+    case DAE.DIM_ENUM(p, l :: l_rest, new_idx)
+      equation
+        ep = Absyn.joinPaths(p, Absyn.IDENT(l));
+        dim_size = new_idx - 1;
+      then
+        (DAE.ENUM_LITERAL(ep, new_idx), DAE.DIM_ENUM(p, l_rest, dim_size));
+  end match;
+end getNextIndex;
+        
 public function addFlowVariable
   "Adds a single flow variable to the connection sets."
   input Connect.Sets inCS;
@@ -723,180 +844,52 @@ algorithm
 end addStream;
 
 public function addArrayStream "function: addArrayStream
- For connecting two arrays, a flow equation for each index should be generated, see addStream."
+  For connecting two stream arrays with addStream."
   input Connect.Sets ss;
   input DAE.ComponentRef r1;
   input Connect.Face d1;
+  input list<DAE.Dimension> dims1;
   input DAE.ComponentRef r2;
   input Connect.Face d2;
-  input Integer dsize;
+  input list<DAE.Dimension> dims2;
   input DAE.ElementSource source "the element origin";
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
-    local
-      Connect.Sets s,ss_1,ss_2;
-      DAE.ComponentRef r1_1,r2_1;
-      Integer i_1,i;
-      Connect.Set s1,s2;
-
-    case (s,_,_,_,_,0,source) then s;
-    case (ss,r1,d1,r2,d2,i,source)
-      equation
-        r1_1 = ComponentReference.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
-        r2_1 = ComponentReference.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
-        i_1 = i - 1;
-        ss_1 = addStream(ss, r1_1, d1, r2_1, d2, source);
-        ss_2 = addArrayStream(ss_1, r1, d1, r2, d2, i_1, source);
-      then
-        ss_2;
-  end matchcontinue;
+  dims1 := Util.listMap(dims1, reverseEnumType);
+  dims2 := Util.listMap(dims2, reverseEnumType);
+  outSets := addArray_impl(ss, r1, d1, dims1, r2, d2, dims2, source, addStream);
 end addArrayStream;
 
-public function addMultiArrayEqu "function: addMultiArrayEqu
- Author: BZ 2008-07
-  For connecting two arrays, an equal equation for each index should
-  be generated. generic dimensionality"
-  input Connect.Sets inSets1;
-  input DAE.ComponentRef inComponentRef2;
-  input DAE.ComponentRef inComponentRef3;
-  input list<DAE.Dimension> dimensions;
-  input DAE.ElementSource source "the origins of the element";
+public function addArrayEqu
+  "For connecting two non-flow non-stream arrays with addEqu."
+  input Connect.Sets ss;
+  input DAE.ComponentRef r1;
+  input Connect.Face d1;
+  input list<DAE.Dimension> dims1;
+  input DAE.ComponentRef r2;
+  input Connect.Face d2;
+  input list<DAE.Dimension> dims2;
+  input DAE.ElementSource source;
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
-    local
-      list<list<DAE.Exp>> expSubs;
-      list<list<DAE.Subscript>> subSubs;
-      Integer dimension;
-    case (inSets1,_,_,{},source) then inSets1;
-    case (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
-      equation
-        expSubs = generateSubscriptList(dimensions);
-        subSubs = Util.listListMap(expSubs,Expression.makeIndexSubscript);
-        outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs,source);
-      then
-       outSets;
-  end matchcontinue;
-end addMultiArrayEqu;
+  dims1 := Util.listMap(dims1, reverseEnumType);
+  dims2 := Util.listMap(dims2, reverseEnumType);
+  outSets := addArray_impl(ss, r1, d1, dims1, r2, d2, dims2, source,
+    addEqu_wrapper);
+end addArrayEqu;
 
-protected function addMultiArrayEqu2 "
-Author: BZ, 2008-07
-Generates Subscripts, from the input list<list, for the componentreferences given."
-  input Connect.Sets inSets1;
-  input DAE.ComponentRef inComponentRef2;
-  input DAE.ComponentRef inComponentRef3;
-  input list<list<DAE.Subscript>> dimensions;
-  input DAE.ElementSource source "the origins of the element";
-  output Connect.Sets outSets;
+protected function addEqu_wrapper
+  "A wrapper for addEqu to make it compatible with addArray_impl."
+  input Connect.Sets ss;
+  input DAE.ComponentRef r1;
+  input Connect.Face f1;
+  input DAE.ComponentRef r2;
+  input Connect.Face f2;
+  input DAE.ElementSource source;
+  output Connect.Sets ss_1;
 algorithm
-  outSets := matchcontinue(inSets1,inComponentRef2,inComponentRef3,dimensions,source)
-    local
-      Connect.Sets s,ss_1,ss_2,ss;
-      DAE.ComponentRef r1_1,r2_1,r1,r2;
-      Connect.Set s1,s2;
-      list<list<DAE.Subscript>> restDims;
-      list<DAE.Subscript> dims;
-      Integer dimension;
-    case (s,_,_,{},_) then s;
-    case (ss,r1,r2,dims::restDims,source)
-      equation
-        r1_1 = ComponentReference.replaceCrefSliceSub(r1,dims);
-        r2_1 = ComponentReference.replaceCrefSliceSub(r2,dims);
-        s1 = findEquSet(ss, r1_1, source);
-        s2 = findEquSet(ss, r2_1, source);
-        ss_1 = merge(ss, s1, s2);
-        ss_2 = addMultiArrayEqu2(ss_1, r1, r2, restDims, source);
-      then
-        ss_2;
-  end matchcontinue;
-end addMultiArrayEqu2;
-
-protected function generateSubscriptList "
-Author BZ 2008-07
-Generates all subscripts for the dimension/(s)"
-  input list<DAE.Dimension> dims;
-  output list<list<DAE.Exp>> subs;
-algorithm subs := matchcontinue(dims)
-  local
-    DAE.Dimension dim;
-    list<DAE.Dimension> rest;
-    list<list<DAE.Exp>> nextLevel,result,currLevel;
-  case(dim::{})
-    equation
-      currLevel = generateSubscriptList2(dim);
-      currLevel = listReverse(currLevel);
-    then currLevel;
-  case(dim::rest)
-    equation
-      currLevel = generateSubscriptList2(dim);
-      currLevel = listReverse(currLevel);
-      nextLevel = generateSubscriptList(rest);
-      result = mergeCurrentWithRestIndexies(nextLevel,currLevel);
-    then result;
-end matchcontinue;
-end generateSubscriptList;
-
-protected function generateSubscriptList2
-  input DAE.Dimension inDim;
-  output list<list<DAE.Exp>> outIndices;
-algorithm
-  outIndices := matchcontinue(inDim)
-    local
-      list<DAE.Exp> exp_indices;
-      list<list<DAE.Exp>> res;
-      Integer i;
-      list<Integer> indices;
-      Absyn.Path name;
-      list<String> l;
-      list<DAE.Exp> el;
-    
-    case DAE.DIM_INTEGER(integer = i)
-      equation
-        indices = Util.listIntRange(i);
-        res = Util.listMap(Util.listMap(indices, Expression.makeIntegerExp), Util.listCreate);
-      then
-        res;
-    
-    case DAE.DIM_ENUM(enumTypeName = name, literals = l)
-      equation
-        (DAE.ARRAY(array = el), _) = Static.makeEnumerationArray(name, l);
-        res = Util.listMap(el, Util.listCreate);
-      then
-        res;
-  end matchcontinue;
-end generateSubscriptList2;
-
-protected function mergeCurrentWithRestIndexies "
-Helper function for generateSubscriptList, merges recursive dimensions with current."
-  input list<list<DAE.Exp>> curr;
-  input list<list<DAE.Exp>> Indexies;
-  output list<list<DAE.Exp>> oIndexies;
-algorithm 
-  oIndexies := matchcontinue(curr,Indexies)
-    local
-      list<DAE.Exp> il;
-      list<list<DAE.Exp>> ill,merged;
-  
-    case(_,{}) then {};
-  
-    case(curr,(il as (_ :: (_ :: _)))::ill)
-      equation
-        ill = mergeCurrentWithRestIndexies(curr,ill);
-        merged = Util.listMap1(curr,Util.listAppendr,il);
-        merged = listAppend(merged,ill);
-      then
-        merged;
-    
-    case(curr,(il as {_})::ill)
-      equation
-        ill = mergeCurrentWithRestIndexies(curr,ill);
-        merged = Util.listMap1(curr,Util.listAppendr,il);
-        merged = listAppend(merged,ill);
-      then
-        merged;
-  end matchcontinue;
-end mergeCurrentWithRestIndexies;
+  ss_1 := addEqu(ss, r1, r2, source);
+end addEqu_wrapper;
 
 protected function crefTupleNotPrefixOf
   "Determines if connection cref is prefix to the component "
