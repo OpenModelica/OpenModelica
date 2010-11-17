@@ -4281,7 +4281,7 @@ public function traverseBackendDAEArrayNoCopyWithUpdate "
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
   input array<Type_a> inArray;
-  input FuncExpTypeWithUpdate func;
+  input FuncExpType func;
   input FuncArrayTypeWithUpdate arrayfunc;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
