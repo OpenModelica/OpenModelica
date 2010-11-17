@@ -4507,10 +4507,9 @@ algorithm
       equation
         b1 = stringEq(name, "DynamicSelect");
         b2 = (0 == System.strncmp("OnMouse", name, 7));
-        b = boolOr(b1, b2);
-        b = boolNot(b);
+        true = boolOr(b1, b2);        
       then 
-        b;
+        false;
     
     // search inside, some(exp)
     case (MODIFICATION(modification = SOME(CLASSMOD(dive, expOpt))) :: rest)
