@@ -4095,7 +4095,7 @@ algorithm
                         eventInfo = ev,
                         extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo)
       equation
-        (BackendDAE.ARRAY_EQUATION(index=indx) :: _) = BackendDAEUtil.equationList(eqns);
+        BackendDAE.ARRAY_EQUATION(index=indx) = BackendDAEUtil.equationNth(eqns,0);
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         ((BackendDAE.VAR(varName = cr) :: _)) = BackendDAEUtil.varList(vars);
         // We need to strip subs from the name since they are removed in cr.
@@ -4118,7 +4118,7 @@ algorithm
                         eventInfo = ev,
                         extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo)
       equation
-        (BackendDAE.ARRAY_EQUATION(index=indx) :: _) = BackendDAEUtil.equationList(eqns);
+        BackendDAE.ARRAY_EQUATION(index=indx) = BackendDAEUtil.equationNth(eqns,0);
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         DAE.ARRAY(scalar=true,array=ea1) = e1;
         DAE.ARRAY(scalar=true,array=ea2) = e2;
@@ -4171,7 +4171,7 @@ algorithm
     // normal call
     case (BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
       equation
-        (BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) :: _) = BackendDAEUtil.equationList(eqns);
+        BackendDAE.ALGORITHM(indx,_,algOutExpVars,_) = BackendDAEUtil.equationNth(eqns,0);
         alg = al[indx + 1];
         solvedVars = BackendVariable.getAllCrefFromVariables(vars);
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
@@ -4184,7 +4184,7 @@ algorithm
     // Error message, inverse algorithms not supported yet
     case (BackendDAE.DAE(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
       equation
-        (BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) :: _) = BackendDAEUtil.equationList(eqns);
+        BackendDAE.ALGORITHM(indx,_,algOutExpVars,source) = BackendDAEUtil.equationNth(eqns,0);
         alg = al[indx + 1];
         solvedVars = BackendVariable.getAllCrefFromVariables(vars);
         algOutVars = Util.listMap(algOutExpVars,Expression.expCref);
@@ -4700,7 +4700,7 @@ algorithm
       BackendDAE.Variables knvars;
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
-      list<BackendDAE.Equation> ie_lst;
+      list<DAE.ComponentRef> initCrefs;
     case (BackendDAE.DAE(orderedVars = vars,
                         knownVars = knvars,
                         externalObjects = extvars,
@@ -4718,8 +4718,8 @@ algorithm
         	 to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
         /* fix the initial thing */
-        ie_lst = BackendDAEUtil.equationList(ie);
-        varsOut = fixInitialThing(varsOut, ie_lst);
+        initCrefs = BackendEquation.getAllCrefFromEquations(ie);
+        varsOut = fixInitialThing(varsOut, initCrefs);
       then
         varsOut;
   end matchcontinue;
@@ -5050,11 +5050,11 @@ end varIndexComparer;
 
 protected function fixInitialThing
   input SimVars simvarsIn;
-  input list<BackendDAE.Equation> initialEqs;
+  input list<DAE.ComponentRef> initCrefs;
   output SimVars simvarsOut;
 algorithm
   simvarsOut :=
-  matchcontinue (simvarsIn, initialEqs)
+  matchcontinue (simvarsIn, initCrefs)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5074,10 +5074,10 @@ algorithm
       then simvarsIn;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
                   outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
-                  extObjVars), initialEqs)
+                  extObjVars), initCrefs)
       equation
         true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
-        stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initialEqs);
+        stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initCrefs);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
                    outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                    extObjVars);
@@ -5100,11 +5100,11 @@ end simvarFixed;
 
 protected function nonFixifyIfHasInit
   input SimVar simvarIn;
-  input list<BackendDAE.Equation> initialEqs;
+  input list<DAE.ComponentRef> initCrefs;
   output SimVar simvarOut;
 algorithm
   simvarOut :=
-  matchcontinue (simvarIn, initialEqs)
+  matchcontinue (simvarIn, initCrefs)
     local
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
@@ -5115,11 +5115,9 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
-      list<DAE.ComponentRef> initCrefs;
       String varNameStr;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initialEqs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initCrefs)
       equation
-        initCrefs = BackendEquation.equationsCrefs(initialEqs);
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});

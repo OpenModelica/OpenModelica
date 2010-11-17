@@ -156,6 +156,31 @@ algorithm
   (_,outExpComponentRefLst) := traverseBackendDAEExpsEqnList(inEquationLst,extractCrefsFromExp,{});
 end equationsCrefs;
 
+public function getAllCrefFromEquations
+  input BackendDAE.EquationArray inEqns;
+  output list<DAE.ComponentRef> cr_lst;
+algorithm
+  cr_lst := traverseBackendDAEEqns(inEqns,traversingEquationCrefFinder,{});
+end getAllCrefFromEquations;
+
+protected function traversingEquationCrefFinder
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Equation, list<DAE.ComponentRef>> inTpl;
+ output tuple<BackendDAE.Equation, list<DAE.ComponentRef>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Equation e;
+      list<DAE.ComponentRef> cr_lst,cr_lst1;
+    case ((e,cr_lst))
+      equation
+        (_,cr_lst1) = traverseBackendDAEExpsEqn(e,extractCrefsFromExp,cr_lst);
+      then ((e,cr_lst1));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end traversingEquationCrefFinder;
+
 protected function extractCrefsFromExp "function: extractCrefsFromExp
   author: Frenkel TUD 2010-11
   helper for equationsCrefs"
