@@ -1409,13 +1409,8 @@ case TERMINATE(__) then
   <<
   <%preExp%>  MODELICA_TERMINATE(<%msgVar%>);
   >>
-case ASSERT(__) then 
-  let &preExp = buffer "" /*BUFD*/
-  let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  <<
-  <%preExp%>  MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
-  >>
+case ASSERT(__) then
+  assertCommon(condition, message, contextSimulationDiscrete, &varDecls)
 end functionWhenReinitStatement;
 
 
@@ -1469,13 +1464,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
                 MODELICA_TERMINATE(<%msgVar%>);
                 >>
 	case ASSERT(__) then 
-  		let &preExp = buffer "" /*BUFD*/
-		let condVar = daeExp(condition, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-                <<
-                <%preExp%> 
-                MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
-                >>
+    assertCommon(condition, message, contextSimulationDiscrete, &varDecls)
   ;separator="\n")
   <<
    <%body%>	
@@ -2246,8 +2235,6 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
 ::=
   <<
   #include "<%filePrefix%>_functions.h"
-  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
-  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
   extern "C" {
   <%functionBodies(functions)%>
   }
@@ -2261,6 +2248,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #ifndef <%filePrefix%>__functions__H
   #define <%filePrefix%>__functions__H
   <%commonHeader()%>
+  #include "simulation_runtime.h"
   extern "C" {
   <%externalFunctionIncludes(includes)%>
   <%functionHeaders(functions)%>
@@ -2385,7 +2373,7 @@ template functionsFile(String filePrefix,
   <<
   #include "<%filePrefix%>.h"
   #include <algorithm>
-  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,"Modelica Assert: %s!\n", msg); }
+  #define MODELICA_ASSERT(msg) { fprintf(stderr,"Modelica Assert: %s!\n", msg); }
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
 
   extern "C" {
@@ -4021,13 +4009,7 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls /*BUF
 ::=
 match stmt
 case STMT_ASSERT(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let condVar = daeExp(cond, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let msgVar = daeExp(msg, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  <<
-  <%preExp%>
-  MODELICA_ASSERT(<%condVar%>, <%msgVar%>);
-  >>
+  assertCommon(cond, msg, context, &varDecls)
 end algStmtAssert;
 
 template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -5719,6 +5701,21 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     >>
   else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
 end patternMatch;
+
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls)
+::=
+  let &preExpCond = buffer ""
+  let &preExpMsg = buffer ""
+  let condVar = daeExp(condition, context, &preExpCond, &varDecls)
+  let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
+  <<
+  <%preExpCond%>
+  if (!<%condVar%>) {
+    <%preExpMsg%>
+    MODELICA_ASSERT(<%msgVar%>);
+  }
+  >>
+end assertCommon;
 
 end SimCodeC;
 

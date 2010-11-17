@@ -349,7 +349,7 @@ int callSolver(int, char**, string, string, double, double, double, long, double
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(cond,msg) if (!(cond)) { terminationAssert = 1; TermMsg = msg; }
+#define MODELICA_ASSERT(msg) { terminationAssert = 1; TermMsg = msg; }
 
 #define MODELICA_TERMINATE(msg)  { modelTermination=1; \
 terminationTerminate = 1; TermMsg = msg; }

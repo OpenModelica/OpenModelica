@@ -5254,19 +5254,8 @@ algorithm
       local
         DAE.Exp i_message;
         DAE.Exp i_condition;
-        Tpl.Text i_msgVar;
-        Tpl.Text i_condVar;
-        Tpl.Text i_preExp;
       equation
-        i_preExp = Tpl.emptyTxt;
-        (i_condVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_condition, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
-        (i_msgVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
-        txt = Tpl.writeText(txt, i_preExp);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("  MODELICA_ASSERT("));
-        txt = Tpl.writeText(txt, i_condVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
-        txt = Tpl.writeText(txt, i_msgVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        (txt, i_varDecls) = assertCommon(txt, i_condition, i_message, SimCode.contextSimulationDiscrete, i_varDecls);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -5510,20 +5499,8 @@ algorithm
       local
         DAE.Exp i_message;
         DAE.Exp i_condition;
-        Tpl.Text i_msgVar;
-        Tpl.Text i_condVar;
-        Tpl.Text i_preExp;
       equation
-        i_preExp = Tpl.emptyTxt;
-        (i_condVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_condition, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
-        (i_msgVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_message, SimCode.contextSimulationDiscrete, i_preExp, i_varDecls);
-        txt = Tpl.writeText(txt, i_preExp);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MODELICA_ASSERT("));
-        txt = Tpl.writeText(txt, i_condVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
-        txt = Tpl.writeText(txt, i_msgVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        (txt, i_varDecls) = assertCommon(txt, i_condition, i_message, SimCode.contextSimulationDiscrete, i_varDecls);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -9419,8 +9396,6 @@ algorithm
   out_txt := Tpl.writeStr(out_txt, i_filePrefix);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "_functions.h\"\n",
-                                       "#define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }\n",
-                                       "#define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }\n",
                                        "extern \"C\" {\n"
                                    }, true));
   out_txt := functionBodies(out_txt, i_functions);
@@ -9446,7 +9421,10 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("__functions__H\n"));
   out_txt := commonHeader(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("extern \"C\" {\n"));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "#include \"simulation_runtime.h\"\n",
+                                       "extern \"C\" {\n"
+                                   }, true));
   out_txt := externalFunctionIncludes(out_txt, i_includes);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := functionHeaders(out_txt, i_functions);
@@ -10029,7 +10007,7 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        ".h\"\n",
                                        "#include <algorithm>\n",
-                                       "#define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }\n",
+                                       "#define MODELICA_ASSERT(msg) { fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }\n",
                                        "#define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }\n",
                                        "\n",
                                        "extern \"C\" {\n"
@@ -21951,20 +21929,8 @@ algorithm
       local
         DAE.Exp i_msg;
         DAE.Exp i_cond;
-        Tpl.Text i_msgVar;
-        Tpl.Text i_condVar;
-        Tpl.Text i_preExp;
       equation
-        i_preExp = Tpl.emptyTxt;
-        (i_condVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_cond, i_context, i_preExp, i_varDecls);
-        (i_msgVar, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_msg, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeText(txt, i_preExp);
-        txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MODELICA_ASSERT("));
-        txt = Tpl.writeText(txt, i_condVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
-        txt = Tpl.writeText(txt, i_msgVar);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        (txt, i_varDecls) = assertCommon(txt, i_cond, i_msg, i_context, i_varDecls);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -32820,5 +32786,39 @@ algorithm
       then (txt, i_rhs, i_onPatternFail, i_varDecls, i_assignments);
   end matchcontinue;
 end patternMatch;
+
+public function assertCommon
+  input Tpl.Text txt;
+  input DAE.Exp i_condition;
+  input DAE.Exp i_message;
+  input SimCode.Context i_context;
+  input Tpl.Text i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+protected
+  Tpl.Text i_msgVar;
+  Tpl.Text i_condVar;
+  Tpl.Text i_preExpMsg;
+  Tpl.Text i_preExpCond;
+algorithm
+  i_preExpCond := Tpl.emptyTxt;
+  i_preExpMsg := Tpl.emptyTxt;
+  (i_condVar, i_preExpCond, out_i_varDecls) := daeExp(Tpl.emptyTxt, i_condition, i_context, i_preExpCond, i_varDecls);
+  (i_msgVar, i_preExpMsg, out_i_varDecls) := daeExp(Tpl.emptyTxt, i_message, i_context, i_preExpMsg, out_i_varDecls);
+  out_txt := Tpl.writeText(txt, i_preExpCond);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("if (!"));
+  out_txt := Tpl.writeText(out_txt, i_condVar);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE(") {\n"));
+  out_txt := Tpl.pushBlock(out_txt, Tpl.BT_INDENT(2));
+  out_txt := Tpl.writeText(out_txt, i_preExpMsg);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("MODELICA_ASSERT("));
+  out_txt := Tpl.writeText(out_txt, i_msgVar);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE(");\n"));
+  out_txt := Tpl.popBlock(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("}"));
+end assertCommon;
 
 end SimCodeC;
