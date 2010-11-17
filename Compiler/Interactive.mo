@@ -2612,6 +2612,16 @@ algorithm
       then
         (res_str,SYMBOLTABLE(p_1,aDep,s,{},{},{},lf));
 
+    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, explodedAst = s, loadedFiles = lf))
+      equation
+        matchApiFunction(istmts, "renameComponentInClass");
+        {Absyn.CREF(componentRef = cname),
+         Absyn.CREF(componentRef = from_ident),
+         Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
+        (res_str,p_1) = renameComponentOnlyInClass(p, cname, from_ident, to_ident);
+      then
+        (res_str,SYMBOLTABLE(p_1,aDep,s,{},{},{},lf));
+
     case (istmts, st as SYMBOLTABLE(ast = p)) /* adrpo added 2005-11-03 */
       equation
         matchApiFunction(istmts, "getCrefInfo");
@@ -2692,7 +2702,7 @@ algorithm
     Real t1,t2,t3;
     case(p,class_,cref1,cref2)
       equation
-        comps = extractAllComponents(p) "class in package" ;
+        comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
         false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
         class_path = Absyn.crefToPath(class_);
         comp_repsrules = COMPONENTREPLACEMENTRULES({COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
@@ -2726,8 +2736,7 @@ protected function renameComponent
   output String outString;
   output Absyn.Program outProgram;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
+  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
     local
       Absyn.Path class_path;
       ComponentReplacementRules comp_reps;
@@ -2736,6 +2745,19 @@ algorithm
       String paths_1,paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
       Real t1,t2,t3;
+      Absyn.Class cl;
+      Absyn.Path model_path;
+      String str;
+      
+    case (p,class_,old_comp,new_comp)
+      equation
+        model_path = Absyn.crefToPath(class_);
+        true = isClassReadOnly(getPathedClassInProgram(model_path,p));
+        str = Absyn.pathString(model_path);
+        str = "Error: class: " +& str +& " is in a read only file!";
+      then
+        (str, p);      
+            
     case (p,class_,old_comp,new_comp)
       equation
         class_path = Absyn.crefToPath(class_) "class in package" ;
@@ -2746,13 +2768,67 @@ algorithm
         paths_2 = stringAppendList({"{",paths_1,"}"});
       then
         (paths_2,p_1);
+    
     case (p,_,_,_)
       equation
         Debug.fprint("failtrace", "rename_component failed\n");
       then
-        ("error",p);
+        ("Error",p);
   end matchcontinue;
 end renameComponent;
+
+protected function renameComponentOnlyInClass
+"@author: adrpo
+  This function renames a component ONLY in the given class"
+  input Absyn.Program inProgram1;
+  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.ComponentRef inComponentRef3;
+  input Absyn.ComponentRef inComponentRef4;
+  output String outString;
+  output Absyn.Program outProgram;
+algorithm
+  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
+    local
+      Absyn.Path class_path;
+      ComponentReplacementRules comp_reps;
+      Absyn.Program p_1,p;
+      list<String> paths;
+      String paths_1,paths_2;
+      Absyn.ComponentRef class_,old_comp,new_comp;
+      Real t1,t2,t3;
+      Absyn.Class cl;
+      Absyn.Path model_path;
+      String str;
+      Absyn.Within w;
+      
+    case (p,class_,old_comp,new_comp)
+      equation
+        model_path = Absyn.crefToPath(class_);
+        true = isClassReadOnly(getPathedClassInProgram(model_path,p));
+        str = Absyn.pathString(model_path);
+        str = "Error: class: " +& str +& " is in a read only file!";
+      then
+        (str, p);      
+            
+    case (p,class_,old_comp,new_comp)
+      equation
+        model_path = Absyn.crefToPath(class_) "class in package" ;
+        cl = getPathedClassInProgram(model_path, p);
+        cl = renameComponentInClass(cl, old_comp, new_comp);
+        w = buildWithin(Absyn.FULLYQUALIFIED(model_path));
+        p = updateProgram(Absyn.PROGRAM({cl}, w, Absyn.dummyTimeStamp), p);
+        str = Absyn.pathString(model_path);
+        paths_2 = stringAppendList({"{",str,"}"});
+      then
+        (paths_2,p);
+    
+    case (p,_,_,_)
+      equation
+        Debug.fprint("failtrace", "renameComponentOnlyInClass failed\n");
+      then
+        ("Error",p);
+  end matchcontinue;
+end renameComponentOnlyInClass;
 
 protected function extractRenamedClassesAsStringList
 "function extractRenamedClassesAsStringList
@@ -4382,16 +4458,34 @@ protected function extractAllComponents
  this traverse all the classes and
  extracts all the components and \"extends\""
   input Absyn.Program p;
+  input Absyn.Path path;
   output Components comps;
-  SCode.Program p_1;
-  list<Env.Frame> env;
-protected
-  Real t1,t2,t3;
 algorithm
-  p_1 := SCodeUtil.translateAbsyn2SCode(p);
-  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-  ((_,_,(comps,_,_))) := traverseClasses(p,NONE(), extractAllComponentsVisitor,
-          (COMPONENTS({},0),p,env), true) "traverse protected" ;
+  comps := matchcontinue(p, path)
+    local
+        SCode.Program p_1;
+        list<Env.Frame> env;
+    
+    /*
+    // if we have a top level class, a modification into it doesn't affect any other!
+    case (p, path as Absyn.IDENT(_))
+      equation
+        p = Dependency.getTotalProgramFromPath(path, p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";        
+      then
+        comps;
+    */    
+    // if we have a qualified class, a modification into it can affect any other
+    case (p, path /*as Absyn.QUALIFIED(name=_)*/)
+      equation
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";
+      then
+        comps;    
+  end matchcontinue;
 end extractAllComponents;
 
 protected function extractAllComponentsVisitor
