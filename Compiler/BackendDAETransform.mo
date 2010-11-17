@@ -1459,7 +1459,6 @@ algorithm
       BackendDAE.EventInfo wc;
       list<BackendDAE.Value> rest;
       BackendDAE.ExternalObjectClasses eoc;
-      list<BackendDAE.Equation> ieLst1,ieLst;
       DAE.Exp stateexp,stateexpcall,dummyderexp;
       DAE.ExpType tp;
       
@@ -1470,14 +1469,12 @@ algorithm
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        ieLst = BackendDAEUtil.equationList(ie);
         stateexp = Expression.crefExp(state);
         tp = Expression.typeof(stateexp);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
         dummyderexp = Expression.crefExp(dummyder);
         (eqn_1,al1,ae1,_) = traverseBackendDAEExpsEqn(eqn, al, ae, replaceDummyDer2Exp,(stateexpcall,dummyderexp));
-        (ieLst1,al2,ae2,_) = traverseBackendDAEExpsEqnList(ieLst,al1,ae1, replaceDummyDer2Exp,(stateexpcall,dummyderexp));
-        ie1 = BackendDAEUtil.listEquation(ieLst1);
+        (ie1,(al2,ae2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (eqn_1,al3,ae3,v_1) = traverseBackendDAEExpsEqn(eqn_1,al2,ae2,replaceDummyDerOthersExp,v);
         eqns_1 = BackendEquation.equationSetnth(eqns, e_1, eqn_1)
          "incidence_row(v\'\',eqn\') => row\' &
@@ -1495,6 +1492,34 @@ algorithm
 
   end matchcontinue;
 end replaceDummyDer;
+
+protected function traversereplaceDummyDer
+"function traversereplaceDummyDer
+  author: Frenkel TUD 2010-11."
+  replaceable type Type_a subtypeof Any; 
+  input tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,array<BackendDAE.MultiDimEquation>,FuncExpType,Type_a>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<array<DAE.Algorithm>,array<BackendDAE.MultiDimEquation>,FuncExpType,Type_a>> outTpl;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inExpTypeA;
+    output tuple<DAE.Exp, Type_a> outExpTypeA;
+  end FuncExpType;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local 
+      BackendDAE.Equation e,e1;
+      array<DAE.Algorithm> algs,algs1;
+      array<BackendDAE.MultiDimEquation> ae,ae1;
+      Type_a ext_arg,ext_arg_1;
+      FuncExpType func;
+    case ((e,(algs,ae,func,ext_arg)))
+      equation
+         (e1,algs1,ae1,ext_arg_1) = traverseBackendDAEExpsEqn(e,algs,ae,func,ext_arg);
+      then
+        ((e,(algs,ae,func,ext_arg)));      
+    case inTpl then inTpl;
+  end matchcontinue;      
+end traversereplaceDummyDer;      
 
 protected function traverseBackendDAEExpsEqn
 "function: traverseBackendDAEExpsEqn
