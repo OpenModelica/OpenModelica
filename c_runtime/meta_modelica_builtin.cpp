@@ -191,10 +191,8 @@ intString_rettype intString(modelica_integer i)
 {
   /* 32-bit integer: 1+log_10(2**31)+1 = 12 digits max */
   static char buffer[12];
-  modelica_string_t res;
   sprintf(buffer, "%d", i);
-  init_modelica_string(&res, buffer);
-  return res;
+  return strdup(buffer);
 }
 
 modelica_metatype boxptr_intEq(modelica_metatype i1, modelica_metatype i2)
@@ -437,7 +435,6 @@ stringEq_rettype stringEq(modelica_string_t str1, modelica_string_t str2)
 
 stringGetStringChar_rettype stringGetStringChar(modelica_string_t str, modelica_integer ix)
 {
-  modelica_string_t res;
   char chr[2] = {'\0','\0'};
   if (*str == 0)
     throw 1;
@@ -447,8 +444,7 @@ stringGetStringChar_rettype stringGetStringChar(modelica_string_t str, modelica_
     ix--;
   }
   chr[0] = *str;
-  init_modelica_string(&res, chr);
-  return res;
+  return strdup(chr);
 }
 
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, modelica_string_t c, modelica_integer ix)
@@ -460,7 +456,7 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, mod
   length = strlen(str);
   if (ix > length)
     throw 1;
-  copy_modelica_string(str, &res);
+  res = strdup(str);
   res[ix-1] = c[0];
   return res;
 }

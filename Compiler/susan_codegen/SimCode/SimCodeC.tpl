@@ -3449,15 +3449,19 @@ match var
  * before set_memory_state. Strings are not known, so we copy them, etc...
  */
 case var as VARIABLE(ty = ET_STRING(__)) then
-    // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
-    let strVar = tempDecl("modelica_string", &varDecls)
-    let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction)%>);<%\n%>'
-    let &varAssign +=
-      <<
-      init_modelica_string(&<%dest%>.targ<%ix%>,<%strVar%>);
-      free(<%strVar%>);<%\n%>
-      >>
-    ""
+    if not acceptMetaModelicaGrammar() then
+      // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
+      let strVar = tempDecl("modelica_string", &varDecls)
+      let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction)%>);<%\n%>'
+      let &varAssign +=
+        <<
+        init_modelica_string(&<%dest%>.targ<%ix%>,<%strVar%>);
+        free(<%strVar%>);<%\n%>
+        >>
+      ""
+    else
+      let &varAssign += '<%dest%>.targ<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
+      ""
 case var as VARIABLE(__) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)
