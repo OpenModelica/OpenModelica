@@ -92,7 +92,7 @@ void Settings_5finit(void)
 
 RML_BEGIN_LABEL(Settings__getVersionNr)
 {
-    rmlA0 = (void*) mk_scon("1.5.1");
+    rmlA0 = (void*) mk_scon("1.6.0");
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
