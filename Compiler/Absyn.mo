@@ -2177,12 +2177,10 @@ public function pathReplaceFirstIdent "
 algorithm
   outPath := matchcontinue(path,replPath)
     local
-      String n;
       Path p;
-      list<String> strings;
     // Should not be possible to replace FQ paths
-    case (QUALIFIED(path = p),replPath) then joinPaths(replPath,p);
-    case (IDENT(name = n),replPath) then replPath;
+    case (QUALIFIED(path = p), _) then joinPaths(replPath,p);
+    case (IDENT(name = _), _) then replPath;
   end matchcontinue;
 end pathReplaceFirstIdent;
 

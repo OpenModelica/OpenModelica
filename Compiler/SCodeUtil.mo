@@ -46,19 +46,20 @@ package SCodeUtil
   The SCode representation is then used as input to the Inst module"
 
 public import Absyn;
-public import SCode;
 public import RTOpts;
+public import SCode;
 
-protected import MetaUtil;
-protected import Dump;
 protected import Debug;
-protected import Util;
+protected import Dump;
 protected import Error;
-protected import System;
 protected import ExpandableConnectors;
 protected import Inst;
 protected import InstanceHierarchy;
+protected import MetaUtil;
+protected import SCodeFlatten;
+protected import System;
 protected import Types;
+protected import Util;
 
 public function translateAbsyn2SCode
 "function: translateAbsyn2SCode
@@ -90,6 +91,7 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
         sp = translate2(inProgram);
+        //sp = SCodeFlatten.flatten(sp);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
         hasExpandableConnectors = System.getHasExpandableConnectors();

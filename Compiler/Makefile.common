@@ -66,6 +66,7 @@ ExpressionSimplify.mo \
 ExpandableConnectors.mo \
 SCode.mo \
 SCodeUtil.mo \
+SCodeFlatten.mo \
 Graphviz.mo \
 HashTable.mo \
 HashTable2.mo \
