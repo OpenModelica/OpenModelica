@@ -59,12 +59,12 @@ void saveall();
 void save(double & var);
 void save(modelica_integer & var);
 void save(modelica_boolean & var);
-void save(char* & var);
+void save(const char* & var);
 
 double pre(double & var);
 int pre(int & var);
 signed char pre(signed char & var);
-char* pre(char* & var);
+const char* pre(const char* & var);
 
 bool edge(double& var);
 bool edge(modelica_integer& var);
@@ -73,7 +73,7 @@ bool edge(modelica_boolean& var);
 bool change(double& var);
 bool change(modelica_integer& var);
 bool change(modelica_boolean& var);
-bool change(char*& var);
+bool change(const char*& var);
 
 double Sample(double t, double start ,double interval);
 double sample(double start ,double interval);
@@ -84,7 +84,7 @@ double LessEq(double a,double b);
 double Greater(double a,double b);
 double GreaterEq(double a,double b);
 
-int checkTermination();
+void checkTermination();
 
 extern long inUpdate;
 extern int euler_in_use;

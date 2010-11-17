@@ -34,13 +34,14 @@
 
 #include <fstream>
 #include <iomanip>
+#include <string.h>
 
 using namespace std;
 
-void read_commented_value( ifstream &f, double *res);
-void read_commented_value( ifstream &f, int *res);
+void read_commented_value(ifstream &f, double *res);
+void read_commented_value(ifstream &f, int *res);
 void read_commented_value(ifstream &f, string *str);
-void read_commented_value(ifstream &f, char **str);
+void read_commented_value(ifstream &f, const char **str);
 void read_commented_value(ifstream &f, signed char *str);
 
 
@@ -211,7 +212,7 @@ inline void read_commented_value(ifstream &f, string *str)
 	}
 }
 
-inline void read_commented_value(ifstream &f, char **str)
+inline void read_commented_value(ifstream &f, const char **str)
 {
 	if (str == NULL) {
 		cerr << "error read_commented_value, no data allocated for storing string" << endl;
@@ -219,16 +220,7 @@ inline void read_commented_value(ifstream &f, char **str)
 	}
 	string line;
 	read_commented_value(f,&line);
-	*str = new char[line.length()+1];
-	int i;
-	for (i=0;i<(int)line.length();i++) {
-		(*str)[i] = line.c_str()[i];
-	}
-	(*str)[i]='\0';
-
-	if (!str) {
-		cerr << "Error reading string value from init file" << endl;
-	}
+	*str = strdup(line.c_str());
 }
 
 inline void read_commented_value( ifstream &f, double *res)

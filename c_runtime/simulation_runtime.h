@@ -133,10 +133,10 @@ typedef enum {
 } DATA_FLAGS;
 
 typedef struct sim_DATA_STRING {
-  char** algebraics; //y ALGVARS
-  char** parameters; //p; PARAMETERS
-  char** inputVars; //in_y INPUTVARS
-  char** outputVars; //out_y OUTPUTVARS
+  const char** algebraics; //y ALGVARS
+  const char** parameters; //p; PARAMETERS
+  const char** inputVars;  //in_y INPUTVARS
+  const char** outputVars; //out_y OUTPUTVARS
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;

@@ -579,7 +579,7 @@ template functionInitializeDataStruc()
     }
   
     if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
-      returnData->stringVariables.algebraics = (char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);
+      returnData->stringVariables.algebraics = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);
       assert(returnData->stringVariables.algebraics);
       memset(returnData->stringVariables.algebraics,0,sizeof(char*)*returnData->stringVariables.nAlgebraic);
     } else {
@@ -623,7 +623,7 @@ template functionInitializeDataStruc()
     }
   
     if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
-    	returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
+    	returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
         assert(returnData->stringVariables.parameters);
         memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
     } else {
@@ -2784,6 +2784,7 @@ end functionHeaderBoxed;
 
 template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed)
  "Generates function header for a Modelica/MetaModelica function. Generates a
+
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
   let fargsStr = if boxed then 
@@ -4333,13 +4334,7 @@ end daeExp;
 template daeExpSconst(String string, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a string constant."
 ::=
-  let escapedStr = '"<%Util.escapeModelicaStringToCString(string)%>"'
-  let strVar = tempDecl("modelica_string", &varDecls /*BUFC*/)
-  let &preExp += if acceptMetaModelicaGrammar() then
-      '<%strVar%> = strdup(<%escapedStr%>);<%\n%>'
-    else
-      'init_modelica_string(&<%strVar%>,<%escapedStr%>);<%\n%>'
-  strVar
+  '"<%Util.escapeModelicaStringToCString(string)%>"'
 end daeExpSconst;
 
 template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,

@@ -69,7 +69,7 @@ int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj, doubl
 	}
 
 	int k = 0;
-	int l,l1;
+	int l;
 	for (int i=0;i<size_A;i++){
 		for (int j=0;j<size_A;j++,k++){
 			l = i+j*size_A;
@@ -77,7 +77,6 @@ int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj, doubl
 			if (i==j) pd[l] -= (double)*cj;
 		}
 	}
-	double tmp;
 
 	//transpose jacobian
 	/*for (int i=0;i<size_A;i++){
@@ -109,7 +108,7 @@ bool continue_MINE(fortran_integer* idid, double* atol, double *rtol);
 */
 double calcTiny(double tout)
 {
-  double uround = dlamch_("P",1);
+  double uround = dlamch_((char*)"P",1);
   if (tout == 0.0) {
     return 1000.0*uround;
   } else {

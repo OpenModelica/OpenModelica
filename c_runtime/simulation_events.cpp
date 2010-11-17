@@ -44,7 +44,7 @@ double* xd_saved = 0;
 double* y_saved = 0;
 modelica_integer*  int_saved = 0;
 modelica_boolean*  bool_saved = 0;
-char** str_saved = 0;
+const char** str_saved = 0;
 
 double* gout = 0;
 double* gout_old = 0;
@@ -84,7 +84,7 @@ int initializeEventData() {
   y_saved = new double[globalData->nAlgebraic];
   int_saved = new modelica_integer[globalData->intVariables.nAlgebraic];
   bool_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
-  str_saved = new char*[globalData->stringVariables.nAlgebraic];
+  str_saved = new const char*[globalData->stringVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   if (!y_saved || !gout || !h_saved || !x_saved || !xd_saved
 		  || !int_saved || !bool_saved || !str_saved || !zeroCrossingEnabled) {
@@ -562,8 +562,8 @@ void save(modelica_boolean & var) {
 }
 
 
-void save(char* & var) {
-  char** pvar = &var;
+void save(const char* & var) {
+  const char** pvar = &var;
   long ind;
   if (sim_verbose) {
     printf("save %s = %s\n", getName((double*)pvar), var);
@@ -621,8 +621,8 @@ modelica_boolean pre(signed char & var) {
   return var;
 }
 
-char* pre(char* & var) {
-  char** pvar = &var;
+const char* pre(const char* & var) {
+  const char** pvar = &var;
   long ind;
 
   ind = long(pvar - globalData->stringVariables.nAlgebraic);
@@ -655,7 +655,7 @@ bool change(modelica_integer& var) {
   return (var != pre(var));
 }
 
-bool change(char*& var) {
+bool change(const char*& var) {
   return (var != pre(var));
 }
 
@@ -668,7 +668,7 @@ bool change(modelica_boolean& var) {
   return (var != pre(var));
 }
 
-int checkTermination(){
+void checkTermination(){
   if (terminationAssert) {
     if (warningLevelAssert) { // terminated from assert, etc.
        cout << "Simulation call assert() at time " << globalData->timeValue << endl;
