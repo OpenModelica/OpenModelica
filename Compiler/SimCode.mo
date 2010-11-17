@@ -4308,10 +4308,10 @@ algorithm
                                  eventInfo=ev)),
           ass1, ass2)
       equation
-        eqns_lst = BackendDAEUtil.equationList(eqns);
         ie2_lst = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,{});
         ie2_lst = listReverse(ie2_lst);
-        eqns_lst = selectContinuousEquations(eqns_lst, 1, ass2, dlow);
+        ((_,_,_,eqns_lst)) = BackendEquation.traverseBackendDAEEqns(eqns,selectContinuousEquations,(1, ass2, vars,{}));
+        eqns_lst = listReverse(eqns_lst); 
 
         eqns_lst = Util.listMap(eqns_lst, BackendEquation.equationToResidualForm);
         eqns_lst = Util.listFilter(eqns_lst, failUnlessResidual);
@@ -5456,29 +5456,26 @@ end generateHelpVarsInArrayCondition;
 protected function selectContinuousEquations
 "function selectContinuousEquations
   Returns only the equations that are solved for a continous variable."
-  input list<BackendDAE.Equation> eqnLst;
-  input Integer eqnIndx; // iterator, starts at 1..n
-	input array<Integer> ass2;
-	input BackendDAE.BackendDAE daelow;
-	output list<BackendDAE.Equation> outEqnLst;
+  input tuple<BackendDAE.Equation, tuple<Integer,array<Integer>,BackendDAE.Variables,list<BackendDAE.Equation>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<Integer,array<Integer>,BackendDAE.Variables,list<BackendDAE.Equation>>> outTpl;  
 algorithm
-  outEqnLst := matchcontinue(eqnLst,eqnIndx,ass2,daelow)
-    local
-      BackendDAE.VariableArray vararr;
+  outTpl := matchcontinue (inTpl)
+    local  
+      BackendDAE.Variables vars;
       BackendDAE.Var var;
-      Integer v,v_1;
+      Integer v,v_1,eqnIndx;
       Boolean b;
       BackendDAE.Equation e;
-    case({},eqnIndx,ass2,daelow) then {};
-    case(e::eqnLst,eqnIndx,ass2,daelow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr)))
+      array<Integer> ass2;
+      list<BackendDAE.Equation> eqnLst,eqnLst1;
+    case ((e,(eqnIndx,ass2,vars,eqnLst)))
      equation
        v = ass2[eqnIndx];
-       v_1 = v - 1;
-       (var) = BackendVariable.vararrayNth(vararr, v_1);
+       var = BackendVariable.getVarAt(vars,v);
        b = hasDiscreteVar({var});
-       eqnLst = selectContinuousEquations(eqnLst,eqnIndx+1,ass2,daelow);
-       eqnLst = Util.if_(b,eqnLst,e::eqnLst);
-     then eqnLst;
+       eqnLst1 = Util.if_(b,eqnLst,e::eqnLst);
+     then ((e,(eqnIndx+1,ass2,vars,eqnLst1)));
+   case (inTpl) then inTpl;       
   end matchcontinue;
 end selectContinuousEquations;
 
