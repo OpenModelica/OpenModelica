@@ -6058,7 +6058,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
 				/* A single algorithm section (consists of several eqns) is not mixed system */
       case (vs,eqns) equation
-        singleAlgorithmSection2(eqns,NONE());
+        singleAlgorithmSectionList(eqns,NONE());
       then false;
     case (vs,eqns)
       equation
@@ -6195,19 +6195,19 @@ algorithm
   _:=
   matchcontinue (inBackendDAE)
     local
-      list<BackendDAE.Equation> eqn_lst;
-      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqnarr))
+    case (BackendDAE.DAE(orderedEqs = eqnarr))
       equation
-        eqn_lst = BackendDAEUtil.equationList(eqnarr);
-        singleAlgorithmSection2(eqn_lst,NONE());
+        SOME(_) = BackendEquation.traverseBackendDAEEqnsWithStop(eqnarr,singleAlgorithmSection2,NONE());
       then
         ();
   end matchcontinue;
 end singleAlgorithmSection;
 
-protected function singleAlgorithmSection2
+protected function singleAlgorithmSectionList
+"function: singleAlgorithmSection
+  author: Frenkel TUD 2010-11
+  Checks if a list of equations consists of a single algorithm section."
   input list<BackendDAE.Equation> inBackendDAEEquationLst;
   input Option<Integer> Index;  
 algorithm
@@ -6219,15 +6219,35 @@ algorithm
     case ({},_) then ();
     case ((BackendDAE.ALGORITHM(index = i) :: res),NONE())
       equation
-        singleAlgorithmSection2(res,SOME(i));
+        singleAlgorithmSectionList(res,SOME(i));
       then
         ();      
     case ((BackendDAE.ALGORITHM(index = i) :: res),SOME(i1))
       equation
         true = intEq(i,i1);
-        singleAlgorithmSection2(res,SOME(i1));
+        singleAlgorithmSectionList(res,SOME(i1));
       then
         ();
+  end matchcontinue;
+end singleAlgorithmSectionList;
+
+protected function singleAlgorithmSection2
+  input tuple<BackendDAE.Equation,Option<Integer>> inTpl;
+  output tuple<BackendDAE.Equation,Boolean,Option<Integer>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local 
+      BackendDAE.Equation e;
+      Integer i,i1;
+    case ((e as BackendDAE.ALGORITHM(index = i),NONE()))
+      then ((e,true,SOME(i)));     
+    case ((e as BackendDAE.ALGORITHM(index = i),SOME(i1)))
+      equation
+        true = intEq(i,i1);
+      then
+        ((e,true,SOME(i1)));
+    case ((e,_)) then ((e,false,NONE())); 
   end matchcontinue;
 end singleAlgorithmSection2;
 
@@ -6245,34 +6265,29 @@ algorithm
       BackendDAE.EquationArray eqnarr;
     case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqnarr))
       equation
-        eqn_lst = BackendDAEUtil.equationList(eqnarr);
-        singleArrayEquation2(eqn_lst,NONE());
+        SOME(_) = BackendEquation.traverseBackendDAEEqnsWithStop(eqnarr,singleArrayEquation2,NONE());
       then
         ();
   end matchcontinue;
 end singleArrayEquation;
 
 protected function singleArrayEquation2
-  input list<BackendDAE.Equation> inBackendDAEEquationLst;
-  input Option<Integer> Index;
+  input tuple<BackendDAE.Equation,Option<Integer>> inTpl;
+  output tuple<BackendDAE.Equation,Boolean,Option<Integer>> outTpl;
 algorithm
-  _:=
-  matchcontinue (inBackendDAEEquationLst,Index)
+  outTpl:=
+  matchcontinue (inTpl)
     local 
-      list<BackendDAE.Equation> res;
+      BackendDAE.Equation e;
       Integer i,i1;
-    case ({},_) then ();
-    case ((BackendDAE.ARRAY_EQUATION(index = i) :: res),NONE())
-      equation
-        singleArrayEquation2(res,SOME(i));
-      then
-        ();
-    case ((BackendDAE.ARRAY_EQUATION(index = i) :: res),SOME(i1))
+    case ((e as BackendDAE.ARRAY_EQUATION(index = i),NONE()))
+      then ((e,true,SOME(i)));
+    case ((e as BackendDAE.ARRAY_EQUATION(index = i),SOME(i1)))
       equation
         true = intEq(i,i1);
-        singleArrayEquation2(res,SOME(i1));
       then
-        ();        
+        ((e,true,SOME(i1)));
+    case ((e,_)) then ((e,false,NONE()));        
   end matchcontinue;
 end singleArrayEquation2;
 
