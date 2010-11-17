@@ -209,7 +209,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 {
-  char *path = SettingsImpl__getInstallationDirectoryPath();
+  const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
     RML_TAILCALLK(rmlFC);
   else
