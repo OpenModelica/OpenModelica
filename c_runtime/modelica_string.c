@@ -140,7 +140,6 @@ void init_modelica_string(modelica_string_t* dest, modelica_string_const str)
     int i;
     int length = strlen(str);
     alloc_modelica_string(dest, length);
-    /* *dest = malloc(length+1); */
     for (i = 0; i<length; ++i) {
         (*dest)[i] = str[i];
     }
@@ -149,7 +148,7 @@ void init_modelica_string(modelica_string_t* dest, modelica_string_const str)
 void alloc_modelica_string(modelica_string_t* dest, int n)
 {
     /* Reserve place for null terminator too.*/
-    *dest = (modelica_string_t*) malloc(n+1); /* char_alloc(n+1); */
+    *dest = (modelica_string_t*) char_alloc(n+1);
     (*dest)[n]=0;
 }
 

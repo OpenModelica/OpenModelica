@@ -2998,10 +2998,12 @@ case FUNCTION(__) then
     )
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls /*BUFC*/) ;separator="\n")
-  let &outVarInits = buffer "" /*BUFD*/
-  let outVarsStr = (outVars |> var =>
-      varOutput(var, retVar, i1, &varDecls /*BUFC*/, &outVarInits /*BUFC*/)
-      ;separator="\n"
+  let &outVarInits = buffer ""
+  let &outVarCopy = buffer ""
+  let &outVarAssign = buffer ""
+  let _1 = (outVars |> var hasindex i1 =>
+      varOutput(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign)
+      ;separator="\n"; empty
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
@@ -3018,9 +3020,10 @@ case FUNCTION(__) then
     <%bodyPart%>
     
     _return:
-    <%outVarsStr%>
+    <%outVarCopy%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
-    return <%if outVars then retVar%>;
+    <%outVarAssign%>
+    return<%if outVars then ' <%retVar%>' %>;
   }
   
   <% if inFunc then
@@ -3436,25 +3439,36 @@ case var as FUNCTION_PTR(__) then
   end match
 end functionArg;
   
-template varOutput(Variable var, String dest, Integer i, Text &varDecls /*BUFP*/,
-          Text &varInits /*BUFP*/)
+template varOutput(Variable var, String dest, Integer ix, Text &varDecls,
+          Text &varInits, Text &varCopy, Text &varAssign)
  "Generates code to copy result value from a function to dest."
 ::=
 match var
+/* The storage size of arrays is known at call time, so they can be allocated
+ * before set_memory_state. Strings are not known, so we copy them, etc...
+ */
+case var as VARIABLE(ty = ET_STRING(__)) then
+    // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
+    let strVar = tempDecl("modelica_string", &varDecls)
+    let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction)%>);<%\n%>'
+    let &varAssign +=
+      <<
+      init_modelica_string(&<%dest%>.targ<%ix%>,<%strVar%>);
+      free(<%strVar%>);<%\n%>
+      >>
+    ""
 case var as VARIABLE(__) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)
     ;separator=", ")
   if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%i%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    <<
-    copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.targ<%i%>);
-    >>
+    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.targ<%ix%>);<%\n%>'
+    ""
   else
     let &varInits += initRecordMembers(var)
-    <<
-    <%dest%>.targ<%i%> = <%contextCref(var.name,contextFunction)%>;
-    >>
+    let &varAssign += '<%dest%>.targ<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
+    ""
 end varOutput;
 
 template initRecordMembers(Variable var)
@@ -4321,7 +4335,10 @@ template daeExpSconst(String string, Context context, Text &preExp /*BUFP*/, Tex
 ::=
   let escapedStr = '"<%Util.escapeModelicaStringToCString(string)%>"'
   let strVar = tempDecl("modelica_string", &varDecls /*BUFC*/)
-  let &preExp += 'init_modelica_string(&<%strVar%>,<%escapedStr%>);<%\n%>'
+  let &preExp += if acceptMetaModelicaGrammar() then
+      '<%strVar%> = strdup(<%escapedStr%>);<%\n%>'
+    else
+      'init_modelica_string(&<%strVar%>,<%escapedStr%>);<%\n%>'
   strVar
 end daeExpSconst;
 
@@ -4458,7 +4475,10 @@ case BINARY(__) then
   match operator
   case ADD(ty = ET_STRING(__)) then
     let tmpStr = tempDecl("modelica_string", &varDecls /*BUFC*/)
-    let &preExp += 'cat_modelica_string(&<%tmpStr%>,<%e1%>,<%e2%>);<%\n%>'
+    let &preExp += if acceptMetaModelicaGrammar() then
+        '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
+      else
+        'cat_modelica_string(&<%tmpStr%>,<%e1%>,<%e2%>);<%\n%>'
     tmpStr
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
