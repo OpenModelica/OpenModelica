@@ -71,7 +71,7 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
 
     <%functionInitialResidual(residualEquations, simCode)%>
     
-    <%functionExtraResudials(allEquations, simCode)%>
+    <%functionExtraResiduals(allEquations, simCode)%>
     
     <%functionBoundParameters(parameterEquations, simCode)%>
 
@@ -281,7 +281,7 @@ public double <%cref(name, simCode)%> { get { return parameters[<%index%>]; } se
 
 
 #region VariableInfos
-private static readonly SimVarInfo[] VariableInfosStatic = new[] {
+public static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<%{  
 		varInfos("State", vars.stateVars, false, simCode),
 		varInfos("StateDer", vars.derivativeVars, false, simCode),
@@ -711,23 +711,29 @@ public override void InitialResidual()
 >>
 end functionInitialResidual;
 
-template functionExtraResudials(list<SimEqSystem> allEquations, SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-(allEquations |> SES_NONLINEAR(__) =>
-<<
-void ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
-{
-   <% localRepresentationArrayDefines %>
-   <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
-     let &preExp = buffer ""
-     let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
-   <<
-   <%preExp%>
-   res[<%i0%>] = <%expPart%>;
-   >> ;separator="\n"%>
-}
->> ;separator="\n")
-end functionExtraResudials;
+template functionExtraResiduals(list<SimEqSystem> allEquations, SimCode simCode) ::=
+  let()= System.tmpTickReset(1)
+  (allEquations |> SES_NONLINEAR(__) =>
+	<<
+	int ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
+	{
+	   <% localRepresentationArrayDefines %>
+	   <%eqs |> saeq as SES_SIMPLE_ASSIGN(__) =>
+         equation_(saeq, contextOther, simCode)
+         ;separator="\n"
+       %>
+	   <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
+	     let &preExp = buffer ""
+	     let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
+	     <<
+	     <%preExp%>
+	     res[<%i0%>] = <%expPart%>;
+	     >> ;separator="\n"
+	   %>
+	   return 0;
+	}
+	>> ;separator="\n")
+end functionExtraResiduals;
 
 template functionBoundParameters(list<SimEqSystem> parameterEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
@@ -923,7 +929,26 @@ case SES_MIXED(__) then
   } // *** mixed_equation_system_end(<%numDiscVarsStr%>) ***
   >>
 
-case SES_NONLINEAR(__) then "SES_NONLINEAR"
+case SES_NONLINEAR(__) then 
+  let size = listLength(crefs)
+  <<
+  //start_nonlinear_system(<%size%>);
+  { var oldX = oldStates; var oldXd = oldStatesDerivatives;  var old2X = oldStates2; var old2Xd = oldStatesDerivatives2;
+    var oldY = oldAlgebraics; var old2Y = oldAlgebraics2; var oldTimeDelta = oldTime - oldTime2; 
+    var nls_x = new double[<%size%>]; var nls_xold = new double[<%size%>];
+    <%crefs |> name hasindex i0 =>
+      <<
+      nls_x[<%i0%>] = /*extraPolate(<%crefStr(name, simCode)%>)*/ oldTimeDelta == 0.0 ? <%cref(name, simCode)%> : (time * (<%oldCref(name, simCode)%> - <%old2Cref(name, simCode)%>) + (oldTime * <%old2Cref(name, simCode)%> - oldTime2 * <%oldCref(name, simCode)%>)) / oldTimeDelta;          
+      nls_xold[<%i0%>] = <%oldCref(name, simCode)%>;
+      >> ;separator="\n"
+    %>
+    SolveNonlinearSystem(ResidualFun<%index%>, nls_x, nls_xold, <%index%>);
+    <%crefs |> name hasindex i0 => 
+    '<%cref(name, simCode)%> = nls_x[<%i0%>];' ;separator="\n"
+    %>
+  } //end_nonlinear_system();
+  >>
+  
 case SES_WHEN(__) then
   let &preExp = buffer ""
   let helpIf = (conditions |> (e, hidx) =>
@@ -1000,6 +1025,15 @@ end preCref;
 template derCref(ComponentRef cr, SimCode simCode) ::=
 '/*derCall!!(<% crefStr(cr, simCode) %>)*/<%representationCref(derComponentRef(cr), simCode)%>'
 end derCref;
+
+template oldCref(ComponentRef cr, SimCode simCode) ::=
+'/*old(<%crefStr(cr, simCode)%>)*/old<%representationCref(cr, simCode)%>'
+end oldCref;
+
+template old2Cref(ComponentRef cr, SimCode simCode) ::=
+'/*old2(<%crefStr(cr, simCode)%>)*/old2<%representationCref(cr, simCode)%>'
+end old2Cref;
+
 
 template contextCref(ComponentRef cr, Context context, SimCode simCode)
   "Generates code for a component reference depending on which context we're in."
@@ -1301,6 +1335,7 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case CODE(__)       then "CODE_NOT_IMPLEMENTED"
   case REDUCTION(__)  then "REDUCTION_NOT_IMPLEMENTED"
   case END(__)        then "END_NOT_IMPLEMENTED"
+  //case VALUEBLOCK(__) then "VALUEBLOCK_NOT_IMPLEMENTED"
   case LIST(__)       then "LIST_NOT_IMPLEMENTED"
   case CONS(__)       then "CONS_NOT_IMPLEMENTED"
   // META_TUPLE
@@ -1907,6 +1942,7 @@ template dimension(Dimension d)
   case DAE.DIM_UNKNOWN(__) then ":"
   else "INVALID_DIMENSION"
 end dimension;
+
 
 end SimCodeCSharp;
 // vim: filetype=susan sw=2 sts=2

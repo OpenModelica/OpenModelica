@@ -24,8 +24,8 @@ tplmode :
 csharp :
 	@echo " ** Generate RightHeartStarling Test CSharp target ** "
 	(cd RightHeartStarling && ../$(OMC) +d=tplmode,CSharp generate.mos)
-	@echo " ** Generate TrapezUnderground Test CSharp target ** "
-	(cd TrapezUnderground && ../$(OMC) +d=tplmode,CSharp generate.mos)
+	#@echo " ** Generate TrapezUnderground Test CSharp target ** "
+	#(cd TrapezUnderground && ../$(OMC) +d=tplmode,CSharp generate.mos)
 
 cppOrig :
 	#@echo " ** Generate TrapezTest original original C/C++ target  ** "
@@ -40,9 +40,9 @@ cppOrig :
 QHP:
 	@echo " ** Simulate QHP  original C/C++   ** "
 	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,failtrace simulate.mos > debug-trace-C.txt 2>&1)
-	(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
+	#(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
+	(cd QHP && ../$(OMC) +d=perfTimes simulate.mos > debug-trace-C.txt 2>&1)
 	@echo " ** Generate QHP CSharp target ** "
-	#,failtrace
 	(cd QHP && ../$(OMC) +showErrorMessages +d=perfTimes,CSharp generate.mos > debug-trace-CSharp.txt 2>&1)
 	
 
@@ -51,8 +51,8 @@ csCopy:
 	#(cp -pf ./QHP/QHP_Blood_BlooodVolume_ExpandableConnectorPatch_T.cs  "/d/Modelica/_svn_Solvers/Compiled Solvers/Simulation/ModelsDotNet/")
 	#(cp -pf ./QHP/QHP_Electrolytes_ExpandableConnectorPatch_T.cs  "/d/Modelica/_svn_Solvers/Compiled Solvers/Simulation/ModelsDotNet/")
 	#(cp -pf ./QHP/QHP_test_TestRedCells.cs  "/d/Modelica/_svn_Solvers/Compiled Solvers/Simulation/ModelsDotNet/")
-	(cp -pf TrapezUnderground/*.cs  $(ModelsNET))
-	(cp -pf RightHeartStarling/*.cs $(ModelsNET))
+	#(cp -pf TrapezUnderground/*.cs  $(ModelsNET))
+	#(cp -pf RightHeartStarling/*.cs $(ModelsNET))
 	(cp -pf ./QHP/*.cs  $(ModelsNET))
 	
 #RightHeartStarling/RightHeartStarling.cpp :  RightHeartStarling/RightHeartStarling.mo 

@@ -1,7 +1,44 @@
 getErrorString();
 
 /*
+//loadModel(Modelica);
 getErrorString();
+loadFile("d:/Modelica/_modely/HumMod - Habilitacna Prednaska/HumMod_OMCTotal.mo");
+//loadFile("d:/Modelica/_modely/HumMod/for testing/HumModOMCTotal.mo");
+getErrorString();
+//checkModel(HumMod_HumMod_GolemEdition);
+translateModel(HumMod_HumMod_GolemEdition);
+getErrorString();
+*/
+
+/*
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/LeftHeartStarling.mo");
+getErrorString();
+simulate(LeftHeartStarling, stopTime=15);
+getErrorString();
+*/
+/*
+loadFile("NonLinSys3.mo");
+simulate(NonLinSys3, tolerance=1e-10, stopTime=10); 
+//val(x,0.0);
+//val(x,0.5);
+//val(x,1.0);
+//val(y,0.0);
+//val(y,0.5);
+//val(y,1.0);
+*/
+/*
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/VenousReturn.mo");
+getErrorString();
+//simulate(HumMod_GolemEdition, stopTime=1);
+//instantiateModel(HumMod_Blood_test_TSystemicCirculation);
+//checkModel(HumMod_Blood_test_TSystemicCirculation);
+simulate(VenousReturn, stopTime=15);
+//simulate(Pokus, stopTime=15);
+getErrorString();
+*/
+
+/*
 loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/TSystemicCirculationTotal.mo");
 getErrorString();
 //simulate(HumMod_GolemEdition, stopTime=1);
@@ -10,16 +47,7 @@ getErrorString();
 simulate(HumMod_Blood_test_TSystemicCirculation, stopTime=1);
 getErrorString();
 */
-/*
-//loadModel(Modelica);
-getErrorString();
-loadFile("d:/Modelica/_modely/HumMod/for testing/HumModOMCTotal.mo");
-getErrorString();
-//simulate(QHP_Electrolytes_test_T2, stopTime=1);
-//simulate(HumMod_GolemEdition, stopTime=1);
-simulate(HumMod_HumMod_GolemEdition, stopTime=1);
-getErrorString();
-*/
+
 /*
 loadFile("ElectrolytesT2Total.mo");
 getErrorString();
@@ -99,14 +127,6 @@ simulate(BloodCircuit, stopTime=10);
 getErrorString();
 */
 
-//loadFile("NonLinSys3.mo");
-//simulate(NonLinSys3, tolerance=1e-10, numberOfIntervals=100); 
-//val(x,0.0);
-//val(x,0.5);
-//val(x,1.0);
-//val(y,0.0);
-//val(y,0.5);
-//val(y,1.0);
 
 
 //loadFile("TestAmoniakTotal.mo");

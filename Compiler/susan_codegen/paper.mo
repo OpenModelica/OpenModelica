@@ -1,7 +1,5 @@
 package paper
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import Example;
@@ -75,7 +73,7 @@ algorithm
         txt = exp(txt, i_condition);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_1(txt, i_statements);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
@@ -272,7 +270,7 @@ public function pok
 algorithm
   out_txt := Tpl.writeStr(txt, intString(i_i0));
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" "));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_7(out_txt, i_names);
   out_txt := Tpl.popIter(out_txt);
 end pok;
@@ -324,10 +322,10 @@ protected
   Tpl.StringToken ret_1;
   Tpl.Text txt_0;
 algorithm
-  txt_0 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("o"));
+  txt_0 := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("o"));
   txt_0 := Tpl.writeStr(txt_0, i_sep);
   ret_1 := Tpl.textStrTok(txt_0);
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(ret_1), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(ret_1), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_9(out_txt, i_names);
   out_txt := Tpl.popIter(out_txt);
 end pok2;
@@ -374,7 +372,7 @@ public function pok3
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_11(out_txt, i_exps);
   out_txt := Tpl.popIter(out_txt);
 end pok3;

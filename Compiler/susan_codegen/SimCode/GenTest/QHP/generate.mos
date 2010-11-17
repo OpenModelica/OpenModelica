@@ -1,5 +1,33 @@
 getErrorString();
 
+loadFile("D:/Modelica/_modely/HeartSystem/HeartSystem.mo");
+loadFile("D:/Modelica/_modely/HeartSystem/VenousPrinciple.mo");
+getErrorString();
+//translateModel(VenousPrinciples.TwoElasticities);
+translateModel(VenousPrinciples.VenousReturnCircuit);
+getErrorString();
+
+/*
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/LeftHeartStarling.mo");
+getErrorString();
+translateModel(LeftHeartStarling);
+getErrorString();
+
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/RightHeartStarling.mo");
+getErrorString();
+translateModel(RightHeartStarling);
+getErrorString();
+*/
+/*
+loadFile("NonLinSys3.mo");
+translateModel(NonLinSys3);
+ 
+
+loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/VenousReturn.mo");
+getErrorString();
+translateModel(VenousReturn);
+getErrorString();
+*/
 /*
 getErrorString();
 loadFile("d:/Modelica/_modely/HumMod/for testing/CVS/TSystemicCirculationTotal.mo");

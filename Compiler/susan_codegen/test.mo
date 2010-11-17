@@ -1,7 +1,5 @@
 package test
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import TplAbsyn;
@@ -88,7 +86,7 @@ public function typedIdents
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_3(out_txt, i_decls);
   out_txt := Tpl.popIter(out_txt);
 end typedIdents;
@@ -145,12 +143,12 @@ protected
 algorithm
   ret_0 := intString(i_ind);
   ret_1 := testfn(intString(i_ind));
-  txt_2 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ss"));
+  txt_2 := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ss"));
   txt_2 := Tpl.writeStr(txt_2, intString(i_ind));
   ret_3 := Tpl.textStrTok(txt_2);
   ret_4 := testfn("2");
   ret_5 := intString(ret_4);
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(ret_0)), ret_1, 0, ret_3, 0, Tpl.ST_STRING(ret_5)));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(ret_0)), ret_1, 0, ret_3, 0, Tpl.ST_STRING(ret_5)));
   out_txt := lm_5(out_txt, i_items);
   out_txt := Tpl.popIter(out_txt);
 end test;
@@ -199,7 +197,7 @@ public function test2
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(i_sep)), i_a, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(i_sep)), i_a, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_7(out_txt, i_items);
   out_txt := Tpl.popIter(out_txt);
 end test2;
@@ -916,18 +914,18 @@ protected
   Tpl.Text txt_1;
   Tpl.Text txt_0;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_9(out_txt, i_items);
   out_txt := smf_10(out_txt, i_item);
   out_txt := smf_11(out_txt, i_ii);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  txt_0 := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt_0 := Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   txt_0 := lm_12(txt_0, i_items);
   txt_0 := smf_13(txt_0, i_item);
   txt_0 := smf_14(txt_0, i_ii);
   txt_0 := Tpl.popIter(txt_0);
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_15(out_txt, i_items);
   out_txt := smf_16(out_txt, i_item);
   out_txt := smf_17(out_txt, i_ii);
@@ -935,18 +933,18 @@ algorithm
   out_txt := smf_19(out_txt, Tpl.ST_STRING("blaaa"));
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_20(out_txt, i_items);
   out_txt := smf_21(out_txt, i_item);
   out_txt := smf_22(out_txt, i_ii);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("!!!!!error should be\n"));
-  txt_1 := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  txt_1 := Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   txt_1 := lm_23(txt_1, i_items);
   txt_1 := smf_24(txt_1, i_item);
   txt_1 := smf_25(txt_1, i_ii);
   txt_1 := Tpl.popIter(txt_1);
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_27(out_txt, i_items);
   out_txt := smf_29(out_txt, i_item);
   out_txt := smf_31(out_txt, i_ii);
@@ -954,7 +952,7 @@ algorithm
   out_txt := smf_35(out_txt, Tpl.ST_STRING("blaaa"));
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  txt_2 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aha"));
+  txt_2 := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("aha"));
   txt_2 := Tpl.writeStr(txt_2, intString(i_ii));
   str_3 := Tpl.textString(txt_2);
   out_txt := fun_36(out_txt, str_3);
@@ -1102,7 +1100,7 @@ algorithm
         Integer i_it;
         Tpl.Text txt_0;
       equation
-        txt_0 = mapInt(emptyTxt, i_it);
+        txt_0 = mapInt(Tpl.emptyTxt, i_it);
         txt = smf_43(txt, txt_0);
         txt = Tpl.nextIter(txt);
         txt = lm_44(txt, rest);
@@ -1124,7 +1122,7 @@ public function testMap
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_44(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap;
@@ -1175,7 +1173,7 @@ algorithm
         Integer i_int;
         Tpl.Text txt_0;
       equation
-        txt_0 = mapInt(emptyTxt, i_int);
+        txt_0 = mapInt(Tpl.emptyTxt, i_int);
         txt = smf_46(txt, txt_0, i_int);
         txt = Tpl.nextIter(txt);
         txt = lm_47(txt, rest);
@@ -1197,7 +1195,7 @@ public function testMap2
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_47(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap2;
@@ -1259,7 +1257,7 @@ algorithm
         list<list<Integer>> rest;
         list<Integer> i_intLst;
       equation
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_49(txt, i_intLst);
         txt = Tpl.popIter(txt);
         txt = Tpl.nextIter(txt);
@@ -1283,7 +1281,7 @@ public function testMap3
   output Tpl.Text out_txt;
 algorithm
   out_txt := Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_50(out_txt, i_lstOfLst);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.popBlock(out_txt);
@@ -1390,7 +1388,7 @@ algorithm
         Integer i_it;
         Tpl.Text txt_0;
       equation
-        txt_0 = mapInt(emptyTxt, i_it);
+        txt_0 = mapInt(Tpl.emptyTxt, i_it);
         txt = mapString(txt, Tpl.textString(txt_0));
         txt = Tpl.nextIter(txt);
         txt = lm_55(txt, rest);
@@ -1412,7 +1410,7 @@ public function testMap5
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_55(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap5;
@@ -1474,7 +1472,7 @@ algorithm
         list<list<Integer>> rest;
         list<Integer> i_intLst;
       equation
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_57(txt, i_intLst);
         txt = Tpl.popIter(txt);
         txt = Tpl.nextIter(txt);
@@ -1499,7 +1497,7 @@ public function intMatrix
 algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("[ "));
   out_txt := Tpl.pushBlock(out_txt, Tpl.BT_ANCHOR(0));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_58(out_txt, i_lstOfLst);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.popBlock(out_txt);
@@ -1543,7 +1541,7 @@ protected
   String str_1;
   Tpl.Text txt_0;
 algorithm
-  txt_0 := mapInt(emptyTxt, i_i);
+  txt_0 := mapInt(Tpl.emptyTxt, i_i);
   str_1 := Tpl.textString(txt_0);
   out_txt := fun_60(txt, str_1);
 end ifTest;
@@ -1579,7 +1577,7 @@ public function bindTest
 protected
   Tpl.Text txt_0;
 algorithm
-  txt_0 := ifTest(emptyTxt, 1);
+  txt_0 := ifTest(Tpl.emptyTxt, 1);
   out_txt := smf_62(txt, txt_0);
 end bindTest;
 
@@ -1590,7 +1588,7 @@ public function txtTest
 protected
   Tpl.Text i_txt;
 algorithm
-  i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ahoj"));
+  i_txt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ahoj"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("hej"));
   out_txt := Tpl.writeText(txt, i_txt);
 end txtTest;
@@ -1602,7 +1600,7 @@ public function txtTest2
 protected
   Tpl.Text i_txt;
 algorithm
-  i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ahoj2"));
+  i_txt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("hej2"));
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("bl·· "));
   out_txt := Tpl.writeText(out_txt, i_txt);
@@ -1620,7 +1618,7 @@ public function txtTest3
 protected
   Tpl.Text i_txt;
 algorithm
-  i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aahoj2"));
+  i_txt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("aahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("ahej2"));
   out_i_buf := Tpl.writeText(i_buf, i_txt);
   (out_i_buf, out_i_buf) := txtTest4(out_i_buf, "ha!", out_i_buf);
@@ -1657,7 +1655,7 @@ algorithm
         String i_hej;
         Tpl.Text i_txt;
       equation
-        i_txt = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ahoj2"));
+        i_txt = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("ahoj2"));
         i_txt = Tpl.writeStr(i_txt, i_hej);
         i_buf = Tpl.writeText(i_buf, i_txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("bl·· "));
@@ -1680,7 +1678,7 @@ public function txtTest5
 protected
   Tpl.Text i_txt;
 algorithm
-  i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aahoj2"));
+  i_txt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("aahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("ahej2"));
   out_i_buf := Tpl.writeText(i_buf, i_txt);
   (out_i_buf, out_i_buf) := txtTest4(out_i_buf, "ha!", out_i_buf);
@@ -1810,9 +1808,9 @@ algorithm
         Tpl.StringToken ret_1;
         Tpl.Text i_buf2;
       equation
-        i_buf2 = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("hop"));
+        i_buf2 = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("hop"));
         ret_1 = Tpl.textStrTok(i_nomut);
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(ret_1), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(ret_1), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (txt, i_mytxt, i_buf2) = lm_69(txt, i_hej, i_nomut, i_mytxt, i_buf2);
         txt = Tpl.popIter(txt);
       then (txt, i_mytxt);
@@ -1826,7 +1824,7 @@ algorithm
         Tpl.StringToken ret_1;
         Tpl.Text i_buf2;
       equation
-        i_buf2 = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("hop"));
+        i_buf2 = Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("hop"));
         ret_1 = Tpl.textStrTok(i_nomut);
         (txt, i_mytxt, i_buf2) = smf_70(txt, i_h, i_nomut, i_mytxt, i_buf2);
       then (txt, i_mytxt);
@@ -1850,8 +1848,8 @@ protected
   Tpl.Text i_nomut;
   Tpl.Text i_mytxt;
 algorithm
-  i_mytxt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("bolo"));
-  i_nomut := Tpl.writeTok(emptyTxt, Tpl.ST_STRING(","));
+  i_mytxt := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("bolo"));
+  i_nomut := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING(","));
   (out_txt, i_mytxt) := fun_71(txt, i_hej, i_mytxt, i_nomut);
   out_i_buf := i_buf;
 end txtTest6;
@@ -2011,7 +2009,7 @@ protected
   Boolean ret_1;
   Tpl.Text txt_0;
 algorithm
-  txt_0 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("a"));
+  txt_0 := Tpl.writeTok(Tpl.emptyTxt, Tpl.ST_STRING("a"));
   txt_0 := Tpl.writeStr(txt_0, i_hoj);
   ret_1 := listMember(Tpl.textString(txt_0), i_lst);
   out_txt := Tpl.writeStr(txt, Tpl.booleanString(ret_1));

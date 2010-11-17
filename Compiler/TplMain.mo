@@ -371,8 +371,6 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
         notPassedCnt = testStringEquality(str,  
 "package Susan
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import Pa.Li.Ko;
@@ -525,8 +523,6 @@ typedIdents(TypedIdents decls) <>=
         notPassedCnt = testStringEquality(str,  
 "package Susan
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-
 public import Tpl;
 
 public import TplAbsyn;
@@ -613,7 +609,7 @@ public function typedIdents
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0,NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_2(out_txt, i_decls);
   out_txt := Tpl.popIter(out_txt);
 end typedIdents;
