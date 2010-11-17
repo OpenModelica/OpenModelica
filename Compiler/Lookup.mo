@@ -2354,7 +2354,7 @@ algorithm
         fail();*/
     case (cache,ht,id)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("lookup");
         false = RTOpts.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
         Env.CLASS(SCode.CLASS(name = name, restriction = r), env) = Env.avlTreeGet(ht, id);
         name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;        

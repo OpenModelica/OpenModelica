@@ -11858,7 +11858,9 @@ algorithm
         str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
       then
         str;
-    case (_,_) then "get_diagram_annotation failed!";
+    case (_,_) 
+      then 
+        "{}";
   end matchcontinue;
 end getDiagramAnnotation;
 
@@ -11883,13 +11885,19 @@ algorithm
       String str;
       Absyn.Path modelpath;
       Absyn.Program p;
+    
     case (modelpath,p,id,f)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNamedAnnotationInClass(cdef,id,f);
+        // fail if is empty!
+        false = stringEq(str, "");
       then
         str;
-    case (_,_,_,_) then "";
+    
+    case (_,_,_,_) 
+      then 
+        "{}";
   end matchcontinue;
 end getNamedAnnotation;
 
@@ -11914,7 +11922,9 @@ algorithm
         str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
       then
         str;
-    case (_,_) then "";
+    case (_,_) 
+      then 
+        "{}";
   end matchcontinue;
 end getIconAnnotation;
 
@@ -13222,7 +13232,10 @@ algorithm
       then 
         s;
     
-    case (_) then "";
+    // adrpo: fail if we don't find it!
+    // case (_) 
+    //   then 
+    //     "";
   end matchcontinue;
 end getDocumentationAnnotationString;
 
@@ -14287,8 +14300,11 @@ algorithm
           inModelPath)
       equation
         // print(Dump.unparseStr(graphicProgram, false));
-        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
-        (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
+        // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(mod) +& "\n");
+        (stripmod,{Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(_,SOME(graphicexp))))}) = stripGraphicsModification(mod);
+        
+        // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
+        
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
         
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
@@ -14320,9 +14336,11 @@ algorithm
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");      
         (stripmod,gxmods) = stripGraphicsModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
-
+        
+        // print("Annotation(Icon) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
+        
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Icon");
-
+        
         placementc = getClassInProgram("Icon", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
@@ -14345,6 +14363,8 @@ algorithm
         // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");        
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
+        
+        // print("Annotation(Diagram) 1: " +& Dump.unparseMod1Str(stripmod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
 
@@ -14363,14 +14383,45 @@ algorithm
       then
         totstr;
 
+    // First line in the first rule above fails if return value from stripGraphicsModification doesn't match the lhs
+    case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
+          inClass,
+          inFullProgram,
+          inModelPath)
+      equation
+        // print(Dump.unparseStr(p, false));
+        // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");      
+        (stripmod,gxmods) = stripGraphicsModification(mod);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
+        
+        // print("Annotation(Diagram) 2: " +& Dump.unparseMod1Str(stripmod) +& "\n");
+        
+        (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, "Diagram");
+        
+        placementc = getClassInProgram("Icon", graphicProgram);
+        placementclass = SCodeUtil.translateClass(placementc);
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
+        (cache,_,_,_,dae,cs,t,state,_,_) =
+          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+                         mod_2, Prefix.NOPRE(), Connect.emptySet,
+                         placementclass, {}, false, Inst.TOP_CALL(),
+                         ConnectionGraph.EMPTY);
+        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
+      then
+        str;
+
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)))}),
           inClass,
           inFullProgram,
           inModelPath)
       equation
         // print(Dump.unparseStr(p, false));
-        // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");        
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE())), false, Absyn.NON_EACH());
+        // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
+        (stripmod,gxmods) = stripGraphicsModification(mod);        
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE())), false, Absyn.NON_EACH());
+        
+        // print("ANY Annotation(" +& anncname +& ") : " +& Dump.unparseMod1Str(mod) +& "\n");
 
         (cache, env, graphicProgram) = buildEnvForGraphicProgram(inFullProgram, inModelPath, mod, anncname);
 
@@ -14387,7 +14438,14 @@ algorithm
       then
         str;
 
-    case (inAnnotation, inClass, inFullProgram,inModelPath)
+    // if we fail, just return the annotation as it is
+    case (inAnnotation, inClass, inFullProgram, inModelPath)
+      equation
+        str = Dump.unparseAnnotationOption(0, SOME(inAnnotation)) +& " ";
+      then
+        str;
+
+    case (inAnnotation, inClass, inFullProgram, inModelPath)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", 
@@ -14407,18 +14465,35 @@ protected function stripGraphicsModification
   output list<Absyn.ElementArg> outAbsynElementArgLst1;
   output list<Absyn.ElementArg> outAbsynElementArgLst2;
 algorithm
-  (outAbsynElementArgLst1,outAbsynElementArgLst2):=
-  matchcontinue (inAbsynElementArgLst)
+  (outAbsynElementArgLst1,outAbsynElementArgLst2) := matchcontinue (inAbsynElementArgLst)
     local
       Absyn.ElementArg mod;
       list<Absyn.ElementArg> rest,l1,l2;
-    case (((mod as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "graphics"))) :: rest)) then (rest,{mod});
+    
+    // handle empty
+    case ({}) then ({},{});
+    
+    // adrpo: remove empty annotations, to handle bad Dymola annotations, for example: Diagram(graphics)
+    case (((mod as Absyn.MODIFICATION(modification = NONE(), componentRef = Absyn.CREF_IDENT(name = "graphics"))) :: rest))
+      equation
+         (l1,l2) = stripGraphicsModification(rest);
+      then 
+        (l1,l2);
+    
+    // add graphics to the second tuple
+    case (((mod as Absyn.MODIFICATION(modification = SOME(_), componentRef = Absyn.CREF_IDENT(name = "graphics"))) :: rest))
+      equation
+        (l1,l2) = stripGraphicsModification(rest);
+      then 
+        (l1,mod::l2);
+    
+    // collect in the first tuple
     case (((mod as Absyn.MODIFICATION(finalItem = _)) :: rest))
       equation
         (l1,l2) = stripGraphicsModification(rest);
       then
         ((mod :: l1),l2);
-    case ({}) then ({},{});
+
   end matchcontinue;
 end stripGraphicsModification;
 

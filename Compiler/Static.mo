@@ -1483,14 +1483,15 @@ algorithm
     case (cache,_,Absyn.BOOL(value = b),impl,_,info)
       then
         (cache,DAE.BCONST(b),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
+    // adrpo: 2010-11-17 this is now fixed! 
     // adrpo, if we have useHeatPort, return false.
     // this is a workaround for handling Modelica.Electrical.Analog.Basic.Resistor
-    case (cache,env,Absyn.CREF(componentRef = cr as Absyn.CREF_IDENT("useHeatPort", _)),impl,pre,info)
-      equation
-        dexp  = DAE.BCONST(false);
-        prop = DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST());
-      then
-        (cache,dexp,prop);
+    // case (cache,env,Absyn.CREF(componentRef = cr as Absyn.CREF_IDENT("useHeatPort", _)),impl,pre,info)
+    //   equation
+    //     dexp  = DAE.BCONST(false);
+    //     prop = DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST());
+    //   then
+    //     (cache,dexp,prop);
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre,info)
       equation
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");

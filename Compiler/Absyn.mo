@@ -4498,8 +4498,19 @@ algorithm
       list<ElementArg> dive, rest;
       Option<Exp> expOpt;
       Boolean b1, b2, b3, b;
+      String name;
 
     case ({}) then true;
+    
+    // search return false if we have DynamicSelect, OnMouse*
+    case (MODIFICATION(componentRef = CREF_IDENT(name,_)) :: rest)
+      equation
+        b1 = stringEq(name, "DynamicSelect");
+        b2 = (0 == System.strncmp("OnMouse", name, 7));
+        b = boolOr(b1, b2);
+        b = boolNot(b);
+      then 
+        b;
     
     // search inside, some(exp)
     case (MODIFICATION(modification = SOME(CLASSMOD(dive, expOpt))) :: rest)

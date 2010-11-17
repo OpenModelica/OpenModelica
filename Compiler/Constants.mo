@@ -366,34 +366,38 @@ end Bitmap;
 //   );
 
 // events & interaction
-// record OnMouseDownSetBoolean
-//   Boolean variable \"Name of variable to change when mouse button pressed\";
-//   Boolean value \"Assigned value\";
-// end OnMouseDown;
+record OnMouseDownSetBoolean
+   Boolean variable \"Name of variable to change when mouse button pressed\";
+   Boolean value \"Assigned value\";
+end OnMouseDownSetBoolean;
+
 // interaction={OnMouseDown(on, true), OnMouseUp(on, false)};
-// record OnMouseMoveXSetReal
-//   Real xVariable \"Name of variable to change when cursor moved in x direction\";
-//   Real minValue;
-//   Real maxValue;
-// end OnMouseMoveXSetReal;
+record OnMouseMoveXSetReal
+   Real xVariable \"Name of variable to change when cursor moved in x direction\";
+   Real minValue;
+   Real maxValue;
+end OnMouseMoveXSetReal;
+
 //
-// record OnMouseMoveYSetReal
-//   Real yVariable \"Name of variable to change when cursor moved in y direction\";
-//   Real minValue;
-//   Real maxValue;
-// end OnMouseMoveYSetReal;
+record OnMouseMoveYSetReal
+   Real yVariable \"Name of variable to change when cursor moved in y direction\";
+   Real minValue;
+   Real maxValue;
+end OnMouseMoveYSetReal;
+
+record OnMouseDownEditInteger
+   Integer variable \"Name of variable to change\";
+end OnMouseDownEditInteger;
+
+record OnMouseDownEditReal
+   Real variable \"Name of variable to change\";
+end OnMouseDownEditReal;
+
 //
-// record OnMouseDownEditInteger
-//   Integer variable \"Name of variable to change\";
-// end OnMouseDownEditInteger;
-//
-// record OnMouseDownEditReal
-//   Real variable \"Name of variable to change\";
-// end OnMouseDownEditReal;
-//
-// record OnMouseDownEditString
-//   String variable \"Name of variable to change\";
-// end OnMouseDownEditString;
+record OnMouseDownEditString
+   String variable \"Name of variable to change\";
+end OnMouseDownEditString;
+
 //
 // annotation(defaultComponentName = \"name\")
 // annotation(missingInnerMessage = \"message\")
