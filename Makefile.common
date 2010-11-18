@@ -97,7 +97,6 @@ distclean: clean
 	rm -rf build/
 clean: qtclean
 	(cd c_runtime && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Compiler/rml2sig && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
