@@ -4216,7 +4216,7 @@ algorithm
 
         // The list of functions is not ordered, so we need to filter out the main function...
         funcs = Env.getFunctionTree(cache);
-        d = DAEUtil.getFunctionList(funcs);
+        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
         d = Util.listSetDifference(d, {mainFunction});
         uniontypePaths = DAEUtil.getUniontypePaths(d,{});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
