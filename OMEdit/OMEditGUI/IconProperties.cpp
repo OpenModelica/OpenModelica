@@ -434,17 +434,17 @@ void IconAttributes::updateIconAttributes()
 
     OMCProxy *pOMCProxy = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     MessageWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
-    // update the component comment
-    if (!pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed()))
-    {
-        pMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::COMMENT_SAVE_ERROR))
-                                             .arg(pOMCProxy->getErrorString()));
-    }
-
+    // update component attributes
     if (!pOMCProxy->setComponentProperties(modelName, componentName, isFinal, mIsFlow, isProtected, isReplaceAble,
                                            variability, isInner, isOuter, causality))
     {
         pMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::ATTRIBUTES_SAVE_ERROR))
+                                             .arg(pOMCProxy->getErrorString()));
+    }
+    // update the component comment
+    if (!pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed()))
+    {
+        pMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::COMMENT_SAVE_ERROR))
                                              .arg(pOMCProxy->getErrorString()));
     }
     accept();

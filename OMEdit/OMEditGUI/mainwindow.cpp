@@ -286,6 +286,14 @@ void MainWindow::createActions()
     documentationAction = documentationdock->toggleViewAction();
     documentationAction->setIcon(QIcon(":/Resources/icons/plot.png"));
     documentationAction->setText(tr("View Documentation"));
+
+    userManualAction = new QAction(tr("User Manual"), this);
+    userManualAction->setStatusTip(tr("Open the User Manual"));
+    connect(userManualAction, SIGNAL(triggered()), SLOT(openUserManual()));
+
+    aboutAction = new QAction(tr("About OMEdit"), this);
+    aboutAction->setStatusTip(tr("Information about OMEdit"));
+    connect(aboutAction, SIGNAL(triggered()), SLOT(openAbout()));
 }
 
 //! Creates the menus
@@ -316,6 +324,9 @@ void MainWindow::createMenus()
 
     menuTools = new QMenu(menubar);
     menuTools->setTitle("&Tools");
+
+    menuHelp = new QMenu(menubar);
+    menuHelp->setTitle("&Help");
 
     this->setMenuBar(menubar);
 
@@ -351,13 +362,15 @@ void MainWindow::createMenus()
     menuView->addAction(libAction);
     menuView->addAction(messageAction);
     menuView->addAction(fileToolBar->toggleViewAction());
-    menuView->addAction(editToolBar->toggleViewAction());
-    menuView->addAction(documentationAction);
+    //menuView->addAction(editToolBar->toggleViewAction());
+    //menuView->addAction(documentationAction);
     menuView->addSeparator();
     menuView->addAction(gridLinesAction);
     menuView->addAction(resetZoomAction);
     menuView->addAction(zoomInAction);
     menuView->addAction(zoomOutAction);
+    menuView->addSeparator();
+    menuView->addAction(checkModelAction);
 
     menuSimulation->addAction(simulationAction);
     menuSimulation->addAction(plotAction);
@@ -365,11 +378,15 @@ void MainWindow::createMenus()
     menuTools->addAction(omcLoggerAction);
     menuTools->addAction(openOMShellAction);
 
+    menuHelp->addAction(userManualAction);
+    menuHelp->addAction(aboutAction);
+
     menubar->addAction(menuFile->menuAction());
     menubar->addAction(menuEdit->menuAction());
     menubar->addAction(menuView->menuAction());
     menubar->addAction(menuSimulation->menuAction());
     menubar->addAction(menuTools->menuAction());
+    menubar->addAction(menuHelp->menuAction());
 }
 
 //! Creates the toolbars
@@ -399,13 +416,13 @@ void MainWindow::createToolbars()
     fileToolBar->addAction(saveAsAction);
     //fileToolBar->addAction(saveAllAction);
 
-    editToolBar = addToolBar(tr("Clipboard Toolbar"));
-    editToolBar->setAllowedAreas(Qt::TopToolBarArea);
+//    editToolBar = addToolBar(tr("Clipboard Toolbar"));
+//    editToolBar->setAllowedAreas(Qt::TopToolBarArea);
     //editToolBar->addAction(undoAction);
     //editToolBar->addAction(redoAction);
-    editToolBar->addAction(cutAction);
-    editToolBar->addAction(copyAction);
-    editToolBar->addAction(pasteAction);
+//    editToolBar->addAction(cutAction);
+//    editToolBar->addAction(copyAction);
+//    editToolBar->addAction(pasteAction);
 
     simulationToolBar = addToolBar(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
@@ -478,7 +495,7 @@ void MainWindow::openOMShell()
 
     if (omShellPath.isEmpty())
     {
-        QMessageBox::warning( this, "Error", GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND), "OK" );
+        QMessageBox::warning( this, "Error", GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND), "OK");
         return;
     }
 
@@ -528,16 +545,42 @@ void MainWindow::checkModel()
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
     if (pCurrentTab)
     {
-        CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure, this);
+        CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure,
+                                                        this);
         widget->show();
     }
+}
+
+void MainWindow::openUserManual()
+{
+    QString userManualPath = QString(Helper::OpenModelicaHome.replace("\\", "/"))
+                             .append("/share/omedit/OMEdit-UserManual.pdf");
+    QDesktopServices::openUrl(userManualPath);
+}
+
+void MainWindow::openAbout()
+{
+    const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
+    QString OMCVersion = mpOMCProxy->getVersion();
+    QString aboutText = QString("OMEdit - ").append(Helper::applicationIntroText).append(" ")
+                        .append(Helper::applicationVersion).append(" Copyright ").append(dateStr + 7)
+                        .append(" Link").append(QChar(246, 0)).append("ping University.\n")
+                        .append("Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n")
+                        .append("Connected to OpenModelica ").append(OMCVersion).append("\n")
+                        .append("Created by Syed Adeel Asghar and Sonia Tariq as part of their final thesis.\n\n")
+                        .append("Supervisor: Dr. Mohsen Torabzadeh-Tari\n")
+                        .append("Advisor: Martin Sj").append(QChar(246, 0)).append("lund\n")
+                        .append("Examiner: Prof. Peter Fritzson\n\n")
+                        .append("Special Thanks to Adrian Pop for helping in OMC related issues.");
+
+    QMessageBox::about(this, QString("About ").append(Helper::applicationName), aboutText);
 }
 
 void MainWindow::disableMainWindow(bool disable)
 {
     menubar->setDisabled(disable);
     fileToolBar->setDisabled(disable);
-    editToolBar->setDisabled(disable);
+    //editToolBar->setDisabled(disable);
     simulationToolBar->setDisabled(disable);
     viewToolBar->setDisabled(disable);
     mpLibrary->setDisabled(disable);

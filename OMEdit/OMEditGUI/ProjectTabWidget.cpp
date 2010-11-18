@@ -1561,7 +1561,9 @@ void ProjectTabWidget::openModel()
 //! @see zoomOut()
 void ProjectTabWidget::resetZoom()
 {
-    this->getCurrentTab()->mpGraphicsView->resetZoom();
+    ProjectTab *pCurrentTab = getCurrentTab();
+    if (pCurrentTab)
+        pCurrentTab->mpGraphicsView->resetZoom();
 }
 
 //! Tells the current tab to increase its zoom factor.
@@ -1569,7 +1571,9 @@ void ProjectTabWidget::resetZoom()
 //! @see zoomOut()
 void ProjectTabWidget::zoomIn()
 {
-    this->getCurrentTab()->mpGraphicsView->zoomIn();
+    ProjectTab *pCurrentTab = getCurrentTab();
+    if (pCurrentTab)
+        pCurrentTab->mpGraphicsView->zoomIn();
 }
 
 //! Tells the current tab to decrease its zoom factor.
@@ -1577,7 +1581,9 @@ void ProjectTabWidget::zoomIn()
 //! @see zoomIn()
 void ProjectTabWidget::zoomOut()
 {
-    this->getCurrentTab()->mpGraphicsView->zoomOut();
+    ProjectTab *pCurrentTab = getCurrentTab();
+    if (pCurrentTab)
+        pCurrentTab->mpGraphicsView->zoomOut();
 }
 
 void ProjectTabWidget::updateTabIndexes()
@@ -1592,7 +1598,11 @@ void ProjectTabWidget::enableProjectToolbar()
 {
     if (!mToolBarEnabled)
     {
-        mpParentMainWindow->viewToolBar->setEnabled(true);
+        mpParentMainWindow->gridLinesAction->setEnabled(true);
+        mpParentMainWindow->resetZoomAction->setEnabled(true);
+        mpParentMainWindow->zoomInAction->setEnabled(true);
+        mpParentMainWindow->zoomOutAction->setEnabled(true);
+        mpParentMainWindow->checkModelAction->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -1601,7 +1611,11 @@ void ProjectTabWidget::disableProjectToolbar()
 {
     if (mToolBarEnabled and (count() == 0))
     {
-        mpParentMainWindow->viewToolBar->setEnabled(false);
+        mpParentMainWindow->gridLinesAction->setEnabled(false);
+        mpParentMainWindow->resetZoomAction->setEnabled(false);
+        mpParentMainWindow->zoomInAction->setEnabled(false);
+        mpParentMainWindow->zoomOutAction->setEnabled(false);
+        mpParentMainWindow->checkModelAction->setEnabled(false);
         mToolBarEnabled = false;
     }
 }

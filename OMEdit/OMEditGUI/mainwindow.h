@@ -101,6 +101,7 @@ public:
     QMenu *menuView;
     QMenu *menuTools;
     QMenu *menuSimulation;
+    QMenu *menuHelp;
     MessageWidget *mpMessageWidget;
     QStatusBar *statusBar;
     QPushButton *mpBackButton;
@@ -132,6 +133,8 @@ public:
     QAction *simulationAction;
     QAction *plotAction;
     QAction *documentationAction;
+    QAction *userManualAction;
+    QAction *aboutAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
@@ -155,6 +158,8 @@ private slots:
     void openNewPackage();
     void openOMShell();
     void checkModel();
+    void openUserManual();
+    void openAbout();
 public slots:
     void disableMainWindow(bool disable);
 private:
