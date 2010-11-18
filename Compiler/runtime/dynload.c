@@ -339,7 +339,7 @@ int mmc_to_value(void* mmc, void** res)
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     /* Transform list by first reversing it to preserve the order */
-	void *varlst;
+    void *varlst;
     mmc = mmc_list_reverse(mmc);
     varlst = (void *) mk_nil();
     while (!MMC_NILTEST(mmc)) {
@@ -471,7 +471,7 @@ static int value_to_type_desc(void *value, type_description *desc)
     void *data = RML_STRUCTDATA(value)[0];
     int len = RML_HDRSTRLEN(RML_GETHDR(data));
     desc->type = TYPE_DESC_STRING;
-    alloc_modelica_string(&(desc->data.string), len);
+    desc->data.string = alloc_modelica_string(len);
     memcpy(desc->data.string, RML_STRINGDATA(data), len + 1);
   }; break;
   case Values__ARRAY_3dBOX2: {
@@ -559,9 +559,9 @@ void *type_desc_to_value(type_description *desc)
   case TYPE_DESC_INT:
     return (void *) Values__INTEGER(mk_icon(desc->data.integer));
   case TYPE_DESC_BOOL:
-	  if(getMyBool(desc)) 
-		  return (void *) Values__BOOL(RML_TRUE);
-	  return (void *) Values__BOOL(RML_FALSE); 
+    if(getMyBool(desc)) 
+      return (void *) Values__BOOL(RML_TRUE);
+    return (void *) Values__BOOL(RML_FALSE); 
   case TYPE_DESC_STRING:
     return (void *) Values__STRING(mk_scon(desc->data.string));
   case TYPE_DESC_TUPLE: {
@@ -722,7 +722,7 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
           return -1;
         str = RML_STRUCTDATA(item)[0];
         len = RML_HDRSTRLEN(RML_GETHDR(str));
-        alloc_modelica_string(ptr, len);
+        *ptr = alloc_modelica_string(len);
         memcpy(*ptr, RML_STRINGDATA(str), len + 1);
         *data = ++ptr;
       }; break;

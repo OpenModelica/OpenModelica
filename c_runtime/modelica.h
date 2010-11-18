@@ -67,21 +67,22 @@ typedef void* modelica_fnptr;
 #include "division.h"
 
 
-#include <assert.h>
-#include "read_write.h"
-#include "meta_modelica.h"
-#include "meta_modelica_builtin.h"
-#include "matrix.h"
-
-
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
-typedef modelica_string_t modelica_string;
+typedef modelica_string_const modelica_string;
 typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
+
+#include <assert.h>
+#include "read_write.h"
+#include "meta_modelica.h"
+#include "meta_modelica_builtin.h"
+#include "meta_modelica_real.h"
+#include "matrix.h"
+
 
 /* math functions (-lm)*/
 typedef modelica_real cos_rettype;

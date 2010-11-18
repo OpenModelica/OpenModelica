@@ -16699,6 +16699,20 @@ algorithm
       then txt;
 
     case ( txt,
+           SimCode.VARIABLE(name = (i_name as i_cr), ty = (i_ty as DAE.ET_STRING())) )
+      local
+        DAE.ExpType i_ty;
+        DAE.ComponentRef i_cr;
+        DAE.ComponentRef i_name;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (read_"));
+        txt = expTypeArrayIf(txt, i_ty);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(&inArgs, (char**) &"));
+        txt = contextCref(txt, i_name, SimCode.contextFunction);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")) return 1;"));
+      then txt;
+
+    case ( txt,
            SimCode.VARIABLE(ty = i_ty, name = i_name) )
       local
         DAE.ComponentRef i_name;
@@ -17801,17 +17815,16 @@ algorithm
       local
         Tpl.Text i_strVar;
       equation
-        (i_strVar, i_varDecls) = tempDecl(Tpl.emptyTxt, "modelica_string", i_varDecls);
+        (i_strVar, i_varDecls) = tempDecl(Tpl.emptyTxt, "modelica_string_t", i_varDecls);
         i_varCopy = Tpl.writeText(i_varCopy, i_strVar);
         i_varCopy = Tpl.writeTok(i_varCopy, Tpl.ST_STRING(" = strdup("));
         i_varCopy = contextCref(i_varCopy, i_var_name, SimCode.contextFunction);
         i_varCopy = Tpl.writeTok(i_varCopy, Tpl.ST_STRING(");"));
         i_varCopy = Tpl.writeTok(i_varCopy, Tpl.ST_NEW_LINE());
-        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING("init_modelica_string(&"));
         i_varAssign = Tpl.writeStr(i_varAssign, i_dest);
         i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(".targ"));
         i_varAssign = Tpl.writeStr(i_varAssign, intString(i_ix));
-        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(","));
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(" = init_modelica_string("));
         i_varAssign = Tpl.writeText(i_varAssign, i_strVar);
         i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING_LIST({
                                                     ");\n",
@@ -24816,9 +24829,8 @@ algorithm
            i_e1,
            i_tmpStr )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("cat_modelica_string(&"));
         txt = Tpl.writeText(txt, i_tmpStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = cat_modelica_string("));
         txt = Tpl.writeText(txt, i_e1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
         txt = Tpl.writeText(txt, i_e2);
@@ -27163,10 +27175,10 @@ algorithm
         (i_sExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_s, i_context, i_preExp, i_varDecls);
         (i_formatExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_format, i_context, i_preExp, i_varDecls);
         i_typeStr = expTypeFromExpModelica(Tpl.emptyTxt, i_s);
-        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string_format(&"));
         i_preExp = Tpl.writeText(i_preExp, i_tvar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = "));
+        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string_format("));
         i_preExp = Tpl.writeText(i_preExp, i_sExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
         i_preExp = Tpl.writeText(i_preExp, i_formatExp);
@@ -27195,10 +27207,10 @@ algorithm
         (i_minlenExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_minlen, i_context, i_preExp, i_varDecls);
         (i_leftjustExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_leftjust, i_context, i_preExp, i_varDecls);
         i_typeStr = expTypeFromExpModelica(Tpl.emptyTxt, i_s);
-        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string(&"));
         i_preExp = Tpl.writeText(i_preExp, i_tvar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = "));
+        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string("));
         i_preExp = Tpl.writeText(i_preExp, i_sExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
         i_preExp = Tpl.writeText(i_preExp, i_minlenExp);
@@ -27230,9 +27242,8 @@ algorithm
         (i_minlenExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_minlen, i_context, i_preExp, i_varDecls);
         (i_leftjustExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_leftjust, i_context, i_preExp, i_varDecls);
         (i_signdigExp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_signdig, i_context, i_preExp, i_varDecls);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("modelica_real_to_modelica_string(&"));
         i_preExp = Tpl.writeText(i_preExp, i_tvar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = modelica_real_to_modelica_string("));
         i_preExp = Tpl.writeText(i_preExp, i_sExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
         i_preExp = Tpl.writeText(i_preExp, i_minlenExp);

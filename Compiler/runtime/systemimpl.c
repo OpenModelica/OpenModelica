@@ -159,7 +159,7 @@ static int set_ldflags(char *str)
   return 0;
 }
 
-static modelica_integer SystemImpl__regularFileExists(const char* str)
+int SystemImpl__regularFileExists(const char* str)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int ret_val;
@@ -181,7 +181,7 @@ static modelica_integer SystemImpl__regularFileExists(const char* str)
 #else
   struct stat buf;
   if (stat(str, &buf)) return 0;
-  return (buf.st_mode & S_IFREG);
+  return (buf.st_mode & S_IFREG) != 0;
 #endif
 }
 
@@ -219,7 +219,7 @@ static char* SystemImpl__readFile(const char* filename)
 }
 
 /* returns 0 on success */
-static modelica_integer SystemImpl__writeFile(const char* filename, const char* data)
+int SystemImpl__writeFile(const char* filename, const char* data)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
@@ -306,6 +306,81 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
   strncpy(res,str,length);
   res[length] = '\0';
   return res;
+}
+
+static const char* SystemImpl__basename(const char *str)
+{
+  const char* res = NULL;
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  res; = strrchr(str, '\\');
+#endif
+  if (res == NULL) { res = strrchr(str, '/'); }
+  if (res == NULL) { res = str; } else { ++res; }
+  return res;
+}
+
+void SystemImpl__enableSendData(int enable)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if(enable)
+    _putenv("enableSendData=1");
+  else
+    _putenv("enableSendData=0");
+#else
+  if(enable)
+    setenv("enableSendData", "1", 1 /* overwrite */);
+  else
+    setenv("enableSendData", "0", 1 /* overwrite */);
+#endif
+}
+
+void SystemImpl__setDataPort(int port)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char* dataport = (char*) malloc(25);
+  sprintf(dataport,"sendDataPort=%d", port);
+  _putenv(dataport);
+  free(dataport);
+#else
+  char* p = (char*) malloc(10);
+  sprintf(p, "%d", port);
+  setenv("sendDataPort", p, 1 /* overwrite */);
+  free(p);
+#endif
+  //setDataPort(port);
+}
+
+int SystemImpl__systemCall(const char* str)
+{
+  int status = -1,ret_val = -1;
+
+  /*if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
+  }*/
+
+  status = system(str);
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  ret_val = status;
+#else
+  if (WIFEXITED(status)) /* Did the process exit normally? */
+    ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
+  else
+    ret_val = -1;
+#endif
+
+  /*if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(stderr);
+  }*/
+  return ret_val;
+}
+
+double SystemImpl__time()
+{
+  clock_t cl = clock();
+  return (double)cl / (double)CLOCKS_PER_SEC;
 }
 
 #ifdef __cplusplus

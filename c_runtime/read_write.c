@@ -220,7 +220,7 @@ void free_type_description(type_description *desc)
       size_t i, cnt;
       cnt = string_array_nr_of_elements(&(desc->data.string_array));
       for (i = 0; i < cnt; ++i) {
-        modelica_string s = ((modelica_string*)desc->data.string_array.data)[i];
+        modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
         if (s) free(s);
       }
       free(desc->data.string_array.dim_size);
@@ -517,7 +517,7 @@ void write_string_array(type_description *desc, boolean_array_t *arr)
   desc->type = TYPE_DESC_STRING_ARRAY;
   if (desc->retval) {
     size_t i;
-    modelica_string *dst = NULL, *src = NULL;
+    modelica_string_t *dst = NULL, *src = NULL;
     desc->data.string_array.ndims = arr->ndims;
     desc->data.string_array.dim_size = malloc(sizeof(*(arr->dim_size))
                                               * arr->ndims);
@@ -554,7 +554,7 @@ int read_modelica_string(type_description **descptr, modelica_string_t *str)
   return -1;
 }
 
-void write_modelica_string(type_description *desc, modelica_string_t *str)
+void write_modelica_string(type_description *desc, modelica_string *str)
 {
   size_t len = 0;
   if (desc->type != TYPE_DESC_NONE)
@@ -566,7 +566,7 @@ void write_modelica_string(type_description *desc, modelica_string_t *str)
     desc->data.string = malloc(len + 1);
     memcpy(desc->data.string, *str, len + 1);
   } else {
-    copy_modelica_string(*str, &desc->data.string);
+    *str = copy_modelica_string(&desc->data.string);
   }
 }
 
@@ -796,7 +796,7 @@ void write_modelica_record_helper(type_description *desc, void* rec_desc_void, v
       write_boolean_array(elem, va_arg(*arg, boolean_array_t *));
       break;
     case TYPE_DESC_STRING:
-      write_modelica_string(elem, va_arg(*arg, modelica_string_t *));
+      write_modelica_string(elem, va_arg(*arg, modelica_string *));
       break;
     case TYPE_DESC_STRING_ARRAY:
       write_string_array(elem, va_arg(*arg, string_array_t *));

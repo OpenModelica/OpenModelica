@@ -113,7 +113,7 @@ void write_boolean_array(type_description *, boolean_array_t *);
 
 int read_modelica_string(type_description **, modelica_string_t *);
 int read_string_array(type_description **, string_array_t *);
-void write_modelica_string(type_description *, modelica_string_t *);
+void write_modelica_string(type_description *, modelica_string *);
 void write_string_array(type_description *, string_array_t *);
 
 int read_modelica_complex(type_description **, modelica_complex *);

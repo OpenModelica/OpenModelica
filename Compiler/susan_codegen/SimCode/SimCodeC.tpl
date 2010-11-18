@@ -3312,6 +3312,10 @@ template readInVar(Variable var)
     <<
     if (read_modelica_record(&inArgs, <%readInVarRecordMembers(ty, contextCref(cr,contextFunction))%>)) return 1;
     >>
+  case VARIABLE(name=cr, ty=ET_STRING(__)) then
+    <<
+    if (read_<%expTypeArrayIf(ty)%>(&inArgs, (char**) &<%contextCref(name,contextFunction)%>)) return 1;
+    >>
   case VARIABLE(__) then
     <<
     if (read_<%expTypeArrayIf(ty)%>(&inArgs, &<%contextCref(name,contextFunction)%>)) return 1;
@@ -3451,11 +3455,11 @@ match var
 case var as VARIABLE(ty = ET_STRING(__)) then
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
-      let strVar = tempDecl("modelica_string", &varDecls)
+      let strVar = tempDecl("modelica_string_t", &varDecls)
       let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction)%>);<%\n%>'
       let &varAssign +=
         <<
-        init_modelica_string(&<%dest%>.targ<%ix%>,<%strVar%>);
+        <%dest%>.targ<%ix%> = init_modelica_string(<%strVar%>);
         free(<%strVar%>);<%\n%>
         >>
       ""
@@ -4477,7 +4481,7 @@ case BINARY(__) then
     let &preExp += if acceptMetaModelicaGrammar() then
         '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
       else
-        'cat_modelica_string(&<%tmpStr%>,<%e1%>,<%e2%>);<%\n%>'
+        '<%tmpStr%> = cat_modelica_string(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
@@ -4794,7 +4798,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%typeStr%>_to_modelica_string_format(&<%tvar%>, <%sExp%>, <%formatExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
@@ -4804,7 +4808,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%typeStr%>_to_modelica_string(&<%tvar%>, <%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
@@ -4814,7 +4818,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    let &preExp += 'modelica_real_to_modelica_string(&<%tvar%>, <%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="delay"),

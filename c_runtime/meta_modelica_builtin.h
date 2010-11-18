@@ -38,7 +38,6 @@
 #define META_MODELICA_BUILTIN_H_
 
 #include "modelica.h"
-#include "meta_modelica_real.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -49,7 +48,7 @@ typedef modelica_boolean boolAnd_rettype;
 typedef modelica_boolean boolOr_rettype;
 typedef modelica_boolean boolNot_rettype;
 typedef modelica_boolean boolEq_rettype;
-typedef modelica_string_t boolString_rettype;
+typedef modelica_string boolString_rettype;
 
 #define boolAnd(X,Y) ((X) && (Y))
 #define boolOr(X,Y) ((X) || (Y))
@@ -105,7 +104,7 @@ intGt_rettype intGt(modelica_integer, modelica_integer);
 typedef modelica_integer intAbs_rettype;
 typedef modelica_integer intNeg_rettype;
 typedef modelica_real intReal_rettype;
-typedef modelica_string_t intString_rettype;
+typedef modelica_string intString_rettype;
 
 intAbs_rettype intAbs(modelica_integer);
 intNeg_rettype intNeg(modelica_integer);
@@ -120,9 +119,9 @@ modelica_metatype boxptr_intString(modelica_metatype);
 
 /* String Character Conversion */
 typedef modelica_integer stringCharInt_rettype;
-typedef modelica_string_t intStringChar_rettype;
+typedef modelica_string intStringChar_rettype;
 
-stringCharInt_rettype stringCharInt(modelica_string_t);
+stringCharInt_rettype stringCharInt(modelica_string);
 intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
@@ -131,28 +130,28 @@ typedef modelica_integer stringHash_rettype;
 typedef modelica_integer stringHashDjb2_rettype;
 typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
-typedef modelica_string_t listStringCharString_rettype;
-typedef modelica_string_t stringAppendList_rettype;
+typedef modelica_string listStringCharString_rettype;
+typedef modelica_string stringAppendList_rettype;
 typedef modelica_string_const stringAppendListExt_rettype;
-typedef modelica_string_t stringAppend_rettype;
+typedef modelica_string stringAppend_rettype;
 typedef modelica_integer stringLength_rettype;
 typedef modelica_integer stringCompare_rettype;
 typedef modelica_boolean stringEq_rettype;
-typedef modelica_string_t stringGetStringChar_rettype;
-typedef modelica_string_t stringUpdateStringChar_rettype;
-typedef modelica_string_t stringCharListString_rettype;
+typedef modelica_string stringGetStringChar_rettype;
+typedef modelica_string stringUpdateStringChar_rettype;
+typedef modelica_string stringCharListString_rettype;
 
-stringInt_rettype stringInt(modelica_string_t);
-stringListStringChar_rettype stringListStringChar(modelica_string_t);
+stringInt_rettype stringInt(modelica_string);
+stringListStringChar_rettype stringListStringChar(modelica_string);
 listStringCharString_rettype listStringCharString(modelica_metatype);
 stringAppendList_rettype stringAppendList(modelica_metatype);
 stringAppendListExt_rettype stringAppendListExt(modelica_metatype);
 stringAppend_rettype stringAppend(modelica_string_const,modelica_string_const);
 stringLength_rettype stringLength(modelica_string_const);
-stringCompare_rettype stringCompare(modelica_string_t,modelica_string_t);
-stringEq_rettype stringEq(modelica_string_t,modelica_string_t);
-stringGetStringChar_rettype stringGetStringChar(modelica_string_t,modelica_integer);
-stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t, modelica_string_t, modelica_integer);
+stringCompare_rettype stringCompare(modelica_string,modelica_string);
+stringEq_rettype stringEq(modelica_string,modelica_string);
+stringGetStringChar_rettype stringGetStringChar(modelica_string,modelica_integer);
+stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string, modelica_string, modelica_integer);
 #define stringCharListString(X) stringAppendList(X)
 stringHash_rettype stringHash(modelica_string_const);
 stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
@@ -229,7 +228,7 @@ typedef modelica_real mmc__clock_rettype;
 
 if__exp_rettype if__exp(modelica_boolean, modelica_metatype, modelica_metatype);
 void boxptr_print(modelica_metatype);
-void print(modelica_string_t);
+void print(modelica_string);
 tick_rettype tick();
 mmc__clock_rettype mmc__clock();
 void equality(modelica_metatype, modelica_metatype);

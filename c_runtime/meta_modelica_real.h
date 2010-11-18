@@ -132,7 +132,7 @@ realGe_rettype realGe(modelica_real, modelica_real);
 realGt_rettype realGt(modelica_real, modelica_real);
 
 typedef modelica_integer realInt_rettype;
-typedef modelica_string_t realString_rettype;
+typedef modelica_string realString_rettype;
 
 realInt_rettype realInt(modelica_real);
 realString_rettype realString(modelica_real);

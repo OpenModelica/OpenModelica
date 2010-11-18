@@ -60,13 +60,9 @@ void ModelicaFormatError(const char* string, ...) {
 }
 
 char* ModelicaAllocateString(size_t len) {
-  char* res;
-  alloc_modelica_string(&res,len);
-  return res;
+  return alloc_modelica_string(len);
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len) {
-  char* res;
-  alloc_modelica_string(&res,len);
-  return res;
+  return alloc_modelica_string(len);
 }

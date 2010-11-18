@@ -230,20 +230,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__basename)
 {
   const char *str = RML_STRINGDATA(rmlA0);
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  const char* res = strrchr(str, '\\');
-  if (res == NULL) { res = strrchr(str, '/'); }
-  if (res == NULL) { res = str; } else { ++res; }
-  rmlA0 = (void*) mk_scon(res);
-#else
-  /* The POSIX version uses basename which is a bit more robust.
-   * But it may modify the contents of the pointer.
-   */
-  char *copy = strdup(str);
-  char *res = basename(copy);
-  rmlA0 = (void*) mk_scon(res);
-  free(copy);
-#endif
+  rmlA0 = mk_scon(SystemImpl__basename(str));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -623,15 +610,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__time)
 {
-  double t;
-  clock_t cl;
-
-  cl=clock();
-
-  t = (double)cl / (double)CLOCKS_PER_SEC;
-  /*  printf("clock : %d\n",cl); */
-  /* printf("returning time: %f\n",time);  */
-  rmlA0 = (void*) mk_rcon(t);
+  rmlA0 = (void*) mk_rcon(SystemImpl__time());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1011,35 +990,10 @@ RML_BEGIN_LABEL(System__tmpTickReset)
 }
 RML_END_LABEL
 
-/* is the same for both Windows/Linux */
 RML_BEGIN_LABEL(System__systemCall)
 {
-  int status = -1,ret_val = -1;
-  char* str = RML_STRINGDATA(rmlA0);
-
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
-  }
-
-  status = system(str);
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  ret_val = status;
-#else
-  if (WIFEXITED(status)) /* Did the process exit normally? */
-    ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
-  else
-    ret_val = -1;
-#endif
-
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(stderr);
-  }
-
-  rmlA0 = (void*) mk_icon(ret_val);
-
+  const char* str = RML_STRINGDATA(rmlA0);
+  rmlA0 = (void*) mk_icon(SystemImpl__systemCall(str));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1215,22 +1169,6 @@ RML_BEGIN_LABEL(System__compileCFile)
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
   }
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__pathDelimiter)
-{
-  rmlA0 = (void*) mk_scon("/");
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__groupDelimiter)
-{
-  rmlA0 = (void*) mk_scon(";");
 
   RML_TAILCALLK(rmlSC);
 }
@@ -1453,31 +1391,6 @@ RML_BEGIN_LABEL(System__directoryExists)
 }
 RML_END_LABEL
 
-#ifdef WIN32
-RML_BEGIN_LABEL(System__platform)
-{
-  rmlA0 = (void*) mk_scon("WIN32");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-#elif CYGWIN
-RML_BEGIN_LABEL(System__platform)
-{
-  rmlA0 = (void*) mk_scon("CYGWIN");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-#else
-
-RML_BEGIN_LABEL(System__platform)
-{
-  rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-#endif
-
-
-
 //void* generate_array(char type, int curdim, type_description *desc, void *data)
 //
 //{
@@ -1517,31 +1430,6 @@ RML_BEGIN_LABEL(System__platform)
 //}
 
 
-RML_BEGIN_LABEL(System__enableSendData)
-{
-  int enable = RML_UNTAGFIXNUM(rmlA0);
-  if(enable)
-    _putenv("enableSendData=1");
-  else
-    _putenv("enableSendData=0");
-
-//  enableSendData(enable);
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__setDataPort)
-{
-  int port = RML_UNTAGFIXNUM(rmlA0);
-
-    char* dataport = malloc(25);
-    sprintf(dataport,"sendDataPort=%s", port);
-    _putenv(dataport);
-    free(dataport);
-//  setDataPort(port);
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
   char * variables = RML_STRINGDATA(rmlA0);
@@ -2178,22 +2066,6 @@ RML_BEGIN_LABEL(System__moFiles)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__pathDelimiter)
-{
-  rmlA0 = (void*) mk_scon("/");
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__groupDelimiter)
-{
-  rmlA0 = (void*) mk_scon(":");
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 char *path_cat (const char *str1, char *str2,char *fileString) {
     size_t str1_len = strlen(str1),str2_len = strlen(str2);
     struct stat buf;
@@ -2274,35 +2146,6 @@ RML_BEGIN_LABEL(System__directoryExists)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__platform)
-{
-  rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-
-RML_BEGIN_LABEL(System__enableSendData)
-{
-  int enable = RML_UNTAGFIXNUM(rmlA0);
-  if(enable)
-    setenv("enableSendData", "1", 1 /* overwrite */);
-  else
-    setenv("enableSendData", "0", 1 /* overwrite */);
-//  enableSendData(enable);
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__setDataPort)
-{
-  long port = RML_UNTAGFIXNUM(rmlA0);
-  char* p = malloc(10);
-  sprintf(p, "%s", (char*) port);
-  setenv("sendDataPort", p, 1 /* overwrite */);
-  free(p);
-  setDataPort(port);
-    RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
   char * variables = RML_STRINGDATA(rmlA0);
@@ -2534,3 +2377,38 @@ RML_BEGIN_LABEL(System__os)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__enableSendData)
+{
+  SystemImpl__enableSendData(RML_UNTAGFIXNUM(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setDataPort)
+{
+  int port = RML_UNTAGFIXNUM(rmlA0);
+  SystemImpl__setDataPort(port);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__platform)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_PLATFORM);
+  RML_TAILCALLK(rmlSC);
+}
+
+RML_BEGIN_LABEL(System__pathDelimiter)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_PATH_DELIMITER);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__groupDelimiter)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_GROUP_DELIMITER);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+

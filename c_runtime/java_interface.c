@@ -294,7 +294,7 @@ JNIEnv* getJavaEnv()
     fprintf(stderr, "getenv(OPENMODELICAHOME) failed - Java subsystem can't find the Java runtime...\n");
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
-  init_modelica_string(&openmodelicahome, openmodelicahome);
+  openmodelicahome = init_modelica_string(openmodelicahome);
 
   classpathEnv = getenv("CLASSPATH");
   if (classpathEnv == NULL)
@@ -776,7 +776,7 @@ char* copyJstring(JNIEnv* env, jobject jstr)
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
 
-  init_modelica_string(&str, str_tmp);
+  str = init_modelica_string(str_tmp);
   (*env)->ReleaseStringUTFChars(env, jstr, str_tmp);
   return str;
 }

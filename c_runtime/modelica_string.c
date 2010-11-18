@@ -48,39 +48,39 @@ int modelica_string_length(modelica_string_const a)
 }
 
 /* Convert a modelica_real to a modelica_string, used in String(real, format="xxx") */
-void modelica_real_to_modelica_string_format(modelica_string_t* dest,modelica_real r,modelica_string_const format)
+modelica_string_const modelica_real_to_modelica_string_format(modelica_real r,modelica_string_const format)
 {
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
   sprintf(&formatStr[1], "%s", format);
   sprintf(buf,formatStr,r);
-  init_modelica_string(dest,buf);
+  return init_modelica_string(buf);
 }
 /* Convert a modelica_integer to a modelica_string, used in String(integer, format="xxx") */
-void modelica_integer_to_modelica_string_format(modelica_string_t* dest,modelica_integer i,modelica_string_const format)
+modelica_string_const modelica_integer_to_modelica_string_format(modelica_integer i,modelica_string_const format)
 {
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
   sprintf(&formatStr[1], "%s", format);
   sprintf(buf,formatStr,i);
-  init_modelica_string(dest,buf);
+  return init_modelica_string(buf);
 }
 /* Convert a modelica_integer to a modelica_string, used in String(string, format="xxx") */
-void modelica_string_to_modelica_string_format(modelica_string_t* dest,modelica_string_const s,modelica_string_const format)
+modelica_string_const modelica_string_to_modelica_string_format(modelica_string_const s,modelica_string_const format)
 {
   char formatStr[40];
   char buf[4000];
   formatStr[0]='%';
   sprintf(&formatStr[1], "%s", format);
   sprintf(buf,formatStr,s);
-  init_modelica_string(dest,buf);
+  return init_modelica_string(buf);
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
-void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)
+modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)
 {
 	char formatStr[40];
 	char buf[400];
@@ -91,12 +91,12 @@ void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_intege
 		sprintf(&formatStr[1],"%dd",minLen);
 	}
 	sprintf(buf,formatStr,i);
-	init_modelica_string(dest,buf);
+	return init_modelica_string(buf);
 }
 
 /* Convert a modelica_real to a modelica_string, used in String(r) */
 
-void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
+modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
 {
 	char formatStr[40];
 	char buf[400];
@@ -107,49 +107,45 @@ void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,mo
 		sprintf(&formatStr[1],"%d.%dg",minLen,signDigits);
 	}
 	sprintf(buf,formatStr,r);
-	init_modelica_string(dest,buf);
+	return init_modelica_string(buf);
 }
 
 /* Convert a modelica_boolean to a modelica_string, used in String(b) */
 
-void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
 	if (b) {
-		init_modelica_string(dest,"true");
+		return "true";
 	} else {
-		init_modelica_string(dest,"false");
+		return "false";
 	}
 }
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
 {
-	int i;
-    int length = strlen(e[nr-1]);
-    alloc_modelica_string(dest, length);
-    for (i = 0; i<length; ++i) {
-        (*dest)[i] = e[nr-1][i];
-    }
-    (*dest)[i]=0;
+  return init_modelica_string(e[nr-1]);
 }
 
 
-void init_modelica_string(modelica_string_t* dest, modelica_string_const str)
+modelica_string_const init_modelica_string(modelica_string_const str)
 {
-    int i;
-    int length = strlen(str);
-    alloc_modelica_string(dest, length);
-    for (i = 0; i<length; ++i) {
-        (*dest)[i] = str[i];
-    }
+  int i;
+  int length = strlen(str);
+  modelica_string_t dest = alloc_modelica_string(length);
+  for (i = 0; i<length; ++i) {
+    dest[i] = str[i];
+  }
+  return dest;
 }
 
-void alloc_modelica_string(modelica_string_t* dest, int n)
+modelica_string_t alloc_modelica_string(int n)
 {
     /* Reserve place for null terminator too.*/
-    *dest = (modelica_string_t*) char_alloc(n+1);
-    (*dest)[n]=0;
+    modelica_string_t dest = (modelica_string_t) char_alloc(n+1);
+    dest[n]=0;
+    return dest;
 }
 
 
@@ -164,18 +160,21 @@ void free_modelica_string(modelica_string_t* a)
     /* free(a); */ /* char_free(length+1); */
 }
 
-void copy_modelica_string(modelica_string_const source, modelica_string_t* dest)
+modelica_string_const copy_modelica_string(modelica_string_const source)
 {
-	alloc_modelica_string(dest,modelica_string_length(source));
-  memcpy(*dest, source, modelica_string_length(source)+1);
+	modelica_string_t dest = alloc_modelica_string(modelica_string_length(source));
+  memcpy(dest, source, modelica_string_length(source)+1);
+  return dest;
 }
 
-void cat_modelica_string(modelica_string_t* dest, modelica_string_const s1, modelica_string_const s2)
+modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2)
 {
-    int len1 = modelica_string_length(s1);
-    int len2 = modelica_string_length(s2);
-    alloc_modelica_string(dest,len1+len2);
-    memcpy(*dest, s1, len1);
-    memcpy((*dest) + len1, s2, len2 + 1);
+  char *dest;
+  int len1 = modelica_string_length(s1);
+  int len2 = modelica_string_length(s2);
+  dest = alloc_modelica_string(len1+len2);
+  memcpy(dest, s1, len1);
+  memcpy(dest + len1, s2, len2 + 1);
+  return dest;
 }
 

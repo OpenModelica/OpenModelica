@@ -222,7 +222,7 @@ modelica_metatype boxptr_intString(modelica_metatype i)
 
 /* String Character Conversion */
 
-stringCharInt_rettype stringCharInt(modelica_string_t chr)
+stringCharInt_rettype stringCharInt(modelica_string chr)
 {
   if (chr[0] == '\0' || chr[1] != '\0')
     throw 1;
@@ -231,18 +231,17 @@ stringCharInt_rettype stringCharInt(modelica_string_t chr)
 
 intStringChar_rettype intStringChar(modelica_integer ix)
 {
-  modelica_string_t res;
+  char chr[2];
   if (ix < 1 || ix > 255)
     throw 1;
-  alloc_modelica_string(&res, 1);
-  res[0] = (char) ix;
-  res[1] = '\0';
-  return res;
+  chr[0] = (char) ix;
+  chr[1] = '\0';
+  return strdup(chr);
 }
 
 /* String Operations */
 
-stringInt_rettype stringInt(modelica_string_t str)
+stringInt_rettype stringInt(modelica_string str)
 {
   long res;
   char* endptr;
@@ -328,7 +327,7 @@ modelica_metatype boxptr_stringHashSdmb(modelica_metatype str)
   return res;
 }
 
-stringListStringChar_rettype stringListStringChar(modelica_string_t str)
+stringListStringChar_rettype stringListStringChar(modelica_string str)
 {
   char chr[2] = {'\0', '\0'};
   modelica_metatype revRes;
@@ -343,10 +342,10 @@ stringListStringChar_rettype stringListStringChar(modelica_string_t str)
 listStringCharString_rettype listStringCharString(modelica_metatype lst)
 {
   int lstLen, i;
-  modelica_string_t res;
+  char* res;
   void* car;
   lstLen = listLength(lst);
-  alloc_modelica_string(&res, lstLen+1);
+  res = (char*) malloc(sizeof(char)*lstLen+1);
   for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
     car = MMC_CAR(lst);
     if (1 != MMC_HDRSTRLEN(MMC_GETHDR(car))) {
@@ -362,7 +361,8 @@ listStringCharString_rettype listStringCharString(modelica_metatype lst)
 stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
-  modelica_string_t res, res_head, tmp;
+  modelica_string_t res, res_head;
+  modelica_string tmp;
   modelica_metatype car, lstHead;
   lstLen = listLength(lst);
   acc = 0;
@@ -407,7 +407,7 @@ modelica_metatype boxptr_stringAppend(modelica_metatype str1, modelica_metatype 
 {
   const char* s1 = MMC_STRINGDATA(str1);
   const char* s2 = MMC_STRINGDATA(str2);
-  char* str = stringAppend(s1,s2);
+  char* str = (char*) stringAppend(s1,s2);
   modelica_metatype res = mmc_mk_scon(str);
   free(str);
   return res;
@@ -418,7 +418,7 @@ stringLength_rettype stringLength(modelica_string_const str)
   return strlen(str);
 }
 
-stringCompare_rettype stringCompare(modelica_string_t str1, modelica_string_t str2)
+stringCompare_rettype stringCompare(modelica_string str1, modelica_string str2)
 {
   stringCompare_rettype res = strcmp(str1,str2);
   if (res < 0)
@@ -428,12 +428,12 @@ stringCompare_rettype stringCompare(modelica_string_t str1, modelica_string_t st
   return 0;
 }
 
-stringEq_rettype stringEq(modelica_string_t str1, modelica_string_t str2)
+stringEq_rettype stringEq(modelica_string str1, modelica_string str2)
 {
   return 0 == strcmp(str1,str2) ? 1 : 0;
 }
 
-stringGetStringChar_rettype stringGetStringChar(modelica_string_t str, modelica_integer ix)
+stringGetStringChar_rettype stringGetStringChar(modelica_string str, modelica_integer ix)
 {
   char chr[2] = {'\0','\0'};
   if (*str == 0)
@@ -447,7 +447,7 @@ stringGetStringChar_rettype stringGetStringChar(modelica_string_t str, modelica_
   return strdup(chr);
 }
 
-stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, modelica_string_t c, modelica_integer ix)
+stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string str, modelica_string c, modelica_integer ix)
 {
   modelica_string_t res;
   int length;
@@ -692,7 +692,7 @@ void boxptr_print(modelica_metatype str)
   fprintf(stdout, "%s", MMC_STRINGDATA(str));
 }
 
-void print(char* str)
+void print(modelica_string str)
 {
   fprintf(stdout, "%s", str);
 }

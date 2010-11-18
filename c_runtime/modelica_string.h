@@ -43,25 +43,25 @@ int modelica_string_ok(modelica_string_t* a);
 
 int modelica_string_length(modelica_string_const a);
 
-void init_modelica_string(modelica_string_t* dest, const char* str);
+modelica_string_const init_modelica_string(modelica_string_const str);
 
-void alloc_modelica_string(modelica_string_t* dest,int length);
+modelica_string_t alloc_modelica_string(int length);
 
 /* formatting String functions */
-void modelica_real_to_modelica_string_format(modelica_string_t* dest,modelica_real r, modelica_string_const format);
-void modelica_integer_to_modelica_string_format(modelica_string_t* dest,modelica_integer i, modelica_string_const format);
-void modelica_string_to_modelica_string_format(modelica_string_t* dest,modelica_string_const s, modelica_string_const format);
+modelica_string_const modelica_real_to_modelica_string_format(modelica_real r, modelica_string_const format);
+modelica_string_const modelica_integer_to_modelica_string_format(modelica_integer i, modelica_string_const format);
+modelica_string_const modelica_string_to_modelica_string_format(modelica_string_const s, modelica_string_const format);
 
-void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,modelica_integer minLen,
+modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,
 modelica_boolean leftJustified,modelica_integer signDigits);
 
-void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i,
+modelica_string_const modelica_integer_to_modelica_string(modelica_integer i,
 	modelica_integer minLen,modelica_boolean leftJustified);
 
-void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b,
+modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b,
 modelica_integer minLen, modelica_boolean leftJustified);
 
-void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr, modelica_string_t e[],
+modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr, modelica_string_t e[],
 modelica_integer minLen, modelica_boolean leftJustified);
 
 
@@ -69,8 +69,8 @@ modelica_integer minLen, modelica_boolean leftJustified);
 void free_modelica_string(modelica_string_t*);
 
 /* Copy string*/
-void copy_modelica_string(modelica_string_const source, modelica_string_t* dest);
+modelica_string_const copy_modelica_string(modelica_string_const source);
 
 /* Concatenate strings */
-void cat_modelica_string(modelica_string_t* dest, modelica_string_const s1, modelica_string_const s2);
+modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2);
 #endif

@@ -32,11 +32,6 @@
 
 extern "C" {
 
-extern int System_regularFileExists(const char* str)
-{
-  return SystemImpl__regularFileExists(str)!=0;
-}
-
 extern void System_writeFile(const char* filename, const char* data)
 {
   if (SystemImpl__writeFile(filename, data))
@@ -145,6 +140,31 @@ extern const char* System_os()
 extern const char* System_trim(const char* str, const char* chars_to_remove)
 {
   return SystemImpl__trim(str,chars_to_remove);
+}
+
+extern const char* System_basename(const char* str)
+{
+  return strdup(SystemImpl__basename(str));
+}
+
+extern const char* System_configureCommandLine()
+{
+  return CONFIGURE_COMMANDLINE;
+}
+
+extern const char* System_platform()
+{
+  return CONFIG_PLATFORM;
+}
+
+extern const char* System_pathDelimiter()
+{
+  return CONFIG_PATH_DELIMITER;
+}
+
+extern const char* System_groupDelimiter()
+{
+  return CONFIG_GROUP_DELIMITER;
 }
 
 }

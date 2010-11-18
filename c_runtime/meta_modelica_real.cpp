@@ -28,6 +28,7 @@
  *
  */
 
+#include "meta_modelica_real.h"
 #include "meta_modelica_builtin.h"
 #include <limits.h>
 #include <time.h>
@@ -125,13 +126,13 @@ realString_rettype realString(modelica_real r)
   /* 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
    * Add safety margin. */
   static char buffer[32];
-  modelica_string_t res;
+  modelica_string res;
   if (isinf(r) && r < 0)
-    init_modelica_string(&res, "-inf");
+    res = "-inf";
   else if (isinf(r))
-    init_modelica_string(&res, "inf");
+    res = "inf";
   else if (isnan(r))
-    init_modelica_string(&res, "NaN");
+    res = "NaN";
   else {
     char* endptr;
     int ix = snprintf(buffer, 32, "%.16g", r);
@@ -148,7 +149,7 @@ realString_rettype realString(modelica_real r)
       buffer[ix++] = '0';
       buffer[ix] = '\0';
     }
-    init_modelica_string(&res, buffer);
+    res = init_modelica_string(buffer);
   }
   return res;
 }

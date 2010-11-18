@@ -34,6 +34,8 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
 
+#define CONFIG_PLATFORM "WIN32"
+
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL
 #if defined(__MINGW32__)
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for OMDev"
@@ -62,6 +64,9 @@
 #else
   #define DEFAULT_LINKER "g++ -shared -export-dynamic"
 #endif
+
+#define CONFIG_PATH_DELIMITER "/"
+#define CONFIG_GROUP_DELIMITER ";"
 
 #else /* Unix */
 

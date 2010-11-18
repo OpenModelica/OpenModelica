@@ -11086,7 +11086,7 @@ protected function instExtGetFname
 algorithm 
   outIdent := matchcontinue (inExternalDecl,inIdent)
     local String id,fid;
-    case (Absyn.EXTERNALDECL(funcName = SOME(id)),fid) then id; 
+    case (Absyn.EXTERNALDECL(funcName = SOME(id)),_) then id; 
     case (Absyn.EXTERNALDECL(funcName = NONE()),fid) then fid; 
   end matchcontinue;
 end instExtGetFname;

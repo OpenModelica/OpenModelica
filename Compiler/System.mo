@@ -187,7 +187,7 @@ end getLinker;
 public function setLDFlags
   input String inString;
 
-  external "C" System_LDFlags(inString) annotation(Library = "omcruntime");
+  external "C" System_setLDFlags(inString) annotation(Library = "omcruntime");
 end setLDFlags;
 
 public function getLDFlags
@@ -252,12 +252,12 @@ end sendData;
 
 public function enableSendData
   input Boolean enable;
-  external "C" System_enableSendData(enable) annotation(Library = "omcruntime");
+  external "C" SystemImpl__enableSendData(enable) annotation(Library = "omcruntime");
 end enableSendData;
 
 public function setDataPort
   input Integer port;
-  external "C" System_setDataPort(port) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setDataPort(port) annotation(Library = "omcruntime");
 end setDataPort;
 
 public function setVariableFilter
@@ -301,7 +301,7 @@ end getVariableNames;
 public function systemCall
   input String inString;
   output Integer outInteger;
-  external "C" outInteger=System_systemCall(inString) annotation(Library = "omcruntime");
+  external "C" outInteger=SystemImpl__systemCall(inString) annotation(Library = "omcruntime");
 end systemCall;
 
 public function cd
@@ -343,7 +343,7 @@ end moFiles;
 
 public function time
   output Real outReal;
-  external "C" outReal=System_time() annotation(Library = "omcruntime");
+  external "C" outReal=SystemImpl__time() annotation(Library = "omcruntime");
 end time;
 
 public function pathDelimiter
@@ -359,7 +359,7 @@ end groupDelimiter;
 public function regularFileExists
   input String inString;
   output Boolean outBool;
-  external "C" outBool = System_regularFileExists(inString) annotation(Library = "omcruntime");
+  external "C" outBool = SystemImpl__regularFileExists(inString) annotation(Library = "omcruntime");
 end regularFileExists;
 
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
