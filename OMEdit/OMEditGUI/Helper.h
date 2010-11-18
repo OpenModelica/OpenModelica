@@ -49,6 +49,12 @@ public:
     static QString omFileTypes;
     static QString omFileOpenText;
     static QString tmpPath;
+    static QString documentationBaseUrl;
+    static QString readOnly;
+    static QString writeAble;
+    static QString iconView;
+    static QString diagramView;
+    static QString modelicaTextView;
     static int viewWidth;
     static int viewHeight;
     static qreal globalIconXScale;
@@ -58,6 +64,7 @@ public:
     static QString ModelicaSimulationMethods;
     static int treeIndentation;
     static QSize iconSize;
+    static QSize buttonIconSize;
     static int headingFontSize;
 };
 
@@ -88,7 +95,9 @@ public:
         DELETE_AND_LOAD,
         REDEFING_EXISTING_MODELS,
         INVALID_COMPONENT_ANNOTATIONS,
-        SAVED_MODEL
+        SAVED_MODEL,
+        COMMENT_SAVE_ERROR,
+        ATTRIBUTES_SAVE_ERROR
     };
 
     static QString getMessage(int type);

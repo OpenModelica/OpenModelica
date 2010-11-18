@@ -42,14 +42,14 @@ PlotWidget::PlotWidget(MainWindow *pParent)
 
     mpPlotTypesCombo = new QComboBox();
     mpPlotTypesCombo->addItem(tr("Plot"));
-    mpPlotTypesCombo->addItem(tr("Plot Parametric"));
-    mpPlotTypesCombo->addItem(tr("Visualize"));
+//    mpPlotTypesCombo->addItem(tr("Plot Parametric"));
+//    mpPlotTypesCombo->addItem(tr("Visualize"));
 
     mpPlotVariablesTree = new QTreeWidget(this);
     mpPlotVariablesTree->setContextMenuPolicy(Qt::DefaultContextMenu);
     mpPlotVariablesTree->setHeaderHidden(true);
     mpPlotVariablesTree->setColumnCount(1);
-    mpPlotVariablesTree->setIndentation(13);
+    mpPlotVariablesTree->setIndentation(Helper::treeIndentation);
     mpPlotVariablesTree->setColumnCount(1);
 
     mpVerticalLayout = new QVBoxLayout(this);
@@ -242,5 +242,5 @@ void PlotWidget::visualize(QString value)
 
 void PlotWidget::contextMenuEvent(QContextMenuEvent *event)
 {
-    QMessageBox::warning(0, "teststs", "sdcsdsdsdv", "OK");
+    //QMessageBox::warning(0, "teststs", "sdcsdsdsdv", "OK");
 }

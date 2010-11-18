@@ -60,7 +60,6 @@ Component::Component(QString value, QString name, QString className, QPointF pos
         getClassComponents(mClassName, mType);
         createSelectionBox();
         createActions();
-        connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
     }
     // if component is a diagram
     else if (mType == StringHandler::DIAGRAM)
@@ -190,7 +189,6 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
         copyClassComponents(pComponent);
         createSelectionBox();
         createActions();
-        connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
     }
     // if component is a diagram
     else if (mType == StringHandler::DIAGRAM)
@@ -350,8 +348,12 @@ void Component::createSelectionBox()
 
 void Component::createActions()
 {
+    // Icon Attributes Action
+    mpIconAttributesAction = new QAction(tr("Attributes"), this);
+    connect(mpIconAttributesAction, SIGNAL(triggered()), SLOT(openIconAttributes()));
     // Icon Properties Action
     mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
+    connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
 }
 
 void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -406,6 +408,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     if (pComponent->mType == StringHandler::ICON)
     {
         menu.addSeparator();
+        menu.addAction(pComponent->mpIconAttributesAction);
         menu.addAction(pComponent->mpIconPropertiesAction);
     }
     menu.exec(event->screenPos());
@@ -692,6 +695,12 @@ void Component::openIconProperties()
 {
     IconProperties *iconProperties = new IconProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     iconProperties->show();
+}
+
+void Component::openIconAttributes()
+{
+    IconAttributes *iconAttributes = new IconAttributes(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    iconAttributes->show();
 }
 
 QString Component::getName()

@@ -45,6 +45,14 @@ public:
     QString getClassName();
     QString getName();
     QString getComment();
+    QString getVariablity();
+    bool getProtected();
+    bool getFlow();
+    bool getFinal();
+    bool getReplaceable();
+    QString getCasuality();
+    bool getInner();
+    bool getOuter();
 private:
     QString mClassName;
     QString mName;

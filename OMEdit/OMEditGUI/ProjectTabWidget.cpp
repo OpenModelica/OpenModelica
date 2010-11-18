@@ -51,8 +51,8 @@
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-GraphicsView::GraphicsView(ProjectTab *parent)
-    : QGraphicsView(parent)
+GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
+    : QGraphicsView(parent), mIconType(iconType)
 {
     mpParentProjectTab = parent;
     this->setFrameShape(QGraphicsView::NoFrame);
@@ -61,7 +61,7 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->setEnabled(true);
     this->setAcceptDrops(true);
     this->mIsCreatingConnector = false;
-    this->setMinimumSize(Helper::viewWidth, Helper::viewHeight);
+    //this->setMinimumSize(Helper::viewWidth, Helper::viewHeight);
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
@@ -70,16 +70,13 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->createActions();
     this->createMenus();
 
-    if (mpParentProjectTab)
-    {
-        if (mpParentProjectTab->mIconType == StringHandler::ICON)
-            this->setStyleSheet("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightGray, stop: 1 gray);");
-        else if (mpParentProjectTab->mIconType == StringHandler::DIAGRAM)
-            this->setStyleSheet("background-color: #ffffff;");
+    if (mIconType == StringHandler::ICON)
+        this->setStyleSheet("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightGray, stop: 1 gray);");
+    else if (mIconType == StringHandler::DIAGRAM)
+        this->setStyleSheet("background-color: #ffffff;");
 
-        connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
-                SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
-    }
+    connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
+            SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
 }
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
@@ -127,7 +124,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
     // check if the view is readonly or not
-    if (mpParentProjectTab->isReadOnly())
+    if (mpParentProjectTab->isReadOnly() or (mIconType == StringHandler::DIAGRAM))
     {
         event->ignore();
         return;
@@ -149,7 +146,7 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 void GraphicsView::dropEvent(QDropEvent *event)
 {
     // check if the view is readonly or not
-    if (mpParentProjectTab->isReadOnly())
+    if (mpParentProjectTab->isReadOnly() or (mIconType == StringHandler::DIAGRAM))
     {
         event->ignore();
         return;
@@ -642,19 +639,14 @@ void GraphicsView::saveModelAnnotation()
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-GraphicsScene::GraphicsScene(ProjectTab *parent)
-    : QGraphicsScene(parent)
+GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
+    : QGraphicsScene(parent), mIconType(iconType)
 {
     mpParentProjectTab = parent;
 
     // only attach the haschanged slot if we are viewing the icon view.
-    if (mpParentProjectTab)
-    {
-        if (mpParentProjectTab->mIconType == StringHandler::ICON)
-        {
-            connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
-        }
-    }
+    if (mIconType == StringHandler::ICON)
+        connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
 GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
@@ -676,108 +668,120 @@ void GraphicsViewScroll::scrollContentsBy(int dx, int dy)
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-ProjectTab::ProjectTab(ProjectTabWidget *parent)
+ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTabWidget *parent)
     : QWidget(parent)
 {
     mIsSaved = true;
     mModelFileName.clear();
     mpParentProjectTabWidget = parent;
-    mIconType = StringHandler::ICON;
+    mModelicaType = modelicaType;
+    mIconType = iconType;
+    setReadOnly(readOnly);
 
-    mpGraphicsScene = new GraphicsScene(this);
-    mpGraphicsView  = new GraphicsView(this);
+    // icon graphics framework
+    mpGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
+    mpGraphicsView = new GraphicsView(StringHandler::ICON, this);
     mpGraphicsView->setScene(mpGraphicsScene);
 
-    mpModelicaModelButton = new QPushButton(QIcon(":/Resources/icons/model.png"), tr("Modeling"), this);
-    mpModelicaModelButton->setIconSize(QSize(25, 25));
-    mpModelicaModelButton->setObjectName(tr("ModelicaModelButton"));
-    mpModelicaModelButton->setCheckable(true);
-    mpModelicaModelButton->setChecked(true);
-    connect(mpModelicaModelButton, SIGNAL(clicked()), this, SLOT(showModelicaModel()));
+    // diagram graphics framework
+    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::DIAGRAM, this);
+    mpDiagramGraphicsView = new GraphicsView(StringHandler::DIAGRAM, this);
+    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
 
-    mpModelicaTextButton = new QPushButton(QIcon(":/Resources/icons/modeltext.png") ,tr("Model Text"), this);
-    mpModelicaTextButton->setIconSize(QSize(25, 25));
-    mpModelicaTextButton->setCheckable(true);
-    mpModelicaTextButton->setObjectName(tr("ModelicaTextButton"));
-    connect(mpModelicaTextButton, SIGNAL(clicked()), this, SLOT(showModelicaText()));
-
+    // create a modelica text editor for modelica text
     mpModelicaEditor = new ModelicaEditor(this);
     mpModelicaEditor->hide();
 
-    mpViewScrollArea = new GraphicsViewScroll(mpGraphicsView);
-    mpViewScrollArea->setWidget(mpGraphicsView);
-    //mpViewScrollArea->ensureVisible(1050, 1220);
-    mpViewScrollArea->ensureVisible(mpGraphicsView->rect().center().x(), mpGraphicsView->rect().center().y(), 100, 272);
-    mpViewScrollArea->setWidgetResizable(true);
+    // set Project Status Bar lables
+    mpReadOnlyLabel = isReadOnly() ? new QLabel(Helper::readOnly) : new QLabel(Helper::writeAble);
+    mpModelicaTypeLabel = new QLabel(StringHandler::getModelicaClassType(mModelicaType));
+    mpViewTypeLabel = new QLabel(StringHandler::getViewType(mIconType));
+    mpModelFilePathLabel = new QLabel(tr(""));
 
-    QHBoxLayout *layout = new QHBoxLayout();
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setAlignment(Qt::AlignRight);
-    layout->addWidget(mpModelicaModelButton);
-    layout->addWidget(mpModelicaTextButton);
+    // frame to contain view buttons
+    QFrame *viewsButtonsFrame = new QFrame;
+    QHBoxLayout *viewsButtonsHorizontalLayout = new QHBoxLayout;
+    viewsButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+
+    // icon view tool button
+    mpDiagramToolButton = new QToolButton;
+    mpDiagramToolButton->setText(Helper::iconView);
+    mpDiagramToolButton->setIcon(QIcon(":/Resources/icons/model.png"));
+    mpDiagramToolButton->setIconSize(Helper::buttonIconSize);
+    mpDiagramToolButton->setToolTip(Helper::iconView);
+    mpDiagramToolButton->setAutoRaise(true);
+    mpDiagramToolButton->setCheckable(true);
+    connect(mpDiagramToolButton, SIGNAL(clicked(bool)), SLOT(showDiagramView(bool)));
+    viewsButtonsHorizontalLayout->addWidget(mpDiagramToolButton);
+
+    // diagram view tool button
+    mpIconToolButton = new QToolButton;
+    mpIconToolButton->setText(Helper::diagramView);
+    mpIconToolButton->setIcon(QIcon(":/Resources/icons/omeditor.png"));
+    mpIconToolButton->setIconSize(Helper::buttonIconSize);
+    mpIconToolButton->setToolTip(Helper::diagramView);
+    mpIconToolButton->setAutoRaise(true);
+    mpIconToolButton->setCheckable(true);
+    connect(mpIconToolButton, SIGNAL(clicked(bool)), SLOT(showIconView(bool)));
+    viewsButtonsHorizontalLayout->addWidget(mpIconToolButton);
+
+    // modelica text view tool button
+    mpModelicaTextToolButton = new QToolButton;
+    mpModelicaTextToolButton->setText(Helper::modelicaTextView);
+    mpModelicaTextToolButton->setIcon(QIcon(":/Resources/icons/modeltext.png"));
+    mpModelicaTextToolButton->setIconSize(Helper::buttonIconSize);
+    mpModelicaTextToolButton->setToolTip(Helper::modelicaTextView);
+    mpModelicaTextToolButton->setAutoRaise(true);
+    mpModelicaTextToolButton->setCheckable(true);
+    connect(mpModelicaTextToolButton, SIGNAL(clicked(bool)), SLOT(showModelicaTextView(bool)));
+    viewsButtonsHorizontalLayout->addWidget(mpModelicaTextToolButton);
+
+    viewsButtonsFrame->setLayout(viewsButtonsHorizontalLayout);
+
+    // view buttons box
+    mpViewsButtonGroup = new QButtonGroup;
+    mpViewsButtonGroup->setExclusive(true);
+    mpViewsButtonGroup->addButton(mpIconToolButton);
+    mpViewsButtonGroup->addButton(mpDiagramToolButton);
+    mpViewsButtonGroup->addButton(mpModelicaTextToolButton);
+
+    // create project status bar
+    mpProjectStatusBar = new QStatusBar;
+    mpProjectStatusBar->setObjectName(tr("PojectStatusBar"));
+    mpProjectStatusBar->addPermanentWidget(viewsButtonsFrame, 5);
+    mpProjectStatusBar->addPermanentWidget(mpReadOnlyLabel, 10);
+    mpProjectStatusBar->addPermanentWidget(mpModelicaTypeLabel, 10);
+    mpProjectStatusBar->addPermanentWidget(mpViewTypeLabel, 10);
+    mpProjectStatusBar->addPermanentWidget(mpModelFilePathLabel, 65);
 
     QVBoxLayout *tabLayout = new QVBoxLayout;
-    tabLayout->setContentsMargins(2, 2, 2, 0);
-    tabLayout->addWidget(mpViewScrollArea);
+    tabLayout->setContentsMargins(2, 2, 2, 2);
+    tabLayout->addWidget(mpProjectStatusBar);
+    tabLayout->addWidget(mpGraphicsView);
+    tabLayout->addWidget(mpDiagramGraphicsView);
     tabLayout->addWidget(mpModelicaEditor);
-    tabLayout->addItem(layout);
     setLayout(tabLayout);
+
+    // depending on the Icon and Diagram, show the appropriate view to user
+    if (mIconType == StringHandler::ICON)
+    {
+        mpDiagramGraphicsView->hide();
+        mpIconToolButton->setChecked(true);
+    }
+    else if (mIconType == StringHandler::DIAGRAM)
+    {
+        mpGraphicsView->hide();
+        mpDiagramToolButton->setChecked(true);
+    }
 
     connect(this, SIGNAL(disableMainWindow(bool)),
             mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
     connect(this, SIGNAL(updateAnnotations()), SLOT(updateModelAnnotations()));
 }
 
-ProjectTab::ProjectTab(bool diagram, ProjectTabWidget *parent)
-    : QWidget(parent)
+ProjectTab::~ProjectTab()
 {
-    Q_UNUSED(diagram);
-    mIsSaved = true;
-    mModelFileName.clear();
-    mpParentProjectTabWidget = parent;
-    mIconType = StringHandler::DIAGRAM;
-
-    mpGraphicsScene = new GraphicsScene(this);
-    mpGraphicsView = new GraphicsView(this);
-    mpGraphicsView->setScene(mpGraphicsScene);
-
-    mpModelicaModelButton = new QPushButton(QIcon(":/Resources/icons/model.png"), tr("Modeling"), this);
-    mpModelicaModelButton->setIconSize(QSize(25, 25));
-    mpModelicaModelButton->setObjectName(tr("ModelicaModelButton"));
-    mpModelicaModelButton->setCheckable(true);
-    mpModelicaModelButton->setChecked(true);
-    connect(mpModelicaModelButton, SIGNAL(clicked()), this, SLOT(showModelicaModel()));
-
-    mpModelicaTextButton = new QPushButton(QIcon(":/Resources/icons/modeltext.png") ,tr("Model Text"), this);
-    mpModelicaTextButton->setIconSize(QSize(25, 25));
-    mpModelicaTextButton->setCheckable(true);
-    mpModelicaTextButton->setObjectName(tr("ModelicaTextButton"));
-    connect(mpModelicaTextButton, SIGNAL(clicked()), this, SLOT(showModelicaText()));
-
-    mpModelicaEditor = new ModelicaEditor(this);
-    mpModelicaEditor->setReadOnly(true);
-    mpModelicaEditor->hide();
-
-    mpViewScrollArea = new GraphicsViewScroll(mpGraphicsView);
-    mpViewScrollArea->setWidget(mpGraphicsView);
-    mpViewScrollArea->ensureVisible(mpGraphicsView->rect().center().x(), mpGraphicsView->rect().center().y(), 100, 272);
-    mpViewScrollArea->setWidgetResizable(true);
-
-    QHBoxLayout *layout = new QHBoxLayout();
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setAlignment(Qt::AlignRight);
-    layout->addWidget(mpModelicaModelButton);
-    layout->addWidget(mpModelicaTextButton);
-
-    QVBoxLayout *tabLayout = new QVBoxLayout;
-    tabLayout->setContentsMargins(2, 2, 2, 0);
-    tabLayout->addWidget(mpViewScrollArea);
-    tabLayout->addWidget(mpModelicaEditor);
-    tabLayout->addItem(layout);
-    setLayout(tabLayout);
-
-    connect(this, SIGNAL(disableMainWindow(bool)),
-            mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
+    delete mpProjectStatusBar;
 }
 
 void ProjectTab::updateTabName(QString name, QString nameStructure)
@@ -789,11 +793,6 @@ void ProjectTab::updateTabName(QString name, QString nameStructure)
         mpParentProjectTabWidget->setTabText(mTabPosition, mModelName);
     else
         mpParentProjectTabWidget->setTabText(mTabPosition, QString(mModelName).append("*"));
-}
-
-void ProjectTab::addChildModel(ProjectTab *model)
-{
-    mChildModelsList.append(model);
 }
 
 void ProjectTab::updateModel(QString name)
@@ -816,6 +815,10 @@ void ProjectTab::updateModel(QString name)
 //! e.g. a component added or a connection has changed.
 void ProjectTab::hasChanged()
 {
+    // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
+    if (isReadOnly())
+        return;
+
     if (mIsSaved)
     {
         QString tabName = mpParentProjectTabWidget->tabText(mpParentProjectTabWidget->currentIndex());
@@ -827,25 +830,41 @@ void ProjectTab::hasChanged()
     }
 }
 
-void ProjectTab::showModelicaModel()
+void ProjectTab::showDiagramView(bool checked)
 {
+    if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
+        return;
     // Enable the main window
     emit disableMainWindow(false);
-    mpModelicaModelButton->setChecked(true);
-    mpModelicaTextButton->setChecked(false);
     mpModelicaEditor->hide();
-    mpViewScrollArea->show();
+    mpGraphicsView->hide();
+    mpDiagramGraphicsView->show();
+    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::DIAGRAM));
 }
 
-void ProjectTab::showModelicaText()
+void ProjectTab::showIconView(bool checked)
 {
+    if (!checked or (checked and mpGraphicsView->isVisible()))
+        return;
+    // Enable the main window
+    emit disableMainWindow(false);
+    mpModelicaEditor->hide();
+    mpDiagramGraphicsView->hide();
+    mpGraphicsView->show();
+    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ICON));
+}
+
+void ProjectTab::showModelicaTextView(bool checked)
+{
+    if (!checked or (checked and mpModelicaEditor->isVisible()))
+        return;
     // Disable the main window
     emit disableMainWindow(true);
     emit updateModelAnnotations();
 
-    mpModelicaModelButton->setChecked(false);
-    mpModelicaTextButton->setChecked(true);
-    mpViewScrollArea->hide();
+    mpGraphicsView->hide();
+    mpDiagramGraphicsView->hide();
+    mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::MODELICATEXT));
     // get the modelica text of the model
     mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
     mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
@@ -926,6 +945,8 @@ void ProjectTab::getModelComponents()
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
     {
+        //! @todo add the code to check if components are of types Real, so that we dont check annotation for them.
+
         Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(componentProperties->getClassName());
         Component *newComponent;
         // create a component
@@ -1065,6 +1086,11 @@ bool ProjectTab::isReadOnly()
     return mReadOnly;
 }
 
+void ProjectTab::setModelFilePathLabel(QString filePath)
+{
+    mpModelFilePathLabel->setText(filePath);
+}
+
 //! Notifies the model that its corresponding text has changed.
 //! @see loadModelFromText(QString name)
 //! @see loadRootModel(QString model)
@@ -1115,8 +1141,8 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
     connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
-    connect(this, SIGNAL(tabAdded()), SLOT(enableViewToolbar()));
-    connect(this, SIGNAL(tabRemoved()), SLOT(disableViewToolbar()));
+    connect(this, SIGNAL(tabAdded()), SLOT(enableProjectToolbar()));
+    connect(this, SIGNAL(tabRemoved()), SLOT(disableProjectToolbar()));
     emit tabRemoved();
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
@@ -1232,15 +1258,14 @@ void ProjectTabWidget::setSourceFile(QString modelName, QString modelFileName)
 
 //! Adds an existing ProjectTab object to itself.
 //! @see closeProjectTab(int index)
-void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure, int type)
+void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure)
 {
     projectTab->mIsSaved = true;
     projectTab->mModelName = modelName;
     projectTab->mModelNameStructure = modelStructure;
     projectTab->mModelFileName = mpParentMainWindow->mpOMCProxy->getSourceFile(modelStructure);
-    projectTab->mType = type;
+    projectTab->setModelFilePathLabel(projectTab->mModelFileName);
     projectTab->mTabPosition = addTab(projectTab, modelName);
-    projectTab->setReadOnly(false);
     projectTab->getModelComponents();
     projectTab->getModelConnections();
     setCurrentWidget(projectTab);
@@ -1253,47 +1278,32 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
 
 //! Adds a ProjectTab object (a new tab) to itself.
 //! @see closeProjectTab(int index)
-void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int type)
+void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int modelicaType)
 {
-    ProjectTab *newTab = new ProjectTab(this);
-    if (getTabByName(StringHandler::removeLastWordAfterDot(modelStructure)))
-    {
-        newTab->mpParentModel = getTabByName(StringHandler::removeLastWordAfterDot(modelStructure));
-        newTab->mpParentModel->addChildModel(newTab);
-    }
-    else
-    {
-        newTab->mpParentModel = 0;
-    }
+    ProjectTab *newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, this);
     newTab->mIsSaved = false;
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
-    newTab->mType = type;
     newTab->mTabPosition = addTab(newTab, modelName.append(QString("*")));
-    newTab->setReadOnly(false);
     setCurrentWidget(newTab);
 }
 
 void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
 {
-    // check if clicked item is a package or not.
-    if (mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(column)))
-    {
-        return;
-    }
-
-    ProjectTab *newTab = new ProjectTab(true, this);
-    newTab->mModelName = item->toolTip(column);
-    newTab->mModelNameStructure = item->toolTip(column);
-    newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(item->toolTip(column)));
-    newTab->setReadOnly(true);
+    Q_UNUSED(column);
+    LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
+    ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
+                                        StringHandler::DIAGRAM, true, this);
+    newTab->mModelName = treeNode->mName;
+    newTab->mModelNameStructure = treeNode->mNameStructure;
+    newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
 
     mpParentMainWindow->setCursor(Qt::WaitCursor);
     Component *diagram;
-    QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(item->toolTip(0));
+    QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->toolTip(0));
     diagram = new Component(result, newTab->mModelNameStructure, newTab->mModelNameStructure,
                             QPointF (0,0), StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
-                            newTab->mpGraphicsView);
+                            newTab->mpDiagramGraphicsView);
     setCurrentWidget(newTab);
     mpParentMainWindow->unsetCursor();
 }
@@ -1318,6 +1328,10 @@ void ProjectTabWidget::saveProjectTabAs()
 void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 {
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
+    // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
+    if (pCurrentTab->isReadOnly())
+        return;
+
     QString tabName = tabText(index);
 
     if (saveAs)
@@ -1340,11 +1354,6 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
                 tabName.chop(1);
                 setTabText(index, tabName);
                 pCurrentTab->mIsSaved = true;
-                MessageWidget *pMessageWidget = mpParentMainWindow->mpMessageWidget;
-                pMessageWidget->printGUIInfoMessage(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
-                                                    .arg(StringHandler::getModelicaClassType(pCurrentTab->mType))
-                                                    .arg(pCurrentTab->mModelName)
-                                                    .arg(pCurrentTab->mModelFileName));
             }
         }
     }
@@ -1377,6 +1386,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
             {
                 pCurrentTab->mModelFileName = modelFileName;
+                pCurrentTab->setModelFilePathLabel(modelFileName);
                 return true;
             }
             // if OMC is unable to save the file
@@ -1475,6 +1485,7 @@ bool ProjectTabWidget::closeAllProjectTabs()
             msgBox->setDefaultButton(QMessageBox::No);
 
             int answer = msgBox->exec();
+            msgBox->raise();
 
             switch (answer)
             {
@@ -1577,7 +1588,7 @@ void ProjectTabWidget::updateTabIndexes()
     }
 }
 
-void ProjectTabWidget::enableViewToolbar()
+void ProjectTabWidget::enableProjectToolbar()
 {
     if (!mToolBarEnabled)
     {
@@ -1586,7 +1597,7 @@ void ProjectTabWidget::enableViewToolbar()
     }
 }
 
-void ProjectTabWidget::disableViewToolbar()
+void ProjectTabWidget::disableProjectToolbar()
 {
     if (mToolBarEnabled and (count() == 0))
     {

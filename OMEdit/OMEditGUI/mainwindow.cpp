@@ -159,6 +159,7 @@ MainWindow::~MainWindow()
     delete statusBar;
     delete mpModelCreator;
     delete mpLibrary;
+    delete mpDocumentationWidget;
 }
 
 //! Event triggered re-implemented method that closes the main window.
@@ -259,7 +260,7 @@ void MainWindow::createActions()
 
     zoomOutAction = new QAction(QIcon(":/Resources/icons/zoomOut.png"), tr("Zoom Out"), this);
 
-    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
+    checkModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
     connect(checkModelAction, SIGNAL(triggered()), SLOT(checkModel()));
 
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
@@ -545,60 +546,3 @@ void MainWindow::disableMainWindow(bool disable)
     mpPlotWidget->setDisabled(disable);
     mpDocumentationWidget->setDisabled(disable);
 }
-
-/*
-//! Opens the new project widget.
-void MainWindow::openNewProject()
-{
-    this->mpNewProject->show();
-}
-
-void MainWindow::incrementProjectsCounter()
-{
-    this->mProjectsCounter += this->mProjectsCounter;
-    emit projectCreated();
-}
-
-void MainWindow::projectCreatedSlot()
-{
-    this->newPackageAction->setEnabled(true);
-    this->newModelAction->setEnabled(true);
-    this->closeProjectAction->setEnabled(true);
-    this->newProjectAction->setEnabled(false);
-    this->openProjectAction->setEnabled(false);
-}
-
-void MainWindow::projectClosedSlot()
-{
-    this->mProjectsCounter -= this->mProjectsCounter;
-    if (this->mProjectsCounter == 0)
-    {
-        this->newPackageAction->setEnabled(false);
-        this->newModelAction->setEnabled(false);
-        this->closeProjectAction->setEnabled(false);
-        this->newProjectAction->setEnabled(true);
-        this->openProjectAction->setEnabled(true);
-    }
-    this->mpLibrary->removeProject();
-}
-
-void MainWindow::projectOpenSlot()
-{
-    QString path = QFileDialog::getExistingDirectory(this, tr("Choose Location"),
-                                                     QDir::currentPath() + tr("/ModelicaProjects"),
-                                                     QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    if (path.isEmpty())
-    {
-        return;
-    }
-
-    this->newPackageAction->setEnabled(true);
-    this->newModelAction->setEnabled(true);
-    this->closeProjectAction->setEnabled(true);
-    this->newProjectAction->setEnabled(false);
-    this->openProjectAction->setEnabled(false);
-
-    this->mpLibrary->openProject(path);
-}
-*/

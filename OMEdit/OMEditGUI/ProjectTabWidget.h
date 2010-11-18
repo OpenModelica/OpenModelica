@@ -60,8 +60,9 @@ class GraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    GraphicsScene(ProjectTab *parent = 0);
+    GraphicsScene(int iconType, ProjectTab *parent = 0);
     ProjectTab *mpParentProjectTab;
+    int mIconType;
 };
 
 class GraphicsView : public QGraphicsView
@@ -69,10 +70,11 @@ class GraphicsView : public QGraphicsView
     Q_OBJECT
 private:
     Connector *mpConnector;
+    int mIconType;
     void createActions();
     void createMenus();
 public:
-    GraphicsView(ProjectTab *parent = 0);
+    GraphicsView(int iconType, ProjectTab *parent = 0);
     void addComponentObject(Component *icon);
     void deleteComponentObject(Component *icon);
     Component* getComponentObject(QString componentName);
@@ -134,17 +136,21 @@ class ProjectTab : public QWidget
 {
     Q_OBJECT
 private:
-    QPushButton *mpModelicaModelButton;
-    QPushButton *mpModelicaTextButton;
     ModelicaEditor *mpModelicaEditor;
-    QList<ProjectTab*> mChildModelsList;
+    QStatusBar *mpProjectStatusBar;
+    QButtonGroup *mpViewsButtonGroup;
+    QToolButton *mpIconToolButton;
+    QToolButton *mpDiagramToolButton;
+    QToolButton *mpModelicaTextToolButton;
+    QLabel *mpReadOnlyLabel;
+    QLabel *mpModelicaTypeLabel;
+    QLabel *mpViewTypeLabel;
+    QLabel *mpModelFilePathLabel;
     bool mReadOnly;
 public:
-    ProjectTab(ProjectTabWidget *parent = 0);
-    ProjectTab(bool diagram, ProjectTabWidget *parent = 0);
+    ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTabWidget *parent = 0);
+    ~ProjectTab();
     void updateTabName(QString name, QString nameStructure);
-    //ProjectTab* getChild();
-    void addChildModel(ProjectTab *model);
     void updateModel(QString name);
     bool loadModelFromText(QString name);
     bool loadRootModel(QString model);
@@ -153,16 +159,17 @@ public:
     void getModelConnections();
     void setReadOnly(bool readOnly);
     bool isReadOnly();
+    void setModelFilePathLabel(QString filePath);
 
-    ProjectTab *mpParentModel;
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;
     GraphicsScene *mpGraphicsScene;
-    GraphicsViewScroll *mpViewScrollArea;
+    GraphicsView *mpDiagramGraphicsView;
+    GraphicsScene *mpDiagramGraphicsScene;
     QString mModelFileName;
     QString mModelName;
     QString mModelNameStructure;
-    int mType;
+    int mModelicaType;
     int mIconType;
     bool mIsSaved;
     int mTabPosition;
@@ -171,13 +178,15 @@ signals:
     void updateAnnotations();
 public slots:
     void hasChanged();
-    void showModelicaModel();
-    void showModelicaText();
+    void showDiagramView(bool checked);
+    void showIconView(bool checked);
+    void showModelicaTextView(bool checked);
     bool ModelicaEditorTextChanged();
     void updateModelAnnotations();
 };
 
 class MainWindow;
+class LibraryTreeNode;
 class ProjectTabWidget : public QTabWidget
 {
     Q_OBJECT
@@ -200,8 +209,8 @@ signals:
     void tabAdded();
     void tabRemoved();
 public slots:
-    void addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure, int type);
-    void addNewProjectTab(QString modelName, QString modelStructure, int type);
+    void addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure);
+    void addNewProjectTab(QString modelName, QString modelStructure, int modelicaType);
     void addDiagramViewTab(QTreeWidgetItem *item, int column);
     void saveProjectTab();
     void saveProjectTabAs();
@@ -214,8 +223,8 @@ public slots:
     void zoomIn();
     void zoomOut();
     void updateTabIndexes();
-    void enableViewToolbar();
-    void disableViewToolbar();
+    void enableProjectToolbar();
+    void disableProjectToolbar();
 };
 
 #endif // PROJECTTABWIDGET_H

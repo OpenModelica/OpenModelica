@@ -78,6 +78,7 @@ private:
     CornerItem *mpBottomLeftCornerItem;
     CornerItem *mpBottomRightCornerItem;
     QAction *mpIconPropertiesAction;
+    QAction *mpIconAttributesAction;
 
     void createActions();
 public:
@@ -156,6 +157,7 @@ public slots:
     void rotateAntiClockwise();
     void resetRotation();
     void openIconProperties();
+    void openIconAttributes();
 protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);

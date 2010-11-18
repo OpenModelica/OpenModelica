@@ -110,8 +110,8 @@ void ModelicaTree::createActions()
     mpRenameAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Rename"), this);
     connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameClass()));
 
-    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check Model"), this);
-    connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModelicaModel()));
 
     mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
     connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
@@ -202,9 +202,8 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     // if the tab is found in current tabs and removed tabs then user has loaded a new model, just open it then
     if (!isFound)
     {
-        //! @todo make it better load the model here and get the components required.
-        ProjectTab *newTab = new ProjectTab(pMainWindow->mpProjectTabs);
-        pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure, treeNode->mType);
+        ProjectTab *newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, pMainWindow->mpProjectTabs);
+        pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
     }
     // unset the cursor
     unsetCursor();
@@ -236,7 +235,7 @@ void ModelicaTree::renameClass()
     widget->show();
 }
 
-void ModelicaTree::checkModel()
+void ModelicaTree::checkModelicaModel()
 {
     CheckModelWidget *widget = new CheckModelWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
                                                     mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
@@ -347,11 +346,14 @@ LibraryTree::~LibraryTree()
 
 void LibraryTree::createActions()
 {
-    mpShowComponentAction = new QAction(QIcon(":/Resources/icons/rename.png"), tr("Show Component"), this);
+    mpShowComponentAction = new QAction(QIcon(":/Resources/icons/model.png"), tr("Show Component"), this);
     connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
 
-    mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("View Documentation"), this);
+    mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/modeltext.png"), tr("View Documentation"), this);
     connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
+
+    mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
+    connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkLibraryModel()));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -361,9 +363,8 @@ void LibraryTree::addModelicaStandardLibrary()
     mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
-        QTreeWidgetItem *newTreePost = new QTreeWidgetItem((QTreeWidget*)0);
-        newTreePost->setText(0, QString("Modelica"));
-        newTreePost->setToolTip(0, QString("Modelica"));
+        LibraryTreeNode *newTreePost = new LibraryTreeNode(QString("Modelica"), QString(""), QString("Modelica"),
+                                                           (QTreeWidget*)0);
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         insertTopLevelItem(0, newTreePost);
 
@@ -556,6 +557,7 @@ void LibraryTree::showContextMenu(QPoint point)
         QMenu menu(this);
         menu.addAction(mpShowComponentAction);
         menu.addAction(mpViewDocumentationAction);
+        menu.addAction(mpCheckModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -572,6 +574,14 @@ void LibraryTree::viewDocumentation()
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     pMainWindow->documentationdock->show();
     pMainWindow->mpDocumentationWidget->show(mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0));
+}
+
+void LibraryTree::checkLibraryModel()
+{
+    CheckModelWidget *widget = new CheckModelWidget(mpParentLibraryWidget->mSelectedLibraryNode->text(0),
+                                                    mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0),
+                                                    mpParentLibraryWidget->mpParentMainWindow);
+    widget->show();
 }
 
 void LibraryTree::loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className)

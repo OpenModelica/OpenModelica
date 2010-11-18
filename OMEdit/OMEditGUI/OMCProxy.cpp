@@ -218,15 +218,15 @@ bool OMCProxy::startServer()
         {
             OMCThread::sleep(1);
             ticks++;
-            if (ticks > 4)
+            if (ticks > 20)
             {
                 msg = "Unable to find " + Helper::applicationName + " server, No OMC object reference file created.";
                 throw std::runtime_error(msg.toStdString().c_str());
             }
         }
         // ORB initialization.
-        int argc = 4;
-        static const char *argv[] = { "OMCProxy", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
+        int argc = 2;
+        static const char *argv[] = { "-ORBgiopMaxMsgSize", "10485760" };
         CORBA::ORB_var orb = CORBA::ORB_init(argc, (char **)argv);
 
         objectRefFile.open(QIODevice::ReadOnly);
@@ -262,16 +262,16 @@ bool OMCProxy::startServer()
         mHasInitialized = false;
         return false;
     }
-   QDir dir;
-   if (!dir.exists(Helper::tmpPath)) {
+    QDir dir;
+    if (!dir.exists(Helper::tmpPath)) {
      if (!dir.mkdir(Helper::tmpPath)) {
        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
                               QString("Failed to create temp dir ").append(Helper::tmpPath), "OK");
        return false;
      }
-   }
-   changeDirectory(Helper::tmpPath);
-   return true;
+    }
+    changeDirectory(Helper::tmpPath);
+    return true;
 }
 
 //! Stops the Open Modelica Compiler. Kill the process omc and also deletes the CORBA reference file.
@@ -300,7 +300,7 @@ void OMCProxy::sendCommand(QString expression)
         mResult = mOMC->sendExpression(expression.toLatin1());
         logOMCMessages(expression);
     }
-    catch(CORBA::Exception& ex)
+    catch(CORBA::Exception&)
     {
         // if the command is quit() and we get exception just simply quit
         if (expression == "quit()")
@@ -474,6 +474,14 @@ QString OMCProxy::getEnvironmentVar(QString name)
 void OMCProxy::loadStandardLibrary()
 {
     sendCommand("loadModel(Modelica)");
+    sendCommand("loadModel(ModelicaServices)");
+
+    //! @todo Remove it once we have removed Media and Fluid from MSL.
+    // just added to remove Fluid and Media Library...
+
+    deleteClass("Modelica.Media");
+    deleteClass("Modelica.Fluid");
+
     if (getResult().contains("true"))
     {
         mIsStandardLibraryLoaded = true;
@@ -734,7 +742,7 @@ bool OMCProxy::loadFile(QString fileName)
 bool OMCProxy::createClass(QString type, QString className)
 {
     sendCommand(type + " " + className + " end " + className + ";");
-    if (getResult().contains("error"))
+    if (getResult().toLower().contains("error"))
         return false;
     else
         return true;
@@ -743,7 +751,7 @@ bool OMCProxy::createClass(QString type, QString className)
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName)
 {
     sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
-    if (getResult().contains("error"))
+    if (getResult().toLower().contains("error"))
         return false;
     else
         return true;
@@ -752,7 +760,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
 bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
 {
     sendCommand("within " + parentClassName + "; " + modelText);
-    if (getResult().contains("error"))
+    if (getResult().toLower().contains("error"))
         return false;
     else
         return true;
@@ -761,7 +769,7 @@ bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
 bool OMCProxy::createModel(QString modelName)
 {
     sendCommand("createModel(" + modelName + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -770,7 +778,7 @@ bool OMCProxy::createModel(QString modelName)
 bool OMCProxy::newModel(QString modelName, QString parentModelName)
 {
     sendCommand("newModel(" + modelName + ", " + parentModelName + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -779,7 +787,7 @@ bool OMCProxy::newModel(QString modelName, QString parentModelName)
 bool OMCProxy::existClass(QString className)
 {
     sendCommand("existClass(" + className + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -845,7 +853,7 @@ QString OMCProxy::list(QString className)
 bool OMCProxy::addClassAnnotation(QString className, QString annotation)
 {
     sendCommand("addClassAnnotation(" + className + ", " + annotation + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -854,7 +862,7 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
 bool OMCProxy::addComponent(QString name, QString className, QString modelName)
 {
     sendCommand("addComponent(" + name + ", " + className + "," + modelName + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -863,7 +871,7 @@ bool OMCProxy::addComponent(QString name, QString className, QString modelName)
 bool OMCProxy::deleteComponent(QString name, QString modelName)
 {
     sendCommand("deleteComponent(" + name + "," + modelName + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
@@ -872,7 +880,7 @@ bool OMCProxy::deleteComponent(QString name, QString modelName)
 bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newName)
 {
     sendCommand("renameComponent(" + modelName + "," + oldName + "," + newName + ")");
-    if (getResult().contains("error"))
+    if (getResult().toLower().contains("error"))
         return false;
     else
         return true;
@@ -881,10 +889,19 @@ bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newNa
 bool OMCProxy::updateComponent(QString name, QString className, QString modelName, QString annotation)
 {
     sendCommand("updateComponent(" + name + "," + className + "," + modelName + "," + annotation + ")");
-    if (getResult().contains("true"))
+    if (getResult().toLower().contains("true"))
         return true;
     else
         return false;
+}
+
+bool OMCProxy::renameComponentInClass(QString modelName, QString oldName, QString newName)
+{
+    sendCommand("renameComponentInClass(" + modelName + "," + oldName + "," + newName + ")");
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
 }
 
 bool OMCProxy::updateConnection(QString from, QString to, QString modelName, QString annotation)
@@ -894,6 +911,29 @@ bool OMCProxy::updateConnection(QString from, QString to, QString modelName, QSt
         return true;
     else
         return false;
+}
+
+bool OMCProxy::setComponentProperties(QString modelName, QString componentName, QString isFinal, QString isFlow,
+                                      QString isProtected, QString isReplaceAble, QString variability, QString isInner,
+                                      QString isOuter, QString causality)
+{
+    sendCommand("setComponentProperties(" + modelName + "," + componentName + ",{" + isFinal + "," + isFlow +
+                "," + isProtected + "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner +
+                "," + isOuter + "}, {\"" + causality + "\"})");
+
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
+}
+
+bool OMCProxy::setComponentComment(QString modelName, QString componentName, QString comment)
+{
+    sendCommand("setComponentComment(" + modelName + "," + componentName + ",\"" + comment + "\")");
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
 }
 
 bool OMCProxy::addConnection(QString from, QString to, QString className)

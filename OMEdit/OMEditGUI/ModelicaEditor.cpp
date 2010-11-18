@@ -89,7 +89,7 @@ void ModelicaEditor::focusOutEvent(QFocusEvent *e)
                 // revert back to last valid block
                 setText(mLastValidText);
                 e->accept();
-                mpParentProjectTab->showModelicaModel();
+                mpParentProjectTab->showIconView(true);
                 break;
             case QMessageBox::RejectRole:
                 document()->setModified(true);

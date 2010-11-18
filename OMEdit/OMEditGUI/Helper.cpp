@@ -34,7 +34,7 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.2";
+QString Helper::applicationVersion = "1.0";
 QString Helper::applicationIntroText = "Open Modelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEdit";
@@ -47,6 +47,13 @@ QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/t
 // Don't randomize the path as then it becomes annoying to remove all dirs
 QString Helper::tmpPath = QString("/tmp/OMEdit");
 #endif
+// We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
+QString Helper::documentationBaseUrl = QString(getenv("OPENMODELICALIBRARY")).replace("\\", "/").append(QString("/Modelica/Images/"));
+QString Helper::readOnly = QString("Read-Only");
+QString Helper::writeAble = QString("Writeable");
+QString Helper::iconView = QString("Icon View");
+QString Helper::diagramView = QString("Diagram View");
+QString Helper::modelicaTextView = QString("Modelica Text View");
 int Helper::viewWidth = 2000;
 int Helper::viewHeight = 2000;
 qreal Helper::globalIconXScale = 0.15;
@@ -55,6 +62,7 @@ qreal Helper::globalDiagramXScale = 1.0;
 qreal Helper::globalDiagramYScale = 1.0;
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
+QSize Helper::buttonIconSize = QSize(20, 20);
 int Helper::headingFontSize = 18;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
@@ -109,6 +117,10 @@ QString GUIMessages::getMessage(int type)
         return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
     case SAVED_MODEL:
         return "Saved %1 %2. File : '%3'";
+    case COMMENT_SAVE_ERROR:
+        return "Following Error has occurred while saving component comment. \n\n %1.";
+    case ATTRIBUTES_SAVE_ERROR:
+        return "Following Error has occurred while saving component attributes. \n\n %1.";
     default:
         return "";
     }

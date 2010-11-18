@@ -42,10 +42,11 @@ class StringHandler
 public:
     StringHandler();
     ~StringHandler();
-    enum IconType {ICON, DIAGRAM};
+    enum IconType {ICON, DIAGRAM, MODELICATEXT};
     enum ModelicaClasses {MODEL, CLASS, CONNECTOR, RECORD, BLOCK, FUNCTION, PACKAGE, PRIMITIVE, TYPE, PARAMETER,
                           CONSTANT, PROTECTED};
     static QString getModelicaClassType(int type);
+    static QString getViewType(int type);
     static QString removeFirstLastCurlBrackets(QString value);
     static QString removeFirstLastBrackets(QString value);
     static QString removeFirstLastQuotes(QString value);

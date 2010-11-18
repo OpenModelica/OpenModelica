@@ -96,7 +96,7 @@ public slots:
     void openProjectTab(QTreeWidgetItem *item, int column);
     void showContextMenu(QPoint point);
     void renameClass();
-    void checkModel();
+    void checkModelicaModel();
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
 };
 
@@ -119,6 +119,7 @@ private:
 
     QAction *mpShowComponentAction;
     QAction *mpViewDocumentationAction;
+    QAction *mpCheckModelAction;
 public:
     LibraryTree(LibraryWidget *pParent = 0);
     ~LibraryTree();
@@ -139,6 +140,7 @@ private slots:
     void showContextMenu(QPoint point);
     void showComponent();
     void viewDocumentation();
+    void checkLibraryModel();
     void loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className);
 protected:
     virtual void mousePressEvent(QMouseEvent *event);

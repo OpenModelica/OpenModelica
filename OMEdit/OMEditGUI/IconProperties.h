@@ -44,7 +44,7 @@ class IconProperties : public QDialog
 public:
     IconProperties(Component *pComponent, QWidget *pParent = 0);
     ~IconProperties();
-    void setUpForm();
+    void setUpDialog();
 
     Component *mpComponent;
 private:
@@ -57,8 +57,8 @@ private:
     QGroupBox *mpComponentGroup;
     QLabel *mpIconNameLabel;
     QLineEdit *mpIconNameTextBox;
-    QLabel *mpIconCommentLabel;
-    QLineEdit *mpIconCommentTextBox;
+    QLabel *mpIconClassLabel;
+    QLabel *mpIconClassTextBox;
     QGroupBox *mpModelGroup;
     QLabel *mpIconModelNameLabel;
     QLabel *mpIconModelNameTextBox;
@@ -71,6 +71,50 @@ private:
     QDialogButtonBox *mpButtonBox;
 public slots:
     void updateIconProperties();
+};
+
+class IconAttributes : public QDialog
+{
+    Q_OBJECT
+public:
+    IconAttributes(Component *pComponent, QWidget *pParent = 0);
+    void setUpDialog();
+    void initializeDialog();
+
+    Component *mpComponent;
+private:
+    QLabel *mpPropertiesHeading;
+    QLabel *mpPixmapLabel;
+    QFrame *mHorizontalLine;
+    QGroupBox *mpTypeGroup;
+    QLabel *mpNameLabel;
+    QLabel *mpNameTextBox;
+    QLabel *mpCommentLabel;
+    QLineEdit *mpCommentTextBox;
+    QGroupBox *mpVariabilityGroup;
+    QButtonGroup *mpVariabilityButtonGroup;
+    QRadioButton *mpConstantRadio;
+    QRadioButton *mpParameterRadio;
+    QRadioButton *mpDiscreteRadio;
+    QRadioButton *mpDefaultRadio;
+    QGroupBox *mpPropertiesGroup;
+    QCheckBox *mpFinalCheckBox;
+    QCheckBox *mpProtectedCheckBox;
+    QCheckBox *mpReplaceAbleCheckBox;
+    QString mIsFlow;
+    QGroupBox *mpCausalityGroup;
+    QButtonGroup *mpCausalityButtonGroup;
+    QRadioButton *mpInputRadio;
+    QRadioButton *mpOutputRadio;
+    QRadioButton *mpNoneRadio;
+    QGroupBox *mpInnerOuterGroup;
+    QCheckBox *mpInnerCheckBox;
+    QCheckBox *mpOuterCheckBox;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
+public slots:
+    void updateIconAttributes();
 };
 
 #endif // ICONPROPERTIES_H

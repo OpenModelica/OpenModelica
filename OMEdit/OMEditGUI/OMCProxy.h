@@ -128,7 +128,12 @@ public:
     bool deleteComponent(QString name, QString modelName);
     bool renameComponent(QString modelName, QString oldName, QString newName);
     bool updateComponent(QString name, QString className, QString modelName, QString annotation);
+    bool renameComponentInClass(QString modelName, QString oldName, QString newName);
     bool updateConnection(QString from, QString to, QString modelName, QString annotation);
+    bool setComponentProperties(QString modelName, QString componentName, QString isFinal, QString isFlow,
+                                QString isProtected, QString isReplaceAble, QString variability, QString isInner,
+                                QString isOuter, QString causality);
+    bool setComponentComment(QString modelName, QString componentName, QString comment);
     bool addConnection(QString from, QString to, QString className);
     bool deleteConnection(QString from, QString to, QString className);
     bool instantiateModel(QString modelName);

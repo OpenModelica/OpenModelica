@@ -78,6 +78,24 @@ QString StringHandler::getModelicaClassType(int type)
     }
 }
 
+QString StringHandler::getViewType(int type)
+{
+    /* swaped icon and diagram to show the user the right text, since in application we call diagram as icon and icon
+        as diagram.......... */
+    switch (type)
+    {
+    case StringHandler::ICON:
+        return "Diagram View";
+    case StringHandler::DIAGRAM:
+        return "Icon View";
+    case StringHandler::MODELICATEXT:
+        return "Modelica Text View";
+    default:
+        // should never be reached
+        return "";
+    }
+}
+
 //! Removes the first and last curly brackest {} from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeFirstLastCurlBrackets(QString value)

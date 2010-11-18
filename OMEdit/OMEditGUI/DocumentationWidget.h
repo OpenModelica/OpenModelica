@@ -47,6 +47,7 @@ private:
 
 public:
     DocumentationWidget(MainWindow *pParent = 0);
+    ~DocumentationWidget();
     void show(QString className);
 
     MainWindow *mpParentMainWindow;
@@ -58,13 +59,20 @@ public:
 class DocumentationViewer : public QWebView
 {
     Q_OBJECT
+private:
+    QUrl mBaseUrl;
 public:
     DocumentationViewer(DocumentationWidget *pParent);
+    void setBaseUrl(QString url);
+    QUrl getBaseUrl();
 
-    DocumentationWidget *mpParent;
+    DocumentationWidget *mpParentDocumentationWidget;
 public slots:
-    void ProcessRequest(QUrl url);
+    void processLinkClick(QUrl url);
     void requestFinished();
+    void processLinkHover(QString link, QString title, QString textContent);
+protected:
+    virtual void mousePressEvent(QMouseEvent *event);
 };
 
 #endif // DOCUMENTATIONWIDGET_H

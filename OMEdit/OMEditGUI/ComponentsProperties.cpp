@@ -45,17 +45,19 @@ ComponentsProperties::ComponentsProperties(QString value)
     this->mIsStream = false;
     this->mIsReplaceable = false;
 
-    this->mVariabilityMap.insert("constant", "Constant");
+    this->mVariabilityMap.insert("constant", "constant");
     this->mVariabilityMap.insert("discrete", "discrete");
     this->mVariabilityMap.insert("parameter", "parameter");
-    this->mVariabilityMap.insert("unspecified", "Default");
+    this->mVariabilityMap.insert("unspecified", "default");
+    this->mVariability.clear();
 
     this->mIsInner = false;
     this->mIsOuter = false;
 
-    this->mCasualityMap.insert("input", "Input");
-    this->mCasualityMap.insert("output", "Output");
-    this->mCasualityMap.insert("unspecified", "None");
+    this->mCasualityMap.insert("input", "input");
+    this->mCasualityMap.insert("output", "output");
+    this->mCasualityMap.insert("unspecified", "none");
+    this->mCasuality.clear();
 
     parseString(value);
 }
@@ -84,7 +86,7 @@ void ComponentsProperties::parseString(QString value)
         return;
 
     if (list.size() > 3)
-        this->mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).compare("protected");
+        this->mIsProtected = StringHandler::removeFirstLastQuotes(list.at(3)).contains("protected");
     else
         return;
 
@@ -114,7 +116,7 @@ void ComponentsProperties::parseString(QString value)
         QMap<QString, QString>::iterator variability_it;
         for (variability_it = this->mVariabilityMap.begin(); variability_it != this->mVariabilityMap.end(); ++variability_it)
         {
-            if (variability_it.key() == StringHandler::removeFirstLastQuotes(list.at(7 + index)));
+            if (variability_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(7 + index))) == 0)
             {
                 this->mVariability = variability_it.value();
                 break;
@@ -137,7 +139,7 @@ void ComponentsProperties::parseString(QString value)
         QMap<QString, QString>::iterator casuality_it;
         for (casuality_it = this->mCasualityMap.begin(); casuality_it != this->mCasualityMap.end(); ++casuality_it)
         {
-            if (casuality_it.key() == StringHandler::removeFirstLastQuotes(list.at(9 + index)));
+            if (casuality_it.key().compare(StringHandler::removeFirstLastQuotes(list.at(9 + index))) == 0)
             {
                 this->mCasuality = casuality_it.value();
                 break;
@@ -158,5 +160,45 @@ QString ComponentsProperties::getName()
 
 QString ComponentsProperties::getComment()
 {
-    return mComment;
+    return StringHandler::removeFirstLastQuotes(mComment);
+}
+
+QString ComponentsProperties::getVariablity()
+{
+    return mVariability;
+}
+
+bool ComponentsProperties::getProtected()
+{
+    return mIsProtected;
+}
+
+bool ComponentsProperties::getFlow()
+{
+    return mIsFlow;
+}
+
+bool ComponentsProperties::getFinal()
+{
+    return mIsFinal;
+}
+
+bool ComponentsProperties::getReplaceable()
+{
+    return mIsReplaceable;
+}
+
+QString ComponentsProperties::getCasuality()
+{
+    return mCasuality;
+}
+
+bool ComponentsProperties::getInner()
+{
+    return mIsInner;
+}
+
+bool ComponentsProperties::getOuter()
+{
+    return mIsOuter;
 }

@@ -59,6 +59,11 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     setLayout(verticalLayout);
 }
 
+DocumentationWidget::~DocumentationWidget()
+{
+    delete mpDocumentationViewer;
+}
+
 void DocumentationWidget::show(QString className)
 {
     mpHeadingLabel->setText(className);    
@@ -78,33 +83,56 @@ void DocumentationWidget::show(QString className)
     documentation = StringHandler::removeFirstLastCurlBrackets(documentation);
     documentation = StringHandler::removeFirstLastQuotes(documentation);
     documentation = documentation.replace("\\\"", "\"");
-    mpDocumentationViewer->setHtml(documentation);
+    documentation = documentation.replace("Modelica://", "Modelica:/");
+    mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
     setVisible(true);
 }
 
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     : QWebView(pParent)
 {
-    mpParent = pParent;
+    mpParentDocumentationWidget = pParent;
+    // set the base url for documentation.
+    setBaseUrl(Helper::documentationBaseUrl);
     // set page font settings
     settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
     settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
     // set page links settings
     page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 
-    connect(this, SIGNAL(linkClicked(QUrl)), SLOT(ProcessRequest(QUrl)));
+    connect(this, SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
+    connect(this->page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
 }
 
-void DocumentationViewer::ProcessRequest(QUrl url)
+void DocumentationViewer::setBaseUrl(QString url)
+{
+    mBaseUrl.setUrl(url);
+}
+
+QUrl DocumentationViewer::getBaseUrl()
+{
+    return mBaseUrl;
+}
+
+void DocumentationViewer::processLinkClick(QUrl url)
 {
     //! @todo
     /* Send all http requests to desktop services for now. If we need to display web pages then we will change it,
        but for now else portion is never reached. */
 
     // if url contains http or mailto: send it to desktop services
-    if ((url.toString().toLower().contains("http")) or (url.toString().toLower().contains("mailto:")))
+    if ((url.toString().startsWith("http")) or (url.toString().startsWith("mailto:")))
     {
         QDesktopServices::openUrl(url);
+    }
+    // if the user has clicked on some Modelica Links like Modelica://
+    else if (url.toString().startsWith("Modelica"))
+    {
+        // remove Modelica:// from link
+        QString className;
+        className = url.toString().mid(10, url.toString().length() - 1);
+        // send the new className to DocumentationWidget
+        mpParentDocumentationWidget->show(className);
     }
     // if it is normal http request then check if its not redirected to https
     else
@@ -128,4 +156,28 @@ void DocumentationViewer::requestFinished()
         this->load(reply->url());
 
     reply->deleteLater();
+}
+
+void DocumentationViewer::processLinkHover(QString link, QString title, QString textContent)
+{
+    Q_UNUSED(title);
+    Q_UNUSED(textContent);
+
+    if (link.isEmpty())
+        mpParentDocumentationWidget->mpParentMainWindow->statusBar->clearMessage();
+    else
+        mpParentDocumentationWidget->mpParentMainWindow->statusBar->showMessage(link);
+}
+
+void DocumentationViewer::mousePressEvent(QMouseEvent *event)
+{
+    // dont allow right click on Documentation Viewer
+    if (event->button() == Qt::LeftButton)
+    {
+        QWebView::mousePressEvent(event);
+    }
+    else if (event->button() == Qt::RightButton)
+    {
+        event->ignore();
+    }
 }

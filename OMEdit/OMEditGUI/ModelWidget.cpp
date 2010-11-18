@@ -131,7 +131,7 @@ void ModelCreator::create()
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
                                  GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                 arg(mpParentMainWindow->mpOMCProxy->getResult()).
+                                 arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
                                  append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
             return;
         }
@@ -144,7 +144,7 @@ void ModelCreator::create()
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
                                   GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                  arg(mpParentMainWindow->mpOMCProxy->getResult()).
+                                  arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
                                   append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
             return;
         }
@@ -571,7 +571,7 @@ void RenameClassWidget::renameClass()
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
                                  GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                 arg(mpParentMainWindow->mpOMCProxy->getResult()).
+                                 arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
                                  append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)),
                                  tr("OK"));
             return;
@@ -580,7 +580,7 @@ void RenameClassWidget::renameClass()
     else
     {
         QMessageBox::critical(this, Helper::applicationName + " - Error",
-                             GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).
+                             GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).append("\n\n").
                              append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)),
                              tr("OK"));
         return;

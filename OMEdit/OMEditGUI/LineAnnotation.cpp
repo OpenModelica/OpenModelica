@@ -103,7 +103,7 @@ LineAnnotation::LineAnnotation(QString shape, Component *pParent)
     QMap<QString, Qt::PenStyle>::iterator it;
     for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
     {
-        if (it.key() == linePattern)
+        if (it.key().compare(linePattern) == 0)
         {
             this->mLinePattern = it.value();
             break;

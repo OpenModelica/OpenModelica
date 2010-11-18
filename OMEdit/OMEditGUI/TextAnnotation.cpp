@@ -112,7 +112,7 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     QMap<QString, Qt::PenStyle>::iterator it;
     for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
     {
-        if (it.key() == linePattern)
+        if (it.key().compare(linePattern) == 0)
         {
             this->mLinePattern = it.value();
             break;
@@ -125,7 +125,7 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     QMap<QString, Qt::BrushStyle>::iterator fill_it;
     for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
     {
-        if (fill_it.key() == fillPattern)
+        if (fill_it.key().compare(fillPattern) == 0)
         {
             this->mFillPattern = fill_it.value();
             break;
