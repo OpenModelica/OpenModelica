@@ -54,7 +54,7 @@ ExpandableConnectors.obj: ExpandableConnectors.mo SCode.sig InstanceHierarchy.si
 ConnectionGraph.obj: ConnectionGraph.mo Util.sig HashTableCG.sig DAEUtil.sig Connect.sig Absyn.sig DAE.sig System.sig Exp.sig Print.sig Debug.sig 
 Convert.obj: Convert.mo DAE.sig Absyn.sig 
 DAE.obj: DAE.mo Values.sig ClassInf.sig Absyn.sig SCode.sig 
-DAELow.obj: DAELow.mo VarTransform.sig Values.sig SCode.sig DAE.sig Absyn.sig Util.sig System.sig Print.sig Exp.sig OptManager.sig RTOpts.sig Env.sig Debug.sig Derive.sig DAEEXT.sig Ceval.sig ClassInf.sig DAEUtil.sig BackendVarTransform.sig Algorithm.sig Builtin.sig Error.sig 
+DAELow.obj: DAELow.mo VarTransform.sig Values.sig SCode.sig DAE.sig Absyn.sig Util.sig System.sig Print.sig Exp.sig OptManager.sig RTOpts.sig Env.sig Debug.sig Derive.sig BackendDAEEXT.sig Ceval.sig ClassInf.sig DAEUtil.sig BackendVarTransform.sig Algorithm.sig Builtin.sig Error.sig 
 DAEUtil.obj: DAEUtil.mo Values.sig SCode.sig Env.sig DAE.sig ClassInf.sig Absyn.sig ValuesUtil.sig Types.sig Util.sig RTOpts.sig ModUtil.sig Print.sig System.sig Exp.sig Dump.sig Error.sig Algorithm.sig Ceval.sig Debug.sig Graphviz.sig 
 Derive.obj: Derive.mo RTOpts.sig DAELow.sig DAEUtil.sig Absyn.sig DAE.sig Util.sig Exp.sig Debug.sig Error.sig 
 Debug.obj: Debug.mo Util.sig Print.sig RTOpts.sig 
@@ -111,7 +111,7 @@ VarTransform.obj: VarTransform.mo SCode.sig HashTable2.sig DAE.sig HashTable3.si
 BackendVarTransform.obj: BackendVarTransform.mo VarTransform.sig DAE.sig DAELow.sig Exp.sig Util.sig 
 Refactor.obj: Refactor.mo Absyn.sig Util.sig Interactive.sig Env.sig Inst.sig 
 DAEQuery.obj: DAEQuery.mo SCode.sig DAELow.sig Util.sig RTOpts.sig System.sig DAEUtil.sig Algorithm.sig Absyn.sig DAE.sig Exp.sig 
-XMLDump.obj: XMLDump.mo Values.sig Static.sig RTOpts.sig SCode.sig DAELow.sig DAE.sig Absyn.sig DAEEXT.sig Util.sig ModUtil.sig Print.sig Dump.sig DAEUtil.sig Algorithm.sig Exp.sig 
+XMLDump.obj: XMLDump.mo Values.sig Static.sig RTOpts.sig SCode.sig DAELow.sig DAE.sig Absyn.sig BackendDAEEXT.sig Util.sig ModUtil.sig Print.sig Dump.sig DAEUtil.sig Algorithm.sig Exp.sig 
 InstanceHierarchy.obj: InstanceHierarchy.mo SCode.sig Types.sig Absyn.sig Util.sig Dump.sig Debug.sig RTOpts.sig 
 InnerOuter.obj: InnerOuter.mo UnitAbsyn.sig SCode.sig Prefix.sig Env.sig DAE.sig ConnectionGraph.sig Connect.sig Absyn.sig VarTransform.sig System.sig Util.sig RTOpts.sig OptManager.sig Lookup.sig Mod.sig Exp.sig Inst.sig PrefixUtil.sig Error.sig Debug.sig Dump.sig ConnectUtil.sig DAEUtil.sig ErrorExt.sig 
 ConnectUtil.obj: ConnectUtil.mo Prefix.sig InnerOuter.sig Env.sig DAE.sig Connect.sig ConnectionGraph.sig Absyn.sig ClassInf.sig Util.sig Static.sig Print.sig Types.sig Exp.sig Lookup.sig Dump.sig Error.sig PrefixUtil.sig DAEUtil.sig Debug.sig 

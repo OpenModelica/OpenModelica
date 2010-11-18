@@ -81,7 +81,7 @@ package XMLDump
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import DAEEXT;
+public import BackendDAEEXT;
 public import Values;
 public import SCode;
 public import RTOpts;
@@ -804,7 +804,7 @@ algorithm
     case ({},_) then ();
     case ((l :: lst),i)
       equation
-        ni = DAEEXT.getLowLink(i);
+        ni = BackendDAEEXT.getLowLink(i);
         dumpStrOpenTagAttr(BLT_BLOCK, ID, intString(i));
         dumpBltInvolvedEquations(l);
         dumpStrCloseTag(BLT_BLOCK);

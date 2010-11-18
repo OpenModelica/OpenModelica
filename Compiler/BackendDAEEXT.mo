@@ -29,13 +29,15 @@
  *
  */
 
-package DAEEXT
-" file:        DAEEXT.mo
-  package:     DAEEXT
-  description: The DAEEXT module is an externally implemented module (in file runtime/daeext.cpp)
-               used for the BLT and index reduction algorithms in \'BackendDAE\'. The implementation
-               mainly consists of several bitvectors implemented using std::vector<bool> since
-               such functionality is not available in MetaModelica Compiler (MMC).
+package BackendDAEEXT
+" file:        BackendDAEEXT.mo
+  package:     BackendDAEEXT
+  description: The BackendDAEEXT module is an externally implemented module (in file 
+               Compiler/runtime/BackendDAEEXT.cpp) used for the BLT and index reduction 
+               algorithms in BackendDAE. 
+               The implementation mainly consists of several bitvectors implemented 
+               using std::vector<bool> since such functionality is not available in 
+               MetaModelica Compiler (MMC).
   
   RCS: $Id$
 "
@@ -193,5 +195,5 @@ public function getF
 
   external "C" ;
 end getF;
-end DAEEXT;
+end BackendDAEEXT;
 

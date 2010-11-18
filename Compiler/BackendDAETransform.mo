@@ -54,7 +54,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
-protected import DAEEXT;
+protected import BackendDAEEXT;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
@@ -140,7 +140,7 @@ algorithm
         (vec1,vec2,dae,m,mt);
     case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,BackendDAE.REMOVE_SIMPLE_EQN())),inFunctions)
       equation
-        DAEEXT.clearDifferentiated();
+        BackendDAEEXT.clearDifferentiated();
         checkMatching(dae, match_opts);
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -469,7 +469,7 @@ algorithm
     case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,derivedAlgs,derivedMultiEqn)
       equation
         (nv == i) = true;
-        DAEEXT.initMarks(nv, nf);
+        BackendDAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
       then
         (ass1_1,ass2_1,dae,m,mt,derivedAlgs,derivedMultiEqn);
@@ -477,7 +477,7 @@ algorithm
     case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         i_1 = i + 1;
-        DAEEXT.initMarks(nv, nf);
+        BackendDAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
         (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, inFunctions,derivedAlgs,derivedMultiEqn);
       then
@@ -514,8 +514,8 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,_,_)
       equation
-        eqn_lst = DAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
-        var_lst = DAEEXT.getMarkedVariables();
+        eqn_lst = BackendDAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
+        var_lst = BackendDAEEXT.getMarkedVariables();
         eqn_str = BackendDump.dumpMarkedEqns(dae, eqn_lst);
         var_str = BackendDump.dumpMarkedVars(dae, var_lst);
         Error.addMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str});
@@ -556,7 +556,7 @@ algorithm
       BackendDAE.Value i;
     case (m,mt,i,ass1,ass2)
       equation
-        DAEEXT.eMark(i) "Side effect" ;
+        BackendDAEEXT.eMark(i) "Side effect" ;
         (ass1_1,ass2_1) = assignOneInEqn(m, mt, i, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -732,7 +732,7 @@ protected function isNotVMarked
   This function succeds for variables that are not marked."
   input Integer i;
 algorithm
-  false := DAEEXT.getVMark(i);
+  false := BackendDAEEXT.getVMark(i);
 end isNotVMarked;
 
 protected function forallUnmarkedVarsInEqnBody
@@ -764,7 +764,7 @@ algorithm
       list<BackendDAE.Value> vars,vs;
     case (m,mt,i,(vars as (v :: vs)),ass1,ass2)
       equation
-        DAEEXT.vMark(v);
+        BackendDAEEXT.vMark(v);
         assarg = getAssigned(v, ass1, ass2);
         (ass1_1,ass2_1) = pathFound(m, mt, assarg, ass1, ass2);
         (ass1_2,ass2_2) = assign(v, i, ass1_1, ass2_1);
@@ -772,7 +772,7 @@ algorithm
         (ass1_2,ass2_2);
     case (m,mt,i,(vars as (v :: vs)),ass1,ass2)
       equation
-        DAEEXT.vMark(v);
+        BackendDAEEXT.vMark(v);
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, vs, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -810,8 +810,8 @@ algorithm
     case (m,mt,ass1,ass2)
       equation
         n = arrayLength(m);
-        DAEEXT.initLowLink(n);
-        DAEEXT.initNumber(n);
+        BackendDAEEXT.initLowLink(n);
+        BackendDAEEXT.initNumber(n);
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
       then
         comps;
@@ -870,7 +870,7 @@ algorithm
         (i,stack,comp);
     case (m,mt,a1,a2,n,i,w,stack,comps)
       equation
-        0 = DAEEXT.getNumber(w);
+        0 = BackendDAEEXT.getNumber(w);
         (i,stack_1,comps) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
         w_1 = w + 1;
         (i,stack_2,comps) = strongConnectMain(m, mt, a1, a2, n, i, w_1, stack_1, comps);
@@ -878,7 +878,7 @@ algorithm
         (i,stack_2,comps);
     case (m,mt,a1,a2,n,i,w,stack,comps)
       equation
-        num = DAEEXT.getNumber(w);
+        num = BackendDAEEXT.getNumber(w);
         (num == 0) = false;
         w_1 = w + 1;
         (i,stack_1,comps) = strongConnectMain(m, mt, a1, a2, n, i, w_1, stack, comps);
@@ -919,8 +919,8 @@ algorithm
     case (m,mt,a1,a2,i,v,stack,comps)
       equation
         i_1 = i + 1;
-        DAEEXT.setNumber(v, i_1)  ;
-        DAEEXT.setLowLink(v, i_1);
+        BackendDAEEXT.setNumber(v, i_1)  ;
+        BackendDAEEXT.setLowLink(v, i_1);
         stack_1 = (v :: stack);
         eqns = reachableNodes(v, m, mt, a1, a2);
         (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, m, mt, a1, a2, i_1, v, stack_1, comps);
@@ -1037,24 +1037,24 @@ algorithm
       array<BackendDAE.Value> a1,a2;
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation
-        0 = DAEEXT.getNumber(w);
+        0 = BackendDAEEXT.getNumber(w);
         (i,stack,comps_1) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
-        lv = DAEEXT.getLowLink(v);
-        lw = DAEEXT.getLowLink(w);
+        lv = BackendDAEEXT.getLowLink(v);
+        lw = BackendDAEEXT.getLowLink(w);
         minv = intMin(lv, lw);
-        DAEEXT.setLowLink(v, minv);
+        BackendDAEEXT.setLowLink(v, minv);
         (i,stack,comps_2) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps_1);
       then
         (i,stack,comps_2);
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation
-        nw = DAEEXT.getNumber(w);
-        nv = DAEEXT.getNumber(v);
+        nw = BackendDAEEXT.getNumber(w);
+        nv = BackendDAEEXT.getNumber(v);
         (nw < nv) = true;
         true = listMember(w, stack);
-        lowlinkv = DAEEXT.getLowLink(v);
+        lowlinkv = BackendDAEEXT.getLowLink(v);
         minv = intMin(nw, lowlinkv);
-        DAEEXT.setLowLink(v, minv);
+        BackendDAEEXT.setLowLink(v, minv);
         (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
       then
         (i,stack,comps_1);
@@ -1097,8 +1097,8 @@ algorithm
       array<BackendDAE.Value> a1,a2;
     case (m,mt,a1,a2,i,v,stack)
       equation
-        lv = DAEEXT.getLowLink(v);
-        nv = DAEEXT.getNumber(v);
+        lv = BackendDAEEXT.getLowLink(v);
+        nv = BackendDAEEXT.getNumber(v);
         (lv == nv) = true;
         (i,stack_1,comps) = checkStack(m, mt, a1, a2, i, v, stack, {});
       then
@@ -1137,8 +1137,8 @@ algorithm
       array<BackendDAE.Value> a1,a2;
     case (m,mt,a1,a2,i,v,(top :: rest),comp)
       equation
-        topn = DAEEXT.getNumber(top);
-        vn = DAEEXT.getNumber(v);
+        topn = BackendDAEEXT.getNumber(top);
+        vn = BackendDAEEXT.getNumber(v);
         (topn >= vn) = true;
         (i,stack_1,comp_1) = checkStack(m, mt, a1, a2, i, v, rest, comp);
       then
@@ -1198,10 +1198,10 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        eqns = DAEEXT.getMarkedEqns();
+        eqns = BackendDAEEXT.getMarkedEqns();
         // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
         // print("\n");
-        diff_eqns = DAEEXT.getDifferentiatedEqns();
+        diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         // print("\n");
@@ -1231,8 +1231,8 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,_,_,_)
       equation
-        eqns = DAEEXT.getMarkedEqns();
-        diff_eqns = DAEEXT.getDifferentiatedEqns();
+        eqns = BackendDAEEXT.getMarkedEqns();
+        diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         es = Util.listMap(eqns_1, intString);
         es_1 = Util.stringDelimitList(es, ", ");
@@ -1243,7 +1243,7 @@ algorithm
         print("differentiated equations:");
         BackendDump.printEquations(diff_eqns,dae);
         print("Variables :");
-        print(Util.stringDelimitList(Util.listMap(DAEEXT.getMarkedVariables(),intString),", "));
+        print(Util.stringDelimitList(Util.listMap(BackendDAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
       then
         fail();
@@ -2491,7 +2491,7 @@ algorithm
         Debug.fprint("bltdump", "\n");
         eqns_1 = BackendEquation.equationAdd(eqns, eqn_1);
         leneqns = BackendDAEUtil.equationSize(eqns_1);
-        DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
+        BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);
@@ -2514,7 +2514,7 @@ algorithm
         Debug.fprint("bltdump", str) "  print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
         leneqns = BackendDAEUtil.equationSize(eqns);
-        DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
+        BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);        

@@ -78,7 +78,7 @@ SRCMO= Absyn.mo \
 	IOStream.mo 
 
 ALLMO = $(SRCMO) \
-	DAEEXT.mo \
+	BackendDAEEXT.mo \
 	Print.mo \
 	RTOpts.mo \
 	System.mo \

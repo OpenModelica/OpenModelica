@@ -45,7 +45,7 @@ ClassLoader.obj: ClassLoader.mo Absyn.sig Util.sig Print.sig System.sig Interact
 Connect.obj: Connect.mo Static.sig Prefix.sig Exp.sig Env.sig DAE.sig Util.sig Types.sig Print.sig Absyn.sig Lookup.sig
 Convert.obj: Convert.mo Values.sig Types.sig Util.sig Exp.sig DAE.sig Algorithm.sig Absyn.sig ClassInf.sig SCode.sig
 DAE.obj: DAE.mo Values.sig Types.sig Exp.sig ClassInf.sig Algorithm.sig Absyn.sig Util.sig RTOpts.sig Print.sig Graphviz.sig ModUtil.sig SCode.sig Env.sig Dump.sig Debug.sig Ceval.sig Error.sig
-DAELow.obj: DAELow.mo Values.sig Exp.sig DAE.sig Absyn.sig Algorithm.sig VarTransform.sig Util.sig System.sig Types.sig SCode.sig Print.sig RTOpts.sig Env.sig Error.sig Derive.sig DAEEXT.sig Debug.sig Builtin.sig Ceval.sig Dump.sig
+DAELow.obj: DAELow.mo Values.sig Exp.sig DAE.sig Absyn.sig Algorithm.sig VarTransform.sig Util.sig System.sig Types.sig SCode.sig Print.sig RTOpts.sig Env.sig Error.sig Derive.sig BackendDAEEXT.sig Debug.sig Builtin.sig Ceval.sig Dump.sig
 Derive.obj: Derive.mo Exp.sig Absyn.sig DAELow.sig Util.sig Debug.sig Error.sig
 Debug.obj: Debug.mo Util.sig Print.sig RTOpts.sig
 Dump.obj: Dump.mo Interactive.sig Absyn.sig Util.sig Print.sig Debug.sig

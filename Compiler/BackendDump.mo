@@ -47,7 +47,7 @@ protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendEquation;
 protected import ComponentReference;
-protected import DAEEXT;
+protected import BackendDAEEXT;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -1329,7 +1329,7 @@ algorithm
     case ({},_) then ();
     case ((l :: lst),i)
       equation
-        ni = DAEEXT.getLowLink(i);
+        ni = BackendDAEEXT.getLowLink(i);
         print("{");
         ls = Util.listMap(l, intString);
         s = Util.stringDelimitList(ls, ", ");

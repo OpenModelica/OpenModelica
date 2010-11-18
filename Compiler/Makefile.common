@@ -116,7 +116,7 @@ Dependency.mo \
 IOStream.mo
 
 # These are externally defined MO modules
-ALLMO = $(SRCMO) DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
+ALLMO = $(SRCMO) BackendDAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo \
 		OptManager.mo UnitParserExt.mo SimulationResults.mo IOStreamExt.mo Database.mo  
 

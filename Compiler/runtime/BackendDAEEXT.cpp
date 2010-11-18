@@ -28,6 +28,18 @@
  *
  */
 
+/*
+ * file:        BackendDAEEXT.cpp
+ * description: The BackendDAEEXT.cpp file is the external implementation of
+ *              MetaModelica package: Compiler/BackendDAEEXT.mo.
+ *              This is used for the BLT and index reduction algorithms in BackendDAE.
+ *              The implementation mainly consists of several bitvectors implemented
+ *              using std::vector<bool> since such functionality is not available in
+ *              MetaModelica Compiler (MMC).
+ *
+ * RCS: $Id$
+ *
+ */
 
 #include <iostream>
 #include <fstream>
@@ -54,11 +66,11 @@ extern "C"
   std::vector<int> v;
   std::vector<int> f;
 
-  void DAEEXT_5finit(void)
+  void BackendDAEEXT_5finit(void)
   {
   }
   
-  RML_BEGIN_LABEL(DAEEXT__initMarks)
+  RML_BEGIN_LABEL(BackendDAEEXT__initMarks)
   {
 
     int nvars = RML_UNTAGFIXNUM(rmlA0);
@@ -70,7 +82,7 @@ extern "C"
   } 
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__eMark)
+  RML_BEGIN_LABEL(BackendDAEEXT__eMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     e_mark.insert(e_mark.begin(),i);
@@ -78,7 +90,7 @@ extern "C"
   }
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__vMark)
+  RML_BEGIN_LABEL(BackendDAEEXT__vMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     v_mark.insert(v_mark.begin(),i);
@@ -86,7 +98,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getVMark)
+  RML_BEGIN_LABEL(BackendDAEEXT__getVMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
 
@@ -95,7 +107,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getEMark)
+  RML_BEGIN_LABEL(BackendDAEEXT__getEMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     //cout << "get_e_mark[" << i << "] == " << e_mark[i-1] << endl;
@@ -104,7 +116,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getMarkedEqns)
+  RML_BEGIN_LABEL(BackendDAEEXT__getMarkedEqns)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -115,7 +127,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__markDifferentiated)
+  RML_BEGIN_LABEL(BackendDAEEXT__markDifferentiated)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     differentiated_mark.insert(differentiated_mark.begin(),i);
@@ -123,14 +135,14 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__clearDifferentiated)
+  RML_BEGIN_LABEL(BackendDAEEXT__clearDifferentiated)
   {
     differentiated_mark.clear();
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getDifferentiatedEqns)
+  RML_BEGIN_LABEL(BackendDAEEXT__getDifferentiatedEqns)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -141,7 +153,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getMarkedVariables)
+  RML_BEGIN_LABEL(BackendDAEEXT__getMarkedVariables)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -152,7 +164,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__initLowLink)
+  RML_BEGIN_LABEL(BackendDAEEXT__initLowLink)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init lowlink n= " << nvars << endl;
@@ -171,7 +183,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__initNumber)
+  RML_BEGIN_LABEL(BackendDAEEXT__initNumber)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init number n= " << nvars << endl;
@@ -190,7 +202,7 @@ extern "C"
   } 
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__setLowLink)
+  RML_BEGIN_LABEL(BackendDAEEXT__setLowLink)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -199,7 +211,7 @@ extern "C"
   }
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__setNumber)
+  RML_BEGIN_LABEL(BackendDAEEXT__setNumber)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -208,7 +220,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getNumber)
+  RML_BEGIN_LABEL(BackendDAEEXT__getNumber)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     rmlA0 = (void*)mk_icon(number[i-1]);
@@ -216,7 +228,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getLowLink)
+  RML_BEGIN_LABEL(BackendDAEEXT__getLowLink)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     rmlA0 = (void*)mk_icon(lowlink[i-1]);
@@ -225,7 +237,7 @@ extern "C"
   RML_END_LABEL
 
 
-  RML_BEGIN_LABEL(DAEEXT__dumpMarkedEquations)
+  RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedEquations)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked equations" << endl
@@ -237,7 +249,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__dumpMarkedVariables)
+  RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedVariables)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked variables" << endl
@@ -250,7 +262,7 @@ extern "C"
   RML_END_LABEL
 
 /*
-  RML_BEGIN_LABEL(DAEEXT__vectorSetnth)
+  RML_BEGIN_LABEL(BackendDAEEXT__vectorSetnth)
   {
     void* vec = rmlA0;
     int pos = RML_UNTAGFIXNUM(rmlA1);
@@ -264,7 +276,7 @@ extern "C"
   RML_END_LABEL
 */
 
-  RML_BEGIN_LABEL(DAEEXT__initV)
+  RML_BEGIN_LABEL(BackendDAEEXT__initV)
   {
     int size = RML_UNTAGFIXNUM(rmlA1);
     v.reserve(size);
@@ -272,7 +284,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__initF)
+  RML_BEGIN_LABEL(BackendDAEEXT__initF)
   {
     int size = RML_UNTAGFIXNUM(rmlA1);
     f.reserve(size);
@@ -280,7 +292,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__setF)
+  RML_BEGIN_LABEL(BackendDAEEXT__setF)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -290,7 +302,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getF)
+  RML_BEGIN_LABEL(BackendDAEEXT__getF)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     assert(i <= f.size());
@@ -299,7 +311,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__setV)
+  RML_BEGIN_LABEL(BackendDAEEXT__setV)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -309,7 +321,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__getV)
+  RML_BEGIN_LABEL(BackendDAEEXT__getV)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     assert(i <= v.size());
