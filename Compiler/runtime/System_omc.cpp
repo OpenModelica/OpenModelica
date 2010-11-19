@@ -167,4 +167,62 @@ extern const char* System_groupDelimiter()
   return CONFIG_GROUP_DELIMITER;
 }
 
+extern int System_strncmp(const char *str1, const char *str2, int len)
+{
+  int res= strncmp(str1,str2,len);
+  /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
+  if      (res>0) res =  1;
+  else if (res<0) res = -1;
+  return res;
+}
+
+extern int System_strcmp(const char *str1, const char *str2)
+{
+  int res = strcmp(str1,str2);
+  /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
+  if      (res>0) res =  1;
+  else if (res<0) res = -1;
+  return res;
+}
+
+extern int System_getHasExpandableConnectors()
+{
+  return hasExpandableConnector;
+}
+
+extern void System_setHasExpandableConnectors(int b)
+{
+  hasExpandableConnector = b;
+}
+
+extern int System_hasInnerOuterDefinitions()
+{
+  return hasInnerOuterDefinitions;
+}
+
+extern void System_setHasInnerOuterDefinitions(int b)
+{
+  hasInnerOuterDefinitions = b;
+}
+
+extern void* System_strtok(const char *str0, const char *delimit)
+{
+  char *s;
+  void *res = mmc_mk_nil();
+  char *str = strdup(str0);
+  s=strtok(str,delimit);
+  if (s == NULL)
+  {
+    free(str);
+    throw 1;
+  }
+  res = mmc_mk_cons(mmc_mk_scon(s),res);
+  while (s=strtok(NULL,delimit))
+  {
+    res = mmc_mk_cons(mmc_mk_scon(s),res);
+  }
+  free(str);
+  return listReverse(res);
+}
+
 }

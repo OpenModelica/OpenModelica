@@ -95,11 +95,14 @@ static char *linker = (char*) DEFAULT_LINKER;
 static char *cflags = (char*) DEFAULT_CFLAGS;
 static char *ldflags= (char*) DEFAULT_LDFLAGS;
 
+static int hasExpandableConnector = 0;
+static int hasInnerOuterDefinitions = 0;
+
 /*
  * Common implementations
  */
 
-static int set_cc(char *str)
+extern int SystemImpl__setCCompiler(const char *str)
 {
   size_t len = strlen(str);
   if (cc != NULL && cc != DEFAULT_CC) {
@@ -111,7 +114,7 @@ static int set_cc(char *str)
   return 0;
 }
 
-static int set_cxx(char *str)
+extern int SystemImpl__setCXXCompiler(const char *str)
 {
   size_t len = strlen(str);
   if (cxx != NULL && cxx != DEFAULT_CXX) {
@@ -123,7 +126,7 @@ static int set_cxx(char *str)
   return 0;
 }
 
-static int set_linker(char *str)
+extern int SystemImpl__setLinker(const char *str)
 {
   size_t len = strlen(str);
   if (linker != NULL && linker != DEFAULT_LINKER) {
@@ -135,7 +138,7 @@ static int set_linker(char *str)
   return 0;
 }
 
-static int set_cflags(char *str)
+extern int SystemImpl__setCFlags(const char *str)
 {
   size_t len = strlen(str);
   if (cflags != NULL && cflags != DEFAULT_CFLAGS) {
@@ -147,7 +150,7 @@ static int set_cflags(char *str)
   return 0;
 }
 
-static int set_ldflags(char *str)
+extern int SystemImpl__setLDFlags(const char *str)
 {
   size_t len = strlen(str);
   if (ldflags != NULL && ldflags != DEFAULT_LDFLAGS) {
@@ -159,7 +162,7 @@ static int set_ldflags(char *str)
   return 0;
 }
 
-int SystemImpl__regularFileExists(const char* str)
+extern int SystemImpl__regularFileExists(const char* str)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   int ret_val;
@@ -381,6 +384,44 @@ double SystemImpl__time()
 {
   clock_t cl = clock();
   return (double)cl / (double)CLOCKS_PER_SEC;
+}
+
+extern char* SystemImpl__pwd()
+{
+  char buf[MAXPATHLEN];
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char* buf2;
+  LPTSTR bufPtr=buf;
+  DWORD bufLen = MAXPATHLEN;
+  GetCurrentDirectory(bufLen,bufPtr);
+
+  /* Make sure windows paths use fronslash and not backslash */
+  return _replace(buf,"\\","/"); // free this result later
+#else
+  if (NULL == getcwd(buf,MAXPATHLEN)) {
+    fprintf(stderr, "System.pwd failed\n");
+    return NULL;
+  }
+  return strdup(buf); // to mimic Windows behaviour
+#endif
+}
+
+extern int SystemImpl__directoryExists(const char *str)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  WIN32_FIND_DATA FileData;
+  HANDLE sh;
+  sh = FindFirstFile(str, &FileData);
+  if (sh == INVALID_HANDLE_VALUE)
+    return 0;
+  FindClose(sh);
+  return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#else
+  struct stat buf;
+  if (stat(str, &buf))
+    return 0;
+  return (buf.st_mode & S_IFDIR) != 0;
+#endif
 }
 
 #ifdef __cplusplus

@@ -266,6 +266,9 @@ RML_BEGIN_LABEL(System__strncmp)
   char *str2 = RML_STRINGDATA(rmlA1);
   rml_sint_t len = RML_UNTAGFIXNUM(rmlA2);
   int res= strncmp(str,str2,len);
+  /* adrpo: 2010-10-07, return -1, 0, +1 so we can pattern match on it directly! */
+  if      (res>0) res =  1;
+  else if (res<0) res = -1;
 
   rmlA0 = (void*) mk_icon(res);
 
@@ -332,8 +335,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setCCompiler)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  if (set_cc(str)) {
+  const char* str = RML_STRINGDATA(rmlA0);
+  if (SystemImpl__setCCompiler(str)) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -351,8 +354,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setCXXCompiler)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  if (set_cxx(str)) {
+  const char* str = RML_STRINGDATA(rmlA0);
+  if (SystemImpl__setCXXCompiler(str)) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -370,8 +373,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setLinker)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  if (set_linker(str)) {
+  const char* str = RML_STRINGDATA(rmlA0);
+  if (SystemImpl__setLinker(str)) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -389,8 +392,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setCFlags)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  if (set_cflags(str)) {
+  const char* str = RML_STRINGDATA(rmlA0);
+  if (SystemImpl__setCFlags(str)) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -408,8 +411,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setLDFlags)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  if (set_ldflags(str)) {
+  const char* str = RML_STRINGDATA(rmlA0);
+  if (SystemImpl__setLDFlags(str)) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -921,11 +924,6 @@ void free_function(modelica_ptr_t func)
 
 /*
  * @author: adrpo
- * side effect to detect if we have expandable conenctors in a program
- */
-int hasExpandableConnector = 0;
-/*
- * @author: adrpo
  * side effect to set if we have expandable conenctors in a program
  */
 RML_BEGIN_LABEL(System__getHasExpandableConnectors)
@@ -945,11 +943,6 @@ RML_BEGIN_LABEL(System__setHasExpandableConnectors)
 }
 RML_END_LABEL
 
-/*
- * @author: adrpo
- * side effect to detect if we have expandable conenctors in a program
- */
-int hasInnerOuterDefinitions = 0;
 /*
  * @author: adrpo
  * side effect to set if we have expandable conenctors in a program
@@ -1174,23 +1167,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  char* buf2;
-  LPTSTR bufPtr=buf;
-  DWORD bufLen = MAXPATHLEN;
-  GetCurrentDirectory(bufLen,bufPtr);
-
-  /* Make sure windows paths use fronslash and not backslash */
-  buf2=_replace(buf,"\\","/");
-
-  rmlA0 = (void*) mk_scon(buf2);
-  free(buf2);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 /* RML_BEGIN_LABEL(System__modelicapath) */
 /* { */
 /*   char *path = getenv("OPENMODELICALIBRARY"); */
@@ -1360,33 +1336,6 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
   free(strSearch);
   free(tmpSearchString);
   free(retString);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__directoryExists)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
-  void *res;
-  WIN32_FIND_DATA FileData;
-  HANDLE sh;
-  if (str == NULL)
-    RML_TAILCALLK(rmlFC);
-  sh = FindFirstFile(str, &FileData);
-  if (sh == INVALID_HANDLE_VALUE) {
-    ret_val = 1;
-  }
-  else {
-    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-      ret_val = 1;
-    }
-    else {
-      ret_val = 0;
-    }
-    FindClose(sh);
-  }
-  rmlA0 = (void*) mk_icon(!ret_val);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1938,20 +1887,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  if (NULL == getcwd(buf,MAXPATHLEN)) {
-    fprintf(stderr, "System.pwd failed\n");
-    rmlA0 = (void*) mk_scon("$invalid_path$");
-  } else {
-    rmlA0 = (void*) mk_scon(buf);
-  }
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 /* RML_BEGIN_LABEL(System__modelicapath) */
 /* { */
 /*   char *path = getenv("OPENMODELICALIBRARY"); */
@@ -2117,32 +2052,6 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     rmlA0 = (void*) mk_scon(retString);
     free(retString);
     RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__directoryExists)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
-  struct stat buf;
-
-  if (str == NULL)
-    RML_TAILCALLK(rmlFC);
-
-  ret_val = stat(str, &buf);
-  if (ret_val != 0 ) {
-    ret_val = 1;
-  }
-  else {
-    if (buf.st_mode & S_IFDIR) {
-      ret_val = 0;
-    }
-    else {
-      ret_val = 1;
-    }
-  }
-  rmlA0 = (void*) mk_icon(!ret_val);
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2412,3 +2321,20 @@ RML_BEGIN_LABEL(System__groupDelimiter)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__pwd)
+{
+  char *buf = SystemImpl__pwd();
+  if (buf == NULL) RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_scon(buf);
+  free(buf);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__directoryExists)
+{
+  const char* str = RML_STRINGDATA(rmlA0);
+  rmlA0 = (void*) mk_icon(SystemImpl__directoryExists(str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

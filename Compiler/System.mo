@@ -139,7 +139,7 @@ end strtok;
 public function setCCompiler
   input String inString;
 
-  external "C" System_setCCompiler(inString) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setCCompiler(inString) annotation(Library = "omcruntime");
 end setCCompiler;
 
 public function getCCompiler
@@ -151,7 +151,7 @@ end getCCompiler;
 public function setCFlags
   input String inString;
 
-  external "C" System_setCFlags(inString) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setCFlags(inString) annotation(Library = "omcruntime");
 end setCFlags;
 
 public function getCFlags
@@ -163,7 +163,7 @@ end getCFlags;
 public function setCXXCompiler
   input String inString;
 
-  external "C" System_setCXXCompiler(inString) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setCXXCompiler(inString) annotation(Library = "omcruntime");
 end setCXXCompiler;
 
 public function getCXXCompiler
@@ -175,7 +175,7 @@ end getCXXCompiler;
 public function setLinker
   input String inString;
 
-  external "C" System_setLinker(inString) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setLinker(inString) annotation(Library = "omcruntime");
 end setLinker;
 
 public function getLinker
@@ -187,7 +187,7 @@ end getLinker;
 public function setLDFlags
   input String inString;
 
-  external "C" System_setLDFlags(inString) annotation(Library = "omcruntime");
+  external "C" SystemImpl__setLDFlags(inString) annotation(Library = "omcruntime");
 end setLDFlags;
 
 public function getLDFlags
@@ -236,8 +236,8 @@ public function freeLibrary
 end freeLibrary;
 
 public function sendData
-  input String inString1;
-  input String inString2; //interpolation
+  input String data;
+  input String interpolation;
   input String title;
   input Boolean legend;
   input Boolean grid;
@@ -247,7 +247,7 @@ public function sendData
   input String yLabel;
   input Boolean points;
   input String range;
-  external "C" System_sendData(inString1,inString2,title,legend,grid,logX,logY,xLabel,yLabel,points,range) annotation(Library = "omcruntime");
+  external "C" emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range) annotation(Library = "omcruntime");
 end sendData;
 
 public function enableSendData
@@ -267,9 +267,9 @@ public function setVariableFilter
 end setVariableFilter;
 
 public function sendData2
-  input String inString1;
-  input String inString2;
-  external "C" System_sendData2(inString1,inString2) annotation(Library = "omcruntime");
+  input String info;
+  input String data;
+  external "C" emulateStreamData2(info, data, 7778) annotation(Library = "omcruntime");
 end sendData2;
 
 public function writeFile
@@ -307,12 +307,12 @@ end systemCall;
 public function cd
   input String inString;
   output Integer outInteger;
-  external "C" outInteger=System_cd(inString) annotation(Library = "omcruntime");
+  external "C" outInteger=chdir(inString) annotation(Library = "omcruntime");
 end cd;
 
 public function pwd
   output String outString;
-  external "C" outString=System_pwd() annotation(Library = "omcruntime");
+  external "C" outString=SystemImpl__pwd() annotation(Library = "omcruntime");
 end pwd;
 
 public function readEnv "Reads the environment variable given as string, fails if variable not found"
@@ -378,7 +378,7 @@ end getPackageFileNames;
 public function directoryExists
   input String inString;
   output Boolean outBool;
-  external "C" outBool=System_directoryExists(inString) annotation(Library = "omcruntime");
+  external "C" outBool=SystemImpl__directoryExists(inString) annotation(Library = "omcruntime");
 end directoryExists;
 
 public function platform
