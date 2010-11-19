@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -28,14 +28,32 @@
  *
  */
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
 #include <stdio.h>
-#include <assert.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <stdlib.h>
-#endif
+
+extern "C" {
+
+extern const char* Corba_waitForCommand()
+{
+  fprintf(stderr, "Corba NYI\n");
+  throw 1;
+}
+
+extern void Corba_initialize()
+{
+  fprintf(stderr, "Corba NYI\n");
+  throw 1;
+}
+
+extern void Corba_close()
+{
+  fprintf(stderr, "Corba NYI\n");
+  throw 1;
+}
+
+extern void Corba_sendreply(const char* _inString)
+{
+  fprintf(stderr, "Corba NYI\n");
+  throw 1;
+}
+
+}

@@ -28,14 +28,40 @@
  *
  */
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <stdio.h>
-#include <assert.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <stdlib.h>
-#endif
+#include "socketimpl.c"
+
+/* TODO: Add the Unix implementation */
+
+extern "C" {
+
+extern int Socket_waitforconnect(int _inInteger)
+{
+  fprintf(stderr, "Socket NYI\n");
+  throw 1;
+}
+
+extern const char* Socket_handlerequest(int _inInteger)
+{
+  fprintf(stderr, "Socket NYI\n");
+  throw 1;
+}
+
+extern void Socket_cleanup()
+{
+  fprintf(stderr, "Socket NYI\n");
+  throw 1;
+}
+
+extern void Socket_close(int _inInteger)
+{
+  fprintf(stderr, "Socket NYI\n");
+  throw 1;
+}
+
+extern void Socket_sendreply(int _inInteger, const char* _inString)
+{
+  fprintf(stderr, "Socket NYI\n");
+  throw 1;
+}
+
+}
