@@ -597,7 +597,8 @@ CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWind
     setMinimumSize(300, 100);
     setModal(true);
 
-    mpCheckResultLabel = new QLabel(tr(""));
+    mpCheckResultLabel = new QTextEdit(tr(""));
+    mpCheckResultLabel->setReadOnly(true);
     mpCheckResultLabel->setText(StringHandler::removeFirstLastQuotes(
                                 mpParentMainWindow->mpOMCProxy->checkModel(mNameStructure)));
     // Create the button

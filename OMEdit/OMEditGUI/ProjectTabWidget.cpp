@@ -1148,8 +1148,6 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
     connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
     connect(mpParentMainWindow->mpLibrary->mpModelicaTree, SIGNAL(nodeDeleted()), SLOT(updateTabIndexes()));
-    connect(mpParentMainWindow->mpLibrary->mpLibraryTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)),
-            SLOT(addDiagramViewTab(QTreeWidgetItem*,int)));
 }
 
 ProjectTabWidget::~ProjectTabWidget()
@@ -1298,14 +1296,12 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
 
-    mpParentMainWindow->setCursor(Qt::WaitCursor);
     Component *diagram;
     QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->toolTip(0));
     diagram = new Component(result, newTab->mModelNameStructure, newTab->mModelNameStructure,
                             QPointF (0,0), StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
                             newTab->mpDiagramGraphicsView);
     setCurrentWidget(newTab);
-    mpParentMainWindow->unsetCursor();
 }
 
 //! Saves current project.
@@ -1563,7 +1559,12 @@ void ProjectTabWidget::resetZoom()
 {
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
-        pCurrentTab->mpGraphicsView->resetZoom();
+    {
+        if (pCurrentTab->mpGraphicsView->isVisible())
+            pCurrentTab->mpGraphicsView->resetZoom();
+        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+            pCurrentTab->mpDiagramGraphicsView->resetZoom();
+    }
 }
 
 //! Tells the current tab to increase its zoom factor.
@@ -1573,7 +1574,12 @@ void ProjectTabWidget::zoomIn()
 {
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
-        pCurrentTab->mpGraphicsView->zoomIn();
+    {
+        if (pCurrentTab->mpGraphicsView->isVisible())
+            pCurrentTab->mpGraphicsView->zoomIn();
+        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+            pCurrentTab->mpDiagramGraphicsView->zoomIn();
+    }
 }
 
 //! Tells the current tab to decrease its zoom factor.
@@ -1583,7 +1589,12 @@ void ProjectTabWidget::zoomOut()
 {
     ProjectTab *pCurrentTab = getCurrentTab();
     if (pCurrentTab)
-        pCurrentTab->mpGraphicsView->zoomOut();
+    {
+        if (pCurrentTab->mpGraphicsView->isVisible())
+            pCurrentTab->mpGraphicsView->zoomOut();
+        else if (pCurrentTab->mpDiagramGraphicsView->isVisible())
+            pCurrentTab->mpDiagramGraphicsView->zoomOut();
+    }
 }
 
 void ProjectTabWidget::updateTabIndexes()

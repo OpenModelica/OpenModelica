@@ -161,7 +161,7 @@ public:
 private:
     QString mName;
     QString mNameStructure;
-    QLabel *mpCheckResultLabel;
+    QTextEdit *mpCheckResultLabel;
     QPushButton *mpOkButton;
 };
 

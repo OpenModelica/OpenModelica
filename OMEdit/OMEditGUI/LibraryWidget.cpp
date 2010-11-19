@@ -335,6 +335,7 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)), SLOT(collapseLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+    connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showComponent(QTreeWidgetItem*,int)));
 }
 
 LibraryTree::~LibraryTree()
@@ -563,10 +564,19 @@ void LibraryTree::showContextMenu(QPoint point)
     }
 }
 
+void LibraryTree::showComponent(QTreeWidgetItem *item, int column)
+{
+    Q_UNUSED(column);
+    mpParentLibraryWidget->mSelectedLibraryNode = item;
+    showComponent();
+}
+
 void LibraryTree::showComponent()
 {
     ProjectTabWidget *pProjectTabs = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs;
+    setCursor(Qt::WaitCursor);
     pProjectTabs->addDiagramViewTab(mpParentLibraryWidget->mSelectedLibraryNode, 0);
+    unsetCursor();
 }
 
 void LibraryTree::viewDocumentation()
@@ -587,9 +597,9 @@ void LibraryTree::checkLibraryModel()
 void LibraryTree::loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className)
 {
     QString result;
-    result = mpParentLibraryWidget->mpLibraryLoaderOMCProxy->getIconAnnotation(className);
+    result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(className);
     LibraryComponent *libComponent = new LibraryComponent(result, className,
-                                                          mpParentLibraryWidget->mpLibraryLoaderOMCProxy);
+                                                          mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
 
     treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
     mpParentLibraryWidget->addComponentObject(libComponent);
@@ -659,10 +669,6 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
     mpGrid->addWidget(mpLibraryTabs);
-
-    // create an OMC Instance for library loading thread
-    mpLibraryLoaderOMCProxy = new OMCProxy(mpParentMainWindow, false);
-    mpLibraryLoaderOMCProxy->loadStandardLibrary();
 
     setLayout(mpGrid);
 }

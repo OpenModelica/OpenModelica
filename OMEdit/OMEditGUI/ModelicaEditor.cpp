@@ -37,6 +37,8 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     : QTextEdit(pParent)
 {
     mpParentProjectTab = pParent;
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
 }
 

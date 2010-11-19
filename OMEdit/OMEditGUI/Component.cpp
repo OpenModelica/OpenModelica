@@ -217,12 +217,12 @@ Component::~Component()
         delete shape;
 
     // delete the list of all components
-    foreach(Component *component, mpComponentsList)
-        delete component;
+//    foreach(Component *component, mpComponentsList)
+//        delete component;
 
-    // delete the list of all inherited components
-    foreach(Component *component, mpInheritanceList)
-        delete component;
+//    // delete the list of all inherited components
+//    foreach(Component *component, mpInheritanceList)
+//        delete component;
 }
 
 //! Parses the result of getIconAnnotation command.

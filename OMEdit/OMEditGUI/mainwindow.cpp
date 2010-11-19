@@ -174,9 +174,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         // Close the OMC Connection
         this->mpOMCProxy->stopServer();
         delete mpOMCProxy;
-        // Close the Library Loader OMC Connection
-        this->mpLibrary->mpLibraryLoaderOMCProxy->stopServer();
-        delete this->mpLibrary->mpLibraryLoaderOMCProxy;
         event->accept();
     }
     else
@@ -424,11 +421,6 @@ void MainWindow::createToolbars()
 //    editToolBar->addAction(copyAction);
 //    editToolBar->addAction(pasteAction);
 
-    simulationToolBar = addToolBar(tr("Simulation"));
-    simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-    simulationToolBar->addAction(simulationAction);
-    simulationToolBar->addAction(plotAction);
-
     viewToolBar = addToolBar(tr("View Toolbar"));
     viewToolBar->setAllowedAreas(Qt::TopToolBarArea);
     viewToolBar->addAction(gridLinesAction);
@@ -438,6 +430,11 @@ void MainWindow::createToolbars()
     viewToolBar->addAction(zoomOutAction);
     viewToolBar->addSeparator();
     viewToolBar->addAction(checkModelAction);
+
+    simulationToolBar = addToolBar(tr("Simulation"));
+    simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    simulationToolBar->addAction(simulationAction);
+    simulationToolBar->addAction(plotAction);
 }
 
 //! Open Simulation Window
@@ -553,8 +550,14 @@ void MainWindow::checkModel()
 
 void MainWindow::openUserManual()
 {
-    QString userManualPath = QString(Helper::OpenModelicaHome.replace("\\", "/"))
+    QString userManualPath;
+    #ifdef WIN32
+    userManualPath = QString(Helper::OpenModelicaHome.replace("\\", "/"))
                              .append("/share/omedit/OMEdit-UserManual.pdf");
+    #else
+    userManualPath = QString(Helper::OpenModelicaHome.replace("\\", "/"))
+                             .append("/share/doc/omedit/OMEdit-UserManual.pdf");
+    #endif
     QDesktopServices::openUrl(userManualPath);
 }
 

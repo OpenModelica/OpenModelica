@@ -138,6 +138,7 @@ private slots:
     void expandLib(QTreeWidgetItem *item);
     void collapseLib(QTreeWidgetItem *item);
     void showContextMenu(QPoint point);
+    void showComponent(QTreeWidgetItem *item, int column);
     void showComponent();
     void viewDocumentation();
     void checkLibraryModel();
@@ -153,7 +154,6 @@ public:
     LibraryTree *mpLibraryTree;
     ModelicaTree *mpModelicaTree;
     QTabWidget *mpLibraryTabs;
-    OMCProxy *mpLibraryLoaderOMCProxy;
     //Member functions
     LibraryWidget(MainWindow *parent = 0);
     ~LibraryWidget();
