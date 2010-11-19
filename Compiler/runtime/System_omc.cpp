@@ -325,4 +325,9 @@ extern void System_freeLibrary(int _inLibHandle)
   throw 1;
 }
 
+extern int System_getHasSendDataSupport()
+{
+  return CONFIG_WITH_SENDDATA;
+}
+
 }

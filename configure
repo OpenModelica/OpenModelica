@@ -610,6 +610,7 @@ CC
 RML_TRACE
 EXE
 QMAKE
+WITH_SENDDATA
 LIBSENDDATA_LDFLAGS
 LIBSENDDATA
 HAVE_COIN
@@ -2160,6 +2161,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -4647,6 +4649,7 @@ if test "${with_sendData_Qt+set}" = set; then :
     as_fn_error $? "\"Cannot compile with libSendData unless qmake is present.\"" "$LINENO" 5 ;
   fi
   LIBSENDDATA="sendData"
+  WITH_SENDDATA="1"
   if test "Darwin" = `uname`; then
     LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
     if test -d /opt/local/Library/Frameworks/; then
@@ -4684,6 +4687,7 @@ else
 
   LIBSENDDATA="sendDataHumbug"
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
+  WITH_SENDDATA="0"
   if test "Darwin" != `uname`; then
     LDFLAGS+=" -lrt"
   fi

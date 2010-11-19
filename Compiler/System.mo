@@ -255,6 +255,11 @@ public function enableSendData
   external "C" SystemImpl__enableSendData(enable) annotation(Library = "omcruntime");
 end enableSendData;
 
+public function getHasSendDataSupport
+  output Boolean hasSendData;
+  external "C" hasSendData=System_getHasSendDataSupport() annotation(Library = "omcruntime");
+end getHasSendDataSupport;
+
 public function setDataPort
   input Integer port;
   external "C" SystemImpl__setDataPort(port) annotation(Library = "omcruntime");

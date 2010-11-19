@@ -236,7 +236,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars;
       Real t,t1,t2,time,timeTotal,timeSimulation,timeStamp,val;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, legend, grid, logX, logY, points;
+      Boolean bval, b, legend, grid, logX, logY, points, builtin, tuple_;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -246,6 +246,8 @@ algorithm
       list<Values.Value> vals;
       list<Real> timeStamps;
       AbsynDep.Depends dep; AbsynDep.AvlTree uses;
+      DAE.InlineType inlineType;
+      DAE.ExpType ty;
     
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {DAE.CREF(componentRef = cr)}),
         (st as Interactive.SYMBOLTABLE(
@@ -1014,7 +1016,13 @@ algorithm
         resI = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, ExpressionDump.printExpStr(xRange), ExpressionDump.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
-        
+     
+      // plot without sendData support is plot2()
+    case (cache,env,DAE.CALL(Absyn.IDENT("plot"), expVars, tuple_, builtin, ty, inlineType),st,msg)
+      equation
+        false = System.getHasSendDataSupport();
+      then (cache,Values.STRING("OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile. Or use a command like plot2() that does not require Qt."),st);
+
     // plot(model, x)
     case (cache,env,
         DAE.CALL(
@@ -1158,7 +1166,7 @@ algorithm
         //Kolla på senddata:emulateStreamData
         
         //expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        //expVars = Util.listMap(expVars, ExpressionDump.printExpStr) "plot" ;
+        //expVars = Util.listMap(expVars, ExpressionDump.printExpStr);
         //vars_2 = Util.listUnionElt("time", vars_1);
         //vars = Util.listCreate("visualize");
         visvar_str = Interactive.getElementsOfVisType(className, p);
@@ -1190,7 +1198,7 @@ algorithm
          equation
          
          // vars = Util.listMap(vars,Expression.CodeVarToCref);
-          //vars_1 = Util.listMap(vars, ExpressionDump.printExpStr) "plot" ;
+          //vars_1 = Util.listMap(vars, ExpressionDump.printExpStr);
            //vars_2 = Util.listUnionElt("time", vars_1);
             filename = Absyn.pathString(className);
             filename = stringAppendList({filename, "_res.plt"});
@@ -1213,7 +1221,7 @@ algorithm
       equation
         print("hittaderättigen\n");
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
-        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "plot" ;
+        vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr);
         vars_2 = Util.listUnionElt("time", vars_1);
         //        listMap(vars_2, print);
         print(stringAppendList(vars_2));

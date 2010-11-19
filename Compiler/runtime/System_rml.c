@@ -833,6 +833,13 @@ void free_function(modelica_ptr_t func)
   /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
 
+RML_BEGIN_LABEL(System__getHasSendDataSupport)
+{
+  rmlA0 = CONFIG_WITH_SENDDATA ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 /*
  * @author: adrpo
  * side effect to set if we have expandable conenctors in a program

@@ -28,6 +28,7 @@ AC_SUBST(SOQT_INCLUDE)
 AC_SUBST(HAVE_COIN)
 AC_SUBST(LIBSENDDATA)
 AC_SUBST(LIBSENDDATA_LDFLAGS)
+AC_SUBST(WITH_SENDDATA)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(RML_TRACE)
@@ -317,6 +318,7 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
     AC_MSG_ERROR("Cannot compile with libSendData unless qmake is present.");
   fi
   LIBSENDDATA="sendData"
+  WITH_SENDDATA="1"
   if test "Darwin" = `uname`; then
     LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
     if test -d /opt/local/Library/Frameworks/; then
@@ -335,6 +337,7 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
 [
   LIBSENDDATA="sendDataHumbug"
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
+  WITH_SENDDATA="0"
   if test "Darwin" != `uname`; then
     LDFLAGS+=" -lrt"
   fi
