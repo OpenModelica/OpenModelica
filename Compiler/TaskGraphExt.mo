@@ -42,7 +42,7 @@ public function newTask
   input String inString;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=TaskGraphExt_newTask(inString) annotation(Library = {"modparomc"});
 end newTask;
 
 public function addEdge
@@ -51,14 +51,14 @@ public function addEdge
   input String inString3;
   input Integer inInteger4;
 
-  external "C" ;
+  external "C" TaskGraphExt_addEdge(inInteger1,inInteger2,inString3,inInteger4) annotation(Library = {"modparomc"});
 end addEdge;
 
 public function getTask
   input String inString;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=TaskGraphExt_getTask(inString) annotation(Library = {"modparomc"});
 end getTask;
 
 public function storeResult
@@ -67,51 +67,51 @@ public function storeResult
   input Boolean inBoolean3;
   input String inString4;
 
-  external "C" ;
+  external "C" TaskGraphExt_storeResult(inString1,inInteger2,inBoolean3,inString4) annotation(Library = {"modparomc"});
 end storeResult;
 
 public function dumpGraph
   input String inString;
 
-  external "C" ;
+  external "C" TaskGraphExt_dumpGraph(inString) annotation(Library = {"modparomc"});
 end dumpGraph;
 
 public function dumpMergedGraph
   input String inString;
 
-  external "C" ;
+  external "C" TaskGraphExt_dumpMergedGraph(inString) annotation(Library = {"modparomc"});
 end dumpMergedGraph;
 
 public function registerStartStop
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" TaskGraphExt_registerStartStop(inInteger1,inInteger2) annotation(Library = {"modparomc"});
 end registerStartStop;
 
 public function getStartTask
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=TaskGraphExt_getStartTask() annotation(Library = {"modparomc"});
 end getStartTask;
 
 public function getStopTask
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=TaskGraphExt_getStopTask() annotation(Library = {"modparomc"});
 end getStopTask;
 
 public function mergeTasks
   input Real inReal1;
   input Real inReal2;
 
-  external "C" ;
+  external "C" TaskGraphExt_mergeTasks(inReal1,inReal2) annotation(Library = {"modparomc"});
 end mergeTasks;
 
 public function schedule
   input Integer inInteger;
 
-  external "C" ;
+  external "C" TaskGraphExt_schedule(inInteger) annotation(Library = {"modparomc"});
 end schedule;
 
 public function generateCode
@@ -119,21 +119,21 @@ public function generateCode
   input Integer inInteger2;
   input Integer inInteger3;
 
-  external "C" ;
+  external "C" TaskGraphExt_generateCode(inInteger1,inInteger2,inInteger3) annotation(Library = {"modparomc"});
 end generateCode;
 
 public function setExecCost
   input Integer inInteger;
   input Real inReal;
 
-  external "C" ;
+  external "C" TaskGraphExt_setExecCost(inInteger,inReal) annotation(Library = {"modparomc"});
 end setExecCost;
 
 public function setTaskType
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" TaskGraphExt_setTaskType(inInteger1,inInteger2) annotation(Library = {"modparomc"});
 end setTaskType;
 
 public function setCommCost
@@ -141,7 +141,7 @@ public function setCommCost
   input Integer inInteger2;
   input Integer inInteger3;
 
-  external "C" ;
+  external "C" TaskGraphExt_setCommCost(inInteger1,inInteger2,inInteger3) annotation(Library = {"modparomc"});
 end setCommCost;
 
 public function addInitVar
@@ -149,7 +149,7 @@ public function addInitVar
   input String inString2;
   input String inString3;
 
-  external "C" ;
+  external "C" TaskGraphExt_addInitVar(inInteger1,inString2,inString3) annotation(Library = {"modparomc"});
 end addInitVar;
 
 public function addInitState
@@ -157,7 +157,7 @@ public function addInitState
   input String inString2;
   input String inString3;
 
-  external "C" ;
+  external "C" TaskGraphExt_addInitState(inInteger1,inString2,inString3) annotation(Library = {"modparomc"});
 end addInitState;
 
 public function addInitParam
@@ -165,7 +165,7 @@ public function addInitParam
   input String inString2;
   input String inString3;
 
-  external "C" ;
+  external "C" TaskGraphExt_addInitParam(inInteger1,inString2,inString3) annotation(Library = {"modparomc"});
 end addInitParam;
 end TaskGraphExt;
 

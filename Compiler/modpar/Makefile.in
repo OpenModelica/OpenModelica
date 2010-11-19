@@ -26,10 +26,14 @@ OBJECTS = Codegen.o \
 else
 OBJECTS = TaskGraphExt_stub.o
 endif
-all: libmodpar.a
+all: libmodpar.a libmodparomc.a
 
 libmodpar.a: $(OBJECTS)
 	ar -sr $@ $(OBJECTS)
+
+libmodparomc.a: TaskGraphExt_stub_omc.o
+	ar -sr $@ $<
+	cp $@ $(builddir_lib)/omc
 
 INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
@@ -56,4 +60,4 @@ reallyclean: clean
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in
-	$(top_builddir)/config.status Makefile
+	(cd $(top_builddir); ./config.status)
