@@ -98,6 +98,7 @@ static char *ldflags= (char*) DEFAULT_LDFLAGS;
 static int hasExpandableConnector = 0;
 static int hasInnerOuterDefinitions = 0;
 static char* class_names_for_simulation = NULL;
+static const char *select_from_dir = NULL;
 
 /*
  * Common implementations
@@ -511,6 +512,26 @@ double SystemImpl__getCurrentTime()
   double elapsedTime;             // the time elapsed as double
   time( &t );
   return difftime(t, 0); // the current time
+}
+
+static int file_select_mo(const struct dirent *entry)
+{
+  char fileName[MAXPATHLEN];
+  int res; char* ptr;
+  struct stat fileStatus;
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0) ||
+      (strcmp(entry->d_name, "package.mo") == 0)) {
+    return (0);
+  } else {
+    ptr = (char*)rindex(entry->d_name, '.');
+    if ((ptr != NULL) &&
+  ((strcmp(ptr, ".mo") == 0))) {
+      return (1);
+    } else {
+      return (0);
+    }
+  }
 }
 
 #ifdef __cplusplus

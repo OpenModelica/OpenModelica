@@ -1825,8 +1825,6 @@ RML_BEGIN_LABEL(System__setEnv)
 RML_END_LABEL
 
 
-char *select_from_dir;
-
 int file_select_directories(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
@@ -1868,26 +1866,6 @@ RML_BEGIN_LABEL(System__subDirectories)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-int file_select_mo(const struct dirent *entry)
-{
-  char fileName[MAXPATHLEN];
-  int res; char* ptr;
-  struct stat fileStatus;
-  if ((strcmp(entry->d_name, ".") == 0) ||
-      (strcmp(entry->d_name, "..") == 0) ||
-      (strcmp(entry->d_name, "package.mo") == 0)) {
-    return (0);
-  } else {
-    ptr = (char*)rindex(entry->d_name, '.');
-    if ((ptr != NULL) &&
-  ((strcmp(ptr, ".mo") == 0))) {
-      return (1);
-    } else {
-      return (0);
-    }
-  }
-}
 
 RML_BEGIN_LABEL(System__moFiles)
 {

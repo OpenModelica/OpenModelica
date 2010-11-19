@@ -265,4 +265,64 @@ extern void* System_getFileModificationTime(const char *fileName)
   }
 }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+void* System_moFiles(const char *directory)
+{
+  void *res;
+  WIN32_FIND_DATA FileData;
+  BOOL more = TRUE;
+  char* directory = RML_STRINGDATA(rmlA0);
+  char pattern[1024];
+  HANDLE sh;
+  sprintf(pattern, "%s\\*.mo", directory);
+  res = (void*)mk_nil();
+  sh = FindFirstFile(pattern, &FileData);
+  if (sh != INVALID_HANDLE_VALUE) {
+    while(more) {
+      if (strcmp(FileData.cFileName,"package.mo") != 0)
+      {
+        res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+      }
+      more = FindNextFile(sh, &FileData);
+    }
+    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
+  }
+  return res;
+}
+#else
+void* System_moFiles(const char *directory)
+{
+  int i,count;
+  void *res;
+  struct dirent **files;
+  select_from_dir = directory;
+  count = scandir(directory, &files, file_select_mo, NULL);
+  res = mmc_mk_nil();
+  for (i=0; i<count; i++)
+  {
+    res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
+    free(files[i]);
+  }
+  return res;
+}
+#endif
+
+extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
+{
+  fprintf(stderr, "System_lookupFunction NYI\n");
+  throw 1;
+}
+
+extern void System_freeFunction(int _inFuncHandle)
+{
+  fprintf(stderr, "System_freeFunction NYI\n");
+  throw 1;
+}
+
+extern void System_freeLibrary(int _inLibHandle)
+{
+  fprintf(stderr, "System_freeLibrary NYI\n");
+  throw 1;
+}
+
 }
