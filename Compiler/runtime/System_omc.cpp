@@ -195,7 +195,7 @@ extern void System_setHasExpandableConnectors(int b)
   hasExpandableConnector = b;
 }
 
-extern int System_hasInnerOuterDefinitions()
+extern int System_getHasInnerOuterDefinitions()
 {
   return hasInnerOuterDefinitions;
 }
@@ -223,6 +223,46 @@ extern void* System_strtok(const char *str0, const char *delimit)
   }
   free(str);
   return listReverse(res);
+}
+
+const char* System_getClassnamesForSimulation()
+{
+  if(class_names_for_simulation)
+    return strdup(class_names_for_simulation);
+  else
+    return "{}";
+}
+
+void System_setClassnamesForSimulation(const char *class_names)
+{
+  if(class_names_for_simulation)
+    free(class_names_for_simulation);
+  class_names_for_simulation = strdup(class_names);
+}
+
+extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
+{
+  fprintf(stderr, "System_getVariableValue NYI\n");
+  throw 1;
+}
+
+extern const char* System_getVariableNames(const char* _modelname)
+{
+  fprintf(stderr, "System_getVariableNames NYI\n");
+  throw 1;
+}
+
+extern void* System_getFileModificationTime(const char *fileName)
+{
+  struct stat attrib;   // create a file attribute structure
+  double elapsedTime;    // the time elapsed as double
+  int result;            // the result of the function call
+
+  if (stat( fileName, &attrib ) != 0) {
+    return mmc_mk_none();
+  } else {
+    return mmc_mk_some(mmc_mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time
+  }
 }
 
 }

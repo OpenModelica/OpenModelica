@@ -79,6 +79,18 @@ extern int RTOpts_getNoSimplify() {
   return noSimplify;
 }
 
+extern void RTOpts_setNoSimplify(int val) {
+  noSimplify = val;
+}
+
+extern int RTOpts_noProc() {
+  return nproc;
+}
+
+extern double RTOpts_latency() {
+  return latency;
+}
+
 extern int RTOpts_acceptMetaModelicaGrammar() {
   return acceptedGrammar == GRAMMAR_METAMODELICA;
 }

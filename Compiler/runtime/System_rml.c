@@ -486,97 +486,12 @@ RML_BEGIN_LABEL(System__readFile)
 }
 RML_END_LABEL
 
-int stringContains(char *str,char c){
-  int i;
-  for(i=0;i<strlen(str);++i)
-    if(str[i]==c){
-      //printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
-      return 1;
-    }
-  return 0;
-}
-int filterString(char* buf,char* bufRes){
-    int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-    char preChar,cc;
-    char filterChars[12] = "0123456789.\0";
-    char numeric[11] = "0123456789\0";
-    slen = strlen(buf);
-    preChar = '\0';
-    for(i=0;i<slen;++i){
-      cc = buf[i];
-      if((stringContains(filterChars,buf[i])))
-      {
-        if(buf[i]=='.'){
-        if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
-          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-          //printf("skipping_1: '%c'\n",buf[i]);
-        }
-        else{
-          bufRes[bufPointer++] = buf[i];
-          isNumeric=0;
-        }
-        }
-        else
-        {
-          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-          //printf("skipping_2: '%c'\n",buf[i]);
-        }
-      }
-      else
-      {
-        bufRes[bufPointer++] = buf[i];
-        isNumeric=0;
-      }
-      preChar = buf[i];
-      //isNumeric=0;
-    }
-    bufRes[bufPointer++] = '\0';
-    return numericEncounter;
-}
-
 RML_BEGIN_LABEL(System__readFileNoNumeric)
 {
   const char* filename = RML_STRINGDATA(rmlA0);
-  char* buf, *bufRes;
-  int res,i,bufPointer = 0,numCount;
-  FILE * file = NULL;
-  struct stat statstr;
-  res = stat(filename, &statstr);
-
-  if(res!=0)
-  {
-    const char *c_tokens[1]={filename};
-    c_add_message(85, /* ERROR_OPENING_FILE */
-      "SCRIPTING",
-      "ERROR",
-      "Error opening file %s.",
-      c_tokens,
-      1);
-    rmlA0 = (void*) mk_scon("No such file");
-    RML_TAILCALLK(rmlSC);
-  }
-
-  file = fopen(filename,"rb");
-  buf = malloc(statstr.st_size+1);
-  bufRes = malloc((statstr.st_size+70)*sizeof(char));
-  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
-  {
-  /* adrpo added 2004-10-26 */
-  free(buf);
-    rmlA0 = (void*) mk_scon("Failed while reading file");
-    RML_TAILCALLK(rmlSC);
-  }
-  buf[statstr.st_size] = '\0';
-  numCount = filterString(buf,bufRes);
-  fclose(file);
-  sprintf(bufRes,"%s\nFilter count from numberic domain: %d",bufRes,numCount);
-
-  rmlA0 = (void*) mk_scon(bufRes);
-
-  /* adrpo added 2004-10-26 */
-  free(buf);
-  free(bufRes);
-
+  char *res = SystemImpl__readFileNoNumeric(filename);
+  rmlA0 = (void*) mk_scon(res);
+  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -654,11 +569,10 @@ int next_intelt(int *arr)
   else return arr[curpos++];
 }
 
-char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
   if(class_names_for_simulation)
-    rmlA0 = (void*) mk_scon(strdup(class_names_for_simulation));
+    rmlA0 = (void*) mk_scon(class_names_for_simulation);
   else
     rmlA0 = (void*) mk_scon("{}");
   RML_TAILCALLK(rmlSC);
@@ -803,10 +717,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getCurrentTime)
 {
-  time_t t;
-  double elapsedTime;             // the time elapsed as double
-  time( &t );
-  rmlA0 = mk_rcon(difftime(t, 0)); // the current time
+  rmlA0 = mk_rcon(SystemImpl__getCurrentTime());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

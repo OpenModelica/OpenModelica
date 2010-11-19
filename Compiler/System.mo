@@ -422,7 +422,7 @@ public function getCurrentTime
  this system function returns current time elapsed
  since the Epoch (00:00:00 UTC, January 1, 1970)."
   output Real outValue;
-  external "C" outValue=System_getCurrentTime() annotation(Library = "omcruntime");
+  external "C" outValue=SystemImpl__getCurrentTime() annotation(Library = "omcruntime");
 end getCurrentTime;
 
 public function getCurrentDateTime
@@ -485,7 +485,7 @@ end compileCFile;
 public function readFileNoNumeric
   input String inString;
   output String outString;
-  external "C" outString=System_readFileNoNumeric(inString) annotation(Library = "omcruntime");
+  external "C" outString=SystemImpl__readFileNoNumeric(inString) annotation(Library = "omcruntime");
 end readFileNoNumeric;
 
 public function setHasExpandableConnectors
