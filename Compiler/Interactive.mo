@@ -10214,6 +10214,12 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
       then
         (newp,"true");
+    
+    // failure
+    case (name,tp,model_,nargs,p)
+      equation
+      then
+        (p,"false");
     /* adrpo: TODO!: handle also model extends M end M; i.e. CLASS_EXTENDS */
   end matchcontinue;
 end updateComponent;
@@ -11480,7 +11486,10 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
       then
         ("Ok",newp);
-    case (class_,cr1,cmt,p) then ("Error",p);
+    
+    case (class_,cr1,cmt,p) 
+      then 
+        ("Error",p);
   end matchcontinue;
 end setComponentComment;
 
@@ -11493,8 +11502,7 @@ protected function setComponentCommentInClass
   input String inString;
   output Absyn.Class outClass;
 algorithm
-  outClass:=
-  matchcontinue (inClass,inComponentRef,inString)
+  outClass := matchcontinue (inClass,inComponentRef,inString)
     local
       list<Absyn.ClassPart> parts_1,parts;
       String name,cmt,bcname;
@@ -11648,7 +11656,7 @@ algorithm
       Absyn.ComponentItem c;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
       equation
-        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
+        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
         compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
@@ -16677,6 +16685,19 @@ algorithm
   end matchcontinue;
 end modificationToAbsyn2;
 
+protected function selectAnnotation
+"@author: adrpo
+  Selects either the new annotation if is SOME or the old one"
+  input Option<Absyn.Annotation> newAnn;
+  input Option<Absyn.Annotation> oldAnn;
+  output Option<Absyn.Annotation> outAnn;
+algorithm
+  outAnn := matchcontinue(newAnn, oldAnn)
+    case(newAnn as SOME(_), _) then newAnn;
+    case(newAnn as NONE(), oldAnn) then oldAnn;
+  end matchcontinue;
+end selectAnnotation;
+
 protected function annotationListToAbsynComment
 "function: annotationListToAbsynComment
    This function takes a list of NamedArg and returns an absyn Comment.
@@ -16686,18 +16707,50 @@ protected function annotationListToAbsynComment
   input Option<Absyn.Comment> inAbsynCommentOption;
   output Option<Absyn.Comment> outAbsynCommentOption;
 algorithm
-  outAbsynCommentOption:=
-  matchcontinue (inAbsynNamedArgLst,inAbsynCommentOption)
+  outAbsynCommentOption := matchcontinue (inAbsynNamedArgLst,inAbsynCommentOption)
     local
       Absyn.Comment ann;
       list<Absyn.NamedArg> nargs;
       Option<Absyn.Comment> oldann;
-    case (nargs,oldann)
+      String oldcmt,newcmt;
+      Option<String> cmtOpt;
+      Option<Absyn.Annotation> annOptOld, annOptNew, annOpt;
+    
+    // old annotation is NONE! take the new one.
+    case (nargs,oldann as NONE())
       equation
         SOME(ann) = annotationListToAbsynComment2(nargs);
       then
         SOME(ann);
-    case (nargs,oldann) then oldann;
+    
+    // old annotation comment is NONE! take the new one.
+    case (nargs,oldann as SOME(Absyn.COMMENT(annOptOld, NONE())))
+      equation
+        SOME(ann as Absyn.COMMENT(annOptNew, cmtOpt)) = annotationListToAbsynComment2(nargs);
+        annOpt = selectAnnotation(annOptNew, annOptOld);
+      then
+        SOME(Absyn.COMMENT(annOpt, cmtOpt));
+    
+    // old annotation comment is SOME and new is NONE! take the old one.
+    case (nargs,oldann as SOME(Absyn.COMMENT(annOptOld, SOME(oldcmt))))
+      equation
+        SOME(ann as Absyn.COMMENT(annOptNew, NONE())) = annotationListToAbsynComment2(nargs);
+        annOpt = selectAnnotation(annOptNew, annOptOld);
+      then
+        SOME(Absyn.COMMENT(annOpt, SOME(oldcmt)));
+    
+    // old annotation comment is SOME and new is SOME! take the new one.
+    case (nargs,oldann as SOME(Absyn.COMMENT(annOptOld, SOME(oldcmt))))
+      equation
+        SOME(ann as Absyn.COMMENT(annOptNew, SOME(newcmt))) = annotationListToAbsynComment2(nargs);
+        annOpt = selectAnnotation(annOptNew, annOptOld);
+      then
+        SOME(Absyn.COMMENT(annOpt, SOME(newcmt)));
+    
+    // no annotations from nargs
+    case (nargs,oldann) 
+      then 
+        oldann;
   end matchcontinue;
 end annotationListToAbsynComment;
 
@@ -16775,8 +16828,7 @@ protected function annotationListToAbsyn
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Annotation outAnnotation;
 algorithm
-  outAnnotation:=
-  matchcontinue (inAbsynNamedArgLst)
+  outAnnotation := matchcontinue (inAbsynNamedArgLst)
     local
       Absyn.ElementArg eltarg;
       Absyn.Exp e;
