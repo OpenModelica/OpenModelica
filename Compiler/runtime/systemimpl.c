@@ -312,7 +312,7 @@ static const char* SystemImpl__basename(const char *str)
 {
   const char* res = NULL;
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  res; = strrchr(str, '\\');
+  res = strrchr(str, '\\');
 #endif
   if (res == NULL) { res = strrchr(str, '/'); }
   if (res == NULL) { res = str; } else { ++res; }
