@@ -46,154 +46,154 @@ public function initMarks
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" BackendDAEEXT_initMarks(inInteger1,inInteger2) annotation(Library = "omcruntime");
 end initMarks;
 
 public function eMark
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_eMark(inInteger) annotation(Library = "omcruntime");
 end eMark;
 
 public function getEMark
   input Integer inInteger;
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean=BackendDAEEXT_getEMark(inInteger) annotation(Library = "omcruntime");
 end getEMark;
 
 public function vMark
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_vMark(inInteger) annotation(Library = "omcruntime");
 end vMark;
 
 public function getVMark
   input Integer inInteger;
   output Boolean outBoolean;
 
-  external "C" ;
+  external "C" outBoolean=BackendDAEEXT_getVMark(inInteger) annotation(Library = "omcruntime");
 end getVMark;
 
 public function getMarkedEqns
   output list<Integer> outIntegerLst;
 
-  external "C" ;
+  external "C" outIntegerLst=BackendDAEEXT_getMarkedEqns() annotation(Library = "omcruntime");
 end getMarkedEqns;
 
 public function getDifferentiatedEqns
   output list<Integer> outIntegerLst;
 
-  external "C" ;
+  external "C" outIntegerLst=BackendDAEEXT_getDifferentiatedEqns() annotation(Library = "omcruntime");
 end getDifferentiatedEqns;
 
 public function clearDifferentiated
 
-  external "C" ;
+  external "C" BackendDAEEXT_clearDifferentiated() annotation(Library = "omcruntime");
 end clearDifferentiated;
 
 public function markDifferentiated
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_markDifferentiated(inInteger) annotation(Library = "omcruntime");
 end markDifferentiated;
 
 public function getMarkedVariables
   output list<Integer> outIntegerLst;
 
-  external "C" ;
+  external "C" outIntegerLst=BackendDAEEXT_getMarkedVariables() annotation(Library = "omcruntime");
 end getMarkedVariables;
 
 public function dumpMarkedEquations
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_dumpMarkedEquations(inInteger) annotation(Library = "omcruntime");
 end dumpMarkedEquations;
 
 public function dumpMarkedVariables
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_dumpMarkedVariables(inInteger) annotation(Library = "omcruntime");
 end dumpMarkedVariables;
 
 public function initLowLink
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_initLowLink(inInteger) annotation(Library = "omcruntime");
 end initLowLink;
 
 public function initNumber
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_initNumber(inInteger) annotation(Library = "omcruntime");
 end initNumber;
 
 public function setLowLink
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" BackendDAEEXT_setLowLink(inInteger1,inInteger2) annotation(Library = "omcruntime");
 end setLowLink;
 
 public function getLowLink
   input Integer inInteger;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=BackendDAEEXT_getLowLink(inInteger) annotation(Library = "omcruntime");
 end getLowLink;
 
 public function setNumber
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" BackendDAEEXT_setNumber(inInteger1,inInteger2) annotation(Library = "omcruntime");
 end setNumber;
 
 public function getNumber
   input Integer inInteger;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=BackendDAEEXT_getNumber(inInteger) annotation(Library = "omcruntime");
 end getNumber;
 
 public function initV
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_initV(inInteger) annotation(Library = "omcruntime");
 end initV;
 
 public function initF
   input Integer inInteger;
 
-  external "C" ;
+  external "C" BackendDAEEXT_initF(inInteger) annotation(Library = "omcruntime");
 end initF;
 
 public function setV
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" BackendDAEEXT_setV(inInteger1,inInteger2) annotation(Library = "omcruntime");
 end setV;
 
 public function getV
   input Integer inInteger;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=BackendDAEEXT_getV(inInteger) annotation(Library = "omcruntime");
 end getV;
 
 public function setF
   input Integer inInteger1;
   input Integer inInteger2;
 
-  external "C" ;
+  external "C" BackendDAEEXT_setF(inInteger1,inInteger2) annotation(Library = "omcruntime");
 end setF;
 
 public function getF
   input Integer inInteger;
   output Integer outInteger;
 
-  external "C" ;
+  external "C" outInteger=BackendDAEEXT_getF(inInteger) annotation(Library = "omcruntime");
 end getF;
 end BackendDAEEXT;
 
