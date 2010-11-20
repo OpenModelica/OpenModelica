@@ -514,6 +514,8 @@ double SystemImpl__getCurrentTime()
   return difftime(t, 0); // the current time
 }
 
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+
 #ifdef __APPLE_CC__
 static int file_select_mo(struct dirent *entry)
 #else
@@ -538,6 +540,7 @@ static int file_select_mo(const struct dirent *entry)
   }
 }
 
+#endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 int setenv(const char* envname, const char* envvalue, int overwrite)
@@ -554,3 +557,4 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
 #ifdef __cplusplus
 }
 #endif
+

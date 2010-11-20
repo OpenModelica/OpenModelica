@@ -11,6 +11,12 @@ builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 
+ifndef OMDEV
+	configUnix = config.unix.h
+else
+	configUnix = 
+endif
+
 SRC	= RTOpts_rml.c Print_rml.c System_rml.c Settings_rml.c \
   SimulationResults.c IOStreamExt_rml.c rtclock.c Database.c Socket_rml.c
 
@@ -48,8 +54,8 @@ Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
 Error_rml.o : errorext.cpp
 Error_omc.o : errorext.cpp
-System_rml.o : systemimpl.c config.unix.h config.h
-System_omc.o : systemimpl.c config.unix.h config.h
+System_rml.o : systemimpl.c config.h $(configUnix)
+System_omc.o : systemimpl.c config.h $(configUnix)
 RTOpts_rml.o : rtoptsimpl.c
 RTOpts_omc.o : rtoptsimpl.c
 IOStreamExt_rml.o : IOStreamExt.c
