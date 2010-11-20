@@ -514,7 +514,11 @@ double SystemImpl__getCurrentTime()
   return difftime(t, 0); // the current time
 }
 
+#ifdef __APPLE_CC__
+static int file_select_mo(struct dirent *entry)
+#else
 static int file_select_mo(const struct dirent *entry)
+#endif
 {
   char fileName[MAXPATHLEN];
   int res; char* ptr;
