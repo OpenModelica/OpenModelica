@@ -26,5 +26,8 @@ CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAIN
 
 include Makefile.common
 
-Makefile: Makefile.in config.unix.h.in
+config.unix.h: config.unix.h.in
+	cd $(top_builddir) && ./config.status
+
+Makefile: Makefile.in
 	cd $(top_builddir) && ./config.status
