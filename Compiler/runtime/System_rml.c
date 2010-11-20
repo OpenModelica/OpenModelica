@@ -924,13 +924,6 @@ RML_END_LABEL
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-RML_BEGIN_LABEL(System__userIsRoot)
-{
-  rmlA0 = mk_icon(0);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 void System_5finit(void)
 {
   char* path;
@@ -1095,21 +1088,6 @@ RML_END_LABEL
 /*   RML_TAILCALLK(rmlSC); */
 /* } */
 /* RML_END_LABEL */
-
-/* adrpo@ida added 2005-11-24 */
-RML_BEGIN_LABEL(System__setEnv)
-{
-  char* envname = RML_STRINGDATA(rmlA0);
-  char* envvalue = RML_STRINGDATA(rmlA1);
-  rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
-  int setenv_result = 0;
-  char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
-  sprintf(temp,"%s=%s", envname, envvalue);
-  setenv_result = _putenv(temp);
-  rmlA0 = (void*) mk_icon(setenv_result);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 RML_BEGIN_LABEL(System__subDirectories)
 {
@@ -1295,19 +1273,6 @@ RML_END_LABEL
 //  }
 //  return lst;
 //}
-
-
-RML_BEGIN_LABEL(System__setVariableFilter)
-{
-  char * variables = RML_STRINGDATA(rmlA0);
-  char* filter=malloc(strlen(variables)+20);
-  sprintf(filter, "sendDataFilter=%s",variables);
-  _putenv(filter);
-  free(filter);
-//  setVariableFilter(variables);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
@@ -1664,13 +1629,6 @@ char* normalizePath(const char* src)
 /*
 */
 
-RML_BEGIN_LABEL(System__userIsRoot)
-{
-  rmlA0 = mk_icon(geteuid() == 0 && running_testsuite == 0 ? 1 : 0);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__isSameFile)
 {
   char* fileName1 = RML_STRINGDATA(rmlA0);
@@ -1817,21 +1775,6 @@ RML_END_LABEL
 /* } */
 /* RML_END_LABEL */
 
-
-/* adrpo@ida added 2005-11-24 */
-RML_BEGIN_LABEL(System__setEnv)
-{
-  char* envname = RML_STRINGDATA(rmlA0);
-  char* envvalue = RML_STRINGDATA(rmlA1);
-  rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
-  int setenv_result = 0;
-  setenv_result = setenv(envname, envvalue, (int)overwrite);
-  rmlA0 = (void*) mk_icon(setenv_result);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-
 int file_select_directories(const struct dirent *entry)
 {
   char fileName[MAXPATHLEN];
@@ -1948,15 +1891,6 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     rmlA0 = (void*) mk_scon(retString);
     free(retString);
     RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__setVariableFilter)
-{
-  char * variables = RML_STRINGDATA(rmlA0);
-  setenv("sendDataFilter", variables, 1 /* overwrite */);
-//  setVariableFilter(variables);
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2231,6 +2165,31 @@ RML_BEGIN_LABEL(System__directoryExists)
 {
   const char* str = RML_STRINGDATA(rmlA0);
   rmlA0 = (void*) mk_icon(SystemImpl__directoryExists(str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__userIsRoot)
+{
+  rmlA0 = mk_icon(CONFIG_USER_IS_ROOT);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setEnv)
+{
+  char* envname = RML_STRINGDATA(rmlA0);
+  char* envvalue = RML_STRINGDATA(rmlA1);
+  rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
+  rmlA0 = mk_icon(setenv(envname, envvalue, overwrite));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setVariableFilter)
+{
+  char* variables = RML_STRINGDATA(rmlA0);
+  setenv("sendDataFilter", variables, 1 /* overwrite */);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

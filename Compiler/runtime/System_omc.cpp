@@ -330,4 +330,16 @@ extern int System_getHasSendDataSupport()
   return CONFIG_WITH_SENDDATA;
 }
 
+extern int System_userIsRoot()
+{
+  return CONFIG_USER_IS_ROOT;
+}
+
+extern const char* System_readEnv(const char *envname)
+{
+  char *envvalue = getenv(envname);
+  if (envvalue == NULL) throw 1;
+  return strdup(envvalue);
+}
+
 }

@@ -40,6 +40,7 @@
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
 
 #define CONFIG_PLATFORM "WIN32"
+#define CONFIG_USER_IS_ROOT 0
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL
 #if defined(__MINGW32__)
