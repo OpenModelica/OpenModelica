@@ -126,10 +126,19 @@ int main(int argc, char* argv[])
     if (!noserv) {
       // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
+      if (omhome)
+        sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
+      else
+        sprintf(systemstr, "omc +d=interactiveCorba > %s 2>&1 &", errorfile);
       int res = system(systemstr);
-      if (!scriptname)
-        cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+      if (res) {
+        if (omhome)
+          cerr << "Failed to start server using " << systemstr << endl;
+        else
+          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
+        return EXIT_FAILURE;
+      }
+      if (!scriptname) cout << "Started server using:"<< systemstr << "\n" << endl;
     }
     sleep(1); // wait a second for the server to start
     doCorbaCommunication(argc,argv,scriptname);
@@ -137,11 +146,19 @@ int main(int argc, char* argv[])
     if (!noserv) {
      // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr,"%s/bin/omc +d=interactive > %s 2>&1 &",
-	      omhome, errorfile);
+      if (omhome)
+        sprintf(systemstr, "%s/bin/omc +d=interactive > %s 2>&1 &", omhome, errorfile);
+      else
+        sprintf(systemstr, "omc +d=interactive > %s 2>&1 &", errorfile);
       int res = system(systemstr);
-      if (!scriptname)
-	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+      if (res) {
+        if (omhome)
+          cerr << "Failed to start server using " << systemstr << endl;
+        else
+          cerr << "Failed to start server using " << systemstr << ". OPENMODELICAHOME was not set; maybe that is the problem." << endl;
+        return EXIT_FAILURE;
+      }
+      if (!scriptname) cout << "Started server using:"<< systemstr << endl;
     }
     sleep(1); // wait a second for the server to start
     doSocketCommunication(scriptname);
@@ -314,15 +331,15 @@ void doSocketCommunication(const string * scriptname)
 }
 
 
-char * check_omhome(void)
+char* check_omhome(void)
 {
   char *str;
 
   str=getenv("OPENMODELICAHOME");
-  if (str == NULL) {
+  /*if (str == NULL) {
     printf("Error, OPENMODELICAHOME not set. Set OPENMODELICAHOME to the root directory of the OpenModlica installation\n");
     exit(1);
-  }
+  }*/
   return str;
 }
 
