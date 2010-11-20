@@ -53,10 +53,10 @@ void c_add_source_message(int errorID,
        int endCol,
        int isReadOnly,
        const char* filename);
-void setCheckpoint(const char* id);
-void delCheckpoint(const char* id);
-void rollBack(const char* id);
-void* rollBackAndPrint(const char* id); // Returns the error string that we rolled back
+void ErrorImpl__setCheckpoint(const char* id);
+void ErrorImpl__delCheckpoint(const char* id);
+void ErrorImpl__rollBack(const char* id);
+char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string that we rolled back. free this resource
 
 #ifdef __cplusplus
   }

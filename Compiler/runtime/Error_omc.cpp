@@ -28,11 +28,7 @@
  *
  */
 
-#define RML_TRUE ((void*)1)
-#define RML_FALSE ((void*)0)
 #include "modelica.h"
-#define mk_scon(X) X
-
 #include "errorext.cpp"
 
 extern "C" {
@@ -47,6 +43,28 @@ void Error_addMessage(int errorID, const char* msg_type, const char* severity, c
       tokenlst=MMC_CDR(tokenlst);
     }
     add_message(errorID,msg_type,severity,message,tokens);
+  }
+}
+
+extern const char* Error_getMessagesStr()
+{
+  return strdup(ErrorImpl__getMessagesStr().c_str());
+}
+
+extern const char* Error_printMessagesStr()
+{
+  return strdup(ErrorImpl__printMessagesStr().c_str());
+}
+
+extern void Error_addSourceMessage(int _id, const char* _msg_type, const char* _msg_severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
+{
+  std::list<std::string> tokens;
+  if (error_on) {
+    while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
+      tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
+      tokenlst=MMC_CDR(tokenlst);
+    }
+    add_source_message(_id,_msg_type,_msg_severity,_msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
   }
 }
 

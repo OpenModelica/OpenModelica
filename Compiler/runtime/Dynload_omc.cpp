@@ -32,7 +32,7 @@ extern "C" {
 
 #include <stdio.h>
 
-extern void* Dynload_executeFunction(int _inFuncHandle, void* _inValLst)
+extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
 {
   fprintf(stderr, "Dynload_executeFunction NYI\n");
   throw 1;

@@ -51,7 +51,7 @@ public function updateCurrentComponent
   input Integer rowend;
   input Integer colstart;
   input Integer colend;
-  external "C";
+  external "C" ErrorImpl__updateCurrentComponent(str,writeable,fileName,rowstart,rowend,colstart,colend) annotation(Library = "omcruntime");
 end updateCurrentComponent;
 
 public function addMessage
@@ -65,63 +65,63 @@ public function addMessage
 end addMessage;
 
 public function addSourceMessage
-  input Error.ErrorID inErrorID1;
-  input String inString2;
-  input String inString3;
-  input Integer inInteger4;
-  input Integer inInteger5;
-  input Integer inInteger6;
-  input Integer inInteger7;
-  input Boolean inBoolean8;
-  input String inString9;
-  input String inString10;
-  input list<String> inStringLst11;
+  input Error.ErrorID id;
+  input String msg_type;
+  input String msg_severity;
+  input Integer sline;
+  input Integer scol;
+  input Integer eline;
+  input Integer ecol;
+  input Boolean read_only;
+  input String filename;
+  input String msg;
+  input list<String> tokens;
 
-  external "C" ;
+  external "C" Error_addSourceMessage(id,msg_type,msg_severity,sline,scol,eline,ecol,read_only,filename,msg,tokens) annotation(Library = "omcruntime");
 end addSourceMessage;
 
 public function printMessagesStr
   output String outString;
 
-  external "C" ;
+  external "C" outString=Error_printMessagesStr() annotation(Library = "omcruntime");
 end printMessagesStr;
 
 public function getNumMessages
   output Integer num;
 
-  external "C";
+  external "C" num=Error_getNumMessages() annotation(Library = "omcruntime");
 end getNumMessages;
 
 public function getNumErrorMessages
   output Integer num;
 
-  external "C";
+  external "C" num=ErrorImpl__getNumErrorMessages() annotation(Library = "omcruntime");
 end getNumErrorMessages;
 
 public function getMessagesStr
   output String outString;
 
-  external "C" ;
+  external "C" outString=Error_getMessagesStr() annotation(Library = "omcruntime");
 end getMessagesStr;
 
 public function clearMessages
-  external "C" ;
+  external "C" ErrorImpl__clearMessages() annotation(Library = "omcruntime");
 end clearMessages;
 
 public function errorOff
 
-  external "C" ;
+  external "C" Error_errorOff() annotation(Library = "omcruntime");
 end errorOff;
 
 public function errorOn
 
-  external "C" ;
+  external "C" Error_errorOn() annotation(Library = "omcruntime");
 end errorOn;
 
 public function setCheckpoint "sets a checkpoint for the error messages, so error messages can be rolled back (i.e. deleted) up to this point
 A unique identifier for this checkpoint must be provided. It is checked when doing rollback or deletion"
   input String id "uniqe identifier for the checkpoint (up to the programmer to guarantee uniqueness)";
-  external "C" ;
+  external "C" ErrorImpl__setCheckpoint(id) annotation(Library = "omcruntime");
 end setCheckpoint;
 
 public function delCheckpoint "deletes the checkpoint at the top of the stack without 
@@ -130,19 +130,19 @@ If the checkpoint id doesn't match, the application exits with -1.
 "
 
   input String id "unique identifier";
-  external "C" ;
+  external "C" ErrorImpl__delCheckpoint(id) annotation(Library = "omcruntime");
 end delCheckpoint;
 
 public function printErrorsNoWarning
   output String outString;
-  external "C" ;
+  external "C" outString=Error_printErrorsNoWarning() annotation(Library = "omcruntime");
 end printErrorsNoWarning;
 
 public function rollBack "rolls back error messages until the latest checkpoint, 
 deleting all error messages added since that point in time. A unique identifier for the checkpoint must be provided
 The application will exit with return code -1 if this identifier does not match."
   input String id "unique identifier";
-  external "C" ;
+  external "C" ErrorImpl__rollBack(id) annotation(Library = "omcruntime");
 end rollBack;
 
 public function isTopCheckpoint 
@@ -152,7 +152,7 @@ public function isTopCheckpoint
   not sure that it exists (due to MetaModelica backtracking)."
   input String id "unique identifier";
   output Boolean isThere "tells us if the checkpoint exists (true) or doesn't (false)";
-  external "C" ;
+  external "C" isThere=ErrorImpl__isTopCheckpoint(id) annotation(Library = "omcruntime");
 end isTopCheckpoint;
 
 public function getLastDeletedCheckpoint 
@@ -161,7 +161,7 @@ public function getLastDeletedCheckpoint
   Is needed to see if the previous phase generated some
   error messages or not"
   output String lastCheckpoint ;
-  external "C" ;
+  external "C" lastCheckpoint=Error_getLastDeletedCheckpoint() annotation(Library = "omcruntime");
 end getLastDeletedCheckpoint;
 
 end ErrorExt;

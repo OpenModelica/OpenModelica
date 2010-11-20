@@ -410,14 +410,16 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parsestring)
 {
-  setCheckpoint("parsestringexp");
+  ErrorImpl__setCheckpoint("parsestring");
   rmlA0 = parseString(rmlA0,PARSE_MODELICA);
   if (rmlA0) {
     rmlA1 = mk_scon("Ok");
-    rollBack("parsestringexp");
+    ErrorImpl__rollBack("parsestring");
     RML_TAILCALLK(rmlSC);
   } else {
-    rmlA1 = rollBackAndPrint("parsestringexp");
+    char *res = ErrorImpl__rollBackAndPrint("parsestring");
+    rmlA1 = mk_scon(res);
+    free(res);
     RML_TAILCALLK(rmlSC);
   }
 }
@@ -426,14 +428,16 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Parser__parsestringexp)
 {
-  setCheckpoint("parsestringexp");
+  ErrorImpl__setCheckpoint("parsestringexp");
   rmlA0 = parseString(rmlA0,PARSE_EXPRESSION);
   if (rmlA0) {
     rmlA1 = mk_scon("Ok");
-    rollBack("parsestringexp");
+    ErrorImpl__rollBack("parsestringexp");
     RML_TAILCALLK(rmlSC);
   } else {
-    rmlA1 = rollBackAndPrint("parsestringexp");
+    char *res = ErrorImpl__rollBackAndPrint("parsestringexp");
+    rmlA1 = mk_scon(res);
+    free(res);
     RML_TAILCALLK(rmlSC);
   }
 }

@@ -45,35 +45,35 @@ void ErrorExt_5finit(void)
 
 RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
 {
-  setCheckpoint(RML_STRINGDATA(rmlA0));
+  ErrorImpl__setCheckpoint(RML_STRINGDATA(rmlA0));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
 {
-  delCheckpoint(RML_STRINGDATA(rmlA0));
+  ErrorImpl__delCheckpoint(RML_STRINGDATA(rmlA0));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__rollBack)
 {
-  rollBack(RML_STRINGDATA(rmlA0));
+  ErrorImpl__rollBack(RML_STRINGDATA(rmlA0));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__isTopCheckpoint)
 {
-  rmlA0 = isTopCheckpoint(RML_STRINGDATA(rmlA0));
+  rmlA0 = mk_bcon(ErrorImpl__isTopCheckpoint(RML_STRINGDATA(rmlA0)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getLastDeletedCheckpoint)
 {
-  rmlA0 = getLastDeletedCheckpoint();
+  rmlA0 = mk_scon(ErrorImpl__getLastDeletedCheckpoint());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -102,7 +102,7 @@ int rs = RML_UNTAGFIXNUM(rmlA3);
 int re = RML_UNTAGFIXNUM(rmlA4);
 int cs = RML_UNTAGFIXNUM(rmlA5);
 int ce = RML_UNTAGFIXNUM(rmlA6);
-update_current_component(newVar,write,fileName,rs,re,cs,ce);
+ErrorImpl__updateCurrentComponent(newVar,write,fileName,rs,re,cs,ce);
 RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -155,27 +155,18 @@ tokenlst=RML_CDR(tokenlst);
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getNumMessages)
-  {
-    rmlA0 = mk_icon((errorMessageQueue.size()));
-    RML_TAILCALLK(rmlSC);
-  }
+{
+  rmlA0 = mk_icon((errorMessageQueue.size()));
+  RML_TAILCALLK(rmlSC);
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getNumErrorMessages)
-    {
-  int res=0;
-
-  stack<ErrorMessage*> queueCopy(errorMessageQueue);
-  while (!queueCopy.empty()) {
-  if (queueCopy.top()->getSeverity().compare(std::string("Error")) == 0) {
-    res++;
-  }
-  queueCopy.pop();
-  }
-    rmlA0 = mk_icon(res);
-    RML_TAILCALLK(rmlSC);
-    }
-  RML_END_LABEL
+{
+  rmlA0 = mk_icon(ErrorImpl__getNumErrorMessages());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
 {
@@ -196,12 +187,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
 {
-  std::string res("");
-  while(!errorMessageQueue.empty()) {
-    res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
-  }
+  std::string res = ErrorImpl__printMessagesStr();
   rmlA0 = mk_scon((char*)res.c_str());
   RML_TAILCALLK(rmlSC);
 }
@@ -209,27 +195,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
 {
-  std::string res("}");
-  while(!errorMessageQueue.empty()) {
-    res = errorMessageQueue.top()->getFullMessage() + res;
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
-    if (!errorMessageQueue.empty()) { res = string(",") + res; }
-  }
-  res = string("{") + res;
-  rmlA0 = mk_scon((char*)res.c_str());
+  std::string res = ErrorImpl__getMessagesStr();
+  rmlA0 = mk_scon(res.c_str());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__clearMessages)
- {
-   while(!errorMessageQueue.empty()) {
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
-   }
-   RML_TAILCALLK(rmlSC);
- }
- RML_END_LABEL
+{
+  ErrorImpl__clearMessages();
+ RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 } //extern "C"
