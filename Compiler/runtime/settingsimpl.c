@@ -104,7 +104,8 @@ static const char* SettingsImpl__getCompileCommand()
   return compileCommand;
 }
 
-extern void SettingsImpl__setCompileCommand(const char *command) {
+extern void SettingsImpl__setCompileCommand(const char *command)
+{
   if(compileCommand)
     free(compileCommand);
   compileCommand = strdup(command);
@@ -153,6 +154,43 @@ extern void SettingsImpl__setInstallationDirectoryPath(const char *value)
 extern void SettingsImpl__setModelicaPath(const char *value)
 {
   commonSetEnvVar("OPENMODELICALIBRARY",value);
+}
+
+extern void SettingsImpl__setTempDirectoryPath(const char *path)
+{
+  if (tempDirectoryPath)
+    free(tempDirectoryPath);
+  tempDirectoryPath = strdup(path);
+}
+
+extern char* SettingsImpl__getTempDirectoryPath()
+{
+  if (tempDirectoryPath == NULL) {
+  // On windows, set Temp directory path to Temp directory as returned by GetTempPath,
+  // which is usually TMP or TEMP or windows catalogue.
+  #ifdef WIN32
+	  int numChars;
+	  char* str,str1;
+	  char tempDirectory[1024];
+		  //extract the temp path
+	  numChars= GetTempPath(1024, tempDirectory);
+	  if (numChars == 1024 || numChars == 0) {
+		  fprintf(stderr, "Error setting temppath in Kernel\n");
+      exit(1);
+	  } else {
+	    // Must do replacement in two steps, since the _replace function can not have similar source as target.
+	    str = _replace(tempDirectory,"\\","/");
+	    tempDirectoryPath= _replace(str,"/","\\\\");
+	    free(str);
+	  }
+  #else
+    const char* str = getenv("TMPDIR");
+    if (str == NULL)
+      str = "/tmp";
+    tempDirectoryPath = strdup(str);
+  #endif
+  }
+  return tempDirectoryPath;
 }
 
 #ifdef __cplusplus

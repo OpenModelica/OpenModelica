@@ -44,7 +44,7 @@ end getVersionNr;
 
 public function setCompilePath
   input String inString;
-  external "C" Settings_setCompilePath(inString) annotation(Library = "omcruntime");
+  external "C" SettingsImpl__setCompilePath(inString) annotation(Library = "omcruntime");
 end setCompilePath;
 
 public function getCompilePath
@@ -56,7 +56,7 @@ end getCompilePath;
 public function setCompileCommand
   input String inString;
 
-  external "C" SettingsImpl_setCompileCommand(inString) annotation(Library = "omcruntime");
+  external "C" SettingsImpl__setCompileCommand(inString) annotation(Library = "omcruntime");
 end setCompileCommand;
 
 public function getCompileCommand
@@ -68,7 +68,7 @@ end getCompileCommand;
 public function setTempDirectoryPath
   input String inString;
 
-  external "C" Settings_setTempDirectoryPath(inString) annotation(Library = "omcruntime");
+  external "C" SettingsImpl__setTempDirectoryPath(inString) annotation(Library = "omcruntime");
 end setTempDirectoryPath;
 
 public function getTempDirectoryPath
@@ -95,7 +95,7 @@ end setModelicaPath;
 
 public function getModelicaPath
   output String outString;
-  external "C" outString=Settings__getModelicaPath() annotation(Library = "omcruntime");
+  external "C" outString=Settings_getModelicaPath() annotation(Library = "omcruntime");
 end getModelicaPath;
 
 public function getEcho

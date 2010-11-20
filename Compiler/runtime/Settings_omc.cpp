@@ -70,7 +70,9 @@ extern const char* Settings_getVersionNr()
   return CONFIG_VERSION;
 }
 
-extern const char* Settings_getTempDirectoryPath();
-extern void Settings_setTempDirectoryPath(const char* _inString);
+extern const char* Settings_getTempDirectoryPath()
+{
+  return strdup(SettingsImpl__getTempDirectoryPath());
+}
 
 }

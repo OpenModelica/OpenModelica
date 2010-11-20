@@ -33,40 +33,6 @@
 
 void Settings_5finit(void)
 {
-
-// On windows, set Temp directory path to Temp directory as returned by GetTempPath,
-// which is usually TMP or TEMP or windows catalogue.
-#ifdef WIN32
-	int numChars;
-	char* str,str1;
-	char tempDirectory[1024];
-		//extract the temp path
-	numChars= GetTempPath(1024, tempDirectory);
-	if (numChars == 1024 || numChars == 0) {
-		printf("Error setting temppath in Kernel\n");
-	} 
-	else {
-	 if (tempDirectoryPath) {
-		free(tempDirectoryPath);
-		tempDirectoryPath=0;
-	 }
-	 // Must do replacement in two steps, since the _replace function can not have similar source as target.
-	 str = _replace(tempDirectory,"\\","/");
-	 tempDirectoryPath= _replace(str,"/","\\\\");
-	 free(str);
-	}
-#else
-  char* str = NULL;
-  str = getenv("TMPDIR");
-  if (str == NULL) {
-    tempDirectoryPath = malloc(sizeof(char)*(strlen("/tmp") + 1));
-    strcpy(tempDirectoryPath, "/tmp");
-  }
-  else {
-    tempDirectoryPath = malloc(sizeof(char)*(strlen(str) + 1));
-    strcpy(tempDirectoryPath, str);
-  }
-#endif
 }
 
 
@@ -122,16 +88,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__setTempDirectoryPath)
 {
-  char* command = RML_STRINGDATA(rmlA0);
-  if(tempDirectoryPath)
-    free(tempDirectoryPath);
-
-  tempDirectoryPath = (char*)malloc(strlen(command)+1);
-  if (tempDirectoryPath == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(tempDirectoryPath,command,strlen(command)+1);
-
+  const char* command = RML_STRINGDATA(rmlA0);
+  SettingsImpl__setTempDirectoryPath(command);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
