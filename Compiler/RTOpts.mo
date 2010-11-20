@@ -97,7 +97,7 @@ end noProc;
 public function setEliminationLevel
   input Integer level;
 
-  external "C" annotation(Library = "omcruntime");
+  external "C" RTOpts_setEliminationLevel(level) annotation(Library = "omcruntime");
 end setEliminationLevel;
 
 public function eliminationLevel
@@ -176,7 +176,7 @@ public function setAnnotationVersion
    setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
-  external "C" annotation(Library = "omcruntime");
+  external "C" RTOpts_setAnnotationVersion(annotationVersion) annotation(Library = "omcruntime");
 end setAnnotationVersion;
 
 public function getNoSimplify
@@ -190,11 +190,8 @@ public function getNoSimplify
 end getNoSimplify;
 
 public function setNoSimplify
-"@author: adrpo 2008-12-13
-   setAnnotationVersion(\"3.x\");
-   for annotations: 1.x or 2.x or 3.x"
   input Boolean noSimplify;
-  external "C" annotation(Library = "omcruntime");
+  external "C" RTOpts_setNoSimplify(noSimplify) annotation(Library = "omcruntime");
 end setNoSimplify;
 
 public function vectorizationLimit
@@ -207,7 +204,7 @@ end vectorizationLimit;
 public function setVectorizationLimit
   "Sets the vectorization limit, see vectorizationLimit above."
   input Integer limit;
-  external "C" annotation(Library = "omcruntime");
+  external "C" RTOpts_setVectorizationLimit(limit) annotation(Library = "omcruntime");
 end setVectorizationLimit;
 
 public function showAnnotations
@@ -217,7 +214,7 @@ end showAnnotations;
 
 public function setShowAnnotations
   input Boolean show;
-  external "C" annotation(Library = "omcruntime");
+  external "C" RTOpts_setShowAnnotations(show) annotation(Library = "omcruntime");
 end setShowAnnotations;
 
 public function getRunningTestsuite
@@ -229,14 +226,14 @@ public function getEvaluateParametersInAnnotations
 "@author: adrpo
  flag to tell us if we should evaluate parameters in annotations"
  output Boolean shouldEvaluate; 
- external "C";
+ external "C" shouldEvaluate=RTOpts_getEvaluateParametersInAnnotations() annotation(Library = "omcruntime");
 end getEvaluateParametersInAnnotations;
 
 public function setEvaluateParametersInAnnotations
 "@author: adrpo
  flag to tell us if we should evaluate parameters in annotations"
  input Boolean shouldEvaluate; 
- external "C";
+ external "C" RTOpts_setEvaluateParametersInAnnotations(shouldEvaluate) annotation(Library = "omcruntime");
 end setEvaluateParametersInAnnotations;
 
 end RTOpts;

@@ -75,6 +75,10 @@ extern int RTOpts_showAnnotations() {
   return showAnnotations;
 }
 
+extern void RTOpts_setShowAnnotations(int show) {
+  showAnnotations = show;
+}
+
 extern int RTOpts_getNoSimplify() {
   return noSimplify;
 }
@@ -93,6 +97,66 @@ extern double RTOpts_latency() {
 
 extern int RTOpts_acceptMetaModelicaGrammar() {
   return acceptedGrammar == GRAMMAR_METAMODELICA;
+}
+
+extern int RTOpts_getRunningTestsuite() {
+  return running_testsuite;
+}
+
+extern int RTOpts_level() {
+  return elimination_level;
+}
+
+extern void RTOpts_setEliminationLevel(int level) {
+  elimination_level = level;
+}
+
+extern const char* RTOpts_classToInstantiate() {
+  return class_to_instantiate;
+}
+
+extern double RTOpts_bandwidth() {
+  return bandwidth;
+}
+
+extern int RTOpts_getEvaluateParametersInAnnotations() {
+  return evaluateParametersInAnnotations;
+}
+
+extern void RTOpts_setEvaluateParametersInAnnotations(int eval) {
+  evaluateParametersInAnnotations = eval;
+}
+
+extern const char* RTOpts_getAnnotationVersion() {
+  return annotation_version;
+}
+
+extern void RTOpts_setAnnotationVersion(const char* version) {
+  annotation_version = version;
+}
+
+extern int RTOpts_vectorizationLimit() {
+  return vectorization_limit;
+}
+
+extern void RTOpts_setVectorizationLimit(int limit) {
+  vectorization_limit = limit;
+}
+
+extern int RTOpts_simulationCg() {
+  return simulation_cg;
+}
+
+extern int RTOpts_silent() {
+  return silent;
+}
+
+extern int RTOpts_splitArrays() {
+  return split_arrays;
+}
+
+extern int RTOpts_versionRequest() {
+  return version_request;
 }
 
 }
