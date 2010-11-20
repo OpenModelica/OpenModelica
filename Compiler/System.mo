@@ -268,7 +268,7 @@ end setDataPort;
 public function setVariableFilter
   input String variables;
   output Boolean b;
-  external "C" b=System_setVariableFilter(variables) annotation(Library = "omcruntime");
+  external "C" b=setenv("sendDataFilter",variables,true) annotation(Library = "omcruntime");
 end setVariableFilter;
 
 public function sendData2
@@ -331,7 +331,7 @@ public function setEnv ""
   input String value;
   input Boolean overwrite "is always true on Windows, so recommended to always call it using true";
   output Integer outInteger;
-  external "C" outInteger=System_setEnv(varName,value,overwrite) annotation(Library = "omcruntime");
+  external "C" outInteger=setenv(varName,value,overwrite) annotation(Library = "omcruntime");
 end setEnv;
 
 public function subDirectories

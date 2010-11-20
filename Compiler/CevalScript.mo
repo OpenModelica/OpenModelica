@@ -424,9 +424,9 @@ algorithm
             lstVarVal = iv,
             compiledFunctions = cf)),msg)
       equation
-        _ = OptManager.setOption("checkModel", true);
+        OptManager.setOption("checkModel", true);
         (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
-        _ = OptManager.setOption("checkModel", false);
+        OptManager.setOption("checkModel", false);
       then
         (cache,ret_val,st_1);
     
@@ -4029,9 +4029,9 @@ algorithm
         false = Interactive.isType(cr, p);
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
-        _ = OptManager.setOption("checkModel", true);
+        OptManager.setOption("checkModel", true);
         (_,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);
-        _ = OptManager.setOption("checkModel", false);
+        OptManager.setOption("checkModel", false);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));

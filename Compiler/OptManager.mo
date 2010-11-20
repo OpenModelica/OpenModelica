@@ -44,18 +44,16 @@ package OptManager
 public function dumpOptions "
 Author BZ 2008-06
 Dump all options."
-external "C";
+external "C" OptManager_dumpOptions() annotation(Library = "omcruntime");
 end dumpOptions;
 
 public function setOption "
 Author: BZ 2008-06
 Set one option, to set an option requires that the option to be set already exists in the program.
-This is done in runtime/OptManager.cpp->OptManager_5finit.
 "
   input String option;
   input Boolean optionValue;
-  output Boolean succeded;
-  external "C";
+  external "C" OptManager_setOption(option,optionValue) annotation(Library = "omcruntime");
 end setOption;
 
 public function getOption "
@@ -64,7 +62,7 @@ Get option as String.
 "
   input String option;
   output Boolean optionValue;
-  external "C";
+  external "C" optionValue=OptManager_getOption(option) annotation(Library = "omcruntime");
 end getOption;
 
 end OptManager;

@@ -2661,7 +2661,7 @@ algorithm
         matchApiFunction(istmts, "setOption");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)), Absyn.BOOL(value = b1)} =
           getApiFunctionArgs(istmts);
-        _ = OptManager.setOption(str, b1);
+        OptManager.setOption(str, b1);
       then
         ("true",st);
 
@@ -14339,12 +14339,12 @@ algorithm
         // set check model on so that partial classes can be instantiated!
         b1 = OptManager.getOption("checkModel");
         b2 = RTOpts.getEvaluateParametersInAnnotations();
-        _ = OptManager.setOption("checkModel", true);
+        OptManager.setOption("checkModel", true);
         RTOpts.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
         (cache,env,_,_) = Inst.instantiateClass(Env.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
         
         RTOpts.setEvaluateParametersInAnnotations(b2);
-        _ = OptManager.setOption("checkModel", b1);        
+        OptManager.setOption("checkModel", b1);        
       then
         (cache, env, graphicProgram);
     
