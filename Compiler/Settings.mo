@@ -39,97 +39,77 @@ package Settings
 
 public function getVersionNr "Returns the version number of this release"
   output String outString;
-
-external "C";
+external "C" outString=Settings_getVersionNr() annotation(Library = "omcruntime");
 end getVersionNr;
 
 public function setCompilePath
   input String inString;
-
-  external "C" ;
+  external "C" Settings_setCompilePath(inString) annotation(Library = "omcruntime");
 end setCompilePath;
 
 public function getCompilePath
   output String outString;
 
-  external "C" ;
+  external "C" outString=Settings_getCompilePath() annotation(Library = "omcruntime");
 end getCompilePath;
 
 public function setCompileCommand
   input String inString;
 
-  external "C" ;
+  external "C" SettingsImpl_setCompileCommand(inString) annotation(Library = "omcruntime");
 end setCompileCommand;
 
 public function getCompileCommand
   output String outString;
 
-  external "C" ;
+  external "C" outString=Settings_getCompileCommand() annotation(Library = "omcruntime");
 end getCompileCommand;
 
 public function setTempDirectoryPath
   input String inString;
 
-  external "C" ;
+  external "C" Settings_setTempDirectoryPath(inString) annotation(Library = "omcruntime");
 end setTempDirectoryPath;
 
 public function getTempDirectoryPath
   output String outString;
 
-  external "C" ;
+  external "C" outString=Settings_getTempDirectoryPath() annotation(Library = "omcruntime");
 end getTempDirectoryPath;
 
 public function setInstallationDirectoryPath
   input String inString;
 
-  external "C" ;
+  external "C" SettingsImpl__setInstallationDirectoryPath(inString) annotation(Library = "omcruntime");
 end setInstallationDirectoryPath;
 
 public function getInstallationDirectoryPath
   output String outString;
-
   external "C"  outString=Settings_getInstallationDirectoryPath() annotation(Library = "omcruntime");
 end getInstallationDirectoryPath;
 
-public function setPlotCommand
-  input String inString;
-
-  external "C" ;
-end setPlotCommand;
-
-public function getPlotCommand
-  output String outString;
-
-  external "C" ;
-end getPlotCommand;
-
 public function setModelicaPath
   input String inString;
-
-  external "C" ;
+  external "C" SettingsImpl__setModelicaPath(inString) annotation(Library = "omcruntime");
 end setModelicaPath;
 
 public function getModelicaPath
   output String outString;
-
-  external "C" ;
+  external "C" outString=Settings__getModelicaPath() annotation(Library = "omcruntime");
 end getModelicaPath;
 
 public function getEcho
   output Integer echo;
-
-  external "C" ;
+  external "C" echo=Settings_getEcho() annotation(Library = "omcruntime");
 end getEcho;
 
 public function setEcho
   input Integer echo;
-
-  external "C" ;
+  external "C" Settings_setEcho(echo) annotation(Library = "omcruntime");
 end setEcho;
 
 public function dumpSettings
-
-  external "C" ;
+  external "C" Settings_dumpSettings() annotation(Library = "omcruntime");
 end dumpSettings;
-end Settings;
 
+end Settings;

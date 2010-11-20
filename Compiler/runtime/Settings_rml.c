@@ -67,32 +67,12 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
-  /* adrpo: TODO! FIXME!
-   * MathCore wants this set to g++
-   * but OpenModelica uses $OPENMODELICAHOME/bin/Compile
-   * now this is solved in CevalScript.compileModel which is different for OpenModelica vs. MathModelica
-   */
-  str = NULL;
-  str = getenv("MC_DEFAULT_COMPILE_CMD");
-  if (str == NULL) {
-    compileCommand = malloc(sizeof(char)*(strlen("g++") + 1));
-    strcpy(compileCommand,"g++");
-  } else {
-    compileCommand = malloc(sizeof(char)*(strlen(str) + 1));
-    strcpy(compileCommand, str);
-  }
-  str = NULL;
-  str = getenv("MC_DEFAULT_COMPILE_PATH");
-  if (str != NULL) {
-	  compilePath = malloc(sizeof(char)*(strlen(str) + 1));
-	  strcpy(compilePath, str);
-  }
 }
 
 
 RML_BEGIN_LABEL(Settings__getVersionNr)
 {
-    rmlA0 = (void*) mk_scon("1.6.0");
+  rmlA0 = (void*) mk_scon(CONFIG_VERSION);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -113,10 +93,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getCompileCommand)
 {
-  if(compileCommand)
-    rmlA0 = (void*) mk_scon(strdup(compileCommand));
-  else
-    rmlA0 = (void*) mk_scon("");
+  rmlA0 = mk_scon(SettingsImpl__getCompileCommand());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -138,10 +115,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getCompilePath)
 {
-  if(compilePath)
-    rmlA0 = (void*) mk_scon(strdup(compilePath));
-  else
-    rmlA0 = (void*) mk_scon("");
+  rmlA0 = mk_scon(SettingsImpl__getCompilePath());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -174,35 +148,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
 {
-  char* command = RML_STRINGDATA(rmlA0);
-  char* omhome = 0;
-  char* installationDirectoryPath = NULL;
-
-  installationDirectoryPath = (char*)malloc(strlen(command)+1);
-  if (installationDirectoryPath == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(installationDirectoryPath,command,strlen(command)+1);
-
-  /* create a str of the form: OPENMODELICAHOME=<PATH>*/
-  omhome = (char*)malloc(strlen(command)+1+18);
-  if (omhome == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  strncpy(omhome,"OPENMODELICAHOME=",17);
-  omhome[17]='\0';
-  strncat(omhome,command,strlen(command));
-  /*set the env-var to created string
-   this is useful when scripts and clients started
-  by omc wants to use OPENMODELICAHOME*/
-    if( putenv(omhome) != 0) // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
-  {
-    RML_TAILCALLK(rmlFC);
-  }
-#if defined(WIN32)
-  /* Only free on windows, in Linux the environment is taking over the ownership of the ptr */
-  free(omhome);
-#endif
+  const char* command = RML_STRINGDATA(rmlA0);
+  SettingsImpl__setInstallationDirectoryPath(command);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -218,75 +165,23 @@ RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__setPlotCommand)
-{
-  char* command = RML_STRINGDATA(rmlA0);
-  if(plotCommand)
-    free(plotCommand);
-
-  plotCommand = (char*)malloc(strlen(command)+1);
-  if (plotCommand == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(plotCommand,command,strlen(command)+1);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(Settings__getPlotCommand)
-{
-  if(plotCommand)
-    rmlA0 = (void*) mk_scon(strdup(plotCommand));
-  else
-    rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(Settings__setModelicaPath)
 {
-  char* command = RML_STRINGDATA(rmlA0);
-  char* mmpath;
-  char* modelicaPath = NULL;
-
-  modelicaPath = (char*)malloc(strlen(command)+1);
-  if (modelicaPath == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(modelicaPath,command,strlen(command)+1);
-
- /* create a str of the form: OPENMODELICALIBRARY=<PATH>*/
-  mmpath = (char*)malloc(strlen(command)+1+strlen("OPENMODELICALIBRARY="));
-  if (mmpath == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  strncpy(mmpath,"OPENMODELICALIBRARY=",strlen("OPENMODELICALIBRARY="));
-  mmpath[strlen("OPENMODELICALIBRARY=")]='\0';
-  strncat(mmpath,command,strlen(command));
-  /*set the env-var to created string
-   this is useful when scripts and clients started
-  by omc wants to use OPENMODELICAHOME*/
-    if( putenv(mmpath) != 0) // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
-  {
-    RML_TAILCALLK(rmlFC);
-  }
-
+  const char* command = RML_STRINGDATA(rmlA0);
+  SettingsImpl__setModelicaPath(command);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
-
-	 char *path = getenv("OPENMODELICALIBRARY");
-	 if (path == NULL) {
-	    rmlA0 = (void*) mk_scon("");
-	    RML_TAILCALLK(rmlFC);
-	  }
-	  else
-	    rmlA0 = (void*) mk_scon(path);
-	 RML_TAILCALLK(rmlSC);
+  char *path = SettingsImpl__getModelicaPath();
+  if (path == NULL)
+    RML_TAILCALLK(rmlFC);
+  else
+    rmlA0 = mk_scon(path);
+  free(path);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -319,10 +214,6 @@ RML_BEGIN_LABEL(Settings__dumpSettings)
 
   if(tempDirectoryPath)
     printf("temp directory path: %s\n",tempDirectoryPath);
-
-  if(plotCommand)
-    printf("plot command: %s\n",plotCommand);
-
 
   RML_TAILCALLK(rmlSC);
 }

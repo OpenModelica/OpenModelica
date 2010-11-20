@@ -486,11 +486,8 @@ algorithm
             instClsLst = ic,
             lstVarVal = iv,
             compiledFunctions = cf)),msg)
-      equation
-        cmd = Util.rawStringToInputString(cmd);
-        Settings.setPlotCommand(cmd);
       then
-        (cache,Values.BOOL(true),st);
+        (cache,Values.BOOL(false),st);
         
     case (cache,env,
         DAE.CALL(path = Absyn.IDENT(name = "getSettings"),expLst = {}),
@@ -507,8 +504,6 @@ algorithm
         res = stringAppendList({res,"Temp folder path: ", str1,"\n"});
         str1 = Settings.getInstallationDirectoryPath();
         res = stringAppendList({res,"Installation folder: ", str1,"\n"});
-        str1 = Settings.getPlotCommand();
-        res = stringAppendList({res,"Plot command: ", str1,"\n"});
         str1 = Settings.getModelicaPath();
         res = stringAppendList({res,"Modelica path: ", str1,"\n"});
       then

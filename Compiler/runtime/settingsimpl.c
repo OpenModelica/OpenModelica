@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "config.h"
 
 /* malloc.h is in sys in Mac OS */
@@ -45,14 +46,17 @@
 #include <Windows.h>
 #endif
 
-char* compileCommand = 0;
-char* compilePath = 0;
-char* tempDirectoryPath = 0;
-char* plotCommand = 0;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int echo = 1; //true
+static char* compileCommand = 0;
+static char* compilePath = 0;
+static char* tempDirectoryPath = 0;
+static int   echo = 1; //true
 
-char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
+extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
+extern int SystemImpl__directoryExists(const char*);
 
 // Do not free or modift the returned variable. It's part of the environment!
 static const char* SettingsImpl__getInstallationDirectoryPath() {
@@ -61,3 +65,96 @@ static const char* SettingsImpl__getInstallationDirectoryPath() {
     return CONFIG_DEFAULT_OPENMODELICAHOME; // On Windows, this is NULL; on Unix it is the configured --prefix
   return path;
 }
+
+// Do not free the returned variable. It's malloc'ed
+char* SettingsImpl__getModelicaPath() {
+  const char *path = getenv("OPENMODELICALIBRARY");
+  if (path == NULL) {
+    // By default, this is <omhome>/lib/omlibrary/mslXX:<omhome>/lib/omlibrary/common
+    const int num_msl_version = 4;
+    const char *msl_versions[] = {"msl31","msl32","msl221","msl16"};
+    const char *omhome = SettingsImpl__getInstallationDirectoryPath();
+    if (omhome == NULL)
+      return NULL;
+    int lenOmhome = strlen(omhome);
+    char *buffer = (char*) malloc(2*lenOmhome+100);
+    int i;
+    for (i=0; i<num_msl_version; i++) {
+      snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/%s",omhome,msl_versions[i]);
+      if (SystemImpl__directoryExists(buffer)) {
+        snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/%s:%s/lib/omlibrary/common",omhome,msl_versions[i],omhome);
+        return buffer;
+      }
+    }
+    snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/common",omhome);
+    return buffer;
+  }
+  return strdup(path);
+}
+
+static const char* SettingsImpl__getCompileCommand()
+{
+  if (compileCommand == NULL) {
+    // Get a default command
+    const char *res = getenv("MC_DEFAULT_COMPILE_CMD");
+    if (res == NULL)
+      return "g++";
+    return res;
+  }
+  return compileCommand;
+}
+
+extern void SettingsImpl__setCompileCommand(const char *command) {
+  if(compileCommand)
+    free(compileCommand);
+  compileCommand = strdup(command);
+}
+
+static const char* SettingsImpl__getCompilePath()
+{
+  if (compilePath == NULL) {
+    // Get a default command
+    const char *res = getenv("MC_DEFAULT_COMPILE_PATH");
+    if (res == NULL)
+      return "";
+    return res;
+  }
+  return compilePath;
+}
+
+extern void SettingsImpl__setCompilePath(const char *path) {
+  if(compilePath)
+    free(compilePath);
+  compilePath = strdup(path);
+}
+
+static void commonSetEnvVar(const char *var, const char *value)
+{
+  int lenVar = strlen(var);
+  int lenVal = strlen(value);
+  char* command = (char*) malloc(lenVar+lenVal+1);
+  assert(command != NULL);
+  /* create a str of the form: <VAR>=<VALUE>*/
+  snprintf(command, lenVar+lenVal+1, "%s=%s", var, value);
+  command[lenVar+lenVal]='\0';
+  /* set the env-var to created string this is useful when scripts and clients started by omc wants to use OPENMODELICAHOME*/
+  assert(putenv(command) == 0); // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
+#if defined(WIN32)
+  /* Only free on windows, in Linux the environment is taking over the ownership of the ptr */
+  free(command);
+#endif
+}
+
+extern void SettingsImpl__setInstallationDirectoryPath(const char *value)
+{
+  commonSetEnvVar("OPENMODELICAHOME",value);
+}
+
+extern void SettingsImpl__setModelicaPath(const char *value)
+{
+  commonSetEnvVar("OPENMODELICALIBRARY",value);
+}
+
+#ifdef __cplusplus
+}
+#endif

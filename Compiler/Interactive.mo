@@ -1958,8 +1958,8 @@ algorithm
         matchApiFunction(istmts, "checkSettings");
         {} = getApiFunctionArgs(istmts);
         vars = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
-        omhome = Util.makeValueOrDefault(System.readEnv,"OPENMODELICAHOME","");
-        omlib = Util.makeValueOrDefault(System.readEnv,"OPENMODELICALIBRARY","");
+        omhome = Settings.getInstallationDirectoryPath();
+        omlib = Settings.getModelicaPath();
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
         omcfound = System.regularFileExists(omcpath);
         os = System.os();

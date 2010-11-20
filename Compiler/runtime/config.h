@@ -28,6 +28,11 @@
  *
  */
 
+#ifndef OPENMODELICA_CONFIG_H
+#define OPENMODELICA_CONFIG_H
+
+#define CONFIG_VERSION "1.6.0"
+
 #define DEFAULT_CC "g++"
 #define DEFAULT_CXX "g++"
 #define DEFAULT_LDFLAGS "-lc_runtime"
@@ -72,5 +77,7 @@
 #else /* Unix */
 
 #include "config.unix.h"
+
+#endif
 
 #endif

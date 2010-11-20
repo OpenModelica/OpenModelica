@@ -32,12 +32,45 @@
 
 extern "C" {
 
-const char* Settings_getInstallationDirectoryPath()
+extern const char* Settings_getInstallationDirectoryPath()
 {
   const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
     throw 1;
   return strdup(path);
 }
+
+extern const char* Settings_getModelicaPath()
+{
+  const char *path = SettingsImpl__getModelicaPath();
+  if (path == NULL)
+    throw 1;
+  return path;
+}
+
+extern const char* Settings_getCompileCommand()
+{
+  return strdup(SettingsImpl__getCompileCommand());
+}
+
+extern void Settings_setPlotCommand(const char* _inString);
+
+extern int Settings_getEcho()
+{
+  return echo;
+}
+
+extern void Settings_setEcho(int _echo)
+{
+  echo = _echo;
+}
+
+extern const char* Settings_getVersionNr()
+{
+  return CONFIG_VERSION;
+}
+
+extern const char* Settings_getTempDirectoryPath();
+extern void Settings_setTempDirectoryPath(const char* _inString);
 
 }
