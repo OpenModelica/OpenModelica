@@ -271,17 +271,16 @@ void* System_moFiles(const char *directory)
   void *res;
   WIN32_FIND_DATA FileData;
   BOOL more = TRUE;
-  char* directory = RML_STRINGDATA(rmlA0);
   char pattern[1024];
   HANDLE sh;
   sprintf(pattern, "%s\\*.mo", directory);
-  res = (void*)mk_nil();
+  res = mmc_mk_nil();
   sh = FindFirstFile(pattern, &FileData);
   if (sh != INVALID_HANDLE_VALUE) {
     while(more) {
       if (strcmp(FileData.cFileName,"package.mo") != 0)
       {
-        res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
       }
       more = FindNextFile(sh, &FileData);
     }
