@@ -74,7 +74,7 @@ struct type_desc_s {
     integer_array_t int_array;
     modelica_boolean boolean;
     boolean_array_t bool_array;
-    modelica_string_t string;
+    modelica_string_const string;
     string_array_t string_array;
     struct {
       size_t elements;

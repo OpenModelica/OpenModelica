@@ -45,7 +45,7 @@ of values."
   input list<Values.Value> inValLst;
   output Values.Value outVal;
 
-  external "C" ;
+  external "C" outVal=DynLoad_executeFunction(inFuncHandle,inValLst) annotation(Library = "omcruntime");
 end executeFunction;
 
 end DynLoad;

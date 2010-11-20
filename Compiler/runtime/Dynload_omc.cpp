@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, LinkÃ¶pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -28,21 +28,14 @@
  *
  */
 
-#ifndef __DYNLOAD_TRY__H
-#define __DYNLOAD_TRY__H
-
-#include "read_write.h"
-
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-int execute_function_try_catch(int (* func)(type_description *, type_description *),
-                               type_description *arglst,
-                               type_description *retarg);
+#include <stdio.h>
 
-#ifdef __cplusplus
+extern void* Dynload_executeFunction(int _inFuncHandle, void* _inValLst)
+{
+  fprintf(stderr, "Dynload_executeFunction NYI\n");
+  throw 1;
 }
-#endif
 
-#endif
+}
