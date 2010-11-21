@@ -136,6 +136,8 @@ public:
     void setSelectionBoxHover();
     void updateSelectionBox();
     void addConnector(Connector *item);
+    void setComponentFlags();
+    void unsetComponentFlags();
 signals:
     void componentClicked(Component*);
     void componentMoved();

@@ -56,7 +56,7 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
 {
     mpParentProjectTab = parent;
     this->setFrameShape(QGraphicsView::NoFrame);
-    this->setDragMode(RubberBandDrag);
+    this->setDragMode(QGraphicsView::RubberBandDrag);
     this->setInteractive(true);
     this->setEnabled(true);
     this->setAcceptDrops(true);
@@ -72,8 +72,6 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
 
     if (mIconType == StringHandler::ICON)
         this->setStyleSheet("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightGray, stop: 1 gray);");
-    else if (mIconType == StringHandler::DIAGRAM)
-        this->setStyleSheet("background-color: #ffffff;");
 
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
@@ -82,6 +80,9 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     Q_UNUSED(rect);
+
+    if (mIconType == StringHandler::DIAGRAM)
+        return;
 
     // draw scene rectangle
     painter->setPen(Qt::black);
@@ -748,6 +749,7 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTab
     // create project status bar
     mpProjectStatusBar = new QStatusBar;
     mpProjectStatusBar->setObjectName(tr("PojectStatusBar"));
+    mpProjectStatusBar->setSizeGripEnabled(false);
     mpProjectStatusBar->addPermanentWidget(viewsButtonsFrame, 5);
     mpProjectStatusBar->addPermanentWidget(mpReadOnlyLabel, 10);
     mpProjectStatusBar->addPermanentWidget(mpModelicaTypeLabel, 10);
@@ -954,18 +956,25 @@ void ProjectTab::getModelComponents()
         {
             // Check if the icon is already loaded.
             QString iconName;
-//            iconName = mpGraphicsView->getUniqueComponentName(StringHandler::getLastWordAfterDot(
-//                                                              componentProperties->getClassName()).toLower());
             iconName = componentProperties->getName();
 
             if (!oldComponent)
             {
+                LibraryComponent *libComponent;
                 QString result = pMainWindow->mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
-                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
-                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
+                libComponent = new LibraryComponent(result, componentProperties->getClassName(),
+                                                     mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
+                // add the component to library widget components lists
+                mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
+                // create a new copy component here
+                newComponent = new Component(libComponent->mpComponent, iconName, QPointF(0.0, 0.0),
+                                             StringHandler::ICON, false, mpGraphicsView);
+//                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
+//                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
             }
             else
             {
+                // create a new copy component here
                 newComponent = new Component(oldComponent, iconName, QPointF(0.0, 0.0), StringHandler::ICON,
                                              false, mpGraphicsView);
             }

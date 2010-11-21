@@ -544,6 +544,13 @@ void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 //! @see hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 void ConnectorLine::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
+    Q_UNUSED(event);
+    // if we are creating the connector then don't show selection box on hover events
+    if (mpParentConnector->mpParentGraphicsView->mIsCreatingConnector)
+    {
+        return;
+    }
+
     if(this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
     {
         if(this->mParentConnectorEndComponentConnected && this->mpParentConnector->getGeometry(getLineNumber()) == Connector::VERTICAL)
@@ -562,6 +569,7 @@ void ConnectorLine::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 //! @see hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 void ConnectorLine::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
+    Q_UNUSED(event);
     emit lineHoverLeave();
 }
 

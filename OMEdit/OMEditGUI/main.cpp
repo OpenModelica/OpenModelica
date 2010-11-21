@@ -33,7 +33,6 @@
 
 #include <QtGui/QApplication>
 #include <QSplashScreen>
-#include <QTimer>
 
 #include "SplashScreen.h"
 #include "mainwindow.h"

@@ -35,7 +35,6 @@
 #define PLOTWIDGET_H
 
 #include "mainwindow.h"
-#include "graphWindow.h"
 
 class MainWindow;
 
@@ -49,15 +48,11 @@ public:
 
     void readPlotVariables(QString fileName);
     void addPlotVariablestoTree(QString fileName, QList<QString> plotVariablesList);
-    void addInGraphWindowMap(QString key, GraphWindow *graphWindow);
-    void deleteInGraphWindowMap(QString key);
-    GraphWindow* getGraphWindow(QString key);
 private:
     QLabel *mpPlotTypesLabel;
     QComboBox *mpPlotTypesCombo;
     QTreeWidget *mpPlotVariablesTree;
     QVBoxLayout *mpVerticalLayout;
-    QMap<QString, GraphWindow*> mGraphWindowsMap;
 public slots:
     void plotVariables(QTreeWidgetItem *item, int column);
     void visualize(QString value);

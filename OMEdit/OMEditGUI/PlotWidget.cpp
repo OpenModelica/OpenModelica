@@ -66,7 +66,9 @@ PlotWidget::PlotWidget(MainWindow *pParent)
 
 void PlotWidget::readPlotVariables(QString fileName)
 {
-    QFile simulationResultFile(Helper::tmpPath.append("/").append(fileName));
+    // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
+    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
+    QFile simulationResultFile(filePath);
     simulationResultFile.open(QIODevice::ReadOnly);
 
     QList<QString> plotVariablesList;
@@ -97,7 +99,6 @@ void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVar
         QTreeWidgetItem *item = mpPlotVariablesTree->topLevelItem(i);
         if (item->toolTip(0) == fileName)
         {
-            deleteInGraphWindowMap(item->toolTip(0));
             qDeleteAll(item->takeChildren());
             delete item;
         }
@@ -145,18 +146,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
 
     QString plotVariablesString = plotVariablesList.join(",");
 
-    // check if plotwindow for this model is already open or not
-/*    GraphWindow *graphWindow;// = getGraphWindow(parentItem->toolTip(column));
-
-    if (!graphWindow)
-    {
-        graphWindow = new GraphWindow(mpParentMainWindow);
-        graphWindow->setWindowTitle(QString(Helper::applicationName).append(" - ").append(graphWindow->windowTitle())
-                                    .append(" for ").append(parentItem->toolTip(column)));
-        graphWindow->setAttribute(Qt::WA_DeleteOnClose);
-    }
-    graphWindow->compoundWidget->gwMain->setServerState(true);
-*/
     // create Plot Expression to send to OMC and Compound Widget
     QString plotExpression;
     // remove the _res.plt from name
@@ -168,7 +157,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     {
         plotExpression = "plot(" + modelName + ", {" + plotVariablesString + "})";
         setCursor(Qt::WaitCursor);
-        //graphWindow->compoundWidget->gwMain->setExpr(plotExpression);
         if (!mpParentMainWindow->mpOMCProxy->plot(modelName, plotVariablesString))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
@@ -179,7 +167,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     {
         plotExpression = "plotParametric(" + modelName + ", {" + plotVariablesString + "})";
         setCursor(Qt::WaitCursor);
-        //graphWindow->compoundWidget->gwMain->setExpr(plotExpression);
         if (!mpParentMainWindow->mpOMCProxy->plotParametric(modelName, plotVariablesString))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
@@ -190,49 +177,12 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     {
         plotExpression = "visualize(" + modelName + ")";
         setCursor(Qt::WaitCursor);
-        //graphWindow->compoundWidget->gwMain->setExpr(plotExpression);
         if (!mpParentMainWindow->mpOMCProxy->visualize(modelName))
         {
             mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(mpParentMainWindow->mpOMCProxy->getResult());
         }
         unsetCursor();
     }
-
-//    graphWindow->showNormal();
-//    graphWindow->raise();       // brings the widget to top level
-//    addInGraphWindowMap(parentItem->toolTip(column), graphWindow);
-}
-
-void PlotWidget::addInGraphWindowMap(QString key, GraphWindow *graphWindow)
-{
-    mGraphWindowsMap.insert(key, graphWindow);
-}
-
-void PlotWidget::deleteInGraphWindowMap(QString key)
-{
-    QMap<QString, GraphWindow*>::iterator it;
-    for (it = mGraphWindowsMap.begin(); it != mGraphWindowsMap.end(); ++it)
-    {
-        if (it.key() == key)
-        {
-            delete it.value();
-            mGraphWindowsMap.remove(key);
-            break;
-        }
-    }
-}
-
-GraphWindow* PlotWidget::getGraphWindow(QString key)
-{
-    QMap<QString, GraphWindow*>::iterator it;
-    for (it = mGraphWindowsMap.begin(); it != mGraphWindowsMap.end(); ++it)
-    {
-        if (it.key() == key)
-        {
-            return it.value();
-        }
-    }
-    return NULL;
 }
 
 void PlotWidget::visualize(QString value)

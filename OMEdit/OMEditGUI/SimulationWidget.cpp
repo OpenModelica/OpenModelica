@@ -185,9 +185,17 @@ void SimulationWidget::simulate()
 
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Enable to simulate the Model '" +
+            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Unable to simulate the Model '" +
                                                                       projectTab->mModelNameStructure + "'");
-            accept();
+            QString result = mpParentMainWindow->mpOMCProxy->getResult();
+            int startPos = result.indexOf("messages");
+            int endPos = result.indexOf("timeFrontend");
+            // add 10 to startPos to remove 'messages = ' word and remove -16 to remove timeFrontend from the end
+            QString message = result.mid(startPos + 10, (endPos - startPos) - 16);
+            message = StringHandler::removeFirstLastQuotes(message).trimmed();
+            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(
+                                                                      GUIMessages::ERROR_OCCURRED))
+                                                                      .arg(message));
         }
         else
         {
@@ -195,10 +203,10 @@ void SimulationWidget::simulate()
             mpParentMainWindow->plotdock->show();
             mpParentMainWindow->mpMessageWidget->printGUIMessage("Simulated '" +
                                                                   projectTab->mModelNameStructure + "' successfully!");
-            progressBar.setValue(endtime);
-            progressBar.hide();
-            accept();
         }
+        progressBar.setValue(endtime);
+        progressBar.hide();
+        accept();
     }
 }
 

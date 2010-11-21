@@ -42,23 +42,15 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     mpParentComponent = pParent;
     mpIconParametersList.append(mpOMCProxy->getParameters(mClassName));
 
-    if (!parseAnnotationString(this, value))
-    {
-        MainWindow *pMainWindow = mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-        pMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::INVALID_COMPONENT_ANNOTATIONS))
-                                                           .arg(mName).arg(mClassName));
-        return;
-    }
+    parseAnnotationString(this, value);
     // if component is an icon
     if (mType == StringHandler::ICON)
     {
         scale(Helper::globalIconXScale, Helper::globalIconYScale);
         setPos(position);
-        setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemSendsGeometryChanges);
+        setComponentFlags();
         setAcceptHoverEvents(true);
-
         getClassComponents(mClassName, mType);
-        createSelectionBox();
         createActions();
     }
     // if component is a diagram
@@ -84,6 +76,11 @@ Component::Component(QString value, QString className, int type, bool connector,
     mpGraphicsView = pParent->mpGraphicsView;
     mpComponentProperties = 0;
     parseAnnotationString(this, mAnnotationString);
+
+    //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
+    //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
+    if (mRectangle.width() > 1)
+        getRootParentComponent()->mRectangle = mRectangle;
 }
 
 /* Called for component annotation instance */
@@ -104,9 +101,13 @@ Component::Component(QString value, QString className, QString transformationStr
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
 
-    // if tab type is icon then allow connections not for diagram view
-    //if (mpGraphicsView->mpParentProjectTab->mIconType == StringHandler::ICON)
-    if (pParent->mType == StringHandler::ICON)
+    //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
+    //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
+    if (mRectangle.width() > 1)
+        getRootParentComponent()->mRectangle = mRectangle;
+
+    // if type is icon then allow connections not for diagram view
+    if (mpParentComponent->mType == StringHandler::ICON)
         connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
 }
 
@@ -120,10 +121,8 @@ Component::Component(QString value, QString className, OMCProxy *omc, Component 
     mType = StringHandler::ICON;
     mIsConnector = false;
 
-    if (parseAnnotationString(this, value))
-    {
-        getClassComponents(mClassName, mType);
-    }
+    parseAnnotationString(this, value);
+    getClassComponents(mClassName, mType);
 }
 
 /* Used for Library Component. Called for inheritance annotation instance */
@@ -162,8 +161,6 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
 {
     mpParentComponent = pParent;
     mClassName = pComponent->mClassName;
-    /* make sure you dont use the OMC instance of pComponent, since it has the library loader instance and
-       not the main instance */
     mpOMCProxy = mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     mAnnotationString = pComponent->mAnnotationString;
 
@@ -172,20 +169,14 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
     // get the component parameters
     mpIconParametersList.append(mpOMCProxy->getParameters(mClassName));
 
-    if (!parseAnnotationString(this, mAnnotationString))
-    {
-        MainWindow *pMainWindow = mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-        pMainWindow->mpMessageWidget->printGUIErrorMessage("The Annotations for the component are not correct. Unable to add component.");
-        return;
-    }
+    parseAnnotationString(this, mAnnotationString);
     // if component is an icon
     if (mType == StringHandler::ICON)
     {
         scale(Helper::globalIconXScale, Helper::globalIconYScale);
         setPos(position);
-        setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemSendsGeometryChanges);
+        setComponentFlags();
         setAcceptHoverEvents(true);
-
         copyClassComponents(pComponent);
         createSelectionBox();
         createActions();
@@ -204,25 +195,17 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
 
 Component::~Component()
 {
-    if (!mpParentComponent and mType == StringHandler::ICON and !mIsLibraryComponent)
-    {
-        delete mpTopLeftCornerItem;
-        delete mpTopRightCornerItem;
-        delete mpBottomLeftCornerItem;
-        delete mpBottomRightCornerItem;
-    }
-
     // delete all the list of shapes
     foreach(ShapeAnnotation *shape, mpShapesList)
         delete shape;
 
     // delete the list of all components
-//    foreach(Component *component, mpComponentsList)
-//        delete component;
+    foreach(Component *component, mpComponentsList)
+        delete component;
 
-//    // delete the list of all inherited components
-//    foreach(Component *component, mpInheritanceList)
-//        delete component;
+    // delete the list of all inherited components
+    foreach(Component *component, mpInheritanceList)
+        delete component;
 }
 
 //! Parses the result of getIconAnnotation command.
@@ -365,6 +348,18 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    // if we are creating the connector then make sure user can not select and move components
+    if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
+    {
+        unsetComponentFlags();
+        return;
+    }
+    // if user not creating connector then check if the item flags are active or not
+    else if (!mpParentComponent)
+    {
+        setComponentFlags();
+    }
+
     if (event->button() == Qt::LeftButton)
     {
         emit componentClicked(this);
@@ -379,6 +374,10 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event);
+
+    // if we are creating the connector then don't show selection box on hover events
+    if (mpGraphicsView->mIsCreatingConnector)
+        return;
 
     if(!this->isSelected())
         setSelectionBoxHover();
@@ -572,6 +571,28 @@ void Component::addConnector(Connector *item)
 
     connect(this, SIGNAL(componentScaled()), item, SLOT(drawConnector()));
     connect(this, SIGNAL(componentScaled()), item, SLOT(updateConnectionAnnotationString()));
+}
+
+void Component::setComponentFlags()
+{
+    // set the item flags
+    if(!this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
+        setFlag(QGraphicsItem::ItemIsMovable);
+    if(!this->flags().testFlag((QGraphicsItem::ItemIsSelectable)))
+        setFlag(QGraphicsItem::ItemIsSelectable);
+    if(!this->flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
+        setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+}
+
+void Component::unsetComponentFlags()
+{
+    // unset the item flags
+    if(this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
+        setFlag(QGraphicsItem::ItemIsMovable, false);
+    if(this->flags().testFlag((QGraphicsItem::ItemIsSelectable)))
+        setFlag(QGraphicsItem::ItemIsSelectable, false);
+    if(this->flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
+        setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
 }
 
 void Component::updateAnnotationString()

@@ -399,8 +399,28 @@ void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
         }
     }
 
-    addNodes(tempPackageNodesList);
-    addNodes(tempNonPackageNodesList);
+    //! @todo
+    /* if both the lists are empty then remove the + sign from tree node. Work Around for Constants Library
+       at the moment. */
+
+    if (tempPackageNodesList.isEmpty() and tempNonPackageNodesList.isEmpty())
+    {
+        // get the node and remove the ChildIndicatorPolicy
+        QTreeWidgetItemIterator it(this);
+        while (*it)
+        {
+            if ((*it)->toolTip(0) == value)
+            {
+                (*it)->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicator);
+            }
+            ++it;
+        }
+    }
+    else
+    {
+        addNodes(tempPackageNodesList);
+        addNodes(tempNonPackageNodesList);
+    }
 
     /*
         Open the Following code and comment the above if loading library once.
@@ -787,16 +807,20 @@ LibraryComponent::LibraryComponent(QString value, QString className, OMCProxy *o
 {
     mClassName = className;
     mpComponent = new Component(value, className, omc);
-    if (mpComponent->mRectangle.width() < 1)
-        return;
+//    if (mpComponent->mRectangle.width() < 1)
+//        return;
 
-    QRectF rect = mpComponent->mRectangle;
+    QRectF rect;
+    if (mpComponent->mRectangle.width() > 1)
+        rect = mpComponent->mRectangle;
+    else
+        rect = QRectF(-100.0, -100.0, 200.0, 200.0);
+
     qreal adjust = 22;
     rect.setX(rect.x() - adjust);
     rect.setY(rect.y() - adjust);
     rect.setWidth(rect.width() + adjust);
     rect.setHeight(rect.height() + adjust);
-
 
     QByteArray byteArray;
     QBuffer buffer(&byteArray);
