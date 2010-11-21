@@ -199,13 +199,13 @@ Component::~Component()
     foreach(ShapeAnnotation *shape, mpShapesList)
         delete shape;
 
-    // delete the list of all components
-    foreach(Component *component, mpComponentsList)
-        delete component;
+//    // delete the list of all components
+//    foreach(Component *component, mpComponentsList)
+//        delete component;
 
-    // delete the list of all inherited components
-    foreach(Component *component, mpInheritanceList)
-        delete component;
+//    // delete the list of all inherited components
+//    foreach(Component *component, mpInheritanceList)
+//        delete component;
 }
 
 //! Parses the result of getIconAnnotation command.
@@ -348,6 +348,9 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    // if user is viewing the component in Icon View
+    if (mpGraphicsView->mIconType == StringHandler::DIAGRAM)
+        return;
     // if we are creating the connector then make sure user can not select and move components
     if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
     {
@@ -394,6 +397,10 @@ void Component::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    // if we are viewing some readonly component then don't show the contextmenu
+    if (mpGraphicsView->mpParentProjectTab->isReadOnly())
+        return;
+
     // get the root component, it could be either icon or diagram
     Component *pComponent = getRootParentComponent();
 

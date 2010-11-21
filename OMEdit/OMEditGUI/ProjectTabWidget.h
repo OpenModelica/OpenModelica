@@ -70,7 +70,6 @@ class GraphicsView : public QGraphicsView
     Q_OBJECT
 private:
     Connector *mpConnector;
-    int mIconType;
     void createActions();
     void createMenus();
 public:
@@ -82,6 +81,7 @@ public:
     bool checkComponentName(QString iconName);
 
     QList<Component*> mComponentsList;
+    int mIconType;
     bool mIsCreatingConnector;
     QVector<Connector*> mConnectorsVector;
     ProjectTab *mpParentProjectTab;
