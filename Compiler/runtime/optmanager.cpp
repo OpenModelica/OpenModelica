@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <list>
 #include <map>
 #include <set>
 #include <string>
@@ -38,91 +39,71 @@
 
 using namespace std;
 
+typedef std::pair<std::string,bool> optPair;
+static const optPair pairs[] = {
+  optPair("translateDAEString",true),
+  optPair("cevalEquation",true),
+  optPair("generateBoschCode",false),
+  optPair("noTearing",false),
+  optPair("noCse",false),
+  optPair("dynamicStateSelection", false),
+  optPair("evaluatingSystem",false),
+  optPair("MOOSEScaleEquations",true),
+  optPair("analyticJacobian",false),
+  optPair("dummyOption",false),
+  optPair("logSelectedStates",false),
+  optPair("checkModel",false),
+  optPair("unitChecking",false),
+  optPair("reportMatchingError",false),
+  optPair("envCache",true),
+  optPair("collectZCFromSmooth", true), // If true zero crossings are collected from expr in smooth(N, expr)
+  optPair("noVectorization", false)  
+};
+
+typedef std::list<optPair> listOptPair;
+static const listOptPair lst (pairs, pairs + sizeof(pairs) / sizeof(optPair) );
+
 typedef map<std::string, bool> stringMap;
-stringMap options;
-const char *undefined = "## UNDEFINED OPTION ##";
-extern "C"
+static stringMap options (lst.begin(), lst.end());
+static const char *undefined = "## UNDEFINED OPTION ##";
+
+extern "C" {
+
+extern void OptManagerImpl__dumpOptions()
 {
-#include "rml.h"
+	cout << endl << "Option mappings, (key, value):" <<endl;
+	for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
+  {
+    cout <<"(" << it->first;
+    cout << " ==> " << it->second << ")"<< endl;
+  }
+  cout << endl;
+}
 
-	// For all options to be used, add an initial value here.
-	void OptManager_5finit(void)
-	{
-		options.clear();
-		options.insert(std::pair<std::string,bool>("translateDAEString",true));
-		options.insert(std::pair<std::string,bool>("cevalEquation",true));
-		options.insert(std::pair<std::string,bool>("generateBoschCode",false));
-		options.insert(std::pair<std::string,bool>("noTearing",false));
-		options.insert(std::pair<std::string,bool>("noCse",false));
-		options.insert(std::pair<std::string,bool>("dynamicStateSelection", false));
-		options.insert(std::pair<std::string,bool>("evaluatingSystem",false));
-		options.insert(std::pair<std::string,bool>("MOOSEScaleEquations",true));
-		options.insert(std::pair<std::string,bool>("analyticJacobian",false));
-		options.insert(std::pair<std::string,bool>("dummyOption",false));
-		options.insert(std::pair<std::string,bool>("logSelectedStates",false));
-		options.insert(std::pair<std::string,bool>("checkModel",false));
-		options.insert(std::pair<std::string,bool>("unitChecking",false));
-		options.insert(std::pair<std::string,bool>("reportMatchingError",false));
-		options.insert(std::pair<std::string,bool>("envCache",true));
-		options.insert(std::pair<std::string,bool>("collectZCFromSmooth", true)); // If true zero crossings are collected from expr in smooth(N, expr)
-        options.insert(std::pair<std::string,bool>("noVectorization", false));
-		//options.insert(std::pair<std::string,bool>("dummy",false));
+int OptManagerImpl__setOption(const char *strEntry, int strValue)
+{
+	stringMap::iterator iter = options.begin();
+	iter = options.find(strEntry);
+	if( iter != options.end() ){
+		options[strEntry] = strValue;
+		return 0;
+	}
+	else{
+		cout << "Error, option " << strEntry << " is not defined in options-map. Every option needs to be defined at program start." << endl;
+		return 1;
+	}
+}
 
-/*		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
-	    {
-	        cout << "Who(key = first): " << it->first;
-	        cout << " Score(value = second): " << it->second << endl;
-	    }
-*/
+int OptManagerImpl__getOption(const char *strEntry)
+{
+	stringMap::iterator iter = options.begin();
+	iter = options.find(strEntry);
+	if( iter != options.end() ) {
+		return iter->second;
+	} else {
+		cout << "Error, option " << strEntry << " is not defined in options-map" << endl;
+		return -1;
 	}
-	RML_BEGIN_LABEL(OptManager__dumpOptions)
-	{
-		cout << endl << "Option mappings, (key, value):" <<endl;
-		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
-	    {
-	        cout <<"(" << it->first;
-	        cout << " ==> " << it->second << ")"<< endl;
-	    }
-		cout << endl;
-		RML_TAILCALLK(rmlSC);
-	}
-	RML_END_LABEL
-	RML_BEGIN_LABEL(OptManager__setOption)
-	{
-		void *entry = rmlA0;
-		void *value = rmlA1;
-		char *strEntry = RML_STRINGDATA(entry);
-		bool strValue = RML_PRIM_MKBOOL(value);
-		stringMap::iterator iter = options.begin();
-		iter = options.find(strEntry);
-		if( iter != options.end() ){
-			options[strEntry] = strValue;
-			rmlA0 = RML_TRUE;//mk_bcon(1);
-		}
-		else{
-			cout << "Error, option " << strEntry << " is not defined in options-map. Every option needs to be defined at program start." << endl;
-			RML_TAILCALLK(rmlFC);
-			rmlA0 = RML_FALSE; //mk_bcon(-1);
-		}
+}
 
-		RML_TAILCALLK(rmlSC);
-	}
-	RML_END_LABEL
-
-	RML_BEGIN_LABEL(OptManager__getOption)
-	{
-		void *entry = rmlA0;
-		char *strEntry = RML_STRINGDATA(entry);
-		stringMap::iterator iter = options.begin();
-		iter = options.find(strEntry);
-		if( iter != options.end() ){
-			rmlA0 = iter->second? RML_TRUE:RML_FALSE;//mk_bcon(iter->second);
-		}
-		else{
-			cout << "Error, option " << strEntry << " is not defined in options-map" << endl;
-			RML_TAILCALLK(rmlFC);
-		}
-		RML_TAILCALLK(rmlSC);
-	}
-	RML_END_LABEL
 } // extern "C"
