@@ -66,7 +66,7 @@ goto rule ## func ## Ex; }}
   #define or_nil(x) (x != 0 ? x : mk_nil())
   #define mk_some_or_none(x) (x ? mk_some(x) : mk_none())
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
-  #define make_redeclare_keywords(replaceable,redeclare) (replaceable && redeclare ? Absyn__REDECLARE_5fREPLACEABLE : replaceable ? Absyn__REPLACEABLE : redeclare ? Absyn__REDECLARE : NULL)
+  #define make_redeclare_keywords(replaceable,redeclare) (((replaceable) && (redeclare)) ? Absyn__REDECLARE_5fREPLACEABLE : ((replaceable) ? Absyn__REPLACEABLE : ((redeclare) ? Absyn__REDECLARE : NULL)))
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
 #if 0
   /* Enable if you don't want to generate the tree */
@@ -330,6 +330,7 @@ element_list returns [void* ast] @init {
 element returns [void* ast] @declarations {
   void *final;
   void *innerouter;
+  void *redecl;
 } :
     ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"), ic, INFO($start), mk_none());}
   | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"), ec, INFO($start),mk_none());}
@@ -338,21 +339,21 @@ element returns [void* ast] @declarations {
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
            if (!cc)
-             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)),
+             $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(),
                                   innerouter, mk_scon("??"),
                                   Absyn__CLASSDEF(RML_FALSE, cdef.ast),
                                   INFO($start), mk_none());
            else
-             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)), innerouter,
+             $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(), innerouter,
                                    mk_scon("component"), cc, INFO($start), mk_none());
         }
     | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            if (cc)
-             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
+             $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
                                   mk_scon("replaceable component"), cc, INFO($start), mk_some_or_none(constr));
            else
-             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
+             $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
                                   mk_scon("replaceable ??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
         }
     )
