@@ -52,7 +52,7 @@ void* Parser_parseexp(const char* filename)
   return res;
 }
 
-void* Parser_parsestring(const char* data, char** msg)
+void* Parser_parsestring(const char* data, const char** msg)
 {
   fprintf(stderr, "Parser.mo NYI\n");throw 1;
   ErrorImpl__setCheckpoint("parsestring");
@@ -67,7 +67,7 @@ void* Parser_parsestring(const char* data, char** msg)
   }
 }
 
-void* Parser_parsestringexp(const char* data, char** msg)
+void* Parser_parsestringexp(const char* data, const char** msg)
 {
   fprintf(stderr, "Parser.mo NYI\n");throw 1;
   ErrorImpl__setCheckpoint("parsestringexp");

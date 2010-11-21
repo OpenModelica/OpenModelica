@@ -45,5 +45,18 @@
 #define mk_some mmc_mk_some
 #define mk_none mmc_mk_none
 #define mk_box2 mmc_mk_box2
+#define RML_FALSE MMC_FALSE
+#define RML_TRUE MMC_TRUE
+#define RML_SIZE_INT MMC_SIZE_INT
+#define RML_TAGFIXNUM MMC_TAGFIXNUM
+#define RML_IMMEDIATE MMC_IMMEDIATE
+#define RML_GETHDR MMC_GETHDR
+#define RML_UNTAGPTR MMC_UNTAGPTR
+#define RML_STRUCTHDR MMC_STRUCTHDR
+
+struct rml_struct {
+    mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */
+    void *data[1];	/* `slots' elements */
+};
 
 #endif

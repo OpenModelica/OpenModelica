@@ -460,3 +460,8 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   }
   return ARG_CONSUME;
 }
+
+extern int RTOptsImpl__acceptMetaModelicaGrammar()
+{
+  return acceptedGrammar == GRAMMAR_METAMODELICA;
+}

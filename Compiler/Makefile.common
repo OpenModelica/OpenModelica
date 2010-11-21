@@ -25,7 +25,8 @@ SUSANMO= \
 SimCodeC.mo \
 SimCodeCSharp.mo \
 SimCodeFMU.mo \
-TplCodegen.mo
+TplCodegen.mo \
+Unparsing.mo
 
 SRCMO= \
 Absyn.mo \

@@ -32,7 +32,7 @@
 #define __RTOPTS_H
 
 int check_debug_flag(char const* strdata);
-int accept_meta_modelica_grammar(void);
+int RTOptsImpl__acceptMetaModelicaGrammar(void);
 extern int running_testsuite;
 extern int showErrorMessages;
 #endif

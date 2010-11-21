@@ -268,7 +268,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   void* res = NULL;
 
   // TODO: Add flags to the actual Parser.parse() call instead of here?
-  if (accept_meta_modelica_grammar()) ModelicaParser_flags |= PARSE_META_MODELICA;
+  if (RTOptsImpl__acceptMetaModelicaGrammar()) ModelicaParser_flags |= PARSE_META_MODELICA;
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);

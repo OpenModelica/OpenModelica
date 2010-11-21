@@ -96,8 +96,10 @@ protected import SCode;
 protected import SCodeUtil;
 protected import Settings;
 protected import SimulationResults;
+protected import Tpl;
 protected import Types;
 protected import UnitAbsyn;
+protected import Unparsing;
 protected import Util;
 protected import ValuesUtil;
 protected import XMLDump;
@@ -1807,6 +1809,19 @@ algorithm
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {DAE.SCONST(string = str)}),st,msg)
     then (cache,Values.STRING("Failed"),st);
         
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateHeader"),expLst = {DAE.SCONST(string = filename)}),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        str = Tpl.tplString(Unparsing.programExternalHeader, SCodeUtil.translateAbsyn2SCode(p));
+        System.writeFile(filename,str);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateHeader")),
+        (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {DAE.CODE(Absyn.C_TYPENAME(path),_)}),
         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation

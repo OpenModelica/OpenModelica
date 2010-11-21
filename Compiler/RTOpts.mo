@@ -157,7 +157,7 @@ public function acceptMetaModelicaGrammar
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
 
-  external "C" outBoolean = RTOpts_acceptMetaModelicaGrammar() annotation(Library = "omcruntime");
+  external "C" outBoolean = RTOptsImpl__acceptMetaModelicaGrammar() annotation(Library = "omcruntime");
 end acceptMetaModelicaGrammar;
 
 public function getAnnotationVersion

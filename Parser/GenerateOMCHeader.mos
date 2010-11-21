@@ -1,0 +1,7 @@
+b1:=loadFile("../Compiler/Absyn.mo");
+b2:=loadFile("../Compiler/Interactive.mo");
+if b1 and b2 then loadOK := true; end if;
+a:=loadOK;
+b3:=generateHeader("OpenModelicaBootstrappingHeader.h");
+if b3 then genOK := true; end if;
+a:=genOK;

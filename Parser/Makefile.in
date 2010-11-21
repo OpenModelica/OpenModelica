@@ -1,3 +1,7 @@
 RMLHOME=@rmlhome@
+OMC=../build/bin/omc
 
 include Makefile.common
+
+Makefile: Makefile.in
+	(cd ..; ./config.status)

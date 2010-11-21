@@ -30,6 +30,8 @@
 
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
+extern "C" {
 #include "OpenModelicaBootstrappingHeader.h"
-
 #include "ModelicaParser.c"
+}
+

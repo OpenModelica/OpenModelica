@@ -7631,6 +7631,10 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,DAE.CALL(Absyn.IDENT("timing"),{exp_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
+    case (cache,env,Absyn.CREF_IDENT(name = "generateHeader"),{Absyn.STRING(value=str)},{},impl,SOME(st),_,_)
+      then
+        (cache,DAE.CALL(Absyn.IDENT("generateHeader"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_,_)
       equation
         className = Absyn.crefToPath(cr);

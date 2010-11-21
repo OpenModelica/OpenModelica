@@ -10,8 +10,7 @@ CC=g++
 .PHONY: all
 all: install libomparse_rml.a
 
-#libomparse.a
-install: libantlr3.a
+install: libantlr3.a libomparse.a
 	cp libantlr3.a libomparse.a ../build/lib/omc/
 
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
@@ -39,17 +38,25 @@ Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
 MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h
 ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h
-ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h
+ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h OpenModelicaBootstrappingHeader.h
 
-Parser_rml.o: $(HFILES)
-Parser_omc.o: $(HFILES)
+ifeq ($(wildcard $(OMC)),)
+OpenModelicaBootstrappingHeader.h: ../Compiler/Absyn.mo ../Compiler/Interactive.mo GenerateOMCHeader.mos
+	@echo "OpenModelica is not available; using the already generated OpenModelicaBootstrappingHeader.h"
+else
+OpenModelicaBootstrappingHeader.h: ../Compiler/Absyn.mo ../Compiler/Interactive.mo GenerateOMCHeader.mos
+	$(OMC) +g=MetaModelica GenerateOMCHeader.mos || (rm -f $@ && false)
+endif
+
+Parser_rml.o: $(HFILES) parse.c
+Parser_omc.o: $(HFILES) parse.c
 
 libomparse_rml.a: Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	rm -f $@
 	ar -ru $@ Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	ranlib $@
 
-libomparse.a: Parser_omc.o $(OBJS)  ModelicaParser_omc.o
+libomparse.a: Parser_omc.o $(OBJS) ModelicaParser_omc.o
 	rm -f $@
 	ar -ru $@ Parser_omc.o $(OBJS) ModelicaParser_omc.o
 	ranlib $@

@@ -95,10 +95,6 @@ extern double RTOpts_latency() {
   return latency;
 }
 
-extern int RTOpts_acceptMetaModelicaGrammar() {
-  return acceptedGrammar == GRAMMAR_METAMODELICA;
-}
-
 extern int RTOpts_getRunningTestsuite() {
   return running_testsuite;
 }

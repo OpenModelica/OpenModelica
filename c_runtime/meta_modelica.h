@@ -122,7 +122,9 @@ typedef modelica_metatype mmc_mk_rcon_rettype;
 typedef modelica_metatype mmc_mk_scon_rettype;
 typedef modelica_metatype mmc_mk_acon_rettype;
 
-#define mmc_mk_bcon(X) (X != 0 ? mmc_mk_icon(1) : mmc_mk_icon(0))
+#define MMC_FALSE (mmc_mk_icon(0))
+#define MMC_TRUE (mmc_mk_icon(1))
+#define mmc_mk_bcon(X) (X != 0 ? MMC_TRUE : MMC_FALSE)
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
 mmc_mk_scon_rettype mmc_mk_scon(const char*);
