@@ -341,4 +341,75 @@ extern const char* System_readEnv(const char *envname)
   return strdup(envvalue);
 }
 
+extern void System_getCurrentDateTime(int* sec, int* min, int* hour, int* mday, int* mon, int* year)
+{
+  time_t t;
+  struct tm* localTime;
+  time( &t );
+  localTime = localtime(&t);
+  *sec = localTime->tm_sec;
+  *min = localTime->tm_min;
+  *hour = localTime->tm_hour;
+  *mday = localTime->tm_mday;
+  *mon = localTime->tm_mon + 1;
+  *year = localTime->tm_year + 1900;
+}
+
+extern const char* System_getUUIDStr()
+{
+  return strdup(SystemImpl__getUUIDStr());
+}
+
+extern int System_loadLibrary(const char *name)
+{
+  int res = SystemImpl__loadLibrary(name);
+  if (res == -1) throw 1;
+  return res;
+}
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+void* System_subDirectories(const char *directory)
+{
+  void *res;
+  WIN32_FIND_DATA FileData;
+  BOOL more = TRUE;
+  char pattern[1024];
+  HANDLE sh;
+
+  sprintf(pattern, "%s\\*.*", directory);
+
+  res = mmc_mk_nil();
+  sh = FindFirstFile(pattern, &FileData);
+  if (sh != INVALID_HANDLE_VALUE) {
+    while(more) {
+      if (strcmp(FileData.cFileName,"..") != 0 &&
+        strcmp(FileData.cFileName,".") != 0 &&
+        (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+      {
+          res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+      }
+      more = FindNextFile(sh, &FileData);
+    }
+    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
+  }
+  return res;
+}
+#else
+void* System_subDirectories(const char *directory)
+{
+  int i,count;
+  void *res;
+  struct dirent **files;
+  select_from_dir = directory;
+  count = scandir(directory, &files, file_select_directories, NULL);
+  res = mmc_mk_nil();
+  for (i=0; i<count; i++)
+  {
+    res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
+    free(files[i]);
+  }
+  return res;
+}
+#endif
+
 }

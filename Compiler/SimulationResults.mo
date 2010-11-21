@@ -45,7 +45,7 @@ public function readPtolemyplotVariables
   input String inVisVars;
   output list<String> outStringLst;
 
-  external "C" ;
+  external "C" outStringLst=SimulationResults_readPtolemyplotVariables(inString,inVisVars) annotation(Library = "omcruntime");
 end readPtolemyplotVariables;
 
 public function readPtolemyplotDataset
@@ -54,14 +54,14 @@ public function readPtolemyplotDataset
   input Integer inInteger;
   output Values.Value outValue;
 
-  external "C" ;
+  external "C" outValue=SimulationResults_readPtolemyplotDataset(inString,inStringLst,inInteger) annotation(Library = "omcruntime");
 end readPtolemyplotDataset;
 
 public function readPtolemyplotDatasetSize
   input String inString;
   output Values.Value outValue;
 
-  external "C" ;
+  external "C" outValue=SimulationResults_readPtolemyplotDatasetSize(inString) annotation(Library = "omcruntime");
 end readPtolemyplotDatasetSize;
 
 end SimulationResults;

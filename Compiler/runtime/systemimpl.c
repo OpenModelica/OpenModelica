@@ -89,6 +89,15 @@ extern "C" {
 #include "rtopts.h"
 #include "errorext.h"
 
+#define MAX_PTR_INDEX 10000
+static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
+static modelica_integer last_ptr_index = -1;
+
+static inline modelica_integer alloc_ptr();
+static inline void free_ptr(modelica_integer index);
+static void free_library(modelica_ptr_t lib);
+static void free_function(modelica_ptr_t func);
+
 static char *cc     = (char*) DEFAULT_CC;
 static char *cxx    = (char*) DEFAULT_CXX;
 static char *linker = (char*) DEFAULT_LINKER;
@@ -553,6 +562,140 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
   return res;
 }
 #endif
+
+// Do not free the result
+static const char* SystemImpl__getUUIDStr()
+{
+  static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  unsigned char *tmp;
+  UUID uuid;
+  if (UuidCreate(&uuid) == RPC_S_OK)
+  	UuidToString(&uuid, &tmp);
+  tmp[36] = '\0';
+  memcpy(uuidStr, strlwr(tmp), 36);
+  RpcStringFree(&tmp);
+#endif
+  return uuidStr;
+}
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+int SystemImpl__loadLibrary(const char *str)
+{
+  char libname[MAXPATHLEN];
+  char currentDirectory[MAXPATHLEN];
+  DWORD bufLen = MAXPATHLEN;
+  modelica_ptr_t lib = NULL;
+  modelica_integer libIndex;
+  HMODULE h;
+  /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
+  GetCurrentDirectory(bufLen,currentDirectory);
+#if defined(_MSC_VER)
+  _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
+#else
+  snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
+#endif
+
+  h = LoadLibrary(libname);
+  if (h == NULL) {
+    //fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
+    fflush(stderr);
+    return -1;
+  }
+  libIndex = alloc_ptr();
+  if (libIndex < 0) {
+    //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
+    FreeLibrary(h);
+    h = NULL;
+    return -1;
+  }
+  lib = lookup_ptr(libIndex); // lib->cnt = 1
+  lib->data.lib = h;
+  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
+  return libIndex;
+}
+
+#else
+int SystemImpl__loadLibrary(const char *str)
+{
+  char libname[MAXPATHLEN];
+  modelica_ptr_t lib = NULL;
+  modelica_integer libIndex;
+  void *h;
+  const char* ctokens[2];
+  snprintf(libname, MAXPATHLEN, "./%s.so", str);
+  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
+  if (h == NULL) {
+    ctokens[0] = dlerror();
+    ctokens[1] = libname;
+    c_add_message(-1, "RUNTIME", "ERROR", "OMC unable to load `%s': %s.\n", ctokens, 2);
+    return -1;
+  }
+  libIndex = alloc_ptr();
+  if (libIndex < 0) {
+    fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
+    dlclose(h);
+    return -1;
+  }
+  lib = lookup_ptr(libIndex);
+  lib->data.lib = h;
+  if (check_debug_flag("dynload"))
+  {
+    fprintf(stderr, "LIB LOAD [%s].\n", libname, lib->cnt, libIndex, h); fflush(stderr);
+  }
+  return libIndex;
+}
+#endif
+
+static inline modelica_integer alloc_ptr()
+{
+  const modelica_integer start = last_ptr_index;
+  modelica_integer index;
+  index = start;
+  for (;;) {
+    ++index;
+    if (index >= MAX_PTR_INDEX)
+      index = 0;
+    if (index == start)
+      return -1;
+    if (ptr_vector[index].cnt == 0)
+      break;
+  }
+  ptr_vector[index].cnt = 1;
+  return index;
+}
+
+modelica_ptr_t lookup_ptr(modelica_integer index)
+{
+  assert(index < MAX_PTR_INDEX);
+  return ptr_vector + index;
+}
+
+static inline void free_ptr(modelica_integer index)
+{
+  assert(index < MAX_PTR_INDEX);
+  ptr_vector[index].cnt = 0;
+  memset(&(ptr_vector[index].data), 0, sizeof(ptr_vector[index].data));
+}
+
+int file_select_directories(const struct dirent *entry)
+{
+  char fileName[MAXPATHLEN];
+  int res;
+  struct stat fileStatus;
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0)) {
+    return (0);
+  } else {
+    sprintf(fileName,"%s/%s",select_from_dir,entry->d_name);
+    res = stat(fileName,&fileStatus);
+    if (res!=0) return 0;
+    if ((fileStatus.st_mode & _IFDIR))
+      return (1);
+    else
+      return (0);
+  }
+}
 
 #ifdef __cplusplus
 }

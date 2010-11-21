@@ -44,10 +44,6 @@
 
 #include "rml.h"
 
-#define MAX_PTR_INDEX 10000
-static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
-static modelica_integer last_ptr_index = -1;
-
 /* use this one to output messages depending on flags! */
 int check_debug_flag(char const* strdata);
 
@@ -58,11 +54,6 @@ int check_debug_flag(char const* strdata);
 #define inline inline
 #endif
 */
-
-static inline modelica_integer alloc_ptr();
-static inline void free_ptr(modelica_integer index);
-static void free_library(modelica_ptr_t lib);
-static void free_function(modelica_ptr_t func);
 
 RML_BEGIN_LABEL(System__regularFileExists)
 {
@@ -736,37 +727,6 @@ RML_BEGIN_LABEL(System__setDebugShowDepth)
 }
 RML_END_LABEL
 
-inline modelica_integer alloc_ptr()
-{
-  const modelica_integer start = last_ptr_index;
-  modelica_integer index;
-  index = start;
-  for (;;) {
-    ++index;
-    if (index >= MAX_PTR_INDEX)
-      index = 0;
-    if (index == start)
-      return -1;
-    if (ptr_vector[index].cnt == 0)
-      break;
-  }
-  ptr_vector[index].cnt = 1;
-  return index;
-}
-
-modelica_ptr_t lookup_ptr(modelica_integer index)
-{
-  assert(index < MAX_PTR_INDEX);
-  return ptr_vector + index;
-}
-
-inline void free_ptr(modelica_integer index)
-{
-  assert(index < MAX_PTR_INDEX);
-  ptr_vector[index].cnt = 0;
-  memset(&(ptr_vector[index].data), 0, sizeof(ptr_vector[index].data));
-}
-
 RML_BEGIN_LABEL(System__freeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
@@ -963,44 +923,6 @@ RML_BEGIN_LABEL(System__isSameFile)
   else {
     RML_TAILCALLK(rmlFC);
   }
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__loadLibrary)
-{
-  const char *str = RML_STRINGDATA(rmlA0);
-  char libname[MAXPATHLEN];
-  char currentDirectory[MAXPATHLEN];
-  DWORD bufLen = MAXPATHLEN;
-  modelica_ptr_t lib = NULL;
-  modelica_integer libIndex;
-  HMODULE h;
-  /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
-  GetCurrentDirectory(bufLen,currentDirectory);
-#if defined(_MSC_VER)
-  _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#else
-  snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#endif
-
-  h = LoadLibrary(libname);
-  if (h == NULL) {
-    //fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
-    fflush(stderr);
-    RML_TAILCALLK(rmlFC);
-  }
-  libIndex = alloc_ptr();
-  if (libIndex < 0) {
-    //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
-    FreeLibrary(h);
-    h = NULL;
-    RML_TAILCALLK(rmlFC);
-  }
-  lib = lookup_ptr(libIndex); // lib->cnt = 1
-  lib->data.lib = h;
-  rmlA0 = (void*) mk_icon(libIndex);
-  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -1336,22 +1258,6 @@ RML_BEGIN_LABEL(System__getCurrentDateTime)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__getUUIDStr)
-{
-  char outStr[36];
-  char *uuidStr;
-  UUID uuid;
-  memset(&uuidStr,0,sizeof(char)*36);
-  if (UuidCreate(&uuid) == RPC_S_OK)
-  	UuidToString(&uuid, (unsigned char **)(&uuidStr));
-  uuidStr[36] = '\0';
-  memcpy(outStr, strlwr(uuidStr), 36);
-  RpcStringFree((unsigned char**)(&uuidStr));
-  rmlA0 = mk_scon(outStr);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 #else /********************************* LINUX PART!!! *************************************/
 
 #ifndef HAVE_SCANDIR
@@ -1654,39 +1560,6 @@ RML_BEGIN_LABEL(System__isSameFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__loadLibrary)
-{
-  const char *str = RML_STRINGDATA(rmlA0);
-  char libname[MAXPATHLEN];
-  modelica_ptr_t lib = NULL;
-  modelica_integer libIndex;
-  void *h;
-  const char* ctokens[2];
-  snprintf(libname, MAXPATHLEN, "./%s.so", str);
-  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
-  if (h == NULL) {
-    ctokens[0] = dlerror();
-    ctokens[1] = libname;
-    c_add_message(-1, "RUNTIME", "ERROR", "OMC unable to load `%s': %s.\n", ctokens, 2);
-    RML_TAILCALLK(rmlFC);
-  }
-  libIndex = alloc_ptr();
-  if (libIndex < 0) {
-    fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
-    dlclose(h);
-    RML_TAILCALLK(rmlFC);
-  }
-  lib = lookup_ptr(libIndex);
-  lib->data.lib = h;
-  rmlA0 = (void*) mk_icon(libIndex);
-  if (check_debug_flag("dynload"))
-  {
-    fprintf(stderr, "LIB LOAD [%s].\n", libname, lib->cnt, libIndex, h); fflush(stderr);
-  }
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 void free_library(modelica_ptr_t lib)
 {
   if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
@@ -1774,25 +1647,6 @@ RML_END_LABEL
 /*   RML_TAILCALLK(rmlSC); */
 /* } */
 /* RML_END_LABEL */
-
-int file_select_directories(const struct dirent *entry)
-{
-  char fileName[MAXPATHLEN];
-  int res;
-  struct stat fileStatus;
-  if ((strcmp(entry->d_name, ".") == 0) ||
-      (strcmp(entry->d_name, "..") == 0)) {
-    return (0);
-  } else {
-    sprintf(fileName,"%s/%s",select_from_dir,entry->d_name);
-    res = stat(fileName,&fileStatus);
-    if (res!=0) return 0;
-    if ((fileStatus.st_mode & _IFDIR))
-      return (1);
-    else
-      return (0);
-  }
-}
 
 RML_BEGIN_LABEL(System__subDirectories)
 {
@@ -1954,18 +1808,6 @@ RML_BEGIN_LABEL(System__getCurrentDateTime)
   rmlA3 = (void*) mk_icon(mday);
   rmlA4 = (void*) mk_icon(mon);
   rmlA5 = (void*) mk_icon(year);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__getUUIDStr)
-{
-  char uuidStr[36] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
-  //uuid_t uuid;
-  //uuid_generate(uuid);
-  //uuid_unparse(uuid,uuidStr);
-  //uuid_clear(uuid);
-  rmlA0 = mk_scon(uuidStr);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2191,5 +2033,23 @@ RML_BEGIN_LABEL(System__setVariableFilter)
   char* variables = RML_STRINGDATA(rmlA0);
   setenv("sendDataFilter", variables, 1 /* overwrite */);
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getUUIDStr)
+{
+  rmlA0 = mk_scon(SystemImpl__getUUIDStr());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__loadLibrary)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  int res = SystemImpl__loadLibrary(str);
+  if (res == -1)
+    RML_TAILCALLK(rmlFC);
+  else
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
