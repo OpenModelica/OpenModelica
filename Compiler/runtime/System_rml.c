@@ -2049,7 +2049,7 @@ RML_BEGIN_LABEL(System__loadLibrary)
   int res = SystemImpl__loadLibrary(str);
   if (res == -1)
     RML_TAILCALLK(rmlFC);
-  else
-    RML_TAILCALLK(rmlSC);
+  rmlA0 = mk_icon(res);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
