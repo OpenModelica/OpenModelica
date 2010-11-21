@@ -52,7 +52,7 @@
 #define RML_IMMEDIATE MMC_IMMEDIATE
 #define RML_GETHDR MMC_GETHDR
 #define RML_UNTAGPTR MMC_UNTAGPTR
-#define RML_STRUCTHDR MMC_STRUCTHDR
+#define RML_STRUCTHDR(X,Y) MMC_STRUCTHDR(X+1,Y)
 
 struct rml_struct {
     mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */

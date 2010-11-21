@@ -9,7 +9,6 @@ extern "C"
 
 void UnitParserExt_5finit(void)
 {
-	unitParser = new UnitParser;
 }
 
 RML_BEGIN_LABEL(UnitParserExt__initSIUnits)

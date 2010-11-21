@@ -5,7 +5,7 @@
 #include <stack>
 
 using namespace std;
-UnitParser* unitParser=0;
+UnitParser* unitParser = new UnitParser;
 stack<UnitParser*> rollbackStack;
 
 extern "C"

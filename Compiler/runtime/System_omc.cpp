@@ -243,13 +243,13 @@ void System_setClassnamesForSimulation(const char *class_names)
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
 {
   fprintf(stderr, "System_getVariableValue NYI\n");
-  throw 1;
+  exit(1);
 }
 
 extern const char* System_getVariableNames(const char* _modelname)
 {
   fprintf(stderr, "System_getVariableNames NYI\n");
-  throw 1;
+  exit(1);
 }
 
 extern void* System_getFileModificationTime(const char *fileName)
@@ -309,19 +309,19 @@ void* System_moFiles(const char *directory)
 extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
 {
   fprintf(stderr, "System_lookupFunction NYI\n");
-  throw 1;
+  exit(1);
 }
 
 extern void System_freeFunction(int _inFuncHandle)
 {
   fprintf(stderr, "System_freeFunction NYI\n");
-  throw 1;
+  exit(1);
 }
 
 extern void System_freeLibrary(int _inLibHandle)
 {
   fprintf(stderr, "System_freeLibrary NYI\n");
-  throw 1;
+  exit(1);
 }
 
 extern int System_getHasSendDataSupport()

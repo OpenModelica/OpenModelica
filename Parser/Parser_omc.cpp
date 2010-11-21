@@ -36,16 +36,15 @@ extern "C" {
 
 void* Parser_parse(const char* filename)
 {
-  fprintf(stderr, "Parser.mo NYI\n");throw 1;
   void *res = parseFile(filename,PARSE_MODELICA);
   if (res == NULL)
     throw 1;
+  // printAny(res);
   return res;
 }
 
 void* Parser_parseexp(const char* filename)
 {
-  fprintf(stderr, "Parser.mo NYI\n");throw 1;
   void *res = parseFile(filename,PARSE_EXPRESSION);
   if (res == NULL)
     throw 1;
@@ -54,7 +53,6 @@ void* Parser_parseexp(const char* filename)
 
 void* Parser_parsestring(const char* data, const char** msg)
 {
-  fprintf(stderr, "Parser.mo NYI\n");throw 1;
   ErrorImpl__setCheckpoint("parsestring");
   void *res = parseString(data,PARSE_MODELICA);
   if (res != NULL) {
@@ -69,7 +67,6 @@ void* Parser_parsestring(const char* data, const char** msg)
 
 void* Parser_parsestringexp(const char* data, const char** msg)
 {
-  fprintf(stderr, "Parser.mo NYI\n");throw 1;
   ErrorImpl__setCheckpoint("parsestringexp");
   void *res = parseString(data,PARSE_EXPRESSION);
   if (res != NULL) {

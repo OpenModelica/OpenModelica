@@ -285,7 +285,9 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   char *tmp;
   debug_none = 1;
 
-  if (strcmp(arg,TESTSCRIPT) == 0) {
+  if (strcmp(arg,"--") == 0) {
+    return ARG_CONSUME;
+  } else if (strcmp(arg,TESTSCRIPT) == 0) {
     running_testsuite = 1;
   } else if (strcmp(arg,VERSION_OPT1) == 0 || strcmp(arg,VERSION_OPT2) == 0) {
     version_request = 1;

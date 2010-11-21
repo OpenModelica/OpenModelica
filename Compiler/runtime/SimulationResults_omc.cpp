@@ -29,25 +29,26 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 extern "C" {
 
 void* SimulationResults_readPtolemyplotVariables(const char *filename, const char *visvars)
 {
   fprintf(stderr, "SimulationResults_readPtolemyplotVariables NYI\n");
-  throw 1;
+  exit(1);
 }
 
 void* SimulationResults_readPtolemyplotDataset(const char *filename, void *vars, int i)
 {
   fprintf(stderr, "SimulationResults_readPtolemyplotDataset NYI\n");
-  throw 1;
+  exit(1);
 }
 
 void* SimulationResults_readPtolemyplotDatasetSize(const char *filename)
 {
   fprintf(stderr, "SimulationResults_readPtolemyplotDatasetSize NYI\n");
-  throw 1;
+  exit(1);
 }
 
 }

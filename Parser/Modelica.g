@@ -414,24 +414,24 @@ component_clause returns [void* ast] @declarations {
       if (RML_GETHDR(path) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
 			{
 				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
-				ar_option = p->data[1];         // get the array option
-				p->data[1] = mk_none();  // replace the array with nothing
+				ar_option = p->data[1+UNBOX_OFFSET];  // get the array option
+				p->data[1+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
 			}
 			else if (RML_GETHDR(path) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
 			{
 				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
-				ar_option = p->data[2];         // get the array option
-				p->data[2] = mk_none();  // replace the array with nothing
+				ar_option = p->data[2+UNBOX_OFFSET];         // get the array option
+				p->data[2+UNBOX_OFFSET] = mk_none();  // replace the array with nothing
 			}
       else
       {
         fprintf(stderr, "component_clause error\n");
       }
 
-              { /* adrpo - use the ANSI C standard */
+      { /* adrpo - use the ANSI C standard */
 				// no arr was set, inspect ar_option and fix it
 				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
-				if (RML_GETHDR(ar_option) == RML_STRUCTHDR(0,0)) // is NONE
+				if (optionNone(ar_option))
 				{
 					arr = mk_nil();
 				}
@@ -439,7 +439,7 @@ component_clause returns [void* ast] @declarations {
 				{
 					arr = p->data[0];
 				}
-		      }
+		  }
 
       ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), path, clst);
     }
@@ -681,7 +681,7 @@ assign_clause_a returns [void* ast] @declarations {
                              assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         { /* uselsess block for ANSI C crap */
         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
-        $ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
+        $ast = Absyn__ALG_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
         }
       }
     )
@@ -693,7 +693,7 @@ equality_or_noretcall_equation returns [void* ast] :
     | {LA(1) != EQUALS && RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
        {
          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
-         ast = Absyn__EQ_5fNORETCALL(p->data[0],p->data[1]);
+         ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
        }
     )
   ;

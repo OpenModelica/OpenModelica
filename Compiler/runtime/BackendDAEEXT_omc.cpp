@@ -42,83 +42,84 @@
  */
 
 #include "BackendDAEEXT.cpp"
+#include <stdlib.h>
 
 extern "C" {
 
 extern int BackendDAEEXT_getVMark(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void* BackendDAEEXT_getMarkedEqns()
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_eMark(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_clearDifferentiated()
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void* BackendDAEEXT_getDifferentiatedEqns()
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern int BackendDAEEXT_getLowLink(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void* BackendDAEEXT_getMarkedVariables()
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern int BackendDAEEXT_getNumber(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_setNumber(int _inInteger1, int _inInteger2)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_initMarks(int _inInteger1, int _inInteger2)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_initLowLink(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_markDifferentiated(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_initNumber(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_setLowLink(int _inInteger1, int _inInteger2)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 extern void BackendDAEEXT_vMark(int _inInteger)
 {
   fprintf(stderr, "BackendDAEEXT NYI\n");
-  throw 1;
+  exit(1);
 }
 
 }

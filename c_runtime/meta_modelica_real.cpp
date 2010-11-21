@@ -149,7 +149,7 @@ realString_rettype realString(modelica_real r)
       buffer[ix++] = '0';
       buffer[ix] = '\0';
     }
-    res = init_modelica_string(buffer);
+    res = strdup(buffer);
   }
   return res;
 }

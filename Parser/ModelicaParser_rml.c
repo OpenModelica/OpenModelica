@@ -38,4 +38,6 @@ extern "C" {
 }
 #endif  
 
+#define UNBOX_OFFSET 0
+#define optionNone(X) (RML_GETHDR(X) == RML_STRUCTHDR(0,0))
 #include "ModelicaParser.c"

@@ -28,6 +28,7 @@
  *
  */
 
+#define UNBOX_OFFSET 1
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 extern "C" {
