@@ -43,15 +43,6 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
   #include <stdio.h>
   #include <errno.h>
   #include <time.h>
-#ifdef __cplusplus
-extern "C" {
-#endif  
-  #include "rml.h"
-  #include "Absyn.h"
-  #include "Interactive.h"
-#ifdef __cplusplus
-}
-#endif
   
   #include "ModelicaParserCommon.h"
   #include "runtime/errorext.h"

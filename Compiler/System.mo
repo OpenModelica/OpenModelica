@@ -440,7 +440,7 @@ public function getCurrentDateTime
   output Integer mday;
   output Integer mon;
   output Integer year;
-  external "C" annotation(Library = "omcruntime");
+  external "C" System_getCurrentDateTime(sec,min,hour,mday,mon,year) annotation(Library = "omcruntime");
 end getCurrentDateTime;
 
 public function getCurrentTimeStr "

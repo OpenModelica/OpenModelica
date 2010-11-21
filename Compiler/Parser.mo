@@ -50,14 +50,14 @@ public function parse
   input String inString;
   output Absyn.Program outProgram;
 
-  external "C" ;
+  external "C" outProgram=Parser_parse(inString) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parse;
 
 public function parseexp
   input String inString;
   output Interactive.InteractiveStmts outInteractiveStmts;
 
-  external "C" ;
+  external "C" outInteractiveStmts=Parser_parseexp(inString) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parseexp;
 
 public function parsestring
@@ -65,7 +65,7 @@ public function parsestring
   output Absyn.Program outProgram;
   output String outString;
 
-  external "C" ;
+  external "C" outProgram=Parser_parsestring(inString,outString) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestring;
 
 public function parsestringexp
@@ -73,7 +73,7 @@ public function parsestringexp
   output Interactive.InteractiveStmts outInteractiveStmts;
   output String outString;
 
-  external "C" ;
+  external "C" outInteractiveStmts=Parser_parsestringexp(inString,outString) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestringexp;
 end Parser;
 

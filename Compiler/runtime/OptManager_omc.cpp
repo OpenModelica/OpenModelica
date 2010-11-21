@@ -33,14 +33,14 @@
 extern "C"
 {
 
-void OptManager_setOption(const char *strEntry, int strValue)
+extern void OptManager_setOption(const char *strEntry, int strValue)
 {
-  if (OptManagerImpl_setOption(strEntry,strValue)) throw 1;
+  if (OptManagerImpl__setOption(strEntry,strValue)) throw 1;
 }
 
-int OptManager_getOption(const char *strEntry)
+extern int OptManager_getOption(const char *strEntry)
 {
-  int res = OptManagerImpl_getOption(strEntry);
+  int res = OptManagerImpl__getOption(strEntry);
   if (res == -1)
     throw 1;
   return res;

@@ -50,14 +50,10 @@ extern "C" {
 #include "runtime/errorext.h"
 #include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
 
-long unsigned int szMemoryUsed = 0;
-long lexerFailed;
+static long unsigned int szMemoryUsed = 0;
+static long lexerFailed;
 
-void Parser_5finit(void)
-{
-}
-
-void lexNoRecover(pANTLR3_LEXER lexer)
+static void lexNoRecover(pANTLR3_LEXER lexer)
 {
   pANTLR3_INT_STREAM inputStream = NULL;
   lexer->rec->state->error = ANTLR3_TRUE;
@@ -66,7 +62,7 @@ void lexNoRecover(pANTLR3_LEXER lexer)
   inputStream->consume(inputStream);
 }
 
-void noRecover(pANTLR3_BASE_RECOGNIZER recognizer)
+static void noRecover(pANTLR3_BASE_RECOGNIZER recognizer)
 {
   recognizer->state->error = ANTLR3_TRUE;
   recognizer->state->failed = ANTLR3_TRUE;
@@ -179,7 +175,7 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 }
 
 /* Error handling based on antlr3baserecognizer.c */
-void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
+static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_PARSER      parser;
   pANTLR3_INT_STREAM  is;
@@ -263,7 +259,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
 
 }
 
-void* parseStream(pANTLR3_INPUT_STREAM input)
+static void* parseStream(pANTLR3_INPUT_STREAM input)
 {
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
@@ -331,7 +327,7 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
-void* parseFile(void* fileNameRML, int flags)
+static void* parseFile(const char* fileName, int flags)
 {
   bool debug         = check_debug_flag("parsedebug");
   bool parsedump     = check_debug_flag("parsedump");
@@ -341,9 +337,9 @@ void* parseFile(void* fileNameRML, int flags)
   pANTLR3_INPUT_STREAM        input;
   int len = 0;
 
-  ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
+  ModelicaParser_filename_C = fileName;
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
-  ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
+  ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
@@ -360,7 +356,7 @@ void* parseFile(void* fileNameRML, int flags)
   return parseStream(input);
 }
 
-void* parseString(void* stringRML, int flags)
+static void* parseString(const char* data, int flags)
 {
   bool debug         = check_debug_flag("parsedebug");
   bool parsedump     = check_debug_flag("parsedump");
@@ -368,17 +364,14 @@ void* parseString(void* stringRML, int flags)
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
-  char* data = NULL;
 
   ModelicaParser_filename_C = "<interactive>";
-  /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
-  data = RML_STRINGDATA(stringRML);
   input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
   if ( input == NULL ) {
     fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);
@@ -386,63 +379,6 @@ void* parseString(void* stringRML, int flags)
   }
   return parseStream(input);
 }
-
-RML_BEGIN_LABEL(Parser__parse)
-{
-  rmlA0 = parseFile(rmlA0,PARSE_MODELICA);
-  if (rmlA0)
-    RML_TAILCALLK(rmlSC);
-  else
-    RML_TAILCALLK(rmlFC);
-}
-RML_END_LABEL
-
-
-RML_BEGIN_LABEL(Parser__parseexp)
-{
-  rmlA0 = parseFile(rmlA0,PARSE_EXPRESSION);
-  if (rmlA0)
-    RML_TAILCALLK(rmlSC);
-  else
-    RML_TAILCALLK(rmlFC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(Parser__parsestring)
-{
-  ErrorImpl__setCheckpoint("parsestring");
-  rmlA0 = parseString(rmlA0,PARSE_MODELICA);
-  if (rmlA0) {
-    rmlA1 = mk_scon("Ok");
-    ErrorImpl__rollBack("parsestring");
-    RML_TAILCALLK(rmlSC);
-  } else {
-    char *res = ErrorImpl__rollBackAndPrint("parsestring");
-    rmlA1 = mk_scon(res);
-    free(res);
-    RML_TAILCALLK(rmlSC);
-  }
-}
-RML_END_LABEL
-
-
-RML_BEGIN_LABEL(Parser__parsestringexp)
-{
-  ErrorImpl__setCheckpoint("parsestringexp");
-  rmlA0 = parseString(rmlA0,PARSE_EXPRESSION);
-  if (rmlA0) {
-    rmlA1 = mk_scon("Ok");
-    ErrorImpl__rollBack("parsestringexp");
-    RML_TAILCALLK(rmlSC);
-  } else {
-    char *res = ErrorImpl__rollBackAndPrint("parsestringexp");
-    rmlA1 = mk_scon(res);
-    free(res);
-    RML_TAILCALLK(rmlSC);
-  }
-}
-RML_END_LABEL
-
 
 #ifdef __cplusplusend
 }

@@ -13,7 +13,7 @@ else
  CORBAOBJ = $(srcdir)/runtime/corbaimpl_stub.o
 endif
 
-AST = $(top_builddir)/Parser/libomparse.a $(top_builddir)/Parser/libantlr3.a
+AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a
 
 RTOBJ   = \
 $(srcdir)/runtime/runtime.a \

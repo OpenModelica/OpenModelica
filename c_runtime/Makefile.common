@@ -47,6 +47,7 @@ ModelicaUtilities.h \
 read_write.h \
 real_array.h \
 ringbuffer.h \
+rml_compatibility.h \
 sendData/humbug.h \
 sendData/sendData.h \
 simulation_delay.h \

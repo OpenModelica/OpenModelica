@@ -1,13 +1,18 @@
 COMPILERHOME=../Compiler/
+BUILDINC = -I../build/include/omc
 RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=-O3 
-CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
+CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include $(BUILDINC)
 CC=g++
 
 .PHONY: all
-all: libantlr3.a libomparse.a
+all: install libomparse_rml.a
+
+#libomparse.a
+install: libantlr3.a
+	cp libantlr3.a libomparse.a ../build/lib/omc/
 
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	# build the library
@@ -27,19 +32,26 @@ HFILES = \
 
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
-Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
-ModelicaParser.o 
+Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o
 
 MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
 MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h
- 
-parse.o: $(HFILES)
+ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h
+ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h
 
-libomparse.a: parse.o $(OBJS)
+Parser_rml.o: $(HFILES)
+Parser_omc.o: $(HFILES)
+
+libomparse_rml.a: Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	rm -f $@
-	ar -ru $@ parse.o $(OBJS)
+	ar -ru $@ Parser_rml.o $(OBJS) ModelicaParser_rml.o
+	ranlib $@
+
+libomparse.a: Parser_omc.o $(OBJS)  ModelicaParser_omc.o
+	rm -f $@
+	ar -ru $@ Parser_omc.o $(OBJS) ModelicaParser_omc.o
 	ranlib $@
 
 parsergen = ModelicaParser.c ModelicaParser.h
