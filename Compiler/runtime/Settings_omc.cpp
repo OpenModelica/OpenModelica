@@ -29,6 +29,7 @@
  */
 
 #include "settingsimpl.c"
+#include <string>
 
 extern "C" {
 
@@ -65,9 +66,11 @@ extern void Settings_setEcho(int _echo)
   echo = _echo;
 }
 
+static const std::string version = std::string(CONFIG_VERSION) + std::string(" (Bootstrapping version; only for development)");
+
 extern const char* Settings_getVersionNr()
 {
-  return CONFIG_VERSION;
+  return version.c_str();
 }
 
 extern const char* Settings_getTempDirectoryPath()

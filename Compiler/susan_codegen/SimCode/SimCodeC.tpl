@@ -3478,6 +3478,9 @@ case var as VARIABLE(__) then
     let &varInits += initRecordMembers(var)
     let &varAssign += '<%dest%>.targ<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
     ""
+case var as FUNCTION_PTR(__) then
+    let &varAssign += '<%dest%>.targ<%ix%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
+    ""
 end varOutput;
 
 template initRecordMembers(Variable var)

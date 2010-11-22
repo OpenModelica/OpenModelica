@@ -18060,6 +18060,27 @@ algorithm
       then (txt, i_varDecls, i_varInits, i_varCopy, i_varAssign);
 
     case ( txt,
+           (i_var as SimCode.FUNCTION_PTR(name = i_var_name)),
+           i_dest,
+           i_ix,
+           i_varDecls,
+           i_varInits,
+           i_varCopy,
+           i_varAssign )
+      local
+        String i_var_name;
+        SimCode.Variable i_var;
+      equation
+        i_varAssign = Tpl.writeStr(i_varAssign, i_dest);
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(".targ"));
+        i_varAssign = Tpl.writeStr(i_varAssign, intString(i_ix));
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(" = (modelica_fnptr) _"));
+        i_varAssign = Tpl.writeStr(i_varAssign, i_var_name);
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_STRING(";"));
+        i_varAssign = Tpl.writeTok(i_varAssign, Tpl.ST_NEW_LINE());
+      then (txt, i_varDecls, i_varInits, i_varCopy, i_varAssign);
+
+    case ( txt,
            _,
            _,
            _,
