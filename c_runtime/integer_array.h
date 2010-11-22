@@ -37,7 +37,7 @@
 #include "memory_pool.h"
 #include <stdarg.h>
 
-typedef int modelica_integer;
+typedef m_integer modelica_integer;
 
 typedef base_array_t integer_array_t;
 
@@ -221,8 +221,6 @@ static inline int ndims_integer_array(integer_array_t* a)
 static inline int size_of_dimension_integer_array(integer_array_t a, int i)
 { return size_of_dimension_base_array(a, i); }
 typedef modelica_integer size_of_dimension_integer_array_rettype;
-static inline modelica_integer *data_of_integer_array(integer_array_t *a)
-{ return (modelica_integer *) a->data; }
 
 void size_integer_array(integer_array_t* a,integer_array_t* dest);
 modelica_integer scalar_integer_array(integer_array_t* a);
@@ -263,4 +261,19 @@ void convert_alloc_integer_array_to_f77(integer_array_t* a,
 void convert_alloc_integer_array_from_f77(integer_array_t* a,
                                           integer_array_t* dest);
 
+/* Note: data_of_integer_array converts from integer_array to int*, for external functions only */
+static inline int* data_of_integer_array(integer_array_t *a)
+{
+  int n,i;
+  int *res;
+  modelica_integer *data;
+  if (sizeof(int) == sizeof(modelica_integer))
+    return (int*) a->data;
+  n=integer_array_nr_of_elements(a);
+  res = (int*) a->data;
+  data = (modelica_integer*) a->data;
+  for (i=0; i<n; i++)
+    res[i] = (int) data[i]; // TODO: Check int out of range?
+  return res;
+}
 #endif

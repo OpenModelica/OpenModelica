@@ -191,7 +191,7 @@ intString_rettype intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
   static char buffer[32];
-  sprintf(buffer, "%ld", i);
+  sprintf(buffer, "%ld", (long) i);
   return strdup(buffer);
 }
 

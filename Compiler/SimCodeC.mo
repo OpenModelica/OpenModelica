@@ -19045,48 +19045,7 @@ end extFunCallVardecl;
 protected function fun_456
   input Tpl.Text in_txt;
   input Boolean in_i_ia;
-  input DAE.ComponentRef in_i_c;
   input Integer in_i_oi;
-  input DAE.ExpType in_i_ty;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_ia, in_i_c, in_i_oi, in_i_ty)
-    local
-      Tpl.Text txt;
-      DAE.ComponentRef i_c;
-      Integer i_oi;
-      DAE.ExpType i_ty;
-
-    case ( txt,
-           false,
-           _,
-           _,
-           _ )
-      then txt;
-
-    case ( txt,
-           _,
-           i_c,
-           i_oi,
-           i_ty )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("convert_alloc_"));
-        txt = expTypeArray(txt, i_ty);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_to_f77(&out.targ"));
-        txt = Tpl.writeStr(txt, intString(i_oi));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", &"));
-        txt = extVarName(txt, i_c);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
-      then txt;
-  end matchcontinue;
-end fun_456;
-
-protected function fun_457
-  input Tpl.Text in_txt;
-  input Integer in_i_oi;
-  input Boolean in_i_ia;
   input DAE.ComponentRef in_i_c;
   input DAE.ExpType in_i_ty;
   input Tpl.Text in_i_varDecls;
@@ -19095,37 +19054,89 @@ protected function fun_457
   output Tpl.Text out_i_varDecls;
 algorithm
   (out_txt, out_i_varDecls) :=
-  matchcontinue(in_txt, in_i_oi, in_i_ia, in_i_c, in_i_ty, in_i_varDecls)
+  matchcontinue(in_txt, in_i_ia, in_i_oi, in_i_c, in_i_ty, in_i_varDecls)
     local
       Tpl.Text txt;
-      Boolean i_ia;
+      Integer i_oi;
       DAE.ComponentRef i_c;
       DAE.ExpType i_ty;
       Tpl.Text i_varDecls;
 
     case ( txt,
-           0,
+           false,
            _,
-           _,
-           _,
-           i_varDecls )
-      then (txt, i_varDecls);
-
-    case ( txt,
-           i_oi,
-           i_ia,
            i_c,
            i_ty,
            i_varDecls )
-      local
-        Integer i_oi;
+      equation
+        i_varDecls = extType(i_varDecls, i_ty);
+        i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(" "));
+        i_varDecls = extVarName(i_varDecls, i_c);
+        i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(";"));
+        i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_NEW_LINE());
+      then (txt, i_varDecls);
+
+    case ( txt,
+           _,
+           i_oi,
+           i_c,
+           i_ty,
+           i_varDecls )
       equation
         i_varDecls = expTypeArrayIf(i_varDecls, i_ty);
         i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(" "));
         i_varDecls = extVarName(i_varDecls, i_c);
         i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(";"));
         i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_NEW_LINE());
-        txt = fun_456(txt, i_ia, i_c, i_oi, i_ty);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("convert_alloc_"));
+        txt = expTypeArray(txt, i_ty);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_to_f77(&out.targ"));
+        txt = Tpl.writeStr(txt, intString(i_oi));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", &"));
+        txt = extVarName(txt, i_c);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+      then (txt, i_varDecls);
+  end matchcontinue;
+end fun_456;
+
+protected function fun_457
+  input Tpl.Text in_txt;
+  input Integer in_i_oi;
+  input DAE.ComponentRef in_i_c;
+  input DAE.ExpType in_i_ty;
+  input Tpl.Text in_i_varDecls;
+  input Boolean in_i_ia;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_i_oi, in_i_c, in_i_ty, in_i_varDecls, in_i_ia)
+    local
+      Tpl.Text txt;
+      DAE.ComponentRef i_c;
+      DAE.ExpType i_ty;
+      Tpl.Text i_varDecls;
+      Boolean i_ia;
+
+    case ( txt,
+           0,
+           _,
+           _,
+           i_varDecls,
+           _ )
+      then (txt, i_varDecls);
+
+    case ( txt,
+           i_oi,
+           i_c,
+           i_ty,
+           i_varDecls,
+           i_ia )
+      local
+        Integer i_oi;
+      equation
+        (txt, i_varDecls) = fun_456(txt, i_ia, i_oi, i_c, i_ty, i_varDecls);
       then (txt, i_varDecls);
   end matchcontinue;
 end fun_457;
@@ -19174,7 +19185,7 @@ algorithm
         Boolean i_ia;
         Integer i_oi;
       equation
-        (txt, i_varDecls) = fun_457(txt, i_oi, i_ia, i_c, i_ty, i_varDecls);
+        (txt, i_varDecls) = fun_457(txt, i_oi, i_c, i_ty, i_varDecls, i_ia);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -19184,7 +19195,7 @@ algorithm
         DAE.ComponentRef i_c;
         DAE.ExpType i_ty;
       equation
-        i_varDecls = expTypeArrayIf(i_varDecls, i_ty);
+        i_varDecls = extType(i_varDecls, i_ty);
         i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(" "));
         i_varDecls = extVarName(i_varDecls, i_c);
         i_varDecls = Tpl.writeTok(i_varDecls, Tpl.ST_STRING(";"));
@@ -19847,23 +19858,23 @@ end extArg;
 
 protected function fun_474
   input Tpl.Text in_txt;
-  input Boolean in_i_ia;
+  input Integer in_i_oi;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_i_ia)
+  matchcontinue(in_txt, in_i_oi)
     local
       Tpl.Text txt;
 
     case ( txt,
-           true )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_ext"));
+           0 )
       then txt;
 
     case ( txt,
            _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_ext"));
       then txt;
   end matchcontinue;
 end fun_474;
@@ -19871,25 +19882,19 @@ end fun_474;
 protected function fun_475
   input Tpl.Text in_txt;
   input Integer in_i_oi;
-  input Boolean in_i_ia;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_i_oi, in_i_ia)
+  matchcontinue(in_txt, in_i_oi)
     local
       Tpl.Text txt;
-      Boolean i_ia;
 
     case ( txt,
-           0,
-           i_ia )
-      equation
-        txt = fun_474(txt, i_ia);
+           0 )
       then txt;
 
     case ( txt,
-           _,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_ext"));
@@ -19930,17 +19935,31 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
-           SimCode.SIMEXTARG(cref = i_c, isArray = i_ia, outputIndex = i_oi, type_ = i_t),
+           SimCode.SIMEXTARG(cref = i_c, outputIndex = i_oi, type_ = DAE.ET_INT()),
+           i_preExp,
+           i_varDecls )
+      local
+        Integer i_oi;
+        DAE.ComponentRef i_c;
+        Tpl.Text i_suffix;
+      equation
+        i_suffix = fun_474(Tpl.emptyTxt, i_oi);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(int*) &"));
+        txt = contextCref(txt, i_c, SimCode.contextFunction);
+        txt = Tpl.writeText(txt, i_suffix);
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
+           SimCode.SIMEXTARG(cref = i_c, outputIndex = i_oi, type_ = i_t),
            i_preExp,
            i_varDecls )
       local
         DAE.ExpType i_t;
         Integer i_oi;
-        Boolean i_ia;
         DAE.ComponentRef i_c;
         Tpl.Text i_suffix;
       equation
-        i_suffix = fun_475(Tpl.emptyTxt, i_oi, i_ia);
+        i_suffix = fun_475(Tpl.emptyTxt, i_oi);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("&"));
         txt = contextCref(txt, i_c, SimCode.contextFunction);
         txt = Tpl.writeText(txt, i_suffix);
@@ -19952,8 +19971,20 @@ algorithm
            i_varDecls )
       local
         DAE.Exp i_exp;
+        Tpl.Text txt_2;
+        Tpl.Text i_tvar;
+        Tpl.Text i_texp;
       equation
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, SimCode.contextFunction, i_preExp, i_varDecls);
+        (i_texp, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_exp, SimCode.contextFunction, i_preExp, i_varDecls);
+        txt_2 = expTypeFromExpFlag(Tpl.emptyTxt, i_exp, 8);
+        (i_tvar, i_varDecls) = tempDecl(Tpl.emptyTxt, Tpl.textString(txt_2), i_varDecls);
+        i_preExp = Tpl.writeText(i_preExp, i_tvar);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = "));
+        i_preExp = Tpl.writeText(i_preExp, i_texp);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(";"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("&"));
+        txt = Tpl.writeText(txt, i_tvar);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -26923,7 +26954,27 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
-           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
+           DAE.CALL(tuple_ = false, builtin = true, ty = DAE.ET_INT(), path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_e2;
+        DAE.Exp i_e1;
+        Tpl.Text i_var2;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
+        (i_var2, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_e2, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("std::min((modelica_integer)"));
+        txt = Tpl.writeText(txt, i_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(",(modelica_integer)"));
+        txt = Tpl.writeText(txt, i_var2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, ty = DAE.ET_REAL(), path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
            i_context,
            i_preExp,
            i_varDecls )
@@ -31420,6 +31471,12 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
+           8 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
+      then txt;
+
+    case ( txt,
            1 )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
@@ -31518,6 +31575,12 @@ algorithm
   matchcontinue(in_txt, in_i_flag)
     local
       Tpl.Text txt;
+
+    case ( txt,
+           8 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
+      then txt;
 
     case ( txt,
            1 )

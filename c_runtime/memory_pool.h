@@ -43,7 +43,7 @@
 #define NR_CHAR_ELEMENTS    10000
 
 typedef double m_real;
-typedef int m_integer;
+typedef int    m_integer;
 typedef const char* m_string;
 typedef signed char m_boolean;
 typedef int _index_t;

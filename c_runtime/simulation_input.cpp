@@ -39,7 +39,7 @@
 using namespace std;
 
 void read_commented_value(ifstream &f, double *res);
-void read_commented_value(ifstream &f, int *res);
+void read_commented_value(ifstream &f, modelica_integer *res);
 void read_commented_value(ifstream &f, string *str);
 void read_commented_value(ifstream &f, const char **str);
 void read_commented_value(ifstream &f, signed char *str);
@@ -88,10 +88,10 @@ void read_commented_value(ifstream &f, signed char *str);
   if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
   read_commented_value(file,outputFormat);
   if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
-  int nxchk,nychk,npchk;
-  int nyintchk,npintchk;
-  int nyboolchk,npboolchk;
-  int nystrchk,npstrchk;
+  modelica_integer nxchk,nychk,npchk;
+  modelica_integer nyintchk,npintchk;
+  modelica_integer nyboolchk,npboolchk;
+  modelica_integer nystrchk,npstrchk;
   read_commented_value(file,&nxchk);
   read_commented_value(file,&nychk);
   read_commented_value(file,&npchk);
@@ -262,7 +262,7 @@ inline void read_commented_value( ifstream &f, signed char *res)
   }
 }
 
-inline void read_commented_value( ifstream &f, int *res)
+inline void read_commented_value( ifstream &f, modelica_integer *res)
 {
   f >> *res;
   char c[160];

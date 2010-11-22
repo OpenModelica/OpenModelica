@@ -60,7 +60,7 @@ void puttype(const type_description *desc)
     fprintf(stderr, "REAL: %g\n", desc->data.real);
     break;
   case TYPE_DESC_INT:
-    fprintf(stderr, "INT: %d\n", desc->data.integer);
+    fprintf(stderr, "INT: %ld\n", desc->data.integer);
     break;
   case TYPE_DESC_BOOL:
     fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
@@ -101,8 +101,7 @@ void puttype(const type_description *desc)
       int e;
       fprintf(stderr, "\t[");
       for (e = 0; e < desc->data.int_array.dim_size[0]; ++e)
-        fprintf(stderr, "%d, ",
-                ((modelica_integer *) desc->data.int_array.data)[e]);
+        fprintf(stderr, "%ld, ", ((modelica_integer *) desc->data.int_array.data)[e]);
       fprintf(stderr, "]\n");
     }
   }; break;

@@ -62,7 +62,7 @@ void save(modelica_boolean & var);
 void save(const char* & var);
 
 double pre(double & var);
-int pre(int & var);
+modelica_integer pre(modelica_integer & var);
 signed char pre(signed char & var);
 const char* pre(const char* & var);
 

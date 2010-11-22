@@ -599,7 +599,7 @@ double pre(double & var) {
   return var;
 }
 
-int pre(modelica_integer & var) {
+modelica_integer pre(modelica_integer & var) {
   modelica_integer* pvar = &var;
   long ind;
 

@@ -194,7 +194,7 @@ void print_integer_matrix(integer_array_t* source)
         for (i = 0; i < source->dim_size[0]; ++i) {
             for (j = 0; j < source->dim_size[1]; ++j) {
                 value = integer_get(source, i * source->dim_size[1] + j);
-                printf("%d\t", value);
+                printf("%ld\t", value);
             }
             printf("\n");
         }
@@ -212,7 +212,7 @@ void print_integer_array(integer_array_t* source)
     data = (modelica_integer *) source->data;
     if (source->ndims == 1) {
         for (i = 0; i < source->dim_size[0]; ++i) {
-            printf("%d",*data);
+            printf("%ld",*data);
             ++data;
             if ((i + 1) < source->dim_size[0]) {
                 printf(", ");
@@ -224,7 +224,7 @@ void print_integer_array(integer_array_t* source)
         for (k = 0; k < n; ++k) {
             for (i = 0; i < source->dim_size[1]; ++i) {
                 for (j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%d",*data);
+                    printf("%ld",*data);
                     ++data;
                     if ((j + 1) < source->dim_size[0]) {
                         printf(", ");

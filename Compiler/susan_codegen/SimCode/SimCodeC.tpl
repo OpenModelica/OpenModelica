@@ -3580,11 +3580,15 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
     'convert_alloc_<%expTypeArray(ty)%>_to_f77(&<%contextCref(c,contextFunction)%>, &<%extVarName(c)%>);'
   case SIMEXTARG(outputIndex = oi, isArray = ia, type_= ty, cref = c) then
     match oi case 0 then "" else
-      let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
-      match ia case false then "" else
-        'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.targ<%oi%>, &<%extVarName(c)%>);'
+      match ia
+        case false then
+          let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
+          ""
+        else
+          let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
+          'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.targ<%oi%>, &<%extVarName(c)%>);'
   case SIMEXTARG(type_ = ty, cref = c) then
-    let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
+    let &varDecls += '<%extType(ty)%> <%extVarName(c)%>;<%\n%>'
     ""
 end extFunCallVardeclF77;
 
@@ -3671,15 +3675,19 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
   case SIMEXTARG(cref=c, isArray=true, type_=t) then
     // Arrays are converted to fortran format that are stored in _ext-variables.
     'data_of_<%expTypeShort(t)%>_array(&(<%extVarName(c)%>))' 
-  case SIMEXTARG(cref=c, isArray=ia, outputIndex=oi, type_=t) then
+  case SIMEXTARG(cref=c, outputIndex=oi, type_=ET_INT()) then
     // Always prefix fortran arguments with &.
-    let suffix = if oi then 
-                   "_ext"
-                 else 
-                   match ia case true then "_ext" else ""
+    let suffix = if oi then "_ext"
+    '(int*) &<%contextCref(c,contextFunction)%><%suffix%>'
+  case SIMEXTARG(cref=c, outputIndex=oi, type_=t) then
+    // Always prefix fortran arguments with &.
+    let suffix = if oi then "_ext"
     '&<%contextCref(c,contextFunction)%><%suffix%>'
   case SIMEXTARGEXP(__) then
-    daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let texp = daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
+    let &preExp += '<%tvar%> = <%texp%>;<%\n%>'
+    '&<%tvar%>'
   case SIMEXTARGSIZE(cref=c) then
     // Fortran functions only takes references to variables, so we must store
     // the result from size_of_dimension_<type>_array in a temporary variable.
@@ -4725,7 +4733,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'std::max(<%var1%>,<%var2%>)'
-  case CALL(tuple_=false, builtin=true,
+  case CALL(tuple_=false, builtin=true, ty = ET_INT(),
+            path=IDENT(name="min"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+  case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
@@ -5554,11 +5567,11 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
  "Generate type helper."
 ::=
   match exp
-  case ICONST(__)        then match flag case 1 then "integer" else "modelica_integer"
+  case ICONST(__)        then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
   case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
-  case ENUM_LITERAL(__)  then match flag case 1 then "integer" else "modelica_integer"
+  case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
   case e as UNARY(__)
   case e as LBINARY(__)
