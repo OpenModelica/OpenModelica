@@ -135,7 +135,7 @@ realString_rettype realString(modelica_real r)
     res = "NaN";
   else {
     char* endptr;
-    int ix = snprintf(buffer, 32, "%.16g", r);
+    int ix = snprintf(buffer, 32, "%.15g", r);
     long ignore;
     if (ix < 0)
       throw 1;

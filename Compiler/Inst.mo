@@ -14515,6 +14515,7 @@ algorithm
     case (_,_)
       equation
         print("- Inst.add failed\n");
+        print(dumpTuple(entry));
       then
         fail();
   end matchcontinue;

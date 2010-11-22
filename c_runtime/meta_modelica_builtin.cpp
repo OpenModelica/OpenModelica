@@ -93,7 +93,7 @@ intDiv_rettype intDiv(modelica_integer i1, modelica_integer i2)
 
 intMod_rettype intMod(modelica_integer i1, modelica_integer i2)
 {
-  return i1%i2;
+  return ((unsigned long) i1) % ((unsigned long) i2);
 }
 
 intMax_rettype intMax(modelica_integer i1, modelica_integer i2)
@@ -129,7 +129,7 @@ modelica_metatype boxptr_intDiv(modelica_metatype i1, modelica_metatype i2)
 
 modelica_metatype boxptr_intMod(modelica_metatype i1, modelica_metatype i2)
 {
-  return (void*) ((long)i1%(long)i2);
+  return (void*) ((unsigned long)i1%(unsigned long)i2);
 }
 
 modelica_metatype boxptr_intMax(modelica_metatype i1, modelica_metatype i2)
@@ -189,9 +189,9 @@ intReal_rettype intReal(modelica_integer i)
 
 intString_rettype intString(modelica_integer i)
 {
-  /* 32-bit integer: 1+log_10(2**31)+1 = 12 digits max */
-  static char buffer[12];
-  sprintf(buffer, "%d", i);
+  /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
+  static char buffer[32];
+  sprintf(buffer, "%ld", i);
   return strdup(buffer);
 }
 
