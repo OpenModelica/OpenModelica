@@ -526,10 +526,12 @@ double SystemImpl__getCurrentTime()
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
 
 #ifdef __APPLE_CC__
-static int file_select_mo(struct dirent *entry)
+typedef struct dirent* direntry;
 #else
-static int file_select_mo(const struct dirent *entry)
+typedef const struct dirent* direntry;
 #endif
+
+static int file_select_mo(direntry entry)
 {
   char fileName[MAXPATHLEN];
   int res; char* ptr;
@@ -678,7 +680,7 @@ static inline void free_ptr(modelica_integer index)
   memset(&(ptr_vector[index].data), 0, sizeof(ptr_vector[index].data));
 }
 
-int file_select_directories(const struct dirent *entry)
+int file_select_directories(direntry entry)
 {
   char fileName[MAXPATHLEN];
   int res;
