@@ -537,6 +537,7 @@ algorithm
       equation
         versionRequest();
         print(Settings.getVersionNr());
+        print("\n");
       then ();
 
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
