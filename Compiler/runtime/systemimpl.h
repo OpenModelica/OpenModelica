@@ -67,5 +67,6 @@ struct modelica_ptr_s {
 typedef struct modelica_ptr_s *modelica_ptr_t;
 modelica_ptr_t lookup_ptr(modelica_integer index);
 
+int SystemImpl__regularFileWritable(const char* str);
 
 #endif //__SYSTEMIMPL_H

@@ -49,6 +49,7 @@ extern "C" {
 
 #include "runtime/errorext.h"
 #include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
+#include "runtime/systemimpl.h"
 
 static long unsigned int szMemoryUsed = 0;
 static long lexerFailed;
@@ -341,6 +342,7 @@ static void* parseFile(const char* fileName, int flags)
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
+  isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
@@ -368,6 +370,7 @@ static void* parseString(const char* data, int flags)
   ModelicaParser_filename_C = "<interactive>";
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
+  isReadOnly = 1;
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 

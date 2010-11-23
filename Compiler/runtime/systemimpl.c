@@ -230,18 +230,25 @@ extern int SystemImpl__regularFileExists(const char* str)
   if (sh == INVALID_HANDLE_VALUE) {
     return 0;
   }
-  if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-    ret_val = 0;
-  } else {
-    ret_val = 1;
-  }
   FindClose(sh);
-  return ret_val;
+  return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
   struct stat buf;
   if (stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
 #endif
+}
+
+extern int SystemImpl__regularFileWritable(const char* str)
+{
+  FILE *f;
+  if (!SystemImpl__regularFileExists(str))
+    return 0;
+  f = fopen(str, "a");
+  if (f == NULL)
+    return 0;
+  fclose(f);
+  return 1;
 }
 
 static char* SystemImpl__readFile(const char* filename)

@@ -96,7 +96,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ErrorExt__updateCurrentComponent)
 {
 char* newVar = RML_STRINGDATA(rmlA0);
-bool write = RML_STRINGDATA(rmlA1);
+bool write = RML_UNTAGFIXNUM(rmlA1);
 char* fileName = RML_STRINGDATA(rmlA2);
 int rs = RML_UNTAGFIXNUM(rmlA3);
 int re = RML_UNTAGFIXNUM(rmlA4);
