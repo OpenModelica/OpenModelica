@@ -47,6 +47,7 @@ QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/t
 // Don't randomize the path as then it becomes annoying to remove all dirs
 QString Helper::tmpPath = QString("/tmp/OMEdit");
 #endif
+QString Helper::settingsFileName = QString("OMEdit-Settings.xml");
 // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
 QString Helper::documentationBaseUrl = QString(getenv("OPENMODELICALIBRARY")).replace("\\", "/").append(QString("/Modelica/Images/"));
 QString Helper::readOnly = QString("Read-Only");
@@ -64,6 +65,7 @@ int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(20, 20);
 int Helper::headingFontSize = 18;
+int Helper::tabWidth = 20;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 

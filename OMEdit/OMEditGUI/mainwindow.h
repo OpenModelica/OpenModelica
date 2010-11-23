@@ -57,6 +57,7 @@
 #include "PlotWidget.h"
 #include "SplashScreen.h"
 #include "DocumentationWidget.h"
+#include "OptionsWidget.h"
 
 class QGridLayout;
 class QHBoxLayout;
@@ -75,6 +76,7 @@ class ModelCreator;
 class SimulationWidget;
 class PlotWidget;
 class DocumentationWidget;
+class OptionsWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -94,6 +96,7 @@ public:
     ModelCreator *mpModelCreator;
     OMCProxy *mpOMCProxy;
     DocumentationWidget *mpDocumentationWidget;
+    OptionsWidget *mpOptionsWidget;
     QMenuBar *menubar;
     QMenu *menuFile;
     QMenu *menuNew;
@@ -124,6 +127,7 @@ public:
     QAction *pasteAction;
     QAction *omcLoggerAction;
     QAction *openOMShellAction;
+    QAction *openOptions;
     QAction *gridLinesAction;
     QAction *resetZoomAction;
     QAction *zoomInAction;
@@ -157,6 +161,7 @@ private slots:
     void openNewFunction();
     void openNewPackage();
     void openOMShell();
+    void openConfiguratonOptions();
     void checkModel();
     void openUserManual();
     void openAbout();

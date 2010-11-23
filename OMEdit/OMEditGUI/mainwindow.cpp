@@ -120,6 +120,8 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::RightDockWidgetArea, documentationdock);
     documentationdock->hide();
 
+    mpOptionsWidget = new OptionsWidget(this);
+
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
     this->createActions();
@@ -268,6 +270,9 @@ void MainWindow::createActions()
     openOMShellAction->setStatusTip(tr("Opens Open Modelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
+    openOptions = new QAction(tr("Options"), this);
+    connect(openOptions, SIGNAL(triggered()), SLOT(openConfiguratonOptions()));
+
     closeAction = new QAction(QIcon(":/Resources/icons/close.png"), tr("Close"), this);
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
     connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
@@ -374,6 +379,8 @@ void MainWindow::createMenus()
 
     menuTools->addAction(omcLoggerAction);
     menuTools->addAction(openOMShellAction);
+    menuTools->addSeparator();
+    menuTools->addAction(openOptions);
 
     menuHelp->addAction(userManualAction);
     menuHelp->addAction(aboutAction);
@@ -535,6 +542,11 @@ void MainWindow::openOMShell()
 
     QProcess *process = new QProcess();
     process->start(omShellPath);
+}
+
+void MainWindow::openConfiguratonOptions()
+{
+    this->mpOptionsWidget->show();
 }
 
 void MainWindow::checkModel()

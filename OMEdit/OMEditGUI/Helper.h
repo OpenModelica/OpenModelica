@@ -49,6 +49,7 @@ public:
     static QString omFileTypes;
     static QString omFileOpenText;
     static QString tmpPath;
+    static QString settingsFileName;
     static QString documentationBaseUrl;
     static QString readOnly;
     static QString writeAble;
@@ -66,6 +67,7 @@ public:
     static QSize iconSize;
     static QSize buttonIconSize;
     static int headingFontSize;
+    static int tabWidth;
 };
 
 class GUIMessages

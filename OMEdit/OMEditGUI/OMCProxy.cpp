@@ -72,8 +72,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     // Set the Layout
     QHBoxLayout *horizontallayout = new QHBoxLayout;
     horizontallayout->setContentsMargins(0, 0, 0, 0);
-    mpExpressionTextBox = new QLineEdit;
-    mpExpressionTextBox->installEventFilter(this);
+    mpExpressionTextBox = new CustomExpressionBox(this);
     mpSendButton = new QPushButton("Send");
     connect(mpSendButton, SIGNAL(pressed()), SLOT(sendCustomExpression()));
     horizontallayout->addWidget(mpExpressionTextBox);
@@ -94,29 +93,6 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
 OMCProxy::~OMCProxy()
 {
     delete mpOMCLogger;
-}
-
-bool OMCProxy::eventFilter(QObject *object, QEvent *event)
-{
-    if (mpExpressionTextBox->hasFocus())
-    {
-        if (event->type() == QEvent::KeyPress)
-        {
-            if (dynamic_cast<QKeyEvent*>(event)->key() == Qt::Key_Up)
-                getPreviousCommand();
-            else if (dynamic_cast<QKeyEvent*>(event)->key() == Qt::Key_Down)
-                getNextCommand();
-            else
-                return QObject::eventFilter(object, event);
-            return true;
-        }
-    }
-    else
-    {
-         // standard event processing
-         return QObject::eventFilter(object, event);
-     }
-
 }
 
 void OMCProxy::getPreviousCommand()
@@ -1003,4 +979,24 @@ QString OMCProxy::checkModel(QString modelName)
 {
     sendCommand("checkModel(" + modelName + ")");
     return getResult();
+}
+
+CustomExpressionBox::CustomExpressionBox(OMCProxy *pParent)
+{
+    mpParentOMCProxy = pParent;
+}
+
+void CustomExpressionBox::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key())
+    {
+    case Qt::Key_Up:
+        mpParentOMCProxy->getPreviousCommand();
+        break;
+    case Qt::Key_Down:
+        mpParentOMCProxy->getNextCommand();
+        break;
+    default:
+        QLineEdit::keyPressEvent(event);
+    }
 }

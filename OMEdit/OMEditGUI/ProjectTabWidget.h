@@ -132,11 +132,13 @@ protected:
 
 class ProjectTabWidget; //Forward declaration
 class ModelicaEditor;
+class ModelicaTextHighlighter;
 class ProjectTab : public QWidget
 {
     Q_OBJECT
 private:
     ModelicaEditor *mpModelicaEditor;
+    ModelicaTextHighlighter *mpModelicaTextHighlighter;
     QStatusBar *mpProjectStatusBar;
     QButtonGroup *mpViewsButtonGroup;
     QToolButton *mpIconToolButton;

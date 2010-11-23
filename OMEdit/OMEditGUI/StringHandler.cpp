@@ -72,6 +72,16 @@ QString StringHandler::getModelicaClassType(int type)
         return "Function";
     case StringHandler::PACKAGE:
         return "Package";
+    case StringHandler::PRIMITIVE:
+        return "Primitive";
+    case StringHandler::TYPE:
+        return "Type";
+    case StringHandler::PARAMETER:
+        return "Parameter";
+    case StringHandler::CONSTANT:
+        return "Constant";
+    case StringHandler::PROTECTED:
+        return "Protected";
     default:
         // should never be reached
         return "";

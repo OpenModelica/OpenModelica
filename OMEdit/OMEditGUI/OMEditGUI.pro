@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += network core gui webkit svg
+QT += network core gui webkit svg xml
 
 TARGET = OMEdit
 TEMPLATE = app
@@ -37,7 +37,8 @@ SOURCES += main.cpp\
     IconProperties.cpp \
     Component.cpp \
     Transformation.cpp \
-    DocumentationWidget.cpp
+    DocumentationWidget.cpp \
+    OptionsWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -66,7 +67,8 @@ HEADERS  += mainwindow.h \
     IconProperties.h \
     Component.h \
     Transformation.h \
-    DocumentationWidget.h
+    DocumentationWidget.h \
+    OptionsWidget.h
 
 # -------For OMNIorb
 win32 {

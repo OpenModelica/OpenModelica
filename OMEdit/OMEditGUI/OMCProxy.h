@@ -43,6 +43,7 @@
 #include "IconParameters.h"
 
 class MainWindow;
+class CustomExpressionBox;
 
 class OMCProxy : public QObject
 {
@@ -55,7 +56,7 @@ private:
     QString mResult;
     bool mDisplayErrors;
     QDialog *mpOMCLogger;
-    QLineEdit *mpExpressionTextBox;
+    CustomExpressionBox *mpExpressionTextBox;
     QPushButton *mpSendButton;
     QTextEdit *mpTextEdit;
     QString mObjectRefFile;
@@ -63,7 +64,6 @@ private:
 public:
     OMCProxy(MainWindow *pParent = 0, bool displayErrors = true);
     ~OMCProxy();
-    virtual bool eventFilter(QObject *object, QEvent *event);
     void getPreviousCommand();
     void getNextCommand();
 
@@ -146,6 +146,16 @@ public slots:
     void openOMCLogger();
     void catchException();
     void sendCustomExpression();
+};
+
+class CustomExpressionBox : public QLineEdit
+{
+public:
+    CustomExpressionBox(OMCProxy *pParent);
+
+    OMCProxy *mpParentOMCProxy;
+protected:
+    virtual void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // OMCPROXY_H

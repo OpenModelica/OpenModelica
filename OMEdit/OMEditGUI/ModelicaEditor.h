@@ -53,4 +53,37 @@ protected:
     virtual void focusOutEvent(QFocusEvent *e);
 };
 
+class ModelicaTextSettings;
+
+class ModelicaTextHighlighter : public QSyntaxHighlighter
+{
+    Q_OBJECT
+public:
+    ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent = 0);
+    void initializeSettings();
+
+    ModelicaTextSettings *mpModelicaTextSettings;
+protected:
+    virtual void highlightBlock(const QString &text);
+private:
+    struct HighlightingRule
+    {
+        QRegExp mPattern;
+        QTextCharFormat mFormat;
+    };
+    QVector<HighlightingRule> mHighlightingRules;
+
+    QRegExp mCommentStartExpression;
+    QRegExp mCommentEndExpression;
+
+    QTextCharFormat mKeywordFormat;
+    QTextCharFormat mTypeFormat;
+    QTextCharFormat mFunctionFormat;
+    QTextCharFormat mQuotationFormat;
+    QTextCharFormat mSingleLineCommentFormat;
+    QTextCharFormat mMultiLineCommentFormat;
+public slots:
+    void settingsChanged();
+};
+
 #endif // MODELICAEDITOR_H

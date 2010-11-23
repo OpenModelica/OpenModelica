@@ -691,6 +691,11 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTab
 
     // create a modelica text editor for modelica text
     mpModelicaEditor = new ModelicaEditor(this);
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->mpOptionsWidget->mpModelicaTextSettings,
+                                                            mpModelicaEditor->document());
+    connect(pMainWindow->mpOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter,
+            SLOT(settingsChanged()));
     mpModelicaEditor->hide();
 
     // set Project Status Bar lables

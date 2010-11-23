@@ -39,6 +39,7 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     mpParentProjectTab = pParent;
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setTabStopWidth(Helper::tabWidth);
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
 }
 
@@ -67,48 +68,167 @@ QString ModelicaEditor::getModelName()
 
 void ModelicaEditor::focusOutEvent(QFocusEvent *e)
 {
-    if (document()->isModified())
+    QTextEdit::focusOutEvent(e);
+//    if (document()->isModified())
+//    {
+//        // if the user makes few mistakes in the text then dont let him change the perspective
+//        if (!emit focusOut())
+//        {
+//            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+//            QMessageBox *msgBox = new QMessageBox(pMainWindow);
+//            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
+//            msgBox->setIcon(QMessageBox::Critical);
+//            msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
+//                            .arg(pMainWindow->mpOMCProxy->getResult()));
+//            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
+//            msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
+//            msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
+
+//            int answer = msgBox->exec();
+
+//            switch (answer)
+//            {
+//            case QMessageBox::AcceptRole:
+//                document()->setModified(false);
+//                // revert back to last valid block
+//                setText(mLastValidText);
+//                e->accept();
+//                mpParentProjectTab->showIconView(true);
+//                break;
+//            case QMessageBox::RejectRole:
+//                document()->setModified(true);
+//                e->ignore();
+//                setFocus();
+//                break;
+//            default:
+//                // should never be reached
+//                document()->setModified(true);
+//                e->ignore();
+//                setFocus();
+//                break;
+//            }
+//        }
+//        else
+//        {
+//            qDebug() << "going back";
+//            e->accept();
+//        }
+//    }
+//    else
+//    {
+//        e->accept();
+//    }
+}
+
+ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent)
+    : QSyntaxHighlighter(pParent)
+{
+    mpModelicaTextSettings = pSettings;
+    initializeSettings();
+}
+
+void ModelicaTextHighlighter::initializeSettings()
+{
+    QTextDocument *textDocument = dynamic_cast<QTextDocument*>(this->parent());
+    textDocument->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(),
+                                       mpModelicaTextSettings->getFontSize()));
+
+    mHighlightingRules.clear();
+    HighlightingRule rule;
+
+    mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
+    QStringList keywordPatterns;
+    keywordPatterns << "\\bextends\\b" << "\\bpublic\\b" << "\\bReal\\b" << "\\bBoolean\\b" << "\\bequation\\b"
+                    << "\\bvoid\\b" << "\\bend\\b";
+    foreach (const QString &pattern, keywordPatterns)
     {
-        // if the user makes few mistakes in the text then dont let him change the perspective
-        if (!emit focusOut())
+        rule.mPattern = QRegExp(pattern);
+        rule.mFormat = mKeywordFormat;
+        mHighlightingRules.append(rule);
+    }
+
+    mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
+    QStringList typePatterns;
+    typePatterns << "\\b" + StringHandler::getModelicaClassType(StringHandler::MODEL).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CLASS).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CONNECTOR).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::RECORD).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::BLOCK).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::FUNCTION).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PACKAGE).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PRIMITIVE).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::TYPE).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PARAMETER).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::CONSTANT).toLower() + "\\b"
+                 << "\\b" + StringHandler::getModelicaClassType(StringHandler::PROTECTED).toLower() + "\\b";
+    foreach (const QString &pattern, typePatterns)
+    {
+        rule.mPattern = QRegExp(pattern);
+        rule.mFormat = mTypeFormat;
+        mHighlightingRules.append(rule);
+    }
+
+    mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
+    rule.mPattern = QRegExp("//[^\n]*");
+    rule.mFormat = mSingleLineCommentFormat;
+    mHighlightingRules.append(rule);
+
+    mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
+
+    mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());
+    rule.mPattern = QRegExp("\\b[A-Za-z0-9_]+(?=\\()");
+    rule.mFormat = mFunctionFormat;
+    mHighlightingRules.append(rule);
+
+    mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
+    rule.mPattern = QRegExp("\".*\"");
+    rule.mFormat = mQuotationFormat;
+    mHighlightingRules.append(rule);
+
+    mCommentStartExpression = QRegExp("/\\*");
+    mCommentEndExpression = QRegExp("\\*/");
+}
+
+void ModelicaTextHighlighter::highlightBlock(const QString &text)
+{
+    setFormat(0, text.length(), mpModelicaTextSettings->getTextRuleColor());
+    foreach (const HighlightingRule &rule, mHighlightingRules)
+    {
+        QRegExp expression(rule.mPattern);
+        int index = expression.indexIn(text);
+        while (index >= 0)
         {
-            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-            QMessageBox *msgBox = new QMessageBox(pMainWindow);
-            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
-            msgBox->setIcon(QMessageBox::Critical);
-            msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
-                            .arg(pMainWindow->mpOMCProxy->getResult()));
-            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
-            msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
-            msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
-
-            int answer = msgBox->exec();
-
-            switch (answer)
-            {
-            case QMessageBox::AcceptRole:
-                document()->setModified(false);
-                // revert back to last valid block
-                setText(mLastValidText);
-                e->accept();
-                mpParentProjectTab->showIconView(true);
-                break;
-            case QMessageBox::RejectRole:
-                document()->setModified(true);
-                e->ignore();
-                setFocus();
-                break;
-            default:
-                // should never be reached
-                document()->setModified(true);
-                e->ignore();
-                setFocus();
-                break;
-            }
+            int length = expression.matchedLength();
+            setFormat(index, length, rule.mFormat);
+            index = expression.indexIn(text, index + length);
         }
     }
-    else
+    setCurrentBlockState(0);
+
+    int startIndex = 0;
+    if (previousBlockState() != 1)
+    startIndex = mCommentStartExpression.indexIn(text);
+
+    while (startIndex >= 0)
     {
-        e->accept();
+        int endIndex = mCommentEndExpression.indexIn(text, startIndex);
+        int commentLength;
+        if (endIndex == -1)
+        {
+            setCurrentBlockState(1);
+            commentLength = text.length() - startIndex;
+        }
+        else
+        {
+            commentLength = endIndex - startIndex + mCommentEndExpression.matchedLength();
+        }
+        setFormat(startIndex, commentLength, mMultiLineCommentFormat);
+        startIndex = mCommentStartExpression.indexIn(text, startIndex + commentLength);
     }
+}
+
+void ModelicaTextHighlighter::settingsChanged()
+{
+    initializeSettings();
+    rehighlight();
 }
