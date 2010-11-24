@@ -561,6 +561,13 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 {
   modelica_metatype *tmpArr;
   int i;
+  if (ix < 0)
+    throw 1;
+  if (ix == 0) {
+    if (listEmpty(lst))
+      throw 1;
+    return MMC_CDR(lst);
+  }
   tmpArr = (modelica_metatype *) malloc(sizeof(modelica_metatype)*ix); /* We know the size of the first part of the list (+1 for the element to delete) */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
@@ -570,7 +577,8 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
   {
     if (MMC_NILTEST(lst))
     {
-      free(tmpArr);
+      if (tmpArr)
+        free(tmpArr);
       throw 1;
     }
     tmpArr[i] = MMC_CAR(lst);
@@ -581,6 +589,7 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
     lst = mmc_mk_cons(tmpArr[i], lst);
   }
   free(tmpArr);
+  
   return lst;
 }
 
