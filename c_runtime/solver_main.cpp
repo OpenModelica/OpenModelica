@@ -235,7 +235,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	saveall();
 	sim_result->emit();
 
-
+	if (globalData->timeValue >= stop){
+		if (sim_verbose) {cout << "Simulation done!" << endl;}
+		return 0;
+	}
 
 	// Do a tiny step to initialize ZeroCrossing that are fulfilled
 	globalData->current_stepsize = calcTiny(globalData->timeValue);
