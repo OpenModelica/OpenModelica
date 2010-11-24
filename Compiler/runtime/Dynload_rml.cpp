@@ -33,22 +33,17 @@
  #include <Windows.h>
 #endif
 
-#include "errorext.h"
-#include "meta_modelica.h"
-
 extern "C" {
 
-#include "systemimpl.h"
-#include "rtopts.h"
 #include "rml.h"
 #include "Absyn.h"
 #include "Values.h"
 
-void *type_desc_to_value(type_description *desc);
-static int execute_function(void *in_arg, void **out_arg,
-                            int (* func)(type_description *,
-                                         type_description *));
-int parse_array(type_description *desc, void *arrdata, void *dimLst);
+}
+
+#include "Dynload.cpp"
+
+extern "C" {
 
 void DynLoad_5finit(void)
 {
@@ -80,7 +75,7 @@ RML_BEGIN_LABEL(DynLoad__executeFunction)
 }
 RML_END_LABEL
 
-void *generate_array(enum type_desc_e type, int curdim, int ndims,
+static void *generate_array(enum type_desc_e type, int curdim, int ndims,
                      int *dim_size, void **data)
 {
   void *lst = (void *) mk_nil();
@@ -142,7 +137,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
 }
 
 
-char* path_to_name(void* path, char del)
+static const char* path_to_name(void* path, char del)
 {
   char* buf = 0;
   char* bufstart = 0;
@@ -255,7 +250,7 @@ static void *name_to_path(const char *name)
   }
 }
 
-void *mmc_list_reverse(void* data) {
+static void *mmc_list_reverse(void* data) {
   void* res = mmc_mk_nil();
   while (!MMC_NILTEST(data)) {
     res = mmc_mk_cons(MMC_CAR(data), res);
@@ -264,7 +259,7 @@ void *mmc_list_reverse(void* data) {
   return res;
 }
 
-int mmc_to_value(void* mmc, void** res)
+static int mmc_to_value(void* mmc, void** res)
 {
   mmc_uint_t hdr;
   int numslots;
@@ -358,7 +353,7 @@ int mmc_to_value(void* mmc, void** res)
   return 1;
 }
 
-void *value_to_mmc(void* value)
+static void *value_to_mmc(void* value)
 {
   switch (RML_HDRCTOR(RML_GETHDR(value))) {
   case Values__INTEGER_3dBOX1:
@@ -751,7 +746,7 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
   return 0;
 }
 
-int parse_array(type_description *desc, void *arrdata, void *dimLst)
+static int parse_array(type_description *desc, void *arrdata, void *dimLst)
 {
   int dims, *dim_size;
   void *data;
@@ -808,90 +803,6 @@ int parse_array(type_description *desc, void *arrdata, void *dimLst)
 
   assert(0);
   return -1;
-}
-
-static int execute_function(void *in_arg, void **out_arg,
-                            int (* func)(type_description *,
-                                         type_description *))
-{
-  type_description arglst[RML_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
-  type_description crashbufretarg, retarg;
-  void *v = NULL;
-  int retval = 0;
-  int debugFlag = check_debug_flag("dynload");
-  state mem_state;
-
-  mem_state = get_memory_state();
-
-  if (debugFlag) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
-
-  v = in_arg;
-  arg = arglst;
-
-  while (RML_GETHDR(v) != RML_NILHDR) {
-    void *val = RML_CAR(v);
-    if (value_to_type_desc(val, arg)) {
-      restore_memory_state(mem_state);
-      if (debugFlag)
-      {
-        puttype(arg);
-        fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr);
-      }
-      return -1;
-    }
-    if (debugFlag) puttype(arg);
-    ++arg;
-    v = RML_CDR(v);
-  }
-
-  init_type_description(arg);
-  init_type_description(&crashbufretarg);
-  init_type_description(&retarg);
-  init_type_description(&crashbuf[5]);
-
-  retarg.retval = 1;
-
-  if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
-  
-  /* call our function pointer! */
-  try {
-    func(arglst, &retarg);
-    retval = 0;
-  } catch (...) {
-    retval = 1;
-  }
-  /* Flush all buffers for deterministic behaviour; in particular for the testsuite */
-  fflush(NULL);
-
-  /* free the type description for the input parameters! */
-  arg = arglst;
-  while (arg->type != TYPE_DESC_NONE) {
-    free_type_description(arg);
-    ++arg;
-  }
-
-  restore_memory_state(mem_state);
-
-  if (retval) {
-    *out_arg = Values__META_5fFAIL;
-    return 0;
-  } else {
-    if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
-
-    (*out_arg) = type_desc_to_value(&retarg);
-    /* out_arg doesn't seem to get freed, something we can do anything about?
-     * adrpo: 2009-09. it shouldn't be freed!
-     */
-
-    free_type_description(&retarg);
-
-    if ((*out_arg) == NULL) {
-      printf("Unable to parse returned values.\n");
-      return -1;
-    }
-
-    return 0;
-  }
 }
 
 }

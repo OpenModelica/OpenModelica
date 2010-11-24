@@ -12156,7 +12156,12 @@ public function recordDefinition
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
+  out_txt := Tpl.writeStr(out_txt, i_encName);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "__desc_added 1\n",
+                                       "const char* "
+                                   }, false));
   out_txt := Tpl.writeStr(out_txt, i_encName);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("__desc__fields["));
   out_txt := Tpl.writeStr(out_txt, intString(i_numFields));

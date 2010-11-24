@@ -53,6 +53,9 @@
 #define RML_GETHDR MMC_GETHDR
 #define RML_UNTAGPTR MMC_UNTAGPTR
 #define RML_STRUCTHDR(X,Y) MMC_STRUCTHDR(X+1,Y)
+#define RML_NUM_ARGS 32
+#define RML_CAR MMC_CAR
+#define RML_CDR MMC_CDR
 
 struct rml_struct {
     mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */

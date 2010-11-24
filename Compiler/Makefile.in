@@ -67,6 +67,7 @@ install_scripts:
 	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
 
 install: install_scripts $(PROG)
+	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
 
 dinstall: install_scripts $(PROGD)
 

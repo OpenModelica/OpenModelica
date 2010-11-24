@@ -28,10 +28,16 @@
  *
  */
 
+#include "modelica.h"
+#include "rml_compatibility.h"
+#include "OpenModelicaBootstrappingHeader.h"
+#include "Dynload.cpp"
+
 extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+
 
 extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
 {

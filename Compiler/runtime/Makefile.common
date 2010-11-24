@@ -49,7 +49,8 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 omc_communication_impl.o: omc_communication.h
 corbaimpl.o: omc_communication.h
-Dynload_rml.o: systemimpl.h errorext.h rtopts.h ../Absyn.h ../Values.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h
+Dynload_rml.o: systemimpl.h errorext.h rtopts.h ../Absyn.h ../Values.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
+Dynload_omc.o: systemimpl.h errorext.h rtopts.h ../OpenModelicaBootstrappingHeader.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
 Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
 Error_rml.o : errorext.cpp

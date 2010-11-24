@@ -2855,6 +2855,7 @@ template recordDefinition(String origName, String encName, String fieldNames, In
  "Generates the definition struct for a record declaration."
 ::=
   <<
+  #define <%encName%>__desc_added 1
   const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};
   struct record_description <%encName%>__desc = {
     "<%encName%>", /* package_record__X */
