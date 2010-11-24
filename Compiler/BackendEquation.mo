@@ -700,6 +700,16 @@ algorithm
   info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
 end equationInfo;
 
+public function equationAlgorithm "Retrieve the true if input is algorithm equation"
+  input BackendDAE.Equation eq;
+  output Boolean out;
+algorithm
+  out := matchcontinue eq
+    case BackendDAE.ALGORITHM(index=_) then true;
+    case _ then false;
+  end matchcontinue;
+end equationAlgorithm;
+
 protected function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
   output DAE.ElementSource source;

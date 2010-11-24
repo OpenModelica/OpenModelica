@@ -2561,7 +2561,125 @@ algorithm
       res;
   end matchcontinue;
 end makeMatrix;
-  
+
+public function removediscreteAssingments "
+Author: wbraun
+Function tarverse Statements and remove discrete one"
+  input list<DAE.Statement> inStmts;
+  input BackendDAE.Variables inVars; 
+  output list<DAE.Statement> outStmts;
+algorithm 
+  outStmts := matchcontinue(inStmts,inVars)
+    local 
+      list<DAE.Statement> stmts,rest,xs;
+      DAE.Else algElse;
+      DAE.Statement stmt,ew;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefLst;
+      BackendDAE.Var v;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> vlst;
+      DAE.Exp e;
+      list<DAE.Exp> expl1;
+      list<Boolean> blst;
+      DAE.ElementSource source;
+      
+      DAE.ExpType tp;
+      Boolean b1;
+      String id1;
+      list<Integer> li;
+    case ({},_) then ({});
+      
+    case ((DAE.STMT_ASSIGN(exp1 = e) :: rest),vars)
+      equation
+        cref = Expression.expCref(e);
+        ({v},_) = BackendVariable.getVar(cref,vars);
+        true = BackendVariable.isVarDiscrete(v);
+        xs = removediscreteAssingments(rest,vars);
+    then xs;
+        
+    /*case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1) :: rest),vars)
+      equation
+        crefLst = Util.listMap(expl1,Expression.expCref);
+        (vlst,_) = Util.listMap12(crefLst,BackendVariable.getVar,vars);
+        //blst = Util.listMap(vlst,BackendVariable.isVarDiscrete);
+        //true = boolOrList(blst);
+        xs = removediscreteAssingments(rest,vars); 
+      then xs;
+      */  
+    case ((DAE.STMT_ASSIGN_ARR(componentRef = cref) :: rest),vars)
+      equation
+        ({v},_) = BackendVariable.getVar(cref,vars);
+        true = BackendVariable.isVarDiscrete(v);
+        xs = removediscreteAssingments(rest,vars);
+     then xs;
+        
+    case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: rest),vars)
+      equation
+        stmts = removediscreteAssingments(stmts,vars);
+        algElse = removediscreteAssingmentsElse(algElse,vars);
+        xs = removediscreteAssingments(rest,vars);
+      then DAE.STMT_IF(e,stmts,algElse,source) :: xs;
+        
+    case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: rest),vars)
+      equation
+        stmts = removediscreteAssingments(stmts,vars);
+        xs = removediscreteAssingments(rest,vars);
+      then DAE.STMT_FOR(tp,b1,id1,e,stmts,source) :: xs;
+        
+    case (((DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: rest),vars)
+      equation
+        stmts = removediscreteAssingments(stmts,vars);
+        xs = removediscreteAssingments(rest,vars);
+    then DAE.STMT_WHILE(e,stmts,source) :: xs;
+    case (((DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: rest),vars)
+        
+      equation
+        stmts = removediscreteAssingments(stmts,vars);
+        xs = removediscreteAssingments(rest,vars);
+      then DAE.STMT_WHEN(e,stmts,NONE(),li,source) :: xs;
+        
+    case (((DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: rest),vars)
+      equation
+        stmts = removediscreteAssingments(stmts,vars);
+        {ew} = removediscreteAssingments({ew},vars);
+        xs = removediscreteAssingments(rest,vars);
+      then DAE.STMT_WHEN(e,stmts,SOME(ew),li,source) :: xs;
+        
+    case ((stmt :: rest),vars)
+      equation
+        xs = removediscreteAssingments(rest,vars);
+      then  stmt :: xs;       
+  end matchcontinue;
+end removediscreteAssingments;
+
+protected function removediscreteAssingmentsElse "
+Author: wbraun
+Helper function for traverseDAEEquationsELse
+"
+  input DAE.Else inElse;
+  input BackendDAE.Variables inVars; 
+  output DAE.Else outElse;
+algorithm 
+  outElse := matchcontinue(inElse,inVars)
+  local
+    DAE.Exp e;
+    list<DAE.Statement> st;
+    DAE.Else el;
+    BackendDAE.Variables vars;
+  case(DAE.NOELSE(),_) then (DAE.NOELSE());
+  case(DAE.ELSEIF(e,st,el),vars)
+    equation
+      el = removediscreteAssingmentsElse(el,vars);
+      st = removediscreteAssingments(st,vars);
+    then DAE.ELSEIF(e,st,el);
+  case(DAE.ELSE(st),vars)
+    equation
+      st = removediscreteAssingments(st,vars);
+    then DAE.ELSE(st);
+end matchcontinue;
+end removediscreteAssingmentsElse;
+
 public function collateAlgorithm "
 Author: Frenkel TUD 2010-07"
   input DAE.Algorithm inAlg;

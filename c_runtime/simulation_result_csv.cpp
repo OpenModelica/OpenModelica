@@ -60,6 +60,10 @@ void simulation_result_csv::emit()
     fprintf(fout, format, globalData->statesDerivatives[i]);
   for (int i = 0; i < globalData->nAlgebraic; i++)
     fprintf(fout, format, globalData->algebraics[i]);
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    fprintf(fout, format, globalData->intVariables.algebraics[i]);
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    fprintf(fout, format, globalData->boolVariables.algebraics[i]);
   fprintf(fout, "\n");
 }
 
@@ -80,6 +84,10 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
  	  fprintf(fout, format, globalData->stateDerivativesNames[i]);
   for (int i = 0; i < globalData->nAlgebraic; i++)
  	  fprintf(fout, format, globalData->algebraicsNames[i]);
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    fprintf(fout, format, globalData->intVariables.algebraics[i]);
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    fprintf(fout, format, globalData->boolVariables.algebraics[i]);
   fprintf(fout,"\n");
 }
 

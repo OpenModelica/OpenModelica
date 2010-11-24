@@ -159,22 +159,22 @@ void storeExtrapolationData()
 
   int i;
   for(i=0;i<globalData->nStates;i++) {
-    globalData->old_states2[i]=globalData->old_states[i];
-    globalData->old_statesDerivatives2[i]=globalData->old_statesDerivatives[i];
-    globalData->old_states[i]=globalData->states[i];
-    globalData->old_statesDerivatives[i]=globalData->statesDerivatives[i];
+    globalData->states_old2[i]=globalData->states_old[i];
+    globalData->statesDerivatives_old2[i]=globalData->statesDerivatives_old[i];
+    globalData->states_old[i]=globalData->states[i];
+    globalData->statesDerivatives_old[i]=globalData->statesDerivatives[i];
   }
   for(i=0;i<globalData->nAlgebraic;i++) {
-    globalData->old_algebraics2[i]=globalData->old_algebraics[i];
-    globalData->old_algebraics[i]=globalData->algebraics[i];
+    globalData->algebraics_old2[i]=globalData->algebraics_old[i];
+    globalData->algebraics_old[i]=globalData->algebraics[i];
   }
   for(i=0;i<globalData->intVariables.nAlgebraic;i++) {
-    globalData->intVariables.old_algebraics2[i]=globalData->intVariables.old_algebraics[i];
-    globalData->intVariables.old_algebraics[i]=globalData->intVariables.algebraics[i];
+    globalData->intVariables.algebraics_old2[i]=globalData->intVariables.algebraics_old[i];
+    globalData->intVariables.algebraics_old[i]=globalData->intVariables.algebraics[i];
   }
   for(i=0;i<globalData->boolVariables.nAlgebraic;i++) {
-    globalData->boolVariables.old_algebraics2[i]=globalData->boolVariables.old_algebraics[i];
-    globalData->boolVariables.old_algebraics[i]=globalData->boolVariables.algebraics[i];
+    globalData->boolVariables.algebraics_old2[i]=globalData->boolVariables.algebraics_old[i];
+    globalData->boolVariables.algebraics_old[i]=globalData->boolVariables.algebraics[i];
   }
   globalData->oldTime2 = globalData->oldTime;
   globalData->oldTime = globalData->timeValue;

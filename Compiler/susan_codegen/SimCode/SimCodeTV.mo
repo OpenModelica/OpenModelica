@@ -32,6 +32,8 @@ package SimCode
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
       list<SimEqSystem> allEquationsPlusWhen;
+      list<SimEqSystem> odeEquations;
+      list<SimEqSystem> algebraicEquations;
       list<SimEqSystem> stateContEquations;
       list<SimEqSystem> nonStateContEquations;
       list<SimEqSystem> nonStateDiscEquations;
@@ -45,6 +47,7 @@ package SimCode
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
+      list<DAE.ComponentRef> discreteModelVars2;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;

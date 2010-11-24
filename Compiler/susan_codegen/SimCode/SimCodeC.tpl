@@ -123,14 +123,6 @@ case SIMCODE(__) then
 
   <%functionUpdateDependents(allEquations, helpVarInfo)%>
   
-  <%functionUpdateDepend(allEquationsPlusWhen, whenClauses, helpVarInfo)%>
-  
-  <%functionUpdateHelpVars(helpVarInfo)%>
-  
-  <%functionOnlyZeroCrossing(zeroCrossings)%>
-  
-  <%functionCheckForDiscreteChanges(discreteModelVars)%>
-  
   <%functionStoreDelayed(delayedExps)%>
   
   <%functionWhen(whenClauses)%>
@@ -144,6 +136,20 @@ case SIMCODE(__) then
   <%functionBoundParameters(parameterEquations)%>
   
   <%functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)%>
+  
+  <%functionODE(odeEquations)%>
+  
+  <%functionODE_residual()%>
+  
+  <%functionAlgebraic(algebraicEquations)%>
+    
+  <%functionAliasEquation(removedEquations)%>
+                       
+  <%functionDAE(allEquationsPlusWhen, whenClauses, helpVarInfo)%>
+    
+  <%functionOnlyZeroCrossing(zeroCrossings)%>
+  
+  <%functionCheckForDiscreteChanges(discreteModelVars2)%>
   
   <%generateLinearMatrixes(JacobianMatrixes)%>
   
@@ -374,14 +380,14 @@ template globalDataVarDefine(SimVar simVar, String arrayName)
     <<
     #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
-    #define $P$old<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
-    #define $P$old2<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
+    #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
     >>
   case SIMVAR(__) then
     <<
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
-    #define $P$old<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
-    #define $P$old2<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
+    #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
     >>
 end globalDataVarDefine;
 
@@ -530,30 +536,30 @@ template functionInitializeDataStruc()
   
     if(flags & STATES && returnData->nStates) {
       returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->old_states = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->old_states2 = (double*) malloc(sizeof(double)*returnData->nStates);
-      assert(returnData->states&&returnData->old_states&&returnData->old_states2);
+      returnData->states_old = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->states_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
+      assert(returnData->states&&returnData->states_old&&returnData->states_old2);
       memset(returnData->states,0,sizeof(double)*returnData->nStates);
-      memset(returnData->old_states,0,sizeof(double)*returnData->nStates);
-      memset(returnData->old_states2,0,sizeof(double)*returnData->nStates);
+      memset(returnData->states_old,0,sizeof(double)*returnData->nStates);
+      memset(returnData->states_old2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->states = 0;
-      returnData->old_states = 0;
-      returnData->old_states2 = 0;
+      returnData->states_old = 0;
+      returnData->states_old2 = 0;
     }
   
     if(flags & STATESDERIVATIVES && returnData->nStates) {
       returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->old_statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->old_statesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);
-      assert(returnData->statesDerivatives&&returnData->old_statesDerivatives&&returnData->old_statesDerivatives2);
+      returnData->statesDerivatives_old = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->statesDerivatives_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
+      assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2);
       memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
-      memset(returnData->old_statesDerivatives,0,sizeof(double)*returnData->nStates);
-      memset(returnData->old_statesDerivatives2,0,sizeof(double)*returnData->nStates);
+      memset(returnData->statesDerivatives_old,0,sizeof(double)*returnData->nStates);
+      memset(returnData->statesDerivatives_old2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->statesDerivatives = 0;
-      returnData->old_statesDerivatives = 0;
-      returnData->old_statesDerivatives2 = 0;
+      returnData->statesDerivatives_old = 0;
+      returnData->statesDerivatives_old2 = 0;
     }
   
     if(flags & HELPVARS && returnData->nHelpVars) {
@@ -566,16 +572,16 @@ template functionInitializeDataStruc()
   
     if(flags & ALGEBRAICS && returnData->nAlgebraic) {
       returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      returnData->old_algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      returnData->old_algebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      assert(returnData->algebraics&&returnData->old_algebraics&&returnData->old_algebraics2);
+      returnData->algebraics_old = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+      returnData->algebraics_old2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+      assert(returnData->algebraics&&returnData->algebraics_old&&returnData->algebraics_old2);
       memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
-      memset(returnData->old_algebraics,0,sizeof(double)*returnData->nAlgebraic);
-      memset(returnData->old_algebraics2,0,sizeof(double)*returnData->nAlgebraic);
+      memset(returnData->algebraics_old,0,sizeof(double)*returnData->nAlgebraic);
+      memset(returnData->algebraics_old2,0,sizeof(double)*returnData->nAlgebraic);
     } else {
       returnData->algebraics = 0;
-      returnData->old_algebraics = 0;
-      returnData->old_algebraics2 = 0;
+      returnData->algebraics_old = 0;
+      returnData->algebraics_old2 = 0;
     }
   
     if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
@@ -588,30 +594,30 @@ template functionInitializeDataStruc()
     
     if (flags & ALGEBRAICS && returnData->intVariables.nAlgebraic) {
       returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-      returnData->intVariables.old_algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-      returnData->intVariables.old_algebraics2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-      assert(returnData->intVariables.algebraics&&returnData->intVariables.old_algebraics&&returnData->intVariables.old_algebraics2);
+      returnData->intVariables.algebraics_old = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.algebraics_old2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      assert(returnData->intVariables.algebraics&&returnData->intVariables.algebraics_old&&returnData->intVariables.algebraics_old2);
       memset(returnData->intVariables.algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-      memset(returnData->intVariables.old_algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-      memset(returnData->intVariables.old_algebraics2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.algebraics_old,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.algebraics_old2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
     } else {
       returnData->intVariables.algebraics=0;
-      returnData->intVariables.old_algebraics = 0;
-      returnData->intVariables.old_algebraics2 = 0;
+      returnData->intVariables.algebraics_old = 0;
+      returnData->intVariables.algebraics_old2 = 0;
     }
 
     if (flags & ALGEBRAICS && returnData->boolVariables.nAlgebraic) {
       returnData->boolVariables.algebraics = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-      returnData->boolVariables.old_algebraics = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-      returnData->boolVariables.old_algebraics2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-      assert(returnData->boolVariables.algebraics&&returnData->boolVariables.old_algebraics&&returnData->boolVariables.old_algebraics2);
+      returnData->boolVariables.algebraics_old = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.algebraics_old2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      assert(returnData->boolVariables.algebraics&&returnData->boolVariables.algebraics_old&&returnData->boolVariables.algebraics_old2);
       memset(returnData->boolVariables.algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-      memset(returnData->boolVariables.old_algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-      memset(returnData->boolVariables.old_algebraics2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.algebraics_old,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.algebraics_old2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
     } else {
       returnData->boolVariables.algebraics=0;
-      returnData->boolVariables.old_algebraics = 0;
-      returnData->boolVariables.old_algebraics2 = 0;
+      returnData->boolVariables.algebraics_old = 0;
+      returnData->boolVariables.algebraics_old2 = 0;
     }
     
     if(flags & PARAMETERS && returnData->nParameters) {
@@ -868,14 +874,14 @@ case EXTOBJINFO(__) then
       data->states = 0;
     }
   
-    if(flags & STATES && data->old_states) {
-      free(data->old_states);
-      data->old_states = 0;
+    if(flags & STATES && data->states_old) {
+      free(data->states_old);
+      data->states_old = 0;
     }
 
-    if(flags & STATES && data->old_states2) {
-      free(data->old_states2);
-      data->old_states2 = 0;
+    if(flags & STATES && data->states_old2) {
+      free(data->states_old2);
+      data->states_old2 = 0;
     }
 
     if(flags & STATESDERIVATIVES && data->statesDerivatives) {
@@ -883,14 +889,14 @@ case EXTOBJINFO(__) then
       data->statesDerivatives = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->old_statesDerivatives) {
-      free(data->old_statesDerivatives);
-      data->old_statesDerivatives = 0;
+    if(flags & STATESDERIVATIVES && data->statesDerivatives_old) {
+      free(data->statesDerivatives_old);
+      data->statesDerivatives_old = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->old_statesDerivatives2) {
-      free(data->old_statesDerivatives2);
-      data->old_statesDerivatives2 = 0;
+    if(flags & STATESDERIVATIVES && data->statesDerivatives_old2) {
+      free(data->statesDerivatives_old2);
+      data->statesDerivatives_old2 = 0;
     }
   
     if(flags & ALGEBRAICS && data->algebraics) {
@@ -898,14 +904,14 @@ case EXTOBJINFO(__) then
       data->algebraics = 0;
     }
   
-    if(flags & ALGEBRAICS && data->old_algebraics) {
-      free(data->old_algebraics);
-      data->old_algebraics = 0;
+    if(flags & ALGEBRAICS && data->algebraics_old) {
+      free(data->algebraics_old);
+      data->algebraics_old = 0;
     }
   
-    if(flags & ALGEBRAICS && data->old_algebraics2) {
-      free(data->old_algebraics2);
-      data->old_algebraics2 = 0;
+    if(flags & ALGEBRAICS && data->algebraics_old2) {
+      free(data->algebraics_old2);
+      data->algebraics_old2 = 0;
     }
   
     if(flags & PARAMETERS && data->parameters) {
@@ -943,7 +949,6 @@ case EXTOBJINFO(__) then
   }
   >>
 end functionDeInitializeDataStruc;
-
 
 template functionDaeOutput(list<SimEqSystem> nonStateContEquations,
                   list<SimEqSystem> removedEquations,
@@ -1209,104 +1214,147 @@ template functionUpdateDependents(list<SimEqSystem> allEquations,
   >>
 end functionUpdateDependents;
 
-
-template functionUpdateDepend(	list<SimEqSystem> allEquationsPlusWhen, 
-								list<SimWhenClause> whenClauses,
-								list<HelpVarInfo> helpVarInfo)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let eqs = (allEquationsPlusWhen |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/)
-    ;separator="\n")
-    
-  let reinit = (whenClauses |> when hasindex i0 =>
-  		genreinits(when, &varDecls,i0)
-  	;separator="\n")
-  <<
-  int function_updateDepend(int &needToIterate)
-  {
-    state mem_state;
-    <%varDecls%>
-    needToIterate = 0;
-    inUpdate=initial()?0:1;
-  
-    mem_state = get_memory_state();
-    <%eqs%>
-    <%reinit%>
-    restore_memory_state(mem_state);
-  
-    inUpdate=0;
-  
-    return 0;
-  }
-  >>
-end functionUpdateDepend;
-
-
-template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFC*/)
-  <<
-  int function_onlyZeroCrossings(double *gout,double *t)
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%zeroCrossingsCode%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionOnlyZeroCrossing;
-
-template functionUpdateHelpVars(list<HelpVarInfo> helpVarInfo)
+template functionInitial(list<SimEqSystem> initialEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let hvars = (helpVarInfo |> (hindex, exp, _) =>
-      let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
-                         &varDecls /*BUFC*/)
-      '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
+  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
-  int function_updatehelpvars()
+  int initial_function()
   {
+    <%varDecls%>
+  
+    <%eqPart%>
+  
+    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
+    ;separator="\n"%>
+  
+    return 0;
+  }
+  >>
+end functionInitial;
+
+
+template functionInitialResidual(list<SimEqSystem> residualEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let body = (residualEquations |> SES_RESIDUAL(__) =>
+      match exp 
+      case DAE.SCONST(__) then
+        'localData->initialResiduals[i++] = 0;'
+      else
+        let &preExp = buffer "" /*BUFD*/
+        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
+                           &varDecls /*BUFC*/)
+        '<%preExp%>localData->initialResiduals[i++] = <%expPart%>;'
+    ;separator="\n")
+  <<
+  int initial_residual()
+  {
+    int i = 0;
     state mem_state;
     <%varDecls%>
   
     mem_state = get_memory_state();
-    <%hvars%>
+    <%body%>
     restore_memory_state(mem_state);
   
     return 0;
   }
   >>
-end functionUpdateHelpVars;
+end functionInitialResidual;
 
 
-template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
-  "Generates function in simulation file."
+template functionExtraResiduals(list<SimEqSystem> allEquations)
+ "Generates functions in simulation file."
+::=
+  (allEquations |> eq as SES_NONLINEAR(__) =>
+     let &varDecls = buffer "" /*BUFD*/
+     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
+         equation_(eq2, contextOther, &varDecls /*BUFC*/)
+       ;separator="\n")   
+     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+         let &preExp = buffer "" /*BUFD*/
+         let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
+                            &preExp /*BUFC*/, &varDecls /*BUFC*/)
+         '<%preExp%>res[<%i0%>] = <%expPart%>;'
+       ;separator="\n")
+     <<
+     void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag)
+     {
+       state mem_state;
+       <%varDecls%>
+       mem_state = get_memory_state();
+       <%prebody%>
+       <%body%>
+       restore_memory_state(mem_state);
+     }
+     >>
+   ;separator="\n\n")
+end functionExtraResiduals;
+
+
+template functionBoundParameters(list<SimEqSystem> parameterEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFC*/)
+    ;separator="\n")
+  let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFC*/)
+    ;separator="\n")    
+  <<
+  int bound_parameters()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%body%>
+    <%divbody%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionBoundParameters;
+
+//TODO: Is the -1 windex check really correct? It seems to work.
+template functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
+                                            list<ComponentRef> discreteModelVars)
+ "Generates function in simulation file."
 ::=
   <<
-  int checkForDiscreteChanges()
+  int checkForDiscreteVarChanges()
   {
     int needToIterate = 0;
+  
+    <%helpVarInfo |> (hindex, exp, windex) =>
+      match windex //if windex is not -1 then
+      case -1 then ""
+      else
+        'if (edge(localData->helpVars[<%hindex%>])) AddEvent(<%windex%> + localData->nZeroCrossing);'
+    ;separator="\n"%>
   
     <%discreteModelVars |> var =>
       'if (change(<%cref(var)%>)) { needToIterate=1; }'
     ;separator="\n"%>
     
+    for (long i = 0; i < localData->nHelpVars; i++) {
+      if (change(localData->helpVars[i])) {
+        needToIterate=1;
+      }
+    }
+  
     return needToIterate;
   }
   >>
-end functionCheckForDiscreteChanges;
-
+end functionCheckForDiscreteVarChanges;
 
 template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
@@ -1488,7 +1536,6 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
   >>
 end functionWhenReinitStatementElse;
 
-
 template functionOde(list<SimEqSystem> stateContEquations)
  "Generates function in simulation file."
 ::=
@@ -1535,6 +1582,194 @@ template functionOde(list<SimEqSystem> stateContEquations)
   #endif
   >>
 end functionOde;
+
+template functionODE(list<SimEqSystem> derivativEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let odeEquations = (derivativEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  int functionODE_new()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%odeEquations%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionODE;
+
+template functionAlgebraic(list<SimEqSystem> algebraicEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algEquations = (algebraicEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  /* for continuous time variables */
+  int functionAlgebraics()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%algEquations%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionAlgebraic;
+
+template functionAliasEquation(list<SimEqSystem> removedEquations)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let removedPart = (removedEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  <<
+  /* for continuous time variables */
+  int functionAliasEquations()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%removedPart%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionAliasEquation;
+
+
+template functionODE_residual()
+  "Generates residual function for dassl in simulation file."
+::=
+  <<
+  int functionODE_residual(double *t, double *x, double *xd, double *delta,
+                      fortran_integer *ires, double *rpar, fortran_integer *ipar)
+  {
+    int i;
+    double temp_xd[NX];
+    double* statesBackup;
+    double* statesDerivativesBackup;
+    double timeBackup;
+  
+    timeBackup = localData->timeValue;
+    statesBackup = localData->states;
+    statesDerivativesBackup = localData->statesDerivatives;
+    
+    localData->timeValue = *t;
+    localData->states = x;
+    localData->statesDerivatives = temp_xd;
+    
+    memcpy(localData->statesDerivatives, statesDerivativesBackup, localData->nStates*sizeof(double));
+  
+    functionODE_new();
+  
+    /* get the difference between the temp_xd(=localData->statesDerivatives)
+       and xd(=statesDerivativesBackup) */
+    for (i=0; i < localData->nStates; i++) {
+      delta[i] = localData->statesDerivatives[i] - statesDerivativesBackup[i];
+    }
+  
+    localData->states = statesBackup;
+    localData->statesDerivatives = statesDerivativesBackup;
+    localData->timeValue = timeBackup;
+  
+    if (modelErrorCode) {
+      if (ires) {
+        *ires = -1;
+      }
+      modelErrorCode =0;
+    }
+  
+    return 0;
+  }
+  >>
+end functionODE_residual;
+
+template functionDAE( list<SimEqSystem> allEquationsPlusWhen, 
+								list<SimWhenClause> whenClauses,
+								list<HelpVarInfo> helpVarInfo)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let eqs = (allEquationsPlusWhen |> eq =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+    
+  let reinit = (whenClauses |> when hasindex i0 =>
+  		genreinits(when, &varDecls,i0)
+  	;separator="\n")
+  <<
+  int functionDAE(int &needToIterate)
+  {
+    state mem_state;
+    <%varDecls%>
+    needToIterate = 0;
+    inUpdate=initial()?0:1;
+  
+    mem_state = get_memory_state();
+    <%eqs%>
+    <%reinit%>
+    restore_memory_state(mem_state);
+  
+    inUpdate=0;
+  
+    return 0;
+  }
+  >>
+end functionDAE;
+
+
+template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFC*/)
+  <<
+  int function_onlyZeroCrossings(double *gout,double *t)
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%zeroCrossingsCode%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionOnlyZeroCrossing;
+
+template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
+  "Generates function in simulation file."
+::=
+  <<
+  int checkForDiscreteChanges()
+  {
+    int needToIterate = 0;
+  
+    <%discreteModelVars |> var =>
+      'if (change(<%cref(var)%>)) { needToIterate=1; }'
+    ;separator="\n"%>
+    
+    return needToIterate;
+  }
+  >>
+//  if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (double) pre(<%cref(var)%>) << " to " << (double) <%cref(var)%> << endl;} 
+end functionCheckForDiscreteChanges;
 
 template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, String MatrixName)
  "Generates function in simulation file."
@@ -1765,149 +2000,6 @@ template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  <%jacMats%>
  >>
 end generateLinearMatrixes;
-
-template functionInitial(list<SimEqSystem> initialEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/)
-    ;separator="\n")
-  <<
-  int initial_function()
-  {
-    <%varDecls%>
-  
-    <%eqPart%>
-  
-    <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
-    ;separator="\n"%>
-  
-    return 0;
-  }
-  >>
-end functionInitial;
-
-
-template functionInitialResidual(list<SimEqSystem> residualEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let body = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp 
-      case DAE.SCONST(__) then
-        'localData->initialResiduals[i++] = 0;'
-      else
-        let &preExp = buffer "" /*BUFD*/
-        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
-                           &varDecls /*BUFC*/)
-        '<%preExp%>localData->initialResiduals[i++] = <%expPart%>;'
-    ;separator="\n")
-  <<
-  int initial_residual()
-  {
-    int i = 0;
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%body%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionInitialResidual;
-
-
-template functionExtraResiduals(list<SimEqSystem> allEquations)
- "Generates functions in simulation file."
-::=
-  (allEquations |> eq as SES_NONLINEAR(__) =>
-     let &varDecls = buffer "" /*BUFD*/
-     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFC*/)
-       ;separator="\n")   
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
-                            &preExp /*BUFC*/, &varDecls /*BUFC*/)
-         '<%preExp%>res[<%i0%>] = <%expPart%>;'
-       ;separator="\n")
-     <<
-     void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag)
-     {
-       state mem_state;
-       <%varDecls%>
-       mem_state = get_memory_state();
-       <%prebody%>
-       <%body%>
-       restore_memory_state(mem_state);
-     }
-     >>
-   ;separator="\n\n")
-end functionExtraResiduals;
-
-
-template functionBoundParameters(list<SimEqSystem> parameterEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/)
-    ;separator="\n")
-  let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/)
-    ;separator="\n")    
-  <<
-  int bound_parameters()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%body%>
-    <%divbody%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionBoundParameters;
-
-//TODO: Is the -1 windex check really correct? It seems to work.
-template functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
-                                            list<ComponentRef> discreteModelVars)
- "Generates function in simulation file."
-::=
-  <<
-  int checkForDiscreteVarChanges()
-  {
-    int needToIterate = 0;
-  
-    <%helpVarInfo |> (hindex, exp, windex) =>
-      match windex //if windex is not -1 then
-      case -1 then ""
-      else
-        'if (edge(localData->helpVars[<%hindex%>])) AddEvent(<%windex%> + localData->nZeroCrossing);'
-    ;separator="\n"%>
-  
-    <%discreteModelVars |> var =>
-      'if (change(<%cref(var)%>)) { needToIterate=1; }'
-    ;separator="\n"%>
-    
-    for (long i = 0; i < localData->nHelpVars; i++) {
-      if (change(localData->helpVars[i])) {
-        needToIterate=1;
-      }
-    }
-  
-    return needToIterate;
-  }
-  >>
-end functionCheckForDiscreteVarChanges;
-
 
 template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."

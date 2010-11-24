@@ -88,7 +88,7 @@ void checkTermination();
 
 extern long inUpdate;
 extern int euler_in_use;
-const int InterationMax = 100;
+const int IterationMax = 100;
 
 #define ZEROCROSSING(ind,exp) { \
 	if (euler_in_use){ \
@@ -105,6 +105,8 @@ const int InterationMax = 100;
 	} \
 	else { \
 		double res1,res2,*statesBackup,*statesDerivativesBackup,*algebraicsBackup,timeBackup;\
+		modelica_integer* algebraicsIntBackup; \
+		modelica_boolean* algebraicsBoolBackup; \
 		if (!inUpdate) { \
 			res = (x) op1 (y); \
 		}\
@@ -114,21 +116,29 @@ const int InterationMax = 100;
 				timeBackup = localData->timeValue;\
 				localData->timeValue = localData->oldTime;\
 				statesBackup = localData->states; \
-				localData->states = localData->old_states; \
+				localData->states = localData->states_old; \
 				statesDerivativesBackup = localData->statesDerivatives; \
-				localData->statesDerivatives = localData->old_statesDerivatives; \
+				localData->statesDerivatives = localData->statesDerivatives_old; \
 				algebraicsBackup = localData->algebraics; \
-				localData->algebraics = localData->old_algebraics; \
+				localData->algebraics = localData->algebraics_old; \
+				algebraicsIntBackup = localData->intVariables.algebraics; \
+				localData->intVariables.algebraics = localData->intVariables.algebraics_old; \
+				algebraicsBoolBackup = localData->boolVariables.algebraics; \
+				localData->boolVariables.algebraics = localData->boolVariables.algebraics_old; \
 				res1 = (x)-(y);\
 				localData->timeValue = localData->oldTime2;\
-				localData->states = localData->old_states2; \
-				localData->statesDerivatives = localData->old_statesDerivatives2; \
-				localData->algebraics = localData->old_algebraics2; \
+				localData->states = localData->states_old2; \
+				localData->statesDerivatives = localData->statesDerivatives_old2; \
+				localData->algebraics = localData->algebraics_old2; \
+				localData->intVariables.algebraics = localData->intVariables.algebraics_old2; \
+				localData->boolVariables.algebraics = localData->boolVariables.algebraics_old2; \
 				res2 = (x)-(y);\
 				localData->timeValue = timeBackup;\
 				localData->states = statesBackup; \
 				localData->statesDerivatives = statesDerivativesBackup; \
 				localData->algebraics = algebraicsBackup; \
+				localData->intVariables.algebraics = algebraicsIntBackup; \
+				localData->boolVariables.algebraics = algebraicsBoolBackup; \
 				res = res1 op2##= res2; \
 			}\
 		}\
@@ -156,8 +166,6 @@ extern long* zeroCrossingEnabled;
 
 int
 function_onlyZeroCrossings(double* gout ,double* t);
-
-int function_updatehelpvars();
 
 int CheckForNewEvent(int flag);
 

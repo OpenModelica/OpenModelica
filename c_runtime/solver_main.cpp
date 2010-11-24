@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -47,7 +47,7 @@ using namespace std;
 // Internal definitions; do not expose
 int euler_ex_step (double* step, int (*f)() );
 int rungekutta_step (double* step, int (*f)());
-int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
+int dasrt_step (double* step, double &start, double &stop, bool &trigger);
 
 #define MAXORD 5
 
@@ -77,17 +77,6 @@ int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj, doubl
 			if (i==j) pd[l] -= (double)*cj;
 		}
 	}
-
-	//transpose jacobian
-	/*for (int i=0;i<size_A;i++){
-		for (int j=0;j<size_A;j++,k++){
-			l = i+j*size_A;
-			l1 = j+i*size_A;
-			tmp = pd[l];
-			pd[l] = pd[l1];
-			pd[l1] = tmp;
-		}
-	}*/
 
 	delete[] matrixA;
 
@@ -142,17 +131,17 @@ double *dummy_delta;
 
 int euler_in_use;
 
-int solver_main_step(int flag, double* step, double &start, double &stop, bool &reset, int (*f)()) {
+int solver_main_step(int flag, double &start, double &stop, bool &reset) {
   switch (flag) {
 	case 2:
-    return rungekutta_step(&globalData->current_stepsize,functionODE);
+    return rungekutta_step(&globalData->current_stepsize,functionODE_new);
   case 3:
-    return dasrt_step(&globalData->current_stepsize,start,stop,reset,functionODE);
+    return dasrt_step(&globalData->current_stepsize,start,stop,reset);
   case 4:
     return functionODE_inline();
   case 1:
   default:
-    return euler_ex_step(&globalData->current_stepsize,functionODE);
+    return euler_ex_step(&globalData->current_stepsize,functionODE_new);
   }
 }	
 
@@ -165,6 +154,9 @@ flag 1=explicit euler
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
 {
+
+	//Stats
+	int eventsdone = 0;
 
 	//Workaround for Relation in simulation_events
 	euler_in_use = 1;
@@ -183,7 +175,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	const string *init_method = getFlagValue("im",argc,argv);
 
-	int retValIntration;
+	int retValIntegrator;
 
   switch (flag) {
   // Allocate RK work arrays
@@ -211,10 +203,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	}
 	if (sim_verbose) { cout << "Calculated bound parameters" << endl; }
 
-	//Enable all Events
-	for (int i = 0; i < globalData->nZeroCrossing; i++) {
-		zeroCrossingEnabled[i] = 1;
-	}
 
 	// Calculate initial values from initial_function()
 	// saveall() value as pre values
@@ -227,70 +215,43 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
 	saveall();
-	if(sim_verbose)
-    sim_result->emit();
-    else
-    storeExtrapolationData();
+	if (sim_verbose){ sim_result->emit(); }
+
 	// Calculate stable discrete state
 	// and initial ZeroCrossings
 	int needToIterate=0;
-	int IntarationNum=0;
-	function_updateDepend(needToIterate);
-	if (sim_verbose) { sim_result->emit();}
+	int IterationNum=0;
+	functionDAE(needToIterate);
 	while (checkForDiscreteChanges() || needToIterate){
 		saveall();
-		function_updateDepend(needToIterate);
-		if (sim_verbose) { sim_result->emit();}
-		IntarationNum++;
-		if (IntarationNum>InterationMax) {
+		functionDAE(needToIterate);
+		IterationNum++;
+		if (IterationNum>IterationMax) {
 			throw TerminateSimulationException(globalData->timeValue,
 					string("ERROR: Too many Iteration. System is not consistent!\n"));
 		}
-
 	}
-	saveall();
-	if(sim_verbose) { sim_result->emit(); }
-
-	// Do a tiny step to initialize ZeroCrossing that are fulfilled
-    // And then go back and start at t_0
-	globalData->current_stepsize = calcTiny(globalData->timeValue);
-	double* backupstats_new = new double[globalData->nStates];
-    std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
-  
-    solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
-	functionDAE_output();
-	if(sim_verbose) { sim_result->emit(); }
-	InitialZeroCrossings();
-
-	globalData->timeValue = start;
-    globalData->current_stepsize = step;
-    std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
-	delete [] backupstats_new;
-	reset = true;
-
-	needToIterate=0;
-	IntarationNum=0;
-	function_updateDepend(needToIterate);
-	if (sim_verbose) { sim_result->emit();}
-	while (checkForDiscreteChanges() || needToIterate){
-		saveall();
-		function_updateDepend(needToIterate);
-		if (sim_verbose) { sim_result->emit();}
-		IntarationNum++;
-		if (IntarationNum>InterationMax) {
-			throw TerminateSimulationException(globalData->timeValue,
-					string("ERROR: Too many Iteration. System is not consistent!\n"));
-		}
-
-	}
+	functionAliasEquations();
 	saveall();
 	sim_result->emit();
+
+
+
+	// Do a tiny step to initialize ZeroCrossing that are fulfilled
+	globalData->current_stepsize = calcTiny(globalData->timeValue);
+	solver_main_step(flag,start,stop,reset);
+	functionAlgebraics();
+	InitialZeroCrossings();
+	CheckForNewEvent(NOINTERVAL);
+	reset = true;
+	functionAliasEquations();
+	saveall();
+	if (sim_verbose){ sim_result->emit(); }
 
 	globalData->init=0;
 	
 	// Put initial values to delayed expression buffers
 	function_storeDelayed();
-
 	
 	if (sim_verbose)  {
 		cout << "Performed initial value calculation." << endl;
@@ -313,23 +274,20 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		}
 		globalData->current_stepsize = step-offset;
 
+		if (sim_verbose){
+            cout << "Call Solver from " << globalData->timeValue << " to " << globalData->timeValue+globalData->current_stepsize << endl;
+		}
 		/* do one integration step
 		 *
 		 * one step means:
 		 * determine all states by Integration-Method
 		 * update continuous part with
-		 * functionODE() and functionDAE_output();
-		 *
+		 * functionODE_new() and functionAlgebraics();
 		 */
 
-                retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
+        retValIntegrator = solver_main_step(flag,start,stop,reset);
 
-		functionDAE_output();
-
-		// functionDAE_output2() contains all discrete Values
-		// should executed for noEvent() operator, but then
-		// avoid all relation that are in function_updateDepend
-		//functionDAE_output2();
+        functionAlgebraics();
 		
 		function_storeDelayed();
 
@@ -337,22 +295,24 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 			reset = false;
 
 		//Check for Events
-		if (CheckForNewEvent(INTERVAL) == 2){
+		if (CheckForNewEvent(INTERVAL)){
 			reset = true;
 			dideventstep = 1;
+			eventsdone++;
 		}else{
 			laststep = globalData->timeValue;
 		}
 		
 		// Emit this time step
+		functionAliasEquations();
 		sim_result->emit();
 		saveall();
 		
 
 		//Check for termination of terminate() or assert()
-	        checkTermination();
+	    checkTermination();
 		
-		if (retValIntration){
+		if (retValIntegrator){
 			throw TerminateSimulationException(globalData->timeValue,
 					string("Error in Simulation. Solver exit with error.\n"));
 		}
@@ -367,9 +327,14 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     }
   }
 
-	deinitializeEventData();
+  if (sim_verbose){
+	  cout << "\t*** Statistics ***" << endl;
+	  cout << "Events: " << eventsdone << endl;
+  }
 
-	return 0;
+  deinitializeEventData();
+
+  return 0;
 }
 
 int euler_ex_step (double* step, int (*f)())
@@ -382,33 +347,31 @@ int euler_ex_step (double* step, int (*f)())
 	return 0;
 }
 
-int rungekutta_step (double* step, int (*f)())
-{	
-  globalData->timeValue += *step;
+int rungekutta_step (double* step, int (*f)()){
   double* backupstates = work_states[rungekutta_s];
   double** k = work_states;
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-  for(int i=0; i < globalData->nStates; i++) {
+  for(int i=0; i < globalData->nStates; i++){
     k[0][i] = globalData->statesDerivatives[i];
     backupstates[i] = globalData->states[i];
   }
 
   for(int j=1;j<rungekutta_s;j++){
     globalData->timeValue = globalData->oldTime + rungekutta_c[j]  * (*step);
-    for(int i=0; i < globalData->nStates; i++) {
+    for(int i=0; i < globalData->nStates; i++){
       globalData->states[i] = backupstates[i] + (*step) * rungekutta_c[j] * k[j-1][i];
     }
     f();
-    for(int i=0; i < globalData->nStates; i++) {
+    for(int i=0; i < globalData->nStates; i++){
       k[j][i] = globalData->statesDerivatives[i];
     }
   }
 
-  for(int i=0 ; i < globalData->nStates; i++) {
+  for(int i=0 ; i < globalData->nStates; i++){
     double sum = 0;
-    for(int j=0; j < rungekutta_s; j++) {
+    for(int j=0; j < rungekutta_s; j++){
       sum = sum + rungekutta_b[j] * k[j][i];
     }
     globalData->states[i] = backupstates[i] + (*step) * sum;
@@ -423,7 +386,7 @@ int rungekutta_step (double* step, int (*f)())
  *   + ZeroCrossing are handled outside DASSL.
  *   + if no event occurs outside DASSL perform a warm-start
  */
-int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)())
+int dasrt_step (double* step, double &start, double &stop, bool &trigger1)
 {
 	double tout;
 	int i;
@@ -461,8 +424,6 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 			iwork[i] = 0;
 		for(i=0; i<lrw; i++)
 			rwork[i] = 0.0;
-		for(i=0; i<globalData->nHelpVars; i++)
-			globalData->helpVars[i] = 0;
 		/*********************************************************************/
 		//info[2] = 1;		//intermediate-output mode
 		/*********************************************************************/
@@ -477,10 +438,9 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 			info[4] = 1;	//use sub-routine JAC
 	}
 
-	if (trigger){
-		if (sim_verbose){
-			cout << "Event-management forced reset of DDASRT... " << endl;
-		}
+	if (trigger1)
+	{
+		if (sim_verbose) { cout << "Event-management forced reset of DDASRT... " << endl; }
 		info[0]=0;	// obtain reset
 	}
 
@@ -489,22 +449,22 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
     	do{
     		tout = globalData->timeValue + *step;
 
-    		//if (sim_verbose){
-		//		cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
-		//}
+    		if (sim_verbose){
+    				cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
+    		}
 
     		if (jac_flag){
-			DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,
+			DDASRT(functionODE_residual, &globalData->nStates, &globalData->timeValue, globalData->states,
 					globalData->statesDerivatives, &tout,
 					info, &reltol, &abstol,
-						&idid, rwork, &lrw, iwork, &liw, rpar,
+						&idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
 						&ipar, Jacobian, dummy_zeroCrossing,
 					&NG_var, jroot);
     		}else{
-				DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,
+				DDASRT(functionODE_residual, &globalData->nStates, &globalData->timeValue, globalData->states,
 						globalData->statesDerivatives, &tout,
 						info, &reltol, &abstol,
-						&idid, rwork, &lrw, iwork, &liw, rpar,
+						&idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
 						&ipar, dummy_Jacobian, dummy_zeroCrossing,
 						&NG_var, jroot);
     		}
@@ -529,19 +489,13 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
 				throw TerminateSimulationException(globalData->timeValue);
 			}
 
-			// Since residual function calculates alg vars too.
-			//functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0);
-			functionODE();
+			functionODE_new();
 		}
 		while(idid==-1 && globalData->timeValue <= stop);
     }
     catch(TerminateSimulationException &e){
         cout << e.getMessage() << endl;
     	//free DASSL specific work arrays.
-		delete [] iwork;
-		delete [] rwork;
-		delete [] jroot;
-		delete [] dummy_delta;
         return 1;
 
     }
@@ -550,11 +504,6 @@ int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*
     	if (sim_verbose){
 			cout << "**Deleting work arrays after last DDASRT call..." << endl;
 		}
-    	//free DASSL specific work arrays.
-		delete [] iwork;
-		delete [] rwork;
-		delete [] jroot;
-		delete [] dummy_delta;
     }
     return 0;
 }

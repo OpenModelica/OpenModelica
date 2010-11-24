@@ -147,7 +147,7 @@ typedef struct sim_DATA_INT {
   modelica_integer* parameters; //p; PARAMETERS
   modelica_integer* inputVars; //in_y INPUTVARS
   modelica_integer* outputVars; //out_y OUTPUTVARS
-  modelica_integer*	old_algebraics, *old_algebraics2;
+  modelica_integer*	algebraics_old, *algebraics_old2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -158,7 +158,7 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* parameters; //p; PARAMETERS
   modelica_boolean* inputVars; //in_y INPUTVARS
   modelica_boolean* outputVars; //out_y OUTPUTVARS
-  modelica_boolean*	old_algebraics, *old_algebraics2;
+  modelica_boolean*	algebraics_old, *algebraics_old2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
@@ -185,9 +185,9 @@ typedef struct sim_DATA {
   double* initialResiduals;
 
   // Old values used for extrapolation
-  double* old_states,*old_states2;
-  double* old_statesDerivatives,*old_statesDerivatives2;
-  double* old_algebraics,*old_algebraics2;
+  double* states_old,*states_old2;
+  double* statesDerivatives_old,*statesDerivatives_old2;
+  double* algebraics_old,*algebraics_old2;
   double oldTime,oldTime2;
   double current_stepsize;
 
@@ -286,7 +286,10 @@ void storeExtrapolationData();
 /*used in DDASRT fortran function*/
 int
 functionDAE_output();
-
+int
+functionAlgebraics();
+int
+functionAliasEquations();
 /* Function for calculating discrete variables, called when event has occured
 to get new values of discrete varibles*/
 int
@@ -296,6 +299,8 @@ functionDAE_output2();
 /*used in DDASRT fortran function*/
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
+int
+functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
 // Function for calling external object constructors
 void
@@ -307,7 +312,7 @@ function_updateDependents();
 /* 	function for calculating all equation sorting order 
 	uses in EventHandle	*/
 int
-function_updateDepend(int& needToIterate);
+functionDAE(int& needToIterate);
 
 // function for storing value histories of delayed expressions
 // called from functionDAE_output()
@@ -318,6 +323,7 @@ function_storeDelayed();
 /*used in functionDAE_res function*/
 int functionODE();
 int functionODE_inline();
+int functionODE_new();
 
 // function for calculate initial values from initial equations
 // and fixed start attibutes

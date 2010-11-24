@@ -51,6 +51,7 @@ double* gout_old = 0;
 long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
 long inSample = 0;
+int dideventstep = 0;
 
 static list<long> EventQueue;
 
@@ -704,26 +705,26 @@ void checkTermination(){
 int CheckForNewEvent(int flag) {
 	if (flag != INTERVAL){
 		int needToIterate=0;
-		int IntarationNum=0;
+		int IterationNum=0;
 		while(checkForDiscreteChanges() || needToIterate) {
 			if (sim_verbose) {
 				cout << "Discrete Variable changed -> event iteration." << endl;
 				sim_result->emit();
 			}
 			saveall();
-			function_updateDepend(needToIterate);
-			IntarationNum++;
-			if (IntarationNum>InterationMax) {
+			functionDAE(needToIterate);
+			IterationNum++;
+			if (IterationNum>IterationMax) {
 				throw TerminateSimulationException(globalData->timeValue,
 						string("ERROR: Too many Iteration. System is not consistent!\n"));
 			}
 	  }
 	}
 	else{
-
 		std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
 		function_onlyZeroCrossings(gout,&globalData->timeValue);
-
+		if (sim_verbose){ cout << "Check for events ..." << endl;
+					  }
 		for (long i = 0; i < globalData->nZeroCrossing; i++) {
 			//if (sim_verbose){ cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
 			//				"check gout[" << i << "] = " << gout[i] << endl;
@@ -740,6 +741,12 @@ int CheckForNewEvent(int flag) {
 		if (!EventQueue.empty() && flag == INTERVAL){
 			FindRoot();
 			EventHandle();
+      
+      if (sim_verbose) { cout << "Event Handling done!" << endl;} 
+      // save the ZeroCrossings
+	    function_onlyZeroCrossings(gout,&globalData->timeValue);
+	    std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
+	
 			return 1;
 		}
 	}
@@ -757,21 +764,20 @@ void EventHandle(){
 		long event_id;
 		event_id = EventQueue.front();
 
-		if (sim_verbose) cout << "Handle Event ID: " << event_id << endl;
+		if (sim_verbose) cout << "Handle Event caused by ZeroCrossing: " << event_id << endl;
 
 		//determined complete system
 		int needToIterate=0;
-		int IntarationNum=0;
-		function_updateDepend(needToIterate);
-		//saveall();
+		int IterationNum=0;
+		functionDAE(needToIterate);
 		if (sim_verbose) { sim_result->emit();}
 		while (needToIterate){
 			if (sim_verbose) cout << "reinit Iteration needed!" << endl;
 			saveall();
-			function_updateDepend(needToIterate);
+			functionDAE(needToIterate);
 			if (sim_verbose) { sim_result->emit();}
-			IntarationNum++;
-			if (IntarationNum>InterationMax) {
+			IterationNum++;
+			if (IterationNum>IterationMax) {
 				//break;
 				throw TerminateSimulationException(globalData->timeValue,
 					string("ERROR: Too many Iteration. System is not consistent!\n"));
@@ -782,9 +788,6 @@ void EventHandle(){
 	}
 	CheckForNewEvent(NOINTERVAL);
 
-	// save the ZeroCrossings
-	function_onlyZeroCrossings(gout,&globalData->timeValue);
-	std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
 }
 
 //
@@ -815,7 +818,7 @@ void FindRoot(){
 
 	//write states to work arrays
 	for(int i=0;i<globalData->nStates;i++){
-		states_left[i] = globalData->old_states[i];
+		states_left[i] = globalData->states_old[i];
 		states_right[i] = globalData->states[i];
 	}
 
@@ -835,21 +838,19 @@ void FindRoot(){
 	globalData->timeValue = time_left;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_left[i];
-		//cout << "states at left side : " << states_left[i]  << endl;
 	}
 	//determined continuous system
-	functionODE();
-	functionDAE_output();
-	function_updatehelpvars();
-	sim_result->emit();
+	functionODE_new();
+	functionAlgebraics();
+	functionAliasEquations();
 	saveall();
+	sim_result->emit();
 
 
 	//determined system at t_e + epsilon
 	globalData->timeValue = time_right;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_right[i];
-		//cout << "states at right side : " << states_right[i]  << endl;
 	}
     
 	delete[] states_left;
@@ -888,8 +889,8 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 		}
 
 		//calculates Values dependents on new states
-		functionODE();
-		functionDAE_output();
+		functionODE_new();
+		functionAlgebraics();
 
 		if ( CheckZeroCrossings(event_id)){ //If Zerocrossing in left Section
 
