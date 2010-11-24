@@ -1529,6 +1529,22 @@ algorithm
       then
         true;
     
+    // adrpo, Type should be ok to match a Type[0] when checkModel is ON
+    case (t1, (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(0), arrayType = t2), _))
+      equation
+        true = OptManager.getOption("checkModel");
+        true = subtype(t1, t2);
+      then
+        true;
+    
+    // adrpo, Type[0] should be ok to match a Type when checkModel is ON 
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(0), arrayType = t1), _), t2)
+      equation
+        true = OptManager.getOption("checkModel");
+        true = subtype(t1, t2);
+      then
+        true;    
+    
     // Array
     case ((DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_))
       equation
