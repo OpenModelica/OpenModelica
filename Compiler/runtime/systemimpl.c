@@ -231,7 +231,7 @@ extern int SystemImpl__regularFileExists(const char* str)
     return 0;
   }
   FindClose(sh);
-  return (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
+  return ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
   struct stat buf;
   if (stat(str, &buf)) return 0;
@@ -582,7 +582,7 @@ static const char* SystemImpl__getUUIDStr()
   if (UuidCreate(&uuid) == RPC_S_OK)
   	UuidToString(&uuid, &tmp);
   tmp[36] = '\0';
-  memcpy(uuidStr, strlwr(tmp), 36);
+  memcpy(uuidStr, strlwr((char*)tmp), 36);
   RpcStringFree(&tmp);
 #endif
   return uuidStr;
@@ -687,6 +687,8 @@ static inline void free_ptr(modelica_integer index)
   memset(&(ptr_vector[index].data), 0, sizeof(ptr_vector[index].data));
 }
 
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+
 int file_select_directories(direntry entry)
 {
   char fileName[MAXPATHLEN];
@@ -705,6 +707,8 @@ int file_select_directories(direntry entry)
       return (0);
   }
 }
+
+#endif
 
 #ifdef __cplusplus
 }
