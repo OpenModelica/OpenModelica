@@ -70,8 +70,21 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     this->createActions();
     this->createMenus();
 
-    if (mIconType == StringHandler::ICON)
-        this->setStyleSheet("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightGray, stop: 1 gray);");
+    // if user is viewing some readonly component then dont draw backgrounds.
+    if (!mpParentProjectTab->isReadOnly())
+    {
+        if (mIconType == StringHandler::ICON)
+        {
+            this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
+                                         .append(", stop: 0 lightGray, stop: 1 gray);"));
+        }
+        // change the background shade if user is in Icon View
+        else if (mIconType == StringHandler::DIAGRAM)
+        {
+            this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
+                                         .append(", stop: 0 gray, stop: 1 lightGray);"));
+        }
+    }
 
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
@@ -81,7 +94,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     Q_UNUSED(rect);
 
-    if (mIconType == StringHandler::DIAGRAM)
+    if (mpParentProjectTab->isReadOnly())
         return;
 
     // draw scene rectangle

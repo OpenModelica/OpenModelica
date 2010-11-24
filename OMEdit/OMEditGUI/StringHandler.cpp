@@ -35,7 +35,7 @@
 //! @author Syed Adeel Asghar <syeas460@student.liu.se>
 //! @date   2010-07-12
 
-//! @brief Contains functions used for parsing results obtained from Open Modelica Compiler.
+//! @brief Contains functions used for parsing results obtained from OpenModelica Compiler.
 
 #include "StringHandler.h"
 

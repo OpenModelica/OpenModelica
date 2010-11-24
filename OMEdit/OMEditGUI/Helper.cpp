@@ -35,7 +35,7 @@
 
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "1.0";
-QString Helper::applicationIntroText = "Open Modelica Connection Editor";
+QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "*.mo";
@@ -100,7 +100,7 @@ QString GUIMessages::getMessage(int type)
     case UNDO_OR_FIX_ERRORS:
         return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
     case NO_OPEN_MODELICA_KEYWORDS:
-        return "Please make sure you are not using any Open Modelica Keywords like (model, package, record, class etc.)";
+        return "Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)";
     case INCOMPATIBLE_CONNECTORS:
         return "Incompatible types for the connectors.";
     case SAVE_CHANGES:

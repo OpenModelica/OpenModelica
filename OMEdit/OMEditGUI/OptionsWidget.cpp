@@ -305,7 +305,8 @@ void OptionsWidget::setUpDialog()
     mpOptionsList = new QListWidget;
     mpOptionsList->setViewMode(QListView::ListMode);
     mpOptionsList->setMovement(QListView::Static);
-    mpOptionsList->setMaximumWidth(128);
+    mpOptionsList->setIconSize(Helper::iconSize);
+    mpOptionsList->setMaximumWidth(150);
     mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
     connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
             SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
@@ -343,6 +344,7 @@ void OptionsWidget::setUpDialog()
 void OptionsWidget::addListItems()
 {
     QListWidgetItem *modelicaTextEditorItem = new QListWidgetItem(mpOptionsList);
+    modelicaTextEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.png"));
     modelicaTextEditorItem->setText(tr("Modelica Text Editor"));
 }
 

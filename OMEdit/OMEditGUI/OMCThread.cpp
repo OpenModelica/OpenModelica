@@ -35,7 +35,7 @@
 //! @author Sonia Tariq <sonta273@student.liu.se>
 //! @date   2010-07-09
 
-//! @brief Used to send the command to Open Modelica Compiler in a thread.
+//! @brief Used to send the command to OpenModelica Compiler in a thread.
 
 #include "OMCThread.h"
 

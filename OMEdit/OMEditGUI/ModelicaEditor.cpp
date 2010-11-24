@@ -138,8 +138,16 @@ void ModelicaTextHighlighter::initializeSettings()
 
     mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
     QStringList keywordPatterns;
-    keywordPatterns << "\\bextends\\b" << "\\bpublic\\b" << "\\bReal\\b" << "\\bBoolean\\b" << "\\bequation\\b"
-                    << "\\bvoid\\b" << "\\bend\\b";
+    keywordPatterns << "\\balgorithm\\b" << "\\band\\b" << "\\bannotation\\b" << "\\bassert\\b" << "\\bbreak\\b"
+                    << "\\bBoolean\\b" << "\\bconnect\\b" <<"\\bconstant\\b" << "\\bconstrainedby\\b" << "\\bder\\b" << "\\bdiscrete\\b"
+                    << "\\beach\\b" << "\\belse\\b" << "\\belseif\\b" "\\belsewhen\\b" << "\\bencapsulated\\b"
+                    << "\\bend\\b" << "\\benumeration\\b" << "\\bequation\\b" << "\\bexpandable\\b" << "\\bextends\\b"
+                    << "\\bexternal\\b" << "\\bfalse\\b" << "\\bfinal\\b" << "\\bflow\\b" << "\\bfor\\b"
+                    << "\\bif\\b" << "\\bimport\\b" << "\\bin\\b" << "\\binitial\\b" << "\\binner\\b" << "\\binput\\b"
+                    << "\\bloop\\b" << "\\bnot\\b" << "\\boperator\\b" << "\\bor\\b" << "\\bouter\\b"
+                    << "\\boutput\\b" << "\\bpartial\\b" << "\\bpublic\\b" << "\\bReal\\b" << "\\bredeclare\\b"
+                    << "\\breplaceable\\b" << "\\breturn\\b" << "\\bstream\\b" << "\\bthen\\b" << "\\btrue\\b"
+                    << "\\bwhen\\b" << "\\bwhile\\b" << "\\bwithin\\b";
     foreach (const QString &pattern, keywordPatterns)
     {
         rule.mPattern = QRegExp(pattern);

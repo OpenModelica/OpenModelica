@@ -77,7 +77,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     mpMessageWidget->printGUIMessage("OMEdit, Version: " + Helper::applicationVersion);
     if (!mExitApplication)
-        mpMessageWidget->printGUIInfoMessage("Open Modelica, Version: " + mpOMCProxy->getVersion());
+        mpMessageWidget->printGUIInfoMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
 
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
@@ -221,7 +221,7 @@ void MainWindow::createActions()
 
     openAction = new QAction(QIcon(":/Resources/icons/open.png"), tr("Open"), this);
     openAction->setShortcut(QKeySequence("Ctrl+o"));
-    openAction->setStatusTip(tr("Opens Open Modelica file"));
+    openAction->setStatusTip(tr("Opens OpenModelica file"));
 
     saveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
     saveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -267,7 +267,7 @@ void MainWindow::createActions()
     connect(omcLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
 
     openOMShellAction = new QAction(QIcon(":/Resources/icons/OMS.bmp"), tr("OMShell"), this);
-    openOMShellAction->setStatusTip(tr("Opens Open Modelica Shell (OMShell)"));
+    openOMShellAction->setStatusTip(tr("Opens OpenModelica Shell (OMShell)"));
     connect(openOMShellAction, SIGNAL(triggered()), SLOT(openOMShell()));
 
     openOptions = new QAction(tr("Options"), this);

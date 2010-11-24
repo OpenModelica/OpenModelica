@@ -35,7 +35,7 @@
 //! @author Sonia Tariq <sonta273@student.liu.se>
 //! @date   2010-06-25
 
-//! @brief Contains functions used for communication with Open Modelica Compiler.
+//! @brief Contains functions used for communication with OpenModelica Compiler.
 
 #include <stdexcept>
 #include <stdlib.h>
@@ -46,7 +46,7 @@
 #include <omniORB4/CORBA.h>
 
 //! @class OMCProxy
-//! @brief The OMCProxy is a singleton class. It contains the reference of the CORBA object used to communicate with the Open Modelica Compiler.
+//! @brief The OMCProxy is a singleton class. It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
 
 //! Constructor
 //! @param mOMC is the CORBA object.
@@ -111,7 +111,7 @@ void OMCProxy::getNextCommand()
     mCommandsList.removeFirst();
 }
 
-//! Starts the Open Modelica Compiler.
+//! Starts the OpenModelica Compiler.
 bool OMCProxy::startServer()
 {
     try
@@ -250,7 +250,7 @@ bool OMCProxy::startServer()
     return true;
 }
 
-//! Stops the Open Modelica Compiler. Kill the process omc and also deletes the CORBA reference file.
+//! Stops the OpenModelica Compiler. Kill the process omc and also deletes the CORBA reference file.
 //! @see startServer
 void OMCProxy::stopServer()
 {
@@ -446,7 +446,7 @@ QString OMCProxy::getEnvironmentVar(QString name)
     return getResult();
 }
 
-//! Loads the Open Modelica Standard Library.
+//! Loads the OpenModelica Standard Library.
 void OMCProxy::loadStandardLibrary()
 {
     sendCommand("loadModel(Modelica)");
@@ -464,7 +464,7 @@ void OMCProxy::loadStandardLibrary()
     }
 }
 
-//! Checks whether the Open Modelica Standard Library is loaded or not.
+//! Checks whether the OpenModelica Standard Library is loaded or not.
 bool OMCProxy::isStandardLibraryLoaded()
 {
     return mIsStandardLibraryLoaded;
