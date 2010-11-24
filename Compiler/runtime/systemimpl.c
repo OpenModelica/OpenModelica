@@ -710,6 +710,12 @@ int file_select_directories(direntry entry)
 
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define getFunctionPointerFromDLL  GetProcAddress
+#else
+#define getFunctionPointerFromDLL dlsym
+#endif
+
 extern int SystemImpl__lookupFunction(int libIndex, const char *str)
 {
   modelica_ptr_t lib = NULL, func = NULL;
@@ -721,11 +727,7 @@ extern int SystemImpl__lookupFunction(int libIndex, const char *str)
   if (lib == NULL)
     return -1;
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  funcptr = (void*)GetProcAddress(lib->data.lib, str);
-#else
-  funcptr = (int (*)(type_description*, type_description*)) dlsym(lib->data.lib, str);
-#endif
+  funcptr =  (int (*)(type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
 
   if (funcptr == NULL) {
     /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/
