@@ -2300,6 +2300,20 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNamedAnnotation");
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, {}))} = 
+        getApiFunctionArgs(istmts);
+        modelpath = Absyn.crefToPath(cr);
+        ErrorExt.setCheckpoint("getNamedAnnotation");
+        RTOpts.setEvaluateParametersInAnnotations(true);        
+        resstr = getNamedAnnotation(modelpath, p, str, getAnnotationValue);
+        RTOpts.setEvaluateParametersInAnnotations(false);
+        ErrorExt.rollBack("getNamedAnnotation");
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
         matchApiFunction(istmts, "getPackages");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path_1 = Absyn.crefToPath(cr);
@@ -13315,6 +13329,27 @@ algorithm
         str;
   end matchcontinue;
 end getNamedAnnotationStr;
+
+protected function getAnnotationValue
+  input Option<Absyn.Modification> mod;
+  output String str;
+algorithm
+  str := matchcontinue (mod)
+    local 
+      String s;
+      Absyn.Exp exp;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = {}, expOption=SOME(exp))))
+      equation
+        s = Dump.printExpStr(exp);
+        s = stringAppendList({"{", s, "}"});
+      then
+        s;
+    
+    // adrpo: empty if no value
+    case (_) then "{}";
+  end matchcontinue;
+end getAnnotationValue;
 
 protected function getDocumentationAnnotationString
   input Option<Absyn.Modification> mod;
