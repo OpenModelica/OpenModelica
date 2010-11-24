@@ -576,7 +576,7 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
 static const char* SystemImpl__getUUIDStr()
 {
   static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(USE_WIN32_UUID)
   unsigned char *tmp;
   UUID uuid;
   if (UuidCreate(&uuid) == RPC_S_OK)

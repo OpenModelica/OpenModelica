@@ -35,6 +35,7 @@
  */
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+#define USE_WIN32_UUID
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shlwapi.h>
