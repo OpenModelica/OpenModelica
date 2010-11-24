@@ -9374,7 +9374,7 @@ algorithm
       equation
         t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info);
         //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
@@ -9385,7 +9385,7 @@ algorithm
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref);
+        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info);
         //Debug.traceln("UNTYPED");
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
@@ -9396,7 +9396,7 @@ algorithm
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
         false = OptManager.getOption("checkModel");
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
-        dim2 = elabArraydimType(t, ad, e, path, pre, cref);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref, info);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -9715,29 +9715,31 @@ protected function elabArraydimType
   input Absyn.Path path "class of declaration, primarily used for error messages";
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef componentRef;
+  input Absyn.Info info;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef)
+  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
       String tpStr,adStr,expStr,str;
-    case(t,ad,exp,path,_,_)
+    case(t,ad,exp,path,_,_,_)
       equation
-        true = (Types.ndims(t) >= listLength(ad));
+        true = (Types.numberOfDimensions(t) >= listLength(ad));
+        adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         outDimensionLst = elabArraydimType2(t,ad);
       then outDimensionLst;
 
-    case(t,ad,exp,path,inPrefix,componentRef)
+    case(t,ad,exp,path,inPrefix,componentRef,_)
       equation
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         tpStr = Types.unparseType(t);
         expStr = ExpressionDump.printExpStr(exp);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& Absyn.printComponentRefStr(componentRef);
-        Error.addMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr});
+        Error.addSourceMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr},info);
       then fail();
     end matchcontinue;
-end  elabArraydimType;
+end elabArraydimType;
 
 protected function elabArraydimType2
 "Help function to elabArraydimType."

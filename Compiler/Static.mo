@@ -955,7 +955,7 @@ algorithm
     case ({}) then 2;
     case ((t :: ts))
       equation
-        tn = Types.ndims(t);
+        tn = Types.numberOfDimensions(t);
         tn2 = matrixConstrMaxDim(ts);
         res = intMax(tn, tn2);
       then
@@ -2403,7 +2403,7 @@ algorithm
     case (cache,env,{el},impl,st,havereal,nmax,doVect,pre,info) /* implicit inst. have real nmax dim1 dim2 */
       equation
         (cache,el_1,(prop as DAE.PROP(t1,_)),_) = elabExp(cache,env, el, impl, st,doVect,pre,info);
-        t1_dim1 = Types.ndims(t1);
+        t1_dim1 = Types.numberOfDimensions(t1);
         nmax_2 = nmax - t1_dim1;
         (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax_2);
         (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
@@ -2416,7 +2416,7 @@ algorithm
     case (cache,env,(el :: els),impl,st,havereal,nmax,doVect,pre,info)
       equation
         (cache,el_1,(prop1 as DAE.PROP(t1,_)),_) = elabExp(cache,env, el, impl, st,doVect,pre,info);
-        t1_ndims = Types.ndims(t1);
+        t1_ndims = Types.numberOfDimensions(t1);
         nmax_2 = nmax - t1_ndims;
         (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax_2);
          (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
@@ -3108,7 +3108,7 @@ algorithm
         (cache,arraycrefe,DAE.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl,NONE(),true,pre,info);
         c2 = Types.dimensionsKnown(arrtp);
         c = Types.boolConst(c2);
-        nd = Types.ndims(arrtp);
+        nd = Types.numberOfDimensions(arrtp);
         exp = DAE.ICONST(nd);
       then
         (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,c));
@@ -6414,7 +6414,7 @@ algorithm
     case (cache,env,{e},_,impl,pre,info) /* vector(array of scalars) = array of scalars */
       equation
         (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        1 = Types.ndims(tp);
+        1 = Types.numberOfDimensions(tp);
       then
         (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c));
 

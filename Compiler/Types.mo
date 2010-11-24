@@ -743,7 +743,7 @@ algorithm
   end matchcontinue;
 end isArrayOrString;
 
-public function ndims "function: ndims
+public function numberOfDimensions "function: ndims
 
   Return the number of dimensions of a Type.
 "
@@ -757,15 +757,16 @@ algorithm
       Type t;
     case ((DAE.T_ARRAY(arrayType = t),_))
       equation
-        n = ndims(t);
+        n = numberOfDimensions(t);
       then
         n + 1;
-    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_)) equation
-        n = ndims(t);
-    then n;
-    case ((_,_)) then 0;
+    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_))
+      equation
+        n = numberOfDimensions(t);
+      then n;
+    else 0;
   end matchcontinue;
-end ndims;
+end numberOfDimensions;
 
 public function dimensionsKnown
   "Returns true if the dimensions of the type is known."
