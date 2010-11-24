@@ -308,8 +308,9 @@ void* System_moFiles(const char *directory)
 
 extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
 {
-  fprintf(stderr, "System_lookupFunction NYI\n");
-  exit(1);
+  int res = SystemImpl__lookupFunction(_inLibHandle, _inFunc);
+  if (res == -1) throw 1;
+  return res;
 }
 
 extern void System_freeFunction(int _inFuncHandle)

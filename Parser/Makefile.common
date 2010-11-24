@@ -45,7 +45,8 @@ OpenModelicaBootstrappingHeader.h: ../Compiler/Absyn.mo ../Compiler/Interactive.
 	@echo "OpenModelica is not available; using the already generated OpenModelicaBootstrappingHeader.h"
 else
 OpenModelicaBootstrappingHeader.h: ../Compiler/Absyn.mo ../Compiler/Interactive.mo GenerateOMCHeader.mos
-	$(OMC) +g=MetaModelica GenerateOMCHeader.mos || (rm -f $@ && false)
+	$(OMC) +g=MetaModelica GenerateOMCHeader.mos
+	@mv $@.new $@
 endif
 
 Parser_rml.o: $(HFILES) parse.c

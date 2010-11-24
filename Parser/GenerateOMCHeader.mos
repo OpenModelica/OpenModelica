@@ -1,7 +1,8 @@
 b1:=loadFile("../Compiler/Absyn.mo");
 b2:=loadFile("../Compiler/Interactive.mo");
-if b1 and b2 then loadOK := true; end if;
-a:=loadOK;
-b3:=generateHeader("OpenModelicaBootstrappingHeader.h");
+b3:=loadFile("../Compiler/Values.mo");
+if b1 and b2 and b3 then loadOK := true; end if;
+a:=loadOK; // Will cause exit(1) if loadOK is undefined
+b3:=generateHeader("OpenModelicaBootstrappingHeader.h.new");
 if b3 then genOK := true; end if;
-a:=genOK;
+a:=genOK; // Will cause exit(1) if genOK is undefined

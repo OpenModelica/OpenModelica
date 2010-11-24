@@ -31,11 +31,12 @@
 extern "C" {
 
 #include <stdio.h>
+#include <stdlib.h>
 
 extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
 {
   fprintf(stderr, "Dynload_executeFunction NYI\n");
-  throw 1;
+  exit(1);
 }
 
 }

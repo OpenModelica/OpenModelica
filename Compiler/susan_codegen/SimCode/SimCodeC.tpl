@@ -54,8 +54,8 @@ template translateModel(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes, recordDecls), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, recordDecls), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
@@ -2322,18 +2322,19 @@ case SES_WHEN(__) then
 end equationWhen;
 
 
-template simulationFunctionsFile(String filePrefix, list<Function> functions, list<String> includes)
+template simulationFunctionsFile(String filePrefix, list<Function> functions, list<RecordDeclaration> recordDecls)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
   #include "<%filePrefix%>_functions.h"
   extern "C" {
   <%functionBodies(functions)%>
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   }
   >>
 end simulationFunctionsFile;
 
-template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<String> includes)
+template simulationFunctionsHeaderFile(String filePrefix, list<Function> functions, list<String> includes, list<RecordDeclaration> recordDecls)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
@@ -2342,6 +2343,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   <%commonHeader()%>
   #include "simulation_runtime.h"
   extern "C" {
+  <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%externalFunctionIncludes(includes)%>
   <%functionHeaders(functions)%>
   }
@@ -2492,10 +2494,10 @@ template functionsHeaderFile(String filePrefix,
   extern "C" {
   #endif
   
+  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%externalFunctionIncludes(includes)%>
   <%functionHeader(mainFunction,true)%>
   <%functionHeaders(functions)%>
-  <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
 
   #ifdef __cplusplus
   }
@@ -2762,13 +2764,11 @@ template functionHeader(Function fn, Boolean inFunc)
   match fn
     case FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
-      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), funArgs, outVars)%>
   
@@ -2791,7 +2791,6 @@ template functionHeader(Function fn, Boolean inFunc)
         <%fname%>_rettypeboxed boxptr_<%fname%>(<%funArgsBoxedStr%>);
         >>
       <<
-      <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
       #define <%fname%>_rettype_1 targ1
       typedef struct <%fname%>_rettype_s {
         struct <%fname%> targ1;
@@ -2861,7 +2860,6 @@ template recordDefinitionHeader(String origName, String encName, Integer numFiel
  "Generates the definition struct for a record declaration."
 ::=
   <<
-  extern const char* <%encName%>__desc__fields[<%numFields%>];
   extern struct record_description <%encName%>__desc;
   >>
 end recordDefinitionHeader;
@@ -3100,7 +3098,6 @@ case FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     <%funArgs%>
@@ -3157,7 +3154,6 @@ case EXTERNAL_FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>' ;separator=", "%>)
   {
     <%varDecls%>
@@ -3201,7 +3197,6 @@ case RECORD_CONSTRUCTOR(__) then
   let structVar = tempDecl(structType, &varDecls /*BUFC*/)
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
@@ -5656,6 +5651,7 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
     case ET_ARRAY(__) then '<%expTypeShort(ty)%>_array'
     else expTypeFlag(ty, 2)
 end expTypeFlag;
+
 
 
 template expTypeFromExpFlag(Exp exp, Integer flag)

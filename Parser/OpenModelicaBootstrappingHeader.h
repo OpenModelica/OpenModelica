@@ -1,5 +1,194 @@
 /* Automatically generated header for external MetaModelica functions */
 // TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_INTEGER__desc__fields_2[1] = {"integer"};
+struct record_description Values_Value_INTEGER__desc_2 = {
+  "Values_Value_INTEGER",
+  "Values.Value.INTEGER",
+  Values_Value_INTEGER__desc__fields_2
+};
+#define Values__INTEGER_3dBOX1 3
+#define Values__INTEGER(integer) (mmc_mk_box2(3,&Values_Value_INTEGER__desc_2,integer))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_REAL__desc__fields_2[1] = {"real"};
+struct record_description Values_Value_REAL__desc_2 = {
+  "Values_Value_REAL",
+  "Values.Value.REAL",
+  Values_Value_REAL__desc__fields_2
+};
+#define Values__REAL_3dBOX1 4
+#define Values__REAL(real) (mmc_mk_box2(4,&Values_Value_REAL__desc_2,real))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_STRING__desc__fields_2[1] = {"string"};
+struct record_description Values_Value_STRING__desc_2 = {
+  "Values_Value_STRING",
+  "Values.Value.STRING",
+  Values_Value_STRING__desc__fields_2
+};
+#define Values__STRING_3dBOX1 5
+#define Values__STRING(string) (mmc_mk_box2(5,&Values_Value_STRING__desc_2,string))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_BOOL__desc__fields_2[1] = {"boolean"};
+struct record_description Values_Value_BOOL__desc_2 = {
+  "Values_Value_BOOL",
+  "Values.Value.BOOL",
+  Values_Value_BOOL__desc__fields_2
+};
+#define Values__BOOL_3dBOX1 6
+#define Values__BOOL(boolean) (mmc_mk_box2(6,&Values_Value_BOOL__desc_2,boolean))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_ENUM_LITERAL__desc__fields_2[2] = {"name","index"};
+struct record_description Values_Value_ENUM_LITERAL__desc_2 = {
+  "Values_Value_ENUM__LITERAL",
+  "Values.Value.ENUM_LITERAL",
+  Values_Value_ENUM_LITERAL__desc__fields_2
+};
+#define Values__ENUM_5fLITERAL_3dBOX2 7
+#define Values__ENUM_5fLITERAL(name,index) (mmc_mk_box3(7,&Values_Value_ENUM_LITERAL__desc_2,name,index))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_ARRAY__desc__fields_2[2] = {"valueLst","dimLst"};
+struct record_description Values_Value_ARRAY__desc_2 = {
+  "Values_Value_ARRAY",
+  "Values.Value.ARRAY",
+  Values_Value_ARRAY__desc__fields_2
+};
+#define Values__ARRAY_3dBOX2 8
+#define Values__ARRAY(valueLst,dimLst) (mmc_mk_box3(8,&Values_Value_ARRAY__desc_2,valueLst,dimLst))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_LIST__desc__fields_2[1] = {"valueLst"};
+struct record_description Values_Value_LIST__desc_2 = {
+  "Values_Value_LIST",
+  "Values.Value.LIST",
+  Values_Value_LIST__desc__fields_2
+};
+#define Values__LIST_3dBOX1 9
+#define Values__LIST(valueLst) (mmc_mk_box2(9,&Values_Value_LIST__desc_2,valueLst))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_META_ARRAY__desc__fields_2[1] = {"valueLst"};
+struct record_description Values_Value_META_ARRAY__desc_2 = {
+  "Values_Value_META__ARRAY",
+  "Values.Value.META_ARRAY",
+  Values_Value_META_ARRAY__desc__fields_2
+};
+#define Values__META_5fARRAY_3dBOX1 10
+#define Values__META_5fARRAY(valueLst) (mmc_mk_box2(10,&Values_Value_META_ARRAY__desc_2,valueLst))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_TUPLE__desc__fields_2[1] = {"valueLst"};
+struct record_description Values_Value_TUPLE__desc_2 = {
+  "Values_Value_TUPLE",
+  "Values.Value.TUPLE",
+  Values_Value_TUPLE__desc__fields_2
+};
+#define Values__TUPLE_3dBOX1 11
+#define Values__TUPLE(valueLst) (mmc_mk_box2(11,&Values_Value_TUPLE__desc_2,valueLst))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_META_TUPLE__desc__fields_2[1] = {"valueLst"};
+struct record_description Values_Value_META_TUPLE__desc_2 = {
+  "Values_Value_META__TUPLE",
+  "Values.Value.META_TUPLE",
+  Values_Value_META_TUPLE__desc__fields_2
+};
+#define Values__META_5fTUPLE_3dBOX1 12
+#define Values__META_5fTUPLE(valueLst) (mmc_mk_box2(12,&Values_Value_META_TUPLE__desc_2,valueLst))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_RECORD__desc__fields_2[4] = {"record_","orderd","comp","index"};
+struct record_description Values_Value_RECORD__desc_2 = {
+  "Values_Value_RECORD",
+  "Values.Value.RECORD",
+  Values_Value_RECORD__desc__fields_2
+};
+#define Values__RECORD_3dBOX4 13
+#define Values__RECORD(record_,orderd,comp,index) (mmc_mk_box5(13,&Values_Value_RECORD__desc_2,record_,orderd,comp,index))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_OPTION__desc__fields_2[1] = {"some"};
+struct record_description Values_Value_OPTION__desc_2 = {
+  "Values_Value_OPTION",
+  "Values.Value.OPTION",
+  Values_Value_OPTION__desc__fields_2
+};
+#define Values__OPTION_3dBOX1 14
+#define Values__OPTION(some) (mmc_mk_box2(14,&Values_Value_OPTION__desc_2,some))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_CODE__desc__fields_2[1] = {"A"};
+struct record_description Values_Value_CODE__desc_2 = {
+  "Values_Value_CODE",
+  "Values.Value.CODE",
+  Values_Value_CODE__desc__fields_2
+};
+#define Values__CODE_3dBOX1 15
+#define Values__CODE(A) (mmc_mk_box2(15,&Values_Value_CODE__desc_2,A))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_NORETCALL__desc__fields_2[0] = {};
+struct record_description Values_Value_NORETCALL__desc_2 = {
+  "Values_Value_NORETCALL",
+  "Values.Value.NORETCALL",
+  Values_Value_NORETCALL__desc__fields_2
+};
+#define Values__NORETCALL_3dBOX0 16
+#define Values__NORETCALL (mmc_mk_box1(16,&Values_Value_NORETCALL__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_Value_META_FAIL__desc__fields_2[0] = {};
+struct record_description Values_Value_META_FAIL__desc_2 = {
+  "Values_Value_META__FAIL",
+  "Values.Value.META_FAIL",
+  Values_Value_META_FAIL__desc__fields_2
+};
+#define Values__META_5fFAIL_3dBOX0 17
+#define Values__META_5fFAIL (mmc_mk_box1(17,&Values_Value_META_FAIL__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_MULOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_MULOP__desc_2 = {
+  "Values_IntRealOp_MULOP",
+  "Values.IntRealOp.MULOP",
+  Values_IntRealOp_MULOP__desc__fields_2
+};
+#define Values__MULOP_3dBOX0 3
+#define Values__MULOP (mmc_mk_box1(3,&Values_IntRealOp_MULOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_DIVOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_DIVOP__desc_2 = {
+  "Values_IntRealOp_DIVOP",
+  "Values.IntRealOp.DIVOP",
+  Values_IntRealOp_DIVOP__desc__fields_2
+};
+#define Values__DIVOP_3dBOX0 4
+#define Values__DIVOP (mmc_mk_box1(4,&Values_IntRealOp_DIVOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_ADDOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_ADDOP__desc_2 = {
+  "Values_IntRealOp_ADDOP",
+  "Values.IntRealOp.ADDOP",
+  Values_IntRealOp_ADDOP__desc__fields_2
+};
+#define Values__ADDOP_3dBOX0 5
+#define Values__ADDOP (mmc_mk_box1(5,&Values_IntRealOp_ADDOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_SUBOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_SUBOP__desc_2 = {
+  "Values_IntRealOp_SUBOP",
+  "Values.IntRealOp.SUBOP",
+  Values_IntRealOp_SUBOP__desc__fields_2
+};
+#define Values__SUBOP_3dBOX0 6
+#define Values__SUBOP (mmc_mk_box1(6,&Values_IntRealOp_SUBOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_POWOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_POWOP__desc_2 = {
+  "Values_IntRealOp_POWOP",
+  "Values.IntRealOp.POWOP",
+  Values_IntRealOp_POWOP__desc__fields_2
+};
+#define Values__POWOP_3dBOX0 7
+#define Values__POWOP (mmc_mk_box1(7,&Values_IntRealOp_POWOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
+const char* Values_IntRealOp_LESSEQOP__desc__fields_2[0] = {};
+struct record_description Values_IntRealOp_LESSEQOP__desc_2 = {
+  "Values_IntRealOp_LESSEQOP",
+  "Values.IntRealOp.LESSEQOP",
+  Values_IntRealOp_LESSEQOP__desc__fields_2
+};
+#define Values__LESSEQOP_3dBOX0 8
+#define Values__LESSEQOP (mmc_mk_box1(8,&Values_IntRealOp_LESSEQOP__desc_2))
+// TODO: Fix OMC generation of uniontypes to a separate C-file at the end
 const char* Interactive_CompiledCFunction_CFunction__desc__fields_2[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
 struct record_description Interactive_CompiledCFunction_CFunction__desc_2 = {
   "Interactive_CompiledCFunction_CFunction",

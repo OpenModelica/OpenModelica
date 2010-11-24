@@ -710,6 +710,37 @@ int file_select_directories(direntry entry)
 
 #endif
 
+extern int SystemImpl__lookupFunction(int libIndex, const char *str)
+{
+  modelica_ptr_t lib = NULL, func = NULL;
+  function_t funcptr;
+  int funcIndex;
+
+  lib = lookup_ptr(libIndex);
+
+  if (lib == NULL)
+    return -1;
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  funcptr = (void*)GetProcAddress(lib->data.lib, str);
+#else
+  funcptr = (int (*)(type_description*, type_description*)) dlsym(lib->data.lib, str);
+#endif
+
+  if (funcptr == NULL) {
+    /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/
+    return -1;
+  }
+
+  funcIndex = alloc_ptr();
+  func = lookup_ptr(funcIndex);
+  func->data.func.handle = funcptr;
+  func->data.func.lib = libIndex;
+  ++(lib->cnt); // lib->cnt = 2
+  /* fprintf(stderr, "LOOKUP LIB index[%d]/count[%d]/handle[%lu] function %s[%d].\n", libIndex, lib->cnt, lib->data.lib, str, funcIndex); fflush(stderr); */
+  return funcIndex;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -938,36 +938,6 @@ void free_library(modelica_ptr_t lib)
   lib->data.lib = NULL;
 }
 
-RML_BEGIN_LABEL(System__lookupFunction)
-{
-  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0), funcIndex;
-  const char *str = RML_STRINGDATA(rmlA1);
-  modelica_ptr_t lib = NULL, func = NULL;
-  function_t funcptr;
-
-  lib = lookup_ptr(libIndex);
-
-  if (lib == NULL)
-    RML_TAILCALLK(rmlFC);
-
-  funcptr = (void*)GetProcAddress(lib->data.lib, str);
-
-  if (funcptr == NULL) {
-    /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/
-    RML_TAILCALLK(rmlFC);
-  }
-
-  funcIndex = alloc_ptr();
-  func = lookup_ptr(funcIndex);
-  func->data.func.handle = funcptr;
-  func->data.func.lib = libIndex;
-  ++(lib->cnt); // lib->cnt = 2
-  /* fprintf(stderr, "LOOKUP LIB index[%d]/count[%d]/handle[%lu] function %s[%d].\n", libIndex, lib->cnt, lib->data.lib, str, funcIndex); fflush(stderr); */
-  rmlA0 = (void*) mk_icon(funcIndex);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__compileCFile)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -1574,35 +1544,6 @@ void free_library(modelica_ptr_t lib)
   lib->data.lib = NULL;
 }
 
-RML_BEGIN_LABEL(System__lookupFunction)
-{
-  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0), funcIndex;
-  const char *str = RML_STRINGDATA(rmlA1);
-  modelica_ptr_t lib = NULL, func = NULL;
-  function_t funcptr;
-
-  lib = lookup_ptr(libIndex);
-
-  if (lib == NULL)
-    RML_TAILCALLK(rmlFC);
-
-  funcptr = dlsym(lib->data.lib, str);
-
-  if (funcptr == NULL) {
-    fprintf(stderr, "Unable to find `%s': %s.\n", str, dlerror());
-    RML_TAILCALLK(rmlFC);
-  }
-
-  funcIndex = alloc_ptr();
-  func = lookup_ptr(funcIndex);
-  func->data.func.handle = funcptr;
-  func->data.func.lib = libIndex;
-  ++(lib->cnt);
-  rmlA0 = (void*) mk_icon(funcIndex);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__compileCFile)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -2051,6 +1992,18 @@ RML_BEGIN_LABEL(System__loadLibrary)
   if (res == -1)
     RML_TAILCALLK(rmlFC);
   rmlA0 = mk_icon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__lookupFunction)
+{
+  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0), funcIndex;
+  const char *str = RML_STRINGDATA(rmlA1);
+  funcIndex = SystemImpl__lookupFunction(libIndex,str);
+  if (funcIndex == -1)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_icon(funcIndex);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

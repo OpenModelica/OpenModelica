@@ -29,6 +29,7 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<Function> functions;
+      list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
       list<SimEqSystem> allEquationsPlusWhen;
@@ -263,7 +264,6 @@ package SimCode
       Absyn.Path name;
       list<Variable> inVars;
       list<Variable> outVars;
-      list<RecordDeclaration> recordDecls; 
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
@@ -279,12 +279,10 @@ package SimCode
       list<Variable> biVars;
       Libs libs;
       String language;
-      list<RecordDeclaration> recordDecls;
     end EXTERNAL_FUNCTION;
     record RECORD_CONSTRUCTOR
       Absyn.Path name;
       list<Variable> funArgs;
-      list<RecordDeclaration> recordDecls;
     end RECORD_CONSTRUCTOR;
   end Function;
   

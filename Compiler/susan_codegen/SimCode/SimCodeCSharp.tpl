@@ -101,7 +101,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     (functions |> fn => match fn  
           case FUNCTION(__)           then 
             <<
-            <%recordDecls |> rd => recordDeclaration(rd, simCode) ;separator="\n"%>
             <%functionBodyRegularFunction(fn, simCode)%>
             >>
           case EXTERNAL_FUNCTION(__)  then 'EXTERNAL_FUN_NOT_IMPLEMETED(name=<%dotPath(name)%>)'
