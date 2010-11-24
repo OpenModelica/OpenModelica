@@ -5928,10 +5928,10 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},graph);
 
     // Illegal redeclarations
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n),_),_,_,_,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n, classDef = SCode.CLASS(info=info)),_),_,_,_,_)
       equation
         (_,_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n);
-        Error.addMessage(Error.REDECLARE_CLASS_AS_VAR, {n});
+        Error.addSourceMessage(Error.REDECLARE_CLASS_AS_VAR, {n}, info);
       then
         fail();
 
@@ -5954,11 +5954,11 @@ algorithm
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
 
     /* non replaceable class definition */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = c),_),inst_dims,impl,_,_)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = SCode.CLASS(info=info)),_),inst_dims,impl,_,_)
       equation
         ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
         "Redeclare of class definition, replaceable is false" ;
-        Error.addMessage(Error.REDECLARE_NON_REPLACEABLE, {n});
+        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE, {n}, info);
       then
         fail();
 
@@ -6100,7 +6100,7 @@ algorithm
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         //The environment is extended (updated) with the new variable binding. 
-        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty, pre, n);
+        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty, pre, n, info);
         
         /* uncomment this for debugging of bindings from mods 
         print("Created binding for var: " +& 
@@ -6220,7 +6220,7 @@ algorithm
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         // The environment is extended (updated) with the new variable binding.
-        (cache,binding) = makeBinding(cache,env, attr, m_1, ty, pre, n) ;
+        (cache,binding) = makeBinding(cache,env, attr, m_1, ty, pre, n, info);
 
         // true in update_frame means the variable is now instantiated.
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE()) ;
@@ -8477,7 +8477,7 @@ algorithm
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
         /* The environment is extended with the new variable binding. */
-        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name);
+        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, rinfo);
         /* type info present */
         //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
@@ -12631,10 +12631,11 @@ public function makeBinding
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input String componentName;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
-  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName)
+  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,info)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp,e_tp;
       DAE.Exp e_1,e;
@@ -12648,8 +12649,8 @@ algorithm
       DAE.Binding binding;
       DAE.Mod startValueModification;
 
-    case (cache,_,_,DAE.NOMOD(),tp,_,_) then (cache,DAE.UNBOUND());
-    case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.NOMOD(),tp,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_,_) then (cache,DAE.UNBOUND());
 
     // adrpo: if the binding is missing for a parameter and 
     //        the parameter has a start value modification, 
@@ -12659,15 +12660,15 @@ algorithm
     //             Modelica.Electrical.Machines.Examples.SMEE_Generator 
     //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
     //             and maybe a lot others.
-    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),inMod as DAE.MOD(eqModOption = NONE()),tp,inPrefix,componentName)
+    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),inMod as DAE.MOD(eqModOption = NONE()),tp,inPrefix,componentName,_)
       equation
         startValueModification = Mod.lookupCompModification(inMod, "start");
-        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName);
+        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,info);
         binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE()); 
       then 
         (cache,binding);
 
-    case (cache,_,_,DAE.MOD(eqModOption = NONE()),tp,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.MOD(eqModOption = NONE()),tp,_,_,_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
     case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
@@ -12676,7 +12677,7 @@ algorithm
       then
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_) /* default */
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_) /* default */
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
@@ -12684,14 +12685,14 @@ algorithm
         e_1 = ExpressionSimplify.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_)
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp, false);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,inPrefix,componentName)
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,inPrefix,componentName,_)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
@@ -12701,10 +12702,10 @@ algorithm
         e_str = ExpressionDump.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
         str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
-        Error.addMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str});
+        Error.addSourceMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str}, info);
       then
         fail();
-    case (_,_,_,_,_,inPrefix,componentName)
+    case (_,_,_,_,_,inPrefix,componentName,_)
       equation
         Debug.fprint("failtrace", "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
       then
@@ -12785,7 +12786,7 @@ algorithm
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
-        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id);
+        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, rinfo);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.UNSPECIFIED()),prot,tp_1,bind,NONE()));
 
