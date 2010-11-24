@@ -235,5 +235,14 @@ modelica_metatype boxptr_realSqrt(modelica_metatype r)
 {
   return mmc_mk_rcon(sqrt(mmc_prim_get_real(r)));
 }
+modelica_metatype boxptr_realLt(modelica_metatype r1,modelica_metatype r2)
+{
+  return mmc_mk_bcon(mmc_prim_get_real(r1) < mmc_prim_get_real(r2));
+}
+modelica_metatype boxptr_realGt(modelica_metatype r1,modelica_metatype r2)
+{
+  return mmc_mk_bcon(mmc_prim_get_real(r1) > mmc_prim_get_real(r2));
+}
+
 
 }

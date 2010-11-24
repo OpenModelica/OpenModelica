@@ -1073,7 +1073,7 @@ public function createFunctions
   output BackendDAE.BackendDAE outBackendDAE;
   output DAE.DAElist outDAE;
 algorithm
-  (libs, includes, functions, outBackendDAE, outDAE) :=
+  (libs, includes, recordDecls, functions, outBackendDAE, outDAE) :=
   matchcontinue (inProgram,inDAElist,inBackendDAE,functionTree,inPath)
     local
       list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;

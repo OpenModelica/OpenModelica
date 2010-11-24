@@ -71,6 +71,8 @@ algorithm
         list<SimCode.Function> i_functions;
         String i_fileNamePrefix;
         SimCode.SimCode i_simCode;
+        Tpl.Text txt_9;
+        Tpl.Text txt_8;
         Tpl.Text txt_7;
         Tpl.Text txt_6;
         Tpl.Text txt_5;
@@ -88,14 +90,18 @@ algorithm
         txt_3 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
         txt_3 = Tpl.writeTok(txt_3, Tpl.ST_STRING("_functions.h"));
         Tpl.textFile(txt_2, Tpl.textString(txt_3));
-        txt_4 = simulationFunctionsFile(Tpl.emptyTxt, i_fileNamePrefix, i_functions, i_recordDecls);
+        txt_4 = simulationFunctionsFile(Tpl.emptyTxt, i_fileNamePrefix, i_functions);
         txt_5 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
         txt_5 = Tpl.writeTok(txt_5, Tpl.ST_STRING("_functions.cpp"));
         Tpl.textFile(txt_4, Tpl.textString(txt_5));
-        txt_6 = simulationMakefile(Tpl.emptyTxt, i_simCode);
+        txt_6 = recordsFile(Tpl.emptyTxt, i_fileNamePrefix, i_recordDecls);
         txt_7 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
-        txt_7 = Tpl.writeTok(txt_7, Tpl.ST_STRING(".makefile"));
+        txt_7 = Tpl.writeTok(txt_7, Tpl.ST_STRING("_records.c"));
         Tpl.textFile(txt_6, Tpl.textString(txt_7));
+        txt_8 = simulationMakefile(Tpl.emptyTxt, i_simCode);
+        txt_9 = Tpl.writeStr(Tpl.emptyTxt, i_fileNamePrefix);
+        txt_9 = Tpl.writeTok(txt_9, Tpl.ST_STRING(".makefile"));
+        Tpl.textFile(txt_8, Tpl.textString(txt_9));
         txt = fun_13(txt, i_simulationSettingsOpt, i_fileNamePrefix, i_simCode);
       then txt;
 
@@ -125,6 +131,8 @@ algorithm
         SimCode.Function i_mainFunction;
         String i_name;
         SimCode.FunctionCode i_functionCode;
+        Tpl.Text txt_8;
+        Tpl.Text txt_7;
         Tpl.Text txt_6;
         Tpl.Text txt_5;
         Tpl.Text txt_4;
@@ -138,14 +146,18 @@ algorithm
         txt_2 = Tpl.writeText(Tpl.emptyTxt, i_filePrefix);
         txt_2 = Tpl.writeTok(txt_2, Tpl.ST_STRING(".h"));
         Tpl.textFile(txt_1, Tpl.textString(txt_2));
-        txt_3 = functionsFile(Tpl.emptyTxt, Tpl.textString(i_filePrefix), i_mainFunction, i_functions, i_extraRecordDecls, i_externalFunctionIncludes);
+        txt_3 = functionsFile(Tpl.emptyTxt, Tpl.textString(i_filePrefix), i_mainFunction, i_functions);
         txt_4 = Tpl.writeText(Tpl.emptyTxt, i_filePrefix);
         txt_4 = Tpl.writeTok(txt_4, Tpl.ST_STRING(".c"));
         Tpl.textFile(txt_3, Tpl.textString(txt_4));
-        txt_5 = functionsMakefile(Tpl.emptyTxt, i_functionCode);
+        txt_5 = recordsFile(Tpl.emptyTxt, Tpl.textString(i_filePrefix), i_extraRecordDecls);
         txt_6 = Tpl.writeText(Tpl.emptyTxt, i_filePrefix);
-        txt_6 = Tpl.writeTok(txt_6, Tpl.ST_STRING(".makefile"));
+        txt_6 = Tpl.writeTok(txt_6, Tpl.ST_STRING("_records.c"));
         Tpl.textFile(txt_5, Tpl.textString(txt_6));
+        txt_7 = functionsMakefile(Tpl.emptyTxt, i_functionCode);
+        txt_8 = Tpl.writeText(Tpl.emptyTxt, i_filePrefix);
+        txt_8 = Tpl.writeTok(txt_8, Tpl.ST_STRING(".makefile"));
+        Tpl.textFile(txt_7, Tpl.textString(txt_8));
       then txt;
 
     case ( txt,
@@ -9594,7 +9606,25 @@ algorithm
   end matchcontinue;
 end equationWhen;
 
-protected function lm_227
+public function simulationFunctionsFile
+  input Tpl.Text txt;
+  input String i_filePrefix;
+  input list<SimCode.Function> i_functions;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("#include \""));
+  out_txt := Tpl.writeStr(out_txt, i_filePrefix);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "_functions.h\"\n",
+                                       "extern \"C\" {\n"
+                                   }, true));
+  out_txt := functionBodies(out_txt, i_functions);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("}"));
+end simulationFunctionsFile;
+
+protected function lm_228
   input Tpl.Text in_txt;
   input list<SimCode.RecordDeclaration> in_items;
 
@@ -9617,7 +9647,7 @@ algorithm
       equation
         txt = recordDeclaration(txt, i_rd);
         txt = Tpl.nextIter(txt);
-        txt = lm_227(txt, rest);
+        txt = lm_228(txt, rest);
       then txt;
 
     case ( txt,
@@ -9625,35 +9655,35 @@ algorithm
       local
         list<SimCode.RecordDeclaration> rest;
       equation
-        txt = lm_227(txt, rest);
+        txt = lm_228(txt, rest);
       then txt;
   end matchcontinue;
-end lm_227;
+end lm_228;
 
-public function simulationFunctionsFile
+public function recordsFile
   input Tpl.Text txt;
   input String i_filePrefix;
-  input list<SimCode.Function> i_functions;
   input list<SimCode.RecordDeclaration> i_recordDecls;
 
   output Tpl.Text out_txt;
+protected
+  String ret_0;
 algorithm
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("#include \""));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("/* Additional record code for "));
   out_txt := Tpl.writeStr(out_txt, i_filePrefix);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" generated by the OpenModelica Compiler "));
+  ret_0 := Settings.getVersionNr();
+  out_txt := Tpl.writeStr(out_txt, ret_0);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
-                                       "_functions.h\"\n",
-                                       "extern \"C\" {\n"
+                                       ". */\n",
+                                       "#include \"meta_modelica.h\"\n"
                                    }, true));
-  out_txt := functionBodies(out_txt, i_functions);
-  out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_227(out_txt, i_recordDecls);
+  out_txt := lm_228(out_txt, i_recordDecls);
   out_txt := Tpl.popIter(out_txt);
-  out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("}"));
-end simulationFunctionsFile;
+end recordsFile;
 
-protected function lm_229
+protected function lm_230
   input Tpl.Text in_txt;
   input list<SimCode.RecordDeclaration> in_items;
 
@@ -9676,7 +9706,7 @@ algorithm
       equation
         txt = recordDeclarationHeader(txt, i_rd);
         txt = Tpl.nextIter(txt);
-        txt = lm_229(txt, rest);
+        txt = lm_230(txt, rest);
       then txt;
 
     case ( txt,
@@ -9684,10 +9714,10 @@ algorithm
       local
         list<SimCode.RecordDeclaration> rest;
       equation
-        txt = lm_229(txt, rest);
+        txt = lm_230(txt, rest);
       then txt;
   end matchcontinue;
-end lm_229;
+end lm_230;
 
 public function simulationFunctionsHeaderFile
   input Tpl.Text txt;
@@ -9713,7 +9743,7 @@ algorithm
                                        "extern \"C\" {\n"
                                    }, true));
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_229(out_txt, i_recordDecls);
+  out_txt := lm_230(out_txt, i_recordDecls);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := externalFunctionIncludes(out_txt, i_includes);
@@ -9728,7 +9758,7 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
 end simulationFunctionsHeaderFile;
 
-protected function fun_231
+protected function fun_232
   input Tpl.Text in_txt;
   input String in_i_modelInfo_directory;
 
@@ -9753,9 +9783,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
   end matchcontinue;
-end fun_231;
+end fun_232;
 
-protected function lm_232
+protected function lm_233
   input Tpl.Text in_txt;
   input list<String> in_items;
 
@@ -9778,7 +9808,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_lib);
         txt = Tpl.nextIter(txt);
-        txt = lm_232(txt, rest);
+        txt = lm_233(txt, rest);
       then txt;
 
     case ( txt,
@@ -9786,37 +9816,10 @@ algorithm
       local
         list<String> rest;
       equation
-        txt = lm_232(txt, rest);
+        txt = lm_233(txt, rest);
       then txt;
   end matchcontinue;
-end lm_232;
-
-protected function fun_233
-  input Tpl.Text in_txt;
-  input String in_it;
-  input Tpl.Text in_i_libsStr;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_it, in_i_libsStr)
-    local
-      Tpl.Text txt;
-      Tpl.Text i_libsStr;
-
-    case ( txt,
-           "",
-           i_libsStr )
-      equation
-        txt = Tpl.writeText(txt, i_libsStr);
-      then txt;
-
-    case ( txt,
-           _,
-           _ )
-      then txt;
-  end matchcontinue;
-end fun_233;
+end lm_233;
 
 protected function fun_234
   input Tpl.Text in_txt;
@@ -9833,6 +9836,33 @@ algorithm
 
     case ( txt,
            "",
+           i_libsStr )
+      equation
+        txt = Tpl.writeText(txt, i_libsStr);
+      then txt;
+
+    case ( txt,
+           _,
+           _ )
+      then txt;
+  end matchcontinue;
+end fun_234;
+
+protected function fun_235
+  input Tpl.Text in_txt;
+  input String in_it;
+  input Tpl.Text in_i_libsStr;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_it, in_i_libsStr)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_libsStr;
+
+    case ( txt,
+           "",
            _ )
       then txt;
 
@@ -9843,7 +9873,7 @@ algorithm
         txt = Tpl.writeText(txt, i_libsStr);
       then txt;
   end matchcontinue;
-end fun_234;
+end fun_235;
 
 public function simulationMakefile
   input Tpl.Text in_txt;
@@ -9878,14 +9908,14 @@ algorithm
         Tpl.Text i_libsStr;
         Tpl.Text i_dirExtra;
       equation
-        i_dirExtra = fun_231(Tpl.emptyTxt, i_modelInfo_directory);
+        i_dirExtra = fun_232(Tpl.emptyTxt, i_modelInfo_directory);
         i_libsStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        i_libsStr = lm_232(i_libsStr, i_makefileParams_libs);
+        i_libsStr = lm_233(i_libsStr, i_makefileParams_libs);
         i_libsStr = Tpl.popIter(i_libsStr);
         str_3 = Tpl.textString(i_dirExtra);
-        i_libsPos1 = fun_233(Tpl.emptyTxt, str_3, i_libsStr);
+        i_libsPos1 = fun_234(Tpl.emptyTxt, str_3, i_libsStr);
         str_5 = Tpl.textString(i_dirExtra);
-        i_libsPos2 = fun_234(Tpl.emptyTxt, str_5, i_libsStr);
+        i_libsPos2 = fun_235(Tpl.emptyTxt, str_5, i_libsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "# Makefile generated by OpenModelica\n",
                                     "\n",
@@ -9931,7 +9961,9 @@ algorithm
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_functions.cpp "));
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("_functions.h\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_functions.h "));
+        txt = Tpl.writeStr(txt, i_fileNamePrefix);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("_records.c\n"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\t"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CXX) $(CFLAGS) -I. -o "));
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
@@ -9945,6 +9977,9 @@ algorithm
         txt = Tpl.writeText(txt, i_libsPos1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) "));
         txt = Tpl.writeText(txt, i_libsPos2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_fileNamePrefix);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_records.c"));
       then txt;
 
     case ( txt,
@@ -10059,7 +10094,7 @@ algorithm
   end matchcontinue;
 end simulationInitFile;
 
-protected function fun_237
+protected function fun_238
   input Tpl.Text in_txt;
   input Option<DAE.Exp> in_i_initialValue;
 
@@ -10084,9 +10119,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("0.0 //default"));
       then txt;
   end matchcontinue;
-end fun_237;
+end fun_238;
 
-protected function lm_238
+protected function lm_239
   input Tpl.Text in_txt;
   input list<SimCode.SimVar> in_items;
 
@@ -10108,11 +10143,11 @@ algorithm
         DAE.ComponentRef i_name;
         Option<DAE.Exp> i_initialValue;
       equation
-        txt = fun_237(txt, i_initialValue);
+        txt = fun_238(txt, i_initialValue);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" //"));
         txt = crefStr(txt, i_name);
         txt = Tpl.nextIter(txt);
-        txt = lm_238(txt, rest);
+        txt = lm_239(txt, rest);
       then txt;
 
     case ( txt,
@@ -10120,10 +10155,10 @@ algorithm
       local
         list<SimCode.SimVar> rest;
       equation
-        txt = lm_238(txt, rest);
+        txt = lm_239(txt, rest);
       then txt;
   end matchcontinue;
-end lm_238;
+end lm_239;
 
 public function initVals
   input Tpl.Text txt;
@@ -10132,11 +10167,11 @@ public function initVals
   output Tpl.Text out_txt;
 algorithm
   out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_238(out_txt, i_varsLst);
+  out_txt := lm_239(out_txt, i_varsLst);
   out_txt := Tpl.popIter(out_txt);
 end initVals;
 
-protected function fun_240
+protected function fun_241
   input Tpl.Text in_txt;
   input Boolean in_i_bool;
 
@@ -10159,7 +10194,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("true"));
       then txt;
   end matchcontinue;
-end fun_240;
+end fun_241;
 
 public function initVal
   input Tpl.Text in_txt;
@@ -10205,7 +10240,7 @@ algorithm
       local
         Boolean i_bool;
       equation
-        txt = fun_240(txt, i_bool);
+        txt = fun_241(txt, i_bool);
       then txt;
 
     case ( txt,
@@ -10247,49 +10282,11 @@ algorithm
                                }, false));
 end commonHeader;
 
-protected function lm_243
-  input Tpl.Text in_txt;
-  input list<SimCode.RecordDeclaration> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           i_rd :: rest )
-      local
-        list<SimCode.RecordDeclaration> rest;
-        SimCode.RecordDeclaration i_rd;
-      equation
-        txt = recordDeclaration(txt, i_rd);
-        txt = Tpl.nextIter(txt);
-        txt = lm_243(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      local
-        list<SimCode.RecordDeclaration> rest;
-      equation
-        txt = lm_243(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_243;
-
 public function functionsFile
   input Tpl.Text txt;
   input String i_filePrefix;
   input SimCode.Function i_mainFunction;
   input list<SimCode.Function> i_functions;
-  input list<SimCode.RecordDeclaration> i_extraRecordDecls;
-  input list<String> i_includes;
 
   output Tpl.Text out_txt;
 algorithm
@@ -10306,10 +10303,6 @@ algorithm
   out_txt := functionBody(out_txt, i_mainFunction, true);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := functionBodies(out_txt, i_functions);
-  out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_243(out_txt, i_extraRecordDecls);
-  out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "}\n",
@@ -10505,7 +10498,9 @@ algorithm
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".c "));
         txt = Tpl.writeStr(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(".h\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(".h "));
+        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("_records.c\n"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\t"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LINK) $(CFLAGS) -o "));
         txt = Tpl.writeStr(txt, i_name);
@@ -10513,7 +10508,9 @@ algorithm
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".c "));
         txt = Tpl.writeText(txt, i_libsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LDFLAGS) -lm"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LDFLAGS) -lm "));
+        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_records.c"));
       then txt;
 
     case ( txt,

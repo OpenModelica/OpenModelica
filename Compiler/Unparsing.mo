@@ -284,14 +284,11 @@ algorithm
         Absyn.Path i_r_name;
         SCode.Restriction i_r;
         SCode.Class i_c;
-        Integer ret_14;
-        Integer ret_13;
-        Integer ret_12;
-        String ret_11;
+        Integer ret_11;
         Integer ret_10;
-        String ret_9;
+        Integer ret_9;
         String ret_8;
-        String ret_7;
+        Integer ret_7;
         String ret_6;
         Integer ret_5;
         Tpl.Text i_nElts;
@@ -314,74 +311,38 @@ algorithm
         i_omcname = Tpl.writeStr(i_omcname, i_c_name);
         ret_5 = listLength(i_p_elementLst);
         i_nElts = Tpl.writeStr(Tpl.emptyTxt, intString(ret_5));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "// TODO: Fix OMC generation of uniontypes to a separate C-file at the end\n",
-                                    "const char* "
-                                }, false));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("extern struct record_description "));
         txt = Tpl.writeText(txt, i_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields_2["));
-        txt = Tpl.writeText(txt, i_nElts);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = {"));
-        txt = Tpl.writeText(txt, i_fieldsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "};\n",
-                                    "struct record_description "
-                                }, false));
-        txt = Tpl.writeText(txt, i_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc_2 = {\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = Tpl.writeStr(txt, i_pack);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
-        ret_6 = Absyn.pathString(i_r_name);
-        txt = Tpl.writeStr(txt, ret_6);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
-        ret_7 = System.stringReplace(i_c_name, "_", "__");
-        txt = Tpl.writeStr(txt, ret_7);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\",\n",
-                                    "\""
-                                }, false));
-        txt = Tpl.writeStr(txt, i_pack);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
-        ret_8 = Absyn.pathString(i_r_name);
-        txt = Tpl.writeStr(txt, ret_8);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
-        txt = Tpl.writeStr(txt, i_c_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("\",\n"));
-        txt = Tpl.writeText(txt, i_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc__fields_2\n"));
-        txt = Tpl.popBlock(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "};\n",
+                                    "__desc;\n",
                                     "#define "
                                 }, false));
         txt = Tpl.writeStr(txt, i_pack);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"));
-        ret_9 = System.stringReplace(i_c_name, "_", "_5f");
-        txt = Tpl.writeStr(txt, ret_9);
+        ret_6 = System.stringReplace(i_c_name, "_", "_5f");
+        txt = Tpl.writeStr(txt, ret_6);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_3dBOX"));
         txt = Tpl.writeText(txt, i_nElts);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        ret_10 = intAdd(3, i_r_index);
-        txt = Tpl.writeStr(txt, intString(ret_10));
+        ret_7 = intAdd(3, i_r_index);
+        txt = Tpl.writeStr(txt, intString(ret_7));
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
         txt = Tpl.writeStr(txt, i_pack);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"));
-        ret_11 = System.stringReplace(i_c_name, "_", "_5f");
-        txt = Tpl.writeStr(txt, ret_11);
+        ret_8 = System.stringReplace(i_c_name, "_", "_5f");
+        txt = Tpl.writeStr(txt, ret_8);
         txt = fun_11(txt, i_p_elementLst, i_fields);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" (mmc_mk_box"));
-        ret_12 = listLength(i_p_elementLst);
-        ret_13 = intAdd(1, ret_12);
-        txt = Tpl.writeStr(txt, intString(ret_13));
+        ret_9 = listLength(i_p_elementLst);
+        ret_10 = intAdd(1, ret_9);
+        txt = Tpl.writeStr(txt, intString(ret_10));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
-        ret_14 = intAdd(3, i_r_index);
-        txt = Tpl.writeStr(txt, intString(ret_14));
+        ret_11 = intAdd(3, i_r_index);
+        txt = Tpl.writeStr(txt, intString(ret_11));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(",&"));
         txt = Tpl.writeText(txt, i_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc_2"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc"));
         txt = fun_12(txt, i_p_elementLst, i_fields);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("))"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());

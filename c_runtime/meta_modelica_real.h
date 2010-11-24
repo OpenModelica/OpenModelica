@@ -131,6 +131,9 @@ realNe_rettype realNe(modelica_real, modelica_real);
 realGe_rettype realGe(modelica_real, modelica_real);
 realGt_rettype realGt(modelica_real, modelica_real);
 
+modelica_metatype boxptr_realLt(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_realGt(modelica_metatype,modelica_metatype);
+
 typedef modelica_integer realInt_rettype;
 typedef modelica_string realString_rettype;
 

@@ -112,6 +112,8 @@ intReal_rettype intReal(modelica_integer);
 intString_rettype intString(modelica_integer);
 
 modelica_metatype boxptr_intEq(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_intLt(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_intGt(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_intAbs(modelica_metatype);
 modelica_metatype boxptr_intNeg(modelica_metatype);
 modelica_metatype boxptr_intReal(modelica_metatype);

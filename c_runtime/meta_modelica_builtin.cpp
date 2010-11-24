@@ -197,7 +197,17 @@ intString_rettype intString(modelica_integer i)
 
 modelica_metatype boxptr_intEq(modelica_metatype i1, modelica_metatype i2)
 {
-  return mmc_mk_icon(i1 == i2);
+  return mmc_mk_bcon(i1 == i2);
+}
+
+modelica_metatype boxptr_intLt(modelica_metatype i1, modelica_metatype i2)
+{
+  return mmc_mk_bcon(i1 < i2);
+}
+
+modelica_metatype boxptr_intGt(modelica_metatype i1, modelica_metatype i2)
+{
+  return mmc_mk_bcon(i1 > i2);
 }
 
 modelica_metatype boxptr_intAbs(modelica_metatype i)

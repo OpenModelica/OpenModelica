@@ -142,9 +142,12 @@ ifeq ($(wildcard ../build/bin/omc),)
 simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
 else 
-simcode:
+simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
 	$(MAKE) -C susan_codegen/SimCode/
+OpenModelicaBootstrappingHeader.h: Absyn.mo Interactive.mo Values.mo GenerateOMCHeader.mos
+	../build/bin/omc +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	@mv $@.new $@
 endif
 $(SUSANMO): simcode
 

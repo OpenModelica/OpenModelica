@@ -1832,8 +1832,8 @@ algorithm
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5,a6)
     local
-      Type_e f_1;
-      list<Type_e> r_1;
+      Type_i f_1;
+      list<Type_i> r_1;
       Type_a f;
       list<Type_a> r;
 
