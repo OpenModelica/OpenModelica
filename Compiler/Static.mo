@@ -453,33 +453,12 @@ algorithm
         e_1 = ExpressionSimplify.simplify(e_1);
       then
         (cache,e_1,prop,st_1);
-    case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,st,doVect,pre,info)
-      equation
-        (cache,start_1,DAE.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect,pre,info) "Range expressions without step value, e.g. 1:5" ;
-        (cache,stop_1,DAE.PROP(stop_t,c_stop),st_2) = elabExp(cache,env, stop, impl, st_1,doVect,pre,info);
-        (start_2,NONE(),stop_2,rt) = deoverloadRange((start_1,start_t),NONE(), (stop_1,stop_t));
-        const = Types.constAnd(c_start, c_stop);
-        (cache,t) = elabRangeType(cache,env, start_2,NONE(), stop_2, const, rt, impl,pre);
-        exp_2 = DAE.RANGE(rt, start_2,NONE(), stop_2);
-        prop_1 = DAE.PROP(t, const);
-        exp_2 = ExpressionSimplify.simplify(exp_2);
-      then
-        (cache,exp_2,prop_1,st_2);
 
-    case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,st,doVect,pre,info)
+    case (cache, env, Absyn.RANGE(start = _), impl, st, doVect, pre, info)
       equation
-        (cache,start_1,DAE.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect,pre,info) "Range expressions with step value, e.g. 1:0.5:4" ;
-        (cache,step_1,DAE.PROP(step_t,c_step),st_2) = elabExp(cache,env, step, impl, st_1,doVect,pre,info);
-        (cache,stop_1,DAE.PROP(stop_t,c_stop),st_3) = elabExp(cache,env, stop, impl, st_2,doVect,pre,info);
-        (start_2,SOME(step_2),stop_2,rt) = deoverloadRange((start_1,start_t), SOME((step_1,step_t)), (stop_1,stop_t));
-        c1 = Types.constAnd(c_start, c_step);
-        const = Types.constAnd(c1, c_stop);
-        (cache,t) = elabRangeType(cache,env, start_2, SOME(step_2), stop_2, const, rt, impl,pre);
-        exp_2 = DAE.RANGE(rt, start_2, SOME(step_2), stop_2);
-        prop_1 = DAE.PROP(t, const);
-        exp_2 = ExpressionSimplify.simplify(exp_2);
+        (cache, e_1, prop, st_1) = elabRange(cache, env, inExp, impl, st, doVect, pre, info);
       then
-        (cache,exp_2,prop_1,st_3);
+        (cache, e_1, prop, st_1);
 
      // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
    case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info)
@@ -1570,7 +1549,7 @@ algorithm
         (cache,stop_1,DAE.PROP(stop_t,c_stop)) = elabGraphicsExp(cache,env, stop, impl,pre,info);
         (start_2,NONE(),stop_2,rt) = deoverloadRange((start_1,start_t),NONE(), (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
-        (cache,t) = elabRangeType(cache,env, start_2,NONE(), stop_2, const, rt, impl,pre);
+        (cache, t) = elabRangeType(cache, env, start_1, NONE(), stop_1, start_t, rt, impl);
       then
         (cache,DAE.RANGE(rt,start_1,NONE(),stop_1),DAE.PROP(t,const));
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,pre,info)
@@ -1581,7 +1560,7 @@ algorithm
         (start_2,SOME(step_2),stop_2,rt) = deoverloadRange((start_1,start_t), SOME((step_1,step_t)), (stop_1,stop_t));
         c1 = Types.constAnd(c_start, c_step);
         const = Types.constAnd(c1, c_stop);
-        (cache,t) = elabRangeType(cache,env, start_2, SOME(step_2), stop_2, const, rt, impl,pre);
+        (cache, t) = elabRangeType(cache, env, start_1, SOME(step_1), stop_1, start_t, rt, impl);
       then
         (cache,DAE.RANGE(rt,start_2,SOME(step_2),stop_2),DAE.PROP(t,const));
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,pre,info)
@@ -1664,119 +1643,192 @@ algorithm
   end matchcontinue;
 end deoverloadRange;
 
-protected function elabRangeType "function: elabRangeType
-
-  Helper function to elab_range. Calculates the dimension of the
-  range expression.
-"
+protected function elabRange
+  "Elaborates a range expression on the form start:stop or start:step:stop."
   input Env.Cache inCache;
-  input Env.Env inEnv1;
-  input DAE.Exp inExp2;
-  input Option<DAE.Exp> inExpExpOption3;
-  input DAE.Exp inExp4;
-  input DAE.Const inConst5;
-  input DAE.ExpType inType6;
-  input Boolean inBoolean7;
+  input Env.Env inEnv;
+  input Absyn.Exp inRangeExp;
+  input Boolean inImpl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean inVect;
   input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
   output Env.Cache outCache;
-  output DAE.Type outType;
+  output DAE.Exp outExp;
+  output DAE.Properties outProps;
+  output Option<Interactive.InteractiveSymbolTable> outST;
 algorithm
-  (outCache,outType) :=
-  matchcontinue (inCache,inEnv1,inExp2,inExpExpOption3,inExp4,inConst5,inType6,inBoolean7,inPrefix)
+  (outCache, outExp, outProps, outST) := 
+  matchcontinue(inCache, inEnv, inRangeExp, inImpl, inST, inVect, inPrefix, info)
     local
-      Integer startv,stopv,n,n_1,stepv,n_2,n_3,n_4;
-      Real rstartv,rstepv,rstopv,rn,rn_1,rn_2,rn_3;
-      list<Env.Frame> env;
-      DAE.Exp start,stop,step;
-      DAE.Const const;
-      Boolean impl;
-      Ident s1,s2,s3,s4,s5,s6,str,sp;
-      Option<Ident> s2opt;
-      DAE.ExpType expty;
+      Absyn.Exp start, step, stop;
+      Option<Absyn.Exp> opt_step;
+      DAE.Exp start_exp, step_exp, stop_exp, range_exp;
+      DAE.Type ty, start_t, step_t, stop_t;
+      DAE.Const co, start_c, step_c, stop_c;
+      Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-      Prefix.Prefix pre;
-      Option<DAE.Exp> ostep;
-      list<String> names;
-      Absyn.Path p;
-    case (cache,env,start,NONE(),stop,const,_,impl,pre) /* impl as false */
-      equation
-        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        n = stopv - startv;
-        n_1 = n + 1;
-      then
-        (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_INTEGER_DEFAULT),NONE()));
-    case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
-      equation
-        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.INTEGER(stepv),_) = Ceval.ceval(cache,env, step, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        n = stopv - startv;
-        n_1 = intDiv(n, stepv);
-        n_2 = n_1 + 1;
-      then
-        (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_INTEGER_DEFAULT),NONE()));
-    /* enumeration has no step value */
-    case (cache,env,start,NONE(),stop,const,_,impl,_) /* impl as false */
-      equation
-        (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.ENUM_LITERAL(index = stopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        n = stopv - startv;
-        n_1 = n + 1;
-        p = Absyn.pathPrefix(p);
-      then
-        (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE(), p,{},{},{}),NONE())),NONE()));
-    case (cache,env,start,NONE(),stop,const,_,impl,_) /* as false */
-      equation
-        (cache,Values.REAL(rstartv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(rstopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        rn = rstopv -. rstartv;
-        rn_2 = realFloor(rn);
-        n_3 = realInt(rn_2);
-        n_1 = n_3 + 1;
-      then
-        (cache,(DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE()));
-    case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
-      equation
-        (cache,Values.REAL(rstartv),_) = Ceval.ceval(cache,env, start, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(rstepv),_) = Ceval.ceval(cache,env, step, impl,NONE(), NONE(), Ceval.NO_MSG());
-        (cache,Values.REAL(rstopv),_) = Ceval.ceval(cache,env, stop, impl,NONE(), NONE(), Ceval.NO_MSG());
-        rn = rstopv -. rstartv;
-        rn_1 = rn /. rstepv;
-        rn_3 = realFloor(rn_1);
-        n_4 = realInt(rn_3);
-        n_2 = n_4 + 1;
-      then
-        (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_REAL_DEFAULT),NONE()));
+      DAE.ExpType ety;
+      list<DAE.Properties> props;
+      list<String> error_strs;
+      String error_str;
 
-    case (cache,_,_,_,_,const,DAE.ET_INT(),_,_)
-      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_INTEGER_DEFAULT),NONE()));
+    // Range without step value.
+    case (_, _, Absyn.RANGE(start = start, step = NONE(), stop = stop), _, _, _, _, _)
+      equation
+        (cache, start_exp, DAE.PROP(start_t, start_c), st) =
+          elabExp(inCache, inEnv, start, inImpl, inST, inVect, inPrefix, info);
+        (cache, stop_exp, DAE.PROP(stop_t, stop_c), st) =
+          elabExp(cache, inEnv, stop, inImpl, st, inVect, inPrefix, info);
+        (start_exp, NONE(), stop_exp, ety) = 
+          deoverloadRange((start_exp, start_t), NONE(), (stop_exp, stop_t));
+        co = Types.constAnd(start_c, stop_c);
+        (cache, ty) = elabRangeType(cache, inEnv, start_exp, NONE(), stop_exp, start_t, ety, inImpl);
+        range_exp = DAE.RANGE(ety, start_exp, NONE(), stop_exp);
+        range_exp = ExpressionSimplify.simplify(range_exp);
+      then
+        (cache, range_exp, DAE.PROP(ty, co), st);
 
-    case (cache,_,_,_,_,const,DAE.ET_REAL(),_,_)
-      then (cache,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE()));
+    // Range with step value.
+    case (_, _, Absyn.RANGE(start = start, step = SOME(step), stop = stop), _, _, _, _, _)
+      equation
+        (cache, start_exp, DAE.PROP(start_t, start_c), st) =
+          elabExp(inCache, inEnv, start, inImpl, inST, inVect, inPrefix, info);
+        (cache, step_exp, DAE.PROP(step_t, step_c), st) =
+          elabExp(cache, inEnv, step, inImpl, st, inVect, inPrefix, info);
+        (cache, stop_exp, DAE.PROP(stop_t, stop_c), st) =
+          elabExp(cache, inEnv, stop, inImpl, st, inVect, inPrefix, info);
+        (start_exp, SOME(step_exp), stop_exp, ety) = 
+          deoverloadRange((start_exp, start_t), SOME((step_exp, step_t)), (stop_exp, stop_t));
+        co = Types.constAnd(start_c, stop_c);
+        (cache, ty) = elabRangeType(cache, inEnv, start_exp, SOME(step_exp), stop_exp, start_t, ety, inImpl);
+        range_exp = DAE.RANGE(ety, start_exp, SOME(step_exp), stop_exp);
+        range_exp = ExpressionSimplify.simplify(range_exp);
+      then
+        (cache, range_exp, DAE.PROP(ty, co), st);
 
-    case (cache,env,start,ostep,stop,const,expty,impl,pre)
+    case (_, _, Absyn.RANGE(start = start, step = opt_step, stop = stop), _, _, _, _, _)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Static.elabRangeType failed: ");
-        sp = PrefixUtil.printPrefixStr(pre);
-        s1 = ExpressionDump.printExpStr(start);
-        s2opt = Util.applyOption(ostep, ExpressionDump.printExpStr);
-        s2 = Util.flattenOption(s2opt, "none");
-        s3 = ExpressionDump.printExpStr(stop);
-        s4 = Types.unparseConst(const);
-        s5 = Util.if_(impl, "impl", "expl");
-        s6 = ExpressionDump.typeString(expty);
-        str = stringAppendList({"(",sp,":",s1,":",s2,":",s3,") ",s4," ",s5," ",s6});
-        Debug.fprintln("failtrace", str);
+        error_strs = Util.listMap(
+          Util.listCons(Util.listConsOption(opt_step, {stop}), start),
+          Dump.dumpExpStr);
+        error_str = Util.stringDelimitList(error_strs, ":");
+        Debug.trace("- " +& Error.infoStr(info));
+        Debug.traceln(" Static.elabRangeType failed on " +& error_str);
       then
         fail();
   end matchcontinue;
+end elabRange;
+
+protected function elabRangeType
+  "This function creates a type for a range expression given by a start, stop,
+  and optional step expression. This function always succeeds, but may return an
+  array-type of unknown size if the expressions can't be constant evaluated."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inStart;
+  input Option<DAE.Exp> inStep;
+  input DAE.Exp inStop;
+  input DAE.Type inType;
+  input DAE.ExpType inExpType;
+  input Boolean inImpl;
+  output Env.Cache outCache;
+  output DAE.Type outType;
+algorithm
+  (outCache, outType) := matchcontinue(inCache, inEnv, inStart, inStep, inStop, inType,
+      inExpType, inImpl)
+    local
+      DAE.Exp step_exp;
+      Values.Value start_val, step_val, stop_val;
+      Integer dim;
+      Env.Cache cache;
+
+    // No step value.
+    case (_, _, _, NONE(), _, _, _, _)
+      equation
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), NONE(), Ceval.NO_MSG());
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), NONE(), Ceval.NO_MSG());
+        dim = elabRangeSize(start_val, NONE(), stop_val);
+      then
+        (cache, (DAE.T_ARRAY(DAE.DIM_INTEGER(dim), inType), NONE()));
+
+    // Some step value.
+    case (_, _, _, SOME(step_exp), _, _, _, _)
+      equation
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), NONE(), Ceval.NO_MSG());
+        (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), NONE(), Ceval.NO_MSG());
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), NONE(), Ceval.NO_MSG());
+        dim = elabRangeSize(start_val, SOME(step_val), stop_val);
+      then
+        (cache, (DAE.T_ARRAY(DAE.DIM_INTEGER(dim), inType), NONE()));
+
+    // Ceval failed in previous cases, return an array of unknown size.
+    else
+      then (inCache, (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), inType), NONE()));
+  end matchcontinue;
 end elabRangeType;
+
+protected function elabRangeSize
+  "Returns the size of a range, given a start, stop, and optional step value."
+  input Values.Value inStartValue;
+  input Option<Values.Value> inStepValue;
+  input Values.Value inStopValue;
+  output Integer outSize;
+algorithm
+  outSize := matchcontinue(inStartValue, inStepValue, inStopValue)
+    local
+      Integer int_start, int_step, int_stop, dim;
+      Real real_start, real_step, real_stop, r;
+
+    // start:stop where start > stop gives an empty vector.
+    case (_, NONE(), _)
+      equation
+        // start > stop == not (start <= stop)
+        false = ValuesUtil.safeLessEq(inStartValue, inStopValue);
+      then
+        0;
+
+    case (Values.INTEGER(int_start), NONE(), Values.INTEGER(int_stop))
+      equation
+        dim = int_stop - int_start + 1;
+      then
+        dim;
+
+    case (Values.INTEGER(int_start), SOME(Values.INTEGER(int_step)), 
+          Values.INTEGER(int_stop))
+      equation
+        dim = int_stop - int_start;
+        dim = intDiv(dim, int_step) + 1;
+      then
+        dim;
+
+    case (Values.REAL(real_start), NONE(), Values.REAL(real_stop))
+      equation
+        r = real_stop -. real_start;
+        r = realFloor(r);
+        dim = realInt(r) + 1;
+      then
+        dim;
+
+    case (Values.REAL(real_start), SOME(Values.REAL(real_step)), 
+          Values.REAL(real_stop))
+      equation
+        r = real_stop -. real_start;
+        r = realDiv(r, real_step);
+        r = realFloor(r);
+        dim = realInt(r) + 1;
+      then
+        dim;
+
+    case (Values.ENUM_LITERAL(index = int_start), NONE(),
+          Values.ENUM_LITERAL(index = int_stop))
+      equation
+        dim = int_stop - int_start + 1;
+      then
+        dim;
+  end matchcontinue;
+end elabRangeSize;
 
 protected function elabTuple "function: elabTuple
 

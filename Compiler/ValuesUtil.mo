@@ -469,41 +469,38 @@ algorithm
 end safeIntRealOp;
 
 public function safeLessEq
-	"Checks if val1 is less or equal to val2. Val1 or val2 can
-	 be integers or reals.
-	"
+  "Checks if val1 is less or equal to val2. Val1 or val2 can be integers (or
+  something that can be converted to integer) or reals."
 	input Value val1;
 	input Value val2;
 	output Boolean outv;
 algorithm
-  outv :=
-  	matchcontinue(val1, val2)
-  		local
-  		  Real rv1,rv2;
-  		  Integer iv1,iv2;
-  		  case (Values.INTEGER(iv1),Values.INTEGER(iv2))
-  		    equation
-  		      outv = (iv1 <= iv2);
-  		  then
-  		    	outv;
-  		  case (Values.REAL(rv1),Values.INTEGER(iv2))
-  		    equation
-  		      rv2 = intReal(iv2);
-  		      outv = (rv1 <=. rv2);
-  		  then
-  		    	outv;
-  		  case (Values.INTEGER(iv1), Values.REAL(rv2))
-  		    equation
-  		      rv1 = intReal(iv1);
-  		      outv = (rv1 <=. rv2);
-  		  then
-  		    	outv;
-  		  case (Values.REAL(rv1), Values.REAL(rv2))
-  		    equation
-  		      outv = (rv1 <=. rv2);
-  		  then
-  		    	outv;
-		end matchcontinue;
+  outv := match(val1, val2)
+    local
+      Real r1, r2;
+      Integer i1, i2;
+      Boolean res;
+
+    case (Values.REAL(r1), Values.REAL(r2))
+      then (r1 <=. r2);
+
+    case (Values.REAL(r1), _)
+      equation
+        r2 = intReal(valueInteger(val2));
+      then (r1 <=. r2);
+
+    case (_, Values.REAL(r2))
+      equation
+        r1 = intReal(valueInteger(val1));
+      then (r1 <=. r2);
+
+    case (_, _)
+      equation
+        i1 = valueInteger(val1);
+        i2 = valueInteger(val2);
+      then
+        (i1 <= i2);
+  end match;
 end safeLessEq;
 
 protected function unparseDescription "function: unparseDescription
@@ -2380,6 +2377,8 @@ algorithm
       Integer i;
     case Values.INTEGER(integer = i) then i;
     case Values.ENUM_LITERAL(index = i) then i;
+    case Values.BOOL(boolean = true) then 1;
+    case Values.BOOL(boolean = false) then 0;
   end matchcontinue;
 end valueInteger;
 
