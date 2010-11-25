@@ -294,3 +294,17 @@ RML_BEGIN_LABEL(RTOpts__getEvaluateParametersInAnnotations)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__orderConnections)
+{
+  rmlA0 = orderConnections ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setOrderConnections)
+{
+  orderConnections = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

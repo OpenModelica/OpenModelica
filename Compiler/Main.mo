@@ -1163,6 +1163,7 @@ algorithm
   print("\t+g=MetaModelica            accept MetaModelica grammar and semantics\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");
   print("\t+showAnnotations           show annotations in the flat modelica output.\n");
+  print("\t+orderConnections=false    disables alphabetical ordering of connections; default is true.\n");
   print("\t+d=flags                   set debug flags: \n");
   print("\t+d=bltdump                 dump the blt form\n");
   print("\t+d=failtrace               prints a lot of error messages; use if your model fails; see also below.\n");

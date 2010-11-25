@@ -1035,6 +1035,7 @@ algorithm
     local
       list<DAE.Element> eq;
       DAE.ComponentRef x,y;
+      Connect.EquSetElement ee1, ee2;
       list<Connect.EquSetElement> cs;
       DAE.ElementSource src,src1,src2;
       DAE.FunctionTree funcs;
@@ -1046,9 +1047,10 @@ algorithm
 
     case {_} then DAEUtil.emptyDae;
     
-    case ((x,src1) :: ((y,src2) :: cs))
+    case ((ee1 as (x,src1)) :: ((ee2 as (y,src2)) :: cs))
       equation
-        DAE.DAE(eq) = equEquations(((x,src1) :: cs));
+        ee1 = Util.if_(RTOpts.orderConnections(), ee1, ee2);
+        DAE.DAE(eq) = equEquations(ee1 :: cs);
         DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
         // do not propagate connects from different sources! use the crefs directly!
         src = DAE.SOURCE(info, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
@@ -1841,7 +1843,8 @@ algorithm
           (s1 as Connect.EQU(expComponentRefLst = pcs1)),
           (s2 as Connect.EQU(expComponentRefLst = pcs2)))
       equation
-        pcs = Util.listMergeSorted(pcs1, pcs2, equSetElementLess);
+        //pcs = Util.listMergeSorted(pcs1, pcs2, equSetElementLess);
+        pcs = mergeEquSets(pcs1, pcs2);
         sets = removeSet2(sets, s1, s2);
         sets = addConnectSet(sets, Connect.EQU(pcs));
       then
@@ -1870,6 +1873,31 @@ algorithm
         sets;
   end matchcontinue;
 end merge;
+
+protected function mergeEquSets
+  "Merges two lists of EquSetElements."
+  input list<Connect.EquSetElement> inSet1;
+  input list<Connect.EquSetElement> inSet2;
+  output list<Connect.EquSetElement> outSet;
+algorithm
+  outSet := matchcontinue(inSet1, inSet2)
+    local
+      list<Connect.EquSetElement> set;
+    // +orderConnections=yes (default) sorts the connectors alphabetically.
+    case (_, _)
+      equation
+        true = RTOpts.orderConnections();
+        set = Util.listMergeSorted(inSet1, inSet2, equSetElementLess);
+      then
+        set;
+    // +orderConnections=no, just use listAppend.
+    case (_, _)
+      equation
+        set = listAppend(inSet1, inSet2);
+      then
+        set;
+  end matchcontinue;
+end mergeEquSets;
 
 protected function equSetElementLess
   "Compares two potiential set elements, and returns true if the first element

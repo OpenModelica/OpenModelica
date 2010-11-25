@@ -236,5 +236,15 @@ public function setEvaluateParametersInAnnotations
  external "C" RTOpts_setEvaluateParametersInAnnotations(shouldEvaluate) annotation(Library = "omcruntime");
 end setEvaluateParametersInAnnotations;
 
+public function orderConnections
+  output Boolean show;
+  external "C" show = RTOpts_orderConnections() annotation(Library = "omcruntime");
+end orderConnections;
+
+public function setOrderConnections
+  input Boolean show;
+  external "C" RTOpts_setOrderConnections(show) annotation(Library = "omcruntime");
+end setOrderConnections;
+
 end RTOpts;
 

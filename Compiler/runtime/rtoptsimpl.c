@@ -105,6 +105,10 @@ int showErrorMessages = 0;
  * modelica */
 static int showAnnotations = 0;
 
+/* flag +orderConnections tells the compiler whether it should order connections
+ * alphabetically or not.*/
+static int orderConnections = 1;
+
 static int set_debug_flags(const char *flagstr)
 {
   int i;
@@ -264,6 +268,8 @@ int setCorbaSessionName(const char *name)
 #define SHOW_ERROR_MESSAGES "+showErrorMessages"
 #define SHOW_ANNOTATIONS    "+showAnnotations"
 #define NO_SIMPLIFY         "+noSimplify"
+#define ORDER_CONNECTIONS   "+orderConnections"
+
 /* Note: RML runtime eats arguments starting with -:
  * You need to use: omc -- --running-testsuite for it to work */
 #define TESTSCRIPT          "--running-testsuite"
@@ -282,6 +288,8 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
   int strLen_SHOW_ANNOTATIONS = strlen(SHOW_ANNOTATIONS);
   int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
+  int strLen_ORDER_CONNECTIONS = strlen(ORDER_CONNECTIONS);
+
   char *tmp;
   debug_none = 1;
 
@@ -339,6 +347,15 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
       noSimplify = 1;
     else {
       fprintf(stderr, "# Wrong option: usage: omc [+noSimplify], by default is to simplify.\n");
+      return ARG_FAILURE;
+    }
+  } else if(strncmp(arg,ORDER_CONNECTIONS,strLen_NO_SIMPLIFY) == 0) {
+    if (strlen(arg) >= strLen_ORDER_CONNECTIONS && strcmp(&arg[strLen_ORDER_CONNECTIONS], "=false") == 0) {
+      orderConnections = 0;
+    } else if(strlen(arg) >= strLen_ORDER_CONNECTIONS && strcmp(&arg[strLen_ORDER_CONNECTIONS], "=true") == 0) {
+      orderConnections = 1;
+    } else {
+      fprintf(stderr, "# Wrong option: usage: omc [+orderConnections=yes|no], default is yes.\n");
       return ARG_FAILURE;
     }
   } else if (arg[0] == '+') {

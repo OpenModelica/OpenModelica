@@ -1766,6 +1766,23 @@ algorithm
       then
         (resstr, st); 
 
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "setOrderConnections");
+        {Absyn.BOOL(value = show)} = getApiFunctionArgs(istmts);
+        RTOpts.setOrderConnections(show);
+      then
+        ("true", st);
+
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "getOrderConnections");
+        {} = getApiFunctionArgs(istmts);
+        show = RTOpts.orderConnections();
+        resstr = boolString(show);
+      then
+        (resstr, st); 
+
   end matchcontinue;
 end evaluateGraphicalApi2;
 

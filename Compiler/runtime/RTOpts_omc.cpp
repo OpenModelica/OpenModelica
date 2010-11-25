@@ -155,4 +155,11 @@ extern int RTOpts_versionRequest() {
   return version_request;
 }
 
+extern void RTOpts_setOrderConnections(int order) {
+  orderConnections = order;
+}
+
+extern int RTOpts_orderConnections() {
+  return orderConnections;
+}
 }
