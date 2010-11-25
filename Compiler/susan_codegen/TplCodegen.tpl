@@ -73,18 +73,14 @@ algorithm
   matchcontinue(<%inArgs |> (nm,_) => 'in_<%nm%>' ;separator=", "%>)
     local
       <%typedIdents(locals)%>
-  <%matchCases |> (mexps, locals, statements) =>
+  <%matchCases |> (mexps, statements) =>
   <<
     
     case ( <%mexps |> it => mmMatchingExp(it) ;separator=",\n"; anchor%> )
-    <%if locals then <<
-      local   
-        <%typedIdents(locals)%>
-    >>%>
-    <%if statements then <<
+      <%if statements then <<
       equation
         <%statements |> it => '<%mmExp(it, "=")%>;' ;separator="\n"%>
-    >>%>
+      >>%>
       then <%match outArgs
             case {(nm,_)} then nm
             case oas then '(<%oas |> (nm,_)=> nm ;separator=", "%>)'

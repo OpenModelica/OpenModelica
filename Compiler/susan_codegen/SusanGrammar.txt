@@ -573,7 +573,7 @@ escapedOptions(lesc,resc):
 	_ => {} 
 
 escOptionExp(lesc,resc):
-	'=' expressionNoOptions(lesc,resc):exp
+	'=' expressionLet(lesc,resc):exp
 	  => SOME(exp)
 	|
 	_ => NONE
@@ -590,10 +590,16 @@ mapTailOpt(headExp,lesc,resc):
 	_ => headExp
 
 indexedByOpt:
-	'hasindex' identifier:id
-		=> SOME(id)
+	'hasindex' identifier:id fromOpt:indexOffsetOpt
+		=> SOME(id), indexOffsetOpt
 	|
-	_ => NONE
+	_ => NONE, {}
+
+fromOpt:
+	'from' expression_base:expFrom 
+		=> { ("$indexOffset", SOME(expFrom)) }
+	|
+	_ => {}
 		
 expressionLet(lesc,resc):
 	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst

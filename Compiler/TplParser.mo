@@ -2894,12 +2894,13 @@ algorithm
       Tpl.StringToken st;
       TplAbsyn.Expression exp, bexp, lexp;
       list<TplAbsyn.Expression> expLst;
-      list<TplAbsyn.EscOption> opts;
+      list<TplAbsyn.EscOption> opts, indexOffsetOption;
     
     case (chars, linfo, lesc, resc, _)
       equation
-        (chars, linfo, exp) = expressionNoOptions(chars, linfo, lesc, resc);
+        (chars, linfo, exp, indexOffsetOption) = expressionNoOptions(chars, linfo, lesc, resc);
         (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
+        opts = listAppend(indexOffsetOption, opts);
         //exp = makeEscapedExp(exp, listAppend(sopt,opts));
         exp = makeEscapedExp(exp, opts);
       then (chars, linfo, exp);
@@ -2980,7 +2981,7 @@ end escapedOptions;
 
 /*
 escOptionExp(lesc,resc):
-	'=' expressionNoOptions(lesc,resc):exp
+	'=' expressionLet(lesc,resc):exp
 	  => SOME(exp)
 	|
 	_ => NONE
@@ -3015,7 +3016,7 @@ algorithm
    case ("=" :: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expressionNoOptions(chars, linfo, lesc, resc);
+        (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
       then (chars, linfo, SOME(exp));
    
    case (chars, linfo, _, _)
@@ -3039,8 +3040,10 @@ public function expressionNoOptions
   output list<String> outChars;
   output LineInfo outLineInfo;
   output TplAbsyn.Expression outExpression;
+  output list<TplAbsyn.EscOption> outIndexOffsetOption;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpression, outIndexOffsetOption) 
+   := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -3054,13 +3057,15 @@ algorithm
       TplAbsyn.Expression exp, bexp;
       list<TplAbsyn.Expression> expLst;
       list<TplAbsyn.EscOption> sopt, opts;
+      
     
    case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = mapTailOpt(chars, linfo, exp, lesc, resc);        
-      then (chars, linfo, exp);
+        (chars, linfo, exp, outIndexOffsetOption) 
+         = mapTailOpt(chars, linfo, exp, lesc, resc);        
+      then (chars, linfo, exp, outIndexOffsetOption);
         
   end matchcontinue;
 end expressionNoOptions;
@@ -3068,7 +3073,7 @@ end expressionNoOptions;
 /*
 mapTailOpt(headExp,lesc,resc):
 	'|>' matchBinding:mexp  
-	indexedByOpt:idxNmOpt //TODO: 'hasindex' in TplAbsyn	
+	indexedByOpt:idxNmOpt	
 	'=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
 	|
 	_ => headExp 
@@ -3083,8 +3088,9 @@ public function mapTailOpt
   output list<String> outChars;
   output LineInfo outLineInfo;
   output TplAbsyn.Expression outExpression;
+  output list<TplAbsyn.EscOption> outIndexOffsetOption;
 algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inHeadExpression, inLeftEsc, inRightEsc)
+  (outChars, outLineInfo, outExpression, outIndexOffsetOption) := matchcontinue (inChars, inLineInfo, inHeadExpression, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -3106,15 +3112,15 @@ algorithm
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, mexp) = matchBinding(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, idxNmOpt) = indexedByOpt(chars, linfo);
+        (chars, linfo, idxNmOpt, outIndexOffsetOption) = indexedByOpt(chars, linfo, lesc, resc);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "=");        
         (chars, linfo) = expectChar(chars, linfo, ">");        
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
-      then (chars, linfo, TplAbsyn.MAP(headExp, mexp, exp) );
+      then (chars, linfo, TplAbsyn.MAP(headExp, mexp, exp, idxNmOpt), outIndexOffsetOption);
 
     case (chars, linfo, headExp, _, _)
-      then (chars, linfo, headExp );
+      then (chars, linfo, headExp, {} );
 
   end matchcontinue;
 end mapTailOpt;
@@ -3129,12 +3135,16 @@ indexedByOpt:
 public function indexedByOpt
   input list<String> inChars;
   input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
   
   output list<String> outChars;
   output LineInfo outLineInfo;
   output Option<TplAbsyn.Ident> outIndexNameOpt;
+  output list<TplAbsyn.EscOption> outIndexOffsetOption;
 algorithm
-  (outChars, outLineInfo, outIndexNameOpt) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outIndexNameOpt, outIndexOffsetOption)
+   := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
       list<String> chars;
       LineInfo linfo;
@@ -3149,18 +3159,66 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
-    case ("h"::"a"::"s"::"i"::"n"::"d"::"e"::"x":: chars, linfo)
+    case ("h"::"a"::"s"::"i"::"n"::"d"::"e"::"x":: chars, linfo, lesc, resc)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars,linfo,id) = identifierNoOpt(chars,linfo);        
-      then (chars, linfo, SOME(id) );
+        (chars,linfo,id) = identifierNoOpt(chars,linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, outIndexOffsetOption) = fromOpt(chars, linfo, lesc, resc);
+      then (chars, linfo, SOME(id), outIndexOffsetOption );
     
-    case (chars, linfo)
-      then (chars, linfo,NONE());
+    case (chars, linfo, lesc, resc)
+      then (chars, linfo, NONE(), {});
 
   end matchcontinue;
 end indexedByOpt;
+
+/*
+fromOpt:
+	'from' expression_base:expFrom 
+		=> { ("$indexOffset", SOME(expFrom)) }
+	|
+	_ => {}
+*/
+public function fromOpt
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output list<TplAbsyn.EscOption> outIndexOffsetOption;
+algorithm
+  (outChars, outLineInfo, outIndexOffsetOption)
+   := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.MatchingExp mexp;
+    
+    case ("f"::"r"::"o"::"m":: chars, linfo, lesc, resc)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);        
+      then (chars, linfo, {(TplAbsyn.indexOffsetOptionId, SOME(exp))} );
+    
+    case (chars, linfo, lesc, resc)
+      then (chars, linfo,{});
+
+  end matchcontinue;
+end fromOpt;
 
 
 /*
@@ -3199,8 +3257,10 @@ algorithm
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, lexp) = letExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);        
-      then (chars, linfo, TplAbsyn.TEMPLATE(lexp :: expLst, "let", "")); //TODO: ?? to be a LET_EXPRESSION ??
+        (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
+        
+        //(chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);        
+      then (chars, linfo, TplAbsyn.LET(lexp, exp)); 
   
     case (chars, linfo, lesc, resc)
       equation
@@ -3218,6 +3278,7 @@ concatLetExp_rest(lesc,resc):
 	expression(lesc,resc):exp
 	  => {exp}
 */
+/*
 public function concatLetExp_rest
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -3259,7 +3320,7 @@ algorithm
     
   end matchcontinue;
 end concatLetExp_rest;
-
+*/
 
 /*
 must not fail - not optional, at least one must match

@@ -135,7 +135,7 @@ package TplAbsyn
 	  end MM_PACKAGE;
 	end MMPackage;
 	
-	type MMMatchCase = tuple<list<MatchingExp>, TypedIdents, list<MMExp>>;
+	type MMMatchCase = tuple<list<MatchingExp>, list<MMExp>>;
 	  
 	uniontype MMDeclaration
 	  record MM_IMPORT

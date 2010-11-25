@@ -1997,7 +1997,7 @@ template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
 ::=
   let jacMats = (JacobianMatrixes |> (eqs,vars,name) =>
   	functionJac(eqs,vars,name)
-  	;seprator="\n")
+  	;separator="\n")
  <<
  <%jacMats%>
  >>
@@ -2899,10 +2899,10 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     int in_<%fname%>(type_description * inArgs, type_description * outVar);
     >>
   if outVars then <<
-  <%outVars |> _ => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
+  <%outVars |> _ hasindex i1 from 1 => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
   typedef struct <%fname%>_rettype<%boxStr%>_s 
   {
-    <%outVars |> var hasindex i1 =>
+    <%outVars |> var hasindex i1 from 1 =>
       match var
       case VARIABLE(__) then
         let dimStr = match ty case ET_ARRAY(__) then
@@ -3093,7 +3093,7 @@ case FUNCTION(__) then
   let &varInits = buffer "" /*BUFD*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFC*/)
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFC*/)
-  let _ = (variableDeclarations |> var =>
+  let _ = (variableDeclarations |> var hasindex i1 from 1 =>
       varInit(var, "", i1, &varDecls /*BUFC*/, &varInits /*BUFC*/)
     )
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
@@ -3101,7 +3101,7 @@ case FUNCTION(__) then
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
-  let _1 = (outVars |> var hasindex i1 =>
+  let _1 = (outVars |> var hasindex i1 from 1 =>
       varOutput(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign)
       ;separator="\n"; empty
     )
@@ -3135,7 +3135,7 @@ case FUNCTION(__) then
     MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%if outVars then (outVars |> var => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    <%if outVars then (outVars |> var hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
   >>
@@ -3160,7 +3160,7 @@ case EXTERNAL_FUNCTION(__) then
   let &outputAlloc = buffer "" /*BUFD*/
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFC*/)
   let callPart = extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let _ = (outVars |> var =>
+  let _ = (outVars |> var hasindex i1 from 1 =>
       varInit(var, retVar, i1, &varDecls /*BUFC*/, &outputAlloc /*BUFC*/)
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
@@ -3184,7 +3184,7 @@ case EXTERNAL_FUNCTION(__) then
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
     out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
-    <%outVars |> var as VARIABLE(__) => writeOutVar(var, i1) ;separator="\n"%>
+    <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n"%>
     return 0;
   }
   >> %>
@@ -3244,7 +3244,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let &varBox = buffer ""
   let &varUnbox = buffer ""
   let args = (funargs |> arg => funArgUnbox(arg, &varDecls, &varBox) ;separator=", ")
-  let retStr = (outvars |> var as VARIABLE(__) hasindex i1 =>
+  let retStr = (outvars |> var as VARIABLE(__) hasindex i1 from 1 =>
     let arg = '<%funRetVar%>.<%retType%>_<%i1%>'
     '<%retVar%>.<%retTypeBoxed%>_<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
@@ -3345,14 +3345,14 @@ template unboxRecord(String recordVar, ExpType ty, Text &preExp, Text &varDecls)
 match ty
 case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
   let tmpVar = tempDecl('struct <%underscorePath(path)%>', &varDecls)
-  let &preExp += (vars |> COMPLEX_VAR(name = compname) =>
+  let &preExp += (vars |> COMPLEX_VAR(name = compname) hasindex offset from 2 =>
     let varType = mmcExpTypeShort(tp)
     let untagTmp = tempDecl('modelica_metatype', &varDecls)
-    let offsetStr = incrementInt(i1, 1)
+    //let offsetStr = incrementInt(i1, 1)
     let &unboxBuf = buffer ""
     let unboxStr = unboxVariable(untagTmp, tp, &unboxBuf, &varDecls)
     <<
-    <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offsetStr%>)));
+    <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
     <%tmpVar%>.<%compname%> = <%unboxStr%>;
     >>
@@ -3532,10 +3532,10 @@ case var as FUNCTION_PTR(__) then
     else
       let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
       <<
-      <% tys |> arg hasindex i1 => '#define <%rettype%>_<%i1%> targ<%i1%>' ; separator="\n" %>
+      <% tys |> arg hasindex i1 from 1 => '#define <%rettype%>_<%i1%> targ<%i1%>' ; separator="\n" %>
       typedef struct <%rettype%>_s
       {
-        <% tys |> ty hasindex i1 => 'modelica_<%mmcExpTypeShort(ty)%> targ<%i1%>;' ; separator="\n" %> 
+        <% tys |> ty hasindex i1 from 1 => 'modelica_<%mmcExpTypeShort(ty)%> targ<%i1%>;' ; separator="\n" %> 
       } <%rettype%>;
       <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
       >>
@@ -3584,7 +3584,7 @@ end varOutput;
 template initRecordMembers(Variable var)
 ::=
 match var
-case VARIABLE(ty = ET_COMPLEX(complexClassType = RECORD)) then
+case VARIABLE(ty = ET_COMPLEX(complexClassType = RECORD(__))) then
 	let varName = contextCref(name,contextFunction)
 	(ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
 end initRecordMembers;
@@ -3966,7 +3966,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  <%expExpLst |> cr =>
+  <%expExpLst |> cr hasindex i1 from 1 =>
     let rhsStr = '<%retStruct%>.targ<%i1%>'
     writeLhsCref(cr, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   ;separator="\n"%>
@@ -5797,14 +5797,14 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     <%patternMatch(head,tvarHead,onPatternFail,&varDecls,&assignments)%><%patternMatch(tail,tvarTail,onPatternFail,&varDecls,&assignments)%>>>
   case PAT_META_TUPLE(__)
     then
-      (patterns |> p hasindex i1 =>
+      (patterns |> p hasindex i1 from 1 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
         >>; empty /* increase the counter even if no output is produced */)
   case PAT_CALL_TUPLE(__)
     then
-      (patterns |> p hasindex i1 =>
+      (patterns |> p hasindex i1 from 1 =>
         let nrhs = '<%rhs%>.targ<%i1%>'
         patternMatch(p,nrhs,onPatternFail,&varDecls,&assignments)
         ; empty /* increase the counter even if no output is produced */
@@ -5820,11 +5820,11 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   case PAT_CALL(__)
     then
       <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;
-      <%(patterns |> p hasindex i0 =>
+      <%(patterns |> p hasindex i2 from 2 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
-        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i0%>));
+        <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i2%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
-        >>); indexOffset=2; empty /* increase the counter even if no output is produced */
+        >> ;empty) /* increase the counter even if no output is produced */
       %>
       >>
   case p as PAT_AS_FUNC_PTR(__) then

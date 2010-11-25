@@ -160,8 +160,8 @@ case FUNCTION(__) then
                 else "void"
   let retVar = match outVars 
                case (fv as VARIABLE(__)) :: _ then crefStr(fv.name,simCode) 
-  let varInits = variableDeclarations |> var hasindex i0 => varInit(var, simCode) 
-                 ;separator="\n" ;indexOffset=1 //TODO:special end of line,see varInit    
+  let varInits = variableDeclarations |> var => varInit(var, simCode) 
+                 ;separator="\n" //TODO:special end of line,see varInit    
   let bodyPart = (body |> stmt  => funStatement(stmt, simCode) ;separator="\n")
   <<
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>)
@@ -261,24 +261,6 @@ public override int MaximumOrder { get { return 5; } }
 public override int StringVarsCount { get { return NYSTR; } }
 public override int StringParametersCount { get { return NPSTR; } }
 
-<%/* *********
-<%vars.stateVars |> SIMVAR(__) => <<
-public double <%cref(name, simCode)%> { get { return states[<%index%>]; } set { states[<%index%>] = value; }}
->> ;separator="\n"%>
-<%vars.derivativeVars |> SIMVAR(__) => <<
-public double <%cref(name, simCode)%> { get { return statesDerivatives[<%index%>]; } set { statesDerivatives[<%index%>] = value; }}
->> ;separator="\n"%>
-  
-<%vars.algVars |> SIMVAR(__) => <<
-public double <%cref(name, simCode)%> { get { return algebraics[<%index%>]; } set { algebraics[<%index%>] = value; }}
-<%/*public double Pre_<%cref(name, simCode)%> { get { return savedAlgebraics[<%index%>]; } set { savedAlgebraics[<%index%>] = value; }}*/%>
->> ;separator="\n"%>
-<%vars.paramVars |> SIMVAR(__) => <<
-public double <%cref(name, simCode)%> { get { return parameters[<%index%>]; } set { parameters[<%index%>] = value; }}
->> ;separator="\n"%>
-******** */%>
-
-
 #region VariableInfos
 public static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<%{  
@@ -290,34 +272,6 @@ public static readonly SimVarInfo[] VariableInfosStatic = new[] {
 		varInfos("Parameter", vars.paramVars, true, simCode),
 		varInfos("ParameterInt", vars.intParamVars, true, simCode),
 		varInfos("ParameterBool", vars.boolParamVars, true, simCode)
-
-/*		
-		(vars.stateVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.State, <%index%>, false)
-		>> ;separator=",\n"),
-		(vars.derivativeVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.StateDer, <%index%>, false)
-		>> ;separator=",\n"),
-		(vars.algVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.Algebraic, <%index%>, false)
-		>> ;separator=",\n"),
-		(vars.intAlgVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.AlgebraicInt, <%index%>, false)
-		>> ;separator=",\n"),
-		(vars.boolAlgVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.AlgebraicBool, <%index%>, false)
-		>> ;separator=",\n"),		
-		(vars.paramVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.Parameter, <%index%>, true)
-		>> ;separator=",\n"),
-		(vars.intParamVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.ParameterInt, <%index%>, true)
-		>> ;separator=",\n"),
-		(vars.boolParamVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefStr(name, simCode)%>", "<%comment%>", SimVarType.ParameterBool, <%index%>, true)
-		>> ;separator=",\n")
-*/
-		
 	} ;separator=",\n\n"%>
 };
 public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
@@ -675,7 +629,7 @@ let()= System.tmpTickReset(1)
 public override void InitialFun()
 {
   <% localRepresentationArrayDefines %>
-  <%initialEquations |> SES_SIMPLE_ASSIGN(__) => equation_(it, contextOther, simCode) ;separator="\n"%>
+  <%initialEquations |> saeq as SES_SIMPLE_ASSIGN(__) => equation_(saeq, contextOther, simCode) ;separator="\n"%>
 
   //if (sim_verbose) {
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
@@ -741,7 +695,7 @@ public override void BoundParameters()
 {
   <% localRepresentationArrayDefines %>
   <% parameterEquations
-     |> SES_SIMPLE_ASSIGN(__)  => equation_(it, contextOther, simCode) ;separator="\n"%>
+     |> saeq as SES_SIMPLE_ASSIGN(__)  => equation_(saeq, contextOther, simCode) ;separator="\n"%>
 }
 >>
 end functionBoundParameters;
@@ -1556,8 +1510,8 @@ end daeExpUnary;
 template daeExpRelation(Operator op, Exp exp1, Exp exp2, Context context, Text &preExp, SimCode simCode) ::=
   let e1 = daeExp(exp1, context, &preExp, simCode)
   let e2 = daeExp(exp2, context, &preExp, simCode)
-  if  daeExpSimRelation(context, op, e1, e2, &preExp) then 
-    it
+  let simrel = daeExpSimRelation(context, op, e1, e2, &preExp) 
+  if  simrel then simrel
   else //non-SIMULATION context or precise equality 
     match op
     case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
@@ -1810,11 +1764,11 @@ template varType(Variable var)
  "Generates type for a variable."
 ::=
 match var
-case var as VARIABLE(__) then
+case VARIABLE(__) then
   if instDims then
-    expTypeArray(var.ty, listLength(instDims))
+    expTypeArray(ty, listLength(instDims))
   else
-    expTypeArrayIf(var.ty)
+    expTypeArrayIf(ty)
 end varType;
 
 // TODO: Check with Codegen

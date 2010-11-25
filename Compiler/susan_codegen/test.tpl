@@ -2,6 +2,14 @@ package test
   
 import interface testI;  
 
+/*
+template pathIdentAdd(PathIdent it, String add) "bla" ::= 
+  match it
+  case IDENT(__)      then ident + add
+  case PATH_IDENT(__) then '<%ident%>.<%pathIdent(path)%>'
+end pathIdentAdd;
+*/
+
 template pathIdent(PathIdent it) "bla" ::= 
   match it
   case IDENT(__)      then ident
@@ -59,7 +67,7 @@ end testMap;
 
 template testMap2(list<Integer> ints) ::= 
 (ints |> int => 
-   (mapInt(it) |> st => mapIntString(int, st)) 
+   (mapInt(int) |> st => mapIntString(int, st)) 
  ;separator=", ")
 end testMap2;
 
@@ -85,7 +93,9 @@ template intMatrix(list<list<Integer>> lstOfLst) ::=
 >>
 end intMatrix;
 
-template ifTest(Integer i) ::= if mapInt(i) then '<%it%> name;' else "/* weird I */"
+template ifTest(Integer i) ::= 
+  let mi = mapInt(i) 
+  if mi then '<%mi%> name;' else "/* weird I */"
 end ifTest;
 
 template bindTest() ::= 
@@ -115,7 +125,7 @@ template txtTest3(String hej, Text &buf) ::=
 let &txt = buffer "aahoj2"
 let &txt += "ahej2"
 let &buf += txt 
-let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
+//OK: ERROR let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
 abláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -139,7 +149,7 @@ template txtTest5(String hej, Text &buf, Text &nobuf) ::=
 let &txt = buffer "aahoj2" 
 let &txt += "ahej2"
 let &buf += txt
-let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
+//let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
 abláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -373,6 +383,37 @@ end implementationTempl;
 template callImplementationTempl(String str) 
 ::= implementationTempl(str)
 end callImplementationTempl;
+
+
+//the if now does not hide the 'ident' and the 'path'
+template pathIdentIf(PathIdent pid, Boolean cond) ::= 
+  match pid
+  case IDENT(__)      then ident
+  case PATH_IDENT(__) then 
+      if cond then '<%ident%>.<%pathIdent(path)%>' //OK
+      //match cond case true then '<%ident%>.<%pathIdent(path)%>' //Error, ident is hidden
+end pathIdentIf;
+
+template hasIndexTest(list<String> lst, Boolean cond) ::= 
+  lst |> str hasindex strIdx from 10 =>
+    if cond then str
+    else str + strIdx
+end hasIndexTest;
+
+
+template lettst(String str) 
+::= 
+  let a = 
+    let b = "ahoj" 
+    b + " doma"
+  (let a = "hoj" //a_1 //TODO: should we allow this ?? yes, with warning when the hidden 'a' is not used  
+   let b = //b reused
+     let b = "b inner 3" + a //b_1
+     let a = "a inner" //a_2
+     a + b //a_2 + b_1
+   b + a) //b + a_1
+   + a // + a
+end lettst;
 
 
 end test;

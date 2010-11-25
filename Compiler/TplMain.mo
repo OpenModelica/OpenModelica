@@ -319,9 +319,9 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                       TplAbsyn.SOME_MATCH(TplAbsyn.BIND_AS_MATCH("v_hej",TplAbsyn.STRING_MATCH("Hej"))),
                       TplAbsyn.BIND_MATCH("v_jokes")
                     },
-                    { ("v_hej",TplAbsyn.STRING_TYPE()),
-                      ("v_jokes",TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE()))
-                    },
+                    //{ ("v_hej",TplAbsyn.STRING_TYPE()),
+                    //  ("v_jokes",TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE()))
+                    //},
                     { 
                      TplAbsyn.MM_ASSIGN({"txt"}, 
                        TplAbsyn.MM_FN_CALL(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("writeStr")), 
@@ -333,8 +333,8 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                       TplAbsyn.SOME_MATCH(TplAbsyn.BIND_MATCH("v_hej")),
                       TplAbsyn.REST_MATCH()
                     },
-                    { ("v_hej",TplAbsyn.STRING_TYPE())
-                    },
+                    //{ ("v_hej",TplAbsyn.STRING_TYPE())
+                    //},
                     { 
                      TplAbsyn.MM_ASSIGN({"txt"}, 
                        TplAbsyn.MM_FN_CALL(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("writeStr")), 
@@ -351,7 +351,7 @@ input Pa.Li inSusan;", true, true, "typedIdentsEx", notPassedCnt);
                       TplAbsyn.NONE_MATCH(),
                       TplAbsyn.REST_MATCH()
                     },
-                    { },
+                    //{ },
                     { 
                      TplAbsyn.MM_ASSIGN({"txt"}, 
                        TplAbsyn.MM_FN_CALL(TplAbsyn.PATH_IDENT("Tpl", TplAbsyn.IDENT("writeStr")), 
@@ -506,7 +506,8 @@ typedIdents(TypedIdents decls) <>=
                                     TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("id")),
                                     TplAbsyn.STR_TOKEN(Tpl.ST_STRING(";"))                                    
                                    },"\"","\""
-                                 )
+                                 ),
+                                 NONE()
                                ),
                                { ("separator", SOME(TplAbsyn.STR_TOKEN(Tpl.ST_NEW_LINE())))
                                }
