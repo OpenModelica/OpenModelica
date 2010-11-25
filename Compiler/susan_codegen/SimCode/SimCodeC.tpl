@@ -2349,8 +2349,8 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
-  #ifndef <%filePrefix%>__functions__H
-  #define <%filePrefix%>__functions__H
+  #ifndef <%stringReplace(filePrefix,".","_")%>__H
+  #define <%stringReplace(filePrefix,".","_")%>__H
   <%commonHeader()%>
   #include "simulation_runtime.h"
   extern "C" {
@@ -2495,8 +2495,8 @@ template functionsHeaderFile(String filePrefix,
  "Generates the contents of the main C file for the function case."
 ::=
   <<
-  #ifndef <%filePrefix%>__H
-  #define <%filePrefix%>__H
+  #ifndef <%stringReplace(filePrefix,".","_")%>__H
+  #define <%stringReplace(filePrefix,".","_")%>__H
   <%commonHeader()%>
   #ifdef __cplusplus
   extern "C" {

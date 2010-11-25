@@ -9727,15 +9727,20 @@ public function simulationFunctionsHeaderFile
   input list<SimCode.RecordDeclaration> i_recordDecls;
 
   output Tpl.Text out_txt;
+protected
+  String ret_1;
+  String ret_0;
 algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("#ifndef "));
-  out_txt := Tpl.writeStr(out_txt, i_filePrefix);
+  ret_0 := System.stringReplace(i_filePrefix, ".", "_");
+  out_txt := Tpl.writeStr(out_txt, ret_0);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
-                                       "__functions__H\n",
+                                       "__H\n",
                                        "#define "
                                    }, false));
-  out_txt := Tpl.writeStr(out_txt, i_filePrefix);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("__functions__H\n"));
+  ret_1 := System.stringReplace(i_filePrefix, ".", "_");
+  out_txt := Tpl.writeStr(out_txt, ret_1);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("__H\n"));
   out_txt := commonHeader(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
@@ -10355,14 +10360,19 @@ public function functionsHeaderFile
   input list<String> i_includes;
 
   output Tpl.Text out_txt;
+protected
+  String ret_1;
+  String ret_0;
 algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("#ifndef "));
-  out_txt := Tpl.writeStr(out_txt, i_filePrefix);
+  ret_0 := System.stringReplace(i_filePrefix, ".", "_");
+  out_txt := Tpl.writeStr(out_txt, ret_0);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "__H\n",
                                        "#define "
                                    }, false));
-  out_txt := Tpl.writeStr(out_txt, i_filePrefix);
+  ret_1 := System.stringReplace(i_filePrefix, ".", "_");
+  out_txt := Tpl.writeStr(out_txt, ret_1);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("__H\n"));
   out_txt := commonHeader(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
