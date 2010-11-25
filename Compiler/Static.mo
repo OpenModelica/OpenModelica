@@ -2614,36 +2614,47 @@ protected function elabMatrixCatOne "function: elabMatrixCatOne
   the first dimension.
   i.e. elabMatrixCatOne( { {1,2;3,4}, {5,6;7,8} }) => {1,2;3,4;5,6;7,8}
 "
-  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpLst;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExpExpLst)
+  outExp := matchcontinue(inExpLst)
     local
-      DAE.Exp e;
-      DAE.ExpType a,tp;
-      Boolean at;
-      list<DAE.Exp> expl,expl1,expl2,es;
-    case ({(e as DAE.ARRAY(ty = a,scalar = at,array = expl))}) then e;
-    case ({DAE.ARRAY(ty = a,scalar = at,array = expl1),DAE.ARRAY(array = expl2)})
+      DAE.Exp res;
+      DAE.ExpType ty;
+
+    case _
       equation
-        expl = listAppend(expl1, expl2);
+        res = Util.listReduce(inExpLst, elabMatrixCatOne2);
       then
-        DAE.ARRAY(a,at,expl);
-    case ((DAE.ARRAY(ty = a,scalar = at,array = expl1) :: es))
+        res;
+    else
       equation
-        DAE.ARRAY(_,_,expl2) = elabMatrixCatOne(es);
-        expl = listAppend(expl1, expl2);
+        ty = Expression.typeof(Util.listFirst(inExpLst));
+        res = makeBuiltinCall("cat", DAE.ICONST(1) :: inExpLst, ty);
       then
-        DAE.ARRAY(a,at,expl);
-    case (expl)
-      equation
-        tp = Expression.typeof(Util.listFirst(expl));
-        e = makeBuiltinCall("cat", DAE.ICONST(1) :: expl, tp);
-      then
-        e;
+        res;
   end matchcontinue;
 end elabMatrixCatOne;
+
+protected function elabMatrixCatOne2
+  "Helper function to elabMatrixCatOne. Concatenates two arrays along the
+  first dimension."
+  input DAE.Exp inArray1;
+  input DAE.Exp inArray2;
+  output DAE.Exp outExp;
+
+  DAE.ExpType ety;
+  Boolean at;
+  DAE.Dimension dim, dim1, dim2;
+  list<DAE.Dimension> dim_rest;
+  list<DAE.Exp> expl, expl1, expl2;
+algorithm
+  DAE.ARRAY(DAE.ET_ARRAY(ety, dim1 :: dim_rest), at, expl1) := inArray1;
+  DAE.ARRAY(ty = DAE.ET_ARRAY(arrayDimensions = dim2 :: _), array = expl2) := inArray2;
+  expl := listAppend(expl1, expl2);
+  dim := Expression.dimensionsAdd(dim1, dim2);
+  outExp := DAE.ARRAY(DAE.ET_ARRAY(ety, dim1 :: dim_rest), at, expl);
+end elabMatrixCatOne2;
 
 protected function promoteExp "function: promoteExp
   author: PA
