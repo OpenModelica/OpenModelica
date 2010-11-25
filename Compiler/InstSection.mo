@@ -2613,23 +2613,6 @@ algorithm
       then
         (cache,{stmt});
 
-    /* GOTO */
-    case (cache,env,ih,pre,SCode.ALG_GOTO(labelName = s, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_GOTO(s,source);
-      then
-        (cache,{stmt});
-
-    case (cache,env,ih,pre,SCode.ALG_LABEL(labelName = s, comment = comment, info = info),source,initial_,impl,unrollForLoops)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_LABEL(s,source);
-      then
-        (cache,{stmt});
-    
     case (cache,env,ih,pre,alg,_,initial_,impl,unrollForLoops)
       equation 
         true = RTOpts.debugFlag("failtrace");

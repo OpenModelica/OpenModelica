@@ -3230,15 +3230,6 @@ algorithm
       then
         str;
     
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(matchType=matchType,switchCases=explist), comment = optcmt))
-      equation
-        s3 = unparseCommentOption(optcmt);
-        strlist = Util.listMap(explist, printExpStr);
-        strlist = Util.listMap1r(strlist, stringAppend, "\ncase:\n    ");
-        s2 = stringAppendList(strlist);
-        str_1 = printMatchType(matchType) +& " cases { " +& s2 +& " } "+& s3 +&";";
-      then
-        str_1;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TRY(al),comment = optcmt)) /* ALG_TRY */
       equation
         i_1 = i + 1;
@@ -6193,28 +6184,6 @@ algorithm
     case Absyn.ALG_THROW()
       equation
         Print.printBuf("record Absyn.ALG_THROW end Absyn.ALG_THROW;");
-      then ();
-    case Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases)
-      equation
-        Print.printBuf("record Absyn.ALG_MATCHCASES matchType = ");
-        printMatchTypeAsCorbaString(matchType);
-        Print.printBuf(", inputExps = ");
-        printListAsCorbaString(inputExps, printExpAsCorbaString, ",");
-        Print.printBuf(", switchCases = ");
-        printListAsCorbaString(switchCases, printExpAsCorbaString, ",");
-        Print.printBuf(" end Absyn.ALG_MATCHCASES;");
-      then ();
-    case Absyn.ALG_GOTO(label)
-      equation
-        Print.printBuf("record Absyn.ALG_GOTO label = \"");
-        Print.printBuf(label);
-        Print.printBuf("\" end Absyn.ALG_GOTO;");
-      then ();
-    case Absyn.ALG_LABEL(label)
-      equation
-        Print.printBuf("record Absyn.ALG_LABEL label = \"");
-        Print.printBuf(label);
-        Print.printBuf("\" end Absyn.ALG_LABEL;");
       then ();
     case Absyn.ALG_FAILURE(body)
       equation

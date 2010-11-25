@@ -407,26 +407,6 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Absyn.Info info;
   end ALG_THROW;
 
-  record ALG_MATCHCASES
-    Absyn.MatchType matchType;
-    list<Absyn.Exp> inputExps;
-    list<Absyn.Exp> switchCases;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_MATCHCASES;
-
-  record ALG_GOTO
-    String labelName;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_GOTO;
-
-  record ALG_LABEL
-    String labelName;
-    Option<Comment> comment;
-    Absyn.Info info;
-  end ALG_LABEL;
-
   record ALG_FAILURE
     list<Statement> stmts;
     Option<Comment> comment;
@@ -2602,12 +2582,6 @@ algorithm
     
     case ALG_THROW(comment,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE(),info);
-    
-    case ALG_MATCHCASES(matchType,inputExps,switchCases,comment,info)
-    then Absyn.ALGORITHMITEM(Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases),NONE(),info);
-      
-    case ALG_GOTO(labelName,comment,info)
-    then Absyn.ALGORITHMITEM(Absyn.ALG_GOTO(labelName),NONE(),info);
     
     case ALG_FAILURE(body,comment,info)
       equation

@@ -1049,18 +1049,6 @@ algorithm
     	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
     	  	(localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
     		then (localCache,elems);
-  	case (localCache,localEnv,ih,DAE.STMT_GOTO(s,source) :: rest,localAccList,pre)
-  	  equation
-  	    elem = DAE.STMT_GOTO(s,source);
-  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
-  	    (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-  	  then (localCache,elems);
-  	case (localCache,localEnv,ih,DAE.STMT_LABEL(s,source) :: rest,localAccList,pre)
-  	  equation
-  	    elem = DAE.STMT_LABEL(s,source);
-  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
-  	    (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
-  	  then (localCache,elems);
   end matchcontinue;
 end prefixStatements;
 

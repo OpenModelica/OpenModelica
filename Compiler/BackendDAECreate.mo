@@ -1749,8 +1749,6 @@ algorithm
         ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
       then (inputs,outputs);                    
     case(vars, DAE.STMT_THROW(source=_)) then ({}, {});
-    case(vars, DAE.STMT_GOTO(source=_)) then ({}, {});
-    case(vars, DAE.STMT_LABEL(source=_)) then ({}, {});
     case(_, _)
       equation
         Debug.fprintln("failtrace", "- BackendDAECreate.lowerStatementInputsOutputs failed\n");

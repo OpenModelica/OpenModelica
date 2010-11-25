@@ -3869,16 +3869,6 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (x :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_GOTO(source = source)) :: xs),func,extraArg)
-      equation
-        (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (x :: xs_1,extraArg);
-        
-    case (((x as DAE.STMT_LABEL(source = source)) :: xs),func,extraArg)
-      equation
-        (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (x :: xs_1,extraArg);
-        
     case ((x :: xs),func,extraArg)
       equation
         str = DAEDump.ppStatementStr(x);

@@ -559,16 +559,6 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_THROW;
 
-  record STMT_GOTO
-    String labelName;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end STMT_GOTO;
-
-  record STMT_LABEL
-    String labelName;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end STMT_LABEL;
-
   //-----
 
 end Statement;

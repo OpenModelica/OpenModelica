@@ -37,7 +37,7 @@ MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer
 Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
 MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h
 Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h
-ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h
+ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/Absyn.h ../Compiler/Interactive.h
 ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h
 
 Parser_rml.o: $(HFILES) parse.c

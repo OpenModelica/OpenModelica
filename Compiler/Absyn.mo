@@ -577,20 +577,6 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   record ALG_THROW
   end ALG_THROW;
 
-  record ALG_MATCHCASES
-    MatchType matchType;
-    list<Exp> inputExps;
-    list<Exp> switchCases;
-  end ALG_MATCHCASES;
-
-  record ALG_GOTO
-    String labelName;
-  end ALG_GOTO;
-
-  record ALG_LABEL
-    String labelName;
-  end ALG_LABEL;
-
   record ALG_FAILURE
     list<AlgorithmItem> equ;
   end ALG_FAILURE;

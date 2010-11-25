@@ -752,12 +752,6 @@ algorithm
     case (Absyn.ALG_THROW(),comment,info)
     then SCode.ALG_THROW(comment,info);
     
-    case (Absyn.ALG_MATCHCASES(matchType,inputExps,switchCases),comment,info)
-    then SCode.ALG_MATCHCASES(matchType,inputExps,switchCases,comment,info);
-      
-    case (Absyn.ALG_GOTO(labelName),comment,info)
-    then SCode.ALG_GOTO(labelName,comment,info);
-    
     case (Absyn.ALG_FAILURE(body),comment,info)
       equation
         stmts = translateClassdefAlgorithmitems(body);

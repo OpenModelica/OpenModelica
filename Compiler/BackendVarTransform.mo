@@ -580,18 +580,6 @@ algorithm
       then
         (DAE.STMT_THROW(source):: es_1); 
     
-    case ((DAE.STMT_GOTO(labelName=str,source=source)::es),repl) 
-      equation
-        es_1 = replaceStatementLst(es, repl);
-      then
-        (DAE.STMT_GOTO(str,source):: es_1); 
-    
-    case ((DAE.STMT_LABEL(labelName=str,source=source)::es),repl) 
-      equation
-        es_1 = replaceStatementLst(es, repl);
-      then
-        (DAE.STMT_LABEL(str,source):: es_1); 
-    
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);

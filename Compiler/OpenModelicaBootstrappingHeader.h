@@ -1533,51 +1533,6 @@ extern struct record_description Absyn_Algorithm_ALG__THROW__desc;
 #define Absyn__ALG_5fTHROW_3dBOX0 13
 #define Absyn__ALG_5fTHROW (mmc_mk_box1(13,&Absyn_Algorithm_ALG__THROW__desc))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_Algorithm_ALG__MATCHCASES__desc_added
-#define Absyn_Algorithm_ALG__MATCHCASES__desc_added
-const char* Absyn_Algorithm_ALG__MATCHCASES__desc__fields[3] = {"matchType","inputExps","switchCases"};
-struct record_description Absyn_Algorithm_ALG__MATCHCASES__desc = {
-  "Absyn_Algorithm_ALG__MATCHCASES",
-  "Absyn.Algorithm.ALG_MATCHCASES",
-  Absyn_Algorithm_ALG__MATCHCASES__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_Algorithm_ALG__MATCHCASES__desc;
-#endif
-#define Absyn__ALG_5fMATCHCASES_3dBOX3 14
-#define Absyn__ALG_5fMATCHCASES(matchType,inputExps,switchCases) (mmc_mk_box4(14,&Absyn_Algorithm_ALG__MATCHCASES__desc,matchType,inputExps,switchCases))
-#ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_Algorithm_ALG__GOTO__desc_added
-#define Absyn_Algorithm_ALG__GOTO__desc_added
-const char* Absyn_Algorithm_ALG__GOTO__desc__fields[1] = {"labelName"};
-struct record_description Absyn_Algorithm_ALG__GOTO__desc = {
-  "Absyn_Algorithm_ALG__GOTO",
-  "Absyn.Algorithm.ALG_GOTO",
-  Absyn_Algorithm_ALG__GOTO__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_Algorithm_ALG__GOTO__desc;
-#endif
-#define Absyn__ALG_5fGOTO_3dBOX1 15
-#define Absyn__ALG_5fGOTO(labelName) (mmc_mk_box2(15,&Absyn_Algorithm_ALG__GOTO__desc,labelName))
-#ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Absyn_Algorithm_ALG__LABEL__desc_added
-#define Absyn_Algorithm_ALG__LABEL__desc_added
-const char* Absyn_Algorithm_ALG__LABEL__desc__fields[1] = {"labelName"};
-struct record_description Absyn_Algorithm_ALG__LABEL__desc = {
-  "Absyn_Algorithm_ALG__LABEL",
-  "Absyn.Algorithm.ALG_LABEL",
-  Absyn_Algorithm_ALG__LABEL__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_Algorithm_ALG__LABEL__desc;
-#endif
-#define Absyn__ALG_5fLABEL_3dBOX1 16
-#define Absyn__ALG_5fLABEL(labelName) (mmc_mk_box2(16,&Absyn_Algorithm_ALG__LABEL__desc,labelName))
-#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FAILURE__desc_added
 #define Absyn_Algorithm_ALG__FAILURE__desc_added
 const char* Absyn_Algorithm_ALG__FAILURE__desc__fields[1] = {"equ"};
@@ -1590,8 +1545,8 @@ struct record_description Absyn_Algorithm_ALG__FAILURE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #endif
-#define Absyn__ALG_5fFAILURE_3dBOX1 17
-#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(17,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
+#define Absyn__ALG_5fFAILURE_3dBOX1 14
+#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(14,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
