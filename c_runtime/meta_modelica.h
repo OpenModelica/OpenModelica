@@ -187,7 +187,7 @@ modelica_real mmc_prim_get_real(void *p);
 #define mmc__unbox__string(X) MMC_STRINGDATA(X)
 #define mmc__unbox__array(X) (*((base_array_t*)X))
 
-#if 1
+#if !defined(OMDEV)
 #include <setjmp.h>
 extern jmp_buf mmc_jumper;
 #define MMC_TRY() {jmp_buf old_mmc_jumper; *old_mmc_jumper = *mmc_jumper; if (setjmp(mmc_jumper) == 0) {
