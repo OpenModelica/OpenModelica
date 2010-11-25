@@ -187,6 +187,10 @@ modelica_real mmc_prim_get_real(void *p);
 #define mmc__unbox__string(X) MMC_STRINGDATA(X)
 #define mmc__unbox__array(X) (*((base_array_t*)X))
 
+#define MMC_TRY() try {
+#define MMC_CATCH() } catch (...) {}
+#define MMC_THROW() throw 1
+
 #if defined(__cplusplus)
 }
 #endif

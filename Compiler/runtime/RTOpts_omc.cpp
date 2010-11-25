@@ -50,7 +50,7 @@ extern modelica_metatype RTOpts_args(modelica_metatype args) {
     const char *arg = MMC_STRINGDATA(head);
     switch (RTOptsImpl__arg(arg)) {
     case ARG_FAILURE:
-      throw 1;
+      MMC_THROW();
       break;
     case ARG_CONSUME:
       break;

@@ -138,13 +138,13 @@ realString_rettype realString(modelica_real r)
     int ix = snprintf(buffer, 32, "%.15g", r);
     long ignore;
     if (ix < 0)
-      throw 1;
+      MMC_THROW();
     errno = 0;
     /* If it looks like an integer, we need to append .0 so it looks like real */
     ignore = strtol(buffer,&endptr,10);
     if (errno == 0 && *endptr == '\0') {
       if (ix > 30)
-        throw 1;
+        MMC_THROW();
       buffer[ix++] = '.';
       buffer[ix++] = '0';
       buffer[ix] = '\0';

@@ -29,31 +29,32 @@
  */
 
 #include <stdio.h>
+#include "meta_modelica.h"
 
 extern "C" {
 
 extern const char* Corba_waitForCommand()
 {
   fprintf(stderr, "Corba NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Corba_initialize()
 {
   fprintf(stderr, "Corba NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Corba_close()
 {
   fprintf(stderr, "Corba NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Corba_sendreply(const char* _inString)
 {
   fprintf(stderr, "Corba NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 }

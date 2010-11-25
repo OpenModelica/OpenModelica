@@ -235,7 +235,7 @@ modelica_metatype boxptr_intString(modelica_metatype i)
 stringCharInt_rettype stringCharInt(modelica_string chr)
 {
   if (chr[0] == '\0' || chr[1] != '\0')
-    throw 1;
+    MMC_THROW();
   return (int) chr[0];
 }
 
@@ -243,7 +243,7 @@ intStringChar_rettype intStringChar(modelica_integer ix)
 {
   char chr[2];
   if (ix < 1 || ix > 255)
-    throw 1;
+    MMC_THROW();
   chr[0] = (char) ix;
   chr[1] = '\0';
   return strdup(chr);
@@ -258,11 +258,11 @@ stringInt_rettype stringInt(modelica_string str)
   errno = 0;
   res = strtol(str,&endptr,10);
   if (errno != 0 || str == endptr)
-    throw 1;
+    MMC_THROW();
   if (*endptr != '\0')
-    throw 1;
+    MMC_THROW();
   if (res > INT_MAX || res < INT_MIN)
-    throw 1;
+    MMC_THROW();
 
   return res;
 }
@@ -360,7 +360,7 @@ listStringCharString_rettype listStringCharString(modelica_metatype lst)
     car = MMC_CAR(lst);
     if (1 != MMC_HDRSTRLEN(MMC_GETHDR(car))) {
      free_modelica_string(&res);
-     throw 1;
+     MMC_THROW();
     }
     res[i] = MMC_STRINGDATA(car)[0];
   }
@@ -447,10 +447,10 @@ stringGetStringChar_rettype stringGetStringChar(modelica_string str, modelica_in
 {
   char chr[2] = {'\0','\0'};
   if (*str == 0)
-    throw 1;
+    MMC_THROW();
   while (ix > 1) {
     if (*(++str) == 0)
-      throw 1;
+      MMC_THROW();
     ix--;
   }
   chr[0] = *str;
@@ -462,10 +462,10 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string str, model
   modelica_string_t res;
   int length;
   if (ix < 1 || c[0] == '\0' || c[1] != '\0')
-    throw 1;
+    MMC_THROW();
   length = strlen(str);
   if (ix > length)
-    throw 1;
+    MMC_THROW();
   res = strdup(str);
   res[ix-1] = c[0];
   return res;
@@ -528,7 +528,7 @@ listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
 listGet_rettype listGet(modelica_metatype lst, modelica_integer i)
 {
   if (i < 1)
-    throw 1;
+    MMC_THROW();
   while (!MMC_NILTEST(lst))
   {
     if (i == 1) {
@@ -537,7 +537,7 @@ listGet_rettype listGet(modelica_metatype lst, modelica_integer i)
     lst = MMC_CDR(lst);
     i--;
   }
-  throw 1; /* List was not long enough */
+  MMC_THROW(); /* List was not long enough */
 }
 
 listNth_rettype listNth(modelica_metatype lst, modelica_integer i)
@@ -558,7 +558,7 @@ modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
 listRest_rettype listRest(modelica_metatype lst)
 {
   if (MMC_NILTEST(lst))
-    throw 1;
+    MMC_THROW();
   return MMC_CDR(lst);
 }
 
@@ -572,10 +572,10 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
   modelica_metatype *tmpArr;
   int i;
   if (ix < 0)
-    throw 1;
+    MMC_THROW();
   if (ix == 0) {
     if (listEmpty(lst))
-      throw 1;
+      MMC_THROW();
     return MMC_CDR(lst);
   }
   tmpArr = (modelica_metatype *) malloc(sizeof(modelica_metatype)*(ix)); /* We know the size of the first part of the list (+1 for the element to delete) */
@@ -589,14 +589,14 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
     {
       if (tmpArr)
         free(tmpArr);
-      throw 1;
+      MMC_THROW();
     }
     tmpArr[i] = MMC_CAR(lst);
     lst = MMC_CDR(lst);
   }
   if (listEmpty(lst)) {
     free(tmpArr);
-    throw 1;
+    MMC_THROW();
   }
   lst = MMC_CDR(lst);
   for (i=ix-1; i>=0; i--)
@@ -623,9 +623,9 @@ arrayLength_rettype arrayLength(modelica_metatype arr)
 arrayGet_rettype arrayGet(modelica_metatype arr, modelica_integer ix)
 {
   if (ix < 1)
-    throw 1;
+    MMC_THROW();
   if((unsigned)ix-1 >= MMC_HDRSLOTS(MMC_GETHDR(arr)))
-    throw 1;
+    MMC_THROW();
   return MMC_STRUCTDATA(arr)[ix-1];
 }
 
@@ -664,7 +664,7 @@ arrayUpdate_rettype arrayUpdate(modelica_metatype arr, modelica_integer ix, mode
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   if (ix < 1 || ix > nelts)
-    throw 1;
+    MMC_THROW();
   MMC_STRUCTDATA(arr)[ix-1] = val;
   return arr;
 }
@@ -741,7 +741,7 @@ if__exp_rettype if__exp(modelica_boolean cond, modelica_metatype in1, modelica_m
 void equality(modelica_metatype in1, modelica_metatype in2)
 {
   if (!mmc_boxes_equal(in1, in2))
-    throw 1;
+    MMC_THROW();
 }
 
 /* Weird RML crap */

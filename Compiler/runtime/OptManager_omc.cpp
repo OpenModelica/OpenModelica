@@ -29,20 +29,21 @@
  */
 
 #include "optmanager.cpp"
+#include "meta_modelica.h"
 
 extern "C"
 {
 
 extern void OptManager_setOption(const char *strEntry, int strValue)
 {
-  if (OptManagerImpl__setOption(strEntry,strValue)) throw 1;
+  if (OptManagerImpl__setOption(strEntry,strValue)) MMC_THROW();
 }
 
 extern int OptManager_getOption(const char *strEntry)
 {
   int res = OptManagerImpl__getOption(strEntry);
   if (res == -1)
-    throw 1;
+    MMC_THROW();
   return res;
 }
 

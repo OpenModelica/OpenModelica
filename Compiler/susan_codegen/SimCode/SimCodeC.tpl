@@ -3129,10 +3129,16 @@ case FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
+    modelica_boolean __tmpFailure;
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
+    __tmpFailure = 1; /* check for success */
+    MMC_TRY();
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
+    __tmpFailure = 0;
+    MMC_CATCH();
+    if (__tmpFailure) return 1;
     <%if outVars then (outVars |> var => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
@@ -3837,7 +3843,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFC*/)
   case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFC*/)
   case s as STMT_CATCH(__)          then algStmtCatch(s, context, &varDecls /*BUFC*/)
-  case s as STMT_THROW(__)          then 'throw 1;<%\n%>'
+  case s as STMT_THROW(__)          then 'MMC_THROW();<%\n%>'
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFC*/)
   else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
@@ -4177,11 +4183,11 @@ case STMT_FAILURE(__) then
     ;separator="\n")
   <<
   <%tmp%> = 0; /* begin failure */
-  try {
+  MMC_TRY()
     <%stmtBody%>
     <%tmp%> = 1;
-  } catch (int ex) {}
-  if (<%tmp%>) throw 1; /* end failure */
+  MMC_CATCH()
+  if (<%tmp%>) MMC_THROW(); /* end failure */
   >>
 end algStmtFailure;
 
@@ -4195,6 +4201,7 @@ case STMT_TRY(__) then
       algStatement(stmt, context, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
+  #error "Using STMT_TRY: This is deprecated, and should be matched with catch anyway."
   try {
     <%body%>
   }
@@ -4211,6 +4218,7 @@ case STMT_CATCH(__) then
       algStatement(stmt, context, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
+  #error "Using STMT_CATCH: This is deprecated, and should be matched with catch anyway."
   catch (int i) {
     <%body%>
   }
@@ -5258,7 +5266,7 @@ case exp as MATCHEXPRESSION(__) then
   let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
   let ix = tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
-  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "throw 1" case MATCH(__) then "break"
+  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
       <<
       { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */
@@ -5268,7 +5276,8 @@ case exp as MATCHEXPRESSION(__) then
         {
           <%varDeclsInner%>
           <%preExpInner%>
-          for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) <% match exp.matchType case MATCHCONTINUE(__) then "try " %>{
+          for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) {
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
             switch (<%ix%>) {
             <% cases |> c as CASE(__) hasindex i0 =>
             let &varDeclsCaseInner = buffer ""
@@ -5286,15 +5295,16 @@ case exp as MATCHEXPRESSION(__) then
               /* Pattern matching succeeded */
               <%assignments%>
               <%stmts%>
-              <% if c.result then '<%preRes%><%res%> = <%caseRes%>;<%\n%>' else 'throw 1;<%\n%>'%>
+              <% if c.result then '<%preRes%><%res%> = <%caseRes%>;<%\n%>' else 'MMC_THROW();<%\n%>'%>
               <%done%> = 1;
               break;
             }<%\n%>
             >>
             %>
             }
-          }<% match exp.matchType case MATCHCONTINUE(__) then " catch (int ex) {}" %>
-          if (!<%done%>) throw 1;
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
+          }
+          if (!<%done%>) MMC_THROW();
         }
       }
       >>
@@ -5754,7 +5764,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     let &assignments = buffer ""
     let expPart = daeExp(rhs, context, &preExp, &varDecls)
     <<<%preExp%>
-    <%patternMatch(lhs,expPart,"throw 1",&varDecls,&assignments)%><%assignments%>>>
+    <%patternMatch(lhs,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>>>
 end algStmtAssignPattern;
 
 template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls, Text &assignments)

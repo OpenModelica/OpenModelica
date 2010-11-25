@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "meta_modelica.h"
 extern "C" {
 
 #include "printimpl.c"
@@ -37,14 +38,14 @@ extern "C" {
 extern void Print_printErrorBuf(const char* str)
 {
   if (PrintImpl__printErrorBuf(str))
-    throw 1;
+    MMC_THROW();
 }
 
 extern void Print_printBuf(const char* str)
 {
   //fprintf(stderr, "Print_writeBuf %s\n", str);
   if (PrintImpl__printBuf(str))
-    throw 1;
+    MMC_THROW();
 }
 
 extern int Print_hasBufNewLineAtEnd(void)
@@ -61,7 +62,7 @@ extern const char* Print_getString(void)
 {
   const char* res = PrintImpl__getString();
   if (res == NULL)
-    throw 1;
+    MMC_THROW();
   return strdup(res);
 }
 
@@ -69,7 +70,7 @@ extern const char* Print_getErrorString(void)
 {
   const char* res = PrintImpl__getErrorString();
   if (res == NULL)
-    throw 1;
+    MMC_THROW();
   return strdup(res);
 }
 
@@ -86,20 +87,20 @@ extern void Print_clearBuf(void)
 extern void Print_printBufSpace(int numSpace)
 {
   if (PrintImpl__printBufSpace(numSpace))
-    throw 1;
+    MMC_THROW();
 }
 
 extern void Print_printBufNewLine(void)
 {
   if (PrintImpl__printBufNewLine())
-    throw 1;
+    MMC_THROW();
 }
 
 extern void Print_writeBuf(const char* filename)
 {
   //fprintf(stderr, "Print_writeBuf %s: %s\n", filename, buf);
   if (PrintImpl__writeBuf(filename))
-    throw 1;
+    MMC_THROW();
 }
 
 }

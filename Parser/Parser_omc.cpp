@@ -38,7 +38,7 @@ void* Parser_parse(const char* filename)
 {
   void *res = parseFile(filename,PARSE_MODELICA);
   if (res == NULL)
-    throw 1;
+    MMC_THROW();
   // printAny(res);
   return res;
 }
@@ -47,7 +47,7 @@ void* Parser_parseexp(const char* filename)
 {
   void *res = parseFile(filename,PARSE_EXPRESSION);
   if (res == NULL)
-    throw 1;
+    MMC_THROW();
   return res;
 }
 

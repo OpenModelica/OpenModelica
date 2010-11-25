@@ -44,7 +44,7 @@ void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void 
   UnitRes res = unitParser->str2unit(str,unit);
   if (!res.Ok()) {
   	std::cerr << "error parsing unit " << str << std::endl;
-  	throw 1;
+  	MMC_THROW();
   }
 
   /* Build rml objects */

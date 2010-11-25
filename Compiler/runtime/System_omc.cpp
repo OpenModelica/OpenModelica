@@ -35,7 +35,7 @@ extern "C" {
 extern void System_writeFile(const char* filename, const char* data)
 {
   if (SystemImpl__writeFile(filename, data))
-    throw 1;
+    MMC_THROW();
 }
 
 extern char* System_readFile(const char* filename)
@@ -47,7 +47,7 @@ extern const char* System_stringReplace(const char* str, const char* source, con
 {
   char* res = _replace(str,source,target);
   if (res == NULL)
-    throw 1;
+    MMC_THROW();
   return res;
 }
 
@@ -64,19 +64,19 @@ extern const char* System_stringFindString(const char* str, const char* searchSt
 {
   const char *found = strstr(str, searchStr);
   if (found == NULL)
-    throw 1;
+    MMC_THROW();
   return strdup(found);
 }
 
 extern void System_realtimeTick(int ix)
 {
-  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) throw 1;
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   rt_tick(ix);
 }
 
 extern double System_realtimeTock(int ix)
 {
-  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) throw 1;
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
   return rt_tock(ix);
 }
 
@@ -214,7 +214,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
   if (s == NULL)
   {
     free(str);
-    throw 1;
+    MMC_THROW();
   }
   res = mmc_mk_cons(mmc_mk_scon(s),res);
   while (s=strtok(NULL,delimit))
@@ -309,7 +309,7 @@ void* System_moFiles(const char *directory)
 extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
 {
   int res = SystemImpl__lookupFunction(_inLibHandle, _inFunc);
-  if (res == -1) throw 1;
+  if (res == -1) MMC_THROW();
   return res;
 }
 
@@ -338,7 +338,7 @@ extern int System_userIsRoot()
 extern const char* System_readEnv(const char *envname)
 {
   char *envvalue = getenv(envname);
-  if (envvalue == NULL) throw 1;
+  if (envvalue == NULL) MMC_THROW();
   return strdup(envvalue);
 }
 
@@ -364,7 +364,7 @@ extern const char* System_getUUIDStr()
 extern int System_loadLibrary(const char *name)
 {
   int res = SystemImpl__loadLibrary(name);
-  if (res == -1) throw 1;
+  if (res == -1) MMC_THROW();
   return res;
 }
 

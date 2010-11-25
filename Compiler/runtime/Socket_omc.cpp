@@ -29,6 +29,7 @@
  */
 
 #include "socketimpl.c"
+#include "meta_modelica.h"
 
 /* TODO: Add the Unix implementation */
 
@@ -37,31 +38,31 @@ extern "C" {
 extern int Socket_waitforconnect(int _inInteger)
 {
   fprintf(stderr, "Socket NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern const char* Socket_handlerequest(int _inInteger)
 {
   fprintf(stderr, "Socket NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Socket_cleanup()
 {
   fprintf(stderr, "Socket NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Socket_close(int _inInteger)
 {
   fprintf(stderr, "Socket NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 extern void Socket_sendreply(int _inInteger, const char* _inString)
 {
   fprintf(stderr, "Socket NYI\n");
-  throw 1;
+  MMC_THROW();
 }
 
 }

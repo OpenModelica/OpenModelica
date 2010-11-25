@@ -49,79 +49,79 @@ extern "C" {
 extern int IOStreamExt_createFile(const char* filename)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_closeFile(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_deleteFile(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_clearFile(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_printFile(int id, int whereToPrint)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern const char* IOStreamExt_readFile(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_appendFile(int id, const char* str)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern int IOStreamExt_createBuffer()
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_deleteBuffer(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_clearBuffer(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern const char* IOStreamExt_readBuffer(int id)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_appendBuffer(int id, const char* str)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern void IOStreamExt_printBuffer(int id, int whereToPrint)
 {
   fprintf(stderr, "NYI: %s:%d\n", __FILE__, __LINE__);
-  throw 1;
+  MMC_THROW();
 }
 
 extern const char* IOStreamExt_appendReversedList(modelica_metatype lst)
@@ -164,7 +164,7 @@ extern void IOStreamExt_printReversedList(modelica_metatype lst, int whereToPrin
   switch (whereToPrint) {
   case 1: f = stdout; break;
   case 2: f = stderr; break;
-  default: throw 1;
+  default: MMC_THROW();
   }
   strs = (const char**) malloc(sizeof(const char*)*lstLen);
   

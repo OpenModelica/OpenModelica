@@ -14340,7 +14340,8 @@ algorithm
         txt = Tpl.writeText(txt, i_fname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "(type_description * inArgs, type_description * outVar)\n",
-                                    "{\n"
+                                    "{\n",
+                                    "  modelica_boolean __tmpFailure;\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -14353,6 +14354,10 @@ algorithm
         txt = lm_349(txt, i_functionArguments);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "__tmpFailure = 1; /* check for success */\n",
+                                    "MMC_TRY();\n"
+                                }, true));
         txt = fun_350(txt, i_outVars);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
         txt = Tpl.writeText(txt, i_fname);
@@ -14360,7 +14365,12 @@ algorithm
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_351(txt, i_functionArguments);
         txt = Tpl.popIter(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(");\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    ");\n",
+                                    "__tmpFailure = 0;\n",
+                                    "MMC_CATCH();\n",
+                                    "if (__tmpFailure) return 1;\n"
+                                }, true));
         txt = fun_353(txt, i_outVars);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("return 0;\n"));
@@ -20381,7 +20391,7 @@ algorithm
       local
         DAE.Statement i_s;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MMC_THROW();"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then (txt, i_varDecls);
 
@@ -22400,7 +22410,7 @@ algorithm
         txt = Tpl.writeText(txt, i_tmp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     " = 0; /* begin failure */\n",
-                                    "try {\n"
+                                    "MMC_TRY()\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeText(txt, i_stmtBody);
@@ -22409,11 +22419,11 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(" = 1;\n"));
         txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "} catch (int ex) {}\n",
+                                    "MMC_CATCH()\n",
                                     "if ("
                                 }, false));
         txt = Tpl.writeText(txt, i_tmp);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") throw 1; /* end failure */"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") MMC_THROW(); /* end failure */"));
       then (txt, i_varDecls);
 
     case ( txt,
@@ -22498,7 +22508,10 @@ algorithm
         i_body = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_body, i_varDecls) = lm_523(i_body, i_tryBody, i_varDecls, i_context);
         i_body = Tpl.popIter(i_body);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("try {\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "#error \"Using STMT_TRY: This is deprecated, and should be matched with catch anyway.\"\n",
+                                    "try {\n"
+                                }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeText(txt, i_body);
         txt = Tpl.softNewLine(txt);
@@ -22588,7 +22601,10 @@ algorithm
         i_body = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_body, i_varDecls) = lm_525(i_body, i_catchBody, i_varDecls, i_context);
         i_body = Tpl.popIter(i_body);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("catch (int i) {\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "#error \"Using STMT_CATCH: This is deprecated, and should be matched with catch anyway.\"\n",
+                                    "catch (int i) {\n"
+                                }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeText(txt, i_body);
         txt = Tpl.softNewLine(txt);
@@ -29201,7 +29217,7 @@ algorithm
     case ( txt,
            Absyn.MATCHCONTINUE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("throw 1"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MMC_THROW()"));
       then txt;
 
     case ( txt,
@@ -29259,7 +29275,7 @@ algorithm
     case ( txt,
            Absyn.MATCHCONTINUE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("try "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MMC_TRY()"));
       then txt;
 
     case ( txt,
@@ -29489,7 +29505,7 @@ algorithm
            _,
            _ )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("throw 1;"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MMC_THROW();"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
 
@@ -29637,7 +29653,7 @@ algorithm
     case ( txt,
            Absyn.MATCHCONTINUE() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" catch (int ex) {}"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("MMC_CATCH()"));
       then txt;
 
     case ( txt,
@@ -29743,10 +29759,10 @@ algorithm
         i_preExp = Tpl.writeText(i_preExp, i_done);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("; "));
         i_preExp = Tpl.writeText(i_preExp, i_ix);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("++) "));
-        i_preExp = fun_634(i_preExp, i_exp_matchType);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE("{\n"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE("++) {\n"));
         i_preExp = Tpl.pushBlock(i_preExp, Tpl.BT_INDENT(2));
+        i_preExp = fun_634(i_preExp, i_exp_matchType);
+        i_preExp = Tpl.softNewLine(i_preExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("switch ("));
         i_preExp = Tpl.writeText(i_preExp, i_ix);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE(") {\n"));
@@ -29755,13 +29771,15 @@ algorithm
         i_preExp = Tpl.popIter(i_preExp);
         i_preExp = Tpl.softNewLine(i_preExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE("}\n"));
-        i_preExp = Tpl.popBlock(i_preExp);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("}"));
         i_preExp = fun_641(i_preExp, i_exp_matchType);
         i_preExp = Tpl.softNewLine(i_preExp);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("if (!"));
+        i_preExp = Tpl.popBlock(i_preExp);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING_LIST({
+                                              "}\n",
+                                              "if (!"
+                                          }, false));
         i_preExp = Tpl.writeText(i_preExp, i_done);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE(") throw 1;\n"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE(") MMC_THROW();\n"));
         i_preExp = Tpl.popBlock(i_preExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_LINE("}\n"));
         i_preExp = Tpl.popBlock(i_preExp);
@@ -32397,7 +32415,7 @@ algorithm
         (i_expPart, i_preExp, i_varDecls) = daeExp(Tpl.emptyTxt, i_rhs, i_context, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
-        (txt, i_expPart, _, i_varDecls, i_assignments) = patternMatch(txt, i_lhs, i_expPart, Tpl.strTokText(Tpl.ST_STRING("throw 1")), i_varDecls, i_assignments);
+        (txt, i_expPart, _, i_varDecls, i_assignments) = patternMatch(txt, i_lhs, i_expPart, Tpl.strTokText(Tpl.ST_STRING("MMC_THROW()")), i_varDecls, i_assignments);
         txt = Tpl.writeText(txt, i_assignments);
       then (txt, i_varDecls);
 

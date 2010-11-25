@@ -30,6 +30,7 @@
 
 #include "settingsimpl.c"
 #include <string>
+#include "meta_modelica.h"
 
 extern "C" {
 
@@ -37,7 +38,7 @@ extern const char* Settings_getInstallationDirectoryPath()
 {
   const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
-    throw 1;
+    MMC_THROW();
   return strdup(path);
 }
 
@@ -45,7 +46,7 @@ extern const char* Settings_getModelicaPath()
 {
   const char *path = SettingsImpl__getModelicaPath();
   if (path == NULL)
-    throw 1;
+    MMC_THROW();
   return path;
 }
 

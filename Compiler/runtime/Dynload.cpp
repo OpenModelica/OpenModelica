@@ -93,9 +93,8 @@ static int execute_function(void *in_arg, void **out_arg,
   if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
   
   /* call our function pointer! */
-  try {
-    func(arglst, &retarg);
-    retval = 0;
+  try { /* Don't let external C functions throwing C++ exceptions kill OMC! */
+    retval = func(arglst, &retarg);
   } catch (...) {
     retval = 1;
   }
