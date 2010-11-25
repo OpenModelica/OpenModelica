@@ -32,6 +32,8 @@
 
 #include "modelica.h"
 
+jmp_buf mmc_jumper;
+
 const struct mmc_header mmc_prim_nil = { MMC_NILHDR };
 
 union mmc_double_as_words {

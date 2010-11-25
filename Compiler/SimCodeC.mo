@@ -14340,8 +14340,7 @@ algorithm
         txt = Tpl.writeText(txt, i_fname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "(type_description * inArgs, type_description * outVar)\n",
-                                    "{\n",
-                                    "  modelica_boolean __tmpFailure;\n"
+                                    "{\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -14354,10 +14353,7 @@ algorithm
         txt = lm_349(txt, i_functionArguments);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "__tmpFailure = 1; /* check for success */\n",
-                                    "MMC_TRY();\n"
-                                }, true));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("MMC_TRY_TOP()\n"));
         txt = fun_350(txt, i_outVars);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
         txt = Tpl.writeText(txt, i_fname);
@@ -14367,9 +14363,7 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     ");\n",
-                                    "__tmpFailure = 0;\n",
-                                    "MMC_CATCH();\n",
-                                    "if (__tmpFailure) return 1;\n"
+                                    "MMC_CATCH_TOP(return 1)\n"
                                 }, true));
         txt = fun_353(txt, i_outVars);
         txt = Tpl.softNewLine(txt);

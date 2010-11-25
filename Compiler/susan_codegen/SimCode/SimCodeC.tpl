@@ -3129,16 +3129,12 @@ case FUNCTION(__) then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    modelica_boolean __tmpFailure;
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
-    __tmpFailure = 1; /* check for success */
-    MMC_TRY();
+    MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
-    __tmpFailure = 0;
-    MMC_CATCH();
-    if (__tmpFailure) return 1;
+    MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
