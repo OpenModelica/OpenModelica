@@ -3088,7 +3088,7 @@ public function alignExtArgsToScopeEnv
   output TypedIdents outExtraArgs;
   output TypedIdents outEncExtraArgs;
 algorithm
-  (outExtraArgs) := 
+  (outExtraArgs,outEncExtraArgs) := 
   matchcontinue (inExtraArgs, inEncExtraArgs, inScopeEnv)
     local
       ScopeEnv scEnv;
@@ -4039,7 +4039,7 @@ public function adaptTextToString
   output list<MMExp> outStmts;
   output TypedIdents outLocals;
 algorithm
-  (outArgValue, outStmts, outLocals)
+  (outArgValue, outArgExp, outStmts, outLocals)
     := matchcontinue (inArgValue, inArgExp, inStmts, inLocals, inTplPackage)
     local
       list<MMExp> stmts;
