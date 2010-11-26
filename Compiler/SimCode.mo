@@ -7300,6 +7300,13 @@ algorithm
         true = "Windows_NT" ==& System.os();
       then {"-llapack-mingw", "-ltmglib-mingw", "-lblas-mingw", "-lf2c"};
     
+    // omcruntime on windows needs linking with mico2313 and wsock!
+    case Absyn.STRING(str as "omcruntime")
+      equation
+        true = "Windows_NT" ==& System.os();
+        str = "-l" +& str;
+      then {str, "-lmico2313", "-lws2_32"};    
+    
     // The library is not actually named libLapack.so.
     // Which is a problem, since MSL says it does.
     case Absyn.STRING("Lapack") then {"-llapack"};        

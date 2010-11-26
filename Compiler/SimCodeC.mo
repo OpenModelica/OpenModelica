@@ -9221,7 +9221,10 @@ algorithm
                                    }, true));
   out_txt := functionBodies(out_txt, a_functions);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("}"));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "}\n",
+                                       "\n"
+                                   }, true));
 end simulationFunctionsFile;
 
 protected function lm_229
@@ -9278,6 +9281,8 @@ algorithm
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_229(out_txt, a_recordDecls);
   out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_NEW_LINE());
 end recordsFile;
 
 protected function lm_231
@@ -9555,7 +9560,7 @@ algorithm
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("_records.c\n"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\t"));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CXX) $(CFLAGS) -I. -o "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CXX) -I. -o "));
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("$(EXEEXT) "));
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
@@ -9565,9 +9570,9 @@ algorithm
         txt = Tpl.writeText(txt, l_dirExtra);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_libsPos1);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) "));
-        txt = Tpl.writeText(txt, l_libsPos2);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeText(txt, l_libsPos2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c "));
         txt = Tpl.writeStr(txt, i_fileNamePrefix);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_records.c"));
       then txt;
@@ -10077,13 +10082,13 @@ algorithm
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("_records.c\n"));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\t"));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LINK) $(CFLAGS) -o "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LINK) -o "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("$(DLLEXT) "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".c "));
         txt = Tpl.writeText(txt, l_libsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(LDFLAGS) -lm "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CFLAGS) $(LDFLAGS) -lm "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_records.c"));
       then txt;

@@ -58,23 +58,28 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
 {
-  rml_sint_t i,size;
-  char **vars;
+  rml_sint_t i = 0,size = 0;
+  char **vars = NULL;
   char* filename = RML_STRINGDATA(rmlA0);
   void *lst = rmlA1;
   rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
-  void* p;
+  void* p = lst;
   /* Dark magic, be aware */
-  rmlA0 = lst;
-  rml_prim_once(RML__list_5flength);
-  size = RML_UNTAGFIXNUM(rmlA0);
+  /* count the number of elements in the list */
+  
+  while( RML_GETHDR(lst) == RML_CONSHDR ) {
+    lst = RML_CDR(lst);
+    ++size;
+  }
 
   vars = (char**)malloc(sizeof(char*)*size);
-  for (i=0, p=lst; i<size; i++) {
+  for (i=0; i<size; i++) {
     vars[i] = RML_STRINGDATA(RML_CAR(p));
     p = RML_CDR(p);
   }
+  
   rmlA0 = (void*)read_ptolemy_dataset(filename,size,vars,datasize);
+  
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }

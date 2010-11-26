@@ -2393,7 +2393,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) $(CFLAGS) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.cpp <%fileNamePrefix%>_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) -lf2c <%fileNamePrefix%>_records.c 
   >>
 end simulationMakefile;
 
@@ -2540,7 +2540,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   
   .PHONY: <%name%>
   <%name%>: <%name%>.c <%name%>.h <%name%>_records.c
-  <%\t%> $(LINK) $(CFLAGS) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(LDFLAGS) -lm <%name%>_records.c
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(CFLAGS) $(LDFLAGS) -lm <%name%>_records.c 
   >>
 end functionsMakefile;
 
