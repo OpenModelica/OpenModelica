@@ -542,6 +542,14 @@ public function getSendDataLibs
   external "C" sendDataLibs=System_getSendDataLibs() annotation(Library = "omcruntime");
 end getSendDataLibs;
 
+public function getCorbaLibs
+"Returns a string containing the compiler flags used for Corba libraries.
+Needed for annotation(Library=\"OpenModelicaCorba\"), a library with special
+semantics."
+  output String corbaLibs;
+  external "C" corbaLibs=System_getCorbaLibs() annotation(Library = "omcruntime");
+end getCorbaLibs;
+
 public function userIsRoot
 "Returns true if the current user is root.
 Used by main to disable running omc as root as it is very dangerous.

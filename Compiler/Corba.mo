@@ -53,24 +53,24 @@ package Corba
 
 public function initialize
 
-  external "C" Corba_initialize() annotation(Library = "omcruntime");
+  external "C" Corba_initialize() annotation(Library = {"omcruntime","OpenModelicaCorba"});
 end initialize;
 
 public function waitForCommand
   output String outString;
 
-  external "C" outString=Corba_waitForCommand() annotation(Library = "omcruntime");
+  external "C" outString=Corba_waitForCommand() annotation(Library = {"omcruntime","OpenModelicaCorba"});
 end waitForCommand;
 
 public function sendreply
   input String inString;
 
-  external "C" Corba_sendreply(inString) annotation(Library = "omcruntime");
+  external "C" Corba_sendreply(inString) annotation(Library = {"omcruntime","OpenModelicaCorba"});
 end sendreply;
 
 public function close
 
-  external "C" Corba_close() annotation(Library = "omcruntime");
+  external "C" Corba_close() annotation(Library = {"omcruntime","OpenModelicaCorba"});
 end close;
 
 end Corba;

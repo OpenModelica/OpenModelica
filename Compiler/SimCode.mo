@@ -7304,6 +7304,14 @@ algorithm
     // Which is a problem, since MSL says it does.
     case Absyn.STRING("Lapack") then {"-llapack"};        
       
+    // Wonder if there may be issues if we have duplicates in the Corba libs
+    // and the other libs. Some other developer will probably swear over this
+    // hack some day, but at least I get an early weekend.
+    case Absyn.STRING("OpenModelicaCorba")
+      equation
+        str = System.getCorbaLibs();
+      then {str};
+
     // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)
       equation

@@ -54,6 +54,7 @@
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
+#define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lmico2313"
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /*

@@ -416,4 +416,9 @@ void* System_subDirectories(const char *directory)
 }
 #endif
 
+extern const char* System_getCorbaLibs()
+{
+  return CONFIG_CORBALIBS;
+}
+
 }

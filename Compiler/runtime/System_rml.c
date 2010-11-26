@@ -1734,6 +1734,13 @@ RML_BEGIN_LABEL(System__getSendDataLibs)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCorbaLibs)
+{
+  rmlA0 = (void*) mk_scon(CONFIG_CORBALIBS);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__getExeExt)
 {
   rmlA0 = (void*) mk_scon(CONFIG_EXE_EXT);
