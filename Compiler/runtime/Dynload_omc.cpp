@@ -52,4 +52,11 @@ extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
   return retarg;
 }
 
+extern const char* _Absyn_pathString2(void*,const char*);
+static const char* path_to_name(void* path, char del)
+{
+  char delStr[2] = {del,'\0'};
+  return _Absyn_pathString2(path, delStr);
+}
+
 }

@@ -48,77 +48,7 @@ static int execute_function(void *in_arg, void **out_arg,
                                          type_description *));
 static int parse_array(type_description *desc, void *arrdata, void *dimLst);
 static void *value_to_mmc(void* value);
-
-static const char* path_to_name(void* path, char del)
-{
-  char* buf = 0;
-  char* bufstart = 0;
-  void* tmpPath;
-  int length = 0;
-
-  tmpPath = path;
-  while (tmpPath != NULL) {
-    switch (RML_HDRCTOR(RML_GETHDR(tmpPath))) {
-    case Absyn__IDENT_3dBOX1: {
-      length += RML_HDRSTRLEN(RML_GETHDR(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET]));
-      tmpPath = NULL;
-      break;
-    };
-    case Absyn__QUALIFIED_3dBOX2: {
-      length += RML_HDRSTRLEN(RML_GETHDR(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET])) + 1;
-      tmpPath = RML_STRUCTDATA(tmpPath)[1];
-      break;
-    };
-    case Absyn__FULLYQUALIFIED_3dBOX1: {
-      tmpPath = RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET];
-      break;
-    };
-    default:
-      /* free(buf); */
-      return "path_to_name: failed to parse";
-    }
-  }
-
-  buf = bufstart = (char*) malloc((length+1)*sizeof(char));
-  if (buf == NULL) {
-    return "path_to_name: malloc failed";
-  }
-
-  tmpPath = path;
-  while (tmpPath != NULL) {
-    int sprintres;
-    switch (RML_HDRCTOR(RML_GETHDR(tmpPath))) {
-    case Absyn__IDENT_3dBOX1: {
-      sprintres = sprintf(buf, "%s", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET]));
-      if (sprintres < 0) {
-        free(buf);
-        return "path_to_name: sprintf failed";
-      }
-      buf += sprintres;
-      tmpPath = NULL;
-      break;
-    };
-    case Absyn__QUALIFIED_3dBOX2: {
-      sprintres = sprintf(buf, "%s%c", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET]), del);
-      if (sprintres < 0) {
-        free(buf);
-        return "path_to_name: sprintf failed";
-      }
-      buf += sprintres;
-      tmpPath = RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET+1];
-      break;
-    };
-    case Absyn__FULLYQUALIFIED_3dBOX1: {
-      tmpPath = RML_STRUCTDATA(tmpPath)[UNBOX_OFFSET];
-      break;
-    };
-    default:
-      free(buf);
-      return "path_to_name: failed to parse";
-    }
-  }
-  return bufstart;
-}
+static const char* path_to_name(void* path, char del);
 
 static int value_to_type_desc(void *value, type_description *desc)
 {
