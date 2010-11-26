@@ -205,7 +205,7 @@ extern jmp_buf mmc_jumper;
 #define MMC_THROW() throw 1
 
 #define MMC_TRY_TOP() try{
-#define MMC_CATCH_TOP(X) } catch (...) {}
+#define MMC_CATCH_TOP(X) } catch (...) {X;}
 
 #endif
 
