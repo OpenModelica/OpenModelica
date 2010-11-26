@@ -39,6 +39,7 @@ package SimulationResults
   "
 
 public import Values;
+protected import ValuesUtil;
 
 public function readPtolemyplotVariables
   input String inString;
@@ -48,13 +49,22 @@ public function readPtolemyplotVariables
   external "C" outStringLst=SimulationResults_readPtolemyplotVariables(inString,inVisVars) annotation(Library = "omcruntime");
 end readPtolemyplotVariables;
 
-public function readPtolemyplotDataset
+protected function readPtolemyplotDatasetWork
   input String inString;
   input list<String> inStringLst;
   input Integer inInteger;
   output Values.Value outValue;
 
   external "C" outValue=SimulationResults_readPtolemyplotDataset(inString,inStringLst,inInteger) annotation(Library = "omcruntime");
+end readPtolemyplotDatasetWork;
+
+public function readPtolemyplotDataset
+  input String inString;
+  input list<String> inStringLst;
+  input Integer inInteger;
+  output Values.Value outValue;
+algorithm
+  outValue := ValuesUtil.reverseMatrix(readPtolemyplotDatasetWork(inString,inStringLst,inInteger));
 end readPtolemyplotDataset;
 
 public function readPtolemyplotDatasetSize

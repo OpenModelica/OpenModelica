@@ -109,6 +109,10 @@ static int hasInnerOuterDefinitions = 0;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 
+// SendData crap
+int getVariableListSize(const char* model);
+unsigned char getVariableList(const char* model, char* lst);
+
 /*
  * Common implementations
  */
@@ -746,7 +750,7 @@ extern int SystemImpl__lookupFunction(int libIndex, const char *str)
   return funcIndex;
 }
 
-int SystemImpl__freeFunction(int funcIndex)
+static int SystemImpl__freeFunction(int funcIndex)
 {
   modelica_ptr_t func = NULL, lib = NULL;
 
@@ -777,7 +781,7 @@ int SystemImpl__freeFunction(int funcIndex)
   return 0;
 }
 
-int SystemImpl__freeLibrary(int libIndex)
+static int SystemImpl__freeLibrary(int libIndex)
 {
   modelica_ptr_t lib = NULL;
 
@@ -796,7 +800,7 @@ int SystemImpl__freeLibrary(int libIndex)
   return 0;
 }
 
-void free_library(modelica_ptr_t lib)
+static void free_library(modelica_ptr_t lib)
 {
   if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
   if (FreeLibraryFromHandle(lib->data.lib))
@@ -807,13 +811,69 @@ void free_library(modelica_ptr_t lib)
   lib->data.lib = NULL;
 }
 
-void free_function(modelica_ptr_t func)
+static void free_function(modelica_ptr_t func)
 {
   /* noop */
   modelica_ptr_t lib = NULL;
   lib = lookup_ptr(func->data.func.lib);
   /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
+
+static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void *varValues, double *returnValue)
+{
+  // values to find the correct range
+  double preValue   = 0.0;
+  double preTime   = 0.0;
+  double nowValue   = 0.0;
+  double nowTime   = 0.0;
+
+  // linjear interpolation data
+  double timedif       = 0.0;
+  double valuedif      = 0.0;
+  double valueSlope      = 0.0;
+  double timeDifTimeStamp  = 0.0;
+
+  // break loop and return value
+  int valueFound = 0;
+
+  for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
+    nowValue   = rml_prim_get_real(RML_CAR(varValues));
+    nowTime   =  rml_prim_get_real(RML_CAR(timeValues));
+
+    if(timeStamp == nowTime){
+      valueFound   = 1;
+      *returnValue = nowValue;
+    } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
+      valueFound       = 1;
+      timedif          = nowTime - preTime;
+      valuedif         = nowValue - preValue;
+      valueSlope       = valuedif / timedif;
+      timeDifTimeStamp = timeStamp - preTime;
+      *returnValue     = preValue + (valueSlope*timeDifTimeStamp);
+    } else {
+      preValue  = nowValue;
+      preTime   = nowTime;
+    }
+  }
+
+  if(valueFound == 0){
+    // value could not be found in the dataset, what do we do?
+    printf("\n WARNING: timestamp(%f) outside simulation timeline \n", timeStamp);
+    return 1;
+  }
+  return 0;
+}
+
+static char* SystemImpl__getVariableNames(const char* model)
+{
+  int size = getVariableListSize(model);
+  char *res;
+  if(!size) return NULL;
+  res = (char*)malloc(sizeof(char)*size +1);
+  getVariableList(model, res);
+  return res;
+}
+
 
 #ifdef __cplusplus
 }

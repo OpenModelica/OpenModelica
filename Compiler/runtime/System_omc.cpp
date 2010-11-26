@@ -28,6 +28,8 @@
  *
  */
 
+#include "meta_modelica.h"
+#include "rml_compatibility.h"
 #include "systemimpl.c"
 
 extern "C" {
@@ -242,14 +244,17 @@ void System_setClassnamesForSimulation(const char *class_names)
 
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
 {
-  fprintf(stderr, "System_getVariableValue NYI\n");
-  exit(1);
+  double res;
+  if (SystemImpl__getVariableValue(_timeStamp,_timeValues,_varValues,&res))
+    MMC_THROW();
+  return res;
 }
 
 extern const char* System_getVariableNames(const char* _modelname)
 {
-  fprintf(stderr, "System_getVariableNames NYI\n");
-  exit(1);
+  char* res = SystemImpl__getVariableNames(_modelname);
+  if(res==NULL) MMC_THROW();
+  return res; /* it's malloc'ed already */
 }
 
 extern void* System_getFileModificationTime(const char *fileName)

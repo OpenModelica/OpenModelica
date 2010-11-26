@@ -68,6 +68,7 @@
 #define RML_HDRSLOTS MMC_HDRSLOTS
 #define RML_FETCH MMC_FETCH
 #define RML_OFFSET MMC_OFFSET
+#define RML_CONSHDR MMC_CONSHDR
 
 /* For external functions, since I was stupid and put the
 record_description as index 0 instead of n-1 :) */

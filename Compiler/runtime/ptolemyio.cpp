@@ -44,8 +44,6 @@ extern "C"
 {
 #include <string.h>
 #include <stdlib.h>
-#include "rml.h"  
-#include "Values.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -55,7 +53,7 @@ void print_error_buf_impl(const char* str);
 
 /* Given a file name and an array of variables, return the RML datastructure
    in Values for Real[size(vars,1],:] i.e. a matrix of variable values, one column for each variable. */
-void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
+void * read_ptolemy_dataset(const char*filename, int size,const char**vars,int datasize)
 {
   char buf[255];
   void *lst,*olst,*dimLst,*odimLst;
@@ -148,7 +146,7 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
 }
 
 /* Given a file name, returns the size of that simulation result in that file*/
-int read_ptolemy_dataset_size(char*filename)
+int read_ptolemy_dataset_size(const char*filename)
 {
   char buf[255];
   ifstream stream(filename);
@@ -173,7 +171,7 @@ int read_ptolemy_dataset_size(char*filename)
   return readIntervalSize;
 }
 
-void * read_ptolemy_variables(char* filename, char* visvars)
+void * read_ptolemy_variables(const char* filename, const char* visvars)
 {
   char buf[255];
   void *lst;

@@ -64,6 +64,7 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
   void *lst = rmlA1;
   rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
   void* p;
+  /* Dark magic, be aware */
   rmlA0 = lst;
   rml_prim_once(RML__list_5flength);
   size = RML_UNTAGFIXNUM(rmlA0);
@@ -78,9 +79,7 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
     RML_TAILCALLK(rmlFC);
   }
 
-  rml_prim_once(ValuesUtil__reverseMatrix);
-
-  RML_TAILCALLK(rmlSC);
+  RML_TAILCALLQ(ValuesUtil__reverseMatrix,1);
 }
 RML_END_LABEL
 
@@ -89,13 +88,8 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDatasetSize)
   int size;
   char* filename = RML_STRINGDATA(rmlA0);
   void* p;
-
   size = read_ptolemy_dataset_size(filename);
-
   rmlA0 = (void*)Values__INTEGER(mk_icon(size));
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

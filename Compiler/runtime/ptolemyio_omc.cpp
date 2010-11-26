@@ -28,43 +28,10 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "meta_modelica.h"
-#include "OpenModelicaBootstrappingHeader.h"
-
 extern "C" {
-
-void* read_ptolemy_dataset(const char*filename, int size,const char**vars,int);
-void* read_ptolemy_variables(const char* filename, const char* visvars);
-int read_ptolemy_dataset_size(const char*filename);
-
-void* SimulationResults_readPtolemyplotVariables(const char *filename, const char *visvars)
-{
-  void* res = read_ptolemy_variables(filename, visvars);
-  if (res == NULL) MMC_THROW();
-  return res;
+#include "meta_modelica.h"
+#include "rml_compatibility.h"
+#include "OpenModelicaBootstrappingHeader.h"
 }
+#include "ptolemyio.cpp"
 
-extern void* _ValuesUtil_reverseMatrix(void*);
-void* SimulationResults_readPtolemyplotDataset(const char *filename, void *lst, int datasize)
-{
-  int i, size = listLength(lst);
-  void *p,*res;
-  const char** vars = (const char**) malloc(sizeof(const char*)*size);
-  for (i=0, p=lst; i<size; i++) {
-    vars[i] = MMC_STRINGDATA(MMC_CAR(p));
-    p = MMC_CDR(p);
-  }
-  res = read_ptolemy_dataset(filename,size,vars,datasize);
-  if (res == NULL) MMC_THROW();
-  return res;
-}
-
-void* SimulationResults_readPtolemyplotDatasetSize(const char *filename)
-{
-  return Values__INTEGER(mmc_mk_icon(read_ptolemy_dataset_size(filename)));
-}
-
-}
