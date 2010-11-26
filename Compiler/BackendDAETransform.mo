@@ -1223,9 +1223,9 @@ algorithm
         dae = makeAlgebraic(dae, state);
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
         // print("new DAE:");
-        // dump(dae);
+        // BackendDump.dump(dae);
         // print("new IM:");
-        // dumpIncidenceMatrix(m);
+        // BackendDump.dumpIncidenceMatrix(m);
       then
         (dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 

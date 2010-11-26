@@ -413,6 +413,24 @@ algorithm
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
 
+        // der(arctan2(y,0)) = sign(y)
+      case (DAE.CALL(path = fname,expLst = {e,e1}),(timevars,functions))
+      equation
+        Builtin.isATan2(fname);
+        true = Expression.isZero(e1);
+      then
+       DAE.CALL(Absyn.IDENT("sign"),{e},false,true,DAE.ET_INT(),DAE.NO_INLINE());
+
+        // der(arctan2(y,x)) = der(y/x)/1+x^2
+      case (DAE.CALL(path = fname,expLst = {e,e1}),(timevars,functions))
+      equation
+        Builtin.isATan2(fname);
+        false = Expression.isZero(e1);
+        exp = Expression.makeDiv(e,e1);
+        e_1 = differentiateExpTime(exp, (timevars,functions));
+      then
+       e_1;
+
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
         Builtin.isExp(fname);
@@ -1397,6 +1415,26 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
     
+    // der(arctan2(y,0)) = sign(y) 
+    case (DAE.CALL(path = fname,expLst = {e,e1}),tv,differentiateIfExp)
+      equation
+        Builtin.isATan2(fname);
+        true = Expression.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
+        true = Expression.isZero(e1);
+      then
+       DAE.CALL(Absyn.IDENT("sign"),{e},false,true,DAE.ET_INT(),DAE.NO_INLINE());
+
+    // der(arctan2(y,x)) = der(y/x)/1+x^2
+    case (DAE.CALL(path = fname,expLst = {e,e1}),tv,differentiateIfExp)
+      equation
+        Builtin.isATan2(fname);
+        true = Expression.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
+        false = Expression.isZero(e1);
+        exp = Expression.makeDiv(e,e1);
+        e_1 = differentiateExp(exp, tv,differentiateIfExp)  ;
+      then
+       e_1;
+           
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       equation
         Builtin.isExp(fname) "exp(x) => x\'  exp(x)" ;
