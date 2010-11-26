@@ -2537,10 +2537,11 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  SENDDATALIBS=<%makefileParams.senddatalibs%>
   
   .PHONY: <%name%>
   <%name%>: <%name%>.c <%name%>.h <%name%>_records.c
-  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(CFLAGS) $(LDFLAGS) -lm <%name%>_records.c 
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.c <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
   >>
 end functionsMakefile;
 

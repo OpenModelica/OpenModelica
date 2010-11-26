@@ -10021,6 +10021,7 @@ algorithm
     local
       Tpl.Text txt;
       String i_name;
+      String i_makefileParams_senddatalibs;
       String i_makefileParams_ldflags;
       String i_makefileParams_cflags;
       String i_makefileParams_omhome;
@@ -10033,7 +10034,7 @@ algorithm
       Tpl.Text l_libsStr;
 
     case ( txt,
-           SimCode.FUNCTIONCODE(makefileParams = SimCode.MAKEFILE_PARAMS(libs = i_makefileParams_libs, ccompiler = i_makefileParams_ccompiler, cxxcompiler = i_makefileParams_cxxcompiler, linker = i_makefileParams_linker, exeext = i_makefileParams_exeext, dllext = i_makefileParams_dllext, omhome = i_makefileParams_omhome, cflags = i_makefileParams_cflags, ldflags = i_makefileParams_ldflags), name = i_name) )
+           SimCode.FUNCTIONCODE(makefileParams = SimCode.MAKEFILE_PARAMS(libs = i_makefileParams_libs, ccompiler = i_makefileParams_ccompiler, cxxcompiler = i_makefileParams_cxxcompiler, linker = i_makefileParams_linker, exeext = i_makefileParams_exeext, dllext = i_makefileParams_dllext, omhome = i_makefileParams_omhome, cflags = i_makefileParams_cflags, ldflags = i_makefileParams_ldflags, senddatalibs = i_makefileParams_senddatalibs), name = i_name) )
       equation
         l_libsStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(" ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         l_libsStr = lm_248(l_libsStr, i_makefileParams_libs);
@@ -10067,6 +10068,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/lib/omc\" "));
         txt = Tpl.writeStr(txt, i_makefileParams_ldflags);
         txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SENDDATALIBS="));
+        txt = Tpl.writeStr(txt, i_makefileParams_senddatalibs);
+        txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "\n",
                                     ".PHONY: "
@@ -10088,7 +10092,7 @@ algorithm
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(".c "));
         txt = Tpl.writeText(txt, l_libsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CFLAGS) $(LDFLAGS) -lm "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_records.c"));
       then txt;
