@@ -23,7 +23,7 @@ SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo
 	cp -pf $@ ../../
 	@echo " "	
 
-Unparsing.mo : Unparsing.tpl UnparsingTV.mo
+Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	@echo " ** Unparsing template compilation ** "
 	$(OMC) $<
 	cp -pf $@ ../../

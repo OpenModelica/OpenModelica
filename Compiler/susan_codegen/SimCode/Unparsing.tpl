@@ -1,6 +1,6 @@
 package Unparsing
 
-import interface UnparsingTV;
+import interface SimCodeTV;
 
 template programExternalHeader(SCode.Program program)
 ::=
@@ -20,6 +20,14 @@ template classExternalHeader(SCode.Class cl, String pack)
 ::=
 match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeader(elt,c.name))
 end classExternalHeader;
+
+template pathString(Absyn.Path path)
+::=
+match path
+  case IDENT(__) then name
+  case QUALIFIED(__) then '<%name%>.<%pathString(path)%>'
+  case FULLYQUALIFIED(__) then pathString(path)
+end pathString;
 
 template elementExternalHeader(SCode.Element elt, String pack)
 ::=

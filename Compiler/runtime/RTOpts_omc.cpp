@@ -35,7 +35,7 @@ extern "C" {
 
 extern int showErrorMessages;
 
-const char* corbaSessionName = ""; // TODO: Move this to corbaimpl when bootstrapped version has that file
+extern const char* corbaSessionName;
 
 extern int RTOpts_debugFlag(const char* flag) {
   return check_debug_flag(flag)!=0;

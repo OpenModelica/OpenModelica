@@ -1090,6 +1090,464 @@ package ClassInf
 
 end ClassInf;
 
+package SCode
+
+type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'";
+
+type Path = Absyn.Path;
+
+type Subscript = Absyn.Subscript;
+
+uniontype Restriction
+  record R_CLASS end R_CLASS;
+  record R_OPTIMIZATION end R_OPTIMIZATION;
+  record R_MODEL end R_MODEL;
+  record R_RECORD end R_RECORD;
+  record R_BLOCK end R_BLOCK;
+  record R_CONNECTOR "a connector"
+    Boolean isExpandable "is expandable?";
+  end R_CONNECTOR;
+  record R_OPERATOR "an operator definition"
+    Boolean isFunction "is this operator a function?";
+  end R_OPERATOR;
+  record R_TYPE end R_TYPE;
+  record R_PACKAGE end R_PACKAGE;
+  record R_FUNCTION end R_FUNCTION;
+  record R_EXT_FUNCTION "Added c.t. Absyn" end R_EXT_FUNCTION;
+  record R_ENUMERATION end R_ENUMERATION;
+
+  // predefined internal types
+  record R_PREDEFINED_INTEGER     "predefined IntegerType" end R_PREDEFINED_INTEGER;
+  record R_PREDEFINED_REAL        "predefined RealType"    end R_PREDEFINED_REAL;
+  record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
+  record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
+  record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
+
+  // MetaModelica extensions
+  record R_METARECORD "Metamodelica extension"
+    Absyn.Path name; //Name of the uniontype
+    Integer index; //Index in the uniontype
+  end R_METARECORD; /* added by x07simbj */
+
+  record R_UNIONTYPE "Metamodelica extension"
+  end R_UNIONTYPE; /* added by simbj */
+end Restriction;
+
+uniontype Mod "- Modifications"
+
+  record MOD
+    Boolean finalPrefix "final" ;
+    Absyn.Each eachPrefix;
+    list<SubMod> subModLst;
+    Option<tuple<Absyn.Exp,Boolean>> absynExpOption "The binding expression of a modification
+    has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
+    should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
+    type checked -before- a is instantiated, which is the current design in instantiation process.";
+  end MOD;
+
+  record REDECL
+    Boolean finalPrefix       "final" ;
+    list<Element> elementLst  "elements" ;
+  end REDECL;
+
+  record NOMOD end NOMOD;
+
+end Mod;
+
+uniontype SubMod "Modifications are represented in an more structured way than in
+    the `Absyn\' module.  Modifications using qualified names
+    (such as in `x.y =  z\') are normalized (to `x(y = z)\').  And a
+    special case when arrays are subscripted in a modification.
+"
+  record NAMEMOD
+    Ident ident;
+    Mod A "A named component" ;
+  end NAMEMOD;
+
+  record IDXMOD
+    list<Subscript> subscriptLst;
+    Mod an "An array element" ;
+  end IDXMOD;
+
+end SubMod;
+
+type Program = list<Class>;
+
+uniontype Class "- Classes"
+  record CLASS "the simplified SCode class"
+    Ident name "the name of the class" ;
+    Boolean partialPrefix "the partial prefix" ;
+    Boolean encapsulatedPrefix "the encapsulated prefix" ;
+    Restriction restriction "the restriction of the class" ;
+    ClassDef classDef "the class specification" ;
+    Absyn.Info info "the class information";
+  end CLASS;
+end Class;
+
+uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
+  record ENUM
+    Ident           literal;
+    Option<Comment> comment;
+  end ENUM;
+end Enum;
+
+uniontype ClassDef
+"The major difference between these types and their Absyn
+ counterparts is that the PARTS constructor contains separate
+ lists for elements, equations and algorithms.
+
+ SCode.PARTS contains elements of a class definition. For instance,
+    model A
+      extends B;
+      C c;
+    end A;
+ Here PARTS contains two elements ('extends B' and 'C c')
+ SCode.DERIVED is used for short class definitions, i.e:
+  class A = B(modifiers);
+ SCode.CLASS_EXTENDS is used for extended class definition, i.e:
+  class extends A (modifier)
+    new elements;
+  end A;"
+  record PARTS "a class made of parts"
+    list<Element>              elementLst          "the list of elements";
+    list<Equation>             normalEquationLst   "the list of equations";
+    list<Equation>             initialEquationLst  "the list of initial equations";
+    list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
+    list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
+    Option<Absyn.ExternalDecl> externalDecl        "used by external functions" ;
+    list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
+    Option<Comment>            comment             "the class comment";
+  end PARTS;
+
+  record CLASS_EXTENDS "an extended class definition plus the additional parts"
+    Ident            baseClassName       "the name of the base class we have to extend";
+    Mod              modifications       "the modifications that need to be applied to the base class";
+    list<Element>    elementLst          "the list of elements";
+    list<Equation>   normalEquationLst   "the list of equations";
+    list<Equation>   initialEquationLst  "the list of initial equations";
+    list<AlgorithmSection>  normalAlgorithmLst  "the list of algorithms";
+    list<AlgorithmSection>  initialAlgorithmLst "the list of initial algorithms";
+    list<Annotation> annotationLst       "the list of annotations found in between class elements, equations and algorithms";
+    Option<Comment>  comment             "the class comment";
+  end CLASS_EXTENDS;
+
+  record DERIVED "a derived class"
+    Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
+    Mod modifications;
+    Absyn.ElementAttributes attributes;
+    Option<Comment> comment "the translated comment from the Absyn";
+  end DERIVED;
+
+  record ENUMERATION "an enumeration"
+    list<Enum> enumLst "if the list is empty it means :, the supertype of all enumerations";
+    Option<Comment> comment "the translated comment from the Absyn";
+  end ENUMERATION;
+
+  record OVERLOAD "an overloaded function"
+    list<Absyn.Path> pathLst;
+    Option<Comment> comment "the translated comment from the Absyn";
+  end OVERLOAD;
+
+  record PDER "the partial derivative"
+    Absyn.Path  functionPath "function name" ;
+    list<Ident> derivedVariables "derived variables" ;
+    Option<Comment> comment "the Absyn comment";
+  end PDER;
+
+end ClassDef;
+
+uniontype Comment
+
+  record COMMENT
+    Option<Annotation> annotation_;
+    Option<String> comment;
+  end COMMENT;
+
+  record CLASS_COMMENT
+    list<Annotation> annotations;
+    Option<Comment> comment;
+  end CLASS_COMMENT;
+end Comment;
+
+uniontype Annotation
+
+  record ANNOTATION
+    Mod modification;
+  end ANNOTATION;
+
+end Annotation;
+
+uniontype Equation "- Equations"
+  record EQUATION "an equation"
+    EEquation eEquation "an equation";
+  end EQUATION;
+
+end Equation;
+
+uniontype EEquation
+"These represent equations and are almost identical to their Absyn versions.
+ In EQ_IF the elseif branches are represented as normal else branches with
+ a single if statement in them."
+  record EQ_IF
+    list<Absyn.Exp> condition "conditional" ;
+    list<list<EEquation>> thenBranch "the true (then) branch" ;
+    list<EEquation>       elseBranch "the false (else) branch" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_IF;
+
+  record EQ_EQUALS "the equality equation"
+    Absyn.Exp expLeft  "the expression on the left side of the operator";
+    Absyn.Exp expRight "the expression on the right side of the operator";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_EQUALS;
+
+  record EQ_CONNECT "the connect equation"
+    Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
+    Absyn.ComponentRef crefRight "the connector/component reference on the right side";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_CONNECT;
+
+  record EQ_FOR "the for equation"
+    Ident           index        "the index name";
+    Absyn.Exp       range        "the range of the index";
+    list<EEquation> eEquationLst "the equation list";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_FOR;
+
+  record EQ_WHEN "the when equation"
+    Absyn.Exp        condition "the when condition";
+    list<EEquation>  eEquationLst "the equation list";
+    list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst "the elsewhen expression and equation list";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_WHEN;
+
+  record EQ_ASSERT "the assert equation"
+    Absyn.Exp condition "the assert condition";
+    Absyn.Exp message   "the assert message";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_ASSERT;
+
+  record EQ_TERMINATE "the terminate equation"
+    Absyn.Exp message "the terminate message";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_TERMINATE;
+
+  record EQ_REINIT "a reinit equation"
+    Absyn.ComponentRef cref      "the variable to initialize";
+    Absyn.Exp          expReinit "the new value" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_REINIT;
+
+  record EQ_NORETCALL "function calls without return value"
+    Absyn.ComponentRef functionName "the function nanme";
+    Absyn.FunctionArgs functionArgs "the function arguments";
+    Option<Comment> comment;
+    Absyn.Info info;
+  end EQ_NORETCALL;
+
+end EEquation;
+
+uniontype AlgorithmSection "- Algorithms
+  The Absyn module uses the terminology from the
+  grammar, where algorithm means an algorithmic
+  statement. But here, an Algorithm means a whole
+  algorithm section."
+  record ALGORITHM "the algorithm section"
+    list<Statement> statements "the algorithm statements" ;
+  end ALGORITHM;
+
+end AlgorithmSection;
+
+uniontype Statement "The Statement type describes one algorithm statement in an algorithm section."
+  record ALG_ASSIGN
+    Absyn.Exp assignComponent "assignComponent" ;
+    Absyn.Exp value "value" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_ASSIGN;
+
+  record ALG_IF
+    Absyn.Exp boolExpr;
+    list<Statement> trueBranch;
+    list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
+    list<Statement> elseBranch;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_IF;
+
+  record ALG_FOR
+    Absyn.ForIterators iterators;
+    list<Statement> forBody "forBody" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_FOR;
+
+  record ALG_WHILE
+    Absyn.Exp boolExpr "boolExpr" ;
+    list<Statement> whileBody "whileBody" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_WHILE;
+
+  record ALG_WHEN_A
+    list<tuple<Absyn.Exp, list<Statement>>> branches;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_WHEN_A;
+
+  record ALG_NORETCALL
+    Absyn.ComponentRef functionCall "functionCall" ;
+    Absyn.FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_NORETCALL;
+
+  record ALG_RETURN
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_RETURN;
+
+  record ALG_BREAK
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_BREAK;
+
+  // Part of MetaModelica extension. KS
+  record ALG_TRY
+    list<Statement> tryBody;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_TRY;
+
+  record ALG_CATCH
+    list<Statement> catchBody;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_CATCH;
+
+  record ALG_THROW
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_THROW;
+
+  record ALG_MATCHCASES
+    Absyn.MatchType matchType;
+    list<Absyn.Exp> inputExps;
+    list<Absyn.Exp> switchCases;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_MATCHCASES;
+
+  record ALG_GOTO
+    String labelName;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_GOTO;
+
+  record ALG_LABEL
+    String labelName;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_LABEL;
+
+  record ALG_FAILURE
+    list<Statement> stmts;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_FAILURE;
+  //-------------------------------
+
+end Statement;
+
+uniontype Element "- Elements
+  There are four types of elements in a declaration, represented by the constructors:
+  EXTENDS   (for extends clauses),
+  CLASSDEF  (for local class definitions)
+  COMPONENT (for local variables). and
+  IMPORT    (for import clauses)
+  The baseclass name is initially NONE() in the translation,
+  and if an element is inherited from a base class it is
+  filled in during the instantiation process."
+  record EXTENDS "the extends element"
+    Path baseClassPath "the extends path";
+    Mod modifications  "the modifications applied to the base class";
+    Option<Annotation> annotation_;
+  end EXTENDS;
+
+  record CLASSDEF "a local class definition"
+    Ident   name               "the name of the local class" ;
+    Boolean finalPrefix        "final prefix" ;
+    Boolean replaceablePrefix  "replaceable prefix" ;
+    Class   classDef           "the class definition" ;
+    Option<Absyn.ConstrainClass> cc;
+  end CLASSDEF;
+
+  record IMPORT "an import element"
+    Absyn.Import imp "the import definition";
+  end IMPORT;
+
+  record COMPONENT "a component"
+    Ident component               "the component name" ;
+    Absyn.InnerOuter innerOuter   "the inner/outer/innerouter prefix";
+    Boolean finalPrefix           "the final prefix" ;
+    Boolean replaceablePrefix     "the replaceable prefix" ;
+    Boolean protectedPrefix       "the protected prefix" ;
+    Attributes attributes         "the component attributes";
+    Absyn.TypeSpec typeSpec       "the type specification" ;
+    Mod modifications             "the modifications to be applied to the component";
+    Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
+    Option<Absyn.Exp> condition   "the conditional declaration of a component";
+    Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
+    Option<Absyn.ConstrainClass> cc "The constraining class for the component";
+  end COMPONENT;
+
+  record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
+    Ident name;
+    Option<String> exp;
+    Option<Real> weight;
+  end DEFINEUNIT;
+end Element;
+
+uniontype Attributes "- Attributes"
+  record ATTR "the attributes of the component"
+    Absyn.ArrayDim arrayDims "the array dimensions of the component";
+    Boolean flowPrefix "the flow prefix" ;
+    Boolean streamPrefix "the stream prefix" ;
+    Accessibility accesibility "the accesibility of the component: RW (read/write), RO (read only), WO (write only)" ;
+    Variability variability " the variability: parameter, discrete, variable, constant" ;
+    Absyn.Direction direction "the direction: input, output or bidirectional" ;
+  end ATTR;
+end Attributes;
+
+uniontype Variability "the variability of a component"
+  record VAR      "a variable"          end VAR;
+  record DISCRETE "a discrete variable" end DISCRETE;
+  record PARAM    "a parameter"         end PARAM;
+  record CONST    "a constant"          end CONST;
+end Variability;
+
+uniontype Accessibility "These are attributes that apply to a declared component."
+  record RW "read/write" end RW;
+  record RO "read-only" end RO;
+  record WO "write-only (not used)" end WO;
+end Accessibility;
+
+uniontype Initial "the initial attribute of an algorithm or equation
+ Intial is used as argument to instantiation-function for
+ specifying if equations or algorithms are initial or not."
+  record INITIAL "an initial equation or algorithm" end INITIAL;
+  record NON_INITIAL "a normal equation or algorithm" end NON_INITIAL;
+end Initial;
+
+end SCode;
 
 package Util
   

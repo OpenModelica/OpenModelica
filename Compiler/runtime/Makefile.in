@@ -10,11 +10,13 @@ RMLINCLUDE = @rmlinc@
 CFLAGS = @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
-  CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
+  CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp
   CORBAINCL = @CORBACFLAGS@
+  OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 else
   CORBASRC = corbaimpl_stub.cpp
   CORBAINCL =  
+  OMCCORBASRC = corbaimpl_stub_omc.o
 endif
 
 SHELL	= /bin/sh

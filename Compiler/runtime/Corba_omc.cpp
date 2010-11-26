@@ -28,55 +28,30 @@
  *
  */
 
+#include <stdio.h>
+#include "corbaimpl.cpp"
 #include "meta_modelica.h"
-#include "rml_compatibility.h"
-#include "parse.c"
 
 extern "C" {
 
-void* Parser_parse(const char* filename)
+extern const char* Corba_waitForCommand()
 {
-  void *res = parseFile(filename,PARSE_MODELICA);
-  if (res == NULL)
-    MMC_THROW();
-  // printAny(res);
-  return res;
+  return strdup(CorbaImpl__waitForCommand());
 }
 
-void* Parser_parseexp(const char* filename)
+extern void Corba_initialize()
 {
-  void *res = parseFile(filename,PARSE_EXPRESSION);
-  if (res == NULL)
-    MMC_THROW();
-  return res;
+  if (CorbaImpl__initialize()) MMC_THROW();
 }
 
-void* Parser_parsestring(const char* data, const char** msg)
+extern void Corba_close()
 {
-  ErrorImpl__setCheckpoint("parsestring");
-  void *res = parseString(data,PARSE_MODELICA);
-  if (res != NULL) {
-    *msg = "Ok";
-    ErrorImpl__rollBack("parsestring");
-    return res;
-  } else {
-    *msg = ErrorImpl__rollBackAndPrint("parsestring");
-    return NULL; // FIXME?!
-  }
+  CorbaImpl__close();
 }
 
-void* Parser_parsestringexp(const char* data, const char** msg)
+extern void Corba_sendreply(const char* _inString)
 {
-  ErrorImpl__setCheckpoint("parsestringexp");
-  void *res = parseString(data,PARSE_EXPRESSION);
-  if (res != NULL) {
-    *msg = "Ok";
-    ErrorImpl__rollBack("parsestringexp");
-    return res;
-  } else {
-    *msg = ErrorImpl__rollBackAndPrint("parsestringexp");
-    return NULL; // FIXME?!
-  }
+  CorbaImpl__sendreply(_inString);
 }
 
 }
