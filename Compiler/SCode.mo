@@ -2779,5 +2779,109 @@ algorithm
   end matchcontinue;
 end isNotComponent;
 
+public function traverseEEquationListExps
+  "Traverses a list of EEquations, calling the given func on each Absyn.Exp it
+  encounters."
+  input list<EEquation> inEEquations;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output list<EEquation> outEEquations;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Absyn.Exp, Argument> inTuple;
+    output tuple<Absyn.Exp, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  (outEEquations, outTuple) := 
+    Util.listMapAndFold(inEEquations, traverseEEquationExps, inTuple);
+end traverseEEquationListExps;
+
+public function traverseEEquationExps
+  "Traverses an EEquation, calling the given function on each Absyn.Exp it
+  encounters."
+  input EEquation inEEquation;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output EEquation outEEquation;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Absyn.Exp, Argument> inTuple;
+    output tuple<Absyn.Exp, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  outTuple := match(inEEquation, inTuple)
+    local
+      TraverseFunc traverser;
+      Argument arg;
+      Absyn.Exp e1, e2;
+      list<Absyn.Exp> expl1, expl2;
+      list<list<EEquation>> then_branch;
+      list<EEquation> else_branch;
+      Option<Comment> comment;
+      Absyn.Info info;
+
+    // TODO: Implement the rest of the EEquations!
+
+    case (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg))
+      equation
+        ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
+        (then_branch, (traverser, arg)) = Util.listMapAndFold(then_branch, 
+          traverseEEquationListExps, inTuple);
+        (else_branch, (traverser, arg)) = 
+          traverseEEquationListExps(else_branch, (traverser, arg));
+      then
+        (EQ_IF(expl1, then_branch, else_branch, comment, info), (traverser, arg));
+
+    case (EQ_EQUALS(e1, e2, comment, info), (traverser, arg))
+      equation
+        ((e1, arg)) = traverser((e1, arg));
+        ((e2, arg)) = traverser((e2, arg));
+      then
+        (EQ_EQUALS(e1, e2, comment, info), (traverser, arg));
+
+    else then (inEEquation, inTuple);
+  end match;
+end traverseEEquationExps;
+
+public function traverseStatementExps
+  "Traverses a Statement, calling the given function on each Absyn.Exp it
+  encounters."
+  input Statement inStatement;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output Statement outStatement;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Absyn.Exp, Argument> inTuple;
+    output tuple<Absyn.Exp, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  outTuple := match(inStatement, inTuple)
+    local
+      TraverseFunc traverser;
+      Argument arg;
+      Absyn.Exp e1, e2;
+      Option<Comment> comment;
+      Absyn.Info info;
+
+    // TODO: Implement the rest of the statements!
+
+    case (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg))
+      equation
+        ((e1, arg)) = traverser((e1, arg));
+        ((e2, arg)) = traverser((e2, arg));
+      then
+        (ALG_ASSIGN(e1, e2, comment, info), (traverser, arg));
+
+    else then (inStatement, inTuple);
+  end match;
+end traverseStatementExps;
+
 end SCode;
 

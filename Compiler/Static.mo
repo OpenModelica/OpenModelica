@@ -10678,7 +10678,7 @@ public function makeEnumerationArray
 algorithm
   enum_lit_names := Util.listMap(enumLiterals, Absyn.makeIdentPathFromString);
   enum_lit_names := Util.listMap1r(enum_lit_names, Absyn.joinPaths, enumTypeName);
-  enum_lit_expl := Util.listMapAndFold(enum_lit_names, makeEnumLiteral, 1);
+  (enum_lit_expl, _) := Util.listMapAndFold(enum_lit_names, makeEnumLiteral, 1);
   sz := listLength(enumLiterals);
   ety := DAE.ET_ARRAY(DAE.ET_ENUMERATION(enumTypeName, enumLiterals, {}),
     {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
@@ -11984,6 +11984,12 @@ algorithm
         const = Types.constAnd(const1, const2);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const);
+
+    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = cr), crefPrefix, impl, info)
+      equation
+        (cache, cr, const1) = elabCrefSubs(cache, env, cr, crefPrefix, impl, info);
+      then
+        (cache, cr, const1);
 
     // failure
     case (cache,env,acr,crefPrefix,impl,info)

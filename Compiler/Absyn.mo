@@ -3210,6 +3210,22 @@ algorithm str := matchcontinue(inComponentRef)
 end matchcontinue;
 end crefFirstIdent;
 
+public function crefFirstIdentNoSubs
+  "Returns the basename of the component reference, but fails if it encounters
+  any subscripts."
+  input ComponentRef inCref;
+  output Ident outIdent;
+algorithm
+  outIdent := match(inCref)
+    local
+      Ident id;
+      ComponentRef cr;
+    case CREF_IDENT(name = id, subscripts = {}) then id;
+    case CREF_QUAL(name = id, subScripts = {}) then id;
+    case CREF_FULLYQUALIFIED(componentRef = cr) then crefFirstIdentNoSubs(cr);
+  end match;
+end crefFirstIdentNoSubs;
+
 public function crefIsIdent "
 Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;

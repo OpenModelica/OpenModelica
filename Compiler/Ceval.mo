@@ -4915,7 +4915,7 @@ algorithm
         enum_names = Util.listSub(enum_names, startIndex, (stopIndex - startIndex) + 1);
         enum_paths = Util.listMap(enum_names, Absyn.makeIdentPathFromString);
         enum_paths = Util.listMap1r(enum_paths, Absyn.joinPaths, enum_type);
-        enum_values = Util.listMapAndFold(enum_paths, makeEnumValue, startIndex);
+        (enum_values, _) = Util.listMapAndFold(enum_paths, makeEnumValue, startIndex);
       then
         enum_values;
   end matchcontinue;

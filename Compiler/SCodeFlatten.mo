@@ -46,6 +46,7 @@ public import SCode;
 protected import Debug;
 protected import Error;
 protected import Util;
+protected import Dump;
 
 protected type Import = tuple<String, Absyn.Path>;
 protected type ImportTable = list<Import>;
@@ -121,7 +122,7 @@ algorithm
   (cdef, outImportCache) := flattenClassDef(cdef, env, inImportTable, inImportCache);
   outClass := SCode.CLASS(name, part_pre, encap_pre, restriction, cdef, info);
 end flattenClass;
-   
+  
 protected function flattenClassDef
   input SCode.ClassDef inClassDef;
   input Env.Env inEnv;
@@ -146,6 +147,12 @@ algorithm
         (ex, cl, im, co, ud) = sortElements(el);
         (imports, cache) = addImports(im, inEnv, inImportTable, inImportCache);
         co = Util.listMap2(co, replaceImportsInComponent, imports, cache);
+        ex = Util.listMap2(ex, replaceImportsInExtends, imports, cache);
+        neql = Util.listMap2(neql, replaceImportsInEquation, imports, cache);
+        ieql = Util.listMap2(ieql, replaceImportsInEquation, imports, cache);
+        nal = Util.listMap2(nal, replaceImportsInAlgorithmSection, imports, cache);
+        ial = Util.listMap2(ial, replaceImportsInAlgorithmSection, imports, cache);
+
         (cl, cache) = flattenClassDefElements(cl, inEnv, imports, cache);
         el = Util.listReduce({ex, cl, co, ud}, listAppend);
       then
@@ -259,32 +266,81 @@ protected function replaceImportsInComponent
   input ImportTable inImportTable;
   input ImportCache inCache;
   output SCode.Element outComponent;
+  
+  SCode.Ident name;
+  Absyn.InnerOuter io;
+  Boolean fp, rp, pp;
+  SCode.Attributes attr;
+  Absyn.TypeSpec type_spec;
+  SCode.Mod mod;
+  Option<SCode.Comment> cmt;
+  Option<Absyn.Exp> cond;
+  Option<Absyn.Info> info;
+  Option<Absyn.ConstrainClass> cc;
 algorithm
-  outComponent := matchcontinue(inComponent, inImportTable, inCache)
-    local
-      SCode.Ident name;
-      Absyn.InnerOuter io;
-      Boolean fp, rp, pp;
-      SCode.Attributes attr;
-      Absyn.TypeSpec type_spec;
-      SCode.Mod mod;
-      Option<SCode.Comment> cmt;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.Info> info;
-      Option<Absyn.ConstrainClass> cc;
-
-    case (SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, 
-        cmt, cond, info, cc), _, _)
-      equation
-        type_spec = replaceImportsInTypeSpec(type_spec, inImportTable, inCache);
-        //mod = replaceImportsInMod(mod, inImportTable, inCache);
-      then
-        SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, 
-          cmt, cond, info, cc);
-
-    case (_, _, _) then inComponent;
-  end matchcontinue;
+  SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod, cmt, cond, 
+    info, cc) := inComponent;
+  type_spec := replaceImportsInTypeSpec(type_spec, inImportTable, inCache);
+  mod := replaceImportsInMod(mod, inImportTable, inCache);
+  cond := replaceImportsInOptExp(cond, inImportTable, inCache);
+  cc := replaceImportsInConstrainingClass(cc, inImportTable, inCache);
+  outComponent := SCode.COMPONENT(name, io, fp, rp, pp, attr, type_spec, mod,
+    cmt, cond, info, cc);
 end replaceImportsInComponent;
+
+protected function replaceImportsInExtends
+  input SCode.Element inExtend;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output SCode.Element outExtend;
+
+  Absyn.Path path;
+  SCode.Mod mod;
+  Option<SCode.Annotation> ann;
+algorithm
+  SCode.EXTENDS(path, mod, ann) := inExtend;
+  path := replaceImportsInPath(path, inImportTable, inCache);
+  mod := replaceImportsInMod(mod, inImportTable, inCache);
+  outExtend := SCode.EXTENDS(path, mod, ann);
+end replaceImportsInExtends;
+
+protected function replaceImportsInEquation
+  input SCode.Equation inEquation;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output SCode.Equation outEquation;
+
+  SCode.EEquation equ;
+algorithm
+  SCode.EQUATION(equ) := inEquation;
+  (equ, _) := SCode.traverseEEquationExps(equ,
+    (replaceImportsInExp2, (inImportTable, inCache)));
+  outEquation := SCode.EQUATION(equ);
+end replaceImportsInEquation;
+
+protected function replaceImportsInAlgorithmSection
+  input SCode.AlgorithmSection inAlgorithm;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output SCode.AlgorithmSection outAlgorithm;
+
+  list<SCode.Statement> statements;
+algorithm
+  SCode.ALGORITHM(statements) := inAlgorithm;
+  statements := Util.listMap2(statements, replaceImportsInStatement,
+    inImportTable, inCache);
+  outAlgorithm := SCode.ALGORITHM(statements);
+end replaceImportsInAlgorithmSection;
+  
+protected function replaceImportsInStatement
+  input SCode.Statement inStatement;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output SCode.Statement outStatement;
+algorithm
+  (outStatement, _) := SCode.traverseStatementExps(inStatement,
+    (replaceImportsInExp2, (inImportTable, inCache)));
+end replaceImportsInStatement;
 
 protected function replaceImportsInTypeSpec
   input Absyn.TypeSpec inTypeSpec;
@@ -294,39 +350,231 @@ protected function replaceImportsInTypeSpec
 algorithm
   outTypeSpec := matchcontinue(inTypeSpec, inImportTable, inCache)
     local
-      Absyn.Ident old_prefix;
-      Absyn.Path path, new_prefix;
+      Absyn.Path path;
       Option<Absyn.ArrayDim> array_dim;
     case (Absyn.TPATH(path, array_dim), _, _)
       equation
-        old_prefix = Absyn.pathFirstIdent(path);
-        new_prefix = lookupImport(old_prefix, inImportTable);
-        path = Absyn.pathReplaceFirstIdent(path, new_prefix);
+        path = replaceImportsInPath(path, inImportTable, inCache);
       then
         Absyn.TPATH(path, array_dim);
-    case (Absyn.TPATH(path, array_dim), _, _)
-      equation
-        path = lookupGlobalImport(path, inCache);
-      then
-        Absyn.TPATH(path, array_dim);
+    else then inTypeSpec;
   end matchcontinue;
 end replaceImportsInTypeSpec;
         
+protected function replaceImportsInPath
+  input Absyn.Path inPath;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inImportTable, inCache)
+    local
+      Absyn.Ident old_prefix;
+      Absyn.Path new_path, new_prefix;
+
+    case (_, _, _)
+      equation
+        old_prefix = Absyn.pathFirstIdent(inPath);
+        new_prefix = lookupImport(old_prefix, inImportTable);
+        new_path = Absyn.pathReplaceFirstIdent(inPath, new_prefix);
+      then
+        Absyn.FULLYQUALIFIED(new_path);
+
+    case (_, _, _)
+      equation
+        new_path = lookupGlobalImportPath(inPath, inCache);
+      then
+        Absyn.FULLYQUALIFIED(new_path);
+
+    else then inPath;
+  end matchcontinue;
+end replaceImportsInPath;
+
+protected function replaceImportsInCref
+  input Absyn.ComponentRef inCref;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inImportTable, inCache)
+    local
+      Absyn.Ident old_prefix;
+      Absyn.Path new_prefix;
+      Absyn.ComponentRef new_cref;
+    case (_, _, _)
+      equation
+        old_prefix = Absyn.crefFirstIdentNoSubs(inCref);
+        new_prefix = lookupImport(old_prefix, inImportTable);
+        new_cref = Absyn.crefReplaceFirstIdent(inCref, new_prefix);
+      then
+        Absyn.CREF_FULLYQUALIFIED(new_cref);
+    else
+      equation
+        new_cref = lookupGlobalImportCref(inCref, inCache);
+      then
+        Absyn.CREF_FULLYQUALIFIED(new_cref);
+  end matchcontinue;
+end replaceImportsInCref;
+
 protected function replaceImportsInMod
   input SCode.Mod inMod;
   input ImportTable inImportTable;
   input ImportCache inCache;
   output SCode.Mod outMod;
 algorithm
-  /*outMod := matchcontinue(inMod, inImportTable, inCache)
+  outMod := matchcontinue(inMod, inImportTable, inCache)
     local
       Boolean fp;
       Absyn.Each ep;
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> opt_exp;
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp) */
-  outMod := inMod;
+      ImportCache cache;
+    case (SCode.MOD(fp, ep, sub_mods, opt_exp), _, _)
+      equation
+        opt_exp = replaceImportsInModOptExp(opt_exp, inImportTable, inCache); 
+        sub_mods = Util.listMap2(sub_mods, replaceImportsInSubMod, 
+          inImportTable, inCache);
+      then SCode.MOD(fp, ep, sub_mods, opt_exp);
+    else then inMod;
+  end matchcontinue;
 end replaceImportsInMod;
+
+protected function replaceImportsInModOptExp
+  input Option<tuple<Absyn.Exp, Boolean>> inOptExp;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Option<tuple<Absyn.Exp, Boolean>> outOptExp;
+algorithm
+  outOptExp := match(inOptExp, inImportTable, inCache)
+    local
+      Absyn.Exp exp;
+      Boolean delay_elab;
+    case (SOME((exp, delay_elab)), _, _)
+      equation
+        exp = replaceImportsInExp(exp, inImportTable, inCache);
+      then
+        SOME((exp, delay_elab));
+    case (NONE(), _, _)
+      then
+        inOptExp;
+  end match;
+end replaceImportsInModOptExp;
+
+protected function replaceImportsInSubMod
+  input SCode.SubMod inSubMod;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output SCode.SubMod outSubMod;
+algorithm
+  outSubMod := match(inSubMod, inImportTable, inCache)
+    local
+      SCode.Ident ident;
+      list<SCode.Subscript> subs;
+      SCode.Mod mod;
+    case (SCode.NAMEMOD(ident = ident, A = mod), _, _)
+      equation
+        mod = replaceImportsInMod(mod, inImportTable, inCache);
+      then
+        SCode.NAMEMOD(ident, mod);
+    case (SCode.IDXMOD(subscriptLst = subs, an = mod), _, _)
+      equation
+        mod = replaceImportsInMod(mod, inImportTable, inCache);
+      then
+        SCode.IDXMOD(subs, mod);
+  end match;
+end replaceImportsInSubMod;
+
+protected function replaceImportsInConstrainingClass
+  input Option<Absyn.ConstrainClass> inConstrain;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Option<Absyn.ConstrainClass> outConstrain;
+algorithm
+  outConstrain := match(inConstrain, inImportTable, inCache)
+    local
+      Absyn.ConstrainClass cc;
+
+    case (SOME(cc), _, _)
+      equation
+        print("Found constraining class!\n");
+      then SOME(cc);
+
+    case (NONE(), _, _) then NONE();
+  end match;
+end replaceImportsInConstrainingClass;
+
+protected function replaceImportsInExp
+  input Absyn.Exp inExp;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Absyn.Exp outExp;
+algorithm
+  ((outExp, _)) := Absyn.traverseExp(inExp, replaceExpTraverser, 
+    (inImportTable, inCache));
+end replaceImportsInExp;
+
+protected function replaceImportsInOptExp
+  input Option<Absyn.Exp> inOptExp;
+  input ImportTable inImportTable;
+  input ImportCache inCache;
+  output Option<Absyn.Exp> outOptExp;
+algorithm
+  outOptExp := match(inOptExp, inImportTable, inCache)
+    local
+      Absyn.Exp exp;
+    case (SOME(exp), _, _)
+      equation
+        exp = replaceImportsInExp(exp, inImportTable, inCache);
+      then
+        SOME(exp);
+    case (NONE(), _, _) then NONE();
+  end match;
+end replaceImportsInOptExp;
+
+protected function replaceImportsInExp2
+  input tuple<Absyn.Exp, tuple<ImportTable, ImportCache>> inTuple;
+  output tuple<Absyn.Exp, tuple<ImportTable, ImportCache>> outTuple;
+
+  Absyn.Exp exp;
+  tuple<ImportTable, ImportCache> imports;
+algorithm
+  (exp, imports) := inTuple;
+  outTuple := Absyn.traverseExp(exp, replaceExpTraverser, imports);
+end replaceImportsInExp2;
+
+protected function replaceExpTraverser
+  input tuple<Absyn.Exp, tuple<ImportTable, ImportCache>> inTuple;
+  output tuple<Absyn.Exp, tuple<ImportTable, ImportCache>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      ImportTable table;
+      ImportCache cache;
+      Absyn.ComponentRef cref;
+      Absyn.FunctionArgs args;
+      
+    case ((Absyn.CREF(componentRef = cref), (table, cache)))
+      equation
+        cref = replaceImportsInCref(cref, table, cache);
+      then
+        ((Absyn.CREF(cref), (table, cache)));
+
+    case ((Absyn.CALL(function_ = cref, functionArgs = args), (table, cache)))
+      equation
+        cref = replaceImportsInCref(cref, table, cache);
+      then
+        ((Absyn.CALL(cref, args), (table, cache)));
+
+    case ((Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), 
+        (table, cache)))
+      equation
+        cref = replaceImportsInCref(cref, table, cache);
+      then
+        ((Absyn.PARTEVALFUNCTION(cref, args), (table, cache)));
+
+    else then inTuple;
+  end matchcontinue;
+end replaceExpTraverser;
 
 protected function emptyImportTable
   output ImportTable outImportTable;
@@ -509,25 +757,18 @@ algorithm
     importEqualPrefix);
 end lookupImport;
 
-protected function lookupGlobalImport
+protected function lookupGlobalImportPath
   input Absyn.Path inPath;
   input ImportCache inCache;
   output Absyn.Path outPath;
-algorithm
-  outPath := matchcontinue(inPath, inCache)
-    local
-      Absyn.Ident name;
-      list<GlobalImport> imps;
-      Absyn.Path path;
-    case (_, IMPORT_CACHE(globalImports = imps))
-      equation
-        path = lookupGlobalImport2(inPath, imps);
-      then
-        path;
-  end matchcontinue;
-end lookupGlobalImport;
 
-protected function lookupGlobalImport2
+  list<GlobalImport> imps;
+algorithm
+  IMPORT_CACHE(globalImports = imps) := inCache;
+  outPath := lookupGlobalImportPath2(inPath, imps);
+end lookupGlobalImportPath;
+
+protected function lookupGlobalImportPath2
   input Absyn.Path inName;
   input list<GlobalImport> inImports;
   output Absyn.Path outPath;
@@ -551,7 +792,7 @@ algorithm
         GLOBAL_IMPORT(ident = ident, imports = imps) :: _)
       equation
         true = stringEq(name, ident);
-        path = lookupGlobalImport2(path, imps);
+        path = lookupGlobalImportPath2(path, imps);
       then
         path;
 
@@ -568,12 +809,68 @@ algorithm
     // No matches, search the rest of the import list.
     case (_, _ :: rest_imps)
       equation
-        path = lookupGlobalImport2(inName, rest_imps);
+        path = lookupGlobalImportPath2(inName, rest_imps);
       then
         path;
   end matchcontinue;
-end lookupGlobalImport2;
+end lookupGlobalImportPath2;
   
+protected function lookupGlobalImportCref
+  input Absyn.ComponentRef inCref;
+  input ImportCache inCache;
+  output Absyn.ComponentRef outCref;
+
+  list<GlobalImport> imps;
+algorithm
+  IMPORT_CACHE(globalImports = imps) := inCache;
+  outCref := lookupGlobalImportCref2(inCref, imps);
+end lookupGlobalImportCref;
+
+protected function lookupGlobalImportCref2
+  input Absyn.ComponentRef inCref;
+  input list<GlobalImport> inImports;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inImports)
+    local
+      String ident, name;
+      Absyn.Path path, imp_path;
+      list<GlobalImport> imps, rest_imps;
+      Absyn.ComponentRef cref, imp_cref;
+
+    case (Absyn.CREF_IDENT(name = name),
+        GLOBAL_IMPORT(ident = ident, path = SOME(imp_path)) :: _)
+      equation
+        true = stringEq(name, ident);
+        cref = Absyn.pathToCref(imp_path);
+      then
+        cref;
+
+    case (Absyn.CREF_QUAL(name = name, componentRef = cref),
+        GLOBAL_IMPORT(ident = ident, imports = imps) :: _)
+      equation
+        true = stringEq(name, ident);
+        cref = lookupGlobalImportCref2(cref, imps);
+      then
+        cref;
+
+    case (Absyn.CREF_QUAL(name = name, componentRef = cref),
+        GLOBAL_IMPORT(ident = ident, path = SOME(imp_path)) :: _)
+      equation
+        true = stringEq(name, ident);
+        imp_cref = Absyn.pathToCref(imp_path);
+        cref = Absyn.joinCrefs(imp_cref, cref);
+      then
+        cref;
+
+    case (_, _ :: rest_imps)
+      equation
+        cref = lookupGlobalImportCref2(inCref, rest_imps);
+      then
+        cref;
+  end matchcontinue;
+end lookupGlobalImportCref2;
+
 protected function importEqualPrefix
   input Absyn.Ident inPrefix;
   input Import inImport;

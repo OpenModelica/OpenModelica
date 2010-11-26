@@ -1483,6 +1483,7 @@ public function listMapAndFold
   input FuncType inFunc;
   input Type_b inArg;
   output list<Type_c> outList;
+  output Type_b outArg;
 
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
@@ -1495,7 +1496,7 @@ public function listMapAndFold
     output Type_b outArg;
   end FuncType;
 algorithm
-  outList := listMapAndFold_tail(inList, inFunc, inArg, {});
+  (outList, outArg) := listMapAndFold_tail(inList, inFunc, inArg, {});
 end listMapAndFold;
 
 public function listMapAndFold_tail
@@ -1505,6 +1506,7 @@ public function listMapAndFold_tail
   input Type_b inArg;
   input list<Type_c> inAccumList;
   output list<Type_c> outList;
+  output Type_b outArg;
 
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
@@ -1517,20 +1519,20 @@ public function listMapAndFold_tail
     output Type_b outArg;
   end FuncType;
 algorithm
-  outList := matchcontinue(inList, inFunc, inArg, inAccumList)
+  (outList, outArg) := matchcontinue(inList, inFunc, inArg, inAccumList)
     local
       Type_a e1;
       list<Type_a> rest_e1;
       Type_c res;
       list<Type_c> rest_res;
-    case ({}, _, _, _) then listReverse(inAccumList);
+    case ({}, _, _, _) then (listReverse(inAccumList), inArg);
     case (e1 :: rest_e1, _, _, _)
       equation
         (res, inArg) = inFunc(e1, inArg);
         inAccumList = res :: inAccumList;
-        rest_res = listMapAndFold_tail(rest_e1, inFunc, inArg, inAccumList);
+        (rest_res, inArg) = listMapAndFold_tail(rest_e1, inFunc, inArg, inAccumList);
       then
-        rest_res;
+        (rest_res, inArg);
   end matchcontinue;
 end listMapAndFold_tail;
 
