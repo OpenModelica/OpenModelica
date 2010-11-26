@@ -41,288 +41,210 @@
  *
  */
 
+extern "C" {
+#include "rml.h"
+}
+
 #include "BackendDAEEXT.cpp"
 
-using namespace std;
+extern "C" {
 
-extern "C"
+void BackendDAEEXT_5finit(void)
 {
-#include <assert.h>
-#include "rml.h"
+}
 
-  std::set<int> e_mark;
-  std::set<int> differentiated_mark;
-  std::set<int> v_mark;
+RML_BEGIN_LABEL(BackendDAEEXT__initMarks)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  int neqns = RML_UNTAGFIXNUM(rmlA1);
+  BackendDAEEXTImpl__initMarks(nvars,neqns);
+  RML_TAILCALLK(rmlSC);
+} 
+RML_END_LABEL
 
+RML_BEGIN_LABEL(BackendDAEEXT__eMark)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__eMark(i);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  std::vector<int> number;
-  std::vector<int> lowlink;
-  std::vector<int> v;
-  std::vector<int> f;
+RML_BEGIN_LABEL(BackendDAEEXT__vMark)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__vMark(i);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  void BackendDAEEXT_5finit(void)
-  {
-  }
-  
-  RML_BEGIN_LABEL(BackendDAEEXT__initMarks)
-  {
+RML_BEGIN_LABEL(BackendDAEEXT__getVMark)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_bcon(BackendDAEEXTImpl__getVMark(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    int neqns = RML_UNTAGFIXNUM(rmlA1);
-    //cout << "init marks n= " << nvars << endl;
-    v_mark.clear();
-    e_mark.clear();
-    RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL
-  
-  RML_BEGIN_LABEL(BackendDAEEXT__eMark)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    e_mark.insert(e_mark.begin(),i);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-  
-  RML_BEGIN_LABEL(BackendDAEEXT__vMark)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    v_mark.insert(v_mark.begin(),i);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getEMark)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_bcon(BackendDAEEXTImpl__getEMark(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getVMark)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
+RML_BEGIN_LABEL(BackendDAEEXT__getMarkedEqns)
+{
+  rmlA0 = BackendDAEEXTImpl__getMarkedEqns();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-    rmlA0 = v_mark.find(i) != v_mark.end() ? RML_TRUE : RML_FALSE;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__markDifferentiated)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__markDifferentiated(i);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getEMark)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    //cout << "get_e_mark[" << i << "] == " << e_mark[i-1] << endl;
-    rmlA0 = e_mark.find(i) != e_mark.end() ? RML_TRUE : RML_FALSE;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__clearDifferentiated)
+{
+  BackendDAEEXTImpl__clearDifferentiated();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getMarkedEqns)
-  {
-    std::set<int>::iterator it;
-    rmlA0 = mk_nil();
-    for (it=e_mark.begin(); it != e_mark.end(); it++) {
-      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
-    }
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getDifferentiatedEqns)
+{
+  rmlA0 = BackendDAEEXTImpl__getDifferentiatedEqns();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__markDifferentiated)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    differentiated_mark.insert(differentiated_mark.begin(),i);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getMarkedVariables)
+{
+  rmlA0 = BackendDAEEXTImpl__getMarkedVariables();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__clearDifferentiated)
-  {
-    differentiated_mark.clear();
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__initLowLink)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__initLowLink(nvars);
+  RML_TAILCALLK(rmlSC);
+} 
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getDifferentiatedEqns)
-  {
-    std::set<int>::iterator it;
-    rmlA0 = mk_nil();
-    for (it=differentiated_mark.begin(); it != differentiated_mark.end(); it++) {
-      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
-    }
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__initNumber)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__initNumber(nvars);
+  RML_TAILCALLK(rmlSC);
+} 
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getMarkedVariables)
-  {
-    std::set<int>::iterator it;
-    rmlA0 = mk_nil();
-    for (it=v_mark.begin(); it != v_mark.end(); it++) {
-      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
-    }
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__setLowLink)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  int val = RML_UNTAGFIXNUM(rmlA1);
+  BackendDAEEXTImpl__setLowLink(i,val);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__initLowLink)
-  {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    //cout << "init lowlink n= " << nvars << endl;
-    lowlink.reserve(nvars);
-    
-    while (lowlink.size() < (unsigned int)nvars)
-    {
-    	lowlink.push_back(0);
-    }
+RML_BEGIN_LABEL(BackendDAEEXT__setNumber)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  int val = RML_UNTAGFIXNUM(rmlA1);
+  BackendDAEEXTImpl__setNumber(i,val);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-    for (int i =0; i < nvars; i++) 
-    {
-      lowlink[i]=0;
-    }
-    RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getNumber)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_icon(BackendDAEEXTImpl__getNumber(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__initNumber)
-  {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    //cout << "init number n= " << nvars << endl;
-    number.reserve(nvars);
-    
-    while (number.size() < (unsigned int)nvars)
-    {
-    	number.push_back(0);
-    }    
-
-    for (int i =0; i < nvars; i++) 
-    {
-      number[i]=0;
-    }
-    RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL
-  
-  RML_BEGIN_LABEL(BackendDAEEXT__setLowLink)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    int val = RML_UNTAGFIXNUM(rmlA1);
-    lowlink[i-1]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-  
-  RML_BEGIN_LABEL(BackendDAEEXT__setNumber)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    int val = RML_UNTAGFIXNUM(rmlA1);
-    number[i-1]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-
-  RML_BEGIN_LABEL(BackendDAEEXT__getNumber)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    rmlA0 = (void*)mk_icon(number[i-1]);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-
-  RML_BEGIN_LABEL(BackendDAEEXT__getLowLink)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    rmlA0 = (void*)mk_icon(lowlink[i-1]);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getLowLink)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_icon(BackendDAEEXTImpl__getLowLink(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 
-  RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedEquations)
-  {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    cout << "marked equations" << endl
-	 << "================" << endl;
-    for (std::set<int>::iterator i =e_mark.begin() ; i != e_mark.end(); i++) {
-      cout << "eqn " << *i << endl;
-    }
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedEquations)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__dumpMarkedEquations(nvars);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedVariables)
-  {
-    int nvars = RML_UNTAGFIXNUM(rmlA0);
-    cout << "marked variables" << endl
-	 << "================" << endl;
-    for (std::set<int>::iterator i =v_mark.begin() ; i != v_mark.end(); i++) {
-      cout << "var " << *i << endl;
-    }
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__dumpMarkedVariables)
+{
+  int nvars = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__dumpMarkedVariables(nvars);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-/*
-  RML_BEGIN_LABEL(BackendDAEEXT__vectorSetnth)
-  {
-    void* vec = rmlA0;
-    int pos = RML_UNTAGFIXNUM(rmlA1);
-    int val = RML_UNTAGFIXNUM(rmlA2);
-    if ( pos >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
-      RML_TAILCALLK(rmlFC);
-    }
-    ((int*)RML_STRUCTDATA(vec))[pos]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-*/
+RML_BEGIN_LABEL(BackendDAEEXT__initV)
+{
+  int size = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__initV(size);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__initV)
-  {
-    int size = RML_UNTAGFIXNUM(rmlA1);
-    v.reserve(size);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__initF)
+{
+  int size = RML_UNTAGFIXNUM(rmlA0);
+  BackendDAEEXTImpl__initF(size);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__initF)
-  {
-    int size = RML_UNTAGFIXNUM(rmlA1);
-    f.reserve(size);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__setF)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  int val = RML_UNTAGFIXNUM(rmlA1);
+  BackendDAEEXTImpl__setF(i,val);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__setF)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    int val = RML_UNTAGFIXNUM(rmlA1);
-    if (i > f.size()) { f.resize(i); }
-    f[i-1]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__getF)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_icon(BackendDAEEXTImpl__getF(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__getF)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    assert(i <= f.size());
-    rmlA0 = (void*)mk_icon(f[i-1]);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
+RML_BEGIN_LABEL(BackendDAEEXT__setV)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  int val = RML_UNTAGFIXNUM(rmlA1);
+  BackendDAEEXTImpl__setV(i,val);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  RML_BEGIN_LABEL(BackendDAEEXT__setV)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    int val = RML_UNTAGFIXNUM(rmlA1);
-    if ( i > v.size() ) { v.resize(i); }
-    v[i-1]=val;
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-
-  RML_BEGIN_LABEL(BackendDAEEXT__getV)
-  {
-    int i = RML_UNTAGFIXNUM(rmlA0);
-    assert(i <= v.size());
-    rmlA0 = (void*)mk_icon(v[i-1]);
-    RML_TAILCALLK(rmlSC);
-  }
-  RML_END_LABEL
-
+RML_BEGIN_LABEL(BackendDAEEXT__getV)
+{
+  int i = RML_UNTAGFIXNUM(rmlA0);
+  rmlA0 = mk_icon(BackendDAEEXTImpl__getV(i));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 } // extern "C"
