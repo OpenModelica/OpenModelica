@@ -8471,7 +8471,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,rinfo)
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;        
         /* Instantiate the component */
-        (cache,compenv,ih,_,_,csets_1,ty,_) = 
+        (cache,compenv,ih,_,_,_,ty,_) = 
           instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY, env);
         
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
@@ -8484,7 +8484,7 @@ algorithm
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
         
         updatedComps = BaseHashTable.add((cref,1),updatedComps);
-      then (cache,env,ih,csets_1,updatedComps);
+      then (cache,env,ih,csets,updatedComps);
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
         //Debug.traceln("- Inst.updateComponentInEnv2 failed");

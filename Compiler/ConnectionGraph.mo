@@ -110,7 +110,7 @@ algorithm
       DAE.AvlTree funcs;
       list<DAE.ComponentRef> roots;
       DAE.DAElist dae;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+      Edges broken;
 
     // empty graph gives you the same dae
     case (GRAPH(_, {}, {}, {}, {}), dae, modelNameQualified) then dae;
@@ -162,7 +162,7 @@ algorithm
       list<DAE.ComponentRef> roots;
       DAE.DAElist dae;
       Connect.Sets sets;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+      Edges broken;
 
     // if not top scope, do not do the connection graph!
     case (graph, sets, false) then (sets, {});
@@ -208,8 +208,8 @@ algorithm
       Boolean updateGraph;
       ConnectionGraph graph;
       DAE.ComponentRef root;
-      list<DAE.ComponentRef> definiteRoots;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+      DefiniteRoots definiteRoots;
+      PotentialRoots potentialRoots;
       Edges branches;
       DaeEdges connections;
 
@@ -240,8 +240,8 @@ algorithm
       ConnectionGraph graph;
       DAE.ComponentRef root;
       Real priority;
-      list<DAE.ComponentRef> definiteRoots;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+      DefiniteRoots definiteRoots;
+      PotentialRoots potentialRoots;
       Edges branches;
       DaeEdges connections;
 
@@ -272,8 +272,8 @@ algorithm
       ConnectionGraph graph;
       DAE.ComponentRef ref1;
       DAE.ComponentRef ref2;
-      list<DAE.ComponentRef> definiteRoots;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+      DefiniteRoots definiteRoots;
+      PotentialRoots potentialRoots;
       Edges branches;
       DaeEdges connections;
 
@@ -307,8 +307,8 @@ algorithm
       DAE.ComponentRef ref1;
       DAE.ComponentRef ref2;
       list<DAE.Element> dae;
-      list<DAE.ComponentRef> definiteRoots;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+      DefiniteRoots definiteRoots;
+      PotentialRoots potentialRoots;
       Edges branches;
       DaeEdges connections;
 
@@ -438,7 +438,7 @@ protected function connectComponents
   input list<DAE.Element> inFullDae;
   output HashTableCG.HashTable outPartition;
   output list<DAE.Element> outDae;
-  output list<tuple<DAE.ComponentRef, DAE.ComponentRef>> outBrokenConnections;
+  output Edges outBrokenConnections;
 algorithm
   (outPartition,outDae,outBrokenConnections) := matchcontinue(inPartition,inRef1,inRef2,inBreakDae,inFullDae)
     local
@@ -545,7 +545,7 @@ protected function originInConnect
 algorithm
   hasOriginInConnect := matchcontinue(inElement, left, right)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectOptLst;
+      list<Option<Edge>> connectOptLst;
       Boolean b;
   
      // var
@@ -687,14 +687,14 @@ end originInConnect;
 protected function isInConnectionList
 "@author: adrpo
  searches the given connect list for the matching connect given as component refence inputs"
-  input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> inConnectEquationOptLst;
+  input list<Option<Edge>> inConnectEquationOptLst;
   input DAE.ComponentRef left;
   input DAE.ComponentRef right;
   output Boolean isPresent;
 algorithm
   isPresent := matchcontinue(inConnectEquationOptLst, left, right)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> rest;
+      list<Option<Edge>> rest;
       DAE.ComponentRef crLeft, crRight;
       Boolean b, b1, b2;
 
@@ -801,14 +801,14 @@ end resultGraphWithRoots;
 protected function addBranchesToTable
 "Adds all branches to the graph."
   input HashTableCG.HashTable inTable;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBranches;
+  input Edges inBranches;
   output HashTableCG.HashTable outTable;
 algorithm
   outTable := matchcontinue(inTable, inBranches)
     local
       HashTableCG.HashTable table, table1, table2;
       DAE.ComponentRef ref1, ref2;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> tail;
+      Edges tail;
 
     case(table, ((ref1,ref2)::tail))
       equation
@@ -821,8 +821,8 @@ end addBranchesToTable;
 
 protected function ord
 "An ordering function for potential roots."
-  input tuple<DAE.ComponentRef,Real> inEl1;
-  input tuple<DAE.ComponentRef,Real> inEl2;
+  input PotentialRoot inEl1;
+  input PotentialRoot inEl2;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inEl1, inEl2)
@@ -849,18 +849,18 @@ end ord;
 protected function addPotentialRootsToTable
 "Adds all potential roots to graph."
   input HashTableCG.HashTable inTable;
-  input list<tuple<DAE.ComponentRef,Real>> inPotentialRoots;
-  input list<DAE.ComponentRef> inRoots;
+  input PotentialRoots inPotentialRoots;
+  input DefiniteRoots inRoots;
   input DAE.ComponentRef inFirstRoot;
   output HashTableCG.HashTable outTable;
-  output list<DAE.ComponentRef> outRoots;
+  output DefiniteRoots outRoots;
 algorithm
   (outTable,outRoots) := matchcontinue(inTable, inPotentialRoots, inRoots, inFirstRoot)
     local
       HashTableCG.HashTable table;
       DAE.ComponentRef potentialRoot, firstRoot, canon1, canon2;
-      list<DAE.ComponentRef> roots, finalRoots;
-      list<tuple<DAE.ComponentRef,Real>> tail;
+      DefiniteRoots roots, finalRoots;
+      PotentialRoots tail;
 
     case(table, {}, roots, _) then (table,roots);
     case(table, ((potentialRoot,_)::tail), roots, firstRoot)
@@ -884,7 +884,7 @@ protected function addConnections
   input list<DAE.Element> inDae;
   output HashTableCG.HashTable outTable;
   output list<DAE.Element> outDae;
-  output list<tuple<DAE.ComponentRef, DAE.ComponentRef>> outBrokenConnections;
+  output Edges outBrokenConnections;
 algorithm
   (outTable,outDae,outBrokenConnections) := matchcontinue(inTable, inConnections, inDae)
     local
@@ -892,7 +892,7 @@ algorithm
       DAE.ComponentRef ref1, ref2;
       DaeEdges tail;
       list<DAE.Element> breakDAE, dae;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken1,broken2,broken;      
+      Edges broken1,broken2,broken;      
 
     // empty case
     case(table, {}, dae) then (table, dae, {});
@@ -912,22 +912,21 @@ protected function findResultGraph
   input  ConnectionGraph inGraph;
   input  list<DAE.Element> inDAE;
   input  String modelNameQualified;
-  output list<DAE.ComponentRef> outRoots;  
+  output DefiniteRoots outRoots;  
   output list<DAE.Element> outDAE;
-  output list<tuple<DAE.ComponentRef, DAE.ComponentRef>> outBrokenConnections;
+  output Edges outBrokenConnections;
 algorithm
   (outRoots, outDAE, outBrokenConnections) := matchcontinue(inGraph, inDAE, modelNameQualified)
     local
-      list<DAE.ComponentRef> definiteRoots, finalRoots;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
-      list<tuple<DAE.ComponentRef,Real>> orderedPotentialRoots;
+      DefiniteRoots definiteRoots, finalRoots;
+      PotentialRoots potentialRoots, orderedPotentialRoots;
       Edges branches;
       DaeEdges connections;
       HashTableCG.HashTable table;
       DAE.ComponentRef dummyRoot;
       Edges brokenConnections, normalConnections;
       list<DAE.Element> dae;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+      Edges broken;
       String brokenConnectsViaGraphViz;
       list<String> userBrokenLst;
       list<list<String>> userBrokenLstLst;
@@ -1131,7 +1130,7 @@ algorithm
 end makeTuple;
 
 protected function printPotentialRootTuple
-  input tuple<DAE.ComponentRef,Real> potentialRoot;
+  input PotentialRoot potentialRoot;
   output String outStr;
 algorithm
   outStr := matchcontinue(potentialRoot) 
@@ -1203,7 +1202,7 @@ end evalIsRootHelper;
 
 protected function printConnectionStr
 "prints the connection str"
-  input tuple<DAE.ComponentRef, DAE.ComponentRef> connectTuple;
+  input Edge connectTuple;
   output String outStr;
 algorithm
   outStr := matchcontinue(connectTuple)
@@ -1301,11 +1300,11 @@ end getDefiniteRoots;
 protected function getPotentialRoots
 "Accessor for ConnectionGraph.potentialRoots."
   input ConnectionGraph inGraph;
-  output list<tuple<DAE.ComponentRef,Real>> outResult;
+  output PotentialRoots outResult;
 algorithm
   outResult := matchcontinue(inGraph)
-    local list<tuple<DAE.ComponentRef,Real>> result;
-    case (GRAPH(_,_,result,_,_)) then result;
+    local PotentialRoots result;
+    case (GRAPH(potentialRoots = result)) then result;
   end matchcontinue;
 end getPotentialRoots;
 
@@ -1338,7 +1337,7 @@ protected function removeBrokenConnectionsFromSets
  and it will remove all component refences from the connection sets
  that have the origin in the given list of connects."
   input Connect.Sets inSets;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input Edges inBrokenConnects;
   output Connect.Sets outSets;
 algorithm
   outSets := matchcontinue(inSets, inBrokenConnects)
@@ -1365,15 +1364,15 @@ protected function removeBrokenConnectionsFromSetLst
  and it will remove all component refences from the connection sets
  that have the origin in the given list of connects."
   input list<Connect.Set> inSetLst;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input Edges inBrokenConnects;
   output list<Connect.Set> outSetLst;
 algorithm
   outSetLst := matchcontinue(inSetLst, inBrokenConnects)
     local
       list<Connect.Set> rest, sets;
-      list<tuple<DAE.ComponentRef, DAE.ElementSource>> expComponentRefLst;
-      list<tuple<DAE.ComponentRef, Connect.Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+      list<Connect.EquSetElement> expComponentRefLst;
+      list<Connect.FlowSetElement> tplExpComponentRefFaceLst;
+      Edges broken;
 
     // handle empty case
     case ({}, _) then {};
@@ -1401,22 +1400,22 @@ end removeBrokenConnectionsFromSetLst;
 protected function equNOTFromConnect
 "@author: adrpo
   This function returns true if the cref has an element source in the given broken connects"
-  input tuple<DAE.ComponentRef, DAE.ElementSource> equConnect;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input Connect.EquSetElement equConnect;
+  input Edges inBrokenConnects;
   output Boolean isNotPresent;
 algorithm
   isNotPresent := matchcontinue(equConnect, inBrokenConnects)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectOptLst;
+      list<Option<Edge>> connectOptLst;
     
     // return true if the origin is not in the broken connects
-    case ((_, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
+    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
       equation 
         false = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
      then true;
     
     // return false if the origin is in the broken connects    
-    case ((_, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
+    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
       equation 
         true = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
      then false;
@@ -1426,13 +1425,13 @@ end equNOTFromConnect;
 protected function flowNOTFromConnect
 "@author: adrpo
   This function returns true if the cref has an element source in the given broken connects"
-  input tuple<DAE.ComponentRef, Connect.Face, DAE.ElementSource> flowConnect;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input Connect.FlowSetElement flowConnect;
+  input Edges inBrokenConnects;
   output Boolean isNotPresent;
 algorithm
   isNotPresent := matchcontinue(flowConnect, inBrokenConnects)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectOptLst;
+      list<Option<Edge>> connectOptLst;
     
     // return true if the origin is not in the broken connects
     case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
@@ -1452,12 +1451,12 @@ protected function outerConenctNOTFromConnect
 "@author: adrpo
   This function returns true if the cref has an element source in the given broken connects"
   input Connect.OuterConnect outerConnects;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input Edges inBrokenConnects;
   output Boolean isNotPresent;
 algorithm
   isNotPresent := matchcontinue(outerConnects, inBrokenConnects)
     local
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectOptLst;
+      list<Option<Edge>> connectOptLst;
     
     // return true if the origin is not in the broken connects
     case (Connect.OUTERCONNECT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
@@ -1476,13 +1475,13 @@ end outerConenctNOTFromConnect;
 protected function elementSourceInBrokenConnects
 "@author: adrpo 
   "
-  input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBrokenConnects;
+  input list<Option<Edge>> connectEquationOptLst;
+  input Edges inBrokenConnects;
   output Boolean presentInBrokenConnects;
 algorithm
   presentInBrokenConnects := matchcontinue(connectEquationOptLst, inBrokenConnects)
     local
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> rest;
+      Edges rest;
       DAE.ComponentRef left, right;
       Boolean b;
 
@@ -1514,8 +1513,8 @@ algorithm
   outGraph := matchcontinue(inGraph1, inGraph2)
     local
       Boolean updateGraph, updateGraph1, updateGraph2;
-      list<DAE.ComponentRef> definiteRoots, definiteRoots1, definiteRoots2;
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots, potentialRoots1, potentialRoots2;
+      DefiniteRoots definiteRoots, definiteRoots1, definiteRoots2;
+      PotentialRoots potentialRoots, potentialRoots1, potentialRoots2;
       Edges branches, branches1, branches2;
       DaeEdges connections, connections1, connections2;
 
@@ -1642,12 +1641,12 @@ protected function generateGraphViz
 "@author: adrpo
   Generate a graphviz file out of the connection graph"
   input String modelNameQualified;
-  input list<DAE.ComponentRef> definiteRoots;
-  input list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+  input DefiniteRoots definiteRoots;
+  input PotentialRoots potentialRoots;
   input Edges branches;
   input DaeEdges connections;
-  input list<DAE.ComponentRef> finalRoots;
-  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+  input DefiniteRoots finalRoots;
+  input Edges broken;
   output String brokenConnectsViaGraphViz;
 algorithm
   brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)

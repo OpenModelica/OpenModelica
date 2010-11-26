@@ -4020,7 +4020,7 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
-      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
+      DAE.Type t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
       DAE.Dimension dim1,dim2;
       DAE.DAElist dae, dae2;
@@ -4028,7 +4028,6 @@ algorithm
       Boolean flowPrefix, streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
-      Boolean c1outer,c2outer;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -4041,9 +4040,7 @@ algorithm
       DAE.FunctionTree functions, equalityConstraintFunctions;
       DAE.DAElist equalityConstraintDAE;
       SCode.Class equalityConstraintFunction;
-      list<Boolean> bolist,bolist2;
       list<DAE.Dimension> dims,dims2;
-      list<Integer> idims,idims2;
 
     /* connections to outer components */
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,false,io1,io2,graph,info)
@@ -4053,14 +4050,6 @@ algorithm
         //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         true = InnerOuter.outerConnection(io1,io2);
         
-        // The cref that is outer should not be prefixed
-        (c1outer,c2outer) = InnerOuter.referOuter(io1,io2);
-
-        //c1_1 = PrefixUtil.prefixCref(pre, c1);
-        //c2_1 = PrefixUtil.prefixCref(pre, c2);
-        //c1_1 = Util.if_(c1outer,c1,c1_1);
-        //c2_1 = Util.if_(c2outer,c2,c2_1);
-
         // prefix outer with the prefix of the inner directly! 
         (cache, DAE.CREF(c1_1, _)) = 
            PrefixUtil.prefixExp(cache, env, ih, DAE.CREF(c1, DAE.ET_OTHER()), pre);
@@ -4094,11 +4083,12 @@ algorithm
     /* Non-flow and Non-stream type Parameters and constants generate assert statements */
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
       equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(t1);
         true = Types.basicType(t2);
+
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4123,70 +4113,22 @@ algorithm
       then
         (cache,env,ih,sets,DAEUtil.emptyDae,graph);
 
-    /* connection of two Reals */        
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_REAL(varLstReal = _),_),vt1,c2,_,(DAE.T_REAL(varLstReal = _),_),vt2,false,false,io1,io2,graph,info)
+    // Connection of two components of basic type.
+    case (cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2, t2, vt2, 
+        false, false, io1, io2, graph, info)
       equation
+        true = Types.basicType(t1);
+        true = Types.basicType(t2);
+
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
+        sets_1 = ConnectUtil.addEqu(sets, c1_1, f1, c2_1, f2, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-
-    /* connection of two Integers */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_INTEGER(varLstInt = _),_),vt1,c2,_,(DAE.T_INTEGER(varLstInt = _),_),vt2,false,false,io1,io2,graph,info)
-      equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
-      then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-
-    /* connection of two Booleans */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_BOOL(_),_),vt1,c2,_,(DAE.T_BOOL(_),_),vt2,false,false,io1,io2,graph,info)
-      equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
-      then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-
-    /* Connection of two Strings */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_STRING(_),_),vt1,c2,_,(DAE.T_STRING(_),_),vt2,false,false,io1,io2,graph,info)
-      equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
-      then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
-
-    /* Connection of two enumeration variables */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE()),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE()),_),vt2,false,false,io1,io2,graph,info)
-      equation
-        (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
-        (cache,c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
-
-        // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
-
-        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
-      then
-        (cache, env, ih, sets_1, DAEUtil.emptyDae, graph);
 
     /* Connection of arrays of complex types */
     case (cache,env,ih,sets,pre,
