@@ -315,14 +315,12 @@ extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
 
 extern void System_freeFunction(int _inFuncHandle)
 {
-  fprintf(stderr, "System_freeFunction NYI\n");
-  exit(1);
+  if (SystemImpl__freeFunction(_inFuncHandle)) MMC_THROW();
 }
 
 extern void System_freeLibrary(int _inLibHandle)
 {
-  fprintf(stderr, "System_freeLibrary NYI\n");
-  exit(1);
+  if (SystemImpl__freeLibrary(_inLibHandle)) MMC_THROW();
 }
 
 extern int System_getHasSendDataSupport()

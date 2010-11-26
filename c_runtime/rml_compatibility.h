@@ -56,6 +56,22 @@
 #define RML_NUM_ARGS 32
 #define RML_CAR MMC_CAR
 #define RML_CDR MMC_CDR
+#define RML_HDRCTOR MMC_HDRCTOR
+#define RML_STRUCTDATA MMC_STRUCTDATA
+#define RML_HDRSTRLEN MMC_HDRSTRLEN
+#define RML_STRINGDATA MMC_STRINGDATA
+#define RML_UNTAGFIXNUM MMC_UNTAGFIXNUM
+#define RML_NILHDR MMC_NILHDR
+#define rml_prim_get_real mmc_prim_get_real
+#define RML_REALHDR MMC_REALHDR
+#define RML_HDRISSTRING MMC_HDRISSTRING
+#define RML_HDRSLOTS MMC_HDRSLOTS
+#define RML_FETCH MMC_FETCH
+#define RML_OFFSET MMC_OFFSET
+
+/* For external functions, since I was stupid and put the
+record_description as index 0 instead of n-1 :) */
+#define UNBOX_OFFSET 1
 
 struct rml_struct {
     mmc_uint_t header;	/* MMC_STRUCTHDR(slots,ctor) */

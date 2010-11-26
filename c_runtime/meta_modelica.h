@@ -189,18 +189,18 @@ modelica_real mmc_prim_get_real(void *p);
 
 #include <setjmp.h>
 
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#if 1
 // Use something like this if needed...
 // #define MMC_JMP_BUF_SIZE 8192
 // extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
 // extern int jmp_buf_index;
-extern jmp_buf mmc_jumper;
-#define MMC_TRY() {jmp_buf old_mmc_jumper; memcpy(old_mmc_jumper, mmc_jumper, sizeof(jmp_buf)); if (setjmp(mmc_jumper) == 0) {
-#define MMC_CATCH() } memcpy(old_mmc_jumper, mmc_jumper, sizeof(jmp_buf));}
-#define MMC_THROW() longjmp(mmc_jumper,1)
+extern jmp_buf *mmc_jumper;
+#define MMC_TRY() {jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_CATCH() } mmc_jumper = old_jumper;}
+#define MMC_THROW() longjmp(*mmc_jumper,1)
 
-#define MMC_TRY_TOP() if (setjmp(mmc_jumper) == 0) {
-#define MMC_CATCH_TOP(X) } else {X;}
+#define MMC_TRY_TOP() MMC_TRY()
+#define MMC_CATCH_TOP(X) mmc_jumper = old_jumper;} else {mmc_jumper = old_jumper;X;}}
 
 #else
 /* Old C++ try/catch/throw implementation */

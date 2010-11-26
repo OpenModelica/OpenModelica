@@ -41,8 +41,15 @@ extern "C" {
 
 extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
 {
-  fprintf(stderr, "Dynload_executeFunction NYI\n");
-  exit(1);
+  modelica_ptr_t func = NULL;
+  int retval = -1;
+  void *retarg = NULL;
+  func = lookup_ptr(_inFuncHandle);
+  if (func == NULL) MMC_THROW();
+
+  retval = execute_function(_inValLst, &retarg, func->data.func.handle);
+  if (retval) MMC_THROW();
+  return retarg;
 }
 
 }

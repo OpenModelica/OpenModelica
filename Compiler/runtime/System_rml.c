@@ -731,34 +731,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__freeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
-  modelica_ptr_t func = NULL, lib = NULL;
-
-  func = lookup_ptr(funcIndex);
-
-  if (func == NULL)
+  if (SystemImpl__freeFunction(funcIndex))
     RML_TAILCALLK(rmlFC);
-
-  lib = lookup_ptr(func->data.func.lib);
-
-  if (lib == NULL) {
-    free_function(func);
-    free_ptr(funcIndex);
-    RML_TAILCALLK(rmlFC);
-  }
-
-
-  if (lib->cnt <= 1) {
-    free_library(lib);
-    free_ptr(func->data.func.lib);
-    // fprintf(stderr, "library count %u, after unloading!\n", lib->cnt); fflush(stderr);
-  } else {
-    --(lib->cnt);
-    // fprintf(stderr, "library count %u, no unloading!\n", lib->cnt); fflush(stderr);
-  }
-
-  free_function(func);
-  free_ptr(funcIndex);
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -766,33 +740,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__freeLibrary)
 {
   modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0);
-  modelica_ptr_t lib = NULL;
-
-  lib = lookup_ptr(libIndex);
-
-  if (lib == NULL)
+  if (SystemImpl__freeLibrary(libIndex))
     RML_TAILCALLK(rmlFC);
-
-  if (lib->cnt <= 1) {
-    free_library(lib);
-    free_ptr(libIndex);
-    /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
-  } else {
-    --(lib->cnt);
-    /* fprintf(stderr, "LIB *NO* UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
-  }
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-void free_function(modelica_ptr_t func)
-{
-  /* noop */
-  modelica_ptr_t lib = NULL;
-  lib = lookup_ptr(func->data.func.lib);
-  /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
-}
 
 RML_BEGIN_LABEL(System__getHasSendDataSupport)
 {
@@ -926,17 +878,6 @@ RML_BEGIN_LABEL(System__isSameFile)
   }
 }
 RML_END_LABEL
-
-void free_library(modelica_ptr_t lib)
-{
-  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", lib->data.lib); fflush(stderr); }
-  if (!FreeLibrary(lib->data.lib))
-  {
-    fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());
-    fflush(stderr);
-  }
-  lib->data.lib = NULL;
-}
 
 RML_BEGIN_LABEL(System__compileCFile)
 {
@@ -1530,19 +1471,6 @@ RML_BEGIN_LABEL(System__isSameFile)
   }
 }
 RML_END_LABEL
-
-void free_library(modelica_ptr_t lib)
-{
-  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
-  if (dlclose(lib->data.lib))
-  {
-    /* report an error here!
-    fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", );
-    fflush(stderr);
-    */
-  }
-  lib->data.lib = NULL;
-}
 
 RML_BEGIN_LABEL(System__compileCFile)
 {

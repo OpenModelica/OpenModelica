@@ -712,8 +712,11 @@ int file_select_directories(direntry entry)
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define getFunctionPointerFromDLL  GetProcAddress
+#define FreeLibraryFromHandle !FreeLibrary
 #else
 #define getFunctionPointerFromDLL dlsym
+#define FreeLibraryFromHandle dlclose
+#define GetLastError(X) 1L
 #endif
 
 extern int SystemImpl__lookupFunction(int libIndex, const char *str)
@@ -741,6 +744,75 @@ extern int SystemImpl__lookupFunction(int libIndex, const char *str)
   ++(lib->cnt); // lib->cnt = 2
   /* fprintf(stderr, "LOOKUP LIB index[%d]/count[%d]/handle[%lu] function %s[%d].\n", libIndex, lib->cnt, lib->data.lib, str, funcIndex); fflush(stderr); */
   return funcIndex;
+}
+
+int SystemImpl__freeFunction(int funcIndex)
+{
+  modelica_ptr_t func = NULL, lib = NULL;
+
+  func = lookup_ptr(funcIndex);
+
+  if (func == NULL) return 1;
+
+  lib = lookup_ptr(func->data.func.lib);
+
+  if (lib == NULL) {
+    free_function(func);
+    free_ptr(funcIndex);
+    return 1;
+  }
+
+
+  if (lib->cnt <= 1) {
+    free_library(lib);
+    free_ptr(func->data.func.lib);
+    // fprintf(stderr, "library count %u, after unloading!\n", lib->cnt); fflush(stderr);
+  } else {
+    --(lib->cnt);
+    // fprintf(stderr, "library count %u, no unloading!\n", lib->cnt); fflush(stderr);
+  }
+
+  free_function(func);
+  free_ptr(funcIndex);
+  return 0;
+}
+
+int SystemImpl__freeLibrary(int libIndex)
+{
+  modelica_ptr_t lib = NULL;
+
+  lib = lookup_ptr(libIndex);
+
+  if (lib == NULL) return 1;
+
+  if (lib->cnt <= 1) {
+    free_library(lib);
+    free_ptr(libIndex);
+    /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
+  } else {
+    --(lib->cnt);
+    /* fprintf(stderr, "LIB *NO* UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
+  }
+  return 0;
+}
+
+void free_library(modelica_ptr_t lib)
+{
+  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
+  if (FreeLibraryFromHandle(lib->data.lib))
+  {
+    fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());
+    fflush(stderr);
+  }
+  lib->data.lib = NULL;
+}
+
+void free_function(modelica_ptr_t func)
+{
+  /* noop */
+  modelica_ptr_t lib = NULL;
+  lib = lookup_ptr(func->data.func.lib);
+  /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
 
 #ifdef __cplusplus
