@@ -11926,6 +11926,7 @@ algorithm
       list<Absyn.Subscript> ss;
       Boolean impl;
       DAE.ComponentRef cr;
+      Absyn.ComponentRef absynCr;
       DAE.ExpType ty;
       list<DAE.Subscript> ss_1;
       Absyn.ComponentRef subs,acr;
@@ -11985,9 +11986,9 @@ algorithm
       then
         (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const);
 
-    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = cr), crefPrefix, impl, info)
+    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), crefPrefix, impl, info)
       equation
-        (cache, cr, const1) = elabCrefSubs(cache, env, cr, crefPrefix, impl, info);
+        (cache, cr, const1) = elabCrefSubs(cache, env, absynCr, crefPrefix, impl, info);
       then
         (cache, cr, const1);
 
