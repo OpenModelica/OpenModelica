@@ -677,7 +677,8 @@ algorithm
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
-        res = stringAppendList({"Simulation failed.\n",errorStr});
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
         simValue = createSimulationResultFailure(res);
       then
         (cache,simValue,st);
@@ -686,7 +687,8 @@ algorithm
       expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
       (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        simValue = createSimulationResultFailure("Simulation Failed. Environment variable OPENMODELICAHOME not set.");
+        str = Absyn.pathString(className);
+        simValue = createSimulationResultFailure("Simulation failed for model: " +& str +& "\nEnvironment variable OPENMODELICAHOME not set.");
       then
         (cache,simValue,st);
         
