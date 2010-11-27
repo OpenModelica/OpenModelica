@@ -227,6 +227,45 @@ extern void* System_strtok(const char *str0, const char *delimit)
   return listReverse(res);
 }
 
+extern void* System_substring(const char *inStr, int start, int stop)
+{
+  char* substring = NULL;
+  char* str = strdup(inStr);
+  int startIndex = start;
+  int stopIndex = stop;
+  int len1 = strlen(str);
+  int len2 = 0;
+  void *res = NULL;
+
+  /* Check arguments */
+  if ( startIndex < 1 )
+  {
+	free(str);
+    MMC_THROW();
+  }
+  if ( stopIndex == -999 )
+  {
+	  stopIndex = startIndex;
+  } else if ( stopIndex < startIndex ) {
+    free(str);
+    MMC_THROW();
+  } else if ( stopIndex > len1 ) {
+    free(str);
+    MMC_THROW();
+  }
+
+  /* Allocate memory and copy string */
+  len2 = stopIndex - startIndex + 1;
+  substring = (char*)malloc(len2);
+  strncpy(substring, &str[startIndex-1], len2);
+  substring[len2] = '\0';
+
+  res = mmc_mk_scon(substring);
+
+  free(substring);
+  return res;
+}
+
 const char* System_getClassnamesForSimulation()
 {
   if(class_names_for_simulation)

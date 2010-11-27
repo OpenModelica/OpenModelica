@@ -1049,7 +1049,7 @@ algorithm
     case "log10" then cevalBuiltinLog10;
     case "arcsin" then cevalBuiltinAsin;
     case "arccos" then cevalBuiltinAcos;
-    case "arctan" then cevalBuiltinAtan;
+    case "arctan" then cevalBuiltinAtan;    
     case "integer" then cevalBuiltinInteger;
     case "boolean" then cevalBuiltinBoolean;
     case "mod" then cevalBuiltinMod;
@@ -1073,7 +1073,8 @@ algorithm
     case "rooted" then cevalBuiltinRooted; //
     case "cross" then cevalBuiltinCross;
     case "fill" then cevalBuiltinFill;
-    case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
+    case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
+    case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;    
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
     case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;
@@ -1423,6 +1424,7 @@ algorithm
     case ("sinh",SOME("sinh")) then ();
     case ("tan",SOME("tan")) then ();
     case ("tanh",SOME("tanh")) then ();
+    case ("substring",SOME("substring")) then ();
   end matchcontinue;
 end isKnownExternalFunc;
 
@@ -1436,7 +1438,11 @@ protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue (inIdent,inAbsynIdentOption,inValuesValueLst,inMsg)
-    local Real rv_1,rv,rv1,rv2,sv,cv;
+    local 
+      Real rv_1,rv,rv1,rv2,sv,cv;
+      String str;
+      Integer start, stop;
+      
     case ("acos",SOME("acos"),{Values.REAL(real = rv)},_)
       equation
         rv_1 = realAcos(rv);
@@ -1504,6 +1510,17 @@ algorithm
         rv_1 = realTanh(rv);
       then
         Values.REAL(rv_1);
+    
+    case ("substring",SOME("substring"),
+          {
+           Values.STRING(string = str),
+           Values.INTEGER(integer = start),
+           Values.INTEGER(integer = stop)
+          },_)
+      equation
+        str = System.substring(str, start, stop);
+      then
+        Values.STRING(str);
   end matchcontinue;
 end cevalKnownExternalFuncs2;
 
@@ -2239,6 +2256,46 @@ algorithm
       then fail();
   end matchcontinue;
 end cevalBuiltinPromote2;
+
+protected function cevalBuiltinSubstring "
+  author: PA
+  Evaluates the String operator String(r), String(i), String(b), String(e).
+  TODO: Also evaluate String(r, significantDigits=d), and String(r, format=s)."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Values.Value arr_val,res;
+      Integer dim_val;
+      list<Env.Frame> env;
+      DAE.Exp str_exp, start_exp, stop_exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer start, stop; 
+      Absyn.Path p;
+    
+    case (cache,env,{str_exp, start_exp, stop_exp},impl,st,msg)
+      equation
+        (cache,Values.STRING(str),_) = ceval(cache,env, str_exp, impl, st, NONE(), msg);
+        (cache,Values.INTEGER(start),_) = ceval(cache,env, start_exp, impl, st, NONE(), msg);
+        (cache,Values.INTEGER(stop),_) = ceval(cache,env, stop_exp, impl, st, NONE(), msg);
+        str = System.substring(str, start, stop);
+      then
+        (cache,Values.STRING(str),st);
+  end matchcontinue;
+end cevalBuiltinSubstring;
 
 protected function cevalBuiltinString "
   author: PA

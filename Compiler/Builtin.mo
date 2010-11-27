@@ -267,6 +267,18 @@ protected constant DAE.Type int2string =(
 protected constant DAE.Type bool2string =(
           DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
 
+protected constant DAE.Type stringIntInt2string=(
+          DAE.T_FUNCTION(
+              {
+              ("x",DAE.T_STRING_DEFAULT),
+              ("y",DAE.T_INTEGER_DEFAULT),
+              ("z",DAE.T_INTEGER_DEFAULT)
+              },
+              DAE.T_STRING_DEFAULT,
+              DAE.NO_INLINE()),
+              NONE());
+
+
 /* type for builtin operator der has unit type parameter to be able to express that derivative of expression
  means an addition of 1/s on the unit dimension */
 protected constant DAE.Type derType=(
@@ -2203,6 +2215,17 @@ algorithm
   end matchcontinue;
 end isATan2;
 
+public function isSubstring
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "substring")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Utilities", path = Absyn.QUALIFIED(name = "Strings",path = Absyn.IDENT(name = "substring"))))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSubstring(inPath); then ();
+  end matchcontinue;
+end isSubstring;
+
 public function isSinh
   input Absyn.Path inPath;
 algorithm
@@ -2489,6 +2512,7 @@ algorithm
       env = Env.extendFrameT(env, "acos", real2real);
       env = Env.extendFrameT(env, "atan", real2real);
       env = Env.extendFrameT(env, "atan2", realReal2real);
+      env = Env.extendFrameT(env, "substring", stringIntInt2string);
       env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);

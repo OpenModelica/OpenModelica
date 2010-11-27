@@ -2813,7 +2813,7 @@ public function traverseEEquationExps
     output tuple<Absyn.Exp, Argument> outTuple;
   end TraverseFunc;
 algorithm
-  outTuple := match(inEEquation, inTuple)
+  (outEEquation, outTuple) := match(inEEquation, inTuple)
     local
       TraverseFunc traverser;
       Argument arg;
@@ -2862,7 +2862,7 @@ public function traverseStatementExps
     output tuple<Absyn.Exp, Argument> outTuple;
   end TraverseFunc;
 algorithm
-  outTuple := match(inStatement, inTuple)
+  (outStatement, outTuple) := match(inStatement, inTuple)
     local
       TraverseFunc traverser;
       Argument arg;

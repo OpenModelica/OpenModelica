@@ -125,6 +125,42 @@ RML_BEGIN_LABEL(System__strtok)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__substring)
+{
+  char* substring = NULL;
+  char* str = RML_STRINGDATA(rmlA0);
+  int startIndex = RML_UNTAGFIXNUM(rmlA1);
+  int stopIndex = RML_UNTAGFIXNUM(rmlA2);
+  int len1 = strlen(str);
+  int len2 = 0;
+
+  /* Check arguments */
+  if ( startIndex < 1 )
+  {
+    RML_TAILCALLK(rmlFC);
+  }
+  if ( stopIndex == -999 )
+  {
+	  stopIndex = startIndex;
+  } else if ( stopIndex< startIndex ) {
+    RML_TAILCALLK(rmlFC);
+  } else if ( stopIndex > len1 ) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  /* Allocate memory and copy string */
+  len2 = stopIndex - startIndex + 1;
+  substring = (char*)malloc(len2);
+  strncpy(substring, &str[startIndex-1], len2);
+  substring[len2] = '\0';
+
+  rmlA0 = mk_scon(substring);
+
+  free(substring);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__toupper)
 {
   char *base = RML_STRINGDATA(rmlA0);

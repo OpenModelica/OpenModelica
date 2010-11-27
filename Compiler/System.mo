@@ -136,6 +136,15 @@ public function strtok
   external "C" outStringLst=System_strtok(inString1,inString2) annotation(Library = "omcruntime");
 end strtok;
 
+public function substring
+  input String inString;
+  input Integer start;
+  input Integer stop;
+  output String outString;
+
+  external "C" outString = System_substring(inString,start,stop) annotation(Library = "omcruntime");
+end substring;
+
 public function setCCompiler
   input String inString;
 
