@@ -306,7 +306,7 @@ namespace IAEX
       {
         QTextDocument* printDocument = new QTextDocument();
         QTextOption opt;
-        opt.setAlignment(Qt::AlignRight);
+        opt.setAlignment(Qt::AlignLeft);
         opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
         printDocument->setDefaultTextOption(opt);
         printDocument->setTextWidth(700);
@@ -315,8 +315,6 @@ namespace IAEX
         doc_->runVisitor( visitor );
         printDocument->setTextWidth(700);
 
-        QMessageBox::information(0, QVariant(printDocument->size().width()).toString(), 
-                                    QVariant(printDocument->idealWidth()).toString());
         printDocument->print( printer_ );
 
         // 2006-03-16 AF
