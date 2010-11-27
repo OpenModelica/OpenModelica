@@ -2155,8 +2155,8 @@ algorithm
         ((eqn :: resAlgEqn),resDiffEqn,resArrayEqns);
     case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest)) /* array equation */
       equation
-        bool_lst = Util.listMap(expl, isAlgebraic);
-        true = Util.boolAndList(bool_lst);
+        // fails if not all call results are true
+        Util.listMapAllValue(expl, isAlgebraic, true);
         (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
         (resAlgEqn,resDiffEqn,(eqn :: resArrayEqns));

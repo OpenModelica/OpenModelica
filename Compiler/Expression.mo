@@ -4247,19 +4247,17 @@ algorithm
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
     case(DAE.ARRAY(array = ae))
       equation
-        ab = Util.listMap(ae,isZero);  
-        res = Util.boolAndList(ab);
+        Util.listMapAllValue(ae,isZero,true);  
       then   
-        res;
+        true;
     
     case (DAE.MATRIX(scalar = scalar))  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        ab = Util.listMap(ae,isZero);  
-        res = Util.boolAndList(ab);
-      then   
-        res;         
+        Util.listMapAllValue(ae,isZero,true);  
+      then
+        true;         
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     
@@ -4340,19 +4338,17 @@ algorithm
     
     case (DAE.ARRAY(array = ae))  
       equation
-        ab = Util.listMap(ae,isConst);  
-        res = Util.boolAndList(ab);
-      then   
-        res;   
+        Util.listMapAllValue(ae,isConst,true);
+      then
+        true;
     
     case (DAE.MATRIX(scalar = scalar))  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        ab = Util.listMap(ae,isConst);  
-        res = Util.boolAndList(ab);
-      then   
-        res;      
+        Util.listMapAllValue(ae,isConst,true);
+      then
+        true;
     
     case (DAE.RANGE(exp=e,expOption=NONE(),range=e1)) 
       equation
@@ -4371,25 +4367,22 @@ algorithm
     
     case (DAE.PARTEVALFUNCTION(expList = ae))  
       equation
-        ab = Util.listMap(ae,isConst);  
-        res = Util.boolAndList(ab);
-      then   
-        res;          
+        Util.listMapAllValue(ae,isConst,true);
+      then
+        true;
     
     case (DAE.TUPLE(PR = ae))  
       equation
-        ab = Util.listMap(ae,isConst);  
-        res = Util.boolAndList(ab);
-      then   
-        res;          
+        Util.listMapAllValue(ae,isConst,true);
+      then
+        true;          
     
     case (DAE.ASUB(exp=e,sub=ae)) 
       equation
         true = isConst(e);
-        ab = Util.listMap(ae,isConst);  
-        res = Util.boolAndList(ab);
-      then   
-        res;   
+        Util.listMapAllValue(ae,isConst,true);
+      then
+        true;
     
     case (DAE.SIZE(exp=e,sz=NONE())) then isConst(e);
     
@@ -5179,12 +5172,13 @@ algorithm
       true = isConst(e) and not isZero(e);
     then false;
 
-      /* For several terms, all must be positive or zero and at least one must be > 0 */
+    /* For several terms, all must be positive or zero and at least one must be > 0 */
     case(e) equation
       (terms as _::_) = terms(e);
-      true = Util.boolAndList(Util.listMap(terms,expIsPositiveOrZero));
+      Util.listMapAllValue(terms,expIsPositiveOrZero,true);
       _::_ = Util.listSelect(terms,expIsPositive);
-    then false;
+    then 
+      false;
 
     case(e) then true;
   end matchcontinue;
@@ -5316,109 +5310,103 @@ algorithm
     // booleans
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2))        
       equation
-        res = boolEq(b1, b2);
+        true = boolEq(b1, b2);
       then
-        res;
+        true;
     
     // enumeration literals
     case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2))
       equation
-        res = Absyn.pathEqual(enum1, enum2);
+        true = Absyn.pathEqual(enum1, enum2);
       then
-        res;
+        true;
     
     // crefs
     case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2))
       equation
-        res = ComponentReference.crefEqual(cr1, cr2);
+        true = ComponentReference.crefEqual(cr1, cr2);
       then
-        res;
+        true;
     
     // binary ops
     case (DAE.BINARY(exp1 = e11,operator = op1,exp2 = e12),DAE.BINARY(exp1 = e21,operator = op2,exp2 = e22))
       equation
-        b1 = operatorEqual(op1, op2);
-        b2 = expEqual(e11, e21);
-        b3 = expEqual(e12, e22);
-        res = Util.boolAndList({b1,b2,b3});
+        true = operatorEqual(op1, op2);
+        true = expEqual(e11, e21);
+        true = expEqual(e12, e22);
       then
-        res;
+        true;
     
     // logical binary ops
     case (DAE.LBINARY(exp1 = e11,operator = op1,exp2 = e12),
           DAE.LBINARY(exp1 = e21,operator = op2,exp2 = e22))
       equation
-        b1 = operatorEqual(op1, op2);
-        b2 = expEqual(e11, e21);
-        b3 = expEqual(e12, e22);
-        res = Util.boolAndList({b1,b2,b3});
+        true = operatorEqual(op1, op2);
+        true = expEqual(e11, e21);
+        true = expEqual(e12, e22);
       then
-        res;
+        true;
     
     // unary ops
     case (DAE.UNARY(operator = op1,exp = e1),DAE.UNARY(operator = op2,exp = e2))
       equation
-        b1 = operatorEqual(op1, op2);
-        b2 = expEqual(e1, e2);
-        res = boolAnd(b1, b2);
+        true = operatorEqual(op1, op2);
+        true = expEqual(e1, e2);
       then
-        res;
+        true;
     
     // logical binary ops
     case (DAE.LUNARY(operator = op1,exp = e1),DAE.LUNARY(operator = op2,exp = e2))
       equation
-        b1 = operatorEqual(op1, op2);
-        b2 = expEqual(e1, e2);
-        res = boolAnd(b1, b2);
+        true = operatorEqual(op1, op2);
+        true = expEqual(e1, e2);
       then
-        res;
+        true;
     
     // relational ops
     case (DAE.RELATION(exp1 = e11,operator = op1,exp2 = e12),DAE.RELATION(exp1 = e21,operator = op2,exp2 = e22))
       equation
-        b1 = operatorEqual(op1, op2);
-        b2 = expEqual(e11, e21);
-        b3 = expEqual(e12, e22);
-        res = Util.boolAndList({b1,b2,b3});
+        true = operatorEqual(op1, op2);
+        true = expEqual(e11, e21);
+        true = expEqual(e12, e22);
       then
-        res;
+        true;
     
     // if expressions
     case (DAE.IFEXP(expCond = e11,expThen = e12,expElse = e13),DAE.IFEXP(expCond = e21,expThen = e22,expElse = e23))
       equation
-        b1 = expEqual(e13, e23);
-        b2 = expEqual(e11, e21);
-        b3 = expEqual(e12, e22);
-        res = Util.boolAndList({b1,b2,b3});
+        true = expEqual(e13, e23);
+        true = expEqual(e11, e21);
+        true = expEqual(e12, e22);
       then
-        res;
+        true;
     
     // function calls
     case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2))
       equation
-        b1 = ModUtil.pathEqual(path1, path2);
-        bs = Util.listThreadMap(expl1, expl2, expEqual);
-        res = Util.boolAndList((b1 :: bs));
+        true = ModUtil.pathEqual(path1, path2);
+        // fails if not all mapped calls return true
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
       then
-        res;
+        true;
     
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2))
       equation
-        b1 = ModUtil.pathEqual(path1, path2);
-        bs = Util.listThreadMap(expl1, expl2, expEqual);
-        res = Util.boolAndList((b1 :: bs));
+        true = ModUtil.pathEqual(path1, path2);
+        // fails if not all mapped calls return true
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
       then
-        res;
+        true;
     
     // arrays
     case (DAE.ARRAY(ty = tp1,array = expl1),DAE.ARRAY(ty = tp2,array = expl2))
       equation
         equality(tp1 = tp2);
-        bs = Util.listThreadMap(expl1, expl2, expEqual);
-        res = Util.boolAndList(bs);
+        // fails if not all mapped calls return true
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
       then
-        res;
+        true;
     
     // matrix
     case (e1 as DAE.MATRIX(ty = _), e2 as DAE.MATRIX(ty = _))
@@ -5435,61 +5423,60 @@ algorithm
     // ranges [start:stop]
     case (DAE.RANGE(ty = tp1,exp = e11,expOption = NONE(),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = NONE(),range = e23))
       equation
-        b1 = expEqual(e13, e23);
-        b2 = expEqual(e11, e21);
-        res = Util.boolAndList({b1,b2});
+        true = expEqual(e13, e23);
+        true = expEqual(e11, e21);
       then
-        res;
+        true;
     
     // ranges [start:step:stop]
     case (DAE.RANGE(ty = tp1,exp = e11,expOption = SOME(e12),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = SOME(e22),range = e23))
       equation
-        b1 = expEqual(e13, e23);
-        b2 = expEqual(e11, e21);
-        b3 = expEqual(e12, e22);
-        res = Util.boolAndList({b1,b2,b3});
+        true = expEqual(e13, e23);
+        true = expEqual(e11, e21);
+        true = expEqual(e12, e22);
       then
-        res;
+        true;
     
     // tuples
     case (DAE.TUPLE(PR = expl1),DAE.TUPLE(PR = expl2))
       equation
-        bs = Util.listThreadMap(expl1, expl2, expEqual);
-        res = Util.boolAndList(bs);
+        // fails if not all mapped calls return true
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
       then
-        res;
+        true;
     
     // casting
     case (DAE.CAST(ty = tp1,exp = e1),DAE.CAST(ty = tp2,exp = e2))
       equation
         equality(tp1 = tp2);
-        res = expEqual(e1, e2);
+        true = expEqual(e1, e2);
       then
-        res;
+        true;
     
     // array subscripts
     case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = e2,sub = ae2))
       equation
-        bs = Util.listThreadMap(ae1, ae2, expEqual);
-        res = Util.boolAndList(bs);
-        b2 = expEqual(e1, e2);
-        res = boolAnd(res, b2);
+        // fails if not all mapped calls return true
+        Util.listThreadMapAllValue(ae1, ae2, expEqual, true);
+        true = expEqual(e1, e2);
       then
-        res;
+        true;
+    
     // size(a)
     case (DAE.SIZE(exp = e1,sz = NONE()),DAE.SIZE(exp = e2,sz = NONE()))
       equation
-        res = expEqual(e1, e2);
+        true = expEqual(e1, e2);
       then
-        res;
+        true;
+    
     // size(a, dim)
     case (DAE.SIZE(exp = e1,sz = SOME(e11)),DAE.SIZE(exp = e2,sz = SOME(e22)))
       equation
-        b1 = expEqual(e1, e2);
-        b2 = expEqual(e11, e22);
-        res = boolAnd(b1, b2);
+        true = expEqual(e1, e2);
+        true = expEqual(e11, e22);
       then
-        res;
+        true;
+    
     // metamodeling code
     case (DAE.CODE(code = _),DAE.CODE(code = _))
       equation

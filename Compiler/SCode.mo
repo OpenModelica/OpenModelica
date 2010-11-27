@@ -1541,42 +1541,50 @@ public function elementEqual
       
      case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
        equation
-         b1 = stringEq(name1,name2);
-         b2 = Util.boolEqual(f1,f2);
-         b3 = Util.boolEqual(r1,r2);
-         b3 = classEqual(cl1,cl2);
-         equal = Util.boolAndList({b1,b2,b3});
-       then equal;
+         true = stringEq(name1,name2);
+         true = boolEq(f1,f2);
+         true = boolEq(r1,r2);
+         true = classEqual(cl1,cl2);
+       then 
+         true;
+     
      case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,cond1,_,cc1), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,cond2,_,cc2))
        equation
          equality(cond1 = cond2);
          equality(cc1 = cc2); // TODO! FIXME! this might fail for different comments!
-         b1 = stringEq(name1,name2);
-         b1a = ModUtil.innerOuterEqual(io,io2);
-         b2 = Util.boolEqual(f1,f2);
-         b3 = Util.boolEqual(r1,r2);
-         b4 = Util.boolEqual(p1,p2);
-         b5 = attributesEqual(attr1,attr2);
-         b6 = modEqual(mod1,mod2);
-         b7 = Absyn.typeSpecEqual(tp1,tp2);
-         equal = Util.boolAndList({b1,b1a,b2,b3,b4,b5,b6,b7});
-         then equal;
+         true = stringEq(name1,name2);
+         true = ModUtil.innerOuterEqual(io,io2);
+         true = boolEq(f1,f2);
+         true = boolEq(r1,r2);
+         true = boolEq(p1,p2);
+         true = attributesEqual(attr1,attr2);
+         true = modEqual(mod1,mod2);
+         true = Absyn.typeSpecEqual(tp1,tp2);
+       then 
+         true;
+     
      case (EXTENDS(path1,mod1,_), EXTENDS(path2,mod2,_))      
        equation
-         b1 = ModUtil.pathEqual(path1,path2);
-         b2 = modEqual(mod1,mod2);
-         equal = Util.boolAndList({b1,b2});
-       then equal;
+         true = ModUtil.pathEqual(path1,path2);
+         true = modEqual(mod1,mod2);
+       then 
+         true;
+     
      case (IMPORT(im1), IMPORT(im2))      
        equation
-         equal = Absyn.importEqual(im1,im2);
-       then equal;
+         true = Absyn.importEqual(im1,im2);
+       then 
+         true;
+     
      case (DEFINEUNIT(name1,os1,or1), DEFINEUNIT(name2,os2,or2))      
        equation
-         b1 = stringEq(name1,name2);
+         true = stringEq(name1,name2);
          equality(os1 = os2);
          equality(or1 = or2);
-       then b1;
+       then 
+         true;
+     
+     // otherwise false
      case(_,_) then false;
    end matchcontinue;
  end elementEqual;
@@ -1616,15 +1624,19 @@ algorithm
       Restriction restr1,restr2;
       ClassDef parts1,parts2;
       Absyn.Info info1,info2;
+    
     case (CLASS(name1,p1,e1,restr1,parts1,info1), CLASS(name2,p2,e2,restr2,parts2,info2))
         equation
-          b1 = stringEq(name1,name2);
-          b2 = Util.boolEqual(p1,p2);
-          b3 = Util.boolEqual(e1,e2);
-          b4 = restrictionEqual(restr1,restr2);
-          b5 = classDefEqual(parts1,parts2);
-          equal = Util.boolAndList({b1,b2,b3,b4,b5});
-        then equal;
+          true = stringEq(name1,name2);
+          true = boolEq(p1,p2);
+          true = boolEq(e1,e2);
+          true = restrictionEqual(restr1,restr2);
+          true = classDefEqual(parts1,parts2);
+        then 
+          true;
+    
+    // otherwise return false
+    case (_,_) then false;
   end matchcontinue;
 end classEqual;
 
@@ -1683,75 +1695,73 @@ protected function classDefEqual
  output Boolean equal;
  algorithm
    equal := matchcontinue(cdef1,cdef2)
-       local
-         list<Element> elts1,elts2;
-         list<Annotation> anns1,anns2;
-         list<Equation> eqns1,eqns2;
-         list<Equation> ieqns1,ieqns2;
-         list<AlgorithmSection> algs1,algs2;
-         list<AlgorithmSection> ialgs1,ialgs2;
-         list<Boolean> blst0,blst1,blst2,blst3,blst4,blst5,blst6,blst;
-         Absyn.ElementAttributes attr1,attr2;
-         Absyn.TypeSpec tySpec1, tySpec2;
-         Absyn.Path p1, p2;
-         Mod mod1,mod2;
-         Boolean b1,b2,b3;
-         list<Enum> elst1,elst2;
-         list<Ident> ilst1,ilst2;
-         String bcName1, bcName2;
-
+     local
+       list<Element> elts1,elts2;
+       list<Annotation> anns1,anns2;
+       list<Equation> eqns1,eqns2;
+       list<Equation> ieqns1,ieqns2;
+       list<AlgorithmSection> algs1,algs2;
+       list<AlgorithmSection> ialgs1,ialgs2;
+       list<Boolean> blst0,blst1,blst2,blst3,blst4,blst5,blst6,blst;
+       Absyn.ElementAttributes attr1,attr2;
+       Absyn.TypeSpec tySpec1, tySpec2;
+       Absyn.Path p1, p2;
+       Mod mod1,mod2;
+       Boolean b1,b2,b3;
+       list<Enum> elst1,elst2;
+       list<Ident> ilst1,ilst2;
+       String bcName1, bcName2;
+       
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
-          PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
+         PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
        equation
-         blst1 = Util.listThreadMap(elts1,elts2,elementEqual);
-         blst2 = Util.listThreadMap(eqns1,eqns2,equationEqual);
-         blst3 = Util.listThreadMap(ieqns1,ieqns2,equationEqual);
-         blst4 = Util.listThreadMap(algs1,algs2,algorithmEqual);
-         blst5 = Util.listThreadMap(ialgs1,ialgs2,algorithmEqual);
+         Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
+         Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
+         Util.listThreadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+         Util.listThreadMapAllValue(algs1,algs2,algorithmEqual,true);
+         Util.listThreadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
          // adrpo: ignore annotations!
          // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
-         blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5/*,blst6*/});
-         equal = Util.boolAndList(blst);
-       then equal;
-
+       then 
+         true;
+         
      case (DERIVED(tySpec1,mod1,attr1,_),
-           DERIVED(tySpec2,mod2,attr2,_))
+         DERIVED(tySpec2,mod2,attr2,_))
        equation
-         b1 = ModUtil.typeSpecEqual(tySpec1, tySpec2);
-         b2 = modEqual(mod1,mod2);
-         b3 = Util.isEqual(attr1,attr2);
-         equal = Util.boolAndList({b1,b2,b3});
-       then equal;
-
+         true = ModUtil.typeSpecEqual(tySpec1, tySpec2);
+         true = modEqual(mod1,mod2);
+         equality(attr1 = attr2);
+       then 
+         true;
+         
      case (ENUMERATION(elst1,_),ENUMERATION(elst2,_))
        equation
-         blst = Util.listThreadMap(elst1,elst2,enumEqual);
-         equal = Util.boolAndList(blst);
-       then equal;
-
-    case (cdef1 as CLASS_EXTENDS(bcName1,mod1,elts1,eqns1,ieqns1,algs1,ialgs1,anns1,_),
-          cdef2 as CLASS_EXTENDS(bcName2,mod2,elts2,eqns2,ieqns2,algs2,ialgs2,anns2,_))
-      equation
-         blst1 = Util.listThreadMap(elts1,elts2,elementEqual);
-         blst2 = Util.listThreadMap(eqns1,eqns2,equationEqual);
-         blst3 = Util.listThreadMap(ieqns1,ieqns2,equationEqual);
-         blst4 = Util.listThreadMap(algs1,algs2,algorithmEqual);
-         blst5 = Util.listThreadMap(ialgs1,ialgs2,algorithmEqual);
-         b1 = stringEq(bcName1,bcName2);
-         b2 = modEqual(mod1,mod2);
+         Util.listThreadMapAllValue(elst1,elst2,enumEqual,true);
+       then 
+         true;
+         
+     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,elts1,eqns1,ieqns1,algs1,ialgs1,anns1,_),
+           cdef2 as CLASS_EXTENDS(bcName2,mod2,elts2,eqns2,ieqns2,algs2,ialgs2,anns2,_))
+       equation
+         Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
+         Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
+         Util.listThreadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+         Util.listThreadMapAllValue(algs1,algs2,algorithmEqual,true);
+         Util.listThreadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
+         true = stringEq(bcName1,bcName2);
+         true = modEqual(mod1,mod2);
          // adrpo: ignore annotations!
          // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
-         blst0 = {b1,b2};
-         blst = Util.listFlatten({blst0,blst1,blst2,blst3,blst4,blst5/*,blst6*/});
-         equal = Util.boolAndList(blst);
-      then
-        equal;
-
-    case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
-      equation
-         blst = Util.listThreadMap(ilst1,ilst2,stringEq);
-         equal = Util.boolAndList(blst);
-       then equal;
+       then
+         true;
+         
+     case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
+       equation
+         Util.listThreadMapAllValue(ilst1,ilst2,stringEq,true);
+       then 
+         true;
+         
+    
     // adrpo: TODO! FIXME! are these below really needed??!!
     // as far as I can tell we handle all the cases.
     case(cdef1, cdef2)
@@ -1780,9 +1790,11 @@ protected function arraydimOptEqual
     case(NONE(),NONE()) then true;
     case(SOME(lst1),SOME(lst2))
       equation
-        blst = Util.listThreadMap(lst1,lst2,subscriptEqual);
-        equal = Util.boolAndList(blst);
-      then equal;
+        Util.listThreadMapAllValue(lst1,lst2,subscriptEqual,true);
+      then 
+        true;
+    // oth. false
+    case(SOME(lst1),SOME(lst2)) then false;        
   end matchcontinue;
 end arraydimOptEqual;
 
@@ -1816,11 +1828,15 @@ algorithm
     local
       list<Statement> a1,a2;
       list<Boolean> blst;
+    
     case(ALGORITHM(a1),ALGORITHM(a2))
       equation
-        blst = Util.listThreadMap(a1,a2,algorithmEqual2);
-        equal = Util.boolAndList(blst);
-      then equal;
+        Util.listThreadMapAllValue(a1,a2,algorithmEqual2,true);
+      then 
+        true;
+    
+    // false otherwise!
+    case (_, _) then false;
   end matchcontinue;
 end algorithmEqual;
 
@@ -1908,49 +1924,56 @@ algorithm
 
     case (EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       equation
-        blst1 = equationEqual22(tb1,tb2);//Util.listThreadMap(tb1,tb2,equationEqual2);
-        blst2 = Util.listThreadMap(fb1,fb2,equationEqual2);
-        blst3 = Util.listThreadMap(ifcond1,ifcond2,Absyn.expEqual);
-        blst = Util.listFlatten({blst1,blst2,blst3});
-        equal = Util.boolAndList(blst);
-      then equal;
+        true = equationEqual22(tb1,tb2);
+        Util.listThreadMapAllValue(fb1,fb2,equationEqual2,true);
+        Util.listThreadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
+      then 
+        true;
+    
     case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
       equation
-        b1 = Absyn.expEqual(e11,e21);
-        b2 = Absyn.expEqual(e12,e22);
-        equal = boolAnd(b1,b2);
-      then equal;
+        true = Absyn.expEqual(e11,e21);
+        true = Absyn.expEqual(e12,e22);
+      then 
+        true;
+    
     case(EQ_CONNECT(crefLeft = cr11, crefRight = cr12),EQ_CONNECT(crefLeft = cr21, crefRight = cr22))
       equation
-        b1 = Absyn.crefEqual(cr11,cr21);
-        b2 = Absyn.crefEqual(cr12,cr22);
-        equal = boolAnd(b1,b2);
-      then equal;
+        true = Absyn.crefEqual(cr11,cr21);
+        true = Absyn.crefEqual(cr12,cr22);
+      then 
+        true;
+    
     case (EQ_FOR(index = id1, range = exp1, eEquationLst = eql1),EQ_FOR(index = id2, range = exp2, eEquationLst = eql2))
       equation
-        blst1 = Util.listThreadMap(eql1,eql2,equationEqual2);
-        b1 = Absyn.expEqual(exp1,exp2);
-        b2 = stringEq(id1,id2);
-        equal = Util.boolAndList(b1::b2::blst1);
-      then equal;
+        Util.listThreadMapAllValue(eql1,eql2,equationEqual2,true);
+        true = Absyn.expEqual(exp1,exp2);
+        true = stringEq(id1,id2);
+      then 
+        true;
+    
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
-        blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
-        b1 = Absyn.expEqual(cond1,cond2);
-        equal = Util.boolAndList(b1::blst1);
-      then equal;
+        Util.listThreadMapAllValue(elst1,elst2,equationEqual2,true);
+        true = Absyn.expEqual(cond1,cond2);
+      then 
+        true;
+    
     case (EQ_ASSERT(condition = c1, message = m1),EQ_ASSERT(condition = c2, message = m2))
       equation
-        b1 = Absyn.expEqual(c1,c2);
-        b2 = Absyn.expEqual(m1,m2);
-        equal = boolAnd(b1,b2);
-      then equal;
+        true = Absyn.expEqual(c1,c2);
+        true = Absyn.expEqual(m1,m2);
+      then 
+        true;
+    
     case (EQ_REINIT(cref = cr1, expReinit = e1),EQ_REINIT(cref = cr2, expReinit = e2))
       equation
-        b1 = Absyn.expEqual(e1,e2);
-        b2 = Absyn.crefEqual(cr1,cr2);
-        equal = boolAnd(b1,b2);
-      then equal;
+        true = Absyn.expEqual(e1,e2);
+        true = Absyn.crefEqual(cr1,cr2);
+      then 
+        true;
+    
+    // otherwise false
     case(_,_) then false;
   end matchcontinue;
 end equationEqual2;
@@ -1960,23 +1983,25 @@ protected function equationEqual22
  Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.)"
   input list<list<EEquation>> tb1;
   input list<list<EEquation>> tb2;
-  output list<Boolean> blist;
+  output Boolean bOut;
 algorithm
-  blist := matchcontinue(tb1,tb2)
+  bOut := matchcontinue(tb1,tb2)
     local
       list<Boolean> blist1,blist2;
       list<EEquation> tb_1,tb_2;
-    case({},{}) then {};
-    case(_,{}) then {false};
-    case({},_) then {false};
+    
+    case({},{}) then true;
+    case(_,{}) then false;
+    case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
       equation
-        blist1 = Util.listThreadMap(tb_1,tb_2,equationEqual2);
-        blist2 = equationEqual22(tb1,tb2);
-        blist1 = listAppend(blist1,blist2);
+        Util.listThreadMapAllValue(tb_1,tb_2,equationEqual2,true);
+        true = equationEqual22(tb1,tb2);
       then
-        blist1;
-end matchcontinue;
+        true;
+    case(tb_1::tb1,tb_2::tb2) then false;
+    
+  end matchcontinue;
 end equationEqual22;
 
 public function modEqual
@@ -1996,26 +2021,30 @@ algorithm
 
     case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))
       equation
-        b1 = Util.boolEqual(f1,f2);
-        b2 = Absyn.eachEqual(each1,each2);
-        b3 = subModsEqual(submodlst1,submodlst2);
-        b4 = Absyn.expEqual(e1,e2);
-        equal = Util.boolAndList({b1,b2,b3,b4});
-      then equal;
-    case (MOD(f1,each1,submodlst1,_),MOD(f2,each2,submodlst2,_))
+        true = boolEq(f1,f2);
+        true = Absyn.eachEqual(each1,each2);
+        true = subModsEqual(submodlst1,submodlst2);
+        true = Absyn.expEqual(e1,e2);
+      then 
+        true;
+    
+    case (MOD(f1,each1,submodlst1,NONE()),MOD(f2,each2,submodlst2,NONE()))
       equation
-        b1 = Util.boolEqual(f1,f2);
-        b2 = Absyn.eachEqual(each1,each2);
-        b3 = subModsEqual(submodlst1,submodlst2);
-        equal = Util.boolAndList({b1,b2,b3});
-      then equal;
+        true = boolEq(f1,f2);
+        true = Absyn.eachEqual(each1,each2);
+        true = subModsEqual(submodlst1,submodlst2);
+      then 
+        true;
+    
     case (NOMOD(),NOMOD()) then true;
+    
     case (REDECL(f1,elts1),REDECL(f2,elts2))
       equation
-        b1 = Util.boolEqual(f1,f2);
-        blst = Util.listThreadMap(elts1,elts2,elementEqual);
-        equal = Util.boolAndList(b1::blst);
-      then equal;
+        true = boolEq(f1,f2);
+        Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
+      then 
+        true;
+    
     case(_,_) then false;
   end matchcontinue;
 end modEqual;
@@ -2035,20 +2064,23 @@ algorithm
       list<Subscript> ss1,ss2;
 
     case ({},{}) then true;
+    
     case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
         equation
-          b1 = stringEq(id1,id2);
-          b2 = modEqual(mod1,mod2);
-          b3 = subModsEqual(subModLst1,subModLst2);
-          equal = Util.boolAndList({b1,b2,b3});
-        then equal;
+          true = stringEq(id1,id2);
+          true = modEqual(mod1,mod2);
+          true = subModsEqual(subModLst1,subModLst2);
+        then 
+          true;
+    
     case (IDXMOD(ss1,mod1)::subModLst1,IDXMOD(ss2,mod2)::subModLst2)
         equation
-          b1 = subscriptsEqual(ss1,ss2);
-          b2 = modEqual(mod1,mod2);
-          b3 = subModsEqual(subModLst1,subModLst2);
-          equal = Util.boolAndList({b1,b2,b3});
-        then equal;
+          true = subscriptsEqual(ss1,ss2);
+          true = modEqual(mod1,mod2);
+          true = subModsEqual(subModLst1,subModLst2);
+        then 
+          true;
+    
     case (_,_) then false;
   end matchcontinue;
 end subModsEqual;
@@ -2066,14 +2098,17 @@ algorithm
       Absyn.Exp e1,e2;
 
     case({},{}) then true;
+    
     case(Absyn.NOSUB()::ss1,Absyn.NOSUB()::ss2)
       then subscriptsEqual(ss1,ss2);
+    
     case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
       equation
-        b1 = Absyn.expEqual(e1,e2);
-        b2 = subscriptsEqual(ss1,ss2);
-        equal = Util.boolAndList({b1,b2});
-        then equal;
+        true = Absyn.expEqual(e1,e2);
+        true = subscriptsEqual(ss1,ss2);
+      then 
+        true;
+    
     case(_,_) then false;
   end matchcontinue;
 end subscriptsEqual;
@@ -2094,14 +2129,16 @@ algorithm
       Absyn.Direction dir1,dir2;
     case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
       equation
-        b1 = arrayDimEqual(ad1,ad2);
-        b2 = Util.boolEqual(fl1,fl2);
-        b3 = accessibilityEqual(acc1,acc2);
-        b4 = variabilityEqual(var1,var2);
-        b5 = directionEqual(dir1,dir2);
-        b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
-        equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
-      then equal;
+        true = arrayDimEqual(ad1,ad2);
+        true = boolEq(fl1,fl2);
+        true = accessibilityEqual(acc1,acc2);
+        true = variabilityEqual(var1,var2);
+        true = directionEqual(dir1,dir2);
+        true = boolEq(st1,st2);  // added Modelica 3.1 stream connectors
+      then 
+        true;
+    
+    case(_, _) then false;        
   end matchcontinue;
 end attributesEqual;
 
@@ -2162,16 +2199,22 @@ protected function arrayDimEqual
      local
        Absyn.Exp e1,e2;
        Boolean b1,b2;
+     
      case({},{}) then true;
-     case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2) equation
-       equal = arrayDimEqual(ad1,ad2);
-       then equal;
+     
+     case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2) 
+       equation
+         true = arrayDimEqual(ad1,ad2);
+       then 
+         true;
+     
      case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
        equation
-         b1 = Absyn.expEqual(e1,e2);
-         b2 =  arrayDimEqual(ad1,ad2);
-         equal = Util.boolAndList({b1,b2});
-         then equal;
+         true = Absyn.expEqual(e1,e2);
+         true =  arrayDimEqual(ad1,ad2);
+       then 
+         true;
+     
      case(_,_) then false;
    end matchcontinue;
 end arrayDimEqual;

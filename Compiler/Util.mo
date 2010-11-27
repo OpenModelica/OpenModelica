@@ -7053,4 +7053,160 @@ algorithm
   end match;
 end listConsOption;
 
+function listMapAllValue
+"@author adrpo
+ applies a function to all elements in the lists and checks if all are the same
+ as a given value"
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+  input  list<TypeA> inLst;
+  input  FuncTypeTypeVarToTypeVar fn;
+  input  TypeB value;  
+  partial function FuncTypeTypeVarToTypeVar
+    input TypeA inTypeA;
+    output TypeB outTypeB;
+    replaceable type TypeA subtypeof Any;
+    replaceable type TypeB subtypeof Any;
+  end FuncTypeTypeVarToTypeVar;
+algorithm
+  _ := matchcontinue(inLst, fn, value)
+    local
+      TypeA hd;
+      TypeB hdChanged;
+      list<TypeA> rest;
+      list<TypeB> l, result;
+    
+    
+    case ({}, _, _) then ();
+    
+    case (hd::rest, fn, value)
+      equation
+        hdChanged = fn(hd);
+        equality(hdChanged = value);
+        listMapAllValue(rest, fn, value);
+    then
+        ();
+  end matchcontinue;
+end listMapAllValue;
+
+function listMap2AllValue
+"@author adrpo
+ checks that the mapped function returns the same given value, otherwise fails"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d fn;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input Type_d inTypeD;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cToType_d
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeD;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+  end FuncTypeType_aType_bType_cToType_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  _ := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, inTypeD)
+    local
+      Type_a hd; Type_d hdChanged;
+      list<Type_a> rest;  list<Type_d> l, result;
+      Type_b extraarg1;
+      Type_c extraarg2;
+    
+    case ({}, _, _, _, _) then ();
+    
+    case (hd::rest, fn, extraarg1, extraarg2, inTypeD)
+      equation
+        hdChanged = fn(hd, extraarg1, extraarg2);
+        equality(inTypeD = hdChanged);
+        listMap2AllValue(rest, fn, extraarg1, extraarg2, inTypeD);
+    then
+        ();
+  end matchcontinue;
+end listMap2AllValue;
+
+public function listMap1AllValue
+"function listMap1AllValue
+ maps a function to elements and checks if the result is always the given value!"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_b inTypeB;
+  input Type_c value;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  _ := matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,value)
+    local
+      Type_c f_1;
+      list<Type_c> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_aType_bToType_c fn;
+      Type_b extraarg;
+    
+    case ({},_,_,_) then ();
+    
+    case ((f :: r),fn,extraarg,value)
+      equation
+        f_1 = fn(f, extraarg);
+        equality(f_1 = value);
+        listMap1AllValue(r, fn, extraarg, value);
+      then
+        ();
+  end matchcontinue;
+end listMap1AllValue;
+
+public function listThreadMapAllValue "function: listThreadMapAllValue
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
+  and checks if the result is the same value.
+  Example: listThreadMapAllValue({true,true},{false,true},boolAnd,true) => fail"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_c value;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  _ := matchcontinue (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC,value)
+    local
+      Type_c fr;
+      list<Type_c> res;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bToType_c fn;
+    
+    case ({},{},_,value) then ();
+    
+    case ((fa :: ra),(fb :: rb),fn,value)
+      equation
+        fr = fn(fa, fb);
+        equality(fr = value);
+        listThreadMapAllValue(ra, rb, fn, value);
+      then
+        ();
+  end matchcontinue;
+end listThreadMapAllValue;
+
 end Util;

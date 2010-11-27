@@ -915,8 +915,8 @@ algorithm
       equation
         ((subs as (_ :: _))) = crefLastSubs(cr);
         exps = Util.listMap(subs, Expression.subscriptExp);
-        bools = Util.listMap(exps, Expression.isOne);
-        true = Util.boolAndList(bools);
+        // fails if any mapped functions returns false
+        Util.listMapAllValue(exps, Expression.isOne, true);
       then
         true;
     case (_) then false;

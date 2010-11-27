@@ -649,9 +649,10 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
+        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
         sim_call = stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
-        0 = System.systemCall(sim_call);        
+        0 = System.systemCall(sim_call);
         
         result_file = stringAppendList({executable,"_res.",outputFormat_str});
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);

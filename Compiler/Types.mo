@@ -506,12 +506,17 @@ public function isRecordWithOnlyReals "Returns true if type is a record only con
   output Boolean b;
 algorithm
   b := matchcontinue(tp)
-  local list<Boolean> bLst;
-    list<Var> varLst;
-    case((DAE.T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) equation
-        bLst = Util.listMap(Util.listMap(varLst,getVarType),isReal);
-        b = Util.boolAndList(bLst);
-    then b;
+    local 
+      list<Boolean> bLst;
+      list<Var> varLst;
+    
+    case((DAE.T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) 
+      equation
+        Util.listMapAllValue(Util.listMap(varLst,getVarType),isReal,true);
+      then
+        true;
+    
+    // otherwise false
     case(_) then false;
   end matchcontinue;
 end isRecordWithOnlyReals;

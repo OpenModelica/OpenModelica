@@ -1980,12 +1980,12 @@ algorithm
     // handle subset equal
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
       equation
-        b1 = Util.boolEqual(f1,f2);
-        b2 = Absyn.eachEqual(each1,each2);
-        b3 = subModsEqual(submods1,submods2);
-        b4 = eqModSubsetOrEqual(eqmod1,eqmod2);
-        equal = Util.boolAndList({b1,b2,b3,b4});
-      then equal;
+        true = Util.boolEqual(f1,f2);
+        true = Absyn.eachEqual(each1,each2);
+        true = subModsEqual(submods1,submods2);
+        true = eqModSubsetOrEqual(eqmod1,eqmod2);
+      then 
+        true;
     case(DAE.REDECL(_,_),DAE.REDECL(_,_)) then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     case(mod1, mod2) then false;      
@@ -2073,25 +2073,32 @@ algorithm
     Boolean b1,b2,b3;
     list<Integer> indx1,indx2;
     list<Boolean> blst1;
+    
     case ({},{}) then true;
+    
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
         true = stringEq(id1,id2);
-        b1 = modEqual(mod1,mod2);
-        b2 = subModsEqual(subModLst1,subModLst2);
-        equal = Util.boolAndList({b1,b2});
-      then equal;
+        true = modEqual(mod1,mod2);
+        true = subModsEqual(subModLst1,subModLst2);
+      then 
+        true;
+    
     case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
       equation
-        blst1 = Util.listThreadMap(indx1,indx2,intEq);
-        b2 = modSubsetOrEqualOrNonOverlap(mod1,mod2);
-        b3 = subModsSubsetOrEqual(subModLst1,subModLst2);
-        equal = Util.boolAndList(b2::b3::blst1);
-      then equal;
+        Util.listThreadMapAllValue(indx1,indx2,intEq,true);
+        true = modSubsetOrEqualOrNonOverlap(mod1,mod2);
+        true = subModsSubsetOrEqual(subModLst1,subModLst2);
+      then 
+        true;
+    
     case(subModLst1,DAE.IDXMOD(_,_)::subModLst2)
       equation
-        b3 = subModsSubsetOrEqual(subModLst1,subModLst2);
-      then b3;
+        true = subModsSubsetOrEqual(subModLst1,subModLst2);
+      then 
+        true;
+    
+    // otherwise false
     case(_,_) then false;
   end matchcontinue;
 end subModsSubsetOrEqual;
@@ -2108,16 +2115,19 @@ algorithm
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
 
-    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) equation
-      b1 = Util.boolEqual(f1,f2);
-      b2 = Absyn.eachEqual(each1,each2);
-      b3 = subModsEqual(submods1,submods2);
-      b4 = eqModEqual(eqmod1,eqmod2);
-      equal = Util.boolAndList({b1,b2,b3,b4});
-      then equal;
+    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
+      equation
+        true = Util.boolEqual(f1,f2);
+        true = Absyn.eachEqual(each1,each2);
+        true = subModsEqual(submods1,submods2);
+        true = eqModEqual(eqmod1,eqmod2);
+      then 
+        true;
+    
     case(DAE.REDECL(_,_),DAE.REDECL(_,_)) then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    // adrpo: do not fail!
+    
+    // adrpo: do not fail, return false!
     case (_, _) then false;
   end matchcontinue;
 end modEqual;
@@ -2139,19 +2149,20 @@ algorithm
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
         true = stringEq(id1,id2);
-        b1 = modEqual(mod1,mod2);
-        b2 = subModsEqual(subModLst1,subModLst2);
-        equal = Util.boolAndList({b1,b2});
-      then equal;
+        true = modEqual(mod1,mod2);
+        true = subModsEqual(subModLst1,subModLst2);
+      then 
+        true;
     
     case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
       equation
-        blst1 = Util.listThreadMap(indx1,indx2,intEq);
-        b2 = modEqual(mod1,mod2);
-        b3 = subModsEqual(subModLst1,subModLst2);
-        equal = Util.boolAndList(b2::b3::blst1);
-      then equal;
+        Util.listThreadMapAllValue(indx1,indx2,intEq,true);
+        true = modEqual(mod1,mod2);
+        true = subModsEqual(subModLst1,subModLst2);
+      then 
+        true;
     
+    // otherwise false
     case(_,_) then false;
   end matchcontinue;
 end subModsEqual;

@@ -6632,17 +6632,17 @@ algorithm
       equation
         sl1=Util.listMap(enumLst,SCode.enumName);
         sl2=Util.listMap(elementLst,SCode.elementName);
-        boolList=Util.listThreadMap(sl1,sl2,stringEq);
-        true=Util.boolAndList(boolList);
-      then ();
+        Util.listThreadMapAllValue(sl1,sl2,stringEq,true);
+      then 
+        ();
 
     case(oldCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), newCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)))
       equation
         sl1=Util.listMap(enumLst,SCode.enumName);
         sl2=Util.listMap(elementLst,SCode.elementName);
-        boolList=Util.listThreadMap(sl1,sl2,stringEq);
-        true=Util.boolAndList(boolList);
-      then ();
+        Util.listThreadMapAllValue(sl1,sl2,stringEq,true);
+      then 
+        ();
 
     // try equality first!
     case(oldCl,newCl)

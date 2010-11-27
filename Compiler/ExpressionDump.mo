@@ -800,7 +800,7 @@ algorithm
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s1_1 = parenthesize(s1, pe1, p,false);
         s4 = Util.stringDelimitList(
-          Util.listMap3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),", ");
+          Util.listMap3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s_4 = s1_1+& "["+& s4 +& "]";
       then
         s_4;
@@ -1963,7 +1963,7 @@ algorithm
         printExp2(e, pri3);
         printRightpar(pri1, pri2);
         Print.printBuf("[");
-        s = Util.stringDelimitList(Util.listMap(es,printExpStr),", ");
+        s = Util.stringDelimitList(Util.listMap(es,printExpStr),",");
         Print.printBuf(s);
         Print.printBuf("]");
       then

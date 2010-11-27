@@ -634,7 +634,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring %s"),
           (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
-          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specifications and may lead to lookup errors."),
+          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specification and may lead to lookup errors."),
           (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
           (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),

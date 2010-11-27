@@ -886,8 +886,9 @@ algorithm
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
     case(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),vars,knvars) equation
-      b = Util.boolAndList(Util.listMap2(expl,isDiscreteExp,vars,knvars));
-    then b;
+      // fails if all mapped function calls doesn't return true 
+      Util.listMap2AllValue(expl,isDiscreteExp,vars,knvars,true);
+    then true;
     case(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),vars,knvars) equation
       b = boolAnd(isDiscreteExp(DAE.CREF(cr,DAE.ET_OTHER()),vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
@@ -895,9 +896,12 @@ algorithm
       b = isDiscreteExp(e1,vars,knvars);
     then b;
     case(BackendDAE.ALGORITHM(in_ = expl),vars,knvars) equation
-      b = Util.boolAndList(Util.listMap2(expl,isDiscreteExp,vars,knvars));
-    then b;
+      // fails if all mapped function calls doesn't return true
+      Util.listMap2AllValue(expl,isDiscreteExp,vars,knvars,true);
+    then true;
     case(BackendDAE.WHEN_EQUATION(whenEquation = _),vars,knvars) then true;
+    // returns false otherwise!
+    case(_,_,_) then false;
   end matchcontinue;
 end isDiscreteEquation;
 

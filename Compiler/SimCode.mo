@@ -5179,7 +5179,7 @@ algorithm
                   outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                   extObjVars), initCrefs)
       equation
-        true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
+        Util.listMapAllValue(stateVars, simvarFixed,true);
         stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initCrefs);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
                    outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
@@ -6190,8 +6190,7 @@ algorithm
     case (v,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))),e2)
       equation
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
-        bls = Util.listMap1(exps_1, Expression.expEqual,f);
-        true = Util.boolAndList(bls);
+        Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.CREF(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
       then  
@@ -6199,8 +6198,7 @@ algorithm
    case (v,e2,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))))
       equation
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
-        bls = Util.listMap1(exps_1, Expression.expEqual,f);
-        true = Util.boolAndList(bls);
+        Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
         (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),DAE.CREF(c,tp));
       then  
