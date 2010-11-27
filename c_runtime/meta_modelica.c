@@ -41,14 +41,6 @@ union mmc_double_as_words {
     mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
 };
 
-mmc_mk_rcon_rettype mmc_mk_rcon(double d)
-{
-    struct mmc_real *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
-    mmc_prim_set_real(p, d);
-    p->header = MMC_REALHDR;
-    return MMC_TAGPTR(p);
-}
-
 void mmc_prim_set_real(struct mmc_real *p, double d)
 {
   union mmc_double_as_words u;
@@ -56,6 +48,14 @@ void mmc_prim_set_real(struct mmc_real *p, double d)
   p->data[0] = u.data[0];
   if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
     p->data[1] = u.data[1];
+}
+
+mmc_mk_rcon_rettype mmc_mk_rcon(double d)
+{
+    struct mmc_real *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+    mmc_prim_set_real(p, d);
+    p->header = MMC_REALHDR;
+    return MMC_TAGPTR(p);
 }
 
 double mmc_prim_get_real(void *p)
