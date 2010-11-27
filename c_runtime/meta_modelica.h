@@ -122,32 +122,200 @@ typedef modelica_metatype mmc_mk_rcon_rettype;
 typedef modelica_metatype mmc_mk_scon_rettype;
 typedef modelica_metatype mmc_mk_acon_rettype;
 
-mmc_mk_icon_rettype mmc_mk_icon(modelica_integer);
+static void *mmc_alloc_bytes(unsigned nbytes)
+{
+  void *p;
+  if( (p = malloc(nbytes)) == 0 ) {
+    fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
+    EXIT(1);
+  }
+  return p;
+}
+
+static void *mmc_alloc_words(unsigned nwords)
+{
+  return mmc_alloc_bytes(nwords * sizeof(void*));
+}
+
 #define MMC_FALSE (mmc_mk_icon(0))
 #define MMC_TRUE (mmc_mk_icon(1))
 #define mmc_mk_bcon(X) (X != 0 ? MMC_TRUE : MMC_FALSE)
-mmc_mk_rcon_rettype mmc_mk_rcon(double);
-mmc_mk_scon_rettype mmc_mk_scon(const char*);
 
-void *mmc_mk_nil(void);
-void *mmc_mk_cons(void*, void*);
-void *mmc_mk_none(void);
-void *mmc_mk_some(void*);
-void *mmc_mk_box0(unsigned ctor);
-void *mmc_mk_box1(unsigned ctor, void*);
-void *mmc_mk_box2(unsigned ctor, void*, void*);
-void *mmc_mk_box3(unsigned ctor, void*, void*, void*);
-void *mmc_mk_box4(unsigned ctor, void*, void*, void*, void*);
-void *mmc_mk_box5(unsigned ctor, void*, void*, void*, void*, void*);
-void *mmc_mk_box6(unsigned ctor, void*, void*, void*, void*, void*, void*);
-void *mmc_mk_box7(unsigned ctor, void*, void*, void*, void*, void *,
-		     void*, void*);
-void *mmc_mk_box8(unsigned ctor, void*, void*, void*, void*, void *,
-		     void*, void*, void*);
-void *mmc_mk_box9(unsigned ctor, void*, void*, void*, void*, void *,
-		     void*, void*, void*, void*);
-void *mmc_mk_box(int slots, unsigned ctor, ...);
-void *mmc_mk_box_arr(int slots, unsigned ctor, void**);
+static inline mmc_mk_icon_rettype mmc_mk_icon(int i)
+{
+    return MMC_IMMEDIATE(MMC_TAGFIXNUM((mmc_sint_t)i));
+}
+
+mmc_mk_rcon_rettype mmc_mk_rcon(double d);
+
+static inline mmc_mk_scon_rettype mmc_mk_scon(const char *s)
+{
+    unsigned nbytes = strlen(s);
+    unsigned header = MMC_STRINGHDR(nbytes);
+    unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    struct mmc_string *p = (struct mmc_string *) mmc_alloc_words(nwords);
+    p->header = header;
+    memcpy(p->data, s, nbytes+1);	/* including terminating '\0' */
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box0(unsigned ctor)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
+    p->header = MMC_STRUCTHDR(0, ctor);
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box1(unsigned ctor, void *x0)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(2);
+    p->header = MMC_STRUCTHDR(1, ctor);
+    p->data[0] = x0;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
+    p->header = MMC_STRUCTHDR(2, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
+    p->header = MMC_STRUCTHDR(3, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
+    p->header = MMC_STRUCTHDR(4, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
+    p->header = MMC_STRUCTHDR(5, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
+	      void *x5)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
+    p->header = MMC_STRUCTHDR(6, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    p->data[5] = x5;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
+	      void *x5, void *x6)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
+    p->header = MMC_STRUCTHDR(7, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    p->data[5] = x5;
+    p->data[6] = x6;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
+	      void *x5, void *x6, void *x7)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
+    p->header = MMC_STRUCTHDR(8, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    p->data[5] = x5;
+    p->data[6] = x6;
+    p->data[7] = x7;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
+	      void *x5, void *x6, void *x7, void *x8)
+{
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
+    p->header = MMC_STRUCTHDR(9, ctor);
+    p->data[0] = x0;
+    p->data[1] = x1;
+    p->data[2] = x2;
+    p->data[3] = x3;
+    p->data[4] = x4;
+    p->data[5] = x5;
+    p->data[6] = x6;
+    p->data[7] = x7;
+    p->data[8] = x8;
+    return MMC_TAGPTR(p);
+}
+
+static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
+{
+    int i;
+    va_list argp;
+    struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(slots+1);
+    p->header = MMC_STRUCTHDR(slots, ctor);
+    va_start(argp, ctor);
+    for (i=0; i<slots; i++) {
+      p->data[i] = va_arg(argp, void*);
+    }
+    va_end(argp);
+    return MMC_TAGPTR(p);
+}
+
+extern const struct mmc_header mmc_prim_nil;
+
+static inline void *mmc_mk_nil(void)
+{
+    return MMC_TAGPTR(&mmc_prim_nil);
+}
+
+static inline void *mmc_mk_cons(void *car, void *cdr)
+{
+    return mmc_mk_box2(1, car, cdr);
+}
+
+static inline void *mmc_mk_none(void)
+{
+    static struct mmc_header none = { MMC_STRUCTHDR(0, 1 /* 0 is the empty list */) };
+    return MMC_TAGPTR(&none);
+}
+
+static inline void *mmc_mk_some(void *x)
+{
+    return mmc_mk_box1(1, x);
+}
+
+void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 int mmc_boxes_equal(void*, void*);
@@ -191,10 +359,11 @@ modelica_real mmc_prim_get_real(void *p);
 #include <setjmp.h>
 
 #if 1
-// Use something like this if needed...
-// #define MMC_JMP_BUF_SIZE 8192
-// extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
-// extern int jmp_buf_index;
+/* Use something like this if needed...
+#define MMC_JMP_BUF_SIZE 8192
+extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
+extern int jmp_buf_index;
+*/
 extern jmp_buf *mmc_jumper;
 #define MMC_TRY() {jmp_buf new_mmc_jumper, *old_jumper; old_jumper = mmc_jumper; mmc_jumper = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_CATCH() } mmc_jumper = old_jumper;}
