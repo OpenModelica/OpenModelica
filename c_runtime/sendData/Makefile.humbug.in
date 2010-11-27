@@ -1,0 +1,10 @@
+CFLAGS=@CFLAGS@
+CXXFLAGS=@CFLAGS@
+
+release/libsendDataHumbug.a: humbug.o
+	mkdir -p release
+	ar -ru $@ $<
+	ranlib $@
+
+Makefile.humbug: Makefile.humbug.in
+	(cd ../../; ./config.status)

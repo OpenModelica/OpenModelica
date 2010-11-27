@@ -1,5 +1,0 @@
-release/libsendDataHumbug.a: humbug.cpp humbug.h
-	mkdir -p release
-	g++ -c -o libsendDataHumbug.o humbug.cpp
-	ar -ru $@ libsendDataHumbug.o
-	ranlib $@
