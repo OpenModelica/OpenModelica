@@ -188,7 +188,7 @@ listMember_rettype listMember(modelica_metatype, modelica_metatype);
 listGet_rettype listGet(modelica_metatype, modelica_integer);
 listNth_rettype listNth(modelica_metatype, modelica_integer);
 listRest_rettype listRest(modelica_metatype);
-listEmpty_rettype listEmpty(modelica_metatype);
+#define listEmpty(LST) MMC_NILTEST(LST)
 listDelete_rettype listDelete(modelica_metatype, modelica_integer);
 #define cons(X,XS) mmc_mk_cons(X,XS)
 

@@ -154,7 +154,8 @@ int mmc_boxes_equal(void*, void*);
 void mmc__unbox(modelica_metatype box, void* res);
 
 typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
-mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int);
+#define mmc__uniontype__metarecord__typedef__equal(UT,CTOR,NFIELDS) (MMC_GETHDR(UT)==MMC_STRUCTHDR(NFIELDS+1,CTOR+3))
+/* mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int); */
 
 void debug__print(const char*,void*); /* For debugging */
 void printAny(void*); /* For debugging */

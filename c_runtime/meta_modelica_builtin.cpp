@@ -562,10 +562,12 @@ listRest_rettype listRest(modelica_metatype lst)
   return MMC_CDR(lst);
 }
 
+/*
 listEmpty_rettype listEmpty(modelica_metatype lst)
 {
   return MMC_NILTEST(lst) ? 1 : 0;
 }
+*/
 
 listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 {

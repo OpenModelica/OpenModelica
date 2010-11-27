@@ -361,6 +361,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   EXIT(1);
 }
 
+/*
 mmc__uniontype__metarecord__typedef__equal_rettype
 mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
 {
@@ -373,13 +374,14 @@ mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
 
-  if (numslots == fieldNums+1 && ctor == ex_ctor+3) { /* RECORD */
+  if (numslots == fieldNums+1 && ctor == ex_ctor+3) { // RECORD
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(ut),1));
     return 1;
   } else {
     return 0;
   }
 }
+*/
 
 void debug__print(const char* prefix, void* any)
 {
