@@ -10734,8 +10734,9 @@ algorithm
       Types.Type idTp;
       Prefix.Prefix pre;
       list<DAE.Exp> exps;
+    
     // return inExp if no vectorization is to be done
-    case(inRef,cache,env,impl,inExp,splicedExpData,false,_,info) then inExp;      
+    case(inRef,cache,env,impl,inExp,splicedExpData,doVect as false,_,info) then inExp;
     
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,pre,info)
       equation

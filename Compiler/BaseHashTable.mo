@@ -56,6 +56,10 @@ protected import Util;
 
 // Generic hashtable code below
 
+// adrpo: use a prime here (pick your poison):
+//        1013 2053 3023 4013   4999 5051 5087 
+public constant Integer defaultBucketSize = 2053;
+
 public function emptyHashTableWork
   input Integer szBucket;
   input Integer szArr;

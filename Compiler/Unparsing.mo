@@ -64,8 +64,9 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
                                        "#ifdef __cplusplus\n",
                                        "}\n",
-                                       "#endif"
-                                   }, false));
+                                       "#endif\n",
+                                       "\n"
+                                   }, true));
 end programExternalHeader;
 
 protected function lm_16

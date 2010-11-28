@@ -1310,7 +1310,7 @@ algorithm
     case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
       equation
         lst = BaseHashTable.get(src, invHt);
-        singleRepl = addReplacementNoTransitive(emptyReplacementsSized(10),src,dst);
+        singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
         repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
         (repl_1,src,dst);

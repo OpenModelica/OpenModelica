@@ -63,7 +63,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(stringHashDjb2,stringEq,Util.id,Absyn.pathString));
+  hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
 end emptyHashTable;
 
 public function emptyHashTableSized

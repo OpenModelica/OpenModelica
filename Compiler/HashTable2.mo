@@ -74,7 +74,7 @@ public function emptyHashTable
 "
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(1000,100,(hashFunc,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,ExpressionDump.printExpStr));
+  hashTable := emptyHashTableSized(BaseHashTable.defaultBucketSize);
 end emptyHashTable;
 
 public function emptyHashTableSized

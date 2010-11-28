@@ -13,7 +13,9 @@ template programExternalHeader(SCode.Program program)
   #ifdef __cplusplus
   }
   #endif
+  
   >>
+  /* adrpo: leave a newline at the end of file to get rid of the C warnings */
 end programExternalHeader;
 
 template classExternalHeader(SCode.Class cl, String pack)
