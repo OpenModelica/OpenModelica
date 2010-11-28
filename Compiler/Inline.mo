@@ -1036,7 +1036,17 @@ algorithm
         new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
-      then ((c,e)::res2);  
+      then ((c,e)::res2); 
+    /* cause of an error somewhere the type of the expression CREF is not equal to the componentreference type
+       this case is needed. */    
+    case((c,e as (DAE.CREF(componentRef = cref)))::res)
+      equation
+        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref); 
+        res1 = extendCrefRecords(res);  
+        new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+        new1 = extendCrefRecords(new);
+        res2 = listAppend(new1,res1);
+      then ((c,e)::res2);          
     case((c,e as (DAE.CALL(expLst = expl,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
         res1 = extendCrefRecords(res);  
