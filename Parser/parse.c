@@ -370,7 +370,7 @@ static void* parseString(const char* data, int flags)
   ModelicaParser_filename_C = "<interactive>";
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
-  isReadOnly = 1;
+  isReadOnly = 0;
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
