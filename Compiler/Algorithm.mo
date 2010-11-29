@@ -249,13 +249,14 @@ algorithm
       DAE.Exp rhs_1,e3,e1;
       DAE.Type ty;
       list<DAE.Exp> ea2;
-    case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
+    
+    case (lhs as DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        DAE.STMT_ASSIGN(t,DAE.CREF(c,crt),rhs_1,source);
+        DAE.STMT_ASSIGN(t,lhs,rhs_1,source);
         /* TODO: Use this when we have fixed states in BackendDAE .lower(...)
         case (e1 as DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
       equation
