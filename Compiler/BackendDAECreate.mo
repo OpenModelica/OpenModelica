@@ -255,6 +255,7 @@ algorithm
       String str;      
       DAE.Element ddl; 
       String s3;
+      DAE.ExpType expTy;
       
     // the empty case 
     case ({},functionTree,states,v1,v2,v3,whenclauses)
@@ -303,8 +304,9 @@ algorithm
         SOME(backendVar2) = Inline.inlineVarOpt(SOME(backendVar1),(SOME(functionTree),{DAE.NORM_INLINE()}));
         e2 = Inline.inlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, vars);
+        e1 = Expression.crefExp(cr);
       then
-        (vars,knvars,extVars,BackendDAE.EQUATION(DAE.CREF(cr, DAE.ET_OTHER()), e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,BackendDAE.EQUATION(e1, e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
     // variables: states and algebraic variables with NO binding equation
     case (((daeEl as DAE.VAR(componentRef = cr, source = source)) :: daeLstRest),functionTree,states,vars,knvars,extVars,whenclauses)
@@ -938,8 +940,8 @@ algorithm
 
     case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source))
       equation
-        e1 = ExpressionSimplify.simplify(DAE.CREF(cr1, DAE.ET_OTHER()));
-        e2 = ExpressionSimplify.simplify(DAE.CREF(cr2, DAE.ET_OTHER()));
+        e1 = ExpressionSimplify.simplify(Expression.crefExp(cr1));
+        e2 = ExpressionSimplify.simplify(Expression.crefExp(cr2));
       then
         BackendDAE.EQUATION(e1,e2,source);
 
@@ -1681,7 +1683,7 @@ algorithm
         // Split the output variables into variables that depend on the loop
         // variable and variables that don't.
         cref_ = ComponentReference.makeCrefIdent(iteratorName, tp, {});
-        iteratorExp = DAE.CREF(cref_, tp);
+        iteratorExp = Expression.crefExp(cref_);
         (arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, BackendDAEUtil.isLoopDependent, iteratorExp);
         arrayVars = Util.listMap(arrayVars, BackendDAEUtil.devectorizeArrayVar);
         // Explode array variables into their array elements.
@@ -1937,6 +1939,8 @@ algorithm
       BackendDAE.Variables v,vars_1,vars;
       list<BackendDAE.Equation> e,eqns;
       DAE.ComponentRef cref_;
+      DAE.Exp exp;
+      
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
@@ -1945,24 +1949,13 @@ algorithm
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
+        exp = Expression.crefExp(cref_);
       then
         /*
-         * Add equation der(dummy) = sin(time*6628.318530717). This so the solver has something to solve
-         * if the model does not contain states. To prevent the solver from taking larger and larger steps
-         * (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
-        (vars_1,(BackendDAE.EQUATION(
-          DAE.CALL(Absyn.IDENT("der"),
-          {DAE.CREF(cref_},false,true,DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sin"),{DAE.BINARY(
-          	DAE.CREF(ComponentReference.makeCrefIdent("time",{}),DAE.ET_REAL()),
-          	DAE.MUL(DAE.ET_REAL()),
-          	DAE.RCONST(628.318530717))},false,true,DAE.ET_REAL()))  :: eqns)); */
-        /*
-         *
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
          */
         (vars_1,(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),
-                          {DAE.CREF(cref_,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
+                          {exp},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.RCONST(0.0), DAE.emptyElementSource)  :: eqns));
 
   end matchcontinue;
