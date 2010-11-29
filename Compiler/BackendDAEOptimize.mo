@@ -260,6 +260,7 @@ algorithm
       DAE.Exp e1;
       DAE.ComponentRef sc;
       DAE.ExpType ty;
+     
      case (crlst,repl,cr,e,t)
       equation
         // is Array
@@ -272,11 +273,13 @@ algorithm
         // check List
         failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
         // extend cr
-        ((e1,_)) = BackendDAEUtil.extendArrExp((DAE.CREF(sc,ty),NONE()));
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
       then
         (sc::crlst,repl_1);
+    
     case (crlst,repl,_,_,_) then (crlst,repl);
   end matchcontinue;
 end removeSimpleEquations3;
@@ -974,11 +977,12 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-      DAE.Exp eqn,eqn_1,scalar,scalar_1;
+      DAE.Exp eqn,eqn_1,scalar,scalar_1,rhs,expCref;
       DAE.ElementSource source;
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
       Integer replace,replace1;
+    
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
@@ -994,7 +998,7 @@ algorithm
         dlowc1 = copyDaeLowforTearing(dlow1);
         BackendDAE.DAE(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
         // add Tearing Var
-        BackendDAE.VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst )) = BackendVariable.vararrayNth(varr, tearingvar-1);
+        BackendDAE.VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst)) = BackendVariable.vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend("tearingresidual_",ident);
         crt = ComponentReference.makeCrefIdent(ident_t,identType,subscriptLst);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
@@ -1002,16 +1006,18 @@ algorithm
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
         BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
-//        (eqn_1,replace) =  Expression.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
-//        (scalar_1,replace1) =  Expression.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
-//        true = replace + replace1 > 0;
+        // (eqn_1,replace) =  Expression.replaceExp(eqn,Expression.crefExp(cr),Expression.crefExp(crt));
+        // (scalar_1,replace1) =  Expression.replaceExp(scalar,Expression.crefExp(cr),Expression.crefExp(crt));
+        // true = replace + replace1 > 0;
         // Add Residual eqn
-        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),DAE.CREF(crt,DAE.ET_REAL()),source));
+        rhs = Expression.crefExp(crt);
+        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),rhs,source));
         eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),DAE.RCONST(0.0),source));
         // add equation to calc org var
+        expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(eqns_1,BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
                           {},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
-                          DAE.CREF(cr,DAE.ET_REAL()), DAE.emptyElementSource));
+                          expCref, DAE.emptyElementSource));
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
         dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
@@ -1305,7 +1311,7 @@ algorithm
         v = ass[e_1 + 1];
         v_1 = v - 1;
         BackendDAE.VAR(varName=cr) = BackendVariable.vararrayNth(varr, v_1);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        varexp = Expression.crefExp(cr);
         expr = ExpressionSolve.solve(e1, e2, varexp);
         divexplst = Expression.extractDivExpFromExp(expr);
         (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
@@ -2056,7 +2062,8 @@ algorithm
       ({v1}, _) = BackendVariable.getVar(cref, BackendDAEUtil.listVar(paramVars));
       ({v2}, _) = BackendVariable.getVar(x, BackendDAEUtil.listVar(paramVars));
       cref_ = differentiateVarWithRespectToX(cref, x, stateVars);
-    then DAE.CREF(cref_, et);
+      e = Expression.makeCrefExp(cref_, et);
+    then e;
       
     // d(parameter)/d(no parameter) = 0
     case(DAE.CREF(componentRef=cref, ty=et), x, functions, inputVars, paramVars, stateVars)
@@ -2066,7 +2073,8 @@ algorithm
       
     case(DAE.CREF(componentRef=cref, ty=et), x, functions, inputVars, paramVars, stateVars) equation
       cref_ = differentiateVarWithRespectToX(cref, x, stateVars);
-    then DAE.CREF(cref_, et);
+      e = Expression.makeCrefExp(cref_, et);
+    then e;
       
     // a + b
     case(DAE.BINARY(exp1=e1, operator=DAE.ADD(ty=et), exp2=e2), x, functions, inputVars, paramVars, stateVars) equation
@@ -2432,7 +2440,7 @@ algorithm
       
       /*cref = ComponentReference.makeCrefIdent(ident, DAE.ET_INT(), {});
       cref = differentiateVarWithRespectToX(cref, var, {});
-      exp2 = DAE.CREF(cref, DAE.ET_INT());
+      exp2 = Expression.crefExp(cref);
       
       derivedStatements2 = {DAE.STMT_ASSIGN(DAE.ET_INT(), exp2, DAE.ICONST(StateVar);0), DAE.emptyElementSource)};
       derivedStatements1 = listAppend(derivedStatements2, derivedStatements1);*/
