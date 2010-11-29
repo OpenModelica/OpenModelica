@@ -30,7 +30,7 @@
  */
 
 package BackendVarTransform
-" file:	       BackendVarTransform.mo
+" file:         BackendVarTransform.mo
   package:     BackendVarTransform
   description: BackendVarTransform contains a Binary Tree representation of variable replacements.
 
@@ -116,7 +116,7 @@ algorithm
 
     case ((BackendDAE.WHEN_EQUATION(whenEqn,source) :: es),repl)
       equation
-				whenEqn1 = replaceWhenEquation(whenEqn,repl);
+        whenEqn1 = replaceWhenEquation(whenEqn,repl);
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.WHEN_EQUATION(whenEqn1,source) :: es_1);
@@ -130,7 +130,7 @@ algorithm
 end replaceEquations;
 
 protected function replaceWhenEquation "Replaces variables in a when equation"
-	input BackendDAE.WhenEquation whenEqn;
+  input BackendDAE.WhenEquation whenEqn;
   input VarTransform.VariableReplacements repl;
   output BackendDAE.WhenEquation outWhenEqn;
 algorithm
@@ -144,27 +144,29 @@ algorithm
     case (BackendDAE.WHEN_EQ(i,cr,e,NONE()),repl) equation
         e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = ExpressionSimplify.simplify(e1);
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
-    then BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
+    then 
+      BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
 
-			// Replacements makes cr negative, a = -b
-	  case (BackendDAE.WHEN_EQ(i,cr,e,NONE()),repl) equation
-        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
+    // Replacements makes cr negative, a = -b
+    case (BackendDAE.WHEN_EQ(i,cr,e,NONE()),repl) equation
+        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
         e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = ExpressionSimplify.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
-    then BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
+    then 
+      BackendDAE.WHEN_EQ(i,cr1,e2,NONE());
 
     case (BackendDAE.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
         e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = ExpressionSimplify.simplify(e1);
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
     then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
-			// Replacements makes cr negative, a = -b
-	  case (BackendDAE.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
+    // Replacements makes cr negative, a = -b
+    case (BackendDAE.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
-        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(DAE.CREF(cr,DAE.ET_OTHER()),repl,NONE());
+        DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(cr1,_)) = VarTransform.replaceExp(Expression.crefExp(cr),repl,NONE());
         e1 = VarTransform.replaceExp(e, repl,NONE());
         e2 = ExpressionSimplify.simplify(DAE.UNARY(DAE.UMINUS(tp),e1));
     then BackendDAE.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
@@ -213,8 +215,8 @@ algorithm
         (BackendDAE.EQUATION(e1_2,e2_2) :: es_1);
      case ((BackendDAE.EQUEQUATION(cr1,cr2) :: es),repl)
       equation
-        DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr1,DAE.ET_OTHER()), repl,NONE());
-        DAE.CREF(cr2,_) = VarTransform.replaceExp(DAE.CREF(cr2,DAE.ET_OTHER()), repl,NONE());
+        DAE.CREF(cr1,_) = VarTransform.replaceExp(Expression.crefExp(cr1), repl,NONE());
+        DAE.CREF(cr2,_) = VarTransform.replaceExp(Expression.crefExp(cr2), repl,NONE());
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.EQUEQUATION(cr1,cr2) :: es_1);
@@ -245,7 +247,7 @@ algorithm
 
     case ((BackendDAE.WHEN_EQUATION(whenEqn) :: es),repl)
       equation
-				whenEqn1 = replaceWhenEquation(whenEqn,repl);
+        whenEqn1 = replaceWhenEquation(whenEqn,repl);
         es_1 = replaceEquations(es, repl);
       then
         (BackendDAE.WHEN_EQUATION(whenEqn1) :: es_1);
@@ -269,7 +271,7 @@ end replaceEquations;
 */
 /*
 protected function replaceWhenEquation "Replaces variables in a when equation"
-	input BackendDAE.WhenEquation whenEqn;
+  input BackendDAE.WhenEquation whenEqn;
   input VarTransform.VariableReplacements repl;
   output BackendDAE.WhenEquation outWhenEqn;
 algorithm

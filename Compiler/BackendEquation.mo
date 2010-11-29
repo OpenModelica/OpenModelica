@@ -649,7 +649,7 @@ public function equationToResidualForm "function: equationToResidualForm
 algorithm
   outEquation := matchcontinue (inEquation)
     local
-      DAE.Exp e,e1,e2,exp;
+      DAE.Exp e,e1,e2,exp,lhs;
       DAE.ComponentRef cr;
       DAE.ExpType tp;
       DAE.ElementSource source "origin of the element";
@@ -672,8 +672,9 @@ algorithm
         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 2\n",exp);
         tp = Expression.typeof(exp);
         b = DAEUtil.expTypeArray(tp);
-        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
-        e = ExpressionSimplify.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
+        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
+        lhs = Expression.makeCrefExp(cr,tp);
+        e = ExpressionSimplify.simplify(DAE.BINARY(lhs,op,exp));
       then
         BackendDAE.RESIDUAL_EQUATION(e,source);
     
