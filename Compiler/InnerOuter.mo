@@ -486,13 +486,13 @@ algorithm
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
 	      cr = DAEUtil.nameInnerouterUniqueCref(cr);
-        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,DAE.CREF(cr,DAE.ET_OTHER()));
+        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
 	    then repl;
 	  case(DAE.VAR(componentRef = cr),outerVars,repl)
 	    equation
 	      outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,DAE.CREF(cr,DAE.ET_OTHER()));
+	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
 	    then repl;
 	end matchcontinue;
 end buildInnerOuterReplVar;

@@ -5759,12 +5759,17 @@ algorithm
       list<DAE.Exp> restExp;
       list<Type> restType, rest;
       DAE.ComponentRef cref_;
+      DAE.Exp crefExp;
+    
     case {} then ({},{});
+    
     case _::rest
       equation
         (restExp,restType) = makeDummyExpAndTypeLists(rest);
         cref_  = ComponentReference.makeCrefIdent("#DummyExp#",DAE.ET_OTHER(),{});
-      then (DAE.CREF(cref_,DAE.ET_OTHER())::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
+        crefExp = Expression.crefExp(cref_);
+      then 
+        (crefExp::restExp,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE())::restType);
   end matchcontinue;
 end makeDummyExpAndTypeLists;
 

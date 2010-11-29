@@ -502,18 +502,20 @@ public function buildCrefExpFromAsub
 algorithm
   cRefOut := matchcontinue(cref, subs)
     local
-      DAE.Exp sub;
+      DAE.Exp sub,crefExp;
       DAE.ExpType ty;
       list<DAE.Exp> rest;
       DAE.ComponentRef crNew;
       list<DAE.Subscript> indexes;
+    
     case (cref, {}) then cref;
     case (DAE.CREF(componentRef=crNew, ty=ty), subs)
       equation
         indexes = Util.listMap(subs, Expression.makeIndexSubscript);
         crNew = ComponentReference.subscriptCref(crNew, indexes);
+        crefExp = Expression.makeCrefExp(crNew, ty);
       then
-        DAE.CREF(crNew, ty);
+        crefExp;
   end matchcontinue;
 end buildCrefExpFromAsub;
 
@@ -615,15 +617,20 @@ algorithm
       list<DAE.Exp> aRest;
       DAE.ComponentRef cr;
       DAE.ExpType aty;
-    case(DAE.ARRAY(ty=aty, scalar=true, array =(DAE.CREF(componentRef=cr) ::aRest)),
-         context)
+      DAE.Exp crefExp;
+    
+    case(DAE.ARRAY(ty=aty, scalar=true, array =(DAE.CREF(componentRef=cr) ::aRest)),context)
       equation
         failure(FUNCTION_CONTEXT()=context); //only in the function context
         { DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
-        true = isArrayExpansion(aRest, cr, 2);        
-      then DAE.CREF(cr, aty) ;
+        true = isArrayExpansion(aRest, cr, 2);
+        crefExp = Expression.makeCrefExp(cr, aty);
+      then 
+        crefExp;
+    
     case(inExp, _) then inExp;
+    
   end matchcontinue; 
 end hackArrayReverseToCref;
 
@@ -665,17 +672,22 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.ExpType aty;
-      list<list<tuple<DAE.Exp, Boolean>>> rows;      
-    case(DAE.MATRIX(ty=aty, scalar = rows as (((DAE.CREF(componentRef=cr),true)::_)::_) ),
-         context)
+      list<list<tuple<DAE.Exp, Boolean>>> rows;
+      DAE.Exp crefExp;  
+            
+    case(DAE.MATRIX(ty=aty, scalar = rows as (((DAE.CREF(componentRef=cr),true)::_)::_) ),context)
       equation
         failure(FUNCTION_CONTEXT()=context);
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
-        true = isMatrixExpansion(rows, cr, 1, 1);        
-      then DAE.CREF(cr, aty) ;
+        true = isMatrixExpansion(rows, cr, 1, 1);
+        crefExp = Expression.makeCrefExp(cr, aty);
+      then 
+        crefExp;
+    
     case(inExp, _) then inExp;
-    end matchcontinue;
+    
+  end matchcontinue;
 end hackMatrixReverseToCref;
 
 protected function isMatrixExpansion
@@ -2062,21 +2074,24 @@ given as indices which is a when_equation"
   output Boolean res;
 algorithm
   res := matchcontinue(cr,daelow,eqns)
-  local
-    BackendDAE.EquationArray eqs;
-    Integer e;
-    Expression.ComponentRef cr2;
-    DAE.Exp exp;
-    Boolean b1,b2;
+    local
+      BackendDAE.EquationArray eqs;
+      Integer e;
+      Expression.ComponentRef cr2;
+      DAE.Exp exp;
+      Boolean b1,b2;
+    
     case(cr,daelow,{}) then true;
+    
     case(cr,daelow as BackendDAE.DAE(orderedEqs=eqs),e::eqns) 
       equation
         BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,cr2,exp,_)) = BackendDAEUtil.equationNth(eqs,intAbs(e)-1);
         //We can asume the same component refs are solved in any else-branch.
         b1 = ComponentReference.crefEqualNoStringCompare(cr,cr2);
-        b2 = Expression.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
+        b2 = Expression.expContains(exp,Expression.crefExp(cr));
         true = boolOr(b1,b2);
       then false;
+    
     case(cr,daelow,_::eqns) 
       equation
         res = crefNotInWhenEquation(cr,daelow,eqns);
@@ -2873,7 +2888,7 @@ algorithm
       equation
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
         = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        varexp = Expression.crefExp(cr);
         exp_ = ExpressionSolve.solveLin(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr, exp_);  
@@ -2898,7 +2913,7 @@ algorithm
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = kind))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         true = BackendVariable.isNonStateVar(v);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        varexp = Expression.crefExp(cr);
         exp_ = solve(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
@@ -2911,7 +2926,7 @@ algorithm
         (BackendDAE.EQUATION(e1, e2,_), v as BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         cr = ComponentReference.crefPrefixDer(cr);
-        exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
+        exp_ = solve(e1, e2, Expression.crefExp(cr));
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
     
@@ -2923,7 +2938,7 @@ algorithm
         ((eqn as BackendDAE.EQUATION(e1,e2,_)),v as BackendDAE.VAR(varName = cr, varKind = kind)) =
         getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         true = BackendVariable.isNonStateVar(v);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        varexp = Expression.crefExp(cr);
         failure(_ = solve(e1, e2, varexp));
         //index = tick();
         index = eqNum; // Use the equation number as unique index
@@ -2939,7 +2954,7 @@ algorithm
         ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE())) =
           getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
         cr_1 = ComponentReference.crefPrefixDer(cr);
-        varexp = DAE.CREF(cr_1, DAE.ET_REAL());
+        varexp = Expression.crefExp(cr_1);
         failure(_ = solve(e1, e2, varexp));
         // index = tick();
         index = eqNum; // Use the equation number as unique index
@@ -3081,7 +3096,7 @@ algorithm
         // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
         /*
         tp = Expression.typeof(e2);
-        e1 = DAE.CREF(left,tp);
+        e1 = Expression.makeCrefExp(left,tp);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
@@ -3498,7 +3513,7 @@ algorithm
     case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
       equation
         cr = BackendVariable.varCref(v);
-        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        varexp = Expression.crefExp(cr);
         expr = solve(e1, e2, varexp);
         restEqs = extractDiscEqs(eqns, vs);
       then
@@ -3766,7 +3781,7 @@ algorithm
       equation
         der_cr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
-        cref_exp = DAE.CREF(der_cr, DAE.ET_REAL());
+        cref_exp = Expression.crefExp(der_cr);
       then
         ((cref_exp, SOME(cref)));
     
@@ -3774,8 +3789,9 @@ algorithm
            NONE()))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
+        cref_exp = Expression.crefExp(cr);
       then
-        ((DAE.CREF(cr,DAE.ET_REAL()), NONE()));
+        ((cref_exp, NONE()));
     case (_) then inExp;
   end matchcontinue;
 end replaceDerOpInExpTraverser;
@@ -3883,7 +3899,7 @@ algorithm
         s = ass2[e];
         c = listNth(crefs,s-1);
         eqn = listNth(eqnLst,e-1);
-        varexp = DAE.CREF(c,DAE.ET_REAL());
+        varexp = Expression.crefExp(c);
         exp = solveEquation(eqn, varexp);
         exps = VarTransform.replaceExp(exp,repl,NONE());
         repl1 = VarTransform.addReplacement(repl, c, exps);
@@ -6187,31 +6203,35 @@ algorithm
       Boolean b;
       list<Boolean> bls; 
       DAE.ComponentRef c;     
+    
     case (v,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))),e2)
       equation
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
         Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
-        (e12,e22) = solveTrivialArrayEquation(v,DAE.CREF(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
+        (e12,e22) = solveTrivialArrayEquation(v,Expression.makeCrefExp(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
       then  
         (e12,e22);
-   case (v,e2,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))))
+    
+    case (v,e2,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))))
       equation
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
         Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
-        (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),DAE.CREF(c,tp));
+        (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),Expression.makeCrefExp(c,tp));
       then  
         (e12,e22);
+    
     // Solve simple linear equations.
     case(v,e1,e2)
       equation
         tp = Expression.typeof(e1);
         res = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
-        (f,rhs) = Expression.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
+        (f,rhs) = Expression.getTermsContainingX(res,Expression.crefExp(v));
         (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
         rhs = ExpressionSimplify.simplify(rhs);
-      then (vTerm,rhs);
+      then 
+        (vTerm,rhs);
 
     // not succeded to solve, return unsolved equation., catched later.
     case(v,e1,e2) then (e1,e2);
@@ -6227,8 +6247,7 @@ protected function getVectorizedCrefFromExp
   input DAE.Exp inExp;
   output Expression.ComponentRef outComponentRef;
 algorithm
-  outComponentRef:=
-  matchcontinue (inExp)
+  outComponentRef := matchcontinue (inExp)
     local
       list<Expression.ComponentRef> crefs,crefs_1;
       Expression.ComponentRef cr;
@@ -6236,6 +6255,7 @@ algorithm
       String s;
       list<DAE.Exp> expl;
       list<list<tuple<DAE.Exp, Boolean>>> column;
+    
     case (DAE.ARRAY(array = expl))
       equation
         ((crefs as (cr :: _))) = Util.listMap(expl, Expression.expCref); //Get all CRefs from exp1.
@@ -6243,6 +6263,7 @@ algorithm
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
+    
     case (DAE.MATRIX(scalar = column))
       equation
         ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
@@ -6262,8 +6283,7 @@ protected function getVectorizedCrefFromExpMatrix
   input list<tuple<DAE.Exp, Boolean>> column; //One column in a matrix.
   output Expression.ComponentRef outComponentRef; //The expanded column
 algorithm
-  outComponentRef:=
-  matchcontinue (column)
+  outComponentRef := matchcontinue (column)
     local
       list<tuple<DAE.Exp, Boolean>> col;
       list<Expression.ComponentRef> crefs,crefs_1;
@@ -6271,6 +6291,7 @@ algorithm
       list<String> strs;
       String s;
       list<DAE.Exp> expl;
+    
     case (col)
       equation
         ((crefs as (cr :: _))) = Util.listMap(col, Expression.expCrefTuple); //Get all CRefs from the list of tuples.
@@ -6278,6 +6299,7 @@ algorithm
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
+		
 		case (_)
 		  equation
       then
@@ -6408,26 +6430,26 @@ end makeResidualReplacements;
 protected function makeResidualReplacements2 "function makeResidualReplacements2
   author: PA
 
-  Helper function to make_residual_replacements
-"
+  Helper function to make_residual_replacements"
   input VarTransform.VariableReplacements inVariableReplacements;
   input list<Expression.ComponentRef> inExpComponentRefLst;
   input Integer inInteger;
   output VarTransform.VariableReplacements outVariableReplacements;
 algorithm
-  outVariableReplacements:=
-  matchcontinue (inVariableReplacements,inExpComponentRefLst,inInteger)
+  outVariableReplacements := matchcontinue (inVariableReplacements,inExpComponentRefLst,inInteger)
     local
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
       Integer pos_1,pos;
       DAE.ComponentRef cr,cref_;
       list<Expression.ComponentRef> crs;
+    
     case (repl,{},_) then repl;
+    
     case (repl,(cr :: crs),pos)
       equation
         cref_ = ComponentReference.makeCrefIdent("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()}), {DAE.INDEX(DAE.ICONST(pos))});
-        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(cref_, DAE.ET_REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -6436,16 +6458,13 @@ algorithm
 end makeResidualReplacements2;
 
 protected function skipPreOperator "function: skipPreOperator
-
   Condition function, used in generate_ode_system2_nonlinear_residuals2.
   The variable in the pre operator should not be replaced in residual
-  functions. This function is passed to replace_exp to ensure this.
-"
+  functions. This function is passed to replace_exp to ensure this."
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExp)
+  outBoolean := matchcontinue (inExp)
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
     case (_) then true;
   end matchcontinue;
@@ -6454,8 +6473,7 @@ end skipPreOperator;
 protected function transformXToXd "function transformXToXd
   author: PA
   this function transforms x variables (in the state vector)
-  to corresponding xd variable (in the derivatives vector)
-"
+  to corresponding xd variable (in the derivatives vector)"
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
@@ -7001,16 +7019,17 @@ protected function getCrefFromExp
   input DAE.Exp e;
   output Absyn.ComponentRef c;
 algorithm
-  c :=
-  matchcontinue(e)
+  c := matchcontinue(e)
     local
       Expression.ComponentRef crefe;
       Absyn.ComponentRef crefa;
+    
     case(DAE.CREF(componentRef = crefe))
       equation
         crefa = ComponentReference.unelabCref(crefe);
       then
         crefa;
+    
     case(e)
       equation
         print("SimCode.getCrefFromExp failed: input was not of type DAE.CREF");
@@ -7401,14 +7420,18 @@ algorithm
       list<DAE.Exp> acc;
       DAE.ComponentRef cref;
       Absyn.Path p;
+    
     case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),acc)) then ((e,e::acc));
+    
     case ((e as DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p),acc))
       equation
         cref = ComponentReference.pathToCref(p);
         e2 = Expression.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
       then
         ((e,e2::acc));
+    
     case itpl then itpl;
+    
   end matchcontinue;
 end matchFnRefs;
 
@@ -7737,12 +7760,14 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp e1, e2, solved_exp;
+    
     case (_, _, DAE.CREF(componentRef = cr))
       equation
         false = crefIsDerivative(cr);
         solved_exp = ExpressionSolve.solve(lhs, rhs, exp);
       then
         solved_exp;    
+    
     case (_, _, DAE.CREF(componentRef = cr))
       equation
         true = crefIsDerivative(cr);

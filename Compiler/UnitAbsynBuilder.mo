@@ -891,12 +891,16 @@ protected function buildTerms "builds the unit terms from DAE elements (equation
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,outStore) := matchcontinue(env,dae,ht,store)
-    local DAE.Exp e1,e2; UnitAbsyn.UnitTerm ut1,ut2;
+    local 
+      DAE.Exp e1,e2,crefExp1,crefExp2,crefExp; 
+      UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2;
       DAE.ComponentRef cr1,cr2;
       list<DAE.Element> elts;
       DAE.FunctionTree funcs;
+    
     case(env,DAE.DAE(elementLst={}),ht,store) then ({},store);
+    
     case(env,DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts),ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
@@ -905,26 +909,33 @@ algorithm
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2))::terms,store);
 
     case(env,DAE.DAE(elementLst=DAE.EQUEQUATION(cr1,cr2,_)::elts),ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
-      (ut2,terms2,store) = buildTermExp(env,DAE.CREF(cr2,DAE.ET_OTHER()),false,ht,store);
+      crefExp1 = Expression.crefExp(cr1);
+      crefExp2 = Expression.crefExp(cr2);
+      (ut1,terms1,store) = buildTermExp(env,crefExp1,false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,crefExp2,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),DAE.CREF(cr2,DAE.ET_OTHER())))::terms,store);
+    then 
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),crefExp2))::terms,store);
 
       /* Only consider variables with binding from this instance level, not furhter down */
     case(env,DAE.DAE(elementLst=DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::elts),ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
+      crefExp1 = Expression.crefExp(cr1);
+      (ut1,terms1,store) = buildTermExp(env,crefExp1,false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
+    then  
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
 
     case(env,DAE.DAE(elementLst=DAE.DEFINE(cr1,e1,_)::elts),ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
+      crefExp1 = Expression.crefExp(cr1);
+      (ut1,terms1,store) = buildTermExp(env,crefExp1,false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
+    then  
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
 
     case(env,DAE.DAE(elementLst=_::elts),ht,store) equation
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);

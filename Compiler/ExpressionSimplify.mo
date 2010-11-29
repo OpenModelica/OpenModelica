@@ -664,11 +664,13 @@ algorithm
       ComponentRef cr;
       Ident idn;
       list<DAE.Exp> expl_1;
+      DAE.Exp expCref;
       
     case(DAE.CREF_IDENT(idn,t2,(ssl as ((DAE.SLICE(DAE.ARRAY(_,_,expl_1))) :: _))),t)
       equation
         cr = ComponentReference.makeCrefIdent(idn,t2,{});
-        exp = simplifyCref2(DAE.CREF(cr,t),ssl);
+        expCref = Expression.makeCrefExp(cr,t);
+        exp = simplifyCref2(expCref,ssl);
       then
         exp;
   end matchcontinue;
@@ -2270,16 +2272,18 @@ algorithm
         t = Expression.unliftArray(t);
         s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
         c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
+        exp = Expression.makeCrefExp(c_1, t);
       then 
-        DAE.CREF(c_1,t); 
+        exp; 
     
     //  qualified name subscript
     case(DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t),sub) 
       equation
         DAE.CREF(c_1,t) = simplify1(DAE.ASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
         c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
+        exp = Expression.makeCrefExp(c_1, t);
       then 
-        DAE.CREF(c_1,t);
+        exp;
 
   end matchcontinue;
 end simplifyAsub0;

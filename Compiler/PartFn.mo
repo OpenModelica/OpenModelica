@@ -1795,9 +1795,17 @@ algorithm
     local
       list<DAE.Exp> newArgs,cdr,cdr_1;
       DAE.Exp e;
+    
     case({},_) then fail();
-    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()) :: cdr,newArgs) then listAppend(newArgs,cdr);
-    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) then listAppend(newArgs,cdr);
+    
+    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()) :: cdr,newArgs) 
+      then 
+        listAppend(newArgs,cdr);
+    
+    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) 
+      then 
+        listAppend(newArgs,cdr);
+    
     case(e :: cdr,newArgs)
       equation
         cdr_1 = replaceFnRef(cdr,newArgs);

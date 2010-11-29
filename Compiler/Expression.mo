@@ -328,11 +328,11 @@ public function stringifyCrefs
 "function: stringifyCrefs
   This function takes an expression and transforms all component
   reference  names contained in the expression to a simpler form.
-  For instance DAE.CREF_QUAL(\"a\",{}, DAE.CREF_IDENT(\"b\",{})) becomes
-  DAE.CREF_IDENT(\"a.b\",{})
+  For instance DAE.CREF_QUAL(a,{}, DAE.CREF_IDENT(b,{})) becomes
+  DAE.CREF_IDENT(a.b,{})
 
   NOTE: This function should not be used in OMC, since the OMC backend no longer
-    uses stringified components. It is still used by MathCore though."
+        uses stringified components. It is still used by MathCore though."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -360,17 +360,20 @@ algorithm
       DAE.Exp e;
       list<Boolean> blist;      
   
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()), ilst)) then ((e, ilst));
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()), ilst)) 
+      then ((e, ilst));
       
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)), ilst)) then ((e, ilst));    
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)), ilst)) 
+      then ((e, ilst));    
   
     case( (DAE.CREF(cr,ty), ilst) )
       equation
         crs = ComponentReference.stringifyComponentRef(cr);
       then
-      ((DAE.CREF(crs,ty), ilst ));
+      ((makeCrefExp(crs,ty), ilst ));
     
     case(inExp) then inExp;
+    
   end matchcontinue;
 end traversingstringifyCrefFinder;
 
@@ -382,16 +385,21 @@ algorithm
     local
       ComponentRef e_cref;
       Absyn.ComponentRef cref;
+      DAE.Exp e;
     
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
       equation
         (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
-      then DAE.CREF(e_cref,DAE.ET_OTHER());
+        e = crefExp(e_cref); 
+      then 
+        e;
     
     case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
         (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
-      then DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(e_cref,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
+        e = crefExp(e_cref);
+      then 
+        DAE.CALL(Absyn.IDENT("der"),{e},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
   end matchcontinue;
 end CodeVarToCref;
 
@@ -663,7 +671,9 @@ algorithm
       equation
         ty = ComponentReference.crefLastType(cr);
         cr_1 = ComponentReference.crefStripLastSubs(cr);
-      then DAE.CREF(cr_1,ty);
+        e = makeCrefExp(cr_1, ty);
+      then 
+        e;
 
     case (DAE.UNARY(operator=op,exp=e))
       equation
@@ -671,7 +681,8 @@ algorithm
         ty = typeof(e_1);
         b = DAEUtil.expTypeArray(ty);
         op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
-      then DAE.UNARY(op1,e_1);
+      then 
+        DAE.UNARY(op1,e_1);
   end matchcontinue;
 end expStripLastSubs;
 
@@ -689,18 +700,23 @@ algorithm
       Operator op,op1;
       DAE.Exp e,e_1;
       Boolean b;
+    
     case (DAE.CREF(componentRef=cr))
       equation
         cr_1 = ComponentReference.crefStripLastIdent(cr);
         ty = ComponentReference.crefLastType(cr_1);
-      then DAE.CREF(cr_1,ty);
+        e = makeCrefExp(cr_1, ty);
+      then 
+        e;
+    
     case (DAE.UNARY(operator=op,exp=e))
       equation
         e_1 = expStripLastIdent(e);
         ty = typeof(e_1);
         b = DAEUtil.expTypeArray(ty);
         op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
-      then DAE.UNARY(op1,e_1);
+      then 
+        DAE.UNARY(op1,e_1);
   end matchcontinue;
 end expStripLastIdent;
 
@@ -712,13 +728,19 @@ public function prependSubscriptExp
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(exp,subscr)
-  local Type t; ComponentRef cr,cr1,cr2;
-    list<Subscript> subs;
-    case(DAE.CREF(cr,t),subscr) equation
-      cr1 = ComponentReference.crefStripLastSubs(cr);
-      subs = ComponentReference.crefLastSubs(cr);
-      cr2 = ComponentReference.subscriptCref(cr1,subscr::subs);
-    then DAE.CREF(cr2,t);
+    local 
+      Type t; ComponentRef cr,cr1,cr2;
+      list<Subscript> subs;
+      DAE.Exp e;
+    
+    case(DAE.CREF(cr,t),subscr) 
+      equation
+        cr1 = ComponentReference.crefStripLastSubs(cr);
+        subs = ComponentReference.crefLastSubs(cr);
+        cr2 = ComponentReference.subscriptCref(cr1,subscr::subs);
+        e = makeCrefExp(cr2, t);
+    then 
+      e;
   end matchcontinue;
 end prependSubscriptExp;
 
@@ -734,18 +756,20 @@ alternative names: subsriptExp (but already taken), subscriptToAsub"
   output DAE.Exp res;
 algorithm
   res := matchcontinue(e,subs)
-  local list<DAE.Exp> expl;
-    DAE.Exp s;
-    DAE.Subscript sub;
+    local 
+      list<DAE.Exp> expl;
+      DAE.Exp s;
+      DAE.Subscript sub;
     
     case(e,{}) then e;
       
-    case(e,sub::subs) equation
-      // Apply one subscript at a time, so simplify works fine on it.
-     s = subscriptExp(sub);
-     res = applyExpSubscripts(ExpressionSimplify.simplify(DAE.ASUB(e,{s})),subs);
-    then res;
-      
+    case(e,sub::subs) 
+      equation
+        // Apply one subscript at a time, so simplify works fine on it.
+        s = subscriptExp(sub);
+        res = applyExpSubscripts(ExpressionSimplify.simplify(DAE.ASUB(e,{s})),subs);
+      then 
+        res;
   end matchcontinue;
 end applyExpSubscripts ;
 
@@ -783,12 +807,14 @@ algorithm
       list<DAE.Exp> a;
       Integer i;
       list<list<tuple<DAE.Exp, Boolean>>> mat;
+      DAE.Exp expCref;
     
     case DAE.CREF(componentRef = cr, ty = ty)
       equation
         ty = unliftArray(ty);
+        expCref = makeCrefExp(cr, ty);
       then
-        DAE.CREF(cr, ty);
+        expCref;
     
     case DAE.ARRAY(ty = ty, scalar = s, array = a)
       equation
@@ -803,6 +829,7 @@ algorithm
         DAE.MATRIX(ty, i, mat);
     
     case (_) then inExp;
+    
   end matchcontinue;
 end unliftExp;
 
@@ -1213,10 +1240,12 @@ algorithm
       ComponentRef cr;
       list<Subscript> subs;
       DAE.Exp e;
+    
     case (DAE.CREF(componentRef=cr))
       equation
         subs = ComponentReference.crefLastSubs(cr);
       then subs;
+    
     case (DAE.UNARY(exp=e))
       equation
         subs = expLastSubs(e);
@@ -3128,7 +3157,8 @@ algorithm
     case(DAE.CREF(componentRef = cr, ty = ety),source,target)
       equation
         (cr1,c) = replaceCrefExpSubs(cr,source,target);
-      then (DAE.CREF(cr1,ety),c);
+        e = makeCrefExp(cr1,ety);
+      then (e,c);
 
     case(DAE.CREF(cr as DAE.CREF_IDENT(id,t2,ssl),ety),_,_)
       equation
@@ -3138,8 +3168,9 @@ algorithm
         id = stringAppendList({"$",id});
         id = Util.stringReplaceChar(id,".","$p");
         cr_1 = ComponentReference.makeCrefIdent(id,t2,ssl);
+        e = makeCrefExp(cr_1,ety);
       then
-        (DAE.CREF(cr_1,ety),1);
+        (e,1);
     
     // no replacement
     case (e,s,_) then (e,0);
@@ -4097,13 +4128,15 @@ algorithm
       list<ComponentRef> crefs;
       ComponentRef cr;
       Type ty;
-      list<Boolean> blist;      
+      list<Boolean> blist;
+      DAE.Exp e;      
     
     case((DAE.CREF(cr,ty), crefs))
       equation
         crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+        e = makeCrefExp(cr,ty);
       then
-        ((DAE.CREF(cr,ty), crefs ));
+        ((e, crefs ));
     
     case(inExp) then inExp;
     

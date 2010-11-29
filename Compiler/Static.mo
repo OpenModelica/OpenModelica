@@ -1259,24 +1259,28 @@ algorithm
       DAE.Exp e1;
       Values.Value v;
       DAE.ComponentRef cref_;
+    
     case(e, {}, id) then {};
+    
     case(e, Values.INTEGER(i)::valLst, id)
       equation
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),DAE.ICONST(i));
+        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_), DAE.ICONST(i));
         expl = elabCallReduction2(e, valLst, id);
       then e1::expl;
+    
     case(e, Values.REAL(r) :: valLst, id)
       equation
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e, DAE.CREF(cref_, DAE.ET_OTHER()), DAE.RCONST(r));
+        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_), DAE.RCONST(r));
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl;
+    
     case(e, (v as Values.ENUM_LITERAL(index = _)) :: valLst, id)
       equation
         e1 = ValuesUtil.valueExp(v);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        (e1,_) = Expression.replaceExp(e,DAE.CREF(cref_,DAE.ET_OTHER()),e1);
+        (e1,_) = Expression.replaceExp(e, Expression.crefExp(cref_),e1);
         expl = elabCallReduction2(e, valLst, id);
       then e1 :: expl; 
   end matchcontinue;
@@ -7094,7 +7098,9 @@ protected function elabCallInteractive "function: elabCallInteractive
       Boolean impl,enabled;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,
+              translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,crefExp,
+              crefExp1,crefExp2;
       tuple<DAE.TType, Option<Absyn.Path>> recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> vars_1,vars_2,vars_3,excludeList;
@@ -7293,8 +7299,9 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
+        crefExp = Expression.crefExp(cr_1);
       then
-        (cache,DAE.CALL(Absyn.IDENT("jacobian"),{DAE.CREF(cr_1,DAE.ET_OTHER())},false,
+        (cache,DAE.CALL(Absyn.IDENT("jacobian"),{crefExp},false,
           true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResult"),{Absyn.STRING(value = filename),Absyn.ARRAY(arrayExp = vars),size_absyn},args,impl,SOME(st),pre,_)
@@ -7814,75 +7821,92 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getUnit"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getQuantity"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getQuantity"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getDisplayUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getDisplayUnit"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMin"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getMin"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMax"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getMax"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStart"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getStart"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getFixed"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getFixed"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getNominal"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("getNominal"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStateSelect"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st),pre,_)
       equation
         (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
         (cache,cr2_1) = elabUntypedCref(cache,env,cr2,impl,pre,info);
+        crefExp1 = Expression.crefExp(cr_1);
+        crefExp2 = Expression.crefExp(cr2_1);        
       then
         (cache,DAE.CALL(Absyn.IDENT("getStateSelect"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(
-          (
-          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.C_VAR()),SOME(st));
+          {crefExp1,crefExp2},false,true,DAE.ET_STRING(),DAE.NO_INLINE()),DAE.PROP(
+          (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "echo"),{bool_exp},{},impl,SOME(st),pre,_)
       equation
@@ -8022,14 +8046,20 @@ algorithm
       Absyn.ComponentRef absynCr;
       Absyn.Path absynPath;
       DAE.ComponentRef daeCr;
+      DAE.Exp crefExp;
+    
     case ({})
       then {};
+    
     case (Absyn.CREF(componentRef = absynCr) :: absynRest)
       equation
         absynPath = Absyn.crefToPath(absynCr);
         daeCr = pathToComponentRef(absynPath);
         daeExpList = absynExpListToDaeExpList(absynRest);
-      then DAE.CREF(daeCr,DAE.ET_OTHER()) :: daeExpList;
+        crefExp = Expression.crefExp(daeCr);
+      then 
+        crefExp :: daeExpList;
+    
     case (_ :: absynRest)
       then absynExpListToDaeExpList(absynRest);
   end matchcontinue;
@@ -8464,8 +8494,8 @@ algorithm
     
     // only interested in filled slots that have a optional expression 
     case (SLOT(an = (id, _), slotFilled = true, expExpOption = SOME(e))::rest, i)
-      equation        
-        o = VarTransform.addReplacement(i, DAE.CREF_IDENT(id, DAE.ET_OTHER(), {}), e);
+      equation
+        o = VarTransform.addReplacement(i, ComponentReference.makeCrefIdent(id, DAE.ET_OTHER(), {}), e);
         o = createInputVariableReplacements(rest, o);
       then 
         o;
@@ -10510,7 +10540,7 @@ algorithm
       DAE.Type t;
       DAE.TType tt;
       DAE.Binding binding;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp,exp1,exp2,crefExp;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Boolean impl;
@@ -10538,8 +10568,9 @@ algorithm
       equation
         t = (DAE.T_ANYTYPE(NONE()),NONE());
         et = Types.elabType(t);
+        crefExp = Expression.makeCrefExp(DAE.WILD(),et);
       then
-        (cache,SOME((DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
+        (cache,SOME((crefExp,DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
 
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
@@ -10591,12 +10622,12 @@ algorithm
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = ComponentReference.toExpCref(c);
-        exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn));
+        exp = Expression.makeCrefExp(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFn));
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
         (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO())));
-
+    
     // MetaModelica extension
     case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,info)
       equation
@@ -10604,7 +10635,7 @@ algorithm
         Error.addSourceMessage(Error.META_NONE_CREF, {}, info);
       then
         (cache,NONE());
-
+    
     case (cache,env,c,impl,doVect,pre,info)
       equation
         // enabled with +d=failtrace
@@ -10615,7 +10646,7 @@ algorithm
         // Debug.traceln("ENVIRONMENT:\n" +& Env.printEnvStr(env));
       then
         fail();
-
+    
     case (cache,env,c,impl,doVect,pre,info)
       equation
         failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
@@ -10720,7 +10751,7 @@ protected function makeASUBArrayAdressing
 algorithm
   outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
     local
-      DAE.Exp exp1,exp2,aexp1,aexp2,tmpExp;
+      DAE.Exp exp1,exp2,aexp1,aexp2,tmpExp,crefExp;
       Absyn.ComponentRef cref, crefChild;
       list<Absyn.Subscript> assl;
       list<DAE.Subscript> essl;
@@ -10744,33 +10775,40 @@ algorithm
         exps = makeASUBArrayAdressing2(essl,pre);
         ty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        exp1 = DAE.ASUB(DAE.CREF(cref_,ty2),exps);
+        crefExp = Expression.makeCrefExp(cref_,ty2);
+        exp1 = DAE.ASUB(crefExp,exps);
       then
         exp1;
+    
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,ty2,essl),ty),_,doVect,pre,info)
       equation
         (_,_,const as DAE.C_VAR()) = elabSubscripts(cache,env,assl,impl,pre,info);
         exps = makeASUBArrayAdressing2( essl,pre);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        exp1 = DAE.ASUB(DAE.CREF(cref_,ty),exps);
+        crefExp = Expression.makeCrefExp(cref_,ty);
+        exp1 = DAE.ASUB(crefExp,exps);
       then
         exp1;
+    
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect,_,info)
       equation
         tty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,tty2,essl);
-        exp1 = DAE.CREF(cref_,ty);
+        exp1 = Expression.makeCrefExp(cref_,ty);
       then
         exp1;
+    
     // Qualified cref, might be a package constant.
     case(_, _, _, _, DAE.CREF(componentRef = cr, ty = ty), _, _, pre, info)
       equation
         (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         exps = makeASUBArrayAdressing2(essl, pre);
-        exp1 = DAE.ASUB(DAE.CREF(cr, ty), exps);
+        crefExp = Expression.makeCrefExp(cr, ty);
+        exp1 = DAE.ASUB(crefExp, exps);
       then
         exp1;
+    
     // adrpo: return exp1 here instead of exp2
     //        returning exp2 generates x.y[{1,2,3}] for  x.Real[3].y;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), Lookup.SPLICEDEXPDATA(SOME(exp2 as DAE.CREF(cr,_)),idTp),doVect,_,info)
@@ -10778,6 +10816,7 @@ algorithm
         //Debug.fprint("failtrace", "-Qualified asubs not yet implemented\n");
       then
         exp1; // adrpo why it was returning here exp2???
+    
     case(_,_,_,_,exp1,_,doVect,_,info)
       then
         exp1;
@@ -10794,7 +10833,7 @@ protected function makeASUBArrayAdressing2
 algorithm
   outExp := matchcontinue (inSSL,inPrefix)
     local
-      DAE.Exp exp1,exp2,b1,b2;
+      DAE.Exp exp1,exp2,b1,b2,crefExp;
       list<DAE.Exp> expl1,expl2;
       DAE.Const c1;
       String id,id2,str,pre_str;
@@ -10807,27 +10846,32 @@ algorithm
 
     // empty list
     case( {},_ ) then {};
+    
     // an integer index in the list head
     case( (sub as DAE.INDEX(exp = exp1 as DAE.ICONST(_)))::subs,pre )
       equation
         expl1 = makeASUBArrayAdressing2(subs,pre);
       then
         (exp1::expl1);
+    
     // a component reference in the list head
     case( (sub as DAE.INDEX(exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,{}),ety1)))::subs ,pre )
       equation
         expl1 = makeASUBArrayAdressing2(subs,pre);
       then
         (exp1::expl1);
-    // ??!! what's up with this??
+    
+    // ??!! what's up with this?? TODO! FIXME!
     case( (sub as DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(id2,ty2,subs2),ety1)))::subs ,pre)
       equation
         expl1 = makeASUBArrayAdressing2(subs,pre);
         expl2 = makeASUBArrayAdressing2(subs2,pre);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
-        exp1 = DAE.ASUB(DAE.CREF(cref_,ety1),expl2);
+        crefExp = Expression.makeCrefExp(cref_,ety1);
+        exp1 = DAE.ASUB(crefExp,expl2);
       then
         (exp1::expl1);
+    
     // an binary expression as index
     case( (sub as DAE.INDEX(DAE.BINARY(b1,op,b2)))::subs ,pre)
       equation
@@ -10836,6 +10880,7 @@ algorithm
         exp1 = DAE.BINARY(b1,op,b2);
       then
         exp1 :: expl2;
+    
     // time to fail
     case( ((sub as DAE.INDEX(exp1)))::subs ,pre)
       equation
@@ -11036,7 +11081,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy,true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy, true);
       then
         (cache,e,DAE.C_VAR(),acc);
 
@@ -11046,7 +11091,7 @@ algorithm
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         expIdTy = Types.elabType(idTp);
-        e = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, NONE(), expIdTy, true);
       then
         (cache,e,DAE.C_VAR(),acc);
 
@@ -11072,7 +11117,7 @@ algorithm
       equation
         expTy = Types.elabType(tt);
       then
-        (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),SCode.RO());
+        (cache,Expression.makeCrefExp(cr,expTy),DAE.C_CONST(),SCode.RO());
 
     // evaluate parameters only if "evalparam" or RTOpts.getEvaluateParametersInAnnotations()is set
     // TODO! also ceval if annotation Evaluate=true.
@@ -11082,7 +11127,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
@@ -11100,7 +11145,7 @@ algorithm
                                     This must be caught later on.";
         expIdTy = Types.elabType(idTp);                            
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
@@ -11114,7 +11159,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
@@ -11126,7 +11171,7 @@ algorithm
                                     This must be caught later on." ;
         expIdTy = Types.elabType(idTp);                                    
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
         (cache,e_1,const,acc);
 
@@ -11136,7 +11181,7 @@ algorithm
         expTy = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,sexp,expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,sexp,expIdTy,true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
@@ -11146,7 +11191,7 @@ algorithm
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
         (cache,e_1,DAE.C_VAR(),acc);
 
@@ -11181,7 +11226,7 @@ algorithm
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
       then
-        (cache,DAE.CREF(cr_1,expTy),DAE.C_CONST(),acc);
+        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_CONST(),acc);
 
     // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
     case (cache,env,cr,acc,SCode.PARAM(),NONE()/* not foriter*/,io,tt,DAE.UNBOUND(),
@@ -11191,7 +11236,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy,true);
+        e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp,expIdTy,true);
       then
         (cache,e,DAE.C_PARAM(),acc);
 
@@ -11202,7 +11247,7 @@ algorithm
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
       then
-        (cache,DAE.CREF(cr_1,expTy),DAE.C_PARAM(),acc);
+        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),acc);
 
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
@@ -11216,7 +11261,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt,NONE(), expIdTy, true);
+        e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt,NONE(), expIdTy, true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
       
@@ -11471,7 +11516,7 @@ algorithm
     case(exp1 as DAE.CREF(cref, ety),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       equation
         cref_2 = ComponentReference.makeCrefQual(id,ty2, ssl,cref);
-        exp1 = DAE.CREF(cref_2,ety);
+        exp1 = Expression.makeCrefExp(cref_2,ety);
       then exp1;
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(id,_, ssl),ety))
@@ -11507,7 +11552,7 @@ algorithm
     case({},id,ety)
       equation
         cref_ = ComponentReference.makeCrefIdent(id,ety,{});
-        exp1 = DAE.CREF(cref_,ety);
+        exp1 = Expression.makeCrefExp(cref_,ety);
       then
         exp1;
     // some subscripts present
@@ -11654,7 +11699,7 @@ algorithm
         true = Expression.isValidSubscript(exp1);
         crty = Expression.unliftArray(ety) "only subscripting one dimension, unlifting once ";
         cref_ = ComponentReference.makeCrefIdent(id,ety,{DAE.INDEX(exp1)});
-        exp1 = DAE.CREF(cref_,crty);
+        exp1 = Expression.makeCrefExp(cref_,crty);
       then exp1;
 
     case(exp1, exp2, id ,ety)
@@ -11689,7 +11734,7 @@ algorithm
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
-        exp2 = DAE.CREF(cref_,crty);
+        exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
     case(exp1 as DAE.ICONST(integer=_), exp2 as DAE.ARRAY(_,_,expl1),ety )
@@ -11727,7 +11772,7 @@ algorithm
       equation
         crty = Expression.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
         cref_ = ComponentReference.makeCrefIdent(id,ty2,(DAE.INDEX(exp1)::subs));
-        exp2 = DAE.CREF(cref_,crty);
+        exp2 = Expression.makeCrefExp(cref_,crty);
       then exp2;
 
     case( exp2 as DAE.ARRAY(_,_,expl1), exp1 as DAE.ICONST(integer=_),ety)
@@ -11817,7 +11862,7 @@ algorithm
         cr_1 = ComponentReference.crefStripLastSubs(cr);
         cr_1 = ComponentReference.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Expression.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // no subscript
@@ -11828,7 +11873,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Expression.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // index
@@ -11887,7 +11932,7 @@ algorithm
         DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Expression.unliftArray(et);
-        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
       then
@@ -12393,7 +12438,8 @@ The non-selected branch will be replaced by a dummy variable called $undefined s
 algorithm
   (outCache, exp, prop,outSt) := matchcontinue(cache,env,b,cond,tbranch,fbranch,impl,st,doVect,inPrefix,info)
     local 
-      DAE.Exp e2; DAE.Properties prop1;
+      DAE.Exp e2,crefExp; 
+      DAE.Properties prop1;
       Option<Interactive.InteractiveSymbolTable> st_1;
       DAE.DAElist dae;
       Prefix.Prefix pre;
@@ -12403,13 +12449,15 @@ algorithm
     case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
       cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
       (cache,e2,prop1,st_1) = elabExp(cache,env, tbranch, impl, st,doVect,pre,info);
-    then (cache,DAE.IFEXP(cond,e2,DAE.CREF(cref_,DAE.ET_OTHER())),prop1,st_1);
+      crefExp = Expression.crefExp(cref_);
+    then (cache,DAE.IFEXP(cond,e2,crefExp),prop1,st_1);
 
     // Select false-branch
     case(cache,env,false,cond,tbranch,fbranch,impl,st,doVect,pre,info) equation
       cref_ = ComponentReference.makeCrefIdent("$undefined",DAE.ET_OTHER(),{});
       (cache,e2,prop1,st_1) = elabExp(cache,env, fbranch, impl, st,doVect,pre,info);
-    then (cache,DAE.IFEXP(cond,DAE.CREF(cref_,DAE.ET_OTHER()),e2),prop1,st_1);
+      crefExp = Expression.crefExp(cref_);
+    then (cache,DAE.IFEXP(cond,crefExp,e2),prop1,st_1);
   end matchcontinue;
 end elabIfexpBranch;
 

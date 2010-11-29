@@ -965,21 +965,30 @@ Author: BZ, 2009-02
 Function for transforming DAE equations into DAE.REINIT form, used by instEquationCommon   "
   input DAE.Element inEq;
   output DAE.Element outEqn;
-algorithm outEqn := matchcontinue(inEq)
-  local
-    DAE.ComponentRef cr,cr2; 
-    DAE.Exp e1,e2,e;
-    DAE.ExpType t;
-    DAE.ElementSource source "the origin of the element";
+algorithm 
+  outEqn := matchcontinue(inEq)
+    local
+      DAE.ComponentRef cr1,cr2; 
+      DAE.Exp e1,e2,e;
+      DAE.ExpType t;
+      DAE.ElementSource source "the origin of the element";
     
-  case(DAE.EQUATION(DAE.CREF(cr,_),e,source)) then DAE.REINIT(cr,e,source);
-  case(DAE.DEFINE(cr,e,source)) then DAE.REINIT(cr,e,source);
-  case(DAE.EQUEQUATION(cr,cr2,source))
-    equation
-      t = ComponentReference.crefLastType(cr2);
-      then DAE.REINIT(cr,DAE.CREF(cr2,t),source);
-  case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
-end matchcontinue;
+    case(DAE.EQUATION(DAE.CREF(cr1,_),e,source)) 
+      then DAE.REINIT(cr1,e,source);
+    
+    case(DAE.DEFINE(cr1,e,source)) 
+      then DAE.REINIT(cr1,e,source);
+    
+    case(DAE.EQUEQUATION(cr1,cr2,source))
+      equation
+        t = ComponentReference.crefLastType(cr2);
+        e2 = Expression.makeCrefExp(cr2,t);
+      then 
+        DAE.REINIT(cr1,e2,source);
+  
+    case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
+    
+  end matchcontinue;
 end makeDAEArrayEqToReinitForm;
 
 protected function condenseArrayEquation "This function transforms makes the two sides of an array equation
@@ -1382,9 +1391,10 @@ algorithm
       then
         dae;
   
-  /* Complex equation for records on form e1 = e2, expand to equality over record elements*/
+    // Complex equation for records on form e1 = e2, expand to equality over record elements 
     case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),source,initial_) 
       then DAEUtil.emptyDae; 
+    
     case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
           (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,type_ = tt) :: vs),
           complexTypeOption = bc, equalityConstraint = ec),p),source,initial_)
@@ -1392,13 +1402,19 @@ algorithm
         ty2 = Types.elabType(tt);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty2);
         c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty2);
-        dae1 = instEqEquation2(DAE.CREF(c1_1,ty2), DAE.CREF(c2_1,ty2), tt, source, initial_);
-        dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
+        
+        e1 = Expression.makeCrefExp(c1_1,ty2);
+        e2 = Expression.makeCrefExp(c2_1,ty2);
+        dae1 = instEqEquation2(e1, e2, tt, source, initial_);
+        e1 = Expression.makeCrefExp(c1,t1);
+        e2 = Expression.makeCrefExp(c2,t2);        
+        dae2 = instEqEquation2(e1, e2, (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
+        
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         dae; 
         
-        // split a constant complex equation to its elements 
+    // split a constant complex equation to its elements 
     case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(path=_,ty=ty)),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
       equation
         elabedType = Types.elabType(tt);
@@ -1414,7 +1430,8 @@ algorithm
         (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false,NONE(), NONE(), Ceval.NO_MSG());
         dael = assignComplexConstantConstruct(value,assignedCr,source);
         //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav)); 
-      then DAE.DAE(dael); 
+      then 
+        DAE.DAE(dael); 
         
    /* all other COMPLEX equations */
    case (e1,e2, tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
@@ -1465,7 +1482,10 @@ algorithm
       list<Values.Value> vals,arrVals;
       list<DAE.Element> eqnsArray,eqns2;
       DAE.ExpType tp;
+      DAE.Exp lhs;
+    
     case(Values.RECORD(orderd = {},comp = {}),cr,source) then {};
+    
     case(Values.RECORD(p, Values.RECORD(comp=_)::vals,n::names,index),cr,source)
       equation
         print(" implement assignComplexConstantConstruct for records of records\n");
@@ -1480,6 +1500,7 @@ algorithm
         eqns = listAppend(eqns,eqnsArray);
       then
         eqns;
+    
     case(Values.RECORD(p, v::vals, n::names, index),cr,source)
       equation
         cr2 = ComponentReference.crefPrependIdent(cr,n,{},DAE.ET_INT());
@@ -1489,19 +1510,31 @@ algorithm
       then
         eqns;
           
-        // REAL
+    // REAL
     case(Values.REAL(r),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()),DAE.RCONST(r),source)};
+      equation
+        lhs = Expression.crefExp(cr);
+      then 
+        {DAE.EQUATION(lhs,DAE.RCONST(r),source)};
       
     case(Values.INTEGER(i),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT()),DAE.ICONST(i),source)};
+      equation
+        lhs = Expression.crefExp(cr);
+      then 
+        {DAE.EQUATION(lhs,DAE.ICONST(i),source)};
         
     case(Values.STRING(s),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING()),DAE.SCONST(s),source)};
+      equation
+        lhs = Expression.crefExp(cr);
+      then 
+        {DAE.EQUATION(lhs,DAE.SCONST(s),source)};
         
     case(Values.BOOL(b),cr,source)
-    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL()),DAE.BCONST(b),source)};
-
+      equation
+        lhs = Expression.crefExp(cr);
+      then 
+        {DAE.EQUATION(lhs,DAE.BCONST(b),source)};
+    
     case(constantValue,cr,source)
       equation
         print(" failure to assign: "  +& ComponentReference.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
@@ -1939,12 +1972,13 @@ protected function replaceLoopDependentCrefInExp
 algorithm
   otpl := matchcontinue itpl
     local
-      DAE.Exp cr_exp;
+      DAE.Exp cr_exp,expCref;
       DAE.ComponentRef cr;
       DAE.ExpType cr_type;
       list<DAE.Subscript> cref_subs;
       list<DAE.Exp> exp_subs;
       Absyn.ForIterators fi;
+    
     case ((cr_exp as DAE.CREF(componentRef = cr), fi))
       equation
         cref_subs = ComponentReference.crefSubs(cr);
@@ -1952,8 +1986,9 @@ algorithm
         true = isSubsLoopDependent(exp_subs, fi);
         cr = ComponentReference.crefStripSubs(cr);
         cr_type = ComponentReference.crefLastType(cr);
+        expCref = Expression.makeCrefExp(cr, cr_type);
       then
-        ((DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), fi));
+        ((DAE.ASUB(expCref, exp_subs), fi));
     case itpl then itpl;
   end matchcontinue;
 end replaceLoopDependentCrefInExp;
@@ -1975,7 +2010,7 @@ algorithm
     case (_, (iter_name, _) :: _)
       equation
         cref_ = ComponentReference.makeCrefIdent(iter_name, DAE.ET_INT(), {});
-        iter_exp = DAE.CREF(cref_, DAE.ET_INT()); 
+        iter_exp = Expression.makeCrefExp(cref_, DAE.ET_INT()); 
         true = isSubsLoopDependentHelper(subscripts, iter_exp);
       then
         true;
@@ -2644,6 +2679,8 @@ algorithm
       list<DAE.Properties> wild_props;
       Integer wild_count;
       list<DAE.Exp> wilds;
+      DAE.Exp wildCrefExp;
+    
     // If the RHS is a function that returns a tuple while the LHS is a single
     // value, make a tuple of the LHS and fill in the missing elements with
     // wildcards.
@@ -2651,13 +2688,15 @@ algorithm
       equation
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
-        wilds = Util.listFill(DAE.CREF(DAE.WILD(), DAE.ET_OTHER()), wild_count);
+        wildCrefExp = Expression.makeCrefExp(DAE.WILD(), DAE.ET_OTHER());
+        wilds = Util.listFill(wildCrefExp, wild_count);
         wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR()), wild_count);
-     then Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
+      then 
+        Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
+    
     // Otherwise, call Algorithm.makeAssignment as usual.
     case (_, _, _, _, _, _, _)
-      then Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps,
-        inAccessibility, inInitial, inSource);
+      then Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps, inAccessibility, inInitial, inSource);
   end matchcontinue;
 end makeAssignment;
 
@@ -4035,7 +4074,7 @@ algorithm
       DAE.InlineType inlineType1, inlineType2;
       Absyn.Path fpath1, fpath2;
       Integer idim1,idim2,dim_int;
-      DAE.Exp zeroVector;
+      DAE.Exp zeroVector, crefExp1, crefExp2;
       list<DAE.Element> elements, breakDAEElements;
       DAE.FunctionTree functions, equalityConstraintFunctions;
       DAE.DAElist equalityConstraintDAE;
@@ -4050,11 +4089,12 @@ algorithm
         //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
         true = InnerOuter.outerConnection(io1,io2);
         
+        
         // prefix outer with the prefix of the inner directly! 
         (cache, DAE.CREF(c1_1, _)) = 
-           PrefixUtil.prefixExp(cache, env, ih, DAE.CREF(c1, DAE.ET_OTHER()), pre);
+           PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c1), pre);
         (cache, DAE.CREF(c2_1, _)) = 
-           PrefixUtil.prefixExp(cache, env, ih, DAE.CREF(c2, DAE.ET_OTHER()), pre);
+           PrefixUtil.prefixExp(cache, env, ih, Expression.crefExp(c2), pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -4093,10 +4133,12 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
+        crefExp1 = Expression.crefExp(c1_1);
+        crefExp2 = Expression.crefExp(c2_1);
       then
         (cache,env,ih,sets,DAE.DAE({
           DAE.ASSERT(
-            DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),DAE.CREF(c2_1,DAE.ET_REAL())),
+            DAE.RELATION(crefExp1,DAE.EQUAL(DAE.ET_BOOL()),crefExp2),
             DAE.SCONST("automatically generated from connect"),
             source) // set the origin of the element
           }),graph);
@@ -4197,9 +4239,11 @@ algorithm
         // Add an edge to connection graph. The edge contains the 
         // dae to be added in the case where the edge is broken.
         zeroVector = Expression.makeRealArrayOfZeros(idim1);
+        crefExp1 = Expression.crefExp(c1_1);
+        crefExp2 = Expression.crefExp(c2_1);
         breakDAEElements = 
           {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
-                        DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
+                        DAE.CALL(fpath1,{crefExp1, crefExp2},
                                  false, false, DAE.ET_REAL(), inlineType1), // use the inline type
                         source // set the origin of the element
                         )};
@@ -4857,13 +4901,18 @@ input DAE.Exp crefOrArray;
 output DAE.Exp cref;
 algorithm
    cref := matchcontinue(crefOrArray)
-   local
-     DAE.ComponentRef cr;
-     DAE.ExpType t;
+     local
+       DAE.ComponentRef cr;
+       DAE.ExpType t;
+       DAE.Exp crefExp;
+       
      case (cref as DAE.CREF(_,_)) then cref;
-     case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) equation
-       cr = ComponentReference.crefStripLastSubs(cr);
-       then DAE.CREF(cr,t);
+     
+     case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) 
+       equation
+         cr = ComponentReference.crefStripLastSubs(cr);
+         crefExp = Expression.makeCrefExp(cr, t);
+       then crefExp;
    end matchcontinue;
 end getVectorizedCref;
 
@@ -5058,7 +5107,7 @@ algorithm
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
+        stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
       then
         (cache,{stmt});
 

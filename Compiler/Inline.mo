@@ -1076,11 +1076,14 @@ algorithm
       DAE.ExpType tp;
       String name;
       DAE.ComponentRef c1,e1;
+      DAE.Exp exp;
+    
     case(DAE.COMPLEX_VAR(name=name,tp=tp),c,e) 
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);  
-        e1 = ComponentReference.crefPrependIdent(e,name,{},tp);  
-      then ((c1,DAE.CREF(e1,tp))); 
+        e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
+        exp = Expression.makeCrefExp(e1,tp);
+      then ((c1,exp)); 
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.extendCrefRecords1 failed");

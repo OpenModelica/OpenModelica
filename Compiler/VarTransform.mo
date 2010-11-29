@@ -220,21 +220,21 @@ algorithm
     case (DAE.DEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
         (e2) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr, DAE.ET_OTHER()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.DEFINE(cr2,e2,source)::dae2;
 
     case (DAE.INITIALDEFINE(cr,e,source)::dae,repl,condExpFunc)
       equation
         (e2) = replaceExp(e, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr, DAE.ET_OTHER()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALDEFINE(cr2,e2,source)::dae2;
 
     case (DAE.EQUEQUATION(cr,cr1,source)::dae,repl,condExpFunc)
       equation
-        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr, DAE.ET_OTHER()), repl, condExpFunc);
-        (DAE.CREF(cr1_2,_)) = replaceExp(DAE.CREF(cr1, DAE.ET_OTHER()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
+        (DAE.CREF(cr1_2,_)) = replaceExp(Expression.crefExp(cr1), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.EQUEQUATION(cr2,cr1_2,source)::dae2;
 
@@ -337,7 +337,7 @@ algorithm
     case (DAE.REINIT(cr,e1,source)::dae,repl,condExpFunc)
       equation
         (e11) = replaceExp(e1, repl, condExpFunc);
-        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr,DAE.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.REINIT(cr2,e11,source)::dae2;
 
@@ -469,8 +469,8 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl,NONE());
-        (DAE.CREF(cr2_1,_)) = replaceExp(DAE.CREF(cr2,DAE.ET_REAL()), repl,NONE());
+        (DAE.CREF(cr1_1,_)) = replaceExp(Expression.crefExp(cr1), repl,NONE());
+        (DAE.CREF(cr2_1,_)) = replaceExp(Expression.crefExp(cr2), repl,NONE());
       then
         (cr1_1,cr2_1);
   end matchcontinue;
@@ -492,7 +492,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation
-        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl,NONE());
+        (DAE.CREF(cr1_1,_)) = replaceExp(Expression.crefExp(cr1), repl,NONE());
         ocrefs = applyReplacementList(repl,increfs);
       then
         cr1_1::ocrefs;
@@ -639,7 +639,7 @@ algorithm
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
-        (e_2 as DAE.CREF(cr_1,_)) = replaceExp(DAE.CREF(cr,DAE.ET_OTHER()), repl, condExpFunc);
+        (e_2 as DAE.CREF(cr_1,_)) = replaceExp(Expression.crefExp(cr), repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1);
@@ -1452,22 +1452,19 @@ When adding replacement rules, we might not have the correct type availible at t
 Then DAE.ET_OTHER() is used, so when replacing exp and finding DAE.ET_OTHER(), we use the
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work,
-	doing that will allow us to use this function for all crefs.
-"
-input DAE.Exp inExp;
-input DAE.ExpType inType;
-output DAE.Exp outExp;
+	    doing that will allow us to use this function for all crefs."
+  input DAE.Exp inExp;
+  input DAE.ExpType inType;
+  output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.ET_OTHER()),inType)
-    then DAE.CREF(cr,inType);
+  case(DAE.CREF(cr,DAE.ET_OTHER()),inType) then Expression.makeCrefExp(cr,inType);
   case(inExp,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
 
 public function replaceExpRepeated "similar to replaceExp but repeats the replacements until expression no longer changes.
-Note: This is only required/useful if replacements are built with addReplacementNoTransitive.
-"
+Note: This is only required/useful if replacements are built with addReplacementNoTransitive."
   input DAE.Exp e;
   input VariableReplacements repl;
   input Option<VisitFunc> func;
@@ -1483,8 +1480,7 @@ algorithm
   outExp := replaceExpRepeated2(e,repl,func,maxIter,1,false);
 end replaceExpRepeated;
 
-public function replaceExpRepeated2 "help function to replaceExpRepeated
-"
+public function replaceExpRepeated2 "help function to replaceExpRepeated"
   input DAE.Exp e;
   input VariableReplacements repl;
   input Option<VisitFunc> func;
@@ -1500,7 +1496,7 @@ public function replaceExpRepeated2 "help function to replaceExpRepeated
 
 algorithm
   outExp := matchcontinue(e,repl,func,maxIter,i,equal)
-  local DAE.Exp e1,res;
+    local DAE.Exp e1,res;
     case(e,repl,func,maxIter,i,equal) equation
       true = i > maxIter;
     then e;
@@ -1797,9 +1793,7 @@ algorithm
 end bintreeToExplist;
 
 protected function bintreeToExplist2 "function: bintree_to_list2
-
-  helper function to bintree_to_list
-"
+  helper function to bintree_to_list"
   input BinTree inBinTree1;
   input list<DAE.Exp> inExpExpLst2;
   input list<DAE.Exp> inExpExpLst3;
@@ -1811,15 +1805,18 @@ algorithm
     local
       list<DAE.Exp> klst,vlst;
       DAE.ComponentRef key;
-      DAE.Exp value;
-      Option<BinTree> left,right;
+      DAE.Exp value,crefExp;
+      Option<BinTree> left,right;      
+    
     case (TREENODE(value = NONE(),left = NONE(),right = NONE()),klst,vlst) then (klst,vlst);
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
+        crefExp = Expression.crefExp(key); 
       then
-        ((DAE.CREF(key,DAE.ET_REAL()) :: klst),(value :: vlst));
+        ((crefExp :: klst),(value :: vlst));
+    
     case (TREENODE(value = NONE(),left = left,right = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
@@ -1830,9 +1827,7 @@ algorithm
 end bintreeToExplist2;
 
 protected function bintreeToExplistOpt "function: bintree_to_list_opt
-
-  helper function to bintree_to_list
-"
+  helper function to bintree_to_list"
   input Option<BinTree> inBinTreeOption1;
   input list<DAE.Exp> inExpExpLst2;
   input list<DAE.Exp> inExpExpLst3;

@@ -399,17 +399,23 @@ algorithm
       DAE.ExpType et;
       String s1,s2,str;
       DAE.ComponentRef cr;
+      DAE.Exp crefExp;
+    
     case (ty1,(DAE.T_BOXED(ty2),_),_)
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
-        (_,ty1) = Types.matchType(DAE.CREF(cr,DAE.ET_OTHER()),ty2,ty1,true);
+        crefExp = Expression.crefExp(cr);
+        (_,ty1) = Types.matchType(crefExp,ty2,ty1,true);
         et = Types.elabType(ty1);
       then SOME(et);
+    
     case (ty1,ty2,_)
       equation
         cr = ComponentReference.makeCrefIdent("#DUMMY#",DAE.ET_OTHER(),{});
-        (_,_) = Types.matchType(DAE.CREF(cr,DAE.ET_OTHER()),ty2,ty1,true);
+        crefExp = Expression.crefExp(cr);
+        (_,_) = Types.matchType(crefExp,ty2,ty1,true);
       then NONE();
+    
     case (ty1,ty2,info)
       equation
         s1 = Types.unparseType(ty1);

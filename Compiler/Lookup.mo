@@ -2599,7 +2599,7 @@ algorithm
         tty = Types.elabType(ty);     
         ty2_2 = Types.elabType(ty);
         cref_ = ComponentReference.makeCrefIdent(id,ty2_2, ss);
-        splicedExp = DAE.CREF(cref_,tty);
+        splicedExp = Expression.makeCrefExp(cref_,tty);
         //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
@@ -2620,7 +2620,7 @@ algorithm
         ty2_2 = Types.elabType(ty2);
         xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
         eType = Types.elabType(ty);
-        splicedExp = DAE.CREF(xCref,eType);
+        splicedExp = Expression.makeCrefExp(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);

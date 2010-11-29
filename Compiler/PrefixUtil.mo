@@ -584,7 +584,7 @@ public function prefixExp "function: prefixExp
 algorithm
   (outCache,outExp) := matchcontinue (inCache,inEnv,inIH,inExp,inPrefix)
     local
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp;
+      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp,crefExp;
       DAE.ComponentRef cr,cr_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -623,8 +623,9 @@ algorithm
       equation
         true = System.getHasInnerOuterDefinitions();
         cr_1 = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cr, pre);
+        crefExp = Expression.makeCrefExp(cr_1, t);
       then
-        (cache,DAE.CREF(cr_1,t));
+        (cache,crefExp);
 
     case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
       equation
@@ -632,8 +633,9 @@ algorithm
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
         (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
         (cache,cr_1) = prefixCref(cache,env,ih,pre,cr);
+        crefExp = Expression.makeCrefExp(cr_1, t);
       then
-        (cache,DAE.CREF(cr_1,t));
+        (cache,crefExp);
 
     case (cache,env,_,e as DAE.CREF(componentRef = cr,ty = t),pre)
       equation
@@ -646,8 +648,9 @@ algorithm
       equation 
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr));
         (cache, cr_1) = prefixSubscriptsInCref(cache, env, ih, pre, cr);
+        crefExp = Expression.makeCrefExp(cr_1, t);
       then
-        (cache,DAE.CREF(cr_1,t));
+        (cache,crefExp);
     
     case (cache,env,ih,(e as DAE.ASUB(exp = e1, sub = expl)),pre) 
       equation

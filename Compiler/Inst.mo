@@ -8969,7 +8969,7 @@ algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
   matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
     local
-      DAE.Exp e,e_1;
+      DAE.Exp e,e_1,lhs,rhs;
       DAE.Properties p,p2;
       list<Env.Frame> env_1,env,compenv;
       Connect.Sets csets,csets_1,csets_2;
@@ -9014,12 +9014,14 @@ algorithm
           instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,ComponentReference.makeCrefIdent(n,ty_1,{})) "check their types";
-        (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
-
+        (rhs,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
+        
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-
-        dae = InstSection.makeDaeEquation(DAE.CREF(cr,ty_1), e_1, source, SCode.NON_INITIAL());
+        
+        lhs = Expression.makeCrefExp(cr,ty_1);
+        
+        dae = InstSection.makeDaeEquation(lhs, rhs, source, SCode.NON_INITIAL());
         // dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,csets,ty,graph);
@@ -12555,34 +12557,37 @@ algorithm
       DAE.ComponentRef cr,c;
       tuple<DAE.TType, Option<Absyn.Path>> ty1;
       DAE.Mod mod,m;
-      DAE.Exp e;
+      DAE.Exp e,lhs;
       DAE.Properties prop2;
       Boolean impl;
 
-      // Record constructors are different
-      // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
+    // Record constructors are different
+    // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
     case (cr,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()),_)))),source,impl)
-    then DAEUtil.emptyDae;
-
-      // Special case if the dimensions of the expression is 0.
-      // If this is true, and it is instantiated normally, matching properties
-      // will result in error messages (Real[0] is not Real), so we handle it here.      
+      then DAEUtil.emptyDae;
+    
+    // Special case if the dimensions of the expression is 0.
+    // If this is true, and it is instantiated normally, matching properties
+    // will result in error messages (Real[0] is not Real), so we handle it here.      
     case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_)))),source,impl)
       equation
         ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(0)),_)) = Types.getPropType(prop2);
       then
         DAEUtil.emptyDae;
-
-     // Regular cases
+    
+    // Regular cases
     case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_)))),source,impl)
       equation
         t = Types.elabType(ty1);
-        dae = InstSection.instEqEquation(DAE.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
+        lhs = Expression.makeCrefExp(cr, t);
+        dae = InstSection.instEqEquation(lhs, DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
       then
         dae;
+    
     case (_,_,DAE.MOD(eqModOption = NONE()),_,impl) then DAEUtil.emptyDae;
     case (_,_,DAE.NOMOD(),_,impl) then DAEUtil.emptyDae;
     case (_,_,DAE.REDECL(finalPrefix = _),_,impl) then DAEUtil.emptyDae;
+    
     case (c,ty1,m,source,impl)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -14201,35 +14206,42 @@ Helper function for propagateBinding"
   output Option<DAE.Exp> outExp;
 algorithm
   outExp:=matchcontinue(inCref, inEquations)
-  local
-    DAE.ComponentRef cref,cref2,cref3;
-    DAE.Exp e;
-    list<DAE.Element> equations;
+    local
+      DAE.ComponentRef cref,cref2,cref3;
+      DAE.Exp e;
+      list<DAE.Element> equations;
 
     case (_, {}) then NONE();
+    
     case (cref, DAE.DEFINE(componentRef=cref2, exp=e)::_)
       equation
-        true=ComponentReference.crefEqual(cref,cref2);
+        true = ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
+    
     case (cref, DAE.EQUATION(exp=DAE.CREF(cref2,_),scalar=e)::_)
       equation
-        true=ComponentReference.crefEqual(cref,cref2);
+        true = ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
+    
     case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)
       equation
-        true=ComponentReference.crefEqual(cref,cref2);
-        e=Expression.crefExp(cref3);
+        true = ComponentReference.crefEqual(cref,cref2);
+        e = Expression.crefExp(cref3);
       then
         SOME(e);
+    
     case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)
       equation
-        true=ComponentReference.crefEqual(cref,cref2);
+        true = ComponentReference.crefEqual(cref,cref2);
       then
         SOME(e);
+    
     case (cref, _::equations)
-      then findCorrespondingBinding(cref,equations);
+      then 
+        findCorrespondingBinding(cref,equations);
+    
   end matchcontinue;
 end findCorrespondingBinding;
 
