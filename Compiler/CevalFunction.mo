@@ -1822,14 +1822,15 @@ algorithm
       list<DAE.Exp> sub_exps;
       list<DAE.Subscript> subs;
       Env.Env env;
-    case ((DAE.ASUB(
-        exp = DAE.CREF(componentRef = cref, ty = ety),
-        sub = sub_exps), env))
+      DAE.Exp exp;
+      
+    case ((DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env))
       equation
         subs = Util.listMap(sub_exps, Expression.makeIndexSubscript);
         cref = ComponentReference.subscriptCref(cref, subs);
+        exp = Expression.makeCrefExp(cref, ety); 
       then
-        ((DAE.CREF(cref, ety), env));
+        ((exp, env));
     else then inTuple;
   end match;
 end optimizeExpTraverser;

@@ -182,7 +182,7 @@ protected
   DAE.ComponentRef cref;
 algorithm
   cref := ComponentReference.makeCrefIdent("currentSimulationResult",DAE.ET_OTHER(),{});
-  outExp := DAE.CREF(cref,DAE.ET_OTHER());
+  outExp := Expression.makeCrefExp(cref,DAE.ET_OTHER());
 end buildCurrentSimulationResultExp;
 
 public function cevalInteractiveFunctions
@@ -1125,9 +1125,8 @@ algorithm
         expVars = Util.listMap(expVars,Expression.CodeVarToCref);
         vars_1 = Util.listMap(expVars, ExpressionDump.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        cref = ComponentReference.makeCrefIdent("currentSimulationResult",DAE.ET_OTHER(),{});
         failure((_,_,_) = Ceval.ceval(cache,env,
-          DAE.CREF(cref,DAE.ET_OTHER()), true, SOME(st),NONE(), Ceval.NO_MSG()));
+          buildCurrentSimulationResultExp(), true, SOME(st),NONE(), Ceval.NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
         
