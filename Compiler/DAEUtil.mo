@@ -1834,8 +1834,8 @@ algorithm
 
     case ((DAE.EQUEQUATION(cr1 = cr1,cr2 = cr2,source = source) :: elts))
       equation
-         DAE.CREF(cr1,_) = toModelicaFormExp(DAE.CREF(cr1,DAE.ET_OTHER()));
-         DAE.CREF(cr2,_) = toModelicaFormExp(DAE.CREF(cr2,DAE.ET_OTHER()));
+         DAE.CREF(cr1,_) = toModelicaFormExp(Expression.crefExp(cr1));
+         DAE.CREF(cr2,_) = toModelicaFormExp(Expression.crefExp(cr2));
         elts_1 = toModelicaFormElts(elts);
       then
         (DAE.EQUEQUATION(cr1,cr2,source) :: elts_1);
@@ -1971,8 +1971,7 @@ protected function toModelicaFormExp "function: toModelicaFormExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp)
+  outExp := matchcontinue (inExp)
     local
       DAE.ComponentRef cr_1,cr;
       DAE.ExpType t,tp;
@@ -1984,11 +1983,13 @@ algorithm
       Integer i;
       Option<DAE.Exp> eopt_1,eopt;
       DAE.InlineType il;
+    
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
         cr_1 = toModelicaFormCref(cr);
       then
-        DAE.CREF(cr_1,t);
+        Expression.makeCrefExp(cr_1,t);
+    
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         e1_1 = toModelicaFormExp(e1);
@@ -2994,28 +2995,32 @@ algorithm
       equation
         ty1 = ComponentReference.crefLastType(cr1);
         ty2 = ComponentReference.crefLastType(cr2);
-        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),DAE.CREF(cr2,ty2));
+        e1 = Expression.makeCrefExp(cr1,ty1);
+        e2 = Expression.makeCrefExp(cr2,ty2);
+        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
       then
         oExp;
     // equation from define
     case(DAE.DEFINE(cr1, e2, _))
       equation
         ty1 = ComponentReference.crefLastType(cr1);
-        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
+        e1 = Expression.makeCrefExp(cr1,ty1);
+        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
       then
         oExp;
     // equation from initial define
     case(DAE.INITIALDEFINE(cr1, e2, _))
       equation
         ty1 = ComponentReference.crefLastType(cr1);
-        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
+        e1 = Expression.makeCrefExp(cr1,ty1);
+        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
       then
         oExp;
     // equation from array TODO! check if this works!
     case(DAE.ARRAY_EQUATION(_, e1, e2, _))
       equation
         ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
+        oExp = DAE.BINARY(e1, DAE.SUB_ARR(ty), e2);
       then
         oExp;
 		// initial array equation
@@ -3174,12 +3179,18 @@ algorithm
       DAE.ExpType cty,ty;
       Integer oarg;
       list<DAE.Subscript> subs;
+      DAE.Exp exp;
+    
     case((DAE.CREF(DAE.CREF_IDENT("time",cty,subs),ty),oarg))
       equation
-      cref_ = ComponentReference.makeCrefIdent("globalData->timeValue",cty,subs);
-      then ((DAE.CREF(cref_,ty),oarg));
+        cref_ = ComponentReference.makeCrefIdent("globalData->timeValue",cty,subs);
+        exp = Expression.makeCrefExp(cref_,ty); 
+      then 
+        ((exp,oarg));
+    
     case(inTplExpExpString) then inTplExpExpString;
-end matchcontinue;
+
+  end matchcontinue;
 end renameTimeToDollarTimeFromCref;
 
 
@@ -3214,21 +3225,27 @@ Author: BZ, 2008-12
 Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
-algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
-  local DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg;
-  case((DAE.CREF(cr,ty),oarg))
-    equation
-      cr2 = unNameInnerouterUniqueCref(cr,DAE.UNIQUEIO);
-    then ((DAE.CREF(cr2,ty),oarg));
+algorithm 
+  outTplExpExpString := matchcontinue (inTplExpExpString)
+    local 
+      DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg; DAE.Exp exp;
+      
+    case((DAE.CREF(cr,ty),oarg))
+      equation
+        cr2 = unNameInnerouterUniqueCref(cr,DAE.UNIQUEIO);
+        exp = Expression.makeCrefExp(cr2,ty);
+      then 
+        ((exp,oarg));
+    
     case(inTplExpExpString) then inTplExpExpString;
+    
   end matchcontinue;
 end removeUniqieIdentifierFromCref;
 
 public function nameUniqueOuterVars "
 Author: BZ, 2008-12
 Rename all variables to the form a.b.$unique$var, call
-This function traverses the entire dae.
-"
+This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
@@ -3238,32 +3255,39 @@ end nameUniqueOuterVars;
 protected function nameUniqueVisitor "
 Author: BZ, 2008-12
 The visitor function for traverseDAE.
-calls Expression.traverseExp on the expression.
-"
-input tuple<DAE.Exp,Integer> itpl;
-output tuple<DAE.Exp,Integer> otpl;
+calls Expression.traverseExp on the expression."
+  input tuple<DAE.Exp,Integer> itpl;
+  output tuple<DAE.Exp,Integer> otpl;
 algorithm
   otpl := matchcontinue itpl
     local
       DAE.Exp exp,oexp;
       Integer arg,oarg;
+    
     case ((exp,oarg)) then Expression.traverseExp(exp,addUniqueIdentifierToCref,oarg);
+    
   end matchcontinue;
 end nameUniqueVisitor;
 
 protected function addUniqueIdentifierToCref "
 Author: BZ, 2008-12
-Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref.
-"
+Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
-algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
-  local DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg;
-  case((DAE.CREF(cr,ty),oarg))
-    equation
-      cr2 = nameInnerouterUniqueCref(cr);
-    then ((DAE.CREF(cr2,ty),oarg));
+algorithm 
+  outTplExpExpString := matchcontinue (inTplExpExpString)
+    local 
+      DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg; DAE.Exp exp;
+    
+    case((DAE.CREF(cr,ty),oarg))
+      equation
+        cr2 = nameInnerouterUniqueCref(cr);
+        exp = Expression.makeCrefExp(cr2,ty);
+      then 
+        ((exp,oarg));
+    
     case(inTplExpExpString) then inTplExpExpString;
+    
   end matchcontinue;
 end addUniqueIdentifierToCref;
 
@@ -3539,7 +3563,7 @@ algorithm
   
     case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg)
       equation
-        ((DAE.CREF(cr2,_),extraArg)) = func((DAE.CREF(cr,DAE.ET_REAL()), extraArg));
+        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
@@ -3548,21 +3572,21 @@ algorithm
     case(DAE.DEFINE(cr,e,source)::dae,func,extraArg)
       equation
         ((e2,extraArg)) = func((e, extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((DAE.CREF(cr,DAE.ET_REAL()), extraArg));
+        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
       then (DAE.DEFINE(cr2,e2,source)::dae2,extraArg);
   
     case(DAE.INITIALDEFINE(cr,e,source)::dae,func,extraArg)
       equation
         ((e2,extraArg)) = func((e, extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((DAE.CREF(cr,DAE.ET_REAL()), extraArg));
+        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
       then (DAE.INITIALDEFINE(cr2,e2,source)::dae2,extraArg);
         
     case(DAE.EQUEQUATION(cr,cr1,source)::dae,func,extraArg)
       equation
-        ((DAE.CREF(cr2,_),extraArg)) = func((DAE.CREF(cr,DAE.ET_REAL()), extraArg));
-        ((DAE.CREF(cr1_2,_),extraArg)) = func((DAE.CREF(cr1,DAE.ET_REAL()), extraArg));
+        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
+        ((DAE.CREF(cr1_2,_),extraArg)) = func((Expression.crefExp(cr1), extraArg));
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
       then (DAE.EQUEQUATION(cr2,cr1_2,source)::dae2,extraArg);
         
@@ -3658,7 +3682,7 @@ algorithm
     case(DAE.REINIT(cr,e1,source)::dae,func,extraArg)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
-        ((DAE.CREF(cr2,_),extraArg)) = func((DAE.CREF(cr,DAE.ET_REAL()),extraArg));
+        ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr),extraArg));
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
       then (DAE.REINIT(cr2,e11,source)::dae2,extraArg);
         
@@ -3753,14 +3777,14 @@ algorithm
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),func,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
-        ((e_2 as DAE.CREF(cr_1,_), extraArg)) = func((DAE.CREF(cr,tp), extraArg));
+        ((e_2 as DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr), extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
         
     case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),func,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
-        failure(((DAE.CREF(_,_), _)) = func((DAE.CREF(cr,tp), extraArg)));
+        failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
         true = RTOpts.debugFlag("failtrace");
         print(DAEDump.ppStatementStr(x));
         print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");      
@@ -5126,18 +5150,24 @@ algorithm
     local
       DAE.ComponentRef cr,cref_1,cref_2;
       HashTable.HashTable crs0,crs1;
-      DAE.Exp exp;
+      DAE.Exp exp,e1,e2;
+      
     case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.ET_REAL())}),crs0))
       equation
         cref_1 = ComponentReference.makeCrefQual("$old",DAE.ET_REAL(),{},cr);
         cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.ET_REAL(),{});
+        e1 = Expression.makeCrefExp(cref_1,DAE.ET_REAL());
+        e2 = Expression.makeCrefExp(cref_2,DAE.ET_REAL());
         exp = DAE.BINARY(
-          DAE.BINARY(exp,DAE.SUB(DAE.ET_REAL()),DAE.CREF(cref_1,DAE.ET_REAL())),
-          DAE.DIV(DAE.ET_REAL()),
-          DAE.CREF(cref_2,DAE.ET_REAL()));
+                DAE.BINARY(exp, DAE.SUB(DAE.ET_REAL()), e1),
+                DAE.DIV(DAE.ET_REAL()),
+                e2);
         crs1 = BaseHashTable.add((cr,0),crs0);
-      then ((exp,crs1));
+      then 
+        ((exp,crs1));
+    
     case ((exp,crs0)) then ((exp,crs0));
+    
   end matchcontinue;
 end simpleInlineDerEuler;
 

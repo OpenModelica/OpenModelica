@@ -569,7 +569,7 @@ algorithm
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
-        lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
+        lst1 = incidenceRowExp(Expression.crefExp(cr), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
@@ -578,7 +578,7 @@ algorithm
     // solved equation
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e))
       equation
-        lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
+        lst1 = incidenceRowExp(Expression.crefExp(cr), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
@@ -595,7 +595,7 @@ algorithm
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we))
       equation
         (cr,e2) = BackendEquation.getWhenEquationExpr(we);
-        e1 = DAE.CREF(cr,DAE.ET_OTHER());
+        e1 = Expression.crefExp(cr);
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
@@ -669,7 +669,7 @@ algorithm
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(DAE.CREF(cr,DAE.ET_OTHER()), vars);
+        lst3 = incidenceRowExp(Expression.crefExp(cr), vars);
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;

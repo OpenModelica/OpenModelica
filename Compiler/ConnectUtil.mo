@@ -1141,9 +1141,19 @@ protected function signFlow "function: signFlow
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inComponentRef,inFace)
-    local DAE.ComponentRef c;
-    case (c,Connect.INSIDE()) then DAE.CREF(c,DAE.ET_OTHER());
-    case (c,Connect.OUTSIDE()) then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.CREF(c,DAE.ET_OTHER()));
+    local DAE.ComponentRef c; DAE.Exp exp;
+    
+    case (c,Connect.INSIDE())
+      equation
+         exp = Expression.crefExp(c); 
+      then 
+        exp;
+    
+    case (c,Connect.OUTSIDE())
+      equation
+        exp = Expression.crefExp(c);
+      then 
+        DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),exp);
   end matchcontinue;
 end signFlow;
 
@@ -1194,10 +1204,9 @@ algorithm
     case ({(cr1, _, f1, src1), (cr2, _, f2, src2)}) 
       equation
         src = DAEUtil.mergeSources(src1, src2);
-        dae = DAE.DAE({
-                DAE.EQUATION(DAE.CREF(cr1,DAE.ET_OTHER()), 
-                             DAE.CREF(cr2,DAE.ET_OTHER()), 
-                             src)});
+        e1 = Expression.crefExp(cr1);
+        e2 = Expression.crefExp(cr2);
+        dae = DAE.DAE({DAE.EQUATION(e1,e2,src)});
       then dae;
 
     // The general case with N inside connectors and M outside:
@@ -1462,7 +1471,7 @@ algorithm
       equation
         // Look up the connection set for the component (as inside).
         Connect.STREAM(sl) = findStreamSet(inSets, inStreamCref,
-          ComponentReference.DUMMY, Connect.INSIDE(), DAE.emptyElementSource);
+          ComponentReference.makeDummyCref(), Connect.INSIDE(), DAE.emptyElementSource);
         in_stream_exp = generateInStreamExp(inStreamCref, sl, inSets);
       then
         in_stream_exp;

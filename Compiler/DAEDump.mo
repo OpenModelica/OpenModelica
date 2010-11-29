@@ -2557,8 +2557,8 @@ algorithm
         Graphviz.LNODE("EQUATION",{e1str,"=",e2str},{},{});
     case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
       equation
-        e1str = printExpStrSpecial(DAE.CREF(cr1,DAE.ET_OTHER()));
-        e2str = printExpStrSpecial(DAE.CREF(cr2,DAE.ET_OTHER()));
+        e1str = printExpStrSpecial(Expression.crefExp(cr1));
+        e2str = printExpStrSpecial(Expression.crefExp(cr2));
       then
         Graphviz.LNODE("EQUEQUATION",{e1str,"=",e2str},{},{});
     case DAE.ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{});
