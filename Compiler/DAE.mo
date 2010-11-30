@@ -951,18 +951,8 @@ uniontype ExpType "- Basic types
     Boolean builtin;
   end ET_FUNCTION_REFERENCE_FUNC;
 
-  //MetaModelica Uniontype, MetaModelica extension, simbj
-  record ET_UNIONTYPE end ET_UNIONTYPE;
-
-  record ET_BOXED "Tag for any boxed data type (useful for equality operations)"
-    ExpType ty;
-  end ET_BOXED;
-
-  record ET_POLYMORPHIC "Used in MetaModelica polymorphic functions" end ET_POLYMORPHIC;
-
-  record ET_META_ARRAY "Array with MetaModelica semantics"
-    ExpType ty;
-  end ET_META_ARRAY;
+  record ET_METATYPE "MetaModelica boxed types (any)" end ET_METATYPE;
+  record ET_BOXED ExpType ty; end ET_BOXED;
 
   record ET_NORETCALL "For functions not returning any values." end ET_NORETCALL;
 

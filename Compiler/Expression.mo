@@ -1499,18 +1499,18 @@ algorithm
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
     
     // MetaModelica extension
-    case (DAE.LIST(ty = tp)) then DAE.ET_LIST(tp); // was tp, but the type of a LIST is a LIST
-    case (DAE.CONS(ty = tp)) then DAE.ET_LIST(tp); // CONS creates lists
+    case (DAE.LIST(ty = tp)) then DAE.ET_METATYPE(); // was tp, but the type of a LIST is a LIST
+    case (DAE.CONS(ty = tp)) then DAE.ET_METATYPE(); // CONS creates lists
     case (DAE.META_TUPLE(explist))
       equation
         tylist = Util.listMap(explist, typeof);
-      then DAE.ET_METATUPLE(tylist);
+      then DAE.ET_METATYPE();
     case (DAE.META_OPTION(SOME(e)))
       equation
         tp = typeof(e);
-      then DAE.ET_METAOPTION(tp);
-    case (DAE.META_OPTION(NONE())) then DAE.ET_METAOPTION(DAE.ET_OTHER());
-    case (DAE.METARECORDCALL(path=_)) then DAE.ET_UNIONTYPE();
+      then DAE.ET_METATYPE();
+    case (DAE.META_OPTION(NONE())) then DAE.ET_METATYPE();
+    case (DAE.METARECORDCALL(path=_)) then DAE.ET_METATYPE();
     case e
       equation
         Debug.fprintln("failtrace", "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e));

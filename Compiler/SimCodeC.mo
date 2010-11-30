@@ -12698,37 +12698,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_METAOPTION(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_LIST(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_UNIONTYPE() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _) )
+           DAE.ET_METATYPE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
       then txt;
@@ -15504,52 +15474,7 @@ algorithm
       Tpl.Text l_shortType;
 
     case ( txt,
-           DAE.ET_LIST(ty = _),
-           a_varName,
-           a_preExp,
-           a_varDecls )
-      equation
-        txt = Tpl.writeStr(txt, a_varName);
-      then (txt, a_preExp, a_varDecls);
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _),
-           a_varName,
-           a_preExp,
-           a_varDecls )
-      equation
-        txt = Tpl.writeStr(txt, a_varName);
-      then (txt, a_preExp, a_varDecls);
-
-    case ( txt,
-           DAE.ET_METAOPTION(ty = _),
-           a_varName,
-           a_preExp,
-           a_varDecls )
-      equation
-        txt = Tpl.writeStr(txt, a_varName);
-      then (txt, a_preExp, a_varDecls);
-
-    case ( txt,
-           DAE.ET_UNIONTYPE(),
-           a_varName,
-           a_preExp,
-           a_varDecls )
-      equation
-        txt = Tpl.writeStr(txt, a_varName);
-      then (txt, a_preExp, a_varDecls);
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC(),
-           a_varName,
-           a_preExp,
-           a_varDecls )
-      equation
-        txt = Tpl.writeStr(txt, a_varName);
-      then (txt, a_preExp, a_varDecls);
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _),
+           DAE.ET_METATYPE(),
            a_varName,
            a_preExp,
            a_varDecls )
@@ -29607,37 +29532,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_METAOPTION(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_LIST(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_UNIONTYPE() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _) )
+           DAE.ET_METATYPE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_MMC"));
       then txt;
@@ -29723,37 +29618,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_LIST(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METAOPTION(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_UNIONTYPE() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _) )
+           DAE.ET_METATYPE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
       then txt;
@@ -29851,37 +29716,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_LIST(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METAOPTION(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_UNIONTYPE() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _) )
+           DAE.ET_METATYPE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("metatype"));
       then txt;

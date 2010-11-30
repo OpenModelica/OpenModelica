@@ -3,6 +3,7 @@ CXXFLAGS=@CFLAGS@
 
 release/libsendDataHumbug.a: humbug.o
 	mkdir -p release
+	rm -f $@
 	ar -ru $@ $<
 	ranlib $@
 

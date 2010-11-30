@@ -534,27 +534,12 @@ package DAE
       ExpType ty;
       list<DAE.Dimension> arrayDimensions;
     end ET_ARRAY;
-    record ET_LIST
-      ExpType ty;
-    end ET_LIST;
-    record ET_METATUPLE
-      list<ExpType> ty;
-    end ET_METATUPLE;
-    record ET_METAOPTION
-      ExpType ty;
-    end ET_METAOPTION;
+    record ET_METATYPE end ET_METATYPE;
+    record ET_BOXED ExpType ty; end ET_BOXED;
     record ET_FUNCTION_REFERENCE_VAR end ET_FUNCTION_REFERENCE_VAR;
     record ET_FUNCTION_REFERENCE_FUNC
       Boolean builtin;
     end ET_FUNCTION_REFERENCE_FUNC;
-    record ET_UNIONTYPE end ET_UNIONTYPE;
-    record ET_BOXED
-      ExpType ty;
-    end ET_BOXED;
-    record ET_POLYMORPHIC end ET_POLYMORPHIC;
-    record ET_META_ARRAY
-      ExpType ty;
-    end ET_META_ARRAY;
     record ET_NORETCALL end ET_NORETCALL;
   end ExpType;
 

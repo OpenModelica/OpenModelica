@@ -10277,37 +10277,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_LIST(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METATUPLE(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_METAOPTION(ty = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_UNIONTYPE() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_POLYMORPHIC() )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_META_ARRAY(ty = _) )
+           DAE.ET_METATYPE() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("META_TYPE_NOT_SUPPORTED"));
       then txt;

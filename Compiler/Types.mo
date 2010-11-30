@@ -414,16 +414,10 @@ algorithm
         ty = (DAE.T_COMPLEX(complexClassType,tvars,NONE(),NONE()),NONE());
       then
         ty;
-    case(DAE.ET_UNIONTYPE()) then ((DAE.T_UNIONTYPE({}),NONE()));
     case(DAE.ET_BOXED(at))
       equation
         ty = expTypetoTypesType(at);
         ty2 = (DAE.T_BOXED(ty),NONE());
-      then ty2;
-    case(DAE.ET_LIST(at))
-      equation
-        ty = expTypetoTypesType(at);
-        ty2 = (DAE.T_LIST(ty),NONE());
       then ty2;
     case(_)
       equation
@@ -3646,9 +3640,7 @@ public
  constant DAE.ExpType etString      = DAE.ET_STRING();
  constant DAE.ExpType etNoRetCall   = DAE.ET_NORETCALL();
  constant DAE.ExpType etFuncRefVar  = DAE.ET_FUNCTION_REFERENCE_VAR();
- constant DAE.ExpType etUnionType   = DAE.ET_UNIONTYPE();
- constant DAE.ExpType etPolyMorphic = DAE.ET_POLYMORPHIC();
-
+ constant DAE.ExpType etMetaType    = DAE.ET_METATYPE();
 
 public function elabType 
 "@author: adrpo
@@ -3665,6 +3657,7 @@ algorithm
       DAE.ExpType expTy;
       TType tt;
       Integer indexBasedOnValueConstructor;
+      String str;
 
     // speedup some of the types that do not actually translate contents 
     case ((DAE.T_INTEGER(varLstInt = _),_)) then etInt;
@@ -3673,9 +3666,13 @@ algorithm
     case ((DAE.T_STRING(varLstString = _),_)) then etString;
     case ((DAE.T_NORETCALL(),_)) then etNoRetCall;
     case ((DAE.T_FUNCTION(_,_,_),_)) then etFuncRefVar;
-    case ((DAE.T_UNIONTYPE(_),_)) then etUnionType;
-    case ((DAE.T_METARECORD(_,_,_),_)) then etUnionType;
-    case ((DAE.T_POLYMORPHIC(_),_)) then etPolyMorphic;
+    case ((DAE.T_UNIONTYPE(_),_)) then etMetaType;
+    case ((DAE.T_METARECORD(_,_,_),_)) then etMetaType;
+    case ((DAE.T_POLYMORPHIC(_),_)) then etMetaType;
+    case ((DAE.T_LIST(_),_)) then etMetaType;
+    case ((DAE.T_META_ARRAY(_),_)) then etMetaType;
+    case ((DAE.T_METAOPTION(_),_)) then etMetaType;
+    case ((DAE.T_METATUPLE(_),_)) then etMetaType;
 
     // see if we have it in memory
     case (inType as (tt, _))
@@ -3708,6 +3705,11 @@ algorithm
         setGlobalRoot(memoryIndex, tyMem);
       then 
         expTy;
+    else
+      equation
+        str = "Types.elabType failed for: " +& unparseType(inType);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
   end matchcontinue;
 end elabType;
 
@@ -3728,13 +3730,6 @@ algorithm
       list<DAE.ExpVar> ecvl;
       list<DAE.ExpType> t_l2;
       list<Type> t_l;
-    
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
-    case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
-    case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
-    case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
-
-    case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
     
     case ((DAE.T_ENUMERATION(path = path, names = names, literalVarLst = varLst),_))
       equation
@@ -3766,38 +3761,11 @@ algorithm
       then
         t_1;
 
-        // MetaModelica extension
-    case ((DAE.T_LIST(t),_))
+    case ((DAE.T_BOXED(t),_))
       equation
         t_1 = elabType(t);
-      then DAE.ET_LIST(t_1);
-
-    case ((DAE.T_META_ARRAY(t),_))
-      equation
-        t_1 = elabType(t);
-      then DAE.ET_LIST(t_1);
-
-    case ((DAE.T_FUNCTION(_,_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
-      then DAE.ET_FUNCTION_REFERENCE_VAR();
-
-    case ((DAE.T_METAOPTION(t),_))
-      equation
-        t_1 = elabType(t);
-      then DAE.ET_METAOPTION(t_1);
-
-    case ((DAE.T_METATUPLE(t_l),_))
-      equation
-        t_l2 = Util.listMap(t_l,elabType);
-      then DAE.ET_METATUPLE(t_l2);
-
-    case ((DAE.T_BOXED(t),_)) equation t_1 = elabType(t); then DAE.ET_BOXED(t_1);
-
-    case ((DAE.T_UNIONTYPE(_),_)) then DAE.ET_UNIONTYPE();
-
-    case ((DAE.T_METARECORD(utPath=_),_)) then DAE.ET_UNIONTYPE();
-
-    case ((DAE.T_POLYMORPHIC(_),_)) then DAE.ET_POLYMORPHIC();
-
+      then DAE.ET_BOXED(t_1);
+      
         /* This is the case when the type is currently UNTYPED */
     case ((_,_))
       equation
@@ -5388,8 +5356,8 @@ algorithm
     case (exp,actual,expected,envPath,polymorphicBindings,_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
+        _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& " (boxed)\n");
         polymorphicBindings = subtypePolymorphic(actual,expected,envPath,polymorphicBindings);

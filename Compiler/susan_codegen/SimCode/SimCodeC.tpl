@@ -2999,13 +2999,7 @@ template extType(ExpType type)
                       then "void *"
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
-  case ET_METAOPTION(__)
-  case ET_LIST(__)
-  case ET_METATUPLE(__)
-  case ET_UNIONTYPE(__)
-  case ET_POLYMORPHIC(__)
-  case ET_META_ARRAY(__)
-  case ET_BOXED(__)       then "void*"
+  case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
   case ET_ENUMERATION(__) then "int"
   else "OTHER_EXT_TYPE"
 end extType;
@@ -3328,13 +3322,7 @@ end funArgUnbox;
 template unboxVariable(String varName, ExpType varType, Text &preExp, Text &varDecls)
 ::=
 match varType
-case ET_LIST(__)
-case ET_METATUPLE(__)
-case ET_METAOPTION(__)
-case ET_UNIONTYPE(__)
-case ET_POLYMORPHIC(__)
-case ET_META_ARRAY(__)
-case ET_BOXED(__) then varName
+case ET_METATYPE(__) case ET_BOXED(__) then varName
 case ET_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
@@ -5529,13 +5517,7 @@ template expTypeRW(DAE.ExpType type)
   case ET_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
   case ET_COMPLEX(complexClassType=RECORD(__))
                       then "TYPE_DESC_RECORD"
-  case ET_METAOPTION(__)
-  case ET_LIST(__)
-  case ET_METATUPLE(__)
-  case ET_UNIONTYPE(__)
-  case ET_POLYMORPHIC(__)
-  case ET_META_ARRAY(__)
-  case ET_BOXED(__)       then "TYPE_DESC_MMC"
+  case ET_METATYPE(__) case ET_BOXED(__)    then "TYPE_DESC_MMC"
 end expTypeRW;
 
 template expTypeShort(DAE.ExpType type)
@@ -5552,13 +5534,7 @@ template expTypeShort(DAE.ExpType type)
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
   case ET_COMPLEX(__)     then 'struct <%underscorePath(name)%>'  
-  case ET_LIST(__)
-  case ET_METATUPLE(__)
-  case ET_METAOPTION(__)
-  case ET_UNIONTYPE(__)
-  case ET_POLYMORPHIC(__)
-  case ET_META_ARRAY(__)
-  case ET_BOXED(__)       then "metatype"
+  case ET_METATYPE(__) case ET_BOXED(__)    then "metatype"
   case ET_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
 end expTypeShort;
@@ -5578,13 +5554,7 @@ template mmcExpTypeShort(DAE.ExpType type)
   case ET_STRING(__)                  then "string"
   case ET_BOOL(__)                    then "integer"
   case ET_ARRAY(__)                   then "array"
-  case ET_LIST(__)
-  case ET_METATUPLE(__)
-  case ET_METAOPTION(__)
-  case ET_UNIONTYPE(__)
-  case ET_POLYMORPHIC(__)
-  case ET_META_ARRAY(__)
-  case ET_BOXED(__)                  then "metatype"
+  case ET_METATYPE(__) case ET_BOXED(__)                then "metatype"
   case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
   else "mmcExpTypeShort:ERROR"
 end mmcExpTypeShort;

@@ -1782,13 +1782,7 @@ template expTypeShort(DAE.ExpType it) ::=
   case ET_ARRAY(__)  then expTypeShort(ty)   
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "COMPLEX_EXTERNAL_TYPE_NOT_SUPPORTED"
   case ET_COMPLEX(__) then '/*struct*/<%underscorePath(name)%>'
-  case ET_LIST(__)
-  case ET_METATUPLE(__)
-  case ET_METAOPTION(__)
-  case ET_UNIONTYPE(__)
-  case ET_POLYMORPHIC(__)
-  case ET_META_ARRAY(__)
-  case ET_BOXED(__)       then "META_TYPE_NOT_SUPPORTED"
+  case ET_METATYPE(__) case ET_BOXED(__) then "META_TYPE_NOT_SUPPORTED"
   case ET_FUNCTION_REFERENCE_VAR(__) then "FN_PTR_NOT_SUPPORTED"
   else "expTypeShort_ERROR"
 end expTypeShort;
