@@ -1859,7 +1859,7 @@ algorithm
       list<DAE.Properties> props;
       list<Env.Frame> env;
       Absyn.Exp e;
-      list<Absyn.Exp> exps;
+      list<Absyn.Exp> exps,es;
       Boolean impl;
       Env.Cache cache;
       Boolean doVect;
@@ -1868,12 +1868,20 @@ algorithm
 
     case (cache,env,(e :: exps),impl,doVect,pre,info)
       equation
+        failure(Absyn.TUPLE(_) = e);
         (cache,e_1,p,_) = elabExp(cache,env, e, impl,NONE(),doVect,pre,info);
         (cache,exps_1,props) = elabTuple(cache,env, exps, impl,doVect,pre,info);
       then
         (cache,(e_1 :: exps_1),(p :: props));
 
     case (cache,env,{},impl,doVect,_,_) then (cache,{},{});
+
+    case (cache,env,((e as Absyn.TUPLE(_)) :: exps),impl,doVect,pre,info)
+      equation
+        (cache,e_1,p,_) = elabExp(cache,env, e, impl,NONE(),doVect,pre,info);
+        (e_1,p) = Types.matchProp(e_1,p,DAE.PROP(DAE.T_BOXED_DEFAULT,DAE.C_CONST()),true);
+        (cache,exps_1,props) = elabTuple(cache,env, exps, impl,doVect,pre,info);
+      then (cache,(e_1 :: exps_1),(p :: props)); 
   end matchcontinue;
 end elabTuple;
 

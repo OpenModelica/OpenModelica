@@ -3047,6 +3047,7 @@ template extFunDefArgF77(SimExtArg extArg)
     let typeStr = 'const <%extType(t)%> *'
     '<%typeStr%> <%name%>'
   case SIMEXTARG(__) then extFunDefArg(extArg)
+
   case SIMEXTARGEXP(__) then extFunDefArg(extArg)
   case SIMEXTARGSIZE(__) then 'int const *'
 end extFunDefArgF77;
@@ -3963,6 +3964,26 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
     let rhsStr = '<%retStruct%>.targ<%i1%>'
     writeLhsCref(cr, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   ;separator="\n"%>
+  >>
+case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
+  let &preExp = buffer "" /*BUFD*/
+  let prefix = 'tmp<%System.tmpTick()%>'
+  let _ = daeExpMatch2(exp, prefix, context, &preExp, &varDecls)
+  <<
+  <%expExpLst |> cr hasindex i1 from 1 =>
+    let rhsStr = '<%prefix%>_targ<%i1%>'
+    let &varDecls += '<%expTypeFromExpModelica(cr)%> <%rhsStr%>;<%\n%>'
+    ""
+  ;separator="\n";empty%>
+  <%preExp%>
+  <%expExpLst |> cr hasindex i1 from 1 =>
+    let rhsStr = '<%prefix%>_targ<%i1%>'
+    writeLhsCref(cr, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  ;separator="\n"%>
+  >>
+else
+  <<
+  #error "algStmtTupleAssign failed"
   >>
 end algStmtTupleAssign;
 
@@ -5236,6 +5257,15 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 ::=
 match exp
 case exp as MATCHEXPRESSION(__) then
+  let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
+  daeExpMatch2(exp,res,context,&preExp,&varDecls)
+end daeExpMatch;
+
+template daeExpMatch2(Exp exp, Text res, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp
+case exp as MATCHEXPRESSION(__) then
   let &preExpInner = buffer ""
   let &preExpRes = buffer ""
   let &varDeclsInput = buffer ""
@@ -5252,7 +5282,6 @@ case exp as MATCHEXPRESSION(__) then
     let &varDeclsInput += '<%expTypeFromExpModelica(exp)%> <%decl%>;<%\n%>'
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
     ""; empty)
-  let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
   let ix = tempDecl('int', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
@@ -5268,28 +5297,7 @@ case exp as MATCHEXPRESSION(__) then
           for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(cases)%> && !<%done%>; <%ix%>++) {
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
             switch (<%ix%>) {
-            <% cases |> c as CASE(__) hasindex i0 =>
-            let &varDeclsCaseInner = buffer ""
-            let &preExpCaseInner = buffer ""
-            let &assignments = buffer ""
-            let &preRes = buffer ""
-            let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%prefix%>_in<%i0%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
-            let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
-            let caseRes = match c.result case SOME(e) then daeExp(e,context,&preRes,&varDeclsCaseInner)
-            let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
-            <<case <%i0%>: {
-              <%varDeclsCaseInner%>
-              <%preExpCaseInner%>
-              <%patternMatching%> 
-              /* Pattern matching succeeded */
-              <%assignments%>
-              <%stmts%>
-              <% if c.result then '<%preRes%><%res%> = <%caseRes%>;<%\n%>' else 'MMC_THROW();<%\n%>'%>
-              <%done%> = 1;
-              break;
-            }<%\n%>
-            >>
-            %>
+            <%daeExpMatchCases(cases,res,prefix,onPatternFail,done,context,&varDecls)%>
             }
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
@@ -5298,7 +5306,35 @@ case exp as MATCHEXPRESSION(__) then
       }
       >>
   res
-end daeExpMatch;
+end daeExpMatch2;
+
+template daeExpMatchCases(list<MatchCase> cases, Text res, Text prefix, Text onPatternFail, Text done, Context context, Text &varDecls)
+::=
+  cases |> c as CASE(__) hasindex i0 =>
+  let &varDeclsCaseInner = buffer ""
+  let &preExpCaseInner = buffer ""
+  let &assignments = buffer ""
+  let &preRes = buffer ""
+  let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%prefix%>_in<%i0%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+  let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
+  let caseRes = (match c.result
+    case SOME(TUPLE(PR=exps)) then
+      (exps |> e hasindex i1 from 1 => '<%res%>_targ<%i1%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
+    case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
+  let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
+  <<case <%i0%>: {
+    <%varDeclsCaseInner%>
+    <%preExpCaseInner%>
+    <%patternMatching%> 
+    /* Pattern matching succeeded */
+    <%assignments%>
+    <%stmts%>
+    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>'%>
+    <%done%> = 1;
+    break;
+  }<%\n%>
+  >>
+end daeExpMatchCases;
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard

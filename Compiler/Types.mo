@@ -81,6 +81,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Patternm;
 protected import Print;
 protected import Util;
 protected import RTOpts;
@@ -3821,6 +3822,14 @@ algorithm
         c = constAnd(c_1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
+    case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = tc1), DAE.PROP(type_ = (et as (DAE.T_BOXED(_),_)),constFlag = c2),printFailtrace)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (e_1,t_1) = matchType(e, gt, et, printFailtrace);
+        c_1 = propTupleAllConst(tc1);
+        c = constAnd(c_1, c2);
+      then
+        (e_1,DAE.PROP(t_1,c));
 
     case(e,inProperties2,inProperties3,true)
       equation
@@ -3984,16 +3993,16 @@ protected function typeConvert "function: typeConvert
 
   If no type conversion is possible, this function fails."
   input DAE.Exp inExp1;
-  input Type inType2;
-  input Type inType3;
+  input Type actual;
+  input Type expected;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Type outType;
 algorithm
   (outExp,outType):=
-  matchcontinue (inExp1,inType2,inType3,printFailtrace)
+  matchcontinue (inExp1,actual,expected,printFailtrace)
     local
-      list<DAE.Exp> elist_1,elist;
+      list<DAE.Exp> elist_1,elist,inputs;
       DAE.ExpType at,t;
       Boolean a,sc;
       Integer nmax,oi;
@@ -4014,7 +4023,10 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefList;
       list<DAE.ExpType> expTypes;
-      DAE.ExpType ety1;
+      DAE.ExpType et,ety1;
+      list<DAE.MatchCase> cases;
+      Absyn.MatchType matchTy;
+      list<DAE.Element> localDecls;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
@@ -4160,17 +4172,17 @@ algorithm
         name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
-        (DAE.ENUM_LITERAL(tp, oi),inType3);        
+        (DAE.ENUM_LITERAL(tp, oi),expected);        
 
     /* Implicit conversion from Integer to Real */
     case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),_),printFailtrace)
-      then (DAE.CAST(DAE.ET_REAL(),e),inType3);
+      then (DAE.CAST(DAE.ET_REAL(),e),expected);
 
     /* Implicit conversion from Integer to enumeration. */
     case (e,(DAE.T_INTEGER(varLstInt = _),_),(DAE.T_ENUMERATION(index = _), _),_)
       equation
-        t = elabType(inType3);
-      then (DAE.CAST(t, e), inType3);
+        t = elabType(expected);
+      then (DAE.CAST(t, e), expected);
       
     /* Implicit conversion from enumeration literal to Real */
     case (e,(DAE.T_ENUMERATION(index = _),_),(DAE.T_REAL(varLstReal = _),p),_)
@@ -4204,6 +4216,15 @@ algorithm
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
+    case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),actual,expected,printFailtrace)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        elist = Patternm.resultExps(cases);
+        (elist_1,tys_1) = matchTypeList(elist, actual, expected, printFailtrace);
+        cases=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
+        et=elabType(expected);
+      then
+        (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),expected);
     case (DAE.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
@@ -5405,6 +5426,32 @@ algorithm
   end matchcontinue;
 end matchType;
 
+public function matchTypes
+"matchType, list of actual types, one  expected type."
+  input list<DAE.Exp> exps;
+  input list<Type> tys;
+  input Type expected;
+  input Boolean printFailtrace;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := matchcontinue (exps,tys,expected,printFailtrace)
+    local
+      DAE.Type ty;
+      DAE.Exp e;
+    case ({},{},_,_) then {};
+    case (e::exps,ty::tys,expected,printFailtrace)
+      equation
+        (e,_) = matchType(e,ty,expected,printFailtrace);
+        exps = matchTypes(exps,tys,expected,printFailtrace); 
+      then
+        e::exps;
+    case (e::_,ty::_,expected,_)
+      equation
+        print("- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n");
+      then fail();
+  end matchcontinue;
+end matchTypes;
+
 protected function printFailure
 "@author adrpo
  print the message only when flag is on.
@@ -6516,5 +6563,34 @@ algorithm
       then ((b,ty)::args,a);
   end match;
 end traverseFuncArg;
+
+public function makeRegularTupleFromMetaTupleOnTrue
+  input Boolean b;
+  input Type ty;
+  output Type out;
+algorithm
+  out := match (b,ty)
+    local
+      list<Type> tys;
+    case (true,(DAE.T_METATUPLE(tys),_))
+      equation
+        tys = Util.listMap(tys, unboxedType);
+        tys = Util.listMap(tys, boxIfUnboxedType);
+        tys = Util.listMap(tys, unboxedType); // Yes. Crazy
+      then ((DAE.T_TUPLE(tys),NONE()));
+    case (false,ty) then ty;
+  end match;
+end makeRegularTupleFromMetaTupleOnTrue;
+
+public function allTuple
+  input list<Type> tys;
+  output Boolean b;
+algorithm
+  b := match tys
+    case {} then true;
+    case ((DAE.T_TUPLE(_),_)::tys) then allTuple(tys);
+    else false;
+  end match;
+end allTuple;
 
 end Types;

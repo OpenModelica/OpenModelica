@@ -578,7 +578,7 @@ algorithm
       list<DAE.MatchCase> elabCases;
       Option<DAE.Type> optType;
       Option<DAE.Exp> optExp;
-    case (cache,env,{},tys,impl,st,performVectorization,pre,info,accExps,accTypes) then (cache,{},listReverse(accExps),accTypes,st);
+    case (cache,env,{},tys,impl,st,performVectorization,pre,info,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
     case (cache,env,case_::rest,tys,impl,st,performVectorization,pre,info,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre,info);
@@ -661,11 +661,10 @@ algorithm
       list<Absyn.Exp> es;
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),impl,st,performVectorization,pre,info)
       then (cache,NONE(),NONE(),st);
-    case (cache,env,Absyn.TUPLE(es),impl,st,performVectorization,pre,info)
+    case (cache,env,exp as Absyn.TUPLE(_),impl,st,performVectorization,pre,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
         ty = Types.getPropType(prop);
-        (elabExp,ty) = Types.matchType(elabExp, ty, DAE.T_BOXED_DEFAULT, false);
       then (cache,SOME(elabExp),SOME(ty),st);
     case (cache,env,exp,impl,st,performVectorization,pre,info)
       equation
@@ -690,7 +689,11 @@ algorithm
     case (cases,{},{},info) then (cases,(DAE.T_NORETCALL(),NONE()));
     case (cases,exps,tys,info)
       equation
-        (exps,ty) = Types.listMatchSuperType(exps,tys,true);
+        ty = Util.listReduce(tys, Types.superType);
+        ty = Types.superType(ty, ty);
+        ty = Types.unboxedType(ty);
+        ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
+        exps = Types.matchTypes(exps, tys, ty, true);
         cases = fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
     else
@@ -702,7 +705,7 @@ algorithm
   end matchcontinue;
 end fixCaseReturnTypes;
 
-protected function fixCaseReturnTypes2
+public function fixCaseReturnTypes2
   input list<DAE.MatchCase> cases;
   input list<DAE.Exp> exps;
   input Absyn.Info info;
@@ -847,5 +850,21 @@ algorithm
       then (cache,NONE());
   end matchcontinue;
 end addLocalDecls;
+
+public function resultExps
+  input list<DAE.MatchCase> cases;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := match cases
+    local
+      DAE.Exp exp;
+    case {} then {};
+    case (DAE.CASE(result=SOME(exp))::cases)
+      equation
+        exps = resultExps(cases);
+      then exp::exps;
+    case (_::cases) then resultExps(cases);
+  end match;
+end resultExps;
 
 end Patternm;

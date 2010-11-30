@@ -4265,7 +4265,6 @@ algorithm
         d = DAEUtil.getFunctionList(funcs);
         d = Util.listSetDifference(d, {mainFunction});
         metarecordTypes = {};
-        
         SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
       then
         (cache, pathstr);

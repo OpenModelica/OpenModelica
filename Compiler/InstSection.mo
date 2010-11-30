@@ -5149,6 +5149,21 @@ algorithm
       then
         (cache,{stmt});
 
+    // (v1,v2,..,vn) := match...
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        true = MetaUtil.onlyCrefExpressions(expl);
+        true = Types.isTuple(Types.getPropType(eprop));
+        (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
+        (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
+      then
+        (cache,{stmt});
+
     case (cache,env,ih,pre,left,e_1,prop,info,source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();

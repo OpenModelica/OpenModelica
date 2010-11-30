@@ -211,6 +211,7 @@ void printAny(void* any) /* For debugging */
   int i;
   void *data;
   struct record_description *desc;
+  fflush(NULL);
 
   if ((0 == ((mmc_sint_t)any & 1))) {
     fprintf(stderr, "%ld", (long) ((mmc_sint_t)any)>>1);
