@@ -1309,7 +1309,7 @@ algorithm
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
-        DAE.ASUB(e, subs);
+        Expression.makeASUB(e, subs);
     
     case (DAE.ASUB(exp = DAE.MATRIX(scalar = (((DAE.CREF(componentRef = cr, ty = ty), _) :: _) :: _)), sub = subs))
       equation
@@ -1318,7 +1318,7 @@ algorithm
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
-        DAE.ASUB(e, subs);
+        Expression.makeASUB(e, subs);
     
     case (_) then arrayVar;
   end matchcontinue;

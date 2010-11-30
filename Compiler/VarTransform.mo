@@ -1646,7 +1646,7 @@ algorithm
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        DAE.ASUB(e1_1,expl);
+        Expression.makeASUB(e1_1,expl);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
         true = replaceExpCond(cond, e);

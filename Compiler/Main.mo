@@ -48,6 +48,7 @@ protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
+protected import ComponentReference;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
@@ -1230,7 +1231,9 @@ algorithm
         // cummulative time of some functions
         // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
-
+        
+        
+        //setGlobalRoot(ComponentReference.crefMemoryIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");

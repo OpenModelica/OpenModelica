@@ -656,7 +656,7 @@ algorithm
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, expl, pre);
         (cache,e1) = prefixExp(cache, env, ih, e1,pre);
-        e2 = DAE.ASUB(e1,es_1);
+        e2 = Expression.makeASUB(e1,es_1);
       then 
         (cache,e2);    
     

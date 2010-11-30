@@ -699,7 +699,7 @@ algorithm
       equation
         e_1 = differentiateExpTime(e, (timevars,functions));
       then
-        DAE.ASUB(e,sub);
+        Expression.makeASUB(e,sub);
     
     case (DAE.REDUCTION(path = a,expr = e1,ident = str,range = e2),(timevars,functions))
       equation
@@ -1561,7 +1561,7 @@ algorithm
       equation
         e_1 = differentiateExp(e, tv, differentiateIfExp);
       then
-        DAE.ASUB(e,sub);
+        Expression.makeASUB(e,sub);
     
     case (DAE.REDUCTION(path = a,expr = e1,ident = str,range = e2),tv,differentiateIfExp)
       equation

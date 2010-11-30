@@ -4669,7 +4669,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        arrexp_1 = ExpressionSimplify.simplify(Expression.makeAsub(arrexp_1, 1));
+        arrexp_1 = ExpressionSimplify.simplify(Expression.makeAsubAddIndex(arrexp_1, 1));
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
         call = makeBuiltinCall(inFnName, {arrexp_1}, tp);
@@ -9417,7 +9417,7 @@ algorithm
       equation
         res = vectorizeCallScalar3(es, ss, dim_indx);
         asub_exp = DAE.ICONST(dim_indx);
-        asub_exp = ExpressionSimplify.simplify(DAE.ASUB(e,{asub_exp}));
+        asub_exp = ExpressionSimplify.simplify(Expression.makeASUB(e,{asub_exp}));
       then
         (asub_exp :: res);
   end matchcontinue;
@@ -10548,7 +10548,7 @@ algorithm
       DAE.Type t;
       DAE.TType tt;
       DAE.Binding binding;
-      DAE.Exp exp,exp1,exp2,crefExp;
+      DAE.Exp exp,exp1,exp2,crefExp,expASUB;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Boolean impl;
@@ -10588,8 +10588,9 @@ algorithm
         (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),acc_1))) = elabCref(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,info);
         (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
         const = Types.constAnd(const1,const2);
+        expASUB = Expression.makeASUB(exp1,{exp2});
       then
-        (cache,SOME((DAE.ASUB(exp1,{exp2}),DAE.PROP(t, const),SCode.WO())));
+        (cache,SOME((expASUB,DAE.PROP(t, const),SCode.WO())));
 
     // a normal cref
     case (cache,env,c,impl,doVect,pre,info) /* impl */
@@ -10784,7 +10785,7 @@ algorithm
         ty2 = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
         crefExp = Expression.makeCrefExp(cref_,ty2);
-        exp1 = DAE.ASUB(crefExp,exps);
+        exp1 = Expression.makeASUB(crefExp,exps);
       then
         exp1;
     
@@ -10794,7 +10795,7 @@ algorithm
         exps = makeASUBArrayAdressing2( essl,pre);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
         crefExp = Expression.makeCrefExp(cref_,ty);
-        exp1 = DAE.ASUB(crefExp,exps);
+        exp1 = Expression.makeASUB(crefExp,exps);
       then
         exp1;
     
@@ -10813,7 +10814,7 @@ algorithm
         cr = ComponentReference.crefStripLastSubs(cr);
         exps = makeASUBArrayAdressing2(essl, pre);
         crefExp = Expression.makeCrefExp(cr, ty);
-        exp1 = DAE.ASUB(crefExp, exps);
+        exp1 = Expression.makeASUB(crefExp, exps);
       then
         exp1;
     
@@ -10876,7 +10877,7 @@ algorithm
         expl2 = makeASUBArrayAdressing2(subs2,pre);
         cref_ = ComponentReference.makeCrefIdent(id2,ty2,{});
         crefExp = Expression.makeCrefExp(cref_,ety1);
-        exp1 = DAE.ASUB(crefExp,expl2);
+        exp1 = Expression.makeASUB(crefExp,expl2);
       then
         (exp1::expl1);
     

@@ -767,7 +767,7 @@ algorithm
       equation
         // Apply one subscript at a time, so simplify works fine on it.
         s = subscriptExp(sub);
-        res = applyExpSubscripts(ExpressionSimplify.simplify(DAE.ASUB(e,{s})),subs);
+        res = applyExpSubscripts(ExpressionSimplify.simplify(makeASUB(e,{s})),subs);
       then 
         res;
   end matchcontinue;
@@ -953,7 +953,7 @@ algorithm
     
     case ({DAE.SLICE(exp = e)},_)
       equation
-        e_1 = ExpressionSimplify.simplify1(DAE.ASUB(e,{inSubscript}));
+        e_1 = ExpressionSimplify.simplify1(makeASUB(e,{inSubscript}));
       then
         {DAE.INDEX(e_1)};
     
@@ -2275,11 +2275,48 @@ end makeNestedIf;
 public function makeCrefExp
 "function makeCrefExp
   Makes an expression of a component reference, given also a type"
-  input ComponentRef cref;
-  input Type tp;
-  output DAE.Exp e;
+  input ComponentRef inCref;
+  input Type inExpType;
+  output DAE.Exp outExp;
 algorithm 
-  e:= DAE.CREF(cref,tp);
+  outExp := matchcontinue(inCref, inExpType)
+    local
+      ComponentRef cref;
+      Type tGiven, tExisting;
+      DAE.Exp e;
+      
+    // do not check type
+    case (cref, tGiven)
+      equation
+        false = RTOpts.debugFlag("checkDAECrefType");
+        e = DAE.CREF(cref, tGiven);
+      then
+        e;
+    
+    // check type, type the same
+    case (cref, tGiven)
+      equation
+        true = RTOpts.debugFlag("checkDAECrefType");
+        tExisting = ComponentReference.crefLastType(cref);
+        equality(tGiven = tExisting); // true = valueEq(tGiven, tExisting);
+        e = DAE.CREF(cref, tGiven);
+      then
+        e;
+    
+    // check type, type different, print warning
+    case (cref, tGiven)
+      equation
+        true = RTOpts.debugFlag("checkDAECrefType");
+        tExisting = ComponentReference.crefLastType(cref);
+        failure(equality(tGiven = tExisting)); // false = valueEq(tGiven, tExisting);
+        Debug.traceln("Warning: Expression.makeCrefExp: given type DAE.CREF.ty: " +& 
+                      ExpressionDump.typeString(tGiven) +&
+                      " is different from existing DAE.CREF.componentRef.ty: " +&
+                      ExpressionDump.typeString(tExisting));  
+        e = DAE.CREF(cref, tGiven);
+      then
+        e;
+  end matchcontinue;
 end makeCrefExp;
 
 public function crefExp "
@@ -2305,6 +2342,50 @@ algorithm cref := matchcontinue(cr)
       DAE.CREF(cr,ty1);
 end matchcontinue;
 end crefExp;
+
+public function makeASUB 
+"@author: adrpo
+  Creates an ASUB given an expression and a list of expression indexes.
+  If flag +d=checkASUB is ON we give a warning that the given exp is
+  not a component reference."
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inSubs;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp,inSubs)    
+    local
+      DAE.Exp exp;
+    
+    // do not check the DAE.ASUB  
+    case(inExp,inSubs) 
+      equation
+        false = RTOpts.debugFlag("checkASUB");
+        exp = DAE.ASUB(inExp,inSubs);
+      then 
+        exp;
+    
+    // check the DAE.ASUB so that the given expression is NOT a cref
+    case(inExp as DAE.CREF(componentRef = _), inSubs) 
+      equation
+        true = RTOpts.debugFlag("checkASUB");
+        Debug.traceln("Warning: makeASUB: given expression: " +& 
+                      ExpressionDump.printExpStr(inExp) +&
+                      " contains a component reference!\n" +&
+                      " Subscripts exps: [" +& Util.stringDelimitList(Util.listMap(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
+                      "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");  
+        exp = DAE.ASUB(inExp,inSubs);
+      then 
+        exp;
+    
+    // check the DAE.ASUB -> was not a cref
+    case(inExp, inSubs)
+      equation
+        true = RTOpts.debugFlag("checkASUB");
+        exp = DAE.ASUB(inExp,inSubs);
+      then
+        exp;
+  end matchcontinue;
+end makeASUB;
 
 public function generateCrefsExpFromExpVar "
 Author: Frenkel TUD 2010-05"
@@ -2666,20 +2747,24 @@ algorithm
   res := Util.listMap1(v,makeDiv,e1);
 end makeDivVector;
 
-public function makeAsub "creates an ASUB given an expression and an index"
+public function makeAsubAddIndex "creates an ASUB given an expression and an index"
   input DAE.Exp e;
   input Integer indx;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(e,indx)
-  local list<DAE.Exp> subs;
-    case(DAE.ASUB(e,subs),indx) equation
-    subs = listAppend(subs,{DAE.ICONST(indx)});
-    then DAE.ASUB(e,subs);
-
-    case(e,indx) then DAE.ASUB(e,{DAE.ICONST(indx)});
+    local list<DAE.Exp> subs;
+    
+    case(DAE.ASUB(e,subs),indx) 
+      equation
+        subs = listAppend(subs,{DAE.ICONST(indx)});
+      then 
+        makeASUB(e,subs);
+    
+    case(e,indx) then makeASUB(e,{DAE.ICONST(indx)});
+    
   end matchcontinue;
-end makeAsub;
+end makeAsubAddIndex;
 
 public function expLn
 "function expLn
@@ -3123,7 +3208,7 @@ algorithm
         cnt_1 = Util.listReduce(lstcnt, intAdd);
         c = c + cnt_1;
       then
-        (DAE.ASUB(e1_1,expl_1),c);
+        (makeASUB(e1_1,expl_1),c);
 
     case (DAE.SIZE(exp = e1,sz = NONE()),source,target)
       equation
@@ -3526,7 +3611,7 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((expl_1,ext_arg_2)) = traverseExpList(expl_1, rel, ext_arg_1);
-        ((e,ext_arg_2)) = rel((DAE.ASUB(e1_1,expl_1),ext_arg_1));
+        ((e,ext_arg_2)) = rel((makeASUB(e1_1,expl_1),ext_arg_1));
       then
         ((e,ext_arg_2));
     
@@ -3916,7 +4001,7 @@ algorithm
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((expl_1,ext_arg_2)) = traverseExpListTopDown(expl_1, rel, ext_arg_1);
       then
-        ((DAE.ASUB(e1_1,expl_1),ext_arg_1));
+        ((makeASUB(e1_1,expl_1),ext_arg_1));
     
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation

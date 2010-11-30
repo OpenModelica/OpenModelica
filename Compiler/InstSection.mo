@@ -1988,7 +1988,7 @@ algorithm
         cr_type = ComponentReference.crefLastType(cr);
         expCref = Expression.makeCrefExp(cr, cr_type);
       then
-        ((DAE.ASUB(expCref, exp_subs), fi));
+        ((Expression.makeASUB(expCref, exp_subs), fi));
     case itpl then itpl;
   end matchcontinue;
 end replaceLoopDependentCrefInExp;
@@ -4861,7 +4861,7 @@ protected function makeAsubIndex
   input DAE.Exp expr;
   output DAE.Exp asub;
 algorithm
-  asub := ExpressionSimplify.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
+  asub := ExpressionSimplify.simplify(Expression.makeASUB(expr, {DAE.ICONST(index)}));
   asub := Debug.bcallret1(Expression.isCrefScalar(asub), Expression.unliftExp, asub, asub);
 end makeAsubIndex;
 
@@ -4886,7 +4886,7 @@ algorithm
       equation
         enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
         e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
-        e = ExpressionSimplify.simplify(DAE.ASUB(expr, {e}));
+        e = ExpressionSimplify.simplify(Expression.makeASUB(expr, {e}));
         e = Debug.bcallret1(Expression.isCref(e), Expression.unliftExp, e, e);
         index = enumIndex + 1;
         expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);

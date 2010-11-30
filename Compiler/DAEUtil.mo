@@ -2049,7 +2049,7 @@ algorithm
       equation
         e_1 = toModelicaFormExp(e);
       then
-        DAE.ASUB(e_1,expl);
+        Expression.makeASUB(e_1,expl);
     case (DAE.SIZE(exp = e,sz = eopt))
       equation
         e_1 = toModelicaFormExp(e);

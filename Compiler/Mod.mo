@@ -937,7 +937,7 @@ algorithm
       equation
         e_2 = DAE.ICONST(n);
         //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");        
-        e_1 = ExpressionSimplify.simplify(DAE.ASUB(e,{e_2}));
+        e_1 = ExpressionSimplify.simplify(Expression.makeASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
                               SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE())));
@@ -1574,7 +1574,7 @@ algorithm
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
-        exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
+        exp = ExpressionSimplify.simplify(Expression.makeASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
         emod = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
       then
@@ -1585,7 +1585,7 @@ algorithm
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
-        exp = ExpressionSimplify.simplify(DAE.ASUB(e,{exp2}));
+        exp = ExpressionSimplify.simplify(Expression.makeASUB(e,{exp2}));
         emod = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
       then
         emod;

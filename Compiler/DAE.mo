@@ -1345,8 +1345,8 @@ end Operator;
 public
 uniontype ComponentRef "- Component references
     CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
-    CREF_IDENT(..) is used for non-qualifed component names, e.g. x
-"
+    CREF_IDENT(..) is used for non-qualifed component names, e.g. x"
+  
   record CREF_QUAL
     Ident ident;
     ExpType identType "type of the identifier, without considering the subscripts";

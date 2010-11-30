@@ -4295,7 +4295,7 @@ algorithm
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st,NONE(), msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,NONE(), msg);
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
@@ -4309,7 +4309,7 @@ algorithm
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st,NONE(), msg);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,NONE(), msg);
         
         false = intEq(matrixDimension, row);
         
@@ -4327,7 +4327,7 @@ algorithm
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st,NONE(), msg);
+        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,NONE(), msg);
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
@@ -4341,7 +4341,7 @@ algorithm
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
       equation
         s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st,NONE(), msg);
+        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,NONE(), msg);
         
         false = intEq(matrixDimension, row);
 

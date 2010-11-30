@@ -2261,8 +2261,8 @@ algorithm
     // subscript of an if-expression
     case(DAE.IFEXP(cond,e1,e2),sub) 
       equation
-        e1 = simplify1(DAE.ASUB(e1,{DAE.ICONST(sub)}));
-        e2 = simplify1(DAE.ASUB(e2,{DAE.ICONST(sub)}));
+        e1 = simplify1(Expression.makeASUB(e1,{DAE.ICONST(sub)}));
+        e2 = simplify1(Expression.makeASUB(e2,{DAE.ICONST(sub)}));
       then 
         DAE.IFEXP(cond,e1,e2);
     
@@ -2279,7 +2279,7 @@ algorithm
     //  qualified name subscript
     case(DAE.CREF(DAE.CREF_QUAL(idn,t2,s,c),t),sub) 
       equation
-        DAE.CREF(c_1,t) = simplify1(DAE.ASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
+        DAE.CREF(c_1,t) = simplify1(Expression.makeASUB(DAE.CREF(c,t),{DAE.ICONST(sub)}));
         c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
         exp = Expression.makeCrefExp(c_1, t);
       then 
@@ -2535,7 +2535,7 @@ algorithm
     
     case ((e as DAE.CREF(componentRef = cr,ty = t)),sub)
       equation
-        e_1 = simplify1(DAE.ASUB(e,{sub}));
+        e_1 = simplify1(Expression.makeASUB(e,{sub}));
       then
         e_1;
     
@@ -2550,7 +2550,7 @@ algorithm
       equation
         e1 = simplify1(e);
       then 
-        DAE.ASUB(e1, {sub});
+        Expression.makeASUB(e1, {sub});
   end matchcontinue;
 end simplifyAsub;
 

@@ -233,7 +233,7 @@ algorithm
       equation
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
       then
-        DAE.ASUB(e1_1,el);
+        Expression.makeASUB(e1_1,el);
     case (str,r,rarg,e) then e;
   end matchcontinue;
 end stringPrefixComponentRef;

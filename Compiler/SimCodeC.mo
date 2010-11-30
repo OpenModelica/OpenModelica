@@ -25626,6 +25626,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_integer)"));
+      then txt;
+
+    case ( txt,
            _ )
       then txt;
   end matchcontinue;

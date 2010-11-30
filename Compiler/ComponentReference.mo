@@ -58,18 +58,113 @@ protected import Util;
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.ET_OTHER(), {});
 
-public function makeDummyCref
+// global root index for cref memory 
+public 
+  constant Integer crefMemoryIndex = 2;
+
+public function createEmptyCrefMemory
 "@author: adrpo
-  This function creates a dummy component reference"
-  output DAE.ComponentRef outCrefIdent;
+  creates an array, with one element for each record in DAE.ComponentRef!"
+  output array<list<DAE.ComponentRef>> crefMemory;
 algorithm
-  outCrefIdent := dummyCref;
-end makeDummyCref;
+  crefMemory := arrayCreate(3, {});
+end createEmptyCrefMemory;
+
+protected function searchInMememoryLst
+"@author: adrpo
+  This function searches in memory for already existing DAE.ComponentRef"
+  input DAE.ComponentRef inCref;
+  input list<DAE.ComponentRef> inMem;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue (inCref, inMem)
+    local
+      list<DAE.ComponentRef> rest;
+      DAE.ComponentRef cref;
+    
+    // fail if we couldn't find it
+    case (inCref, {}) then fail();
+    
+    // see if we have it in memory, return the already existing!
+    case (inCref, cref::rest)
+      equation
+        equality(inCref = cref);
+      then
+        cref;
+    
+    // try the next    
+    case (inCref, cref::rest)
+      equation
+        failure(equality(inCref = cref));
+        cref = searchInMememoryLst(inCref, rest);
+      then
+        cref;
+  end matchcontinue;
+end searchInMememoryLst;
+
+protected function shareCref 
+"@author: adrpo
+  searches in the global cache for the given cref and if 
+  there is one, returns that pointer, otherwise adds it"
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue (inCref)
+    local
+      array<list<DAE.ComponentRef>> crefMem;
+      list<DAE.ComponentRef> crefLst;
+      DAE.ComponentRef cref;
+      Integer indexBasedOnValueConstructor;
+
+    // see if we have it in memory
+    case (inCref) then inCref;
+
+    // see if we have it in memory
+    case (inCref)
+      equation        
+        // oh the horror. if you don't understand this, contact adrpo
+        // get from global roots
+        crefMem = getGlobalRoot(crefMemoryIndex);
+        // select a list based on the constructor of DAE.ComponentRef value
+        indexBasedOnValueConstructor = valueConstructor(inCref); 
+        crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
+        // search in the list for already existing one
+        cref = searchInMememoryLst(inCref, crefLst);
+        
+        // print("Lst: " +& intString(listLength(crefLst)) +& 
+        //       " Shared: " +& printComponentRefStr(cref) +& "\n");
+      then
+        cref;
+    
+    // we didn't find it, add it
+    case (inCref)
+      equation
+        // oh the horror. if you don't understand this, contact adrpo
+        // get from global roots        
+        crefMem = getGlobalRoot(crefMemoryIndex);
+        // select a list based on the constructor of DAE.ComponentRef value
+        indexBasedOnValueConstructor = valueConstructor(inCref);        
+        crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
+        // add the translation to the list and set the array
+        crefMem = arrayUpdate(crefMem, indexBasedOnValueConstructor + 1, inCref::crefLst);
+        // set the global cache with the new value
+        setGlobalRoot(crefMemoryIndex, crefMem);
+      then 
+        inCref;
+  end matchcontinue;
+end shareCref;
 
 /***************************************************/
 /* generate a ComponentRef */
 /***************************************************/
 
+public function makeDummyCref
+"@author: adrpo
+  This function creates a dummy component reference"
+  output DAE.ComponentRef outCrefIdent;
+algorithm
+  outCrefIdent := dummyCref; // shareCref(dummyCref);
+end makeDummyCref;
 
 public function makeCrefIdent
 "@author: adrpo
@@ -79,7 +174,7 @@ public function makeCrefIdent
   input list<DAE.Subscript> subscriptLst;
   output DAE.ComponentRef outCrefIdent;
 algorithm
-  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst);
+  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst); // shareCref(DAE.CREF_IDENT(ident, identType, subscriptLst));
 end makeCrefIdent;
 
 public function makeCrefQual
@@ -90,7 +185,11 @@ public function makeCrefQual
   input list<DAE.Subscript> subscriptLst;
   input DAE.ComponentRef componentRef;
   output DAE.ComponentRef outCrefQual;
+protected
+  DAE.ComponentRef subCref;
 algorithm
+  // subCref := shareCref(componentRef);
+  // outCrefQual := shareCref(DAE.CREF_QUAL(ident, identType, subscriptLst, subCref));
   outCrefQual := DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef);
 end makeCrefQual;
 

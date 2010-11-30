@@ -2482,7 +2482,7 @@ algorithm
       
     case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars)
     equation
-      cref = DAE.CREF_IDENT(ident, DAE.ET_INT(), {});
+      cref = ComponentReference.makeCrefIdent(ident, DAE.ET_INT(), {});
       controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       controlVars = listAppend(controlVars, {controlVar});
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions, inputVars, paramVars, stateVars, controlVars);

@@ -4842,7 +4842,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFC*/)
-    let cast = match arg.ty case ET_INT(__) then "(modelica_integer)" //else ""
+    let cast = match arg.ty case ET_INT(__) then "(modelica_integer)" 
+                            case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
     let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
     '<%retVar%>'
   case CALL(tuple_=false, builtin=true,
