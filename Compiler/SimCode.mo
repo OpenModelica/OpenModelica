@@ -7514,16 +7514,28 @@ outExp := matchcontinue(inExp)
     String se;
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
     equation
+      true = Expression.isConst(e2);
+      false = Expression.isZero(e2);
+    then ((e, (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
+    equation
       (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
     then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+
 /*
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
     then ((e, dlowmode ));
 */    
+
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      true = Expression.isConst(e2);
+      false = Expression.isZero(e2);
+    then ((e, (vars,varlst,dzer,divLst) ));
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
@@ -7531,7 +7543,13 @@ outExp := matchcontinue(inExp)
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
+    equation
+      true = Expression.isConst(e2);
+      false = Expression.isZero(e2);
+    then ((e, (vars,varlst,dzer,divLst) ));
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
@@ -7539,7 +7557,7 @@ outExp := matchcontinue(inExp)
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
   case(inExp) then (inExp);
 end matchcontinue;
 end traversingDivExpFinder;
