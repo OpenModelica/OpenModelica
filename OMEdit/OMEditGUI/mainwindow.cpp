@@ -56,7 +56,8 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setObjectName("MainWindow");
     this->setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
     this->setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
-    this->setMinimumSize(950, 670);
+    this->setGeometry(0, 0, 950, 670);
+    this->setMinimumSize(400, 300);
     this->setContentsMargins(1, 1, 1, 1);
 
     //Create a centralwidget for the main window
