@@ -237,11 +237,13 @@ protected function solve2
 algorithm
   outExp := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
-      DAE.Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
+      DAE.Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp,e2_1,e2_2,e22_1,e22_2;
       DAE.ComponentRef cr;
       DAE.Exp invCr;
       list<DAE.Exp> factors;
       Boolean linExp;
+      DAE.ExpType tp,tp1;
+      list<DAE.ComponentRef> crefs;
     
      // e1 e2 e3 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
@@ -266,6 +268,18 @@ algorithm
         false = Expression.expContains(rhs_1, crexp);
       then
         rhs_1;
+
+    // 0 = a*(b-c)  solve for b        
+    case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = hasOnlyFactors(e1,e2);
+        true = Expression.isZero(e1);
+        DAE.BINARY(e2_1,DAE.MUL(tp),DAE.BINARY(e22_1,DAE.SUB(tp1),e22_2)) = e2;
+        crefs = Expression.extractCrefsFromExp(e2_1);
+        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
+        rhs_1 = solve(e22_1,e22_2,crexp);
+      then
+        rhs_1;      
 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation

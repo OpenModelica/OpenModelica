@@ -4165,26 +4165,28 @@ algorithm
   equations_ := matchcontinue(mixedEvent,genDiscrete,inBackendDAE,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,block_,helpVarInfo) 
     local
       Integer indx,cg_id_1,cg_id;
-      list<Integer> ds;
+      list<Integer> ds,comp;
       DAE.Exp e1,e2;
       list<DAE.Exp> ea1,ea2;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
       list<BackendDAE.Equation> re;
       DAE.ComponentRef cr,origname,cr_1;
       BackendDAE.Variables vars,knvars,exvars;
-      BackendDAE.EquationArray eqns,se,ie,eqns_1;
+      BackendDAE.EquationArray eqns,se,ie,eqns_1,se1;
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac,jac1;
       BackendDAE.JacobianType jac_tp;
-      array<list<Integer>> m,m_1,mt_1;
+      array<list<Integer>> m,m_1,mt_1,m_2,mt_2;
       DAE.ElementSource source "the origin of the element";
       BackendDAE.AliasVariables av;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAE subsystem_dae;
       SimEqSystem equation_;
       String cr_1_str;      
+      array<Integer> v1,v2;
+      list<list<Integer>> comps;
     
     case (mixedEvent,genDiscrete,
           BackendDAE.DAE(orderedVars = vars,
@@ -4229,13 +4231,16 @@ algorithm
         ealst = Util.listThreadTuple(ea1,ea2);
         re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re); 
-        subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+        se1 = BackendDAEUtil.listEquation({});
+        subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se1,ie,ae,al,ev,eoc);
         m = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
         mt_1 = BackendDAEUtil.transposeMatrix(m);
+        (v1,v2,subsystem_dae,m_2,mt_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED(), BackendDAE.KEEP_SIMPLE_EQN()),DAE.AVLTREENODE(NONE(),0,NONE(),NONE()));
+        (comps) = BackendDAETransform.strongComponents(m_2, mt_2, v1,v2);  
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac1 = BackendDAEUtil.calculateJacobian(vars, eqns, ae, m, mt_1,false);
+        jac1 = BackendDAEUtil.calculateJacobian(vars, eqns_1, ae, m_2, mt_2,false);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);
-        equations_ = createOdeSystem2(mixedEvent, genDiscrete, false, subsystem_dae, jac1, jac_tp, block_,helpVarInfo);             
+        equations_ = createEquations(false, true, genDiscrete, false, false, subsystem_dae, v1, v2, comps, helpVarInfo);
       then
         equations_;          
     
@@ -4390,9 +4395,13 @@ algorithm
         SES_ARRAY_CALL_ASSIGN(cr2, e2);
     
     // failure
-    case (_,_,_,_)
+    case (cr,_,e1,e2)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createSingleArrayEqnCode2 failed"});
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        s3 = ComponentReference.crefStr(cr);
+        s = stringAppendList({"SimCode.createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+        Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
   end matchcontinue;
@@ -6221,6 +6230,8 @@ algorithm
         (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),Expression.makeCrefExp(c,tp));
       then  
         (e12,e22);
+    
+    
     
     // Solve simple linear equations.
     case(v,e1,e2)
