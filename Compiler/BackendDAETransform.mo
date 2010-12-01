@@ -2251,7 +2251,6 @@ algorithm
       list<BackendDAE.Value> res2,vars2,res22,res2_1,rest;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Var> varlst;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       array<list<BackendDAE.Value>> m,mt;
@@ -2262,11 +2261,9 @@ algorithm
     case ((e :: rest),daelow as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),m,mt)
       equation
         (res1,res2) = statesInEqns(rest, daelow, m, mt);
-        e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        vars2 = statesInEqn(eqn, vars);
-        varlst = BackendDAEUtil.varList(vars);
-        (res11,res22) = statesInVars(varlst, vars2);
+        vars2 = Util.listSelect(m[e], Util.intNegative);  
+        vars2 = Util.listMap(vars2,intAbs);
+        (res11,res22) = statesInVars(vars, vars2);
         res1_1 = listAppend(res11, res1);
         res2_1 = listAppend(res22, res2);
       then
@@ -2282,106 +2279,6 @@ algorithm
   end matchcontinue;
 end statesInEqns;
 
-protected function statesInEqn "function: statesInEqn
-  author: PA
-  Helper function to states_in_eqns"
-  input BackendDAE.Equation eqn;
-  input BackendDAE.Variables vars;
-  output list<Integer> res;
-  BackendDAE.Variables vars_1;
-algorithm
-  vars_1 := statesAsAlgebraicVars(vars);
-  res := BackendDAEUtil.incidenceRow(vars_1, eqn,{});
-end statesInEqn;
-
-protected function statesAsAlgebraicVars "function: statesAsAlgebraicVars
-  author: PA
-
-  Return the subset of variables consisting of all states, but changed
-  varkind to variable."
-  input BackendDAE.Variables vars;
-  output BackendDAE.Variables v1_1;
-  list<BackendDAE.Var> varlst,varlst_1;
-  BackendDAE.Variables v1;
-algorithm
-  varlst := BackendDAEUtil.varList(vars) "Creates a new set of BackendDAE.Variables from a BackendDAE.Var list" ;
-  varlst_1 := statesAsAlgebraicVars2(varlst);
-  v1 := BackendDAEUtil.emptyVars();
-  v1_1 := BackendVariable.addVars(varlst_1, v1);
-end statesAsAlgebraicVars;
-
-protected function statesAsAlgebraicVars2 "function: statesAsAlgebraicVars2
-  author: PA
-
-  helper function to states_as_algebraic_vars
-"
-  input list<BackendDAE.Var> inVarLst;
-  output list<BackendDAE.Var> outVarLst;
-algorithm
-  outVarLst:=
-  matchcontinue (inVarLst)
-    local
-      list<BackendDAE.Var> res,vs;
-      DAE.ComponentRef cr;
-      DAE.VarDirection a;
-      BackendDAE.Type b;
-      Option<DAE.Exp> c,f;
-      Option<Values.Value> d;
-      list<DAE.Subscript> e;
-      BackendDAE.Value g;
-      list<Absyn.Path> i;
-      DAE.ElementSource source "the element source";
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-
-    case {} then {};
-    case ((BackendDAE.VAR(varName = cr,
-               varKind = BackendDAE.STATE(),
-               varDirection = a,
-               varType = b,
-               bindExp = c,
-               bindValue = d,
-               arryDim = e,
-               index = g,
-               source = source,
-               values = dae_var_attr,
-               comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs))
-      equation
-        res = statesAsAlgebraicVars2(vs) "states treated as algebraic variables" ;
-      then
-        (BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: res);
-
-    case ((BackendDAE.VAR(varName = cr,
-               varDirection = a,
-               varType = b,
-               bindExp = c,
-               bindValue = d,
-               arryDim = e,
-               index = g,
-               source = source,
-               values = dae_var_attr,
-               comment = comment,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs))
-      equation
-        res = statesAsAlgebraicVars2(vs) "other variables treated as known" ;
-      then
-        (BackendDAE.VAR(cr,BackendDAE.CONST(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: res);
-
-    case ((_ :: vs))
-      equation
-        res = statesAsAlgebraicVars2(vs);
-      then
-        res;
-  end matchcontinue;
-end statesAsAlgebraicVars2;
-
-
-
 protected function statesInVars "function: statesInVars
   author: PA
 
@@ -2391,16 +2288,15 @@ protected function statesInVars "function: statesInVars
   outputs: (DAE.ComponentRef list, /* names of the states */
               int list /* number for each state */)
 "
-  input list<BackendDAE.Var> inVarLst;
+  input BackendDAE.Variables vars;
   input list<Integer> inIntegerLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
   output list<Integer> outIntegerLst;
 algorithm
   (outExpComponentRefLst,outIntegerLst):=
-  matchcontinue (inVarLst,inIntegerLst)
+  matchcontinue (vars,inIntegerLst)
     local
-      list<BackendDAE.Var> vars;
-      BackendDAE.Value v_1,v;
+      BackendDAE.Value v;
       DAE.ComponentRef cr;
       DAE.Flow flowPrefix;
       list<BackendDAE.Key> res1;
@@ -2408,8 +2304,7 @@ algorithm
     case (vars,{}) then ({},{});
     case (vars,(v :: rest))
       equation
-        v_1 = v - 1;
-        BackendDAE.VAR(varName = cr, flowPrefix = flowPrefix) = listNth(vars, v_1);
+        BackendDAE.VAR(varName = cr, flowPrefix = flowPrefix) = BackendVariable.getVarAt(vars,v);
         (res1,res2) = statesInVars(vars, rest);
       then
         ((cr :: res1),(v :: res2));

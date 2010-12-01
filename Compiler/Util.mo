@@ -6155,6 +6155,14 @@ algorithm
   res := (v >= 0);
 end intPositive;
 
+public function intNegative "function: intNegative
+  Returns true if integer value is negative (< 0)"
+  input Integer v;
+  output Boolean res;
+algorithm
+  res := (v < 0);
+end intNegative;
+
 public function optionToList "function: optionToList
   Returns an empty list for NONE() and a list containing
   the element for SOME(element). To use with listAppend"
