@@ -1036,6 +1036,27 @@ algorithm
       equation
        b = Util.getOptionOrDefault(blst,true);
       then ((e,false,(vars,knvars,SOME(b))));       
+/*
+    This cases are wrong because of Modelica Specification:
+    
+    3.8.3 
+    
+    Unless inside noEvent: Ordered relations (>,<,>=,<=) and the functions ceil, floor, div, mod,
+    rem, abs, sign. These will generate events if at least one subexpression is not a
+    discrete-time expression. [In other words, relations inside noEvent(), such as noEvent(x>1),
+    are not discrete-time expressions].
+    
+    and 
+    
+    3.7.1
+    
+    abs(v): Is expanded into 
+      noEvent(if v >= 0 then v else -v)
+    Argument v needs to be an Integer or Real expression.
+    sign(v): Is expanded into 
+      noEvent(if v>0 then 1 else if v<0 then -1 else 0)
+     Argument v needs to be an Integer or Real expression.
+
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "abs")),(vars,knvars,blst)))) 
       equation
        b = Util.getOptionOrDefault(blst,true);
@@ -1044,6 +1065,7 @@ algorithm
       equation
        b = Util.getOptionOrDefault(blst,true);
       then ((e,false,(vars,knvars,SOME(b))));       
+*/
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent")),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
 
     case((e,(vars,knvars,NONE()))) then ((e,true,(vars,knvars,NONE())));
@@ -2023,23 +2045,25 @@ public function varsInEqn
 algorithm
   outIntegerLst := matchcontinue (inIncidenceMatrix,inInteger)
     local
-      BackendDAE.Value n_1,n,indx;
+      BackendDAE.Value n,indx;
       list<BackendDAE.Value> res,res_1;
       array<list<BackendDAE.Value>> m;
       String s;
     
     case (m,n)
       equation
-        n_1 = n - 1;
-        res = m[n_1 + 1];
+        res = m[n];
         res_1 = removeNegative(res);
       then
         res_1;
     
-    case (_,indx)
+    case (m,indx)
       equation
         print("- BackendDAEUtil.varsInEqn failed, indx= ");
         s = intString(indx);
+        print(s);
+        print(" array length: ");
+        s = intString(arrayLength(m));
         print(s);
         print("\n");
       then
@@ -3681,12 +3705,17 @@ algorithm
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
-        new_exp = Expression.applyExpSubscripts(new_exp,subs); 
+        new_exp = Expression.applyExpSubscripts(new_exp,subs);
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),entrylst1);
+    case (_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAE.calculateJacobianRow failed");
+      then
+        fail();         
   end matchcontinue;
 end calculateJacobianRow;
 

@@ -2637,7 +2637,8 @@ algorithm
     /* All other functions generate zerocrossing. */        
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars))))
       then ((e,true,((e :: zeroCrossings),(vars,knvars))));      
-    case ((e,(zeroCrossings,(vars,knvars)))) then ((e,true,(zeroCrossings,(vars,knvars))));
+    case ((e,(zeroCrossings,(vars,knvars))))
+      then ((e,true,(zeroCrossings,(vars,knvars))));
   end matchcontinue;
 end collectZeroCrossings;
 

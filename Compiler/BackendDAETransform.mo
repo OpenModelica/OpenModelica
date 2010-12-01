@@ -170,11 +170,12 @@ algorithm
         ae = listArray(ae_lst);    
         einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
         dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc);   
-        m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL()) 
+        m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL())
         "Rerun matching to get updated assignments and incidence matrices
          TODO: instead of rerunning: find out which equations are removed
                and remove those from assignments and incidence matrix.";
         mt_1 = BackendDAEUtil.transposeMatrix(m_1);
+        BackendDAEEXT.clearDifferentiated();
         nvars = arrayLength(m_1);
         neqns = arrayLength(mt_1);
         memsize = nvars + nvars;
@@ -1205,6 +1206,7 @@ algorithm
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         // print("\n");
+        // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
@@ -2272,7 +2274,7 @@ algorithm
     case ((e :: rest),_,_,_)
       equation
         se = intString(e);
-        print("-BackendDAE.statesInEqns failed for eqn: ");
+        print("-BackendDAETransform.statesInEqns failed for eqn: ");
         print(se);
         print("\n");
       then
