@@ -407,10 +407,11 @@ template globalDataAttrInt(DAE.ExpType type)
  "Generates integer for use in arrays in global data section."
 ::=
   match type
-  case ET_REAL(__)   then "1"
-  case ET_STRING(__) then "2"
-  case ET_INT(__)    then "4"
-  case ET_BOOL(__)   then "8"
+  case ET_REAL(__)        then "1"
+  case ET_STRING(__)      then "2"
+  case ET_INT(__)         then "4"
+  case ET_ENUMERATION(__) then "4"
+  case ET_BOOL(__)        then "8"
 end globalDataAttrInt;
 
 
@@ -2994,13 +2995,13 @@ template extType(ExpType type)
   case ET_REAL(__)        then "double"
   case ET_STRING(__)      then "const char*"
   case ET_BOOL(__)        then "int"
+  case ET_ENUMERATION(__) then "int"  
   case ET_ARRAY(__)       then extType(ty)
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case ET_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
-  case ET_ENUMERATION(__) then "int"
   else "OTHER_EXT_TYPE"
 end extType;
 
@@ -3374,6 +3375,7 @@ template mmcConstructorType(ExpType type)
   case ET_BOOL(__) then 'mmc_mk_icon_rettype'
   case ET_REAL(__) then 'mmc_mk_rcon_rettype'
   case ET_STRING(__) then 'mmc_mk_scon_rettype'
+  case ET_ENUMERATION(__) then 'mmc_mk_icon_rettype'
   case ET_ARRAY(__) then 'mmc_mk_acon_rettype'
   case ET_COMPLEX(__) then 'modelica_metatype'
 end mmcConstructorType;
@@ -3385,6 +3387,7 @@ template mmcConstructor(ExpType type, String varName, Text &preExp, Text &varDec
   case ET_BOOL(__) then 'mmc_mk_icon(<%varName%>)'
   case ET_REAL(__) then 'mmc_mk_rcon(<%varName%>)'
   case ET_STRING(__) then 'mmc_mk_scon(<%varName%>)'
+  case ET_ENUMERATION(__) then 'mmc_mk_icon(<%varName%>)'
   case ET_ARRAY(__) then 'mmc_mk_acon(<%varName%>)'
   case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     let varCount = incrementInt(listLength(vars), 1)
@@ -4426,6 +4429,7 @@ template rhsCrefType(ExpType type)
 ::=
   match type
   case ET_INT(__) then "(modelica_integer)"
+  case ET_ENUMERATION(__) then "(modelica_integer)"
   //else ""
 end rhsCrefType;
   
@@ -4499,7 +4503,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
     if box then
       box
     else if crefIsScalar(cr, context) then
-      let cast = match ty case ET_INT(__) then "(modelica_integer)" //else ""
+      let cast = match ty case ET_INT(__) then "(modelica_integer)"
+                          case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
       '<%cast%><%contextCref(cr,context)%>'
     else 
      if crefSubIsScalar(cr) then
@@ -4571,7 +4576,8 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)
     let dimsLenStr = listLength(dims)
     let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
-    let &preExp += '<%expTypeShort(aty)%>_array_create(&<%tmpArr%>, &<%arrayCrefCStr(ecr.componentRef)%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    let type = expTypeShort(aty)
+    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
 end daeExpCrefRhsArrayBox;
 
@@ -4614,24 +4620,32 @@ case BINARY(__) then
   case POW(__) then 'pow((modelica_real)<%e1%>, (modelica_real)<%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case ADD_ARR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'add_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case SUB_ARR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'sub_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'  
   case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'  
   case MUL_SCALAR_ARRAY(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_scalar_<%type%>(<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'    
   case MUL_ARRAY_SCALAR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
     '<%var%>'  
@@ -4640,16 +4654,22 @@ case BINARY(__) then
   case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
   case SUB_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for SUB_ARRAY_SCALAR'
   case MUL_SCALAR_PRODUCT(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_scalar" else "real_scalar"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_scalar" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_scalar"
+                        else "real_scalar"
     'mul_<%type%>_product(&<%e1%>, &<%e2%>)'
   case MUL_MATRIX_PRODUCT(__) then
-    let typeShort = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer" else "real"
+    let typeShort = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer" 
+                             case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer"
+                             else "real"
     let type = '<%typeShort%>_array'
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%typeShort%>_matrix_product_smart(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case DIV_ARRAY_SCALAR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
@@ -4721,32 +4741,43 @@ case rel as RELATION(__) then
     let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     match rel.operator
-    case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
-    case LESS(ty = ET_INT(__))         then '(<%e1%> < <%e2%>)'
-    case LESS(ty = ET_REAL(__))        then '(<%e1%> < <%e2%>)'
-    case GREATER(ty = ET_BOOL(__))     then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
-    case GREATER(ty = ET_INT(__))      then '(<%e1%> > <%e2%>)'
-    case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
-    case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
-
-    case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
-    case LESSEQ(ty = ET_INT(__))       then '(<%e1%> <= <%e2%>)'
-    case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
-    case GREATEREQ(ty = ET_BOOL(__))   then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
-    case GREATEREQ(ty = ET_INT(__))    then '(<%e1%> >= <%e2%>)'
-    case GREATEREQ(ty = ET_REAL(__))   then '(<%e1%> >= <%e2%>)'
-    case EQUAL(ty = ET_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-    case EQUAL(ty = ET_STRING(__))     then '(!strcmp(<%e1%>, <%e2%>))'
-    case EQUAL(ty = ET_INT(__))        then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = ET_ENUMERATION(__))then '(<%e1%> == <%e2%>)'    
-    case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-    case NEQUAL(ty = ET_STRING(__))    then '(strcmp(<%e1%>, <%e2%>))'
-    case NEQUAL(ty = ET_INT(__))       then '(<%e1%> != <%e2%>)'
-    case NEQUAL(ty = ET_REAL(__))      then '(<%e1%> != <%e2%>)'
+    
+    case LESS(ty = ET_BOOL(__))             then '(!<%e1%> && <%e2%>)'
+    case LESS(ty = ET_STRING(__))           then '(strcmp(<%e1%>, <%e2%>) < 0)'
+    case LESS(ty = ET_INT(__))              then '(<%e1%> < <%e2%>)'
+    case LESS(ty = ET_REAL(__))             then '(<%e1%> < <%e2%>)'
+    case LESS(ty = ET_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
+    
+    case GREATER(ty = ET_BOOL(__))          then '(<%e1%> && !<%e2%>)'
+    case GREATER(ty = ET_STRING(__))        then '(strcmp(<%e1%>, <%e2%>) > 0)'
+    case GREATER(ty = ET_INT(__))           then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = ET_REAL(__))          then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = ET_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
+    
+    case LESSEQ(ty = ET_BOOL(__))           then '(!<%e1%> || <%e2%>)'
+    case LESSEQ(ty = ET_STRING(__))         then '(strcmp(<%e1%>, <%e2%>) <= 0)'
+    case LESSEQ(ty = ET_INT(__))            then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = ET_REAL(__))           then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = ET_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
+    
+    case GREATEREQ(ty = ET_BOOL(__))        then '(<%e1%> || !<%e2%>)'
+    case GREATEREQ(ty = ET_STRING(__))      then '(strcmp(<%e1%>, <%e2%>) >= 0)'
+    case GREATEREQ(ty = ET_INT(__))         then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = ET_REAL(__))        then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = ET_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
+    
+    case EQUAL(ty = ET_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+    case EQUAL(ty = ET_STRING(__))          then '(!strcmp(<%e1%>, <%e2%>))'
+    case EQUAL(ty = ET_INT(__))             then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = ET_REAL(__))            then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = ET_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'    
+    
+    case NEQUAL(ty = ET_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+    case NEQUAL(ty = ET_STRING(__))         then '(strcmp(<%e1%>, <%e2%>))'
+    case NEQUAL(ty = ET_INT(__))            then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = ET_REAL(__))           then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = ET_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
+    
     else "daeExpRelation:ERR"
 end daeExpRelation;
 
@@ -4828,7 +4859,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(tuple_=false, builtin=true, ty=ty, 
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),
             expLst={e1, e2, DAE.SCONST(string=string)}) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
     let var = tempDecl(type, &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
@@ -4853,11 +4886,18 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'std::max(<%var1%>,<%var2%>)'
+  
   case CALL(tuple_=false, builtin=true, ty = ET_INT(),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+  
+  case CALL(tuple_=false, builtin=true, ty = ET_ENUMERATION(__),
+            path=IDENT(name="min"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'  
   
   case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
             path=IDENT(name="min"), expLst={e1,e2}) then
@@ -5202,17 +5242,23 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
             sub={ENUM_LITERAL(index=j)}) then
     let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_2D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>)'            
+    '<%typeShort%>_get_2D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>)'
   
   case ASUB(exp=e, sub={ENUM_LITERAL(index=i)}) then
     let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let typeShort = expTypeFromExpShort(e)
     '<%typeShort%>_get(&<%e1%>, <%incrementInt(i,-1)%>)'
   
+  case ASUB(exp=e, sub={index}) then
+    let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let expIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let typeShort = expTypeFromExpShort(e)
+    '<%typeShort%>_get(&<%exp%>, ((<%expIndex%>) - 1))'
+  
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expIndexes = (indexes |> index => '<%daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-    'CODEGEN_COULD_NOT_HANDLE_ASUB(<%exp%>[<%expIndexes%>])'    
+    'CODEGEN_COULD_NOT_HANDLE_ASUB(<%exp%>[<%expIndexes%>])'
   
   else
     'OTHER_ASUB'
@@ -5533,10 +5579,11 @@ template daeExpMetaHelperConstantNameType(Text varname, ExpType type,
  "Helper to daeExpMetaHelperConstant."
 ::=
   match type
-  case ET_INT(__)     then 'mmc_mk_icon(<%varname%>)'
-  case ET_BOOL(__)    then 'mmc_mk_icon(<%varname%>)'
-  case ET_REAL(__)    then 'mmc_mk_rcon(<%varname%>)'
-  case ET_STRING(__)  then 'mmc_mk_scon(<%varname%>)'
+  case ET_INT(__)         then 'mmc_mk_icon(<%varname%>)'
+  case ET_BOOL(__)        then 'mmc_mk_icon(<%varname%>)'
+  case ET_REAL(__)        then 'mmc_mk_rcon(<%varname%>)'
+  case ET_STRING(__)      then 'mmc_mk_scon(<%varname%>)'
+  case ET_ENUMERATION(__) then 'mmc_mk_icon(<%varname%>)'
   case ET_COMPLEX(name=cname) then
     let start = daeExpMetaHelperBoxStart(incrementInt(listLength(varLst), 1))
     let args = if varLst then
@@ -5619,6 +5666,7 @@ template expTypeRW(DAE.ExpType type)
   case ET_REAL(__)        then "TYPE_DESC_REAL"
   case ET_STRING(__)      then "TYPE_DESC_STRING"
   case ET_BOOL(__)        then "TYPE_DESC_BOOL"
+  case ET_ENUMERATION(__) then "TYPE_DESC_INT"  
   case ET_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
   case ET_COMPLEX(complexClassType=RECORD(__))
                       then "TYPE_DESC_RECORD"
@@ -5658,6 +5706,7 @@ template mmcExpTypeShort(DAE.ExpType type)
   case ET_REAL(__)                    then "real"
   case ET_STRING(__)                  then "string"
   case ET_BOOL(__)                    then "integer"
+  case ET_ENUMERATION(__)             then "integer"
   case ET_ARRAY(__)                   then "array"
   case ET_METATYPE(__) case ET_BOXED(__)                then "metatype"
   case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"

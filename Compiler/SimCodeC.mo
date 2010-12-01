@@ -2417,6 +2417,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("4"));
+      then txt;
+
+    case ( txt,
            DAE.ET_BOOL() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("8"));
@@ -12679,6 +12685,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
+      then txt;
+
+    case ( txt,
            DAE.ET_ARRAY(ty = i_ty) )
       equation
         txt = extType(txt, i_ty);
@@ -12707,12 +12719,6 @@ algorithm
            DAE.ET_BOXED(ty = _) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("void*"));
-      then txt;
-
-    case ( txt,
-           DAE.ET_ENUMERATION(path = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
       then txt;
 
     case ( txt,
@@ -15780,6 +15786,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_mk_icon_rettype"));
+      then txt;
+
+    case ( txt,
            DAE.ET_ARRAY(ty = _) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_mk_acon_rettype"));
@@ -15917,6 +15929,17 @@ algorithm
            a_varDecls )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_mk_scon("));
+        txt = Tpl.writeStr(txt, a_varName);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
+           DAE.ET_ENUMERATION(path = _),
+           a_varName,
+           a_preExp,
+           a_varDecls )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_mk_icon("));
         txt = Tpl.writeStr(txt, a_varName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then (txt, a_preExp, a_varDecls);
@@ -22698,6 +22721,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_integer)"));
+      then txt;
+
+    case ( txt,
            _ )
       then txt;
   end matchcontinue;
@@ -23328,6 +23357,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(modelica_integer)"));
+      then txt;
+
+    case ( txt,
            _ )
       then txt;
   end matchcontinue;
@@ -23686,6 +23721,7 @@ algorithm
       list<DAE.Dimension> a_dims;
       Tpl.Text a_varDecls;
       DAE.ExpType a_aty;
+      Tpl.Text l_type;
       Tpl.Text l_dimsValuesStr;
       Integer ret_3;
       Tpl.Text l_dimsLenStr;
@@ -23716,12 +23752,15 @@ algorithm
         l_dimsValuesStr = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         l_dimsValuesStr = lm_568(l_dimsValuesStr, a_dims);
         l_dimsValuesStr = Tpl.popIter(l_dimsValuesStr);
-        a_preExp = expTypeShort(a_preExp, a_aty);
+        l_type = expTypeShort(Tpl.emptyTxt, a_aty);
+        a_preExp = Tpl.writeText(a_preExp, l_type);
         a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING("_array_create(&"));
         a_preExp = Tpl.writeText(a_preExp, l_tmpArr);
-        a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING(", &"));
+        a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING(", ((modelica_"));
+        a_preExp = Tpl.writeText(a_preExp, l_type);
+        a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING("*)&("));
         a_preExp = arrayCrefCStr(a_preExp, a_ecr_componentRef);
-        a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING(", "));
+        a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING(")), "));
         a_preExp = Tpl.writeText(a_preExp, l_dimsLenStr);
         a_preExp = Tpl.writeTok(a_preExp, Tpl.ST_STRING(", "));
         a_preExp = Tpl.writeText(a_preExp, l_dimsValuesStr);
@@ -23960,6 +23999,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_array"));
@@ -23980,6 +24025,12 @@ algorithm
 
     case ( txt,
            DAE.ET_ARRAY(ty = DAE.ET_INT()) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
       then txt;
@@ -24010,6 +24061,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_array"));
@@ -24030,6 +24087,12 @@ algorithm
 
     case ( txt,
            DAE.ET_ARRAY(ty = DAE.ET_INT()) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
       then txt;
@@ -24060,6 +24123,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_scalar"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_scalar"));
@@ -24085,6 +24154,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("real"));
@@ -24105,6 +24180,12 @@ algorithm
 
     case ( txt,
            DAE.ET_ARRAY(ty = DAE.ET_INT()) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
       then txt;
@@ -24918,10 +24999,14 @@ algorithm
 
     case ( txt,
            DAE.LESS(ty = DAE.ET_STRING()),
-           _,
-           _ )
+           a_e2,
+           a_e1 )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("# string comparison not supported\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(strcmp("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") < 0)"));
       then txt;
 
     case ( txt,
@@ -24949,6 +25034,18 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.LESS(ty = DAE.ET_ENUMERATION(path = _)),
+           a_e2,
+           a_e1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" < "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
            DAE.GREATER(ty = DAE.ET_BOOL()),
            a_e2,
            a_e1 )
@@ -24962,10 +25059,14 @@ algorithm
 
     case ( txt,
            DAE.GREATER(ty = DAE.ET_STRING()),
-           _,
-           _ )
+           a_e2,
+           a_e1 )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("# string comparison not supported\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(strcmp("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") > 0)"));
       then txt;
 
     case ( txt,
@@ -24993,6 +25094,18 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.GREATER(ty = DAE.ET_ENUMERATION(path = _)),
+           a_e2,
+           a_e1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" > "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
            DAE.LESSEQ(ty = DAE.ET_BOOL()),
            a_e2,
            a_e1 )
@@ -25006,10 +25119,14 @@ algorithm
 
     case ( txt,
            DAE.LESSEQ(ty = DAE.ET_STRING()),
-           _,
-           _ )
+           a_e2,
+           a_e1 )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("# string comparison not supported\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(strcmp("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") <= 0)"));
       then txt;
 
     case ( txt,
@@ -25037,6 +25154,18 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.LESSEQ(ty = DAE.ET_ENUMERATION(path = _)),
+           a_e2,
+           a_e1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" <= "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
            DAE.GREATEREQ(ty = DAE.ET_BOOL()),
            a_e2,
            a_e1 )
@@ -25050,10 +25179,14 @@ algorithm
 
     case ( txt,
            DAE.GREATEREQ(ty = DAE.ET_STRING()),
-           _,
-           _ )
+           a_e2,
+           a_e1 )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("# string comparison not supported\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("(strcmp("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") >= 0)"));
       then txt;
 
     case ( txt,
@@ -25070,6 +25203,18 @@ algorithm
 
     case ( txt,
            DAE.GREATEREQ(ty = DAE.ET_REAL()),
+           a_e2,
+           a_e1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" >= "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
+           DAE.GREATEREQ(ty = DAE.ET_ENUMERATION(path = _)),
            a_e2,
            a_e1 )
       equation
@@ -25186,6 +25331,18 @@ algorithm
 
     case ( txt,
            DAE.NEQUAL(ty = DAE.ET_REAL()),
+           a_e2,
+           a_e1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, a_e1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" != "));
+        txt = Tpl.writeText(txt, a_e2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
+           DAE.NEQUAL(ty = DAE.ET_ENUMERATION(path = _)),
            a_e2,
            a_e1 )
       equation
@@ -25605,6 +25762,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_ENUMERATION(path = _)) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_array"));
@@ -25989,6 +26152,21 @@ algorithm
 
     case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, ty = DAE.ET_INT(), path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
+           a_context,
+           a_preExp,
+           a_varDecls )
+      equation
+        (l_var1, a_preExp, a_varDecls) = daeExp(Tpl.emptyTxt, i_e1, a_context, a_preExp, a_varDecls);
+        (l_var2, a_preExp, a_varDecls) = daeExp(Tpl.emptyTxt, i_e2, a_context, a_preExp, a_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("std::min((modelica_integer)"));
+        txt = Tpl.writeText(txt, l_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(",(modelica_integer)"));
+        txt = Tpl.writeText(txt, l_var2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, ty = DAE.ET_ENUMERATION(path = _), path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
            a_context,
            a_preExp,
            a_varDecls )
@@ -27267,6 +27445,7 @@ algorithm
       Tpl.Text a_preExp;
       SimCode.Context a_context;
       list<DAE.Exp> i_indexes;
+      DAE.Exp i_index;
       DAE.ExpType i_ecr_ty;
       list<DAE.Exp> i_subs;
       DAE.Exp i_ecr;
@@ -27276,6 +27455,7 @@ algorithm
       Integer i_i;
       DAE.Exp i_e;
       Tpl.Text l_expIndexes;
+      Tpl.Text l_expIndex;
       Tpl.Text l_exp;
       Integer ret_23;
       Integer ret_22;
@@ -27492,6 +27672,23 @@ algorithm
         ret_23 = SimCode.incrementInt(i_i, -1);
         txt = Tpl.writeStr(txt, intString(ret_23));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, a_varDecls, a_preExp);
+
+    case ( txt,
+           DAE.ASUB(exp = i_e, sub = {i_index}),
+           a_varDecls,
+           a_preExp,
+           a_context )
+      equation
+        (l_exp, a_preExp, a_varDecls) = daeExp(Tpl.emptyTxt, i_e, a_context, a_preExp, a_varDecls);
+        (l_expIndex, a_preExp, a_varDecls) = daeExp(Tpl.emptyTxt, i_index, a_context, a_preExp, a_varDecls);
+        l_typeShort = expTypeFromExpShort(Tpl.emptyTxt, i_e);
+        txt = Tpl.writeText(txt, l_typeShort);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_get(&"));
+        txt = Tpl.writeText(txt, l_exp);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", (("));
+        txt = Tpl.writeText(txt, l_expIndex);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(") - 1))"));
       then (txt, a_varDecls, a_preExp);
 
     case ( txt,
@@ -29698,6 +29895,17 @@ algorithm
       then (txt, a_preExp, a_varDecls);
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _),
+           a_varname,
+           a_preExp,
+           a_varDecls )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_mk_icon("));
+        txt = Tpl.writeText(txt, a_varname);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
            DAE.ET_COMPLEX(name = i_cname, varLst = i_varLst),
            a_varname,
            a_preExp,
@@ -30021,6 +30229,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("TYPE_DESC_INT"));
+      then txt;
+
+    case ( txt,
            DAE.ET_ARRAY(ty = i_ty) )
       equation
         txt = expTypeRW(txt, i_ty);
@@ -30207,6 +30421,12 @@ algorithm
 
     case ( txt,
            DAE.ET_BOOL() )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
+      then txt;
+
+    case ( txt,
+           DAE.ET_ENUMERATION(path = _) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
       then txt;
