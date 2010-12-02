@@ -1500,8 +1500,9 @@ algorithm
       equation
         bLst = Util.listMap1(expl,Expression.expContains, Expression.crefExp(tv));
         false = Util.listReduce(bLst,boolOr);
+        (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
-        DAE.RCONST(0.0);
+        e1;
     
     case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv,differentiateIfExp)
       equation
@@ -1561,7 +1562,7 @@ algorithm
       equation
         e_1 = differentiateExp(e, tv, differentiateIfExp);
       then
-        Expression.makeASUB(e,sub);
+        Expression.makeASUB(e_1,sub);
     
     case (DAE.REDUCTION(path = a,expr = e1,ident = str,range = e2),tv,differentiateIfExp)
       equation

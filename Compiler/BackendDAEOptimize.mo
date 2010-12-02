@@ -1322,7 +1322,7 @@ algorithm
         BackendDAE.VAR(varName=cr) = BackendVariable.vararrayNth(varr, v_1);
         varexp = Expression.crefExp(cr);
 
-        expr = ExpressionSolve.solve(e1, e2, varexp);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         divexplst = Expression.extractDivExpFromExp(expr);
         (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
         // check constexplst if equal 0

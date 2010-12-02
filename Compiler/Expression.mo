@@ -2796,6 +2796,7 @@ algorithm
   outExp := matchcontinue (inType)
     case (DAE.ET_INT()) then DAE.ICONST(1);
     case (DAE.ET_REAL()) then DAE.RCONST(1.0);
+    case(_) then DAE.RCONST(1.0);
   end matchcontinue;
 end makeConstOne;
 

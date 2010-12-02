@@ -331,7 +331,7 @@ algorithm
         origname_str = ComponentReference.printComponentRefStr(cr);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
-        expr = ExpressionSolve.solve(e1, e2, varexp);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
 	Expression.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
@@ -357,7 +357,7 @@ algorithm
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = Expression.crefExp(cr_1);
-        expr = ExpressionSolve.solve(e1, e2, varexp);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Expression.print_exp_str e1 => e1s &
 	Expression.print_exp_str e2 => e2s &
 	print \"Equation \" & print e1s & print \" = \" & print e2s &
@@ -392,7 +392,7 @@ algorithm
         id = c_name;
         cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
         varexp = Expression.crefExp(cr_1);
-        failure(_ = ExpressionSolve.solve(e1, e2, varexp));
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
@@ -406,7 +406,7 @@ algorithm
         ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
-        failure(expr = ExpressionSolve.solve(e1, e2, varexp));
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
