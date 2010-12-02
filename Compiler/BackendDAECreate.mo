@@ -131,7 +131,7 @@ algorithm
         reqns = listAppend(algeqns1, reqns);
         (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
-        vars_1 = detectImplicitDiscreteAlgs(vars_1, algs_1);
+        vars_1 = detectImplicitDiscreteAlgs(vars_1,knvars, algs_1);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
         (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
@@ -172,7 +172,7 @@ algorithm
         // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = BackendDAEOptimize.removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
         aliasVars = BackendDAEUtil.emptyAliasVariables();
         vars_1 = detectImplicitDiscrete(vars, eqns);
-        vars_1 = detectImplicitDiscreteAlgs(vars_1, algs);
+        vars_1 = detectImplicitDiscreteAlgs(vars_1,knvars, algs);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,functionTree);
         (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
@@ -2004,24 +2004,25 @@ protected function detectImplicitDiscreteAlgs
   This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inKnVariables;
   input list<DAE.Algorithm> inAlgsLst;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVariables,inAlgsLst)
+  outVariables := matchcontinue (inVariables,inKnVariables,inAlgsLst)
     local
-      BackendDAE.Variables v,v_1,v_2;
+      BackendDAE.Variables v,v_1,v_2,knv;
       list<DAE.Statement> statementLst;
       list<DAE.Algorithm> xs;
-    case (v,{}) then v;   
-    case (v,(DAE.ALGORITHM_STMTS(statementLst = statementLst) :: xs))
+    case (v,_,{}) then v;   
+    case (v,knv,(DAE.ALGORITHM_STMTS(statementLst = statementLst) :: xs))
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,false);
-        v_2 = detectImplicitDiscreteAlgs(v_1, xs);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,false);
+        v_2 = detectImplicitDiscreteAlgs(v_1,knv, xs);
       then
         v_2;
-    case (v,(_ :: xs))
+    case (v,knv,(_ :: xs))
       equation
-        v_1 = detectImplicitDiscreteAlgs(v, xs);
+        v_1 = detectImplicitDiscreteAlgs(v,knv, xs);
       then
         v_1;
   end matchcontinue;
@@ -2032,69 +2033,184 @@ protected function detectImplicitDiscreteAlgsStatemens
   This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inKnVariables;
   input list<DAE.Statement> inStatementLst;
   input Boolean insideWhen "true if its called from a when statement";
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVariables,inStatementLst,insideWhen)
+  outVariables := matchcontinue (inVariables,inKnVariables,inStatementLst,insideWhen)
     local
-      BackendDAE.Variables v,v_1,v_2,v_3;
+      BackendDAE.Variables v,v_1,v_2,v_3,knv;
       DAE.ComponentRef cr;
       list<DAE.Statement> xs,statementLst;
       BackendDAE.Var var;
       list<BackendDAE.Var> vars;
       DAE.Statement statement;
       Boolean b;
-    case (v,{},_) then v;
-    case (v,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
+      DAE.ExpType tp;
+      DAE.Ident iteratorName;
+      DAE.Exp e,iteratorExp;
+      list<DAE.Exp> iteratorexps;
+    case (v,_,{},_) then v;
+    case (v,knv,(DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr)) :: xs),true)
       equation
         ((var :: _),_) = BackendVariable.getVar(cr, v);
         var = BackendVariable.setVarKind(var,BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVar(var, v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2; 
-    case (v,(DAE.STMT_ASSIGN_ARR(componentRef = cr) :: xs),true)
+    case (v,knv,(DAE.STMT_ASSIGN_ARR(componentRef = cr) :: xs),true)
       equation
         (vars,_) = BackendVariable.getVar(cr, v);
         vars = Util.listMap1(vars,BackendVariable.setVarKind,BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVars(vars,v);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2; 
-    case (v,(DAE.STMT_IF(statementLst = statementLst) :: xs),true)
+    case (v,knv,(DAE.STMT_IF(statementLst = statementLst) :: xs),true)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2;          
-    case (v,(DAE.STMT_FOR(statementLst = statementLst) :: xs),true)
+    case (v,knv,(DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e,statementLst = statementLst) :: xs),true)
       equation
         /* TODO: use the range for the componentreferences */
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,true);
+        //cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        //iteratorExp = Expression.crefExp(cr);   
+        //iteratorexps = extendRange(e,knv);     
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2; 
-    case (v,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = NONE()) :: xs),_)
+    case (v,knv,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = NONE()) :: xs),_)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, xs,false);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,false);
       then
         v_2;
-    case (v,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = SOME(statement)) :: xs),_)
+    case (v,knv,(DAE.STMT_WHEN(statementLst = statementLst,elseWhen = SOME(statement)) :: xs),_)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,statementLst,true);
-        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,{statement},true);
-        v_3 = detectImplicitDiscreteAlgsStatemens(v_2, xs,false);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv,{statement},true);
+        v_3 = detectImplicitDiscreteAlgsStatemens(v_2,knv, xs,false);
       then
         v_3;        
-    case (v,(_ :: xs),b)
+    case (v,knv,(_ :: xs),b)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, xs,b);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv, xs,b);
       then
         v_1;
   end matchcontinue;
 end detectImplicitDiscreteAlgsStatemens;
+
+protected function detectImplicitDiscreteAlgsStatemensFor
+"function: detectImplicitDiscreteAlgsStatemensFor
+  "
+  input DAE.Exp inIteratorExp;
+  input list<DAE.Exp> inExplst;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inKnVariables;
+  input list<DAE.Statement> inStatementLst;
+  input Boolean insideWhen "true if its called from a when statement";
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inIteratorExp,inExplst,inVariables,inKnVariables,inStatementLst,insideWhen)
+    local
+      BackendDAE.Variables v,v_1,v_2,knv;
+      list<DAE.Statement> statementLst,statementLst1;
+      BackendDAE.Var var;
+      Boolean b;
+      DAE.Exp e,ie;
+      list<DAE.Exp> rest;
+    case (_,{},v,_,_,_) then v;
+    case (ie,e::rest,v,knv,statementLst,b)
+      equation
+        (statementLst1,_) = DAEUtil.traverseDAEEquationsStmts(statementLst,replaceExp,((ie,e)));
+        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst1,true);
+        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie,rest,v_1,knv,statementLst,b);
+      then
+        v_2;
+    case (_,_,_,_,_,_)
+      equation
+        print("BackendDAECreate.detectImplicitDiscreteAlgsStatemensFor failed \n");
+      then
+        fail();
+  end matchcontinue;
+end detectImplicitDiscreteAlgsStatemensFor;
+
+protected function replaceExp
+"Help function to e.g. detectImplicitDiscreteAlgsStatemensFor"
+  input tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp>> tpl;
+  output tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      DAE.Exp e,e1,s,t;
+    case((e,(s,t))) equation
+      (e1,_) = Expression.replaceExp(e,s,t);
+    then ((e1,(s,t)));
+    case tpl then tpl;
+  end matchcontinue;
+end replaceExp;
+
+protected function extendRange
+"function: extendRange
+  "
+  input DAE.Exp rangeExp;
+  input BackendDAE.Variables inKnVariables;  
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst:=
+  matchcontinue (rangeExp,inKnVariables)
+    local 
+      list<DAE.Exp> explst;
+      DAE.ExpType tp;
+      DAE.Exp startvalue,stopvalue,stepvalue;
+      Option<DAE.Exp> stepvalueopt;
+      BackendDAE.Variables knv;
+      Integer istart,istop,istep;
+      list<Integer> ilst;
+    case (DAE.RANGE(ty=tp,exp=startvalue,expOption=stepvalueopt,range=stopvalue),knv)
+      equation
+        stepvalue = Util.getOptionOrDefault(stepvalueopt,DAE.ICONST(1));
+        istart = expInt(startvalue,knv);
+        istep = expInt(stepvalue,knv);
+        istop = expInt(stopvalue,knv);
+        ilst = Util.listIntRange3(istart,istop,istep);
+        explst = Util.listMap(ilst,Expression.makeIntegerExp);
+      then
+        explst;
+    case (_,_)
+      equation
+        print("BackendDAECreate.extendRange failed \n");
+      then
+        fail();
+  end matchcontinue;
+end extendRange;
+
+protected function expInt "returns the int value of an expression"
+	input DAE.Exp exp;
+  input BackendDAE.Variables inKnVariables;	
+	output Integer i;
+algorithm
+	i := matchcontinue(exp,inKnVariables)
+ local 
+   Integer i2;
+   DAE.ComponentRef cr;
+   BackendDAE.Variables knv;
+   DAE.Exp e;
+	  case (DAE.ICONST(integer = i2),_) then i2;
+    case (DAE.ENUM_LITERAL(index = i2),_) then i2;
+    case (DAE.CREF(componentRef=cr),knv)
+      equation
+        ((BackendDAE.VAR(bindExp=SOME(e)):: _),_) = BackendVariable.getVar(cr, knv); 
+        i2 = expInt(e,knv);  
+      then
+        i2;
+	end matchcontinue;
+end expInt;
 
 protected function sortEqn
 "function: sortEqn
@@ -2114,7 +2230,7 @@ algorithm
         res;
     case (eqns)
       equation
-        print("sort_eqn failed \n");
+        print("BackendDAECreate.sort_eqn failed \n");
       then
         fail();
   end matchcontinue;

@@ -482,6 +482,18 @@ algorithm
   outTypeALst := {inTypeA1, inTypeA2};
 end listMake2;
 
+public function listIntRange3 "
+Returns a list of integers from n to m. Only works if n < m.
+Example listIntRange2(3,9,2) => {3,5,7,9}
+"
+  input Integer n;
+  input Integer m;
+  input Integer s;
+  output list<Integer> res;
+algorithm
+res := listIntRangeHelp(n,m,s);
+end listIntRange3;
+
 public function listIntRange2 "
 Returns a list of integers from n to m. Only works if n < m.
 Example listIntRange2(3,5) => {3,4,5}
@@ -490,7 +502,7 @@ Example listIntRange2(3,5) => {3,4,5}
   input Integer m;
   output list<Integer> res;
 algorithm
-res := listIntRangeHelp(n,m);
+res := listIntRangeHelp(n,m,1);
 end listIntRange2;
 
 public function listIntRange "function: listIntRange
@@ -499,7 +511,7 @@ public function listIntRange "function: listIntRange
   input Integer n;
   output list<Integer> res;
 algorithm
-  res := listIntRangeHelp(1,n); /* listIntRange_tail(1, n, {}); */
+  res := listIntRangeHelp(1,n,1); /* listIntRange_tail(1, n, {}); */
 end listIntRange;
 
 protected function listIntRange_tail
@@ -532,22 +544,23 @@ end listIntRange_tail;
 protected function listIntRangeHelp
   input Integer inInteger1;
   input Integer inInteger2;
+  input Integer inInteger3;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
-  matchcontinue (inInteger1,inInteger2)
+  matchcontinue (inInteger1,inInteger2,inInteger3)
     local
-      Integer i_1,i,n;
+      Integer i_1,i,n,s;
       list<Integer> res;
-    case (i,n)
+    case (i,n,s)
       equation
         (i < n) = true;
-        i_1 = i + 1;
+        i_1 = i + s;
 
-        res = listIntRangeHelp(i_1, n);
+        res = listIntRangeHelp(i_1, n,s);
       then
         (i :: res);
-    case (i,n) then {i};
+    case (i,n,s) then {i};
   end matchcontinue;
 end listIntRangeHelp;
 
