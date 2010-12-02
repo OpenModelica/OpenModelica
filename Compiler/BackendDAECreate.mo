@@ -982,8 +982,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        ((e1_2,_)) = BackendDAEUtil.extendArrExp((e1_1,SOME(funcs)));
-        ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
+        ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
+        ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
         ds = Expression.dimensionsSizes(dims);
@@ -994,8 +994,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
-        ((e1_2,_)) = BackendDAEUtil.extendArrExp((e1_1,SOME(funcs)));
-        ((e2_2,_)) = BackendDAEUtil.extendArrExp((e2_1,SOME(funcs)));
+        ((e1_2,_)) = extendArrExp((e1_1,SOME(funcs)));
+        ((e2_2,_)) = extendArrExp((e2_1,SOME(funcs)));
         e1_3 = ExpressionSimplify.simplify(e1_2);
         e2_3 = ExpressionSimplify.simplify(e2_2);
         ds = Expression.dimensionsSizes(dims);
@@ -2909,8 +2909,8 @@ algorithm
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
   equation 
-    ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
-    ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
+    ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
+    ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
     e2_2 = ExpressionSimplify.simplify(e2_1);
     ds = Util.listMap(ad, Expression.dimensionSize);
   then
@@ -2920,8 +2920,8 @@ algorithm
   equation 
     tp = Expression.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
-    ((e1_1,_)) = BackendDAEUtil.extendArrExp((e1,SOME(inFuncs)));
-    ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,SOME(inFuncs)));
+    ((e1_1,_)) = extendArrExp((e1,SOME(inFuncs)));
+    ((e2_1,_)) = extendArrExp((e2,SOME(inFuncs)));
     e2_2 = ExpressionSimplify.simplify(e2_1);
     eqn = BackendEquation.generateEQUATION((e1_1,e2_2),source);
   then
@@ -2957,6 +2957,11 @@ Author: Frenkel TUD 2010-07"
 algorithm 
   outAlg := matchcontinue(inAlg,funcs)
     local list<DAE.Statement> statementLst;
+    case(inAlg,funcs)
+      equation
+        // Don't extend array?
+        false = RTOpts.splitArrays();        
+      then inAlg;        
     case(DAE.ALGORITHM_STMTS(statementLst=statementLst),funcs)
       equation
         (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, BackendDAEUtil.extendArrExp, funcs);
@@ -2965,6 +2970,24 @@ algorithm
     case(inAlg,funcs) then inAlg;        
   end matchcontinue;
 end extendAlgorithm;
+
+protected function extendArrExp "
+Author: Frenkel TUD 2010-12"
+  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
+  output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
+algorithm 
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp e;
+      Option<DAE.FunctionTree> funcs;
+    case (itpl)
+      equation
+        // Don't extend array?
+        false = RTOpts.splitArrays();      
+      then itpl;
+    case (itpl) then BackendDAEUtil.extendArrExp(itpl);
+  end matchcontinue;
+end extendArrExp;
 
 protected function checkAssertCondition "Succeds if condition of assert is not constant false"
   input DAE.Exp cond;

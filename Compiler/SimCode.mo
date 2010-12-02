@@ -4215,6 +4215,8 @@ algorithm
         ((BackendDAE.VAR(varName = cr) :: _)) = BackendDAEUtil.varList(vars);
         // We need to strip subs from the name since they are removed in cr.
         cr_1 = ComponentReference.crefStripLastSubs(cr);
+        ((e1,_)) = BackendDAEUtil.collateArrExp((e1,NONE()));
+        ((e2,_)) = BackendDAEUtil.collateArrExp((e2,NONE()));
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2);
       then
@@ -4237,6 +4239,8 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
         DAE.ARRAY(scalar=true,array=ea1) = e1;
         DAE.ARRAY(scalar=true,array=ea2) = e2;
+        ea1 = BackendDAEUtil.collateArrExpList(ea1,NONE());
+        ea2 = BackendDAEUtil.collateArrExpList(ea2,NONE());
         ealst = Util.listThreadTuple(ea1,ea2);
         re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re); 

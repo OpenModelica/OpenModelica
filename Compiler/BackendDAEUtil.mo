@@ -2748,6 +2748,29 @@ algorithm
   end matchcontinue;
 end collateAlgorithm;
 
+public function collateArrExpList
+"function collateArrExpList
+ author Frenkel TUD:
+  replace {a[1],a[2],a[3]} for Real a[3] with a"
+  input list<DAE.Exp> expl;
+  input Option<DAE.FunctionTree> optfunc;
+  output list<DAE.Exp> outexpl;
+algorithm
+  outexpl := matchcontinue(expl,optfunc)
+    local 
+      DAE.Exp e,e1; 
+      list<DAE.Exp> expl1;
+    
+    case({},_) then {};
+    
+    case(e::expl,optfunc) equation
+      ((e1,_)) = collateArrExp((e,optfunc));
+      expl1 = collateArrExpList(expl,optfunc);
+    then 
+      e1::expl1; 
+  end matchcontinue;
+end collateArrExpList;
+
 public function collateArrExp "
 Author: Frenkel TUD 2010-07"
   input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
