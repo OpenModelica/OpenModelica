@@ -2568,6 +2568,7 @@ template cref(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
+  case WILD(__) then ''
   else "$P" + crefToCStr(cr)
 end cref;
 
@@ -2577,6 +2578,7 @@ template crefToCStr(ComponentRef cr)
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>'
   case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
@@ -3995,6 +3997,8 @@ template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BU
  "Generates code for writing a returnStructur to var."
 ::=
 match exp
+case ecr as CREF(componentRef=WILD(__)) then
+  ''
 case CREF(ty= t as DAE.ET_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context case SIMULATION(__) then
@@ -4409,6 +4413,8 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
       daeExpCrefRhs(ecr, context, &preExp, &varDecls)
   case ecr as CREF(componentRef=CREF_QUAL(__)) then
     contextCref(ecr.componentRef, context)
+  case ecr as CREF(componentRef=WILD(__)) then
+    ''
   else
     "ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS"
 end scalarLhsCref;

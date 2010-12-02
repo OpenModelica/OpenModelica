@@ -10215,6 +10215,10 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.WILD() )
+      then txt;
+
+    case ( txt,
            i_cr )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P"));
@@ -10251,6 +10255,10 @@ algorithm
         txt = subscriptsToCStr(txt, i_subscriptLst);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P"));
         txt = crefToCStr(txt, i_componentRef);
+      then txt;
+
+    case ( txt,
+           DAE.WILD() )
       then txt;
 
     case ( txt,
@@ -20353,6 +20361,14 @@ algorithm
       Tpl.Text l_lhsStr;
 
     case ( txt,
+           DAE.CREF(componentRef = DAE.WILD()),
+           _,
+           _,
+           a_preExp,
+           a_varDecls )
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
            (i_exp as DAE.CREF(ty = (i_t as DAE.ET_ARRAY(ty = _)))),
            a_rhsStr,
            a_context,
@@ -22648,6 +22664,13 @@ algorithm
            a_varDecls )
       equation
         txt = contextCref(txt, i_ecr_componentRef, a_context);
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
+           DAE.CREF(componentRef = DAE.WILD()),
+           _,
+           a_preExp,
+           a_varDecls )
       then (txt, a_preExp, a_varDecls);
 
     case ( txt,
