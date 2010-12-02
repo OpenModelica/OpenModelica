@@ -99,6 +99,7 @@ else
     AC_MSG_ERROR([RML not installed])
   fi
   rmlhome=`dirname \`dirname $RMLC\``
+  rmlc_bin=$RMLC
 fi
 
 dnl Checks for libraries.

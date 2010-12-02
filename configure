@@ -3429,6 +3429,7 @@ fi
     as_fn_error $? "RML not installed" "$LINENO" 5
   fi
   rmlhome=`dirname \`dirname $RMLC\``
+  rmlc_bin=$RMLC
 fi
 
 
