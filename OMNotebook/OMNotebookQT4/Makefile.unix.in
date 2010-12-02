@@ -12,7 +12,7 @@ NAME=OMNotebook
 all: build
 
 Makefile:
-	LDFLAGS="$(LDFLAGS)" $(QMAKE)
+	$(QMAKE)
 
 clean: Makefile
 	rm -rf $(NAME) $(NAME)$(EXE) omc_communication.* Makefile
