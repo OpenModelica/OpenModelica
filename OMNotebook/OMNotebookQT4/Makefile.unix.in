@@ -12,7 +12,7 @@ NAME=OMNotebook
 all: build
 
 Makefile:
-	$(QMAKE)
+	LDFLAGS="$(LDFLAGS)" $(QMAKE)
 
 clean: Makefile
 	rm -rf $(NAME) $(NAME)$(EXE) omc_communication.* Makefile
@@ -20,7 +20,7 @@ clean: Makefile
 omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
 
-$(NAME)$(EXE): Makefile omc_communication.cc
+$(NAME)$(EXE): Makefile OMNotebook.config omc_communication.cc
 	$(MAKE) -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
@@ -48,3 +48,5 @@ build: $(NAME)
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status
 
+OMNotebook.config: OMNotebook.config.in
+	cd $(top_builddir); ./config.status
