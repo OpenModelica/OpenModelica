@@ -105,7 +105,7 @@ dnl Checks for libraries.
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 
 AC_MSG_CHECKING([for rml includefiles in $rmlhome])
 rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`
