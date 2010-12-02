@@ -2,3 +2,4 @@ CORBALIBS = @CORBALIBS@
 CORBAINC = @CORBA_QMAKE_INCLUDES@
 USE_CORBA = @QT_USE_CORBA@
 INCLUDEPATH += $$system(echo @CFLAGS@ | sed "s/\ //g" | grep ^-I | sed s/^-I//)
+QMAKE_LFLAGS += @LDFLAGS@
