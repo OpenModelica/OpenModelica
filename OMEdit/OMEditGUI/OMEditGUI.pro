@@ -82,8 +82,7 @@ LIBS += -LC:\\Thesis\\omniORB-4.1.4\\lib\\x86_win32 \
 
 INCLUDEPATH += C:\\Thesis\\omniORB-4.1.4\\include
 } else {
-LIBS += -L/usr/lib/ -lomniORB4 -lomnithread
-INCLUDEPATH += /usr/include/omniORB4
+    include(OMEdit.config)
 }
 #---------End OMNIorb
 
