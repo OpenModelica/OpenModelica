@@ -711,6 +711,40 @@ algorithm
   end matchcontinue;
 end equationAlgorithm;
 
+public function getUsedAlgorithmsfromEquations
+  input BackendDAE.EquationArray inEqns;
+  input array<DAE.Algorithm> algarr;
+  output list<DAE.Algorithm> algs;
+algorithm
+  ((_,_,algs)) := traverseBackendDAEEqns(inEqns,traverseAlgorithmFinder,({},algarr,{}));
+end getUsedAlgorithmsfromEquations;
+
+public function traverseAlgorithmFinder "function: traverseAlgorithmFinder
+  author: Frenkel TUD 2010-12
+  collect all used algorithms"
+  input tuple<BackendDAE.Equation, tuple<list<Integer>,array<DAE.Algorithm>,list<DAE.Algorithm>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<list<Integer>,array<DAE.Algorithm>,list<DAE.Algorithm>>> outTpl;  
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Equation eqn;
+      array<DAE.Algorithm> algarr;
+      DAE.Algorithm alg;
+      list<DAE.Algorithm> algs;
+      list<Integer> indexes;
+      Integer indx;      
+      case ((eqn as BackendDAE.ALGORITHM(index=indx),(indexes,algarr,algs)))
+        equation
+          false = Util.listContainsWithCompareFunc(indx,indexes,intEq);
+          alg = algarr[indx + 1];
+        then
+          ((eqn,(indx::indexes,algarr,alg::algs)));
+    case (inTpl) then inTpl;
+  end matchcontinue;
+end traverseAlgorithmFinder;
+
+
 protected function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
   output DAE.ElementSource source;

@@ -1658,21 +1658,14 @@ algorithm
         algebraicEquations = createEquations(false, false, false, true, false, dlow2, ass1, ass2, blt_no_states, helpVarInfo);
         allEquationsPlusWhen = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
         
-        //print("Here1\n");
         allEquations = createEquations(false, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
-        //print("Here3\n");
         stateContEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
-        //print("Here4\n");
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        //print("Here5\n");
         nonStateContEquations = createEquations(false, false, true, false, false, dlow2, ass1, ass2,
                                                 contBlocks, helpVarInfo);
-        //print("Here6\n");
         nonStateDiscEquations = createEquations(false, useZerocrossing(), true, false, false, dlow2, ass1, ass2,
                                                 discBlocks, helpVarInfo);
-        //print("Here7\n");
         initialEquations = createInitialEquations(dlow2);
-        //print("Here8\n");
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
@@ -4473,7 +4466,7 @@ algorithm
         ie2_lst = Util.listMap(ie2_lst, BackendEquation.equationToResidualForm);
         ie2_lst = Util.listFilter(ie2_lst, failUnlessResidual);
         resEqus4 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
-        
+       
         residualEquations = listAppend(resEqus1, resEqus2);
         residualEquations = listAppend(residualEquations, resEqus3);
         residualEquations = listAppend(residualEquations, resEqus4);
@@ -4513,6 +4506,22 @@ algorithm
         SES_ALGORITHM(algStatements);       
   end matchcontinue;
 end dlowEqToSimEqSystem;
+
+protected function dlowAlgToSimEqSystem
+  input DAE.Algorithm inAlg;
+  output SimEqSystem outEquation;
+algorithm
+  outEquation := matchcontinue (inAlg)
+    local
+      DAE.Algorithm alg;
+      list<DAE.Statement> algStatements;
+    case (alg)
+      equation
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+      then
+        SES_ALGORITHM(algStatements);       
+  end matchcontinue;
+end dlowAlgToSimEqSystem;
 
 protected function failUnlessResidual
   input BackendDAE.Equation eq;
@@ -4567,14 +4576,21 @@ algorithm
       list<BackendDAE.Equation> parameterEquationsTmp;
       BackendDAE.Variables knvars;
       array<Algorithm.Algorithm> algs;
+      BackendDAE.EquationArray ie;
+      list<SimEqSystem> inalgs;
+      list<DAE.Algorithm> ialgs;      
     
-    case (BackendDAE.DAE(knownVars=knvars,algorithms=algs))
+    case (BackendDAE.DAE(knownVars=knvars,initialEqs=ie,algorithms=algs))
       equation
         // kvars params
         parameterEquationsTmp = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,{}); 
 
         parameterEquations = Util.listMap1(parameterEquationsTmp,
                                           dlowEqToSimEqSystem,algs);
+                                          
+        ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
+        inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
+        parameterEquations = listAppend(parameterEquations, inalgs);                                                   
       then
         parameterEquations;
     

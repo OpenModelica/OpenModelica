@@ -48,7 +48,6 @@ protected import BackendDAECreate;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
-protected import ComponentReference;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
