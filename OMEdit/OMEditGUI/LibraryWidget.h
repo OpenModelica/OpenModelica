@@ -49,8 +49,6 @@
 #include <QVBoxLayout>
 #include <QListWidgetItem>
 #include <QStringList>
-#include <QSvgGenerator>
-#include <QSvgRenderer>
 
 #include "mainwindow.h"
 #include "StringHandler.h"
@@ -65,11 +63,12 @@ class LibraryComponent;
 class ModelicaTreeNode : public QTreeWidgetItem
 {
 public:
-    ModelicaTreeNode(QString text, QString tooltip, int type, QTreeWidget *parent = 0);
-    QIcon getModelicaNodeIcon(int type);
+    ModelicaTreeNode(QString text, QString parentName, QString tooltip, int type, QTreeWidget *parent = 0);
+    static QIcon getModelicaNodeIcon(int type);
 
     int mType;
     QString mName;
+    QString mParentName;
     QString mNameStructure;
 };
 
@@ -98,6 +97,7 @@ public slots:
     void renameClass();
     void checkModelicaModel();
     bool deleteNodeTriggered(ModelicaTreeNode *node = 0);
+    void saveChildModels(QString modelName, QString filePath);
 };
 
 class LibraryTreeNode : public QTreeWidgetItem
@@ -105,6 +105,7 @@ class LibraryTreeNode : public QTreeWidgetItem
 public:
     LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent = 0);
 
+    int mType;
     QString mName;
     QString mParentName;
     QString mNameStructure;
@@ -142,7 +143,7 @@ private slots:
     void showComponent();
     void viewDocumentation();
     void checkLibraryModel();
-    void loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className);
+    void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
 protected:
     virtual void mousePressEvent(QMouseEvent *event);
 };
@@ -185,23 +186,24 @@ public:
     QPixmap getComponentPixmap(QSize size);
 
     QString mClassName;
-    QByteArray mSvgByteArray;
     Component *mpComponent;
+    QGraphicsView *mpGraphicsView;
+    QRectF mRectangle;
 };
 
 class LibraryLoader : public QThread
 {
     Q_OBJECT
 public:
-    LibraryLoader(QTreeWidgetItem *treeNode, QString className, LibraryTree *pParent = 0);
+    LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent = 0);
 
     LibraryTree *mpParentLibraryTree;
-    QTreeWidgetItem *mTreeNode;
+    LibraryTreeNode *mTreeNode;
     QString mClassName;
 protected:
     void run();
 signals:
-    void loadLibraryComponent(QTreeWidgetItem *treeNode, QString className);
+    void loadLibraryComponent(LibraryTreeNode *treeNode, QString className);
 };
 
 #endif // LIBRARYWIDGET_H

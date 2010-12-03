@@ -44,11 +44,12 @@
 
 #include "LibraryWidget.h"
 
-ModelicaTreeNode::ModelicaTreeNode(QString text, QString tooltip, int type, QTreeWidget *parent)
+ModelicaTreeNode::ModelicaTreeNode(QString text, QString parentName, QString tooltip, int type, QTreeWidget *parent)
     :QTreeWidgetItem(parent)
 {
     mType = type;
     mName = text;
+    mParentName = parentName;
     mNameStructure = tooltip;
 
     setText(0, mName);
@@ -147,6 +148,15 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
         pMainWindow->mpProjectTabs->removeTab(pCurrentTab->mTabPosition);
         emit nodeDeleted();
     }
+    // Delete the tab from the list of removed tabs
+    else
+    {
+        pCurrentTab = pMainWindow->mpProjectTabs->getRemovedTabByName(item->mNameStructure);
+        if (pCurrentTab)
+        {
+            pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
+        }
+    }
     // Delete the complete tree node now
     //delete item;
 }
@@ -157,12 +167,12 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
 
     if (parentName.isEmpty())
     {
-        newTreePost = new ModelicaTreeNode(name, parentStructure + name, type, this);
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, type, this);
         insertTopLevelItem(0, newTreePost);
     }
     else
     {
-        newTreePost = new ModelicaTreeNode(name, parentStructure + name, type);
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, type);
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
@@ -202,7 +212,16 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     // if the tab is found in current tabs and removed tabs then user has loaded a new model, just open it then
     if (!isFound)
     {
-        ProjectTab *newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, pMainWindow->mpProjectTabs);
+        ProjectTab *newTab;
+        if (treeNode->mParentName.isEmpty())
+        {
+            newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, false, pMainWindow->mpProjectTabs);
+        }
+        else
+        {
+            newTab = new ProjectTab(treeNode->mType, StringHandler::ICON, false, true, pMainWindow->mpProjectTabs);
+            newTab->mIsSaved = true;
+        }
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
     }
     // unset the cursor
@@ -305,6 +324,38 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
     }
 }
 
+void ModelicaTree::saveChildModels(QString modelName, QString filePath)
+{
+    MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
+    ModelicaTreeNode *node = getNode(modelName);
+    if (!node)
+        return;
+
+    for (int i = 0 ; i < node->childCount() ; i++)
+    {
+        ModelicaTreeNode *childNode = dynamic_cast<ModelicaTreeNode*>(node->child(i));
+        if (childNode)
+        {
+            ProjectTab *pCurrentTab = pMainWindow->mpProjectTabs->getTabByName(childNode->mNameStructure);
+            // if projectTab not found then look in removed tabs
+            if (!pCurrentTab)
+            {
+                pCurrentTab = pMainWindow->mpProjectTabs->getRemovedTabByName(childNode->mNameStructure);
+            }
+            if (pCurrentTab)
+            {
+                pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, filePath);
+                pCurrentTab->setModelFilePathLabel(filePath);
+                // if current node is package then save all items under it to the same file
+                if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
+                {
+                    saveChildModels(pCurrentTab->mModelNameStructure, filePath);
+                }
+            }
+        }
+    }
+}
+
 LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent)
     : QTreeWidgetItem(parent)
 {
@@ -350,7 +401,7 @@ void LibraryTree::createActions()
     mpShowComponentAction = new QAction(QIcon(":/Resources/icons/model.png"), tr("Show Component"), this);
     connect(mpShowComponentAction, SIGNAL(triggered()), SLOT(showComponent()));
 
-    mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/modeltext.png"), tr("View Documentation"), this);
+    mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.png"), tr("View Documentation"), this);
     connect(mpViewDocumentationAction, SIGNAL(triggered()), SLOT(viewDocumentation()));
 
     mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), tr("Check"), this);
@@ -463,7 +514,10 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
 
     // If Loaded class is package show treewidgetitem expand indicator
     // Remove if using load once library feature
-    if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure + className))
+    int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(parentStructure +
+                                                                                               className);
+    newTreePost->mType = classType;
+    if (classType == StringHandler::PACKAGE)
     {
         newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         //hasIcon = false;
@@ -614,14 +668,25 @@ void LibraryTree::checkLibraryModel()
     widget->show();
 }
 
-void LibraryTree::loadingLibraryComponent(QTreeWidgetItem *treeNode, QString className)
+void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString className)
 {
     QString result;
     result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(className);
     LibraryComponent *libComponent = new LibraryComponent(result, className,
                                                           mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
 
-    treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+    QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+    if (pixmap.isNull())
+    {
+        if (QString(className).toLower().contains("usersguide"))
+            treeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
+        else
+            treeNode->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(treeNode->mType));
+    }
+    else
+    {
+        treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+    }
     mpParentLibraryWidget->addComponentObject(libComponent);
 }
 
@@ -807,93 +872,53 @@ LibraryComponent::LibraryComponent(QString value, QString className, OMCProxy *o
 {
     mClassName = className;
     mpComponent = new Component(value, className, omc);
-//    if (mpComponent->mRectangle.width() < 1)
-//        return;
 
-    QRectF rect;
     if (mpComponent->mRectangle.width() > 1)
-        rect = mpComponent->mRectangle;
+        mRectangle = mpComponent->mRectangle;
     else
-        rect = QRectF(-100.0, -100.0, 200.0, 200.0);
+        mRectangle = QRectF(-100.0, -100.0, 200.0, 200.0);
 
-    qreal adjust = 22;
-    rect.setX(rect.x() - adjust);
-    rect.setY(rect.y() - adjust);
-    rect.setWidth(rect.width() + adjust);
-    rect.setHeight(rect.height() + adjust);
+    qreal adjust = 25;
+    mRectangle.setX(mRectangle.x() - adjust);
+    mRectangle.setY(mRectangle.y() - adjust);
+    mRectangle.setWidth(mRectangle.width() + adjust);
+    mRectangle.setHeight(mRectangle.height() + adjust);
 
-    QByteArray byteArray;
-    QBuffer buffer(&byteArray);
-    buffer.open(QIODevice::WriteOnly);
-
-    QSvgGenerator svgGenerator;
-    svgGenerator.setOutputDevice(&buffer);
-    svgGenerator.setSize(QSize(rect.width(), rect.height()));
-    svgGenerator.setViewBox(rect);
-
-    QPainter painter;
-    painter.begin(&svgGenerator);
-    painter.scale(1.0, -1.0);
-
-    generateSvg(&painter, mpComponent);
-
-    painter.end();
-    mSvgByteArray = byteArray;
-    buffer.close();
+    mpGraphicsView = new QGraphicsView;
+    mpGraphicsView->setScene(new QGraphicsScene);
+    mpGraphicsView->setSceneRect(mRectangle);
+    mpGraphicsView->scene()->addItem(mpComponent);
 }
 
 LibraryComponent::~LibraryComponent()
 {
     delete mpComponent;
-}
-
-void LibraryComponent::generateSvg(QPainter *painter, Component *pComponent)
-{
-    foreach (ShapeAnnotation *shape, pComponent->mpShapesList)
-    {
-        if (dynamic_cast<LineAnnotation*>(shape))
-            dynamic_cast<LineAnnotation*>(shape)->drawLineAnnotaion(painter);
-        if (dynamic_cast<PolygonAnnotation*>(shape))
-            dynamic_cast<PolygonAnnotation*>(shape)->drawPolygonAnnotaion(painter);
-        if (dynamic_cast<RectangleAnnotation*>(shape))
-            dynamic_cast<RectangleAnnotation*>(shape)->drawRectangleAnnotaion(painter);
-        if (dynamic_cast<EllipseAnnotation*>(shape))
-            dynamic_cast<EllipseAnnotation*>(shape)->drawEllipseAnnotaion(painter);
-    }
-
-    foreach (Component *inheritance, pComponent->mpInheritanceList)
-    {
-        generateSvg(painter, inheritance);
-    }
-
-    foreach (Component *component, pComponent->mpComponentsList)
-    {
-        painter->save();
-        painter->setTransform(component->mpTransformation->getLibraryTransformationMatrix());
-        generateSvg(painter, component);
-        painter->restore();
-    }
+    delete mpGraphicsView;
 }
 
 QPixmap LibraryComponent::getComponentPixmap(QSize size)
 {
-    QSvgRenderer svgRenderer(mSvgByteArray);
+    if (mpComponent->mRectangle.width() < 1)
+        return QPixmap();
+
     QPixmap pixmap(size);
     pixmap.fill(QColor(Qt::transparent));
     QPainter painter(&pixmap);
-    svgRenderer.render(&painter);
+    painter.setWindow(mRectangle.toRect());
+    painter.scale(1.0, -1.0);
+    mpGraphicsView->scene()->render(&painter, mRectangle, mpGraphicsView->sceneRect());
     painter.end();
     return pixmap;
 }
 
-LibraryLoader::LibraryLoader(QTreeWidgetItem *treeNode, QString className, LibraryTree *pParent)
+LibraryLoader::LibraryLoader(LibraryTreeNode *treeNode, QString className, LibraryTree *pParent)
 {
     mTreeNode = treeNode;
     mClassName = className;
     mpParentLibraryTree = pParent;
 
-    connect(this, SIGNAL(loadLibraryComponent(QTreeWidgetItem*,QString)),
-            mpParentLibraryTree, SLOT(loadingLibraryComponent(QTreeWidgetItem*,QString)));
+    connect(this, SIGNAL(loadLibraryComponent(LibraryTreeNode*,QString)),
+            mpParentLibraryTree, SLOT(loadingLibraryComponent(LibraryTreeNode*,QString)));
 }
 
 void LibraryLoader::run()

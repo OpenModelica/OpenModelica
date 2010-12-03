@@ -61,11 +61,14 @@ private:
     QTextEdit *mpTextEdit;
     QString mObjectRefFile;
     QList<QString> mCommandsList;
+    QMap<QString, QString> mCommandsMap;
 public:
     OMCProxy(MainWindow *pParent = 0, bool displayErrors = true);
     ~OMCProxy();
     void getPreviousCommand();
     void getNextCommand();
+    void addCommandMap(QString expression, QString result);
+    QString getCommandMap(QString expression);
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};

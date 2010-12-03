@@ -38,26 +38,26 @@
 #include "Component.h"
 
 class OMCProxy;
+class RectangleCornerItem;
 
 class LineAnnotation : public ShapeAnnotation
 {
-private:
-    QColor mLineColor;
-    qreal mThickness;
-    bool mSmooth;
-    bool mVisible;
-    QPointF mOrigin;
-    qreal mRotation;
-    QList<QPointF> mPoints;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
+    Q_OBJECT
 public:
     LineAnnotation(QString shape, Component *pParent = 0);
+    LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
+    QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawLineAnnotaion(QPainter *painter);
+    void addPoint(QPointF point);
+    void updateEndPoint(QPointF point);
+    void drawRectangleCornerItems();
+    QString getShapeAnnotation();
 
     Component *mpComponent;
+public slots:
+    void updatePoint(int index, QPointF point);
 };
 
 #endif // LINEANNOTATION_H

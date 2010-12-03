@@ -222,5 +222,112 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    Q_UNUSED(event);
     this->mItemClicked = false;
+}
+
+RectangleCornerItem::RectangleCornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
+    : QGraphicsItem(pParent), mItemClicked(false), mConnectedPointIndex(connectedPointIndex)
+{
+    setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
+             | QGraphicsItem::ItemSendsGeometryChanges);
+    setAcceptHoverEvents(true);
+    this->scale(1.0, -1.0);
+    this->mActivePen = QPen(Qt::red);
+    this->mHoverPen = QPen(Qt::darkRed);
+    this->setPos(x, y);
+    this->mRectangle = QRectF (-3, -3, 6, 6);
+    setActive();
+
+    mpShapeAnnotation = pParent;
+    connect(this, SIGNAL(itemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updatePoint(int,QPointF)));
+    connect(this, SIGNAL(itemClicked()), mpShapeAnnotation, SLOT(doSelect()));
+    connect(this, SIGNAL(itemUnClicked()), mpShapeAnnotation, SLOT(doUnSelect()));
+    connect(this, SIGNAL(itemPositionUpdate()), mpShapeAnnotation->mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+//! Tells the box to become visible and use active style.
+//! @see setPassive();
+//! @see setHovered();
+void RectangleCornerItem::setActive()
+{
+    this->setVisible(true);
+    mPen = mActivePen;
+    update();
+}
+
+//! Tells the box to become invisible.
+//! @see setActive();
+//! @see setHovered();
+void RectangleCornerItem::setPassive()
+{
+    this->setVisible(false);
+}
+
+//! Tells the box to become visible and use hovered style.
+//! @see setActive();
+//! @see setPassive();
+void RectangleCornerItem::setHovered()
+{
+    this->setVisible(true);
+    mPen = mHoverPen;
+}
+
+QRectF RectangleCornerItem::boundingRect() const
+{
+    return mRectangle;
+}
+
+void RectangleCornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+
+    painter->setPen(mPen);
+    painter->setBrush(mPen.color());
+    painter->drawRect(mRectangle);
+}
+
+//! Event when mouse cursor enters component icon.
+void RectangleCornerItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+
+    setCursor(Qt::ArrowCursor);
+}
+
+//! Event when mouse cursor leaves component icon.
+void RectangleCornerItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
+{
+    Q_UNUSED(event);
+
+    unsetCursor();
+}
+
+void RectangleCornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    emit itemClicked();
+    mClickPos = mapToScene(event->pos());
+    QGraphicsItem::mousePressEvent(event);
+}
+
+void RectangleCornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+    emit itemUnClicked();
+    if (mClickPos != mapToScene(event->pos()))
+    {
+        emit itemPositionUpdate();
+    }
+    mpShapeAnnotation->setSelected(true);
+    QGraphicsItem::mouseReleaseEvent(event);
+}
+
+QVariant RectangleCornerItem::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    QGraphicsItem::itemChange(change, value);
+    if (change == QGraphicsItem::ItemPositionHasChanged)
+    {
+        emit itemMoved(mConnectedPointIndex, value.toPointF());
+    }
+    return value;
 }

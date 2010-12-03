@@ -118,7 +118,7 @@ public:
     QPointF mOldPosition;
     bool isMousePressed;
 
-    bool parseAnnotationString(Component *item, QString value);
+    bool parseAnnotationString(Component *item, QString value, bool libraryIcon = false);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     QString getName();
@@ -151,13 +151,6 @@ public slots:
     void showSelectionBox();
     void resizeComponent(qreal resizeFactorX, qreal resizeFactorY);
     void deleteMe();
-    void moveUp();
-    void moveDown();
-    void moveLeft();
-    void moveRight();
-    void rotateClockwise();
-    void rotateAntiClockwise();
-    void resetRotation();
     void openIconProperties();
     void openIconAttributes();
 protected:

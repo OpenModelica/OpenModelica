@@ -65,12 +65,47 @@ public:
     void setHovered();
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 signals:
     void iconSelected();
     void iconResized(qreal resizeFactorX, qreal resizeFactorY);
+};
+
+class RectangleCornerItem : public QObject, public QGraphicsItem
+{
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
+private:
+    QRectF mRectangle;
+    QPen mPen;
+    QPen mActivePen;
+    QPen mHoverPen;
+    bool mItemClicked;
+    QPointF mClickPos;
+    int mConnectedPointIndex;
+public:
+    RectangleCornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent = 0);
+    void setActive();
+    void setPassive();
+    void setHovered();
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+
+    ShapeAnnotation *mpShapeAnnotation;
+signals:
+    void itemMoved(int index, QPointF point);
+    void itemClicked();
+    void itemUnClicked();
+    void itemPositionUpdate();
+protected:
+    virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
 
 #endif // CORNERITEM_H

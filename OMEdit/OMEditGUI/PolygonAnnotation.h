@@ -41,28 +41,22 @@ class OMCProxy;
 
 class PolygonAnnotation : public ShapeAnnotation
 {
-private:
-    bool mVisible;
-    QPointF mOrigin;
-    qreal mRotation;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mPoints;
-    bool mSmooth;
+    Q_OBJECT
 public:
     PolygonAnnotation(QString shape, Component *pParent = 0);
+    PolygonAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
+    QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawPolygonAnnotaion(QPainter *painter);
+    void addPoint(QPointF point);
+    void updateEndPoint(QPointF point);
+    void drawRectangleCornerItems();
+    QString getShapeAnnotation();
 
     Component *mpComponent;
+public slots:
+    void updatePoint(int index, QPointF point);
 };
 
 #endif // POLYGONANNOTATION_H

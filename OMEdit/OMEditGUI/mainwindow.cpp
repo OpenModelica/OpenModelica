@@ -76,7 +76,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpMessageWidget->setReadOnly(true);
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
-    mpMessageWidget->printGUIMessage("OMEdit, Version: " + Helper::applicationVersion);
+    mpMessageWidget->printGUIMessage("OMEdit, " + Helper::applicationVersion);
     if (!mExitApplication)
         mpMessageWidget->printGUIInfoMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
 
@@ -297,6 +297,34 @@ void MainWindow::createActions()
     aboutAction = new QAction(tr("About OMEdit"), this);
     aboutAction->setStatusTip(tr("Information about OMEdit"));
     connect(aboutAction, SIGNAL(triggered()), SLOT(openAbout()));
+
+    shapesActionGroup = new QActionGroup(this);
+    shapesActionGroup->setExclusive(false);
+
+    lineAction = new QAction(QIcon(":/Resources/icons/line-shape.png"), tr("Line"), shapesActionGroup);
+    lineAction->setStatusTip(tr("Draws a line."));
+    lineAction->setCheckable(true);
+    connect(lineAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    polygonAction = new QAction(QIcon(":/Resources/icons/polygon-shape.png"), tr("Polygon"), shapesActionGroup);
+    polygonAction->setStatusTip(tr("Draws a polygon."));
+    polygonAction->setCheckable(true);
+    connect(polygonAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    rectangleAction = new QAction(QIcon(":/Resources/icons/rectangle-shape.png"), tr("Rectangle"), shapesActionGroup);
+    rectangleAction->setStatusTip(tr("Draws a rectangle."));
+    rectangleAction->setCheckable(true);
+    connect(rectangleAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    ellipseAction = new QAction(QIcon(":/Resources/icons/ellipse-shape.png"), tr("Ellipse"), shapesActionGroup);
+    ellipseAction->setStatusTip(tr("Draws an Ellipse."));
+    ellipseAction->setCheckable(true);
+    connect(ellipseAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    textAction = new QAction(QIcon(":/Resources/icons/text-shape.png"), tr("Text"), shapesActionGroup);
+    textAction->setStatusTip(tr("Draws a text."));
+    textAction->setCheckable(true);
+    connect(textAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 }
 
 //! Creates the menus
@@ -438,6 +466,14 @@ void MainWindow::createToolbars()
     viewToolBar->addAction(zoomOutAction);
     viewToolBar->addSeparator();
     viewToolBar->addAction(checkModelAction);
+
+    shapesToolBar = addToolBar(tr("Shapes Toolbar"));
+    shapesToolBar->setAllowedAreas(Qt::TopToolBarArea);
+    shapesToolBar->addAction(lineAction);
+    shapesToolBar->addAction(polygonAction);
+    shapesToolBar->addAction(rectangleAction);
+    shapesToolBar->addAction(ellipseAction);
+    shapesToolBar->addAction(textAction);
 
     simulationToolBar = addToolBar(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
@@ -585,6 +621,20 @@ void MainWindow::openAbout()
                         .append("Special Thanks to Adrian Pop for helping in OMC related issues.");
 
     QMessageBox::about(this, QString("About ").append(Helper::applicationName), aboutText);
+}
+
+void MainWindow::toggleShapesButton()
+{
+    QAction *clickedAction = qobject_cast<QAction*>(const_cast<QObject*>(sender()));
+
+    QList<QAction*> shapeActions = shapesActionGroup->actions();
+    foreach (QAction *shapeAction, shapeActions)
+    {
+        if (shapeAction != clickedAction)
+        {
+            shapeAction->setChecked(false);
+        }
+    }
 }
 
 void MainWindow::disableMainWindow(bool disable)

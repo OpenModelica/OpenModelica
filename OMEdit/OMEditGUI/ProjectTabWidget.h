@@ -55,6 +55,11 @@ class ProjectTab;
 class Component;
 class ComponentAnnotation;
 class Connector;
+class LineAnnotation;
+class PolygonAnnotation;
+class RectangleAnnotation;
+class EllipseAnnotation;
+class TextAnnotation;
 
 class GraphicsScene : public QGraphicsScene
 {
@@ -72,6 +77,11 @@ private:
     Connector *mpConnector;
     void createActions();
     void createMenus();
+    void createLineShape(QPointF point);
+    void createPolygonShape(QPointF point);
+    void createRectangleShape(QPointF point);
+    void createEllipseShape(QPointF point);
+    void createTextShape(QPointF point);
 public:
     GraphicsView(int iconType, ProjectTab *parent = 0);
     void addComponentObject(Component *icon);
@@ -79,10 +89,24 @@ public:
     Component* getComponentObject(QString componentName);
     QString getUniqueComponentName(QString iconName, int number = 1);
     bool checkComponentName(QString iconName);
+    void addShapeObject(ShapeAnnotation *shape);
+    void deleteShapeObject(ShapeAnnotation *shape);
 
     QList<Component*> mComponentsList;
+    QList<ShapeAnnotation*> mShapesList;
+    LineAnnotation *mpLineShape;
+    PolygonAnnotation *mpPolygonShape;
+    RectangleAnnotation *mpRectangleShape;
+    EllipseAnnotation *mpEllipseShape;
+    TextAnnotation *mpTextShape;
     int mIconType;
     bool mIsCreatingConnector;
+    bool mIsMovingComponents;
+    bool mIsCreatingLine;
+    bool mIsCreatingPolygon;
+    bool mIsCreatingRectangle;
+    bool mIsCreatingEllipse;
+    bool mIsCreatingText;
     QVector<Connector*> mConnectorsVector;
     ProjectTab *mpParentProjectTab;
     QAction *mpCancelConnectionAction;
@@ -108,6 +132,7 @@ public slots:
     void showGridLines(bool showLines);
     void selectAll();
     void saveModelAnnotation();
+    void addClassAnnotation();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
     virtual void dropEvent(QDropEvent *event);
@@ -115,6 +140,7 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
+    virtual void mouseDoubleClickEvent(QMouseEvent *event);
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void contextMenuEvent(QContextMenuEvent *event);
@@ -149,8 +175,9 @@ private:
     QLabel *mpViewTypeLabel;
     QLabel *mpModelFilePathLabel;
     bool mReadOnly;
+    bool mIsChild;
 public:
-    ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTabWidget *parent = 0);
+    ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChild, ProjectTabWidget *parent = 0);
     ~ProjectTab();
     void updateTabName(QString name, QString nameStructure);
     void updateModel(QString name);
@@ -161,7 +188,10 @@ public:
     void getModelConnections();
     void setReadOnly(bool readOnly);
     bool isReadOnly();
+    void setIsChild(bool isChild);
+    bool isChild();
     void setModelFilePathLabel(QString filePath);
+    QString getModelicaTypeLabel();
 
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;
@@ -210,6 +240,7 @@ public:
 signals:
     void tabAdded();
     void tabRemoved();
+    void modelSaved(QString modelName, QString filePath);
 public slots:
     void addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure);
     void addNewProjectTab(QString modelName, QString modelStructure, int modelicaType);

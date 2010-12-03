@@ -34,7 +34,7 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "1.0";
+QString Helper::applicationVersion = "Version: 2.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEdit";
@@ -66,6 +66,7 @@ QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(20, 20);
 int Helper::headingFontSize = 18;
 int Helper::tabWidth = 20;
+qreal Helper::shapesStrokeWidth = 5.0;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
 
@@ -118,11 +119,13 @@ QString GUIMessages::getMessage(int type)
     case INVALID_COMPONENT_ANNOTATIONS:
         return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
     case SAVED_MODEL:
-        return "Saved %1 %2. File : '%3'";
+        return "The %1 '%2' is not saved.";
     case COMMENT_SAVE_ERROR:
         return "Following Error has occurred while saving component comment. \n\n %1.";
     case ATTRIBUTES_SAVE_ERROR:
         return "Following Error has occurred while saving component attributes. \n\n %1.";
+    case CHILD_MODEL_SAVE:
+        return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
     default:
         return "";
     }

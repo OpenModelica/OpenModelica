@@ -54,7 +54,7 @@ void SplashScreen::setMessage()
     this->mColors.append(QColor(213, 218, 220));
 
     this->mPoints.append(QPointF(30, 140));
-    this->mFonts.append(QFont("Arial", 20));
+    this->mFonts.append(QFont("Helvetica", 18));
     this->mColors.append(QColor(213, 218, 220));
 
     //this->mPoints.append(QPointF(110, 322));

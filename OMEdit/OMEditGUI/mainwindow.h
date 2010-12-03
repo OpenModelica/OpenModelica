@@ -139,10 +139,18 @@ public:
     QAction *documentationAction;
     QAction *userManualAction;
     QAction *aboutAction;
+    QActionGroup *shapesActionGroup;
+    QAction *lineAction;
+    QAction *rectangleAction;
+    QAction *ellipseAction;
+    QAction *polygonAction;
+    QAction *textAction;
+    QAction *bitmapAction;
 
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
     QToolBar *viewToolBar;
+    QToolBar *shapesToolBar;
     QToolBar *simulationToolBar;
 
     QDockWidget *plotdock;
@@ -165,6 +173,7 @@ private slots:
     void checkModel();
     void openUserManual();
     void openAbout();
+    void toggleShapesButton();
 public slots:
     void disableMainWindow(bool disable);
 private:

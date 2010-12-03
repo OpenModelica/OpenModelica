@@ -36,13 +36,8 @@
 LineAnnotation::LineAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
-    // initialize the Line Patterns map.
-    this->mLinePatternsMap.insert("None", Qt::NoPen);
-    this->mLinePatternsMap.insert("Solid", Qt::SolidLine);
-    this->mLinePatternsMap.insert("Dash", Qt::DashLine);
-    this->mLinePatternsMap.insert("Dot", Qt::DotLine);
-    this->mLinePatternsMap.insert("DashDot", Qt::DashDotLine);
-    this->mLinePatternsMap.insert("DashDotDot", Qt::DashDotDotLine);
+    // initialize all fields with default values
+    initializeFields();
 
     // parse the shape to get the list of attributes of Line.
     QStringList list = StringHandler::getStrings(shape);
@@ -133,9 +128,35 @@ LineAnnotation::LineAnnotation(QString shape, Component *pParent)
     }
 }
 
+LineAnnotation::LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{
+    // initialize all fields with default values
+    initializeFields();
+    mIsCustomShape = true;
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
 QRectF LineAnnotation::boundingRect() const
 {
-    return QRectF();
+    return shape().boundingRect();
+}
+
+QPainterPath LineAnnotation::shape() const
+{
+    QPainterPath path;
+    for (int i = 0 ; i < this->mPoints.size() ; i++)
+    {
+        QPointF p1 = this->mPoints.at(i);
+        if (i == 0)
+            path.moveTo(p1.x(), p1.y());
+        path.lineTo(p1.x(), p1.y());
+    }
+
+    QPainterPathStroker stroker;
+    stroker.setWidth(Helper::shapesStrokeWidth);
+    return stroker.createStroke(path);
 }
 
 void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -149,27 +170,118 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 void LineAnnotation::drawLineAnnotaion(QPainter *painter)
 {
     QPainterPath path;
-    //painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern, Qt::RoundCap, Qt::MiterJoin));
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
+    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+    pen.setCosmetic(true);
+    painter->setPen(pen);
 
     if (this->mPoints.size() > 0)
     {
         for (int i = 0 ; i < this->mPoints.size() ; i++)
         {
-            QPointF p1 = this->mPoints.at(i);
+            QPointF point1 = this->mPoints.at(i);
             if (i == 0)
-                path.moveTo(p1.x(), p1.y());
+            {
+                path.moveTo(point1.x(), point1.y());
+                continue;
+            }
 
             //! @todo add the support for splines..........
             if (this->mSmooth)
             {
-
+                if (i % 3 != 0)
+                {
+                    //path.lineTo(point1.x(), point1.y());
+                    continue;
+                }
+                else
+                {
+                    QPointF point2 = this->mPoints.at(i - 2);
+                    QPointF point3 = this->mPoints.at(i - 1);
+                    path.cubicTo(point2, point3, point1);
+                }
             }
             else
             {
-                path.lineTo(p1.x(), p1.y());
+                path.lineTo(point1.x(), point1.y());
             }
         }
-        painter->strokePath(path, this->mLineColor);
+        painter->drawPath(path);
     }
+}
+
+void LineAnnotation::addPoint(QPointF point)
+{
+    mPoints.append(point);
+}
+
+void LineAnnotation::updateEndPoint(QPointF point)
+{
+    mPoints.back() = point;
+}
+
+void LineAnnotation::drawRectangleCornerItems()
+{
+    mIsFinishedCreatingShape = true;
+    // remove the last point since mouse double click event has added an extra point to it.....
+    mPoints.remove(mPoints.size() - 1);
+    for (int i = 0 ; i < this->mPoints.size() ; i++)
+    {
+        QPointF point = this->mPoints.at(i);
+        RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
+        mRectangleCornerItemsList.append(rectangleCornerItem);
+    }
+    emit updateShapeAnnotation();
+}
+
+QString LineAnnotation::getShapeAnnotation()
+{
+    QString annotationString;
+    annotationString.append("Line(");
+
+    if (!mVisible)
+    {
+        annotationString.append("visible=false,");
+    }
+
+    annotationString.append("points={");
+    for (int i = 0 ; i < mPoints.size() ; i++)
+    {
+        annotationString.append("{").append(QString::number(mapToScene(mPoints[i]).x())).append(",");
+        annotationString.append(QString::number(mapToScene(mPoints[i]).y())).append("}");
+        if (i < mPoints.size() - 1)
+            annotationString.append(",");
+    }
+    annotationString.append("},");
+
+    annotationString.append("rotation=").append(QString::number(this->rotation())).append(",");
+
+    annotationString.append("color={");
+    annotationString.append(QString::number(mLineColor.red())).append(",");
+    annotationString.append(QString::number(mLineColor.green())).append(",");
+    annotationString.append(QString::number(mLineColor.blue()));
+    annotationString.append("},");
+
+    QMap<QString, Qt::PenStyle>::iterator it;
+    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
+    {
+        if (it.value() == mLinePattern)
+        {
+            annotationString.append("pattern=LinePattern.").append(it.key()).append(",");
+            break;
+        }
+    }
+
+    annotationString.append("thickness=").append(QString::number(mThickness));
+    if (mSmooth)
+    {
+        annotationString.append(",smooth=Smooth.Bezier");
+    }
+
+    annotationString.append(")");
+    return annotationString;
+}
+
+void LineAnnotation::updatePoint(int index, QPointF point)
+{
+    mPoints.replace(index, point);
 }

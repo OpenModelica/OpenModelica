@@ -36,26 +36,7 @@
 PolygonAnnotation::PolygonAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
-    // initialize the Line Patterns map.
-    this->mLinePatternsMap.insert("None", Qt::NoPen);
-    this->mLinePatternsMap.insert("Solid", Qt::SolidLine);
-    this->mLinePatternsMap.insert("Dash", Qt::DashLine);
-    this->mLinePatternsMap.insert("Dot", Qt::DotLine);
-    this->mLinePatternsMap.insert("DashDot", Qt::DashDotLine);
-    this->mLinePatternsMap.insert("DashDotDot", Qt::DashDotDotLine);
-
-    // initialize the Fill Patterns map.
-    this->mFillPatternsMap.insert("None", Qt::NoBrush);
-    this->mFillPatternsMap.insert("Solid", Qt::SolidPattern);
-    this->mFillPatternsMap.insert("Horizontal", Qt::HorPattern);
-    this->mFillPatternsMap.insert("Vertical", Qt::VerPattern);
-    this->mFillPatternsMap.insert("Cross", Qt::CrossPattern);
-    this->mFillPatternsMap.insert("Forward", Qt::FDiagPattern);
-    this->mFillPatternsMap.insert("Backward", Qt::BDiagPattern);
-    this->mFillPatternsMap.insert("CrossDiag", Qt::DiagCrossPattern);
-    this->mFillPatternsMap.insert("HorizontalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("VerticalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("Sphere", Qt::RadialGradientPattern);
+    initializeFields();
 
     // parse the shape to get the list of attributes of Polygon.
     QStringList list = StringHandler::getStrings(shape);
@@ -161,9 +142,29 @@ PolygonAnnotation::PolygonAnnotation(QString shape, Component *pParent)
     }
 }
 
+PolygonAnnotation::PolygonAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{
+    // initialize all fields with default values
+    initializeFields();
+    mIsCustomShape = true;
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
 QRectF PolygonAnnotation::boundingRect() const
 {
-    return QRectF();
+    return shape().boundingRect();
+}
+
+QPainterPath PolygonAnnotation::shape() const
+{
+    QPainterPath path;
+    path.addPolygon(QPolygonF(mPoints));
+
+    QPainterPathStroker stroker;
+    stroker.setWidth(Helper::shapesStrokeWidth);
+    return stroker.createStroke(path);
 }
 
 void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -189,13 +190,115 @@ void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
         painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
         break;
     }
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
+    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+    pen.setCosmetic(true);
+    painter->setPen(pen);
 
-    QVector<QPointF> points;
-    for (int i = 0 ; i < this->mPoints.size() ; i ++)
-        points.append(this->mPoints.at(i));
-
-    path.addPolygon(QPolygonF(points));
+    path.addPolygon(QPolygonF(mPoints));
     painter->drawPath(path);
-    painter->strokePath(path, this->mLineColor);
+}
+
+void PolygonAnnotation::addPoint(QPointF point)
+{
+    mPoints.append(point);
+    mPoints.back() = mPoints.first();
+}
+
+void PolygonAnnotation::updateEndPoint(QPointF point)
+{
+    // we update the second last point for polygon since the last point is connected to first one
+    mPoints.replace(mPoints.size() - 2, point);
+}
+
+void PolygonAnnotation::drawRectangleCornerItems()
+{
+    mIsFinishedCreatingShape = true;
+    // remove the last point since mouse double click event has added an extra point to it.....
+    mPoints.remove(mPoints.size() - 1);
+    // the loop should run -1 size so that we dont have two corner item for starting and ending points
+    for (int i = 0 ; i < this->mPoints.size() - 1 ; i++)
+    {
+        QPointF point = this->mPoints.at(i);
+        RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
+        mRectangleCornerItemsList.append(rectangleCornerItem);
+    }
+    emit updateShapeAnnotation();
+}
+
+QString PolygonAnnotation::getShapeAnnotation()
+{
+    QString annotationString;
+    annotationString.append("Polygon(");
+
+    if (!mVisible)
+    {
+        annotationString.append("visible=false,");
+    }
+
+    annotationString.append("points={");
+    for (int i = 0 ; i < mPoints.size() ; i++)
+    {
+        annotationString.append("{").append(QString::number(mapToScene(mPoints[i]).x())).append(",");
+        annotationString.append(QString::number(mapToScene(mPoints[i]).y())).append("}");
+        if (i < mPoints.size() - 1)
+            annotationString.append(",");
+    }
+    annotationString.append("},");
+
+    annotationString.append("rotation=").append(QString::number(this->rotation())).append(",");
+
+    annotationString.append("lineColor={");
+    annotationString.append(QString::number(mLineColor.red())).append(",");
+    annotationString.append(QString::number(mLineColor.green())).append(",");
+    annotationString.append(QString::number(mLineColor.blue()));
+    annotationString.append("},");
+
+    annotationString.append("fillColor={");
+    annotationString.append(QString::number(mFillColor.red())).append(",");
+    annotationString.append(QString::number(mFillColor.green())).append(",");
+    annotationString.append(QString::number(mFillColor.blue()));
+    annotationString.append("},");
+
+    QMap<QString, Qt::PenStyle>::iterator it;
+    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
+    {
+        if (it.value() == mLinePattern)
+        {
+            annotationString.append("pattern=LinePattern.").append(it.key()).append(",");
+            break;
+        }
+    }
+
+    QMap<QString, Qt::BrushStyle>::iterator fill_it;
+    for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
+    {
+        if (fill_it.value() == mFillPattern)
+        {
+            annotationString.append("fillPattern=FillPattern.").append(fill_it.key()).append(",");
+            break;
+        }
+    }
+
+    annotationString.append("lineThickness=").append(QString::number(mThickness));
+    if (mSmooth)
+    {
+        annotationString.append(",smooth=Smooth.Bezier");
+    }
+
+    annotationString.append(")");
+    return annotationString;
+}
+
+void PolygonAnnotation::updatePoint(int index, QPointF point)
+{
+    // if updating the starting point then update the end point with it as well
+    if (index == 0)
+    {
+        mPoints.replace(index, point);
+        mPoints.back() = mPoints.first();
+    }
+    else
+    {
+        mPoints.replace(index, point);
+    }
 }

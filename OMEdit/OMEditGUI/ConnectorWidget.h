@@ -43,7 +43,7 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "Component.h"
+//#include "Component.h"
 
 class ConnectorLine;
 class GraphicsView;

@@ -68,6 +68,7 @@ public:
     static QSize buttonIconSize;
     static int headingFontSize;
     static int tabWidth;
+    static qreal shapesStrokeWidth;
 };
 
 class GUIMessages
@@ -99,7 +100,8 @@ public:
         INVALID_COMPONENT_ANNOTATIONS,
         SAVED_MODEL,
         COMMENT_SAVE_ERROR,
-        ATTRIBUTES_SAVE_ERROR
+        ATTRIBUTES_SAVE_ERROR,
+        CHILD_MODEL_SAVE
     };
 
     static QString getMessage(int type);

@@ -40,6 +40,8 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTabStopWidth(Helper::tabWidth);
+    // depending on the project tab readonly state set the text view readonly state
+    setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
 }
 

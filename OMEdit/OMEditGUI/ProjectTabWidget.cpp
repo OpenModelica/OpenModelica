@@ -61,11 +61,16 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     this->setEnabled(true);
     this->setAcceptDrops(true);
     this->mIsCreatingConnector = false;
+    this->mIsMovingComponents = false;
+    this->mIsCreatingLine = false;
+    this->mIsCreatingPolygon = false;
+    this->mIsCreatingRectangle = false;
+    this->mIsCreatingEllipse = false;
+    this->mIsCreatingText = false;
     //this->setMinimumSize(Helper::viewWidth, Helper::viewHeight);
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
-    this->scale(2.0, -2.0);
     this->centerOn(this->sceneRect().center());
     this->createActions();
     this->createMenus();
@@ -73,6 +78,7 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     // if user is viewing some readonly component then dont draw backgrounds.
     if (!mpParentProjectTab->isReadOnly())
     {
+        this->scale(2.0, -2.0);
         if (mIconType == StringHandler::ICON)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
@@ -84,6 +90,11 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
                                          .append(", stop: 0 gray, stop: 1 lightGray);"));
         }
+    }
+    // if readonly view then don't scale the graphics view
+    else
+    {
+        this->scale(1.0, -1.0);
     }
 
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
@@ -283,11 +294,26 @@ bool GraphicsView::checkComponentName(QString iconName)
     return true;
 }
 
+void GraphicsView::addShapeObject(ShapeAnnotation *shape)
+{
+    mShapesList.append(shape);
+}
+
+void GraphicsView::deleteShapeObject(ShapeAnnotation *shape)
+{
+    mShapesList.removeOne(shape);
+}
+
 //! Defines what happens when the mouse is moving in a GraphicsView.
 //! @param event contains information of the mouse moving operation.
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-    QGraphicsView::mouseMoveEvent(event);
+    // don't send mouse move events to items if we are creating something
+    if (!mIsCreatingConnector and !mIsCreatingLine and !mIsCreatingPolygon and !mIsCreatingRectangle
+        and !mIsCreatingEllipse and !mIsCreatingText)
+    {
+        QGraphicsView::mouseMoveEvent(event);
+    }
 
     //If creating connector, the end port shall be updated to the mouse position.
     if (this->mIsCreatingConnector)
@@ -295,18 +321,71 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
         mpConnector->updateEndPoint(this->mapToScene(event->pos()));
         mpConnector->drawConnector();
     }
+    //If creating line shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingLine)
+    {
+        mpLineShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpLineShape->update();
+    }
+    //If creating rectangle shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingPolygon)
+    {
+        mpPolygonShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpPolygonShape->update();
+    }
+    //If creating rectangle shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingRectangle)
+    {
+        mpRectangleShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpRectangleShape->update();
+    }
+    //If creating rectangle shape, the end points shall be updated to the mouse position.
+    else if (this->mIsCreatingEllipse)
+    {
+        mpEllipseShape->updateEndPoint(this->mapToScene(event->pos()));
+        mpEllipseShape->update();
+    }
 }
 
 //! Defines what happens when clicking in a GraphicsView.
 //! @param event contains information of the mouse click operation.
 void GraphicsView::mousePressEvent(QMouseEvent *event)
 {
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    // if left button presses and we are creating a connector
     if ((event->button() == Qt::LeftButton) && (this->mIsCreatingConnector))
     {
         mpConnector->addPoint(this->mapToScene(event->pos()));
     }
-    if ((event->button() == Qt::LeftButton) && (!this->mIsCreatingConnector))
+    // if left button presses and we are starting to create a Line
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->lineAction->isChecked())
     {
+        // if we are starting to create a line then create line object and add to graphicsview
+        createLineShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are starting to create a Line
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->polygonAction->isChecked())
+    {
+        // if we are starting to create a line then create line object and add to graphicsview
+        createPolygonShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are starting to create a Rectangle
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->rectangleAction->isChecked())
+    {
+        // if we are starting to create a rectangle then create rectangle object and add to graphicsview
+        createRectangleShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are starting to create an Ellipse
+    else if ((event->button() == Qt::LeftButton) && pMainWindow->ellipseAction->isChecked())
+    {
+        // if we are starting to create a rectangle then create rectangle object and add to graphicsview
+        createEllipseShape(this->mapToScene(event->pos()));
+    }
+    // if left button presses and we are not creating a connector
+    else if ((event->button() == Qt::LeftButton))
+    {
+        // this flag is just used to have seperate identify for if statement in mouse release event of graphicsview
+        this->mIsMovingComponents = true;
         // save the position of all components
         foreach (Component *component, mComponentsList)
         {
@@ -314,13 +393,20 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
             component->isMousePressed = true;
         }
     }
-    QGraphicsView::mousePressEvent(event);
+    /* don't send mouse press events to items if we are creating something, only send them if creating a connector
+       because for connector we need to select end port */
+    if (!mIsCreatingLine and !mIsCreatingPolygon and !mIsCreatingRectangle and !mIsCreatingEllipse
+        and !mIsCreatingText)
+    {
+        QGraphicsView::mousePressEvent(event);
+    }
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if ((event->button() == Qt::LeftButton) && (!this->mIsCreatingConnector))
+    if ((event->button() == Qt::LeftButton) && (this->mIsMovingComponents))
     {
+        this->mIsMovingComponents = false;
         // if component position is changed then update annotations
         foreach (Component *component, mComponentsList)
         {
@@ -341,6 +427,34 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         }
     }
     QGraphicsView::mouseReleaseEvent(event);
+}
+
+void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    if (this->mIsCreatingLine)
+    {
+        // finish creating the line
+        this->mIsCreatingLine = false;
+        // add the line to shapes list
+        addShapeObject(mpLineShape);
+        mpLineShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpLineShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        pMainWindow->lineAction->setChecked(false);
+    }
+    else if (this->mIsCreatingPolygon)
+    {
+        // finish creating the line
+        this->mIsCreatingPolygon = false;
+        // add the line to shapes list
+        addShapeObject(mpPolygonShape);
+        mpPolygonShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpPolygonShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        pMainWindow->polygonAction->setChecked(false);
+    }
+    QGraphicsView::mouseDoubleClickEvent(event);
 }
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
@@ -412,6 +526,106 @@ void GraphicsView::createActions()
 }
 
 void GraphicsView::createMenus()
+{
+
+}
+
+void GraphicsView::createLineShape(QPointF point)
+{
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (!this->mIsCreatingLine)
+    {
+        this->mIsCreatingLine = true;
+        mpLineShape = new LineAnnotation(this);
+        mpLineShape->addPoint(point);
+        mpLineShape->addPoint(point);
+        this->scene()->addItem(mpLineShape);
+    }
+    // if we are already creating a line then only add one point.
+    else
+    {
+        mpLineShape->addPoint(point);
+    }
+}
+
+void GraphicsView::createPolygonShape(QPointF point)
+{
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (!this->mIsCreatingPolygon)
+    {
+        this->mIsCreatingPolygon = true;
+        mpPolygonShape = new PolygonAnnotation(this);
+        mpPolygonShape->addPoint(point);
+        mpPolygonShape->addPoint(point);
+        mpPolygonShape->addPoint(point);
+        this->scene()->addItem(mpPolygonShape);
+    }
+    // if we are already creating a polygon then only add one point.
+    else
+    {
+        mpPolygonShape->addPoint(point);
+    }
+}
+
+void GraphicsView::createRectangleShape(QPointF point)
+{
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (!this->mIsCreatingRectangle)
+    {
+        this->mIsCreatingRectangle = true;
+        mpRectangleShape = new RectangleAnnotation(this);
+        mpRectangleShape->addPoint(point);
+        mpRectangleShape->addPoint(point);
+        this->scene()->addItem(mpRectangleShape);
+    }
+    // if we are already creating a rectangle then simply finish creating it.
+    else
+    {
+        // finish creating the rectangle
+        this->mIsCreatingRectangle = false;
+        // add the line to shapes list
+        addShapeObject(mpRectangleShape);
+        mpRectangleShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpRectangleShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->rectangleAction->setChecked(false);
+    }
+}
+
+void GraphicsView::createEllipseShape(QPointF point)
+{
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (!this->mIsCreatingEllipse)
+    {
+        this->mIsCreatingEllipse = true;
+        mpEllipseShape = new EllipseAnnotation(this);
+        mpEllipseShape->addPoint(point);
+        mpEllipseShape->addPoint(point);
+        this->scene()->addItem(mpEllipseShape);
+    }
+    // if we are already creating a rectangle then simply finish creating it.
+    else
+    {
+        // finish creating the rectangle
+        this->mIsCreatingEllipse = false;
+        // add the line to shapes list
+        addShapeObject(mpEllipseShape);
+        mpEllipseShape->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+        mpEllipseShape->drawRectangleCornerItems();
+        // make the toolbar button of line unchecked
+        mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->ellipseAction->setChecked(false);
+    }
+}
+
+void GraphicsView::createTextShape(QPointF point)
 {
 
 }
@@ -648,6 +862,43 @@ void GraphicsView::saveModelAnnotation()
 //    pOMCProcy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString);
 }
 
+void GraphicsView::addClassAnnotation()
+{
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    QString annotationString;
+    annotationString.append("annotate=");
+
+    int counter = 0;
+
+    if (mIconType == StringHandler::ICON)
+    {
+        annotationString.append("Diagram(");
+    }
+    else if (mIconType == StringHandler::DIAGRAM)
+    {
+        annotationString.append("Icon(");
+    }
+    if (mShapesList.size() > 0)
+    {
+        annotationString.append("graphics={");
+        foreach (ShapeAnnotation *shape, mShapesList)
+        {
+            annotationString.append(shape->getShapeAnnotation());
+            if (counter < mShapesList.size() - 1)
+                annotationString.append(",");
+            counter++;
+        }
+        annotationString.append("}");
+    }
+    annotationString.append(")");
+
+    // add the class annotation to model through OMC
+    if (!pMainWindow->mpOMCProxy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString))
+    {
+        pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation");
+    }
+}
+
 //! @class GraphicsScene
 //! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
 
@@ -682,7 +933,7 @@ void GraphicsViewScroll::scrollContentsBy(int dx, int dy)
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTabWidget *parent)
+ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChild, ProjectTabWidget *parent)
     : QWidget(parent)
 {
     mIsSaved = true;
@@ -691,6 +942,7 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTab
     mModelicaType = modelicaType;
     mIconType = iconType;
     setReadOnly(readOnly);
+    setIsChild(isChild);
 
     // icon graphics framework
     mpGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
@@ -709,7 +961,6 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTab
                                                             mpModelicaEditor->document());
     connect(pMainWindow->mpOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter,
             SLOT(settingsChanged()));
-    mpModelicaEditor->hide();
 
     // set Project Status Bar lables
     mpReadOnlyLabel = isReadOnly() ? new QLabel(Helper::readOnly) : new QLabel(Helper::writeAble);
@@ -782,17 +1033,10 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, ProjectTab
     tabLayout->addWidget(mpModelicaEditor);
     setLayout(tabLayout);
 
-    // depending on the Icon and Diagram, show the appropriate view to user
-    if (mIconType == StringHandler::ICON)
-    {
-        mpDiagramGraphicsView->hide();
-        mpIconToolButton->setChecked(true);
-    }
-    else if (mIconType == StringHandler::DIAGRAM)
-    {
-        mpGraphicsView->hide();
-        mpDiagramToolButton->setChecked(true);
-    }
+    // Hide the modelica text view, icon view and show diagram view
+    mpModelicaEditor->hide();
+    mpDiagramGraphicsView->hide();
+    mpIconToolButton->setChecked(true);
 
     connect(this, SIGNAL(disableMainWindow(bool)),
             mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
@@ -836,16 +1080,15 @@ void ProjectTab::updateModel(QString name)
 void ProjectTab::hasChanged()
 {
     // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
-    if (isReadOnly())
+    // if model is a child then simply return.....
+    if (isReadOnly() or isChild())
         return;
 
     if (mIsSaved)
     {
         QString tabName = mpParentProjectTabWidget->tabText(mpParentProjectTabWidget->currentIndex());
-
         tabName.append("*");
         mpParentProjectTabWidget->setTabText(mpParentProjectTabWidget->currentIndex(), tabName);
-
         mIsSaved = false;
     }
 }
@@ -966,7 +1209,6 @@ void ProjectTab::getModelComponents()
     foreach (ComponentsProperties *componentProperties, components)
     {
         //! @todo add the code to check if components are of types Real, so that we dont check annotation for them.
-
         Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(componentProperties->getClassName());
         Component *newComponent;
         // create a component
@@ -1009,10 +1251,11 @@ void ProjectTab::getModelComponents()
             newComponent->mTransformationString = componentsAnnotationsList.at(i);
             Transformation *transformation = new Transformation(newComponent);
             //newComponent->setTransform(transformation->getTransformationMatrix());
+            //! @todo We need to reset the matrix before applying tranformations.
+            newComponent->resetTransform();
             newComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
             newComponent->setRotation(transformation->getRotateAngle());
-            //newComponent->scale(transformation->getScale(), transformation->getScale());
-            //! @todo add the scaling code later on
+            newComponent->scale(transformation->getScale(), transformation->getScale());
         }
         i++;
     }
@@ -1113,9 +1356,24 @@ bool ProjectTab::isReadOnly()
     return mReadOnly;
 }
 
+void ProjectTab::setIsChild(bool isChild)
+{
+    mIsChild = isChild;
+}
+
+bool ProjectTab::isChild()
+{
+    return mIsChild;
+}
+
 void ProjectTab::setModelFilePathLabel(QString filePath)
 {
     mpModelFilePathLabel->setText(filePath);
+}
+
+QString ProjectTab::getModelicaTypeLabel()
+{
+    return mpModelicaTypeLabel->text();
 }
 
 //! Notifies the model that its corresponding text has changed.
@@ -1175,6 +1433,8 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
     connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
     connect(mpParentMainWindow->mpLibrary->mpModelicaTree, SIGNAL(nodeDeleted()), SLOT(updateTabIndexes()));
+    connect(this, SIGNAL(modelSaved(QString,QString)), mpParentMainWindow->mpLibrary->mpModelicaTree,
+            SLOT(saveChildModels(QString,QString)));
 }
 
 ProjectTabWidget::~ProjectTabWidget()
@@ -1238,6 +1498,7 @@ void ProjectTabWidget::removeTab(int index)
     mpParentMainWindow->disableMainWindow(false);
     // if tab is saved and user is just closing it then save it to mRemovedTabsList, so that we can open it later on
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
+    QTabWidget::removeTab(index);
     if (pCurrentTab->mIsSaved)
     {
         mRemovedTabsList.append(pCurrentTab);
@@ -1247,7 +1508,6 @@ void ProjectTabWidget::removeTab(int index)
         // delete the tab if user dont save it, becasue removetab only removes the widget don't delete it
         delete pCurrentTab;
     }
-    QTabWidget::removeTab(index);
     emit tabRemoved();
 }
 
@@ -1305,11 +1565,19 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
 //! @see closeProjectTab(int index)
 void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int modelicaType)
 {
-    ProjectTab *newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, this);
-    newTab->mIsSaved = false;
+    ProjectTab *newTab;
+    if (modelStructure.isEmpty())
+    {
+        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, false, this);
+        newTab->mIsSaved = false;
+    }
+    else
+    {
+        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, true, this);
+    }
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
-    newTab->mTabPosition = addTab(newTab, modelName.append(QString("*")));
+    newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
     setCurrentWidget(newTab);
 }
 
@@ -1318,16 +1586,33 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     Q_UNUSED(column);
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
     ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
-                                        StringHandler::DIAGRAM, true, this);
+                                        StringHandler::DIAGRAM, true, false, this);
     newTab->mModelName = treeNode->mName;
     newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
 
     Component *diagram;
     QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->toolTip(0));
-    diagram = new Component(result, newTab->mModelNameStructure, newTab->mModelNameStructure,
-                            QPointF (0,0), StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
-                            newTab->mpDiagramGraphicsView);
+    diagram = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
+                            StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
+                            newTab->mpGraphicsView);
+
+
+    Component *oldIconComponent = mpParentMainWindow->mpLibrary->getComponentObject(newTab->mModelNameStructure);
+    Component *newIconComponent;
+
+    if (!oldIconComponent)
+    {
+        QString result = mpParentMainWindow->mpOMCProxy->getIconAnnotation(newTab->mModelNameStructure);
+        newIconComponent = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
+                                         StringHandler::ICON, false, mpParentMainWindow->mpOMCProxy,
+                                         newTab->mpDiagramGraphicsView);
+    }
+    else
+    {
+        newIconComponent = new Component(oldIconComponent, newTab->mModelName, QPointF (0,0), StringHandler::ICON,
+                                        false, newTab->mpDiagramGraphicsView);
+    }
     setCurrentWidget(newTab);
 }
 
@@ -1351,9 +1636,20 @@ void ProjectTabWidget::saveProjectTabAs()
 void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 {
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
+    if (!pCurrentTab)
+        return;
     // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
     if (pCurrentTab->isReadOnly())
         return;
+
+    // if model is a child model then give user a message and return
+    if (pCurrentTab->isChild())
+    {
+        MessageWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
+        pMessageWidget->printGUIInfoMessage(QString(GUIMessages::getMessage(GUIMessages::CHILD_MODEL_SAVE))
+                                            .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
+        return;
+    }
 
     QString tabName = tabText(index);
 
@@ -1405,7 +1701,12 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         }
         else
         {
-            this->setSourceFile(pCurrentTab->mModelNameStructure, modelFileName);
+            // set the source file in OMC
+            pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, modelFileName);
+            // if opened tab is a package save all of its child models
+            if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
+                emit modelSaved(pCurrentTab->mModelNameStructure, modelFileName);
+            // finally save the model through OMC
             if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
             {
                 pCurrentTab->mModelFileName = modelFileName;
@@ -1455,7 +1756,8 @@ bool ProjectTabWidget::closeProjectTab(int index)
         QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
         msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
         msgBox->setIcon(QMessageBox::Question);
-        msgBox->setText(QString("The model '").append(modelName).append("'").append(QString(" is not saved.")));
+        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
+                        .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
         msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
         msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
         msgBox->setDefaultButton(QMessageBox::Save);
@@ -1641,6 +1943,8 @@ void ProjectTabWidget::enableProjectToolbar()
         mpParentMainWindow->zoomInAction->setEnabled(true);
         mpParentMainWindow->zoomOutAction->setEnabled(true);
         mpParentMainWindow->checkModelAction->setEnabled(true);
+        // enable the shapes tool bar
+        mpParentMainWindow->shapesToolBar->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -1654,6 +1958,8 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->zoomInAction->setEnabled(false);
         mpParentMainWindow->zoomOutAction->setEnabled(false);
         mpParentMainWindow->checkModelAction->setEnabled(false);
+        // disable the shapes tool bar
+        mpParentMainWindow->shapesToolBar->setEnabled(false);
         mToolBarEnabled = false;
     }
 }

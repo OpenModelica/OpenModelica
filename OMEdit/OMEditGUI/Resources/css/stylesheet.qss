@@ -19,7 +19,7 @@ QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:ha
     image: url(:/Resources/icons/branch-open.png);
 }
 QTreeWidget::item {
-    height: 20px;
+    height: 22px;
 }
 /* End of Library Widget Styles */
 

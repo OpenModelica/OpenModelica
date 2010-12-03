@@ -28,7 +28,6 @@
         <file>Resources/icons/zoom100.png</file>
         <file>Resources/icons/zoomIn.png</file>
         <file>Resources/icons/zoomOut.png</file>
-        <file>Resources/icons/branch-end.png</file>
         <file>Resources/icons/vline.png</file>
         <file>Resources/icons/branch-closed.png</file>
         <file>Resources/icons/branch-open.png</file>
@@ -43,5 +42,12 @@
         <file>Resources/icons/omeditor_splash.png</file>
         <file>Resources/icons/omeditor.png</file>
         <file>Resources/icons/omedit.ico</file>
+        <file>Resources/icons/branch-end.png</file>
+        <file>Resources/icons/info-icon.png</file>
+        <file>Resources/icons/ellipse-shape.png</file>
+        <file>Resources/icons/text-shape.png</file>
+        <file>Resources/icons/line-shape.png</file>
+        <file>Resources/icons/rectangle-shape.png</file>
+        <file>Resources/icons/polygon-shape.png</file>
     </qresource>
 </RCC>

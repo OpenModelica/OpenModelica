@@ -39,6 +39,7 @@
  */
 
 #include "ConnectorWidget.h"
+#include "Component.h"
 
 Connector::Connector(Component *pComponent, GraphicsView *pParentView, QGraphicsItem *pParent)
 {
@@ -47,7 +48,7 @@ Connector::Connector(Component *pComponent, GraphicsView *pParentView, QGraphics
     this->setStartComponent(pComponent);
     setFlags(QGraphicsItem::ItemIsFocusable);
     this->setPos(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
-    this->scale(Helper::globalIconXScale, Helper::globalIconYScale);
+    this->scale(1.0, 1.0);
     setZValue(-1.0);
     this->updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
     this->mEndComponentConnected = false;
@@ -75,7 +76,7 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
     mPoints = points;
 
     //Setup the geometries vector based on the point geometry
-    for(int i=0; i != mPoints.size()-1; ++i)
+    for(int i = 0 ; i < mPoints.size()-1 ; ++i)
     {
         if(mPoints[i].x() == mPoints[i+1].x())
             mGeometries.push_back(Connector::VERTICAL);
@@ -91,7 +92,7 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
     connect(mpEndComponent->mpParentComponent, SIGNAL(componentDeleted()), SLOT(deleteMe()));
 
     //Create the lines, so that drawConnector has something to work with
-    for(int i = 0; i != mPoints.size()-1; ++i)
+    for(int i = 0 ; i < mPoints.size()-1 ; ++i)
     {
         ConnectorLine *tempLine = new ConnectorLine(mapFromScene(mPoints[i]).x(), mapFromScene(mPoints[i]).y(),
                                                     mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(),
@@ -109,9 +110,9 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
     this->drawConnector();
 
     //Make all lines selectable and all lines except first and last movable
-    for(int i=1; i!=mpLines.size()-1; ++i)
+    for(int i = 1 ; i < mpLines.size() - 1 ; ++i)
         mpLines[i]->setFlag(QGraphicsItem::ItemIsMovable, true);
-    for(int i=0; i!=mpLines.size(); ++i)
+    for(int i = 0 ; i < mpLines.size() ; ++i)
         mpLines[i]->setFlag(QGraphicsItem::ItemIsSelectable, true);
 
     mpStartComponent->mpParentComponent->addConnector(this);
@@ -493,7 +494,10 @@ ConnectorLine::ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNum
     this->mParentConnectorEndComponentConnected = false;
     this->mActivePen = QPen(Qt::red);
     this->mPassivePen = QPen(Qt::black);
-    this->mHoverPen = QPen(Qt::darkRed, 7);
+    QPen pen (Qt::darkRed);
+    pen.setWidth(3);
+    pen.setCosmetic(true);
+    this->mHoverPen = pen;
 }
 
 //! Reimplementation of paint function. Removes the ugly dotted selection box.

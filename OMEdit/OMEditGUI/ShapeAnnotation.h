@@ -39,11 +39,68 @@
 
 #include "StringHandler.h"
 
+class GraphicsView;
+class RectangleCornerItem;
+
 // Base class for all shapes annotations
 class ShapeAnnotation : public QObject, public QGraphicsItem
 {
+    Q_OBJECT
+    Q_INTERFACES(QGraphicsItem)
 public:
     ShapeAnnotation(QGraphicsItem *parent = 0);
+    ShapeAnnotation(GraphicsView *graphicsView, QGraphicsItem *parent = 0);
+    ~ShapeAnnotation();
+    void initializeFields();
+    void setSelectionBoxActive();
+    void setSelectionBoxPassive();
+    void setSelectionBoxHover();
+    virtual QString getShapeAnnotation();
+
+    GraphicsView *mpGraphicsView;
+signals:
+   void updateShapeAnnotation();
+public slots:
+    void deleteMe();
+    void doSelect();
+    void doUnSelect();
+    void moveUp();
+    void moveDown();
+    void moveLeft();
+    void moveRight();
+    void rotateClockwise();
+    void rotateAntiClockwise();
+    void resetRotation();
+protected:
+    bool mVisible;
+    QPointF mOrigin;
+    qreal mRotation;
+    QColor mLineColor;
+    QColor mFillColor;
+    QMap<QString, Qt::PenStyle> mLinePatternsMap;
+    Qt::PenStyle mLinePattern;
+    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
+    Qt::BrushStyle mFillPattern;
+    qreal mThickness;
+    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
+    Qt::BrushStyle mBorderPattern;
+    QVector<QPointF> mPoints;
+    QList<QPointF> mExtent;
+    qreal mCornerRadius;
+    bool mSmooth;
+
+    QList<RectangleCornerItem*> mRectangleCornerItemsList;
+    bool mIsCustomShape;
+    bool mIsFinishedCreatingShape;
+    bool mIsRectangleCorneItemClicked;
+    bool mIsItemClicked;
+    QPointF mClickPos;
+
+    virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 };
 
 #endif // SHAPEANNOTATION_H

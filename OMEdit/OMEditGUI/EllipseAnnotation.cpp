@@ -36,26 +36,7 @@
 EllipseAnnotation::EllipseAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
-    // initialize the Line Patterns map.
-    this->mLinePatternsMap.insert("None", Qt::NoPen);
-    this->mLinePatternsMap.insert("Solid", Qt::SolidLine);
-    this->mLinePatternsMap.insert("Dash", Qt::DashLine);
-    this->mLinePatternsMap.insert("Dot", Qt::DotLine);
-    this->mLinePatternsMap.insert("DashDot", Qt::DashDotLine);
-    this->mLinePatternsMap.insert("DashDotDot", Qt::DashDotDotLine);
-
-    // initialize the Fill Patterns map.
-    this->mFillPatternsMap.insert("None", Qt::NoBrush);
-    this->mFillPatternsMap.insert("Solid", Qt::SolidPattern);
-    this->mFillPatternsMap.insert("Horizontal", Qt::HorPattern);
-    this->mFillPatternsMap.insert("Vertical", Qt::VerPattern);
-    this->mFillPatternsMap.insert("Cross", Qt::CrossPattern);
-    this->mFillPatternsMap.insert("Forward", Qt::FDiagPattern);
-    this->mFillPatternsMap.insert("Backward", Qt::BDiagPattern);
-    this->mFillPatternsMap.insert("CrossDiag", Qt::DiagCrossPattern);
-    this->mFillPatternsMap.insert("HorizontalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("VerticalCylinder", Qt::LinearGradientPattern);
-    this->mFillPatternsMap.insert("Sphere", Qt::RadialGradientPattern);
+    initializeFields();
 
     // Remove { } from shape
 
@@ -148,9 +129,42 @@ EllipseAnnotation::EllipseAnnotation(QString shape, Component *pParent)
     this->mExtent.append(p2);
 }
 
+EllipseAnnotation::EllipseAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{
+    // initialize all fields with default values
+    initializeFields();
+    mIsCustomShape = true;
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
 QRectF EllipseAnnotation::boundingRect() const
 {
-    return QRectF();
+//    if ((mExtent.size() < 2) or (mIsCustomRectangle and !mIsFinishedCreatingRectangle))
+//        return QRectF();
+//    else
+//        return QRectF(mExtent.at(0), mExtent.at(1));
+    return shape().boundingRect();
+}
+
+QPainterPath EllipseAnnotation::shape() const
+{
+    QPainterPath path;
+    QPointF p1 = this->mExtent.at(0);
+    QPointF p2 = this->mExtent.at(1);
+
+    qreal left = qMin(p1.x(), p2.x());
+    qreal top = qMin(p1.y(), p2.y());
+    qreal width = fabs(p1.x() - p2.x());
+    qreal height = fabs(p1.y() - p2.y());
+
+    QRectF ellipse (left, top, width, height);
+    path.addEllipse(ellipse);
+
+    QPainterPathStroker stroker;
+    stroker.setWidth(Helper::shapesStrokeWidth);
+    return stroker.createStroke(path);
 }
 
 void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -208,9 +222,96 @@ void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
         painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
         break;
     }
-    painter->setPen(QPen(this->mLineColor, this->mThickness, this->mLinePattern));
+    // make the pen width upper rounded, otherwise ellipse is distorted
+    qreal thickness = ceil(mThickness);
+
+    QPen pen(mLineColor, thickness, this->mLinePattern);
+    pen.setCosmetic(true);
+    painter->setPen(pen);
 
     path.addEllipse(ellipse);
     painter->drawPath(path);
-    painter->strokePath(path, this->mLineColor);
+}
+
+void EllipseAnnotation::addPoint(QPointF point)
+{
+    mExtent.append(point);
+}
+
+void EllipseAnnotation::updateEndPoint(QPointF point)
+{
+    mExtent.back() = point;
+}
+
+void EllipseAnnotation::drawRectangleCornerItems()
+{
+    mIsFinishedCreatingShape = true;
+    for (int i = 0 ; i < this->mExtent.size() ; i++)
+    {
+        QPointF point = this->mExtent.at(i);
+        RectangleCornerItem *rectangleCornerItem = new RectangleCornerItem(point.x(), point.y(), i, this);
+        mRectangleCornerItemsList.append(rectangleCornerItem);
+    }
+    emit updateShapeAnnotation();
+}
+
+QString EllipseAnnotation::getShapeAnnotation()
+{
+    QString annotationString;
+    annotationString.append("Ellipse(");
+
+    if (!mVisible)
+    {
+        annotationString.append("visible=false,");
+    }
+
+    annotationString.append("rotation=").append(QString::number(this->rotation())).append(",");
+
+    annotationString.append("lineColor={");
+    annotationString.append(QString::number(mLineColor.red())).append(",");
+    annotationString.append(QString::number(mLineColor.green())).append(",");
+    annotationString.append(QString::number(mLineColor.blue()));
+    annotationString.append("},");
+
+    annotationString.append("fillColor={");
+    annotationString.append(QString::number(mFillColor.red())).append(",");
+    annotationString.append(QString::number(mFillColor.green())).append(",");
+    annotationString.append(QString::number(mFillColor.blue()));
+    annotationString.append("},");
+
+    QMap<QString, Qt::PenStyle>::iterator it;
+    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
+    {
+        if (it.value() == mLinePattern)
+        {
+            annotationString.append("pattern=LinePattern.").append(it.key()).append(",");
+            break;
+        }
+    }
+
+    QMap<QString, Qt::BrushStyle>::iterator fill_it;
+    for (fill_it = this->mFillPatternsMap.begin(); fill_it != this->mFillPatternsMap.end(); ++fill_it)
+    {
+        if (fill_it.value() == mFillPattern)
+        {
+            annotationString.append("fillPattern=FillPattern.").append(fill_it.key()).append(",");
+            break;
+        }
+    }
+
+    annotationString.append("lineThickness=").append(QString::number(mThickness)).append(",");
+    annotationString.append("extent={{");
+    annotationString.append(QString::number(mapToScene(mExtent.at(0)).x())).append(",");
+    annotationString.append(QString::number(mapToScene(mExtent.at(0)).y())).append("},{");
+    annotationString.append(QString::number(mapToScene(mExtent.at(1)).x())).append(",");
+    annotationString.append(QString::number(mapToScene(mExtent.at(1)).y()));
+    annotationString.append("}}");
+
+    annotationString.append(")");
+    return annotationString;
+}
+
+void EllipseAnnotation::updatePoint(int index, QPointF point)
+{
+    mExtent.replace(index, point);
 }

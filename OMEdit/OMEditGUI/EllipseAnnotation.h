@@ -41,25 +41,22 @@ class OMCProxy;
 
 class EllipseAnnotation : public ShapeAnnotation
 {
-private:
-    bool mVisible;
-    QPointF mOrigin;
-    qreal mRotation;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QList<QPointF> mExtent;
+    Q_OBJECT
 public:
     EllipseAnnotation(QString shape, Component *pParent = 0);
+    EllipseAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
+    QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawEllipseAnnotaion(QPainter *painter);
+    void addPoint(QPointF point);
+    void updateEndPoint(QPointF point);
+    void drawRectangleCornerItems();
+    QString getShapeAnnotation();
 
     Component *mpComponent;
+public slots:
+    void updatePoint(int index, QPointF point);
 };
 
 #endif // ELLIPSEANNOTATION_H

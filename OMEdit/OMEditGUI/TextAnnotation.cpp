@@ -183,7 +183,10 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
 
 QRectF TextAnnotation::boundingRect() const
 {
-    return QRectF();
+    if (mExtent.size() < 2)
+        return QRectF();
+    else
+        return QRectF(mExtent.at(0), mExtent.at(1));
 }
 
 void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -242,7 +245,9 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         break;
     }*/
     painter->scale(1.0, -1.0);
-    painter->setPen(QPen(this->mFillColor, this->mThickness, this->mLinePattern));
+    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+    pen.setCosmetic(true);
+    painter->setPen(pen);
     painter->setBrush(QBrush(this->mFillColor, Qt::SolidPattern));
     painter->setFont(QFont(this->mFontName, this->mDefaultFontSize + this->mFontSize, this->mFontWeight, this->mFontItalic));
     painter->drawText(rect, Qt::AlignCenter, this->mTextString, &rect);

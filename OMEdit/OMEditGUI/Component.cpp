@@ -35,7 +35,7 @@
 
 Component::Component(QString value, QString name, QString className, QPointF position, int type, bool connector,
                      OMCProxy *omc, GraphicsView *graphicsView, Component *pParent)
-    : ShapeAnnotation(pParent), mAnnotationString(value), mName(name), mClassName(className), mType(type),
+    : ShapeAnnotation(graphicsView, pParent), mAnnotationString(value), mName(name), mClassName(className), mType(type),
       mIsConnector(connector), mpOMCProxy(omc), mpGraphicsView(graphicsView)
 {
     mIsLibraryComponent = false;
@@ -44,17 +44,25 @@ Component::Component(QString value, QString name, QString className, QPointF pos
 
     parseAnnotationString(this, value);
     // if component is an icon
-    if (mType == StringHandler::ICON)
+    if ((mType == StringHandler::ICON))
     {
-        scale(Helper::globalIconXScale, Helper::globalIconYScale);
         setPos(position);
-        setComponentFlags();
-        setAcceptHoverEvents(true);
-        getClassComponents(mClassName, mType);
-        createActions();
+        if (mpGraphicsView->mpParentProjectTab->isReadOnly())
+        {
+            scale(Helper::globalDiagramXScale, Helper::globalDiagramYScale);
+            getClassComponents(mClassName, mType);
+        }
+        else
+        {
+            scale(Helper::globalIconXScale, Helper::globalIconYScale);
+            setComponentFlags();
+            setAcceptHoverEvents(true);
+            getClassComponents(mClassName, mType);
+            createActions();
+        }
     }
     // if component is a diagram
-    else if (mType == StringHandler::DIAGRAM)
+    else if ((mType == StringHandler::DIAGRAM))
     {
         scale(Helper::globalDiagramXScale, Helper::globalDiagramYScale);
         setPos(position);
@@ -121,7 +129,7 @@ Component::Component(QString value, QString className, OMCProxy *omc, Component 
     mType = StringHandler::ICON;
     mIsConnector = false;
 
-    parseAnnotationString(this, value);
+    parseAnnotationString(this, value, true);
     getClassComponents(mClassName, mType);
 }
 
@@ -137,7 +145,12 @@ Component::Component(QString value, QString className, Component *pParent)
     mpComponentProperties = 0;
     mType = StringHandler::ICON;
     mIsConnector = false;
-    parseAnnotationString(this, mAnnotationString);
+    parseAnnotationString(this, mAnnotationString, true);
+
+    //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
+    //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
+    if (mRectangle.width() > 1)
+        getRootParentComponent()->mRectangle = mRectangle;
 }
 
 /* Used for Library Component. Called for component annotation instance */
@@ -151,13 +164,19 @@ Component::Component(QString value, QString className, QString transformationStr
     mpOMCProxy = pParent->mpOMCProxy;
     mType = StringHandler::ICON;
     mIsConnector = false;
-    parseAnnotationString(this, mAnnotationString);
+    parseAnnotationString(this, mAnnotationString, true);
     mpTransformation = new Transformation(this);
+    setTransform(mpTransformation->getTransformationMatrix());
+
+    //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
+    //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
+    if (mRectangle.width() > 1)
+        getRootParentComponent()->mRectangle = mRectangle;
 }
 
 Component::Component(Component *pComponent, QString name, QPointF position, int type, bool connector,
                      GraphicsView *graphicsView, Component *pParent)
-    : ShapeAnnotation(pParent), mName(name), mType(type), mIsConnector(connector), mpGraphicsView(graphicsView)
+    : ShapeAnnotation(graphicsView, pParent), mName(name), mType(type), mIsConnector(connector), mpGraphicsView(graphicsView)
 {
     mpParentComponent = pParent;
     mClassName = pComponent->mClassName;
@@ -171,18 +190,26 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
 
     parseAnnotationString(this, mAnnotationString);
     // if component is an icon
-    if (mType == StringHandler::ICON)
+    if ((mType == StringHandler::ICON))
     {
-        scale(Helper::globalIconXScale, Helper::globalIconYScale);
         setPos(position);
-        setComponentFlags();
-        setAcceptHoverEvents(true);
-        copyClassComponents(pComponent);
-        createSelectionBox();
-        createActions();
+        if (mpGraphicsView->mpParentProjectTab->isReadOnly())
+        {
+            scale(Helper::globalDiagramXScale, Helper::globalDiagramYScale);
+            copyClassComponents(pComponent);
+        }
+        else
+        {
+            scale(Helper::globalIconXScale, Helper::globalIconYScale);
+            setComponentFlags();
+            setAcceptHoverEvents(true);
+            copyClassComponents(pComponent);
+            createSelectionBox();
+            createActions();
+        }
     }
     // if component is a diagram
-    else if (mType == StringHandler::DIAGRAM)
+    else if ((mType == StringHandler::DIAGRAM))
     {
         scale(Helper::globalDiagramXScale, Helper::globalDiagramYScale);
         setPos(position);
@@ -210,7 +237,7 @@ Component::~Component()
 
 //! Parses the result of getIconAnnotation command.
 //! @param value is the result of getIconAnnotation command obtained from OMC.
-bool Component::parseAnnotationString(Component *item, QString value)
+bool Component::parseAnnotationString(Component *item, QString value, bool libraryIcon)
 {
     value = StringHandler::removeFirstLastCurlBrackets(value);
     if (value.isEmpty())
@@ -292,12 +319,16 @@ bool Component::parseAnnotationString(Component *item, QString value)
             EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, item);
             item->mpShapesList.append(ellipseAnnotation);
         }
-        if (shape.startsWith("Text"))
+        // don't parse the text annotation for library icon
+        if (!libraryIcon)
         {
-            shape = shape.mid(QString("Text").length());
-            shape = StringHandler::removeFirstLastBrackets(shape);
-            TextAnnotation *textAnnotation = new TextAnnotation(shape, item);
-            item->mpShapesList.append(textAnnotation);
+            if (shape.startsWith("Text"))
+            {
+                shape = shape.mid(QString("Text").length());
+                shape = StringHandler::removeFirstLastBrackets(shape);
+                TextAnnotation *textAnnotation = new TextAnnotation(shape, item);
+                item->mpShapesList.append(textAnnotation);
+            }
         }
     }
 }
@@ -349,7 +380,7 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     // if user is viewing the component in Icon View
-    if (mpGraphicsView->mIconType == StringHandler::DIAGRAM)
+    if ((mpGraphicsView->mIconType == StringHandler::DIAGRAM) or (mpGraphicsView->mpParentProjectTab->isReadOnly()))
         return;
     // if we are creating the connector then make sure user can not select and move components
     if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
@@ -650,73 +681,6 @@ void Component::deleteMe()
     mpGraphicsView->deleteComponentObject(this);
     mpGraphicsView->scene()->removeItem(this);
     delete(this);
-}
-
-//! Slot that moves component one pixel upwards
-//! @see moveDown()
-//! @see moveLeft()
-//! @see moveRight()
-void Component::moveUp()
-{
-    this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()+1);
-    mpGraphicsView->scene()->update();
-}
-
-//! Slot that moves component one pixel downwards
-//! @see moveUp()
-//! @see moveLeft()
-//! @see moveRight()
-void Component::moveDown()
-{
-    this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()-1);
-    mpGraphicsView->scene()->update();
-}
-
-//! Slot that moves component one pixel leftwards
-//! @see moveUp()
-//! @see moveDown()
-//! @see moveRight()
-void Component::moveLeft()
-{
-    this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()-1, this->pos().y());
-    mpGraphicsView->scene()->update();
-}
-
-//! Slot that moves component one pixel rightwards
-//! @see moveUp()
-//! @see moveDown()
-//! @see moveLeft()
-void Component::moveRight()
-{
-    this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()+1, this->pos().y());
-    mpGraphicsView->scene()->update();
-}
-
-void Component::rotateClockwise()
-{
-    qreal rotation = this->rotation();
-    qreal rotateIncrement = 90;
-
-    if (rotation == -270)
-        this->setRotation(0);
-    else
-        this->setRotation(rotation - rotateIncrement);
-}
-
-void Component::rotateAntiClockwise()
-{
-    qreal rotation = this->rotation();
-    qreal rotateIncrement = -90;
-
-    if (rotation == 270)
-        this->setRotation(0);
-    else
-        this->setRotation(rotation - rotateIncrement);
-}
-
-void Component::resetRotation()
-{
-    this->setRotation(0);
 }
 
 void Component::openIconProperties()

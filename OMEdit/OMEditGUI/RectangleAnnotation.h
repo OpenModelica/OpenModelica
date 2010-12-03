@@ -41,28 +41,22 @@ class OMCProxy;
 
 class RectangleAnnotation : public ShapeAnnotation
 {
-private:
-    bool mVisible;
-    QPointF mOrigin;
-    qreal mRotation;
-    QColor mLineColor;
-    QColor mFillColor;
-    QMap<QString, Qt::PenStyle> mLinePatternsMap;
-    Qt::PenStyle mLinePattern;
-    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
-    Qt::BrushStyle mFillPattern;
-    qreal mThickness;
-    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
-    Qt::BrushStyle mBorderPattern;
-    QList<QPointF> mExtent;
-    qreal mCornerRadius;
+    Q_OBJECT
 public:
     RectangleAnnotation(QString shape, Component *pParent = 0);
+    RectangleAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
+    QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void drawRectangleAnnotaion(QPainter *painter);
+    void addPoint(QPointF point);
+    void updateEndPoint(QPointF point);
+    void drawRectangleCornerItems();
+    QString getShapeAnnotation();
 
     Component *mpCompnent;
+public slots:
+    void updatePoint(int index, QPointF point);
 };
 
 #endif // RECTANGLEANNOTATION_H

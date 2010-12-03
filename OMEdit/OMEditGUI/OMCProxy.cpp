@@ -111,6 +111,24 @@ void OMCProxy::getNextCommand()
     mCommandsList.removeFirst();
 }
 
+void OMCProxy::addCommandMap(QString expression, QString result)
+{
+    mCommandsMap.insert(expression, result);
+}
+
+QString OMCProxy::getCommandMap(QString expression)
+{
+    QMap<QString, QString>::iterator it;
+    for (it = mCommandsMap.begin(); it != mCommandsMap.end(); ++it)
+    {
+        if (it.key().compare(expression) == 0)
+        {
+            return it.value();
+        }
+    }
+    return QString();
+}
+
 //! Starts the OpenModelica Compiler.
 bool OMCProxy::startServer()
 {
@@ -273,8 +291,20 @@ void OMCProxy::sendCommand(QString expression)
     // Send command to server
     try
     {
-        mResult = mOMC->sendExpression(expression.toLatin1());
-        logOMCMessages(expression);
+        // check the expression in IconCommandsMap
+        QString expressionResult = getCommandMap(expression);
+        if (expressionResult.isEmpty())
+        {
+            mResult = mOMC->sendExpression(expression.toLatin1());
+            logOMCMessages(expression);
+            // only store the command if expression has "Modelica." in it, we don't want to store user defined models
+            if (expression.contains("Modelica."))
+                addCommandMap(expression, getResult());
+        }
+        else
+        {
+            mResult = expressionResult;
+        }
     }
     catch(CORBA::Exception&)
     {
@@ -323,7 +353,7 @@ QStringList OMCProxy::createPackagesList()
     foreach (QString package, classesList)
     {
         // if package is Modelica skip it.
-        if (package != tr("Modelica"))
+        if (package != tr("Modelica") and package != tr("ModelicaServices"))
             addPackage(&packagesList, package, tr(""));
     }
     return packagesList;
@@ -608,7 +638,7 @@ bool OMCProxy::setParameterValue(QString className, QString parameter, QString v
 //! Gets the Icon Annotation of a specified class from OMC.
 //! @param className is the name of the class.
 QString OMCProxy::getIconAnnotation(QString className)
-{
+{    
     sendCommand("getIconAnnotation(" + className + ")");
     return getResult();
 }
