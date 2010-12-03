@@ -42,11 +42,11 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
-                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${model}.mo  												  
+                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${model}.mo Modelica ModelicaServices 												  
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
 
