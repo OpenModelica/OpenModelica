@@ -2076,11 +2076,11 @@ algorithm
         v_2;          
     case (v,knv,(DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e,statementLst = statementLst) :: xs),true)
       equation
-        /* TODO: use the range for the componentreferences */
-        //cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
-        //iteratorExp = Expression.crefExp(cr);   
-        //iteratorexps = extendRange(e,knv);     
-        v_1 = detectImplicitDiscreteAlgsStatemens(v,knv,statementLst,true);
+        /* use the range for the componentreferences */
+        cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
+        iteratorExp = Expression.crefExp(cr);   
+        iteratorexps = extendRange(e,knv);
+        v_1 = detectImplicitDiscreteAlgsStatemensFor(iteratorExp,iteratorexps,v,knv,statementLst,true);
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
         v_2; 
@@ -2694,8 +2694,9 @@ algorithm
         eq_count_1 = eq_count + 1;
         zc1 = findZeroCrossings2(v,knvars,xs,mdeqs,eq_count_1,{},0,algs);
         DAE.ALGORITHM_STMTS(stmts) = listNth(algs,ind);
-        rel = Algorithm.getAllExpsStmts(stmts);
-        rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3,v,knvars));
+        //rel = Algorithm.getAllExpsStmts(stmts);
+        //rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3,v,knvars));
+        rellst1 = traverseAlgStmts(stmts,v,knvars);
         zc2 = makeZeroCrossings(rellst1, {eq_count}, {});
         res = listAppend(zc2, zc1);
       then
@@ -2764,6 +2765,259 @@ algorithm
       then ((e,true,(zeroCrossings,(vars,knvars))));
   end matchcontinue;
 end collectZeroCrossings;
+
+public function traverseAlgStmts "function: traverseAlgStmts
+  Author: Frenkel TUD, 2010-12
+  Helper function to collectZeroCrossings,
+  Handles the traversing of DAE.Statement."
+  input list<DAE.Statement> inStmts;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output list<DAE.Exp> zeroCrossings;
+algorithm
+  zeroCrossings := matchcontinue(inStmts,vars,knvars)
+    local
+      DAE.Exp e_1,e_2,e,e2,iteratorExp;
+      list<DAE.Exp> expl1,expl2,zcl,zcl1,zcl2,zcl3,zcl4,iteratorexps;
+      DAE.ComponentRef cr_1,cr;
+      list<DAE.Statement> xs_1,xs,stmts,stmts2;
+      DAE.ExpType tp,tt;
+      DAE.Statement x,ew,ew_1;
+      Boolean b1;
+      DAE.Ident id1,str;
+      list<Integer> li;
+      DAE.ElementSource source;
+      Algorithm.Else algElse;
+      Absyn.Path fnName;
+      Absyn.MatchType matchType;
+      DAE.Pattern pattern;
+      
+    case ({},vars,knvars) then {};
+      
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = findZeroCrossings3(e2, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);        
+      then zcl;
+        
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = Util.listFlatten(Util.listMap2(expl1,findZeroCrossings3,vars,knvars));
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);          
+      then zcl;
+        
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = findZeroCrossings3(Expression.crefExp(cr), vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);        
+      then zcl;
+              
+    case (((x as DAE.STMT_ASSIGN_PATTERN(lhs = pattern, rhs = e, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = traverseAlgStmts(xs,vars,knvars);
+        zcl = listAppend(zcl1,zcl2);      
+      then zcl;
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmtElse(algElse,vars,knvars);
+        zcl2 = traverseAlgStmts(stmts,vars,knvars);
+        zcl3 = findZeroCrossings3(e, vars,knvars);
+        zcl4 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);        
+        zcl = listAppend(zcl,zcl4);        
+      then zcl;
+        
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),vars,knvars)
+      equation
+        /* use the range for the componentreferences */
+        cr = ComponentReference.makeCrefIdent(id1, tp, {});
+        iteratorExp = Expression.crefExp(cr);   
+        iteratorexps = extendRange(e,knvars); 
+        zcl1 = traverseAlgStmtsFor(iteratorExp,iteratorexps,stmts,vars,knvars);
+        zcl2 = findZeroCrossings3(e, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);          
+      then zcl;
+        
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(stmts,vars,knvars);
+        zcl2 = findZeroCrossings3(e, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);          
+      then zcl;
+        
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(stmts,vars,knvars);
+        zcl2 = findZeroCrossings3(e, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);          
+      then zcl;
+        
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(ew::stmts,vars,knvars);
+        zcl2 = findZeroCrossings3(e, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);          
+      then zcl;
+        
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = findZeroCrossings3(e2, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);        
+      then zcl;
+        
+    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);       
+      then zcl;
+        
+    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = findZeroCrossings3(e2, vars,knvars);
+        zcl3 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+        zcl = listAppend(zcl,zcl3);        
+      then zcl;
+        
+    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = findZeroCrossings3(e, vars,knvars);
+        zcl2 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);       
+      then zcl;
+        
+    case (((x as DAE.STMT_RETURN(source = source)) :: xs),vars,knvars)
+      equation
+        zcl = traverseAlgStmts(xs, vars,knvars);
+      then zcl;
+        
+    case (((x as DAE.STMT_BREAK(source = source)) :: xs),vars,knvars)
+      equation
+        zcl = traverseAlgStmts(xs, vars,knvars);
+      then zcl;
+        
+    // MetaModelica extension. KS
+    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(stmts,vars,knvars);
+        zcl2 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);         
+      then zcl;
+        
+    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(stmts,vars,knvars);
+        zcl2 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);         
+      then zcl;
+        
+    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),vars,knvars)
+      equation
+        zcl1 = traverseAlgStmts(stmts,vars,knvars);
+        zcl2 = traverseAlgStmts(xs, vars,knvars);
+        zcl = listAppend(zcl1,zcl2);         
+      then zcl;
+        
+    case (((x as DAE.STMT_THROW(source = source)) :: xs),vars,knvars)
+      equation
+        zcl = traverseAlgStmts(xs, vars,knvars);
+      then zcl;
+        
+    case ((x :: xs),vars,knvars)
+      equation
+        str = DAEDump.ppStatementStr(x);
+        str = "BackendDAECreate.traverseAlgStmts not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end traverseAlgStmts;
+
+protected function traverseAlgStmtElse "
+Author: Frenkel TUD, 2010-12
+Helper function for traverseAlgStmts
+"
+  input Algorithm.Else inElse;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output list<DAE.Exp> zeroCrossings;
+algorithm
+  zeroCrossings := matchcontinue(inElse,vars,knvars)
+  local
+    DAE.Exp e,e_1;
+    list<DAE.Statement> st;
+    Algorithm.Else el;
+    list<DAE.Exp> zcl,zcl1,zcl2,zcl3;
+  case(DAE.NOELSE(),vars,knvars) then {};
+  case(DAE.ELSEIF(e,st,el),vars,knvars)
+    equation
+      zcl1 = traverseAlgStmtElse(el,vars,knvars);
+      zcl2 = traverseAlgStmts(st,vars,knvars);
+      zcl3 = findZeroCrossings3(e, vars,knvars);
+      zcl = listAppend(zcl1,zcl2);
+      zcl = listAppend(zcl,zcl3);
+    then zcl;
+  case(DAE.ELSE(st),vars,knvars)
+    equation
+      zcl = traverseAlgStmts(st,vars,knvars);
+    then zcl;
+end matchcontinue;
+end traverseAlgStmtElse;
+
+protected function traverseAlgStmtsFor
+"function: traverseAlgStmtsFor
+  "
+  input DAE.Exp inIteratorExp;
+  input list<DAE.Exp> inExplst;
+  input list<DAE.Statement> inStmts;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output list<DAE.Exp> zeroCrossings;
+algorithm
+  zeroCrossings := matchcontinue (inIteratorExp,inExplst,inStmts,vars,knvars)
+    local
+      list<DAE.Statement> statementLst,statementLst1;
+      DAE.Exp e,ie;
+      list<DAE.Exp> rest,zcl,zcl1,zcl2;
+    case (_,{},_,_,_) then {};
+    case (ie,e::rest,statementLst,vars,knvars)
+      equation
+        (statementLst1,_) = DAEUtil.traverseDAEEquationsStmts(statementLst,replaceExp,((ie,e)));
+        zcl1 = traverseAlgStmts(statementLst1, vars,knvars);
+        zcl2 = traverseAlgStmtsFor(ie,rest,statementLst,vars,knvars);
+        zcl = listAppend(zcl1,zcl2);
+      then
+        zcl;
+    case (_,_,_,_,_)
+      equation
+        print("BackendDAECreate.traverseAlgStmtsFor failed \n");
+      then
+        fail();
+  end matchcontinue;
+end traverseAlgStmtsFor;
 
 public function zeroCrossingsEquations
 "Returns a list of all equations (by their index) that contain a zero crossing
