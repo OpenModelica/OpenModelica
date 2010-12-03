@@ -377,7 +377,8 @@ public function typeCheckFunction
 "function: typeCheckFunction
   Type check a function.
   The function will fail iff a function has illegally typed.
-  Errors are handled using side effects in Error.mo"
+  Errors are handled using side effects in Error.mo
+Note: This does not work for recursive functions, so don't use it!"
   input Absyn.Program inProgram;
   input InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm

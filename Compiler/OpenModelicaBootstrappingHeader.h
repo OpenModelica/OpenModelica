@@ -3216,5 +3216,3 @@ extern struct record_description Absyn_ExternalDecl_EXTERNALDECL__desc;
 }
 #endif
 
-/*adrpo: leave a new line at the end of file to get rid of the warning! */
-

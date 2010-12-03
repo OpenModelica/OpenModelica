@@ -224,6 +224,13 @@ algorithm
       then
         (cache,Values.LIST(es_1),stOpt);
 
+    case (cache,env,DAE.CONS(car=e1,cdr=e2),impl,stOpt,dimOpt,msg)
+      equation
+        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
+        (cache,Values.LIST(vallst),stOpt) = ceval(cache,env,e2,impl,stOpt,dimOpt,msg);
+      then
+        (cache,Values.LIST(v::vallst),stOpt);
+
     // MetaModelica Partial Function. sjoelund 
     case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,stOpt,_,MSG())
       equation

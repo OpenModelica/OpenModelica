@@ -226,7 +226,6 @@ algorithm
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
         (p,msg) = Parser.parsestring(str);
         true = stringEq(msg, "Ok") "Always succeeds, check msg for errors" ;
-        Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
         newprog = Interactive.updateProgram(p_1, iprog);
@@ -239,8 +238,10 @@ algorithm
         res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
         res_1 = makeDebugResult("dump", res_1);
         res = makeDebugResult("dumpgraphviz", res_1);
+        isymb = Interactive.SYMBOLTABLE(newprog,aDep,a,b,vars_1,cf_1,lf);
+        Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
       then
-        (true,res,Interactive.SYMBOLTABLE(newprog,aDep,a,b,vars_1,cf_1,lf));
+        (true,res,isymb);
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
       equation
         //debug_print("Command: don't typeCheck", str);
