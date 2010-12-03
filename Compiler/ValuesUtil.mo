@@ -2395,4 +2395,11 @@ algorithm
   end matchcontinue;
 end valueDimensions;
 
+public function extractValueString
+  input Values.Value val;
+  output String str;
+algorithm
+  Values.STRING(str) := val;
+end extractValueString;
+
 end ValuesUtil;
