@@ -587,7 +587,7 @@ algorithm
 
         print("Algorithms:\n");
         print("===============\n");
-        dumpAlgorithms(arrayList(algs));
+        dumpAlgorithms(arrayList(algs),0);
       then
         ();
   end matchcontinue;
@@ -595,19 +595,23 @@ end dump;
 
 protected function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> algs;
+  input Integer indx;
 algorithm
-  _ := matchcontinue(algs)
+  _ := matchcontinue(algs,indx)
     local 
       list<Algorithm.Statement> stmts;
       IOStream.IOStream myStream;
+      String is;
       
-    case({}) then ();
-    case(DAE.ALGORITHM_STMTS(stmts)::algs) 
+    case({},_) then ();
+    case(DAE.ALGORITHM_STMTS(stmts)::algs,indx) 
       equation
+        is = intString(indx);
         myStream = IOStream.create("", IOStream.LIST()); 
+        myStream = IOStream.append(myStream,stringAppend(is,". "));
         myStream = DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
         IOStream.print(myStream, IOStream.stdOutput);
-        dumpAlgorithms(algs);
+        dumpAlgorithms(algs,indx+1);
     then ();
   end matchcontinue;
 end dumpAlgorithms;

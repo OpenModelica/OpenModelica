@@ -2928,7 +2928,7 @@ algorithm
     
     // non-state non-linear
     case (eqNum,
-          BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=algs),
           ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
         ((eqn as BackendDAE.EQUATION(e1,e2,_)),v as BackendDAE.VAR(varName = cr, varKind = kind)) =
@@ -2938,13 +2938,13 @@ algorithm
         failure((_,_) = solve(e1, e2, varexp));
         //index = tick();
         index = eqNum; // Use the equation number as unique index
-        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
+        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, algs, {});
       then
         {SES_NONLINEAR(index, resEqs, {cr})};
     
     // state nonlinear
     case (eqNum,
-          BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=algs),
           ass1, ass2, helpVarInfo, false, skipDiscInAlgorithm)
       equation
         ((eqn as BackendDAE.EQUATION(e1,e2,_)),BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE())) =
@@ -2954,7 +2954,7 @@ algorithm
         failure((_,_) = solve(e1, e2, varexp));
         // index = tick();
         index = eqNum; // Use the equation number as unique index
-        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
+        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, algs, {});
       then
         {SES_NONLINEAR(index, resEqs, {cr_1})};
 
@@ -3029,64 +3029,69 @@ end addHindexForCondition;
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input array<BackendDAE.MultiDimEquation> arrayEqs;
+  input array< .DAE.Algorithm> algs;
   input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output list<SimEqSystem> eqSystems;
   output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
   (eqSystems,outEntrylst) :=
-  matchcontinue (eqs, arrayEqs,inEntrylst)
+  matchcontinue (eqs, arrayEqs, algs, inEntrylst)
     local
       Integer cg_id,cg_id_1,indx_1,cg_id_2,indx,aindx;
       DAE.ExpType tp;
       DAE.Exp res_exp,e1,e2,e;
+      list<DAE.Exp> explst;
       String var,indx_str,stmt;
       list<BackendDAE.Equation> rest,rest2;
       array<BackendDAE.MultiDimEquation> aeqns;
       VarTransform.VariableReplacements repl;
       BackendDAE.Equation eq;
-      list<SimEqSystem> eqSystemsRest;
+      list<SimEqSystem> eqSystemsRest,eqSystlst;
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;
-      DAE.ComponentRef left;      
+      DAE.ComponentRef left;   
+      String eqstr;   
+      DAE.Algorithm alg;
+      list<DAE.Statement> algStatements;
     
-    case ({}, _, inEntrylst) then ({},inEntrylst);
+    case ({}, _, _, inEntrylst) then ({},inEntrylst);
     
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, algs, inEntrylst)
       equation
         tp = Expression.typeof(e1);
-        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        res_exp = Expression.expSub(e1,e2);
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
     
-    case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, algs, inEntrylst)
       equation
         res_exp = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
-        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
     
     // An array equation
-    case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), aeqns, inEntrylst)
+    case ((BackendDAE.ARRAY_EQUATION(index=aindx) :: rest), aeqns, algs, inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
         tp = Expression.typeof(e1);
-        res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
+        res_exp = Expression.expSub(e1,e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(aindx,ad,inEntrylst);
         res_exp = Expression.applyExpSubscripts(res_exp,subs);        
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
-        (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, entrylst1);
+        (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, algs, entrylst1);
       then 
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst2);
         
-    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,aeqns,inEntrylst)
+    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,aeqns,algs,inEntrylst)
       equation
         // This following does not work. It does not take index or elseWhen into account.
         // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
@@ -3096,7 +3101,7 @@ algorithm
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
       then
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
         */
@@ -3104,13 +3109,33 @@ algorithm
       then
         fail();
         
-    case (eq::_,_,_)
+    case ((BackendDAE.ALGORITHM(index = indx,out=explst) :: rest), aeqns, algs, inEntrylst)
       equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"},BackendEquation.equationInfo(eq));
+        alg = algs[indx + 1];
+        explst = Util.listMap(explst,replaceDerOpInExp);
+        eqSystlst = Util.listMap(explst,makeSES_RESIDUAL);
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, algs, inEntrylst);
+        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
+      then
+        (SES_ALGORITHM(algStatements)::eqSystemsRest,entrylst1);        
+        
+    case (eq::_,_,_,_)
+      equation
+        eqstr = BackendDump.equationStr(eq);
+        eqstr = stringAppend("SimCode.createNonlinearResidualEquations failed for equation: ",eqstr);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {eqstr},BackendEquation.equationInfo(eq));
       then
         fail();    
   end matchcontinue;
 end createNonlinearResidualEquations;
+
+protected function makeSES_RESIDUAL
+  input DAE.Exp inExp;
+  output SimEqSystem outSimEqn;
+algorithm
+  outSimEqn := SES_RESIDUAL(inExp);
+end makeSES_RESIDUAL;
 
 protected function applyResidualReplacements
   "Replaces variables in nonlinear equation systems with xloc[index] variables."
@@ -3446,7 +3471,7 @@ algorithm
         // generade code for other equations
         simeqnsystemlst = Util.listMap6(block_1,createEquation,daelow1, ass1, ass2, helpVarInfo, true,false);
         simeqnsystem = Util.listFlatten(simeqnsystemlst);
-        (resEqs,_) = createNonlinearResidualEquations(reqns, ae, {});
+        (resEqs,_) = createNonlinearResidualEquations(reqns, ae, algorithms, {});
         index = Util.listFirst(block_); // use first equation nr as index
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
@@ -3596,6 +3621,7 @@ algorithm
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       array<BackendDAE.MultiDimEquation> arrayEqs;
       Integer index;
+      array< .DAE.Algorithm> algorithms;
     
     // A single array equation
     case (mixedEvent,genDiscrete,skipDiscInAlgorithm,dae,optJac,jac_tp,block_,helpVarInfo)
@@ -3658,21 +3684,21 @@ algorithm
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
     
     // Time varying nonlinear jacobian. Non-linear system of equations.
-    case (mixedEvent,_,skipDiscInAlgorithm,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),BackendDAE.JAC_NONLINEAR(),block_,helpVarInfo)
+    case (mixedEvent,_,skipDiscInAlgorithm,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae,algorithms=algorithms),SOME(jac),BackendDAE.JAC_NONLINEAR(),block_,helpVarInfo)
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
-        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
+        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, algorithms, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
         {SES_NONLINEAR(index, resEqs, crefs)};
     
     // No analytic jacobian available. Generate non-linear system.
-    case (mixedEvent,_,skipDiscInAlgorithm,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE(),BackendDAE.JAC_NO_ANALYTIC(),block_,helpVarInfo)
+    case (mixedEvent,_,skipDiscInAlgorithm,BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae,algorithms=algorithms),NONE(),BackendDAE.JAC_NO_ANALYTIC(),block_,helpVarInfo)
       equation
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
-        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
+        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, algorithms, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
         {SES_NONLINEAR(index, resEqs, crefs)};

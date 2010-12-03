@@ -1277,6 +1277,9 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
 ::=
   (allEquations |> eq as SES_NONLINEAR(__) =>
      let &varDecls = buffer "" /*BUFD*/
+     let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
+         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
+       ;separator="\n")      
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
          equation_(eq2, contextOther, &varDecls /*BUFD*/)
        ;separator="\n")   
@@ -1292,6 +1295,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        state mem_state;
        <%varDecls%>
        mem_state = get_memory_state();
+       <%algs%>
        <%prebody%>
        <%body%>
        restore_memory_state(mem_state);
