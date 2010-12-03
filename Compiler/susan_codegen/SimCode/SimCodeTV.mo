@@ -909,6 +909,11 @@ package DAE
       Exp msg;
       ElementSource source;
     end STMT_ASSERT;
+    record STMT_REINIT
+      Exp var;
+      Exp value;
+      ElementSource source;
+    end STMT_REINIT;  
     record STMT_RETURN
       ElementSource source;
     end STMT_RETURN;

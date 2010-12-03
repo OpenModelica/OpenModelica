@@ -3841,6 +3841,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_THROW(__)          then 'MMC_THROW();<%\n%>'
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
+  case s as STMT_REINIT(__) 		then algStmtReinit(s, context, &varDecls /*BUFD*/)
   else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
 end algStatement;
 
@@ -4357,6 +4358,20 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
       >>
 end algStatementWhenPreAssigns;
 
+template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
+ "Generates an assigment algorithm statement."
+::=
+  match stmt
+  case STMT_REINIT(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    save(<%expPart1%>);
+    <%preExp%>
+    <%expPart1%> = <%expPart2%>;
+    >>
+end algStmtReinit;
 
 template indexSpecFromCref(ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                   Text &varDecls /*BUFP*/)

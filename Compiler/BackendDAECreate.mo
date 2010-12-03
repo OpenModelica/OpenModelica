@@ -462,11 +462,10 @@ algorithm
     // when equations
     case ((daeEl as DAE.WHEN_EQUATION(condition = c)) :: daeLstRest,functionTree,states,vars,knvars,extVars,whenclauses)
       equation
-        (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
+        (vars,knvars,extVars,eqns1,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
         = lower2(daeLstRest, functionTree, states, vars, knvars, extVars, whenclauses);
         count = listLength(whenclauses_1);
-        (eqns2,vars2,count_1,whenclauses_2) = lowerWhenEqn(daeEl, count, whenclauses_1);
-        vars = BackendVariable.mergeVariables(vars1, vars2);
+        (eqns2,count_1,whenclauses_2) = lowerWhenEqn(daeEl, count, whenclauses_1);
         opteqlst = Util.listMap(eqns2,Util.makeOption);
         opteqlst = Util.listMap1(opteqlst,Inline.inlineEqOpt,(SOME(functionTree),{DAE.NORM_INLINE()}));
         eqns2 = Util.listMap(opteqlst,Util.getOption);
@@ -489,10 +488,10 @@ algorithm
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
         = lower2(daeLstRest, functionTree, states, vars, knvars, extVars, whenclauses);
-       a1 = Inline.inlineAlgorithm(a,(SOME(functionTree),{DAE.NORM_INLINE()})); 
-       a2 = extendAlgorithm(a1,SOME(functionTree));
+        a1 = Inline.inlineAlgorithm(a,(SOME(functionTree),{DAE.NORM_INLINE()})); 
+        a2 = extendAlgorithm(a1,SOME(functionTree));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a2 :: algs,ialgs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a1 :: algs,ialgs,whenclauses_1,extObjCls,states);
     
     // flat class / COMP
     case (DAE.COMP(dAElist = daeElts) :: daeLstRest,functionTree,states,vars,knvars,extVars,whenclauses)
@@ -1090,11 +1089,10 @@ protected function lowerWhenEqn
   input Integer inWhenClauseIndex;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   output list<BackendDAE.Equation> outEquationLst;
-  output BackendDAE.Variables outVariables;
   output Integer outWhenClauseIndex;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
 algorithm
-  (outEquationLst,outVariables,outWhenClauseIndex,outWhenClauseLst):=
+  (outEquationLst,outWhenClauseIndex,outWhenClauseLst):=
   matchcontinue (inElement,inWhenClauseIndex,inWhenClauseLst)
     local
       BackendDAE.Variables vars;
@@ -1112,7 +1110,6 @@ algorithm
 
     case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE()),i,whenList)
       equation
-        vars = BackendDAEUtil.emptyVars();
         (res,reinit) = lowerWhenEqn2(eqnl, i);
         equation_count = listLength(res);
         reinit_count = listLength(reinit);
@@ -1125,12 +1122,11 @@ algorithm
         whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
         whenClauseList4 = listAppend(whenClauseList3, whenList);
       then
-        (res,vars,i_1,whenClauseList4);
+        (res,i_1,whenClauseList4);
 
     case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart)),i,whenList)
       equation
-        vars = BackendDAEUtil.emptyVars();
-        (elseEqnLst,_,nextWhenIndex,elseClauseList) = lowerWhenEqn(elsePart,i,whenList);
+        (elseEqnLst,nextWhenIndex,elseClauseList) = lowerWhenEqn(elsePart,i,whenList);
         (trueEqnLst,reinit) = lowerWhenEqn2(eqnl, nextWhenIndex);
         equation_count = listLength(trueEqnLst);
         reinit_count = listLength(reinit);
@@ -1143,7 +1139,7 @@ algorithm
         (res1,i_1,whenClauseList4) = mergeClauses(trueEqnLst,elseEqnLst,whenClauseList3,
           elseClauseList,nextWhenIndex + tot_count);
       then
-        (res1,vars,i_1,whenClauseList4);
+        (res1,i_1,whenClauseList4);
 
     case (DAE.WHEN_EQUATION(condition = cond),_,_)
       equation
