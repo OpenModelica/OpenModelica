@@ -49,7 +49,7 @@
 // QT includes
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
-#include <QtCore/QFile>
+#include <QtCore>
 
 
 using namespace std;
@@ -113,7 +113,7 @@ bool OmcCommunicator::establishConnection()
 	char *user = getenv("USER");
 	if (!user) { user = "nobody"; }
 
-	objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
+	objectRefFile.setFileName(QString(QDir::tempPath()) + "/openmodelica." + *(new QString(user)) + ".objid");
 
 #endif
 
