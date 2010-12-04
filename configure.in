@@ -325,14 +325,14 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
   fi
   LIBSENDDATA="sendData"
   WITH_SENDDATA="1"
-  if test "Darwin" = `uname`; then
-    LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
-    if test -d /opt/local/Library/Frameworks/; then
-      LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
-    fi
-  else
+  #if test "Darwin" = `uname`; then
+  #  LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+  #  if test -d /opt/local/Library/Frameworks/; then
+  #    LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
+  #  fi
+  #else
     LIBSENDDATA_LDFLAGS="-lQtNetwork -lQtCore -lQtGui"
-  fi
+  #fi
   
   LDFLAGS_BAK=$LDFLAGS
   LDFLAGS+=" $LIBSENDDATA_LDFLAGS"
