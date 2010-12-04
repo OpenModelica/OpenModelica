@@ -39,6 +39,7 @@
 
 #include <stdexcept>
 #include <stdlib.h>
+#include <iostream>
 
 #include "OMCProxy.h"
 #include "OMCThread.h"
@@ -214,7 +215,7 @@ bool OMCProxy::startServer()
             ticks++;
             if (ticks > 20)
             {
-                msg = "Unable to find " + Helper::applicationName + " server, No OMC object reference file created.";
+                msg = "Unable to find " + Helper::applicationName + " server, Object reference file " + mObjectRefFile + " not created.";
                 throw std::runtime_error(msg.toStdString().c_str());
             }
         }
