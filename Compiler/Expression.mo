@@ -2020,7 +2020,7 @@ public function getTermsContainingX
 algorithm
   (outExp1,outExp2) := matchcontinue (inExp1,inExp2)
     local
-      DAE.Exp xt1,nonxt1,xt2,nonxt2,xt,nonxt,e1,e2,cr,e;
+      DAE.Exp xt1,nonxt1,xt2,nonxt2,xt,nonxt,e1,e2,cr,e,zero;
       Type ty;
       Boolean res;
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty),exp2 = e2),(cr as DAE.CREF(componentRef = _)))
@@ -2083,11 +2083,12 @@ algorithm
         nonxt = DAE.UNARY(DAE.UMINUS_ARR(ty),nonxt1);
       then
         (xt,nonxt);            
-    case (e,(cr as DAE.CREF(componentRef = _)))
+    case (e,(cr as DAE.CREF(ty = ty)))
       equation
         res = expContains(e, cr);
-        xt = Util.if_(res, e, DAE.RCONST(0.0));
-        nonxt = Util.if_(res, DAE.RCONST(0.0), e);
+        (zero,_) = makeZeroExpression(arrayDimension(ty));        
+        xt = Util.if_(res, e, zero);
+        nonxt = Util.if_(res, zero, e);
       then
         (xt,nonxt);
     case (e,cr)
@@ -2852,14 +2853,16 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> eLst;
       DAE.Type ty;
+      Boolean scalar;
     case {} then (DAE.RCONST(0.0), DAE.T_REAL_DEFAULT);
     case d::dims
       equation
         i = dimensionSize(d);
         (e, ty) = makeZeroExpression(dims);
         eLst = Util.listFill(e,i);
+        scalar = Util.isListEmpty(dims);
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),false,eLst), 
+        (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),scalar,eLst), 
          (DAE.T_ARRAY(d,ty),NONE()));      
   end matchcontinue;
 end makeZeroExpression;  

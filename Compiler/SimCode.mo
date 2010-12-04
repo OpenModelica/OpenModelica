@@ -934,7 +934,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
-      String filenameprefix,file_dir;
+      String filenameprefix,file_dir,resstr;
       list<SCode.Class> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
@@ -993,9 +993,19 @@ algorithm
            ("timeBackend",  Values.REAL(timeBackend)),
            ("timeFrontend", Values.REAL(timeFrontend))
            };   
+//        resstr = Absyn.pathString(className);
+//        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
+        resstr = "SimCode: The model has been translated";
       then
-        (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir, resultValues);
-  end matchcontinue;
+        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+/*    case (_,_,className,_,_,_, _)
+      equation        
+        resstr = Absyn.pathString(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then
+        fail();
+*/  end matchcontinue;
 end translateModel;
 
 public function translateFunctions
@@ -4103,24 +4113,21 @@ algorithm
     
     case (BackendDAE.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
-        tp = Expression.typeof(e1);
-        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        new_exp = Expression.expSub(e1,e2);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
-        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
+        rhs_exp_1 = Expression.negate(rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,inEntrylst);
     
     case (BackendDAE.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
-        tp = Expression.typeof(e1);
-        new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
+        new_exp = Expression.expSub(e1,e2);
         ad = Util.listMap(ds,Util.makeOption);
         (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,inEntrylst);
         new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
-        tp1 = Expression.typeof(rhs_exp);
-        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
+        rhs_exp_1 = Expression.negate(rhs_exp);
         rhs_exp_2 = ExpressionSimplify.simplify(rhs_exp_1);
       then (rhs_exp_2,entrylst1);     
     
@@ -4392,27 +4399,30 @@ algorithm
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ty = Expression.typeof(e2);
+        e2 = Expression.negate(e2);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
+        SES_ARRAY_CALL_ASSIGN(eltcr, e2);
     
     case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))))
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        ty = Expression.typeof(e1);
+        e1 = Expression.negate(e1);
       then
-        SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
+        SES_ARRAY_CALL_ASSIGN(eltcr, e1);       
     
     case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2))
       equation
          cr2 = getVectorizedCrefFromExp(e2);
+         e1 = Expression.negate(e1);
       then
-         SES_ARRAY_CALL_ASSIGN(cr2, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
+         SES_ARRAY_CALL_ASSIGN(cr2, e1);       
     
     case (cr,eltcr,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
       equation
          cr2 = getVectorizedCrefFromExp(e1);
+         e2 = Expression.negate(e2);
       then
-         SES_ARRAY_CALL_ASSIGN(cr2, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
+         SES_ARRAY_CALL_ASSIGN(cr2, e2);
     
     case (cr,eltcr,e1,e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
       equation
@@ -6263,7 +6273,7 @@ protected function solveTrivialArrayEquation
 algorithm
   (outE1,outE2) := matchcontinue(v,e1,e2)
     local
-      DAE.Exp e12,e22,vTerm,res,rhs,f;
+      DAE.Exp e,e12,e22,vTerm,res,rhs,f;
       list<DAE.Exp> terms,exps,exps_1,expl_1;
       DAE.ExpType tp;
       Boolean b;
@@ -6275,7 +6285,7 @@ algorithm
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
         Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
-        (e12,e22) = solveTrivialArrayEquation(v,Expression.makeCrefExp(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
+        (e12,e22) = solveTrivialArrayEquation(v,Expression.makeCrefExp(c,tp),Expression.negate(e2));
       then  
         (e12,e22);
     
@@ -6284,7 +6294,7 @@ algorithm
         (f::exps_1) = Util.listMap(exps, Expression.expStripLastSubs); //Strip last subscripts
         Util.listMap1AllValue(exps_1, Expression.expEqual, f, true);
         c = ComponentReference.crefStripLastSubs(c);
-        (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),Expression.makeCrefExp(c,tp));
+        (e12,e22) = solveTrivialArrayEquation(v,Expression.negate(e2),Expression.makeCrefExp(c,tp));
       then  
         (e12,e22);
     
@@ -6293,8 +6303,8 @@ algorithm
     // Solve simple linear equations.
     case(v,e1,e2)
       equation
-        tp = Expression.typeof(e1);
-        res = ExpressionSimplify.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
+        e = Expression.expSub(e1,e2);
+        res = ExpressionSimplify.simplify(e);
         (f,rhs) = Expression.getTermsContainingX(res,Expression.crefExp(v));
         (vTerm as DAE.CREF(_,_)) = ExpressionSimplify.simplify(f);
         rhs = ExpressionSimplify.simplify(rhs);

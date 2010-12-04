@@ -334,8 +334,11 @@ algorithm
     local
       DAE.ExpType tp;      
       DAE.ComponentRef cr;
+      list<list<DAE.ComponentRef>> crefslstls;
+      list<DAE.ComponentRef> crefs;
+      list<Boolean> blst;
       String cr_str,cr_str_1,e_str,str,s1;
-      DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0;
+      DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0,zero;
       BackendDAE.Variables timevars;
       DAE.Operator op,rel;
       list<DAE.Exp> expl_1,expl,sub;
@@ -351,6 +354,7 @@ algorithm
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
+    case (e as DAE.BCONST(bool = _),_) then e;      
     
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) 
       then DAE.RCONST(1.0);
@@ -491,6 +495,14 @@ algorithm
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
 
+    // abs(x)
+    case (DAE.CALL(path=fname, expLst={exp},tuple_ = b,builtin = c,ty=tp,inlineType=inl),(timevars,functions)) 
+      equation
+        Builtin.isAbs(fname);
+        e1_1 = differentiateExpTime(exp, (timevars,functions));
+      then 
+        DAE.IFEXP(DAE.RELATION(e1_1,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(0.0)), e1_1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),e1_1));
+
     case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),(timevars,functions)) /* ax^(a-1) */
       equation
         d_e1 = differentiateExpTime(e1, (timevars,functions)) "e^x => xder(e)e^x-1" ;
@@ -502,14 +514,10 @@ algorithm
       then
         exp;
 
-    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=_))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
-      equation
-         // generate zeros
-         expl_1 = Util.listFill(DAE.RCONST(0.0), Expression.sizeOf(tp));  
-      then DAE.ARRAY(tp,true,expl_1);
-    
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) 
-      then DAE.RCONST(0.0);
+      equation
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then zero;
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),(timevars,functions))
       equation
@@ -580,6 +588,17 @@ algorithm
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(a,expl_1,b,c,tp,inl);
+    
+    case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c,ty=tp),(timevars,functions))
+      equation
+        // if only parameters no derivative needed
+        crefslstls = Util.listMap(expl,Expression.extractCrefsFromExp);
+        crefs = Util.listFlatten(crefslstls);
+        blst = Util.listMap1(crefs,BackendVariable.existsVar,timevars);
+        false = Util.boolOrList(blst);
+        (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        e1;    
     
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
@@ -1198,7 +1217,7 @@ algorithm
     local
       Real rval;
       DAE.ComponentRef cr,crx,tv;
-      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
+      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond,zero;
       DAE.ExpType tp, ctp;      
       Absyn.Path a,fname;
       Boolean b,c;
@@ -1220,11 +1239,12 @@ algorithm
       then
         DAE.RCONST(rval);
 
-    case ((e as DAE.CREF(componentRef = cr)),crx,_)
+    case ((e as DAE.CREF(componentRef = cr,ty=tp)),crx,_)
       equation
         false = ComponentReference.crefEqual(cr, crx) "D(c)/dx => 0" ;
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
-        DAE.RCONST(0.0);
+        zero;
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),tv,differentiateIfExp)
       equation
@@ -1578,8 +1598,10 @@ algorithm
 	       the derivative is zero. For efficiency reasons this rule
 	       is last. Otherwise expressions is allways traversed twice
 	       when differentiating." ;
+        tp = Expression.typeof(e);
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));	       
       then
-        DAE.RCONST(0.0);
+        zero;
 
     // Differentiate if-expressions if last argument true
     case (DAE.IFEXP(cond,e1,e2),tv,differentiateIfExp as true) 
