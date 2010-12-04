@@ -139,8 +139,8 @@ int CorbaImpl__initialize()
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #endif
   int argc=4;
-  string omc_client_request_event_name 	= "omc_client_request_event";
-  string omc_return_value_ready_name   	= "omc_return_value_ready";
+  string omc_client_request_event_name   = "omc_client_request_event";
+  string omc_return_value_ready_name     = "omc_return_value_ready";
   DWORD lastError = 0;
   char* errorMessage = "OpenModelica OMC could not be started.\nAnother OMC is already running.\n\n\
 Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit.\n\nCorba.initialize()";
@@ -148,24 +148,24 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   /* create the events and locks with different names if we have a corba session */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
-  	omc_client_request_event_name 	+= corbaSessionName;
-  	omc_return_value_ready_name   	+= corbaSessionName;
+    omc_client_request_event_name   += corbaSessionName;
+    omc_return_value_ready_name     += corbaSessionName;
   }
   omc_client_request_event = CreateEvent(NULL,FALSE,FALSE,omc_client_request_event_name.c_str());
   lastError = GetLastError();
   if (omc_client_request_event == NULL || (omc_client_request_event != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
-  	display_omc_error(lastError, errorMessage);
-    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), lastError);	
-	  return 1;
+    display_omc_error(lastError, errorMessage);
+    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), lastError);  
+    return 1;
   }
   omc_return_value_ready = CreateEvent(NULL,FALSE,FALSE,omc_return_value_ready_name.c_str());
   lastError = GetLastError();  
   if (omc_return_value_ready == NULL && (omc_return_value_ready != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
-  	display_omc_error(lastError, errorMessage);
-  	fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);		
-	  return 1;
+    display_omc_error(lastError, errorMessage);
+    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);    
+    return 1;
   }
   InitializeCriticalSection(&lock);
   InitializeCriticalSection(&clientlock);
@@ -185,30 +185,30 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
-	  /*
-	   * The RootPOA has the SYSTEM_ID policy, but we want to assign our
-	   * own IDs, so create a new POA with the USER_ID policy
-	   *  After we got the RootPOA manager, we need our own POA
-	   */
-	  pl.length(1);
-	  pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
-	  omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
-	  
-	  oid = new PortableServer::ObjectId_var(PortableServer::string_to_ObjectId (corbaSessionName));
-	  server = new OmcCommunication_impl();
+    /*
+     * The RootPOA has the SYSTEM_ID policy, but we want to assign our
+     * own IDs, so create a new POA with the USER_ID policy
+     *  After we got the RootPOA manager, we need our own POA
+     */
+    pl.length(1);
+    pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
+    omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
+    
+    oid = new PortableServer::ObjectId_var(PortableServer::string_to_ObjectId (corbaSessionName));
+    server = new OmcCommunication_impl();
     omcpoa->activate_object_with_id(*oid, server);
-	  /* 
-	   * build the reference to store in the file
-	   */  
-	  ref = omcpoa->id_to_reference (oid->in());
-	  objref_file << tempPath << "openmodelica.objid." << corbaSessionName;
+    /* 
+     * build the reference to store in the file
+     */  
+    ref = omcpoa->id_to_reference (oid->in());
+    objref_file << tempPath << "openmodelica.objid." << corbaSessionName;
   }  
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl(); 
       oid = new PortableServer::ObjectId_var(poa->activate_object(server));
-  	  ref = poa->id_to_reference (oid->in());
-  	  objref_file << tempPath << "openmodelica.objid";	  
+      ref = poa->id_to_reference (oid->in());
+      objref_file << tempPath << "openmodelica.objid";    
   }
 
   str = (const char*)orb->object_to_string (ref.in());
@@ -311,49 +311,43 @@ int CorbaImpl__initialize()
   mgr = poa->the_POAManager();
 
   /* get temp dir */
-  char tmpDir[1024];
-  strcpy(tmpDir, "/tmp");
-#ifndef __APPLE_CC__
-  if (getenv("TMPDIR") != 0) {
-    strcpy(tmpDir, getenv("TMPDIR"));
-  }
-#endif
-
+  char* tmpDir = SettingsImpl__getTempDirectoryPath();
   /* get the user name */
   char *user = getenv("USER");
   if (user==NULL) { user="nobody"; }
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
-	  /*
-	   * The RootPOA has the SYSTEM_ID policy, but we want to assign our
-	   * own IDs, so create a new POA with the USER_ID policy
-	   *  After we got the RootPOA manager, we need our own POA
-	   */
-	  pl.length(1);
-	  pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
-	  omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
-	  
-	  oid = PortableServer::string_to_ObjectId (corbaSessionName);
-	  server = new OmcCommunication_impl();
-#if defined(USE_OMNIORB)	  
-	  omcpoa->activate_object_with_id(oid, server);
+    /*
+     * The RootPOA has the SYSTEM_ID policy, but we want to assign our
+     * own IDs, so create a new POA with the USER_ID policy
+     *  After we got the RootPOA manager, we need our own POA
+     */
+    pl.length(1);
+    pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
+    omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
+    
+    oid = PortableServer::string_to_ObjectId (corbaSessionName);
+    server = new OmcCommunication_impl();
+#if defined(USE_OMNIORB)    
+    omcpoa->activate_object_with_id(oid, server);
 #else
-	  omcpoa->activate_object_with_id(*oid, server);
-#endif	  
-	  /* 
-	   * build the reference to store in the file
-	   */  
-	  ref = omcpoa->id_to_reference (oid.in());
-	  objref_file << tmpDir << "/openmodelica." << user << ".objid." << corbaSessionName;
+    omcpoa->activate_object_with_id(*oid, server);
+#endif    
+    /* 
+     * build the reference to store in the file
+     */  
+    ref = omcpoa->id_to_reference (oid.in());
+    objref_file << tmpDir << "/openmodelica." << user << ".objid." << corbaSessionName;
   }  
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl(); 
-  	  oid = poa->activate_object(server);
-  	  ref = poa->id_to_reference (oid.in());
-  	  objref_file << tmpDir << "/openmodelica." << user << ".objid";	  
+      oid = poa->activate_object(server);
+      ref = poa->id_to_reference (oid.in());
+      objref_file << tmpDir << "/openmodelica." << user << ".objid";    
   }
+  free(tmpDir);
 
   str = orb->object_to_string (ref.in());
   /* Write reference to file */
