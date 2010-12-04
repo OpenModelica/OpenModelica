@@ -5,7 +5,7 @@ EXE=@EXE@
 QMAKE=@QMAKE@
 
 install: build
-	cp -p OMEdit ../../build/bin/OMEdit
+	cp -p ../bin/OMEdit ../../build/bin/OMEdit
 	mkdir -p ../../build/share/doc/omedit/
 	cp -p ../docs/*.pdf ../../build/share/doc/omedit/
 always:
@@ -14,7 +14,7 @@ $(NAME)$(EXE): Makefile OMEdit.config
 	$(MAKE) -f Makefile
 ifeq ($(EXE),.app)
 $(NAME): $(NAME)$(EXE) always
-	cp -p ../bin/$</Contents/MacOS/$(NAME) $@
+	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
 endif
 
 build: $(NAME)
