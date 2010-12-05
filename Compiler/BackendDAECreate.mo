@@ -754,7 +754,13 @@ algorithm
       then
         (BackendDAE.STATE(),states);
     // Or states have StateSelect.always
-    case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()),_,_,_)))
+    case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
+      equation
+      states = BackendDAEUtil.treeAdd(states, v, 0);  
+    then (BackendDAE.STATE(),states);
+
+    // Or states have StateSelect.prefer
+    case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
       equation
       states = BackendDAEUtil.treeAdd(states, v, 0);  
     then (BackendDAE.STATE(),states);
