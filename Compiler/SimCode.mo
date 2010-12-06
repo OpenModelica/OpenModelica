@@ -7952,12 +7952,24 @@ algorithm
         true = Expression.isConst(e);
       then
         SOME(e);
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+        true = Expression.isConst(e);
+      then
+        SOME(e);        
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConst(e);
       then
         SOME(e);
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+        true = Expression.isConst(e);
+      then
+        SOME(e);          
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);

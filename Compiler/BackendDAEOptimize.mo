@@ -68,6 +68,8 @@ protected import Error;
 protected import RTOpts;
 protected import Util;
 protected import VarTransform;
+protected import Values;
+protected import ValuesUtil;
 
 
 /* 
@@ -725,7 +727,7 @@ algorithm
       Integer pos;
       BackendDAE.Variables v,kn,v1,v2;
       BackendDAE.EquationArray eqns,eqns1;
-      BackendDAE.Var var,var1,var2;
+      BackendDAE.Var var,var1,var2,var3;
       DAE.ComponentRef cr;
       DAE.Exp e1,e2,cre,es;
       Integer i,pos_1;
@@ -750,6 +752,9 @@ algorithm
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
+        // variable time not there
+        ((_,false)) = Expression.traverseExp(e1, traversingComponentRefTimeFinder, false);
+        ((_,false)) = Expression.traverseExp(e2, traversingComponentRefTimeFinder, false);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         // set kind to PARAM
@@ -757,8 +762,10 @@ algorithm
         //var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
         // add bindExp
         var2 = BackendVariable.setBindExp(var,es);
+        // add bindValue if constant
+        var3 = setbindValue(es,var2);
         // update vars
-        v1 = BackendVariable.addVar(var2,v);
+        v1 = BackendVariable.addVar(var3,v);
         // store changed var
         mvars_1 = BackendDAEUtil.treeAdd(mvars, cr, 0);
         // equations of var
@@ -772,6 +779,45 @@ algorithm
     case ((elem,pos,m,(v,kn,eqns,mT,mvars,meqns))) then ((elem,m,(v,kn,eqns,mT,mvars,meqns))); 
   end matchcontinue;
 end removeParameterEqnsFinder;
+
+public function traversingComponentRefTimeFinder "
+Author: Frenkel 2010-12"
+  input tuple<DAE.Exp, Boolean > inExp;
+  output tuple<DAE.Exp, Boolean > outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e;      
+    
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), _)) 
+      then
+        ((e, true ));
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingComponentRefTimeFinder;
+
+protected function setbindValue
+" function: setbindValue
+  autor: Frenkel TUD 2010-12"
+  input DAE.Exp inExp;
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue(inExp,inVar)
+    local 
+     Values.Value value; 
+     BackendDAE.Var var;     
+    case(inExp,inVar)
+      equation
+        true = Expression.isConst(inExp);
+        value = ValuesUtil.expValue(inExp);
+        var = BackendVariable.setBindValue(inVar,value);
+      then var;
+    case(_,inVar) then inVar;        
+  end matchcontinue;
+end setbindValue;
 
 protected function traverseIncidenceMatrix2 
 " function: traverseIncidenceMatrix2

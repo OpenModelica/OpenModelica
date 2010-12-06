@@ -40,6 +40,7 @@ package BackendVariable
 
 public import BackendDAE;
 public import DAE;
+public import Values;
 
 protected import Absyn;
 protected import BackendDAEUtil;
@@ -50,7 +51,6 @@ protected import Expression;
 protected import HashTable2;
 protected import SCode;
 protected import RTOpts;
-protected import Values;
 protected import Util;
 
 /* =======================================================
@@ -946,6 +946,47 @@ algorithm
     then BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
   end matchcontinue;
 end setBindExp;
+
+public function setBindValue
+"function setBindExp
+  author: Frenkel TUD 2010-12
+  Sets the BackendDAE.Var.bindExp of a variable"
+  input BackendDAE.Var inVar;
+  input Values.Value inBindValue;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue (inVar,inBindValue)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.VarKind kind;
+      DAE.VarDirection dir;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> bind,st;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      BackendDAE.Value i;
+      DAE.ElementSource source "origin of equation";
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = cr,
+              varKind = kind,
+              varDirection = dir,
+              varType = tp,
+              bindExp = bind,
+              bindValue = NONE(),
+              arryDim = dim,
+              index = i,
+              source = source,
+              values = attr,
+              comment = comment,
+              flowPrefix = flowPrefix,
+              streamPrefix = streamPrefix),inBindValue)
+    then BackendDAE.VAR(cr,kind,dir,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix);
+  end matchcontinue;
+end setBindValue;
 
 public function isVarOnTopLevelAndOutput
 "function isVarOnTopLevelAndOutput
