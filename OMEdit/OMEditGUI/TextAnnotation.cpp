@@ -264,18 +264,6 @@ void TextAnnotation::checkNameString()
             mTextString = mpComponent->getRootParentComponent()->getName();
         else if (mpComponent->mpComponentProperties)
             mTextString = mpComponent->mpComponentProperties->getName();
-
-//        if (dynamic_cast<IconAnnotation*>(item))
-//            this->mTextString = (dynamic_cast<IconAnnotation*>(item))->getName();
-//        else if (dynamic_cast<InheritanceAnnotation*>(item))
-//            this->mTextString = (dynamic_cast<InheritanceAnnotation*>(item))->getParentIcon()->getName();
-//        else if (dynamic_cast<ComponentAnnotation*>(item))
-//        {
-//            if (dynamic_cast<ComponentAnnotation*>(item)->mIconType == StringHandler::ICON)
-//                this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->getParentIcon()->getName();
-//            else if (dynamic_cast<ComponentAnnotation*>(item)->mIconType == StringHandler::DIAGRAM)
-//                this->mTextString = (dynamic_cast<ComponentAnnotation*>(item))->mpComponentProperties->getName();
-//        }
     }
 }
 

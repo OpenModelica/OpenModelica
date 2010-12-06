@@ -914,17 +914,17 @@ GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
         connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
-GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
-    : QScrollArea(parent)
-{
-    mpGraphicsView = graphicsView;
-}
+//GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
+//    : QScrollArea(parent)
+//{
+//    mpGraphicsView = graphicsView;
+//}
 
-void GraphicsViewScroll::scrollContentsBy(int dx, int dy)
-{
-    QScrollArea::scrollContentsBy(dx, dy);
-    mpGraphicsView->update();
-}
+//void GraphicsViewScroll::scrollContentsBy(int dx, int dy)
+//{
+//    QScrollArea::scrollContentsBy(dx, dy);
+//    mpGraphicsView->update();
+//}
 
 //! @class ProjectTab
 //! @brief The ProjectTab class is a Widget to contain a simulation model

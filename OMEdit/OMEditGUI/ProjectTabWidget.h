@@ -53,7 +53,6 @@
 
 class ProjectTab;
 class Component;
-class ComponentAnnotation;
 class Connector;
 class LineAnnotation;
 class PolygonAnnotation;
@@ -146,15 +145,15 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *event);
 };
 
-class GraphicsViewScroll : public QScrollArea
-{
-public:
-    GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent = 0);
+//class GraphicsViewScroll : public QScrollArea
+//{
+//public:
+//    GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent = 0);
 
-    GraphicsView *mpGraphicsView;
-protected:
-    virtual void scrollContentsBy(int dx, int dy);
-};
+//    GraphicsView *mpGraphicsView;
+//protected:
+//    virtual void scrollContentsBy(int dx, int dy);
+//};
 
 class ProjectTabWidget; //Forward declaration
 class ModelicaEditor;

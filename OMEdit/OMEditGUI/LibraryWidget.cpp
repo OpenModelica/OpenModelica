@@ -701,7 +701,7 @@ void LibraryTree::mousePressEvent(QMouseEvent *event)
         return;
     }
 
-    if ((event->button() == Qt::LeftButton))
+    if ((event->button() == Qt::LeftButton) and mItemExpandCollapseClicked)
     {
         QTreeWidgetItem *item = static_cast<QTreeWidgetItem*>(itemAt(event->pos()));
         if (!item)

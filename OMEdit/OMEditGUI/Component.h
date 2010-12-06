@@ -59,8 +59,6 @@ class PolygonAnnotation;
 class RectangleAnnotation;
 class EllipseAnnotation;
 class TextAnnotation;
-class InheritanceAnnotation;
-class ComponentAnnotation;
 class IconProperties;
 class IconParameters;
 class Transformation;
