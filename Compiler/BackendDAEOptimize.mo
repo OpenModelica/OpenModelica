@@ -608,6 +608,341 @@ algorithm
 end simpleEquation;
 
 
+/*
+ * remove parameter equations
+ */
+public function removeParameterEqns
+" function: removeParameterEqns
+  autor: Frenkel TUD 2010-12
+  Detect all equations with only one time depend variable and 
+  check if it is a time independend variable. In case of time 
+  independendce it change the variability from VARIABLE to Parameter
+  and add a bind expression."
+  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.IncidenceMatrix inM;
+  input BackendDAE.IncidenceMatrixT inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrixT outMT;
+algorithm
+  (outDlow,outM,outMT):=
+  matchcontinue (inDlow,inM,inMT)
+    local
+      BackendDAE.BackendDAE dlow,dlow1;
+      BackendDAE.IncidenceMatrix m,m_1,m_2;
+      BackendDAE.IncidenceMatrixT mT,mT_1;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,knvars2;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,eqns2;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo,einfo1;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.BinTree movedVars;
+      list<Integer> meqns;
+    case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
+      equation
+        true = RTOpts.debugFlag("optimizeParameter");
+        // check equations
+        (m_1,(ordvars1,knvars1,eqns1,_,movedVars,meqns)) = traverseIncidenceMatrix(m,removeParameterEqnsFinder,(ordvars,knvars,eqns,mT,BackendDAE.emptyBintree,{}));
+        // move changed variables 
+        (ordvars2,knvars2) = BackendVariable.moveVariables(ordvars1,knvars1,movedVars);
+        // remove changed eqns
+        eqns2 = BackendEquation.equationDelete(eqns1,meqns);
+        // update EventInfo
+        einfo1 = removeEqnsfromEventInfo(meqns,einfo);
+        // update IncidenceMatrix
+        dlow1 = BackendDAE.DAE(ordvars2,knvars2,exobj,av,eqns2,remeqns,inieqns,arreqns,algorithms,einfo1,eoc);
+        m_2 = BackendDAEUtil.incidenceMatrix(dlow1, BackendDAE.NORMAL());
+        // update transposed IncidenceMatrix
+        mT_1 = BackendDAEUtil.transposeMatrix(m_2);
+      then (dlow1,m_2,mT_1);
+    case (dlow,m,mT) then (dlow,m,mT);
+  end matchcontinue;        
+end removeParameterEqns;
+
+protected function traverseIncidenceMatrix 
+" function: traverseIncidenceMatrix
+  autor: Frenkel TUD 2010-12"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.IncidenceMatrix inM;
+  input FuncType func;
+  input Type_a inTypeA;
+  output BackendDAE.IncidenceMatrix outM;
+  output Type_a outTypeA;
+  partial function FuncType
+    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
+    output tuple<BackendDAE.IncidenceMatrixElement,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+  end FuncType;
+algorithm
+  (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,arrayLength(inM),inTypeA);
+end traverseIncidenceMatrix;
+
+protected function traverseIncidenceMatrix1 
+" function: traverseIncidenceMatrix1
+  autor: Frenkel TUD 2010-12"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.IncidenceMatrix inM;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_a inTypeA;
+  output BackendDAE.IncidenceMatrix outM;
+  output Type_a outTypeA;
+  partial function FuncType
+    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
+    output tuple<BackendDAE.IncidenceMatrixElement,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+  end FuncType;
+algorithm
+  (outM,outTypeA) := matchcontinue(inM,func,pos,len,inTypeA)
+    local 
+      BackendDAE.IncidenceMatrix m,m1,m2;
+      BackendDAE.IncidenceMatrixElement newElt;
+      Type_a extArg,extArg1;
+    
+    case(inM,func,pos,len,inTypeA) equation 
+      true = pos > len;
+    then (inM,inTypeA);
+    
+    case(inM,func,pos,len,inTypeA) equation
+      ((newElt,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+      m1 = arrayUpdate(m,pos,newElt);
+      (m2,extArg1) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg);
+    then (m2,extArg1);
+  end matchcontinue;
+end traverseIncidenceMatrix1;
+
+protected function removeParameterEqnsFinder
+"autor: Frenkel TUD 2010-12"
+ input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.IncidenceMatrixT,BackendDAE.BinTree,list<Integer>>> inTpl;
+ output tuple<BackendDAE.IncidenceMatrixElement,BackendDAE.IncidenceMatrix, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.IncidenceMatrixT,BackendDAE.BinTree,list<Integer>>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.IncidenceMatrixElement elem;
+      BackendDAE.IncidenceMatrix m,m1,m2;
+      Integer pos;
+      BackendDAE.Variables v,kn,v1,v2;
+      BackendDAE.EquationArray eqns,eqns1;
+      BackendDAE.Var var,var1,var2;
+      DAE.ComponentRef cr;
+      DAE.Exp e1,e2,cre,es;
+      Integer i,pos_1;
+      BackendDAE.Equation eqn;
+      BackendDAE.IncidenceMatrixT mT,mT1;
+      BackendDAE.BinTree mvars,mvars_1,mvars_2;
+      list<Integer> meqns,vareqns,meqns1,vareqns1;
+    case ((elem,pos,m,(v,kn,eqns,mT,mvars,meqns)))
+      equation
+        // check number of vars in eqns
+        //true = intEq(1,listLength(elem));
+        {i} = elem;
+        var = BackendVariable.getVarAt(v,i);
+        // no State
+        false = BackendVariable.isStateVar(var);
+        // no toplevel input or Output
+        cr = BackendVariable.varCref(var);
+        false = BackendVariable.isTopLevelInputOrOutput(cr,v,kn);
+        // not already changed
+        failure(_ = BackendDAEUtil.treeGet(mvars, cr));
+        // try to solve the equation
+        pos_1 = pos-1;
+        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(e1,e2,cre);
+        // set kind to PARAM
+        // do not set varKind because of simulation results
+        //var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
+        // add bindExp
+        var2 = BackendVariable.setBindExp(var,es);
+        // update vars
+        v1 = BackendVariable.addVar(var2,v);
+        // store changed var
+        mvars_1 = BackendDAEUtil.treeAdd(mvars, cr, 0);
+        // equations of var
+        vareqns = mT[i];
+        // remove var from IncidenceMatrix 
+        m1 = removeVarfromIncidenceMatrix(vareqns,i,m);
+        // remove not yet visited equations
+        vareqns1 = Util.listSelect1(vareqns,pos,intLt);
+       (m2,(v2,kn,eqns1,mT1,mvars_2,meqns1)) = traverseIncidenceMatrix2(vareqns1,m1,removeParameterEqnsFinder,(v1,kn,eqns,mT,mvars_1,pos_1::meqns));
+      then (({},m2,(v2,kn,eqns1,mT1,mvars_2,meqns1)));
+    case ((elem,pos,m,(v,kn,eqns,mT,mvars,meqns))) then ((elem,m,(v,kn,eqns,mT,mvars,meqns))); 
+  end matchcontinue;
+end removeParameterEqnsFinder;
+
+protected function traverseIncidenceMatrix2 
+" function: traverseIncidenceMatrix2
+  autor: Frenkel TUD 2010-12"
+  replaceable type Type_a subtypeof Any; 
+  input list<Integer> inEqns;
+  input BackendDAE.IncidenceMatrix inM;
+  input FuncType func;  
+  input Type_a inTypeA;
+  output BackendDAE.IncidenceMatrix outM;
+  output Type_a outTypeA;
+  partial function FuncType
+    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
+    output tuple<BackendDAE.IncidenceMatrixElement,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+  end FuncType;  
+algorithm
+  (outM,outTypeA) := matchcontinue(inEqns,inM,func,inTypeA)
+    local 
+      Integer pos;
+      list<Integer> rest;
+      BackendDAE.IncidenceMatrix m,m1,m2;
+      BackendDAE.IncidenceMatrixElement newElt;
+      Type_a extArg,extArg1;
+    
+    case({},inM,_,inTypeA) then (inM,inTypeA);
+    
+    case(pos::rest,inM,func,inTypeA)
+      equation
+      ((newElt,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+      m1 = arrayUpdate(m,pos,newElt);
+      (m2,extArg1) = traverseIncidenceMatrix2(rest,m1,func,extArg);
+    then (m2,extArg1);
+  end matchcontinue;
+end traverseIncidenceMatrix2;
+
+protected function removeVarfromIncidenceMatrix
+" function: traverseIncidenceMatrix2
+  autor: Frenkel TUD 2010-12"
+  input list<Integer> inEqns;
+  input Integer inVar;
+  input BackendDAE.IncidenceMatrix inM;
+  output BackendDAE.IncidenceMatrix outM;
+algorithm
+  outM := matchcontinue(inEqns,inVar,inM)
+    local 
+      Integer pos;
+      list<Integer> rest;
+      BackendDAE.IncidenceMatrix m,m1;
+      BackendDAE.IncidenceMatrixElement newElt;
+    
+    case({},_,inM) then inM;
+    
+    case(pos::rest,inVar,inM)
+      equation
+      newElt = Util.listRemoveOnTrue(inVar,intEq,inM[pos]);
+      m = arrayUpdate(inM,pos,newElt);
+      m1 = removeVarfromIncidenceMatrix(rest,inVar,inM);
+    then m1;
+  end matchcontinue;
+end removeVarfromIncidenceMatrix;
+
+protected function removeEqnsfromEventInfo
+" function: removeEqnsfromEventInfo
+  autor: Frenkel TUD 2010-12"
+  input list<Integer> inEqns;
+  input BackendDAE.EventInfo inEI;
+  output BackendDAE.EventInfo outEI;
+algorithm
+  outEI := matchcontinue(inEqns,inEI)
+    local 
+      Integer pos;
+      list<Integer> rest;
+      BackendDAE.EventInfo ei,ei1;
+    
+    case({},inEI) then inEI;
+    
+    case(pos::rest,inEI)
+      equation
+      ei = removeEqnfromEventInfo(pos,inEI);
+      ei1 = removeEqnsfromEventInfo(rest,ei);
+    then ei1;
+
+    // do not fail in case of an error        
+    case(pos::rest,inEI)
+      equation
+        Debug.fcall("failtrace",print,"BackendDAEOptimize.removeEqnsfromEventInfo failed\n");
+        ei1 = removeEqnsfromEventInfo(rest,inEI);
+    then ei1;      
+  end matchcontinue;
+end removeEqnsfromEventInfo;
+
+protected function removeEqnfromEventInfo
+" function: removeEqnfromEventInfo
+  autor: Frenkel TUD 2010-12"
+  input Integer inEqn;
+  input BackendDAE.EventInfo inEI;
+  output BackendDAE.EventInfo outEI;
+algorithm
+  outEI := matchcontinue(inEqn,inEI)
+    local 
+      Integer eqn;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      list<BackendDAE.ZeroCrossing> zeroCrossingLst,zeroCrossingLst1;
+
+    case(eqn,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst))
+      equation
+      zeroCrossingLst1 = removeEqnfromZeroCrossingLst(eqn,zeroCrossingLst);
+    then BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst1);
+  end matchcontinue;
+end removeEqnfromEventInfo;
+
+protected function removeEqnsfromZeroCrossingLst
+" function: removeEqnsfromZeroCrossingLst
+  autor: Frenkel TUD 2010-12"
+  input list<Integer> inEqns;
+  input list<BackendDAE.ZeroCrossing> inZCLst;
+  output list<BackendDAE.ZeroCrossing> outZCLs;
+algorithm
+  outZCLs := matchcontinue(inEqns,inZCLst)
+    local 
+      Integer eqn;
+      list<Integer> rest;
+      list<BackendDAE.ZeroCrossing>  zc,zc1;
+    
+    case({},inZCLst) then inZCLst;
+    
+    case(eqn::rest,inZCLst)
+      equation
+      zc = removeEqnfromZeroCrossingLst(eqn,inZCLst);
+      zc1 = removeEqnsfromZeroCrossingLst(rest,zc);
+    then zc1;
+  end matchcontinue;
+end removeEqnsfromZeroCrossingLst;
+
+protected function removeEqnfromZeroCrossingLst
+" function: removeEqnfromZeroCrossingLst
+  autor: Frenkel TUD 2010-12"
+  input Integer inEqn;
+  input list<BackendDAE.ZeroCrossing> inZCLst;
+  output list<BackendDAE.ZeroCrossing> outZCLs;
+algorithm
+  outZCLs := matchcontinue(inEqn,inZCLst)
+    local 
+      Integer eqn;
+      list<BackendDAE.ZeroCrossing>  rest,zclst;
+      DAE.Exp relation_;
+      list<Integer> occurEquLst,occurEquLst1;
+      list<Integer> occurWhenLst;
+    
+     case(_,{}) then inZCLst;
+
+    case(eqn,BackendDAE.ZERO_CROSSING(relation_,{},occurWhenLst)::rest)
+      equation
+      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
+    then BackendDAE.ZERO_CROSSING(relation_,{},occurWhenLst)::zclst;
+
+    // if list occurEquLst and occurWhenLst then remove zero crossing         
+    case(eqn,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,{})::rest)
+      equation
+      {} = Util.listRemoveOnTrue(eqn+1,intEq,occurEquLst);
+      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
+    then zclst;
+    
+    case(eqn,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::rest)
+      equation
+      occurEquLst1 = Util.listRemoveOnTrue(eqn+1,intEq,occurEquLst);
+      zclst = removeEqnfromZeroCrossingLst(eqn,rest);
+    then BackendDAE.ZERO_CROSSING(relation_,occurEquLst1,occurWhenLst)::zclst;
+  end matchcontinue;
+end removeEqnfromZeroCrossingLst;
+
 /*  
  * tearing system of equations stuff 
  */ 

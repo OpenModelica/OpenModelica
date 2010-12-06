@@ -906,6 +906,47 @@ algorithm
   end matchcontinue;
 end setVarIndex;
 
+public function setBindExp
+"function setBindExp
+  author: Frenkel TUD 2010-12
+  Sets the BackendDAE.Var.bindExp of a variable"
+  input BackendDAE.Var inVar;
+  input DAE.Exp inBindExp;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue (inVar,inBindExp)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.VarKind kind;
+      DAE.VarDirection dir;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> st;
+      Option<Values.Value> v;
+      list<DAE.Subscript> dim;
+      BackendDAE.Value i;
+      DAE.ElementSource source "origin of equation";
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+
+    case (BackendDAE.VAR(varName = cr,
+              varKind = kind,
+              varDirection = dir,
+              varType = tp,
+              bindExp = NONE(),
+              bindValue = v,
+              arryDim = dim,
+              index = i,
+              source = source,
+              values = attr,
+              comment = comment,
+              flowPrefix = flowPrefix,
+              streamPrefix = streamPrefix),inBindExp)
+    then BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
+  end matchcontinue;
+end setBindExp;
+
 public function isVarOnTopLevelAndOutput
 "function isVarOnTopLevelAndOutput
   this function checks if the provided cr is from a var that is on top model

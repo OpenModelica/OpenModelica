@@ -366,7 +366,10 @@ uniontype IndexType
 end IndexType; 
 
 public
-type IncidenceMatrix = array<list<Integer>>;
+type IncidenceMatrixElement = list<Integer>;
+
+public
+type IncidenceMatrix = array<IncidenceMatrixElement>;
 
 public
 type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation indexes (1..n),

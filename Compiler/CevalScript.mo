@@ -3776,6 +3776,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), true, true);
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
+        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
         (_,_,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(), BackendDAE.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));

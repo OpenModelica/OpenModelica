@@ -285,7 +285,6 @@ algorithm
     // 0 = a*(b-c)  solve for b    
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
-        true = hasOnlyFactors(e1,e2);
         true = Expression.isZero(e1);
         (e,a) = solve3(e2,crexp);
         (rhs_1,asserts) = solve(e1,e,crexp);
@@ -301,7 +300,6 @@ algorithm
     // swapped args: a*(b-c) = 0  solve for b     
     case (e2,e1,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
-        true = hasOnlyFactors(e1,e2);
         true = Expression.isZero(e1);
         (e,a) = solve3(e2,crexp);
         (rhs_1,asserts) = solve(e1,e,crexp);
@@ -368,73 +366,43 @@ algorithm
       DAE.Exp crexp,e1,e2;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs;
-          
-    case (DAE.BINARY(e1,DAE.MUL(_),e2),(crexp as DAE.CREF(componentRef = cr)))
+      DAE.Operator op;
+    
+    case (DAE.BINARY(e1,op,e2),(crexp as DAE.CREF(componentRef = cr)))
       equation
+        true = solve4(op);
         false = Expression.isZero(e1);
         crefs = Expression.extractCrefsFromExp(e1);
         false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e2,e1); 
-       
-    case (DAE.BINARY(e1,DAE.MUL(_),e2),(crexp as DAE.CREF(componentRef = cr)))
+    // swapped arguments   
+    case (DAE.BINARY(e1,op,e2),(crexp as DAE.CREF(componentRef = cr)))
       equation
+        true = solve4(op);
         false = Expression.isZero(e2);
         crefs = Expression.extractCrefsFromExp(e2);
         false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e1,e2);        
-
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e1);
-        crefs = Expression.extractCrefsFromExp(e1);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e2,e1);  
-       
-    case (DAE.BINARY(e1,DAE.MUL_ARR(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e2);
-        crefs = Expression.extractCrefsFromExp(e2);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e1,e2);    
-        
-    case (DAE.BINARY(e1,DAE.DIV(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e1);
-        crefs = Expression.extractCrefsFromExp(e1);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e2,e1);  
-       
-    case (DAE.BINARY(e1,DAE.DIV(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e2);
-        crefs = Expression.extractCrefsFromExp(e2);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e1,e2);        
-
-    case (DAE.BINARY(e1,DAE.DIV_ARR(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e1);
-        crefs = Expression.extractCrefsFromExp(e1);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e2,e1); 
-       
-    case (DAE.BINARY(e1,DAE.DIV_ARR(_),e2),(crexp as DAE.CREF(componentRef = cr)))
-      equation
-        false = Expression.isZero(e2);
-        crefs = Expression.extractCrefsFromExp(e2);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
-      then
-        (e1,e2);             
 
   end matchcontinue;
 end solve3;
+
+protected function solve4
+"function: solve4
+  helper for solve3
+  This function chechs the operator"
+  input DAE.Operator inOp;
+  output Boolean outBool;
+algorithm
+  outBool := matchcontinue (inOp)
+    case DAE.MUL(_) then true;
+    case DAE.MUL_ARR(_) then true;
+    case DAE.DIV(_) then true;
+    case DAE.DIV_ARR(_) then true;
+  end matchcontinue;
+end solve4;
 
 protected function hasOnlyFactors "help function to solve2, returns true if equation e1 == e2, has either e1 == 0 or e2 == 0 and the expression only contains
 factors, e.g. a*b*c = 0. In this case we can not solve the equation"

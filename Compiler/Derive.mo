@@ -354,7 +354,6 @@ algorithm
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
-    case (e as DAE.BCONST(bool = _),_) then e;      
     
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) 
       then DAE.RCONST(1.0);
@@ -568,13 +567,17 @@ algorithm
         e_1 = differentiateExpTime(e, (timevars,functions));
       then
         DAE.LUNARY(op,e_1);
-    
+    /* 
+      this is wrong. The derivative of c > d is not dc > dd. It is the derivative of 
+      (c>d) and this is perhaps NAN for c equal d and 0 otherwise
+        
     case (DAE.RELATION(exp1 = e1,operator = rel,exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
         DAE.RELATION(e1_1,rel,e2_1);
+    */
     
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),(timevars,functions))
       equation
@@ -1537,13 +1540,18 @@ algorithm
       then
         DAE.LUNARY(op,e_1);
     
+    /* 
+      this is wrong. The derivative of c > d is not dc > dd. It is the derivative of 
+      (c>d) and this is perhaps NAN for c equal d and 0 otherwise
+    
     case (DAE.RELATION(exp1 = e1,operator = rel,exp2 = e2),tv,differentiateIfExp)
       equation
         e1_1 = differentiateExp(e1, tv, differentiateIfExp);
         e2_1 = differentiateExp(e2, tv, differentiateIfExp);
       then
         DAE.RELATION(e1_1,rel,e2_1);
-
+	  */
+	  
     // der(x)
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst =
           {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)

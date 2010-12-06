@@ -640,6 +640,20 @@ algorithm
   end matchcontinue;
 end equationSetnth;
 
+public function equationDelete "function: equationDelete
+  author: Frenkel TUD 2010-12
+  Delets the equations from the list of Integers."
+  input BackendDAE.EquationArray inEquationArray;
+  input list<Integer> inIntLst;
+  output BackendDAE.EquationArray outEquationArray;
+protected
+  list<BackendDAE.Equation> eqnlst,eqnlst1;
+algorithm
+   eqnlst := BackendDAEUtil.equationList(inEquationArray);
+   eqnlst1 := Util.listDeletePositions(eqnlst,inIntLst);  
+   outEquationArray :=  BackendDAEUtil.listEquation(eqnlst1);
+end equationDelete;
+
 public function equationToResidualForm "function: equationToResidualForm
   author: PA
   This function transforms an equation to its residual form.

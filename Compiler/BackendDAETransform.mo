@@ -978,17 +978,15 @@ algorithm
   outIntegerLst:=
   matchcontinue (inInteger1,inIncidenceMatrix2,inIncidenceMatrixT3,inIntegerArray4,inIntegerArray5)
     local
-      BackendDAE.Value eqn_1,var,var_1,pos,eqn;
+      BackendDAE.Value var,pos,eqn;
       list<BackendDAE.Value> reachable,reachable_1,reachable_2;
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
       String eqnstr;
     case (eqn,m,mt,a1,a2)
       equation
-        eqn_1 = eqn - 1;
-        var = a2[eqn_1 + 1];
-        var_1 = var - 1;
-        reachable = mt[var_1 + 1] "Got the variable that is solved in the equation" ;
+        var = a2[eqn];
+        reachable = mt[var] "Got the variable that is solved in the equation" ;
         reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
         pos = Util.listPosition(eqn, reachable_1) ".. except this one" ;
         reachable_2 = listDelete(reachable_1, pos);

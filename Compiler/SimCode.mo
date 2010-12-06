@@ -837,10 +837,11 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(dae);
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
+        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
+        Debug.fprint("bltdump", "Lowered DAE:\n");
+        Debug.fcall("bltdump", BackendDump.dump, dlow);
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -964,10 +965,11 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, addDummy, true);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", BackendDump.dump, dlow);
         m = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
         mT = BackendDAEUtil.transposeMatrix(m);
+        (dlow,m,mT) = BackendDAEOptimize.removeParameterEqns(dlow,m,mT);
+        Debug.fprint("bltdump", "Lowered DAE:\n");
+        Debug.fcall("bltdump", BackendDump.dump, dlow);
         (ass1,ass2,dlow_1,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT(),BackendDAE.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -998,14 +1000,15 @@ algorithm
         resstr = "SimCode: The model has been translated";
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
-/*    case (_,_,className,_,_,_, _)
+    case (_,_,className,_,_,_, _)
       equation        
+        true = RTOpts.debugFlag("failtrace");
         resstr = Absyn.pathString(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
-*/  end matchcontinue;
+  end matchcontinue;
 end translateModel;
 
 public function translateFunctions
