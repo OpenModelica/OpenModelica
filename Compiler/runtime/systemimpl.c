@@ -38,6 +38,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -269,11 +270,27 @@ static char* SystemImpl__readFile(const char* filename)
     c_add_message(85, /* ERROR_OPENING_FILE */
       "SCRIPTING",
       "ERROR",
-      "Error opening file %s.",
+      "Error opening file: %s.",
       c_tokens,
       1);
     return strdup("No such file");
   }
+
+  /* adrpo: if size is larger than the max string, return a different string */
+#ifndef _LP64
+  if (statstr.st_size > (pow(2, 22) * 4))
+  {
+    const char *c_tokens[1]={filename};
+    c_add_message(85, /* ERROR_OPENING_FILE */
+      "SCRIPTING",
+      "ERROR",
+      "File too large to fit into a MetaModelica string: %s.",
+      c_tokens,
+      1);
+    fclose(file);
+    return strdup("File too large");
+  }
+#endif
 
   file = fopen(filename,"rb");
   buf = (char*) malloc(statstr.st_size+1);
@@ -281,6 +298,7 @@ static char* SystemImpl__readFile(const char* filename)
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
     free(buf);
+    fclose(file);
     return strdup("Failed while reading file");
   }
   buf[statstr.st_size] = '\0';
