@@ -46,6 +46,8 @@ public import SCode;
 public import Values;
 public import ValuesUtil;
 public import HashTable;
+public import HashTable2;
+
 
 public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAE.DAElist emptyDae = DAE.DAE({});
@@ -2659,6 +2661,178 @@ algorithm
   end matchcontinue;
 end transformIfEqToExpr;
 
+public function evaluateAnnotation
+"function: evaluateAnnotation
+  evaluates the annotation Evaluate"
+  input DAE.DAElist inDAElist;
+  output DAE.DAElist outDAElist;
+algorithm
+  (outDAElist) := matchcontinue (inDAElist)
+    local
+      DAE.DAElist dae;
+      HashTable2.HashTable ht;
+      list<DAE.Element> elts,elts1;
+    case (dae as DAE.DAE(elts))
+      equation
+        true = RTOpts.debugFlag("evaluateanno");
+        ht = evaluateAnnotation1(dae,HashTable2.emptyHashTable());
+        (elts1,_) = traverseDAE2(elts, evaluateAnnotationVisitor, ht);
+      then
+        DAE.DAE(elts1);
+    case (dae) then dae;
+  end matchcontinue;
+end evaluateAnnotation;
+
+protected function evaluateAnnotationVisitor "
+Author: Frenkel TUD, 2010-12"
+  input tuple<DAE.Exp,HashTable2.HashTable> itpl;
+  output tuple<DAE.Exp,HashTable2.HashTable> otpl;
+algorithm
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp exp;
+      HashTable2.HashTable ht;
+    case ((exp,ht)) then Expression.traverseExp(exp,evaluateAnnotationTraverse,ht);
+  end matchcontinue;
+end evaluateAnnotationVisitor;
+
+protected function evaluateAnnotationTraverse "
+Author: Frenkel TUD, 2010-12"
+  input tuple<DAE.Exp, HashTable2.HashTable> itpl;
+  output tuple<DAE.Exp, HashTable2.HashTable> otpl;
+algorithm
+  otpl := matchcontinue (itpl)
+    local
+      DAE.ComponentRef cr;
+      HashTable2.HashTable ht;
+      DAE.Exp exp,e1;
+    
+    case((exp as DAE.CREF(componentRef=cr),ht))
+      equation
+        e1 = BaseHashTable.get(cr,ht);
+      then 
+        ((e1,ht));
+    case(itpl) then itpl;
+  end matchcontinue;
+end evaluateAnnotationTraverse;
+
+public function evaluateAnnotation1
+"function: evaluateAnnotation1
+  evaluates the annotation Evaluate"
+  input DAE.DAElist inDAElist;
+  input HashTable2.HashTable inHt;
+  output HashTable2.HashTable ouHt;
+algorithm
+  (ouHt) := matchcontinue (inDAElist,inHt)
+    local
+      list<DAE.Element> rest,sublist;
+      DAE.Element el;
+      SCode.Comment comment;
+      HashTable2.HashTable ht,ht1,ht2;
+      DAE.ComponentRef cr;
+      SCode.Annotation anno;
+      list<SCode.Annotation> annos;
+      DAE.Exp e;
+    case (DAE.DAE({}),ht) then ht;
+    case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),ht)
+      equation
+        ht1 = evaluateAnnotation1(DAE.DAE(sublist),ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+      then
+        ht2;
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),ht)
+      equation
+        SCode.COMMENT(annotation_=SOME(anno)) = comment;
+        true = hasevaluateAnnotation({anno});
+        ht1 = BaseHashTable.add((cr,e),ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+      then
+        ht2;
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),ht)
+      equation
+        SCode.CLASS_COMMENT(annotations=annos) = comment;
+        true = hasevaluateAnnotation(annos);
+        ht1 = BaseHashTable.add((cr,e),ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+      then
+        ht2;        
+    case (DAE.DAE(el :: rest),ht)
+      equation
+        ht1 = evaluateAnnotation1(DAE.DAE(rest),ht);
+      then
+        ht1;
+  end matchcontinue;
+end evaluateAnnotation1;
+
+protected function hasevaluateAnnotation
+"function: hasevaluateAnnotation
+  check if the Evaluate annotation is present in comment"
+  input list<SCode.Annotation> inAnnos;
+  output Boolean outB;
+algorithm
+  outB := matchcontinue (inAnnos)
+    local
+      Boolean b;
+      list<SCode.Annotation> rest;
+      SCode.Mod mod;
+    case (SCode.ANNOTATION(modification = mod) :: rest)
+      equation
+        true = hasevaluateAnnotation2(mod);
+      then
+        true;
+    case (SCode.ANNOTATION(modification = mod) :: rest)
+      equation
+        false = hasevaluateAnnotation2(mod);
+        b = hasevaluateAnnotation(rest);
+      then
+        b;
+  end matchcontinue;
+end hasevaluateAnnotation;
+
+protected function hasevaluateAnnotation2
+"function: hasevaluateAnnotation2
+  check if the Evaluate annotation is present in comment"
+  input SCode.Mod inMod;
+  output Boolean outB;
+algorithm
+  (outB) := matchcontinue (inMod)
+    local
+      Boolean b;
+      list<SCode.SubMod> subModLst;    
+    case (SCode.MOD(subModLst=subModLst))
+      equation
+        b = hasevaluateAnnotation3(subModLst);
+      then
+        b;
+  end matchcontinue;
+end hasevaluateAnnotation2;
+
+protected function hasevaluateAnnotation3
+"function: hasevaluateAnnotation3
+  check if the Evaluate annotation is present in comment"
+  input list<SCode.SubMod> inSubModes;
+  output Boolean outB;
+algorithm
+  (outB) := matchcontinue (inSubModes)
+    local
+      Boolean b;
+      list<SCode.SubMod> rest;
+      SCode.SubMod submod;
+      SCode.Mod mod;
+    case (SCode.NAMEMOD(ident = "Evaluate",A=SCode.MOD(absynExpOption=SOME((Absyn.BOOL(value=true),_)))) :: rest) then true;
+    case (SCode.IDXMOD(an=mod) :: rest)
+      equation
+        true = hasevaluateAnnotation2(mod);
+      then
+        true;
+    case (submod :: rest)
+      equation
+        b = hasevaluateAnnotation3(rest);
+      then
+        b;
+  end matchcontinue;
+end hasevaluateAnnotation3;
+
 protected function selectBranches
 "@author: adrpo
  this function will select the equations in the
@@ -5177,6 +5351,7 @@ public function transformationsBeforeBackend
 algorithm
   d := dae;
   // Transform if equations to if expression before going into code generation.
+  d := evaluateAnnotation(d);
   d := transformIfEqToExpr(d,false);
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);
