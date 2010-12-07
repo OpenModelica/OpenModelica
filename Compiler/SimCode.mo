@@ -3763,6 +3763,7 @@ algorithm
     local
       DAE.Exp e1, e2;
       DAE.ElementSource src;
+      DAE.ComponentRef cr;
       
     case (BackendDAE.EQUATION(exp = e1, scalar = e2, source = src))
       equation
@@ -3770,6 +3771,18 @@ algorithm
         e2 = replaceDerOpInExp(e2);
       then
         BackendDAE.EQUATION(e1, e2, src);
+    
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e1, source = src))
+      equation
+        e1 = replaceDerOpInExp(e1);
+      then
+        BackendDAE.RESIDUAL_EQUATION(e1, src);    
+
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp = e1, source = src))
+      equation
+        e1 = replaceDerOpInExp(e1);
+      then
+        BackendDAE.SOLVED_EQUATION(cr,e1, src); 
     
     case (_) then inEqn;
     
@@ -4493,11 +4506,13 @@ algorithm
         resEqus1 = Util.listMap1(eqns_lst, dlowEqToSimEqSystem,al);        
         
         se_lst = BackendEquation.traverseBackendDAEEqns(se,BackendDAEUtil.traverseequationToResidualForm,{});
+        se_lst = replaceDerOpInEquationList(se_lst);
         se_lst = listReverse(se_lst);
         se_lst = Util.listFilter(se_lst, failUnlessResidual);
         resEqus2 = Util.listMap1(se_lst, dlowEqToSimEqSystem,al);
         
         ie_lst = BackendEquation.traverseBackendDAEEqns(ie,BackendDAEUtil.traverseequationToResidualForm,{});
+        ie_lst = replaceDerOpInEquationList(ie_lst);
         ie_lst = listReverse(ie_lst);
         ie_lst = Util.listFilter(ie_lst, failUnlessResidual);
         resEqus3 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
