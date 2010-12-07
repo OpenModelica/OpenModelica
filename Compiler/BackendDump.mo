@@ -54,6 +54,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import HashTable2;
 protected import IOStream;
 protected import SCode;
 protected import Util;
@@ -1353,5 +1354,55 @@ algorithm
   res := Util.stringDelimitList(Util.listMap(lst,intString),",");
   res := stringAppendList({"{",res,"}"});
 end intListStr;
+
+public function dumpAliasVariables "function: dumpAliasVariables
+  author: Frenkel TUD 2010-12
+
+  dump AliasVariables.
+"
+  input BackendDAE.AliasVariables aliasVars;
+protected
+    HashTable2.HashTable varMappings;
+    BackendDAE.Variables aliasVars;
+    String sl;
+    Integer l;
+algorithm
+  BackendDAE.ALIASVARS(varMappings,aliasVars) := aliasVars;
+  l := BackendVariable.varsSize(aliasVars);
+  sl := intString(l);
+  print("AliasVariables: ");
+  print(sl);
+  print("\n===============\n");
+  _ := BackendVariable.traverseBackendDAEVars(aliasVars,dumpAliasVariable,varMappings);
+  print("\n");
+end dumpAliasVariables;
+
+protected function dumpAliasVariable
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, tuple<HashTable2.HashTable>> inTpl;
+ output tuple<BackendDAE.Var, tuple<HashTable2.HashTable>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      HashTable2.HashTable varMappings;
+      DAE.Exp e;
+      String s,scr,se;
+    case ((v,varMappings))
+      equation
+        cr = BackendVariable.varCref(v);
+        // does not work
+        //e = BaseHashTable.get(cr,varMappings);
+        e = BackendVariable.varBindExp(v);
+        scr = ComponentReference.crefStr(cr);
+        se = ExpressionDump.printExpStr(e);
+        s = stringAppendList({scr," = ",se,"\n"});
+        print(s);
+      then ((v,varMappings));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end dumpAliasVariable;
 
 end BackendDump;

@@ -347,6 +347,19 @@ algorithm
    end matchcontinue;
 end varStartValue;
 
+public function varBindExp
+"function varBindExp
+  author: Frenkel TUD 2010-12
+  Returns the bindExp of a variable."
+  input BackendDAE.Var v;
+  output DAE.Exp sv;
+algorithm
+  sv := matchcontinue(v)
+    local DAE.Exp e;
+    case (BackendDAE.VAR(bindExp = SOME(e))) then e;
+   end matchcontinue;
+end varBindExp;
+
 public function varStateSelect
 "function varStateSelect
   author: PA

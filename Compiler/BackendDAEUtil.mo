@@ -54,6 +54,7 @@ protected import Absyn;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import Ceval;
 protected import ClassInf;
@@ -686,12 +687,15 @@ algorithm
 algorithm
   outAliasVariables := matchcontinue (inAliasVariables,inVar,inExp)
     local
-      HashTable2.HashTable aliasMappings;
+      HashTable2.HashTable aliasMappings,aliasMappings1;
       BackendDAE.Variables aliasVariables,aliasVariables1;
+      DAE.ComponentRef cr;
     
     case (BackendDAE.ALIASVARS(aliasMappings,aliasVariables),inVar,inExp)
       equation
         aliasVariables1 = BackendVariable.addVar(inVar,aliasVariables);
+        cr = BackendVariable.varCref(inVar);
+        aliasMappings1 = BaseHashTable.add((cr,inExp),aliasMappings);
       then
         BackendDAE.ALIASVARS(aliasMappings,aliasVariables1);
     case (_,_,_)

@@ -144,6 +144,7 @@ algorithm
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
         (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,BackendDAEUtil.emptyAliasVariables());
+        Debug.fcall("dumpalias", BackendDump.dumpAliasVariables, varsAliases);
       then
         (vars_1,knvars_2,eqns_3,seqns_4,ieqns_2,arreqns2, algs_1, varsAliases);
     case (_,_,_,_,_,_,_,_)
@@ -632,8 +633,8 @@ algorithm
     // constant equations
     case (inVars,BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e)::rest,inAlias)
       equation
-        // check exp is zero
-        true = Expression.isZero(e);
+        // check exp is const
+        true = Expression.isConst(e);
         ({var},_) = BackendVariable.getVar(cr,inVars);
         // set kind to PARAM
         // do not set varKind because of simulation results
@@ -655,8 +656,10 @@ algorithm
         removeConstantEqns1(e);
         // get var
         ({var},_) = BackendVariable.getVar(cr,inVars);
+        // add bindExp
+        var2 = BackendVariable.setBindExp(var,e);        
         // add
-        aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var,e);
+        aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var2,e);
         // next
         (vars,eqns,aliasvars1) = removeConstantEqns(inVars,rest,aliasvars);
       then
