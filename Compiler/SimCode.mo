@@ -4613,19 +4613,48 @@ algorithm
   parameterEquations := matchcontinue (dlow)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
-      BackendDAE.Variables knvars;
+      BackendDAE.Variables knvars,extobj,v,kn;
       array<Algorithm.Algorithm> algs;
-      BackendDAE.EquationArray ie;
+      BackendDAE.EquationArray ie,pe,emptyeqns;
       list<SimEqSystem> inalgs;
-      list<DAE.Algorithm> ialgs;      
+      list<DAE.Algorithm> ialgs; 
+      BackendDAE.BackendDAE paramdlow,paramdlow1; 
+      array<BackendDAE.MultiDimEquation> arrayEqs;  
+      BackendDAE.ExternalObjectClasses extObjClasses;
+      BackendDAE.AliasVariables alisvars;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mT;
+      array<Integer> v1,v2;
+      list<Integer> lv1,lv2;
+      list<list<Integer>> comps;
+      list<BackendDAE.Var> lv,lkn;
+      list<HelpVarInfo> helpVarInfo;
     
-    case (BackendDAE.DAE(knownVars=knvars,initialEqs=ie,algorithms=algs))
+    case (BackendDAE.DAE(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses))
       equation
         // kvars params
-        parameterEquationsTmp = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,{}); 
+        ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1)); 
 
-        parameterEquations = Util.listMap1(parameterEquationsTmp,
-                                          dlowEqToSimEqSystem,algs);
+        // sort the equations         
+        emptyeqns = BackendDAEUtil.listEquation({});
+        pe = BackendDAEUtil.listEquation(parameterEquationsTmp);
+        alisvars = BackendDAEUtil.emptyAliasVariables();
+        v = BackendDAEUtil.listVar(lv);
+        kn = BackendDAEUtil.listVar(lkn);
+        paramdlow = BackendDAE.DAE(v,kn,extobj,alisvars,pe,emptyeqns,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);    
+        m = BackendDAEUtil.incidenceMatrix(paramdlow,BackendDAE.NORMAL());
+        mT = BackendDAEUtil.transposeMatrix(m); 
+        v1 = listArray(lv1);     
+        v2 = listArray(lv2);     
+        Debug.fcall("paramdlowdump", BackendDump.dump,paramdlow);
+        Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrix,m);
+        Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
+        Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
+        (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
+        Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);        
+
+        (helpVarInfo, paramdlow1) = generateHelpVarInfo(paramdlow, comps);        
+        parameterEquations = createEquations(false, false, true, false, false, paramdlow1, v1, v2, comps, helpVarInfo);
                                           
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
         inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
@@ -4674,29 +4703,38 @@ algorithm
 end createInitialAssignmentsFromStart;
 
 protected function createInitialParamAssignments
- input tuple<BackendDAE.Var, list<BackendDAE.Equation>> inTpl;
- output tuple<BackendDAE.Var, list<BackendDAE.Equation>> outTpl;
+ input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Var>,list<Integer>,list<Integer>,Integer>> inTpl;
+ output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Var>,list<Integer>,list<Integer>,Integer>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl) 
     local
-      BackendDAE.Var var;
+      BackendDAE.Var var,var1;
       BackendDAE.Equation initialEquation;
       list<BackendDAE.Equation> eqns; 
       Option<DAE.VariableAttributes> attr;
       DAE.ComponentRef cr;
       DAE.Exp startv;
-      DAE.Exp e;
-      DAE.ElementSource source "the origin of the element";
+      DAE.Exp e,cre;
+      DAE.ElementSource source;
+      list<Integer> v1,v2;
+      Integer pos,epos;
+      list<BackendDAE.Var> v,kn;
 
-    case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),eqns))
+    case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),(eqns,v,kn,v1,v2,pos)))
       equation
         false = Expression.isConst(e);
-        initialEquation = BackendDAE.SOLVED_EQUATION(cr, e, source);
+        cre = Expression.crefExp(cr);
+        initialEquation = BackendDAE.EQUATION(cre, e, source);
+        epos = listLength(v1)+1;
+        var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE);
       then
-        ((var,initialEquation :: eqns));
+        ((var,(initialEquation :: eqns,var1::v,kn,epos::v1,pos::v2,pos+1)));
     
-   case (inTpl) then inTpl;
+   case ((var,(eqns,v,kn,v1,v2,pos)))
+     equation
+        var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
+     then ((var,(eqns,v,var1::kn,v1,v2,pos)));
   end matchcontinue;
 end createInitialParamAssignments;
 
@@ -7940,6 +7978,12 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Values.Value value;
       DAE.Exp e;
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+        true = Expression.isConst(e);
+      then
+        SOME(e);        
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = BackendDAE.STRING(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
@@ -7952,36 +7996,42 @@ algorithm
         true = Expression.isConst(e);
       then
         SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), bindValue = SOME(value)))
-      equation
-        e = ValuesUtil.valueExp(value);
-        true = Expression.isConst(e);
-      then
-        SOME(e);        
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
-      equation
-        e = DAEUtil.getStartAttrFail(dae_var_attr);
-        true = Expression.isConst(e);
-      then
-        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
       then
         SOME(e);          
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Expression.isConst(e);
+      then
+        SOME(e);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConst(e);
       then
         SOME(e);
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+        true = Expression.isConst(e);
+      then
+        SOME(e);         
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConst(e);
       then
         SOME(e);
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+        true = Expression.isConst(e);
+      then
+        SOME(e);         
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);

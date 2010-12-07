@@ -2190,43 +2190,45 @@ algorithm
     local
       DAE.ComponentRef cr;
       BackendDAE.Variables vars,knvars;
+      BackendDAE.VarKind kind;
     case (cr,vars,_)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, vars);
-      then
-        ();
-    case (cr,vars,_)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, vars);
+        isVarKindVariable(kind);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),_) = getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),_) = getVar(cr, knvars);
-      then
-        ();
-    case (cr,_,knvars)
-      equation
-        ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),_) = getVar(cr, knvars);
+        ((BackendDAE.VAR(varKind = kind) :: _),_) = getVar(cr, knvars);
+        isVarKindVariable(kind);
       then
         ();
   end matchcontinue;
 end isVariable;
+
+public function isVarKindVariable
+"function: isVarKindVariable
+
+  This function takes a DAE.ComponentRef and two Variables. It searches
+  the two sets of variables and succeed if the variable is STATE or
+  VARIABLE. Otherwise it fails.
+  Note: An array variable is currently assumed that each scalar element has
+  the same type.
+  inputs:  (DAE.ComponentRef,
+              Variables, /* vars */
+              Variables) /* known vars */
+  outputs: ()"
+  input BackendDAE.VarKind inVarKind;
+algorithm
+  _:=
+  matchcontinue (inVarKind)
+    case (BackendDAE.VARIABLE()) then ();
+    case (BackendDAE.STATE()) then ();
+    case (BackendDAE.DUMMY_STATE()) then ();
+    case (BackendDAE.DUMMY_DER()) then ();
+    case (BackendDAE.DISCRETE()) then ();
+  end matchcontinue;
+end isVarKindVariable;
 
 public function moveVariables
 "function: moveVariables

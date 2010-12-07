@@ -644,7 +644,6 @@ algorithm
       list<Integer> meqns;
     case (dlow as BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT)
       equation
-        true = RTOpts.debugFlag("optimizeParameter");
         // check equations
         (m_1,(ordvars1,knvars1,eqns1,_,movedVars,meqns)) = traverseIncidenceMatrix(m,removeParameterEqnsFinder,(ordvars,knvars,eqns,mT,BackendDAE.emptyBintree,{}));
         // move changed variables 
@@ -753,8 +752,8 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2) = eqn;
         // variable time not there
-        ((_,false)) = Expression.traverseExp(e1, traversingComponentRefTimeFinder, false);
-        ((_,false)) = Expression.traverseExp(e2, traversingComponentRefTimeFinder, false);
+        ((_,false)) = Expression.traverseExpTopDown(e1, traversingParameterEqnsFinder, false);
+        ((_,false)) = Expression.traverseExpTopDown(e2, traversingParameterEqnsFinder, false);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
         // set kind to PARAM
@@ -780,23 +779,23 @@ algorithm
   end matchcontinue;
 end removeParameterEqnsFinder;
 
-public function traversingComponentRefTimeFinder "
+public function traversingParameterEqnsFinder "
 Author: Frenkel 2010-12"
   input tuple<DAE.Exp, Boolean > inExp;
-  output tuple<DAE.Exp, Boolean > outExp;
+  output tuple<DAE.Exp,Boolean, Boolean > outExp;
 algorithm 
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e;      
+      Boolean b;
     
-    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), _)) 
-      then
-        ((e, true ));
-    
-    case(inExp) then inExp;
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), _)) then ((e,false,true));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), _)) then ((e,false,true ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), _)) then ((e,false,true ));
+    case((e,b)) then ((e,not b,b));
     
   end matchcontinue;
-end traversingComponentRefTimeFinder;
+end traversingParameterEqnsFinder;
 
 protected function setbindValue
 " function: setbindValue
