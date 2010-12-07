@@ -2670,12 +2670,12 @@ algorithm
   (outDAElist) := matchcontinue (inDAElist)
     local
       DAE.DAElist dae;
-      HashTable2.HashTable ht;
+      HashTable2.HashTable ht,pv;
       list<DAE.Element> elts,elts1;
     case (dae as DAE.DAE(elts))
       equation
-        true = RTOpts.debugFlag("evaluateanno");
-        ht = evaluateAnnotation1(dae,HashTable2.emptyHashTable());
+        pv = getParameterVars(dae,HashTable2.emptyHashTable());
+        ht = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
         (elts1,_) = traverseDAE2(elts, evaluateAnnotationVisitor, ht);
       then
         DAE.DAE(elts1);
@@ -2716,9 +2716,8 @@ algorithm
   end matchcontinue;
 end evaluateAnnotationTraverse;
 
-public function evaluateAnnotation1
-"function: evaluateAnnotation1
-  evaluates the annotation Evaluate"
+public function getParameterVars
+"function: getParameterVars"
   input DAE.DAElist inDAElist;
   input HashTable2.HashTable inHt;
   output HashTable2.HashTable ouHt;
@@ -2727,42 +2726,109 @@ algorithm
     local
       list<DAE.Element> rest,sublist;
       DAE.Element el;
-      SCode.Comment comment;
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
-      SCode.Annotation anno;
-      list<SCode.Annotation> annos;
       DAE.Exp e;
     case (DAE.DAE({}),ht) then ht;
     case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),ht)
       equation
-        ht1 = evaluateAnnotation1(DAE.DAE(sublist),ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+        ht1 = getParameterVars(DAE.DAE(sublist),ht);
+        ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
         ht2;
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),ht)
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)))):: rest),ht)
       equation
-        SCode.COMMENT(annotation_=SOME(anno)) = comment;
-        true = hasevaluateAnnotation({anno});
         ht1 = BaseHashTable.add((cr,e),ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+        ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
         ht2;
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),ht)
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)))):: rest),ht)
       equation
-        SCode.CLASS_COMMENT(annotations=annos) = comment;
-        true = hasevaluateAnnotation(annos);
         ht1 = BaseHashTable.add((cr,e),ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),ht1);
+        ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
         ht2;        
     case (DAE.DAE(el :: rest),ht)
       equation
-        ht1 = evaluateAnnotation1(DAE.DAE(rest),ht);
+        ht1 = getParameterVars(DAE.DAE(rest),ht);
+      then
+        ht1;
+  end matchcontinue;
+end getParameterVars;
+
+public function evaluateAnnotation1
+"function: evaluateAnnotation1
+  evaluates the annotation Evaluate"
+  input DAE.DAElist inDAElist;
+  input HashTable2.HashTable inPV;
+  input HashTable2.HashTable inHt;
+  output HashTable2.HashTable ouHt;
+algorithm
+  (ouHt) := matchcontinue (inDAElist,inPV,inHt)
+    local
+      list<DAE.Element> rest,sublist;
+      DAE.Element el;
+      SCode.Comment comment;
+      HashTable2.HashTable ht,ht1,ht2,pv;
+      DAE.ComponentRef cr;
+      SCode.Annotation anno;
+      list<SCode.Annotation> annos;
+      DAE.Exp e,e1;
+    case (DAE.DAE({}),_,ht) then ht;
+    case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),pv,ht)
+      equation
+        ht1 = evaluateAnnotation1(DAE.DAE(sublist),pv,ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+      then
+        ht2;
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
+      equation
+        SCode.COMMENT(annotation_=SOME(anno)) = comment;
+        true = hasevaluateAnnotation({anno});
+        e1 = evaluateParameter(e,pv);
+        ht1 = BaseHashTable.add((cr,e1),ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+      then
+        ht2;
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
+      equation
+        SCode.CLASS_COMMENT(annotations=annos) = comment;
+        true = hasevaluateAnnotation(annos);
+        e1 = evaluateParameter(e,pv);
+        ht1 = BaseHashTable.add((cr,e1),ht);
+        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+      then
+        ht2;        
+    case (DAE.DAE(el :: rest),pv,ht)
+      equation
+        ht1 = evaluateAnnotation1(DAE.DAE(rest),pv,ht);
       then
         ht1;
   end matchcontinue;
 end evaluateAnnotation1;
+
+public function evaluateParameter
+"function: evaluateParameter"
+  input DAE.Exp inExp;
+  input HashTable2.HashTable inPV;
+  output DAE.Exp outExp;
+algorithm
+  (outExp) := matchcontinue (inExp,inPV)
+    local
+      HashTable2.HashTable pv;
+      DAE.Exp e,e1,e2;
+    case (e,_)
+      equation
+        true = Expression.isConst(e);
+      then e;
+    case (e,pv)
+      equation
+        ((e1,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,pv);
+        e2 = evaluateParameter(e1,pv);
+      then
+        e2;
+  end matchcontinue;
+end evaluateParameter;
 
 protected function hasevaluateAnnotation
 "function: hasevaluateAnnotation
@@ -3742,6 +3808,14 @@ algorithm
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
         (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
       then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae2,extraArg);
+ 
+    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg)
+      equation
+        ((_,extraArg)) = func((Expression.crefExp(cr), extraArg));
+        (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
+        (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
+        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
+      then (DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae2,extraArg);
         
     case(DAE.DEFINE(cr,e,source)::dae,func,extraArg)
       equation
