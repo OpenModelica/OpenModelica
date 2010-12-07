@@ -665,6 +665,7 @@ end emptyVars;
 
 public function emptyAliasVariables
   output BackendDAE.AliasVariables outAliasVariables;
+protected  
   HashTable2.HashTable aliasMappings;
   BackendDAE.Variables aliasVariables;
 algorithm
@@ -672,6 +673,34 @@ algorithm
   aliasVariables := emptyVars();
   outAliasVariables := BackendDAE.ALIASVARS(aliasMappings,aliasVariables);
 end emptyAliasVariables;
+
+public function addAliasVariables
+"function: addAliasVariables
+  author: Frenkel TUD 2010-12
+  Add an alias variable to the AliasVariables "
+  input BackendDAE.AliasVariables inAliasVariables;
+  input BackendDAE.Var inVar;
+  input DAE.Exp inExp;
+  output BackendDAE.AliasVariables outAliasVariables;
+algorithm
+algorithm
+  outAliasVariables := matchcontinue (inAliasVariables,inVar,inExp)
+    local
+      HashTable2.HashTable aliasMappings;
+      BackendDAE.Variables aliasVariables,aliasVariables1;
+    
+    case (BackendDAE.ALIASVARS(aliasMappings,aliasVariables),inVar,inExp)
+      equation
+        aliasVariables1 = BackendVariable.addVar(inVar,aliasVariables);
+      then
+        BackendDAE.ALIASVARS(aliasMappings,aliasVariables1);
+    case (_,_,_)
+      equation
+        print("- BackendDAEUtil.addAliasVariables failed\n");
+      then
+        fail();        
+  end matchcontinue;
+end addAliasVariables;
 
 public function equationList "function: equationList
   author: PA

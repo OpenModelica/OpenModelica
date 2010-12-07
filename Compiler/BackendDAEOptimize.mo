@@ -109,10 +109,10 @@ algorithm
   matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inAlgs,inBinTree6)
     local
       VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1;
-      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
+      list<BackendDAE.Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_4,seqns_3,eqns,reqns,ieqns;
       list<BackendDAE.MultiDimEquation> arreqns,arreqns1,arreqns2;
       BackendDAE.BinTree movedvars_1,states,outputs;
-      BackendDAE.Variables vars_1,knvars_1,vars,knvars;
+      BackendDAE.Variables vars_1,knvars_1,vars,knvars,knvars_2;
       list<DAE.Exp> crlst,elst;
       list<DAE.Algorithm> algs,algs_1;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
@@ -143,10 +143,9 @@ algorithm
         inputsoutputs = Util.listMap1r(algs_1,BackendDAECreate.lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
-        // return aliasVars empty for now
-        varsAliases = BackendDAEUtil.emptyAliasVariables();
+        (knvars_2,seqns_4,varsAliases) = removeConstantEqns(knvars_1,seqns_3,BackendDAEUtil.emptyAliasVariables());
       then
-        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, varsAliases);
+        (vars_1,knvars_2,eqns_3,seqns_4,ieqns_2,arreqns2, algs_1, varsAliases);
     case (_,_,_,_,_,_,_,_)
       equation
         print("-remove_simple_equations failed\n");
@@ -389,7 +388,7 @@ protected function simpleEquation
   input Boolean swap "if true swap args.";
   output DAE.Exp e1;
   output DAE.Exp e2;
-  output DAE.ElementSource source "the element source";
+  output DAE.ElementSource source;
 algorithm
   (e1,e2,source) := matchcontinue (eqn,swap)
       local
@@ -609,6 +608,77 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
+
+protected function removeConstantEqns
+"autor: Frenkel TUD 2010-12"
+ input BackendDAE.Variables inVars;
+ input list<BackendDAE.Equation> inEqns;
+ input BackendDAE.AliasVariables inAlias;
+ output BackendDAE.Variables outVars;
+ output list<BackendDAE.Equation> outEqns;
+ output BackendDAE.AliasVariables outAlias;
+algorithm
+  (outVars,outEqns,outAlias) :=
+  matchcontinue (inVars,inEqns,inAlias)
+    local
+      BackendDAE.Variables vars,vars1;
+      BackendDAE.Var var,var1,var2,var3;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest,eqns;
+      BackendDAE.AliasVariables aliasvars,aliasvars1;
+    case (inVars,{},inAlias) then (inVars,{},inAlias);
+    // constant equations
+    case (inVars,BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e)::rest,inAlias)
+      equation
+        // check exp is zero
+        true = Expression.isZero(e);
+        ({var},_) = BackendVariable.getVar(cr,inVars);
+        // set kind to PARAM
+        // do not set varKind because of simulation results
+        //var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
+        // add bindExp
+        var2 = BackendVariable.setBindExp(var,e);
+        // add bindValue if constant
+        var3 = setbindValue(e,var2);
+        // update vars
+        vars = BackendVariable.addVar(var3,inVars);
+        // next
+        (vars1,eqns,aliasvars) = removeConstantEqns(vars,rest,inAlias);
+      then
+        (vars1,eqns,aliasvars);
+    // alias vars
+    case (inVars,(eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e))::rest,inAlias)
+      equation
+        // test exp
+        removeConstantEqns1(e);
+        // get var
+        ({var},_) = BackendVariable.getVar(cr,inVars);
+        // add
+        aliasvars = BackendDAEUtil.addAliasVariables(inAlias,var,e);
+        // next
+        (vars,eqns,aliasvars1) = removeConstantEqns(inVars,rest,aliasvars);
+      then
+        (vars,eqn::eqns,aliasvars1);        
+    case (inVars,eqn::rest,inAlias)
+      equation
+         (vars,eqns,aliasvars) = removeConstantEqns(inVars,rest,inAlias);
+      then
+        (vars,eqn::eqns,aliasvars);
+  end matchcontinue;
+end removeConstantEqns;
+
+protected function removeConstantEqns1
+"autor: Frenkel TUD 2010-12"
+ input DAE.Exp inExp;
+algorithm
+  _ :=
+  matchcontinue (inExp)
+    case (DAE.CREF(componentRef=_)) then ();
+    case (DAE.UNARY(exp = DAE.CREF(componentRef=_))) then ();
+  end matchcontinue;
+end removeConstantEqns1;
 
 /*
  * remove parameter equations

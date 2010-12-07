@@ -169,7 +169,7 @@ algorithm
         ie = BackendDAEUtil.listEquation(ie_lst);
         ae = listArray(ae_lst);    
         einfo = BackendDAE.EVENT_INFO(whenclauses,zero_crossings); 
-        dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc);   
+        dae_1 = BackendDAE.DAE(v,kv,exv,av,e,re,ie,ae,al,einfo,eoc); 
         m_1 = BackendDAEUtil.incidenceMatrix(dae_1, BackendDAE.NORMAL())
         "Rerun matching to get updated assignments and incidence matrices
          TODO: instead of rerunning: find out which equations are removed
