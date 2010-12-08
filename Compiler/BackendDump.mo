@@ -1396,7 +1396,7 @@ algorithm
         // does not work
         //e = BaseHashTable.get(cr,varMappings);
         e = BackendVariable.varBindExp(v);
-        scr = ComponentReference.crefStr(cr);
+        scr = ComponentReference.printComponentRefStr(cr);
         se = ExpressionDump.printExpStr(e);
         s = stringAppendList({scr," = ",se,"\n"});
         print(s);
@@ -1404,5 +1404,42 @@ algorithm
     case inTpl then inTpl; 
   end matchcontinue;
 end dumpAliasVariable;
+
+public function dumpStateVariables "function: dumpStateVariables
+  author: Frenkel TUD 2010-12
+
+  dump State Variables.
+"
+  input BackendDAE.Variables inVars;
+algorithm
+  print("States Variables\n");
+  print("=================\n");
+  _ := BackendVariable.traverseBackendDAEVars(inVars,dumpStateVariable,1);
+  print("\n");
+end dumpStateVariables;
+
+protected function dumpStateVariable
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Var, Integer> inTpl;
+ output tuple<BackendDAE.Var, Integer> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      String scr;
+      Integer pos;
+    case ((v,pos))
+      equation
+        true = BackendVariable.isStateVar(v);
+        cr = BackendVariable.varCref(v);
+        scr = ComponentReference.printComponentRefStr(cr);
+        print(intString(pos)); print(": ");
+        print(scr); print("\n");
+      then ((v,pos+1));
+    case inTpl then inTpl; 
+  end matchcontinue;
+end dumpStateVariable;
 
 end BackendDump;

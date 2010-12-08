@@ -1198,13 +1198,13 @@ algorithm
     case (dae,m,mt,nv,nf,i,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
-        // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
-        // print("\n");
+        //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        //print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         // print("\n");
-        // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
+        //  print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
@@ -2380,16 +2380,16 @@ algorithm
 
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
-        str = BackendDump.equationStr(eqn);
-        //print( "differentiated equation ") ;
-        Debug.fprint("bltdump", str)  ;
-        //print(str); print("\n");
+        //str = BackendDump.equationStr(eqn);
+        // print( "differentiated equation ") ;
+        Debug.fprint("bltdump", BackendDump.equationStr(eqn));
+        // print(str); print("\n");
         Debug.fprint("bltdump", " to ");
-        //print(" to ");
-        str = BackendDump.equationStr(eqn_1);
-        //print(str);
+        // print(" to ");
+        // str = BackendDump.equationStr(eqn_1);
+        // print(str);
         //print("\n");
-        Debug.fprint("bltdump", str) "  print \" to \" & print str &  print \"\\n\" &" ;
+        Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
         eqns_1 = BackendEquation.equationAdd(eqns, eqn_1);
         leneqns = BackendDAEUtil.equationSize(eqns_1);
@@ -2404,16 +2404,16 @@ algorithm
 
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
-        str = BackendDump.equationStr(eqn);
-        //print( "differentiated equation ") ;
-        Debug.fprint("bltdump", str)  ;
-        //print(str); print("\n");
+        // str = BackendDump.equationStr(eqn);
+        // print( "differentiated equation ") ;
+        Debug.fprint("bltdump", BackendDump.equationStr(eqn));
+        // print(str); print("\n");
         Debug.fprint("bltdump", " to ");
-        //print(" to ");
-        str = BackendDump.equationStr(eqn_1);
-        //print(str);
-        //print("\n");
-        Debug.fprint("bltdump", str) "  print \" to \" & print str &  print \"\\n\" &" ;
+        // print(" to ");
+        // str = BackendDump.equationStr(eqn_1);
+        // print(str);
+        // print("\n");
+        Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
         leneqns = BackendDAEUtil.equationSize(eqns);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
