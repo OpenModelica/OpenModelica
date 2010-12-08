@@ -53,6 +53,7 @@ public import Prefix;
 public import SCode;
 public import RTOpts;
 public import InnerOuter;
+public import ComponentReference;
 
 public 
 type Ident = String;
@@ -75,6 +76,19 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
+
+protected 
+uniontype FullMod "used for error reporting"
+  record MOD "the fully qualified cref and the mod, only used for redeclare"
+    DAE.ComponentRef cref;
+    DAE.Mod mod; 
+  end MOD;
+  
+  record SUB_MOD "the fully qualified cref and the sub mod for all other mods"
+    DAE.ComponentRef cref;
+    DAE.SubMod subMod;
+  end SUB_MOD;
+end FullMod;
 
 public function elabMod "
   This function elaborates on the expressions in a modification and
@@ -990,18 +1004,15 @@ algorithm
 end expandList;
 
 protected function insertSubmods "function: insertSubmods
-
-  This function repeatedly calls `insert_submod\' to incrementally
-  insert several sub-modifications.
-"
+  This function repeatedly calls insertSubmod to incrementally
+  insert several sub-modifications."
   input list<DAE.SubMod> inTypesSubModLst1;
   input list<DAE.SubMod> inTypesSubModLst2;
   input Env.Env inEnv3;
   input Prefix.Prefix inPrefix4;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  outTypesSubModLst:=
-  matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
+  outTypesSubModLst := matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
     local
       list<DAE.SubMod> x_1,xs_1,l,xs,y;
       DAE.SubMod x;
@@ -1019,18 +1030,15 @@ algorithm
 end insertSubmods;
 
 protected function insertSubmod "function: insertSubmod
-
-  This function inserts a `SubMod\' into a list of unique `SubMod\'s,
-  while keeping the uniqueness, merging the submod if necessary.
-"
+  This function inserts a SubMod into a list of unique SubMods,
+  while keeping the uniqueness, merging the submod if necessary."
   input DAE.SubMod inSubMod;
   input list<DAE.SubMod> inTypesSubModLst;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  outTypesSubModLst:=
-  matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
+  outTypesSubModLst := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
     local
       DAE.SubMod sub,sub1;
       DAE.Mod m,m1,m2;
@@ -1041,7 +1049,7 @@ algorithm
       list<Integer> i1,i2;
     
     case (sub,{},_,_) then {sub};
-    
+    /* adrpo 2010-12-08 DO NOT MERGE SUBS as we then cannot catch duplicate modifications like: (w.start = 1, w(start = 2))  
     case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: tail),env,pre)
       equation
         true = stringEq(n1, n2);
@@ -1055,7 +1063,7 @@ algorithm
         m = merge(m1, m2, env, pre);
       then
         (DAE.IDXMOD(i1,m) :: tail);
-    
+    */
     case (sub1,sub2,_,_) then (sub1 :: sub2);
   end matchcontinue;
 end insertSubmod;
@@ -1340,6 +1348,47 @@ algorithm
   s := Util.if_(addParan,"(","") +& s +& Util.if_(addParan,")","");
 end printSubsStr;
 
+protected function tryMergeSubMods
+"@author: adrpo
+  This function tries to merge the mods."
+  input list<DAE.SubMod> inSubModLst;
+  output DAE.Mod mod;
+algorithm
+  mod := matchcontinue(inSubModLst)
+    local
+      list<DAE.SubMod> rest;
+      DAE.SubMod x;
+      DAE.Mod mod1, mod2, m1, m2;
+      list<FullMod> fullMods;
+    
+    case ({}) then fail();
+    
+    case ({DAE.NAMEMOD(mod=mod)}) then mod;
+    case ({DAE.IDXMOD(mod=mod)}) then mod;
+    
+    case ((x as DAE.NAMEMOD(mod=mod1))::rest)
+      equation
+        // make sure x is not present in the rest
+        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
+        // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");        
+        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", NONE(), false);
+        mod2 = tryMergeSubMods(rest);
+        mod = merge(mod1, mod2, {}, Prefix.NOPRE());
+      then
+        mod;
+    case ((x as DAE.IDXMOD(mod=mod1))::rest)
+      equation
+        // make sure x is not present in the rest
+        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
+        // print("FullModsTry: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
+        checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", NONE(), false);
+        mod2 = tryMergeSubMods(rest);
+        mod = merge(mod1, mod2, {}, Prefix.NOPRE());
+      then
+        mod;
+  end matchcontinue;
+end tryMergeSubMods;
+
 protected function lookupCompModification2 "function: lookupCompModification2
   This function is just a helper to lookupCompModification"
   input list<DAE.SubMod> inSubModLst;
@@ -1372,20 +1421,31 @@ algorithm
       then
         mod;
 
-    // found our modification and there are more duplicates present 
+    // adrpo: we need to try to merge the duplicates as they might not be duplicates at all!
+    //        i.e. (r.start = 5, r.stateSelect=StateSelect.prefer), this would generate a warning!
     case (inSubModLst,id)
       equation
         duplicates = lookupNamedModifications(inSubModLst, id);
-        s = printSubsStr(duplicates, true);
+        mod = tryMergeSubMods(duplicates);
+      then
+        mod;
+    
+    // found our modification and there are more duplicates present, ignore, it will be caught later 
+    case (inSubModLst,id)
+      equation
+        duplicates = lookupNamedModifications(inSubModLst, id);
         (head::tail) = duplicates;
+        DAE.NAMEMOD(mod=mod) = head;
+        /*
+        s = printSubsStr(duplicates, true);
         s1 = prettyPrintSubmod(head);
         s1 = "(" +& s1 +& ")";
         s2 = printSubsStr(tail, true); 
         Error.addMessage(Error.DUPLICATE_MODIFICATIONS_WARNING, {id, s, s1, s2});
-        DAE.NAMEMOD(mod=mod) = head;
+        */
       then
         mod;
-
+    
     case (inSubModLst,inIdent)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -1426,7 +1486,7 @@ algorithm
         mod_3;
     case (mod,idx)
       equation
-                true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Mod.lookupIdxModification(");
         str = printModStr(mod);
         Debug.fprint("failtrace", str);
@@ -1714,6 +1774,13 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       Option<Absyn.Info> info;
       SCode.Element celm,elementOne;
+    
+    
+    //case (inMod1,inMod2,_,_)
+    //  equation
+    //    print("Merging: " +& printModStr(inMod1) +& " with " +& printModStr(inMod2) +& "\n");  
+    //  then 
+    //    fail();
     
     case (m,DAE.NOMOD(),_,_) then m;
     
@@ -2166,6 +2233,38 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end subModsEqual;
+
+public function subModEqual "Returns true if two submod are equal."
+  input DAE.SubMod subMod1;
+  input DAE.SubMod subMod2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(subMod1,subMod2)
+    local    
+      DAE.Ident id1,id2;
+      DAE.Mod mod1,mod2;
+      Boolean b1,b2,b3;
+      list<Integer> indx1,indx2;
+      list<Boolean> blst1;
+    
+    case (DAE.NAMEMOD(id1,mod1),DAE.NAMEMOD(id2,mod2))
+      equation
+        true = stringEq(id1,id2);
+        true = modEqual(mod1,mod2);
+      then 
+        true;
+    
+    case (DAE.IDXMOD(indx1,mod1),DAE.IDXMOD(indx2,mod2))
+      equation
+        Util.listThreadMapAllValue(indx1,indx2,intEq,true);
+        true = modEqual(mod1,mod2);
+      then 
+        true;
+    
+    // otherwise false
+    case(_,_) then false;
+  end matchcontinue;
+end subModEqual;
 
 protected function eqModEqual "Returns true if two EqMods are equal"
   input Option<DAE.EqMod> eqMod1;
@@ -2748,6 +2847,290 @@ algorithm
         ();
   end matchcontinue;
 end checkIdxModsForNoOverlap;
+
+protected function getFullModsFromMod
+"@author: adrpo
+  This function will create fully qualified crefs from 
+  modifications. See also getFullModsFromSubMods.
+  Examples:
+  x(start=1, stateSelect=s) => x.start, x.stateSelect
+  (x.start=1, x.stateSelect=s) => x.start, x.stateSelect
+  x([2] = 1, start = 2) => x[2], x.start"
+  input DAE.ComponentRef inTopCref;
+  input DAE.Mod inMod;
+  output list<FullMod> outFullMods;
+algorithm
+  outFullMods := matchcontinue(inTopCref, inMod)
+    local
+      list<FullMod> fullMods;
+      list<DAE.SubMod> subModLst;
+      DAE.Ident id;
+      DAE.Mod mod;
+      list<Integer> indexes;
+      list<tuple<SCode.Element, DAE.Mod>> tplSCodeElementModLst;
+      Boolean finalPrefix;
+    
+    // DAE.NOMOD empty case, no more dive in
+    case (inTopCref, DAE.NOMOD()) then {};
+    
+    // DAE.MOD
+    case (inTopCref, DAE.MOD(subModLst = subModLst))
+      equation
+        fullMods = getFullModsFromSubMods(inTopCref, subModLst);
+      then
+        fullMods;
+
+    // DAE.REDECL
+    case (inTopCref, DAE.REDECL(finalPrefix = finalPrefix, tplSCodeElementModLst = tplSCodeElementModLst))
+      equation
+        fullMods = getFullModsFromModRedeclare(inTopCref, tplSCodeElementModLst, finalPrefix);
+      then
+        fullMods;
+  end matchcontinue;
+end getFullModsFromMod;
+
+protected function getFullModsFromModRedeclare
+"@author: adrpo
+  This function will create fully qualified 
+  crefs from the redeclaration lists for redeclare mod.
+  See also getFullModsFromMod, getFullModsFromSubMod
+  Examples: 
+  x(redeclare package P = P, redeclare class C = C) => x.P, x.C"
+  input DAE.ComponentRef inTopCref;
+  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input Boolean finalPrefix;
+  output list<FullMod> outFullMods;
+algorithm
+  outFullMods := matchcontinue(inTopCref, inTplSCodeElementModLst, finalPrefix)
+    local
+      list<FullMod> fullMods;
+      DAE.Ident id;
+      DAE.Mod mod;
+      list<tuple<SCode.Element, DAE.Mod>> rest;
+      DAE.ComponentRef cref;
+      SCode.Element el;
+      tuple<SCode.Element, DAE.Mod> x;
+    
+    // empty case 
+    case (_, {}, _) then {};
+    
+    // SCode.CLASS, TODO! FIXME! what do we do with the mod??
+    case (inTopCref, (x as (SCode.CLASSDEF(name = id), mod))::rest, finalPrefix)
+      equation
+        cref = ComponentReference.joinCrefs(
+                 inTopCref, 
+                 ComponentReference.makeCrefIdent(
+                   id, DAE.ET_OTHER(), {}));
+        fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix);
+      then
+        MOD(cref, DAE.REDECL(finalPrefix, {x}))::fullMods;
+    
+    // SCode.COMPONENT, TODO! FIXME! what do we do with the mod??
+    case (inTopCref, (x as (SCode.COMPONENT(component = id), mod))::rest, finalPrefix)
+      equation
+        cref = ComponentReference.joinCrefs(
+                 inTopCref, 
+                 ComponentReference.makeCrefIdent(
+                   id, DAE.ET_OTHER(), {}));
+        fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix);
+      then
+        MOD(cref, DAE.REDECL(finalPrefix, {x}))::fullMods;
+        
+    // anything else, just ignore, TODO! FIXME! maybe report an error??!!
+    case (inTopCref, (el, mod)::rest, finalPrefix)
+      equation
+        fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix);
+      then
+        fullMods;  
+  end matchcontinue;
+end getFullModsFromModRedeclare;
+
+protected function getFullModsFromSubMods
+"@author: adrpo
+  This function will create fully qualified crefs from 
+  sub modifications. See also getFullModsFromMod. 
+  Examples:
+  x(start=1, stateSelect=s) => x.start, x.stateSelect
+  (x.start=1, x.stateSelect=s) => x.start, x.stateSelect
+  x([2] = 1, start = 2) => x[2], x.start"
+  input DAE.ComponentRef inTopCref;
+  input list<DAE.SubMod> inSubMods;
+  output list<FullMod> outFullMods;
+algorithm
+  outFullMods := matchcontinue(inTopCref, inSubMods)
+    local
+      list<FullMod> fullMods1, fullMods2, fullMods;
+      list<DAE.SubMod> rest;
+      DAE.SubMod subMod;
+      DAE.Ident id;
+      DAE.Mod mod;
+      list<Integer> indexes;
+      DAE.ComponentRef cref;
+    
+    // empty case 
+    case (_, {}) then {};
+    
+    // named modifier, only add LEAFS to the list! 
+    case (inTopCref, (subMod as DAE.NAMEMOD(id, mod))::rest)
+      equation
+        cref = ComponentReference.joinCrefs(
+                 inTopCref, 
+                 ComponentReference.makeCrefIdent(
+                   id, DAE.ET_OTHER(), {}));
+        fullMods1 = getFullModsFromMod(cref, mod);
+        fullMods2 = getFullModsFromSubMods(inTopCref, rest);
+        fullMods = listAppend(
+                     Util.if_(Util.isListEmpty(fullMods1), 
+                              SUB_MOD(cref, subMod)::fullMods1, // add if LEAF
+                              fullMods1),
+                     fullMods2);
+      then
+        fullMods;
+
+    // index modifier, only add LEAFS to the list!
+    case (inTopCref, (subMod as DAE.IDXMOD(indexes, mod))::rest)
+      equation
+        cref = ComponentReference.crefSetLastSubs(
+                 inTopCref,
+                 listAppend( 
+                   ComponentReference.crefLastSubs(inTopCref),
+                   Expression.intSubscripts(indexes))
+                 );
+        fullMods1 = getFullModsFromMod(cref, mod);
+        fullMods2 = getFullModsFromSubMods(inTopCref, rest);
+        fullMods = listAppend(
+                     Util.if_(Util.isListEmpty(fullMods1), 
+                              SUB_MOD(cref, subMod)::fullMods1, // add if LEAF
+                              fullMods1),
+                     fullMods2);
+      then
+        fullMods;
+  end matchcontinue;
+end getFullModsFromSubMods;
+
+public function verifySingleMod "
+Author BZ
+Checks so that we only have one modifier for each element.
+Fails on; a(x=3, redeclare Integer x)"
+  input DAE.Mod m;
+  input Prefix.Prefix pre;
+  input String elementName;
+  input Option<Absyn.Info> infoOpt;
+algorithm 
+  _ := matchcontinue(m,pre,elementName,infoOpt)
+    local
+      DAE.Mod mod;
+      DAE.ComponentRef cref;
+      list<FullMod> fullMods;
+    
+    case(mod,pre,elementName,infoOpt)
+      equation
+        cref = PrefixUtil.makeCrefFromPrefixNoFail(pre);
+        // print("Prefix:" +& PrefixUtil.printPrefixStr(pre)+& "\n"); 
+        // print("Element:" +& elementName +& "\n");
+        // print("Prefix + element: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
+        // print("Entire Mod: " +& printModStr(mod) +& "\n");
+        // mod = lookupCompModification(mod, elementName);
+        // print("Element Mod: " +& printModStr(mod) +& "\n");
+        fullMods = getFullModsFromMod(cref, mod);
+        // print("FullMods: " +& Util.stringDelimitList(Util.listMap1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
+        checkDuplicatesInFullMods(fullMods, pre, elementName, infoOpt, true);
+      then
+        ();
+  end matchcontinue;
+end verifySingleMod;
+
+protected function fullModCrefsEqual
+"@author: adrpo
+  This function checks if the crefs of the given full mods are equal"
+  input FullMod inFullMod1;
+  input FullMod inFullMod2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(inFullMod1, inFullMod2)
+    local DAE.ComponentRef cr1, cr2;
+    case (MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+    case (MOD(cr1, _), SUB_MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);
+    case (SUB_MOD(cr1, _), MOD(cr2, _)) then ComponentReference.crefEqualNoStringCompare(cr1, cr2);    
+  end matchcontinue;
+end fullModCrefsEqual;
+
+protected function prettyPrintFullMod
+"@author: adrpo
+  This function checks if the crefs of the given full mods are equal"
+  input FullMod inFullMod;
+  input Integer inDepth;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inFullMod, inDepth)
+    local 
+      DAE.Mod mod;
+      DAE.SubMod subMod;
+      DAE.ComponentRef cr;
+      String str;
+    
+    case (MOD(cr, mod),        inDepth)
+      equation
+        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintMod(mod, inDepth);
+      then
+        str; 
+    
+    case (SUB_MOD(cr, subMod), inDepth)
+      equation
+        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintSubmod(subMod); 
+      then
+        str;
+    
+  end matchcontinue;
+end prettyPrintFullMod;
+
+protected function checkDuplicatesInFullMods "helper function for verifySingleMod"
+  input list<FullMod> subs;
+  input Prefix.Prefix pre;
+  input String elementName;
+  input Option<Absyn.Info> infoOpt;
+  input Boolean addErrorMessage;  
+algorithm 
+  _ := matchcontinue(subs,pre,elementName,infoOpt,addErrorMessage)
+    local 
+      String n,s1,s2,s3;
+      DAE.Mod mod;
+      DAE.SubMod subMod;
+      DAE.ComponentRef cref;
+      list<FullMod> rest, duplicates;
+      FullMod fullMod;
+    
+    case({},pre,elementName,infoOpt,addErrorMessage) then ();
+    
+    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage)
+      equation
+        false = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+        checkDuplicatesInFullMods(rest,pre,elementName,infoOpt,addErrorMessage);
+      then
+        ();
+    
+    // do not add a message
+    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage as false)
+      equation
+        true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+      then
+        fail();
+    
+    // add a message
+    case(fullMod::rest,pre,elementName,infoOpt,addErrorMessage as true)
+      equation
+        true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+        duplicates = Util.listSelect1(rest, fullMod, fullModCrefsEqual);
+        s1 = prettyPrintFullMod(fullMod, 1);
+        s2 = PrefixUtil.makePrefixString(pre);
+        s3 = Util.stringDelimitList(Util.listMap1(duplicates, prettyPrintFullMod, 1), ", ");
+        s2 = s2 +& ", duplicates are: " +& s3;
+        Error.addMessageOrSourceMessage(Error.MULTIPLE_MODIFIER, {s1,s2}, infoOpt);
+      then
+        fail();
+  end matchcontinue;
+end checkDuplicatesInFullMods;
 
 end Mod;
 

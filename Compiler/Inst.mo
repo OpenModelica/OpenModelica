@@ -5061,7 +5061,7 @@ algorithm
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
-      String str,prepath,s1;
+      String str,prepath,s1,elementName;
       SCode.Element ele;
       Boolean nopre;
       Absyn.Info rinfo;
@@ -5074,9 +5074,14 @@ algorithm
 
     // Don't instantiate conditional components with condition = false.
     case (cache, env, ih, store, mod, pre, csets, ci_state, 
-        (ele as SCode.COMPONENT(component = comp_name, info = info), _) :: els, inst_dims,
+        (el as (SCode.COMPONENT(component = comp_name, info = info, condition=SOME(_)), _)) :: els, inst_dims,
         impl, callscope, graph)
       equation
+        // check for duplicate modifications
+        ele = Util.tuple21(el);
+        (elementName, info) = extractCurrentName(ele);
+        Mod.verifySingleMod(mod,pre,elementName,info);
+        
         rinfo = Util.getOptionOrDefault(info, Absyn.dummyInfo);
         (true, cache) = isConditionalComponent(cache, env, ele, pre, rinfo);
 
@@ -5095,13 +5100,11 @@ algorithm
     /* most work done in inst_element. */
     case (cache,env,ih,store,mod,pre,csets,ci_state,el :: els,inst_dims,impl,callscope,graph)
       equation
-        /* make variable_string for error printing*/
+        // check for duplicate modifications
         ele = Util.tuple21(el);
-        (str, info) = extractCurrentName(ele);
-        path = Absyn.IDENT(str);
-        path = PrefixUtil.prefixPath(path,pre);
-        str = Absyn.pathString(path);
-        verifySingleMod(mod,pre,str);
+        (elementName, info) = extractCurrentName(ele);
+        Mod.verifySingleMod(mod,pre,elementName,info);
+        
         /*
         classmod = Mod.lookupModificationP(mods, t);
         mm = Mod.lookupCompModification(mods, n);
@@ -5132,67 +5135,6 @@ algorithm
         fail();
   end matchcontinue;
 end instElementList;
-
-protected function verifySingleMod "
-Author BZ
-Checks so that we only have one modifier for each element.
-Fails on; a(x=3, redeclare Integer x)
-"
-  input DAE.Mod m;
-  input Prefix.Prefix pre;
-  input String str;
-algorithm _ := matchcontinue(m,pre,str)
-  local
-    list<DAE.SubMod> subs;
-  case(DAE.MOD(_,_,subs,_),pre,str)
-    equation
-      verifySingleMod2(subs,{},pre,str);
-    then
-      ();
-  case(DAE.NOMOD(),pre,str) then ();
-  case(DAE.REDECL(finalPrefix=_),pre,str) then ();
-end matchcontinue;
-end verifySingleMod;
-
-protected function verifySingleMod2 "
-helper function for verifySingleMod
-"
-  input list<DAE.SubMod> subs;
-  input list<String> prior;
-  input Prefix.Prefix pre;
-  input String str;
-algorithm _ := matchcontinue(subs,prior,pre,str)
-  local String n,s1;
-  case({},_,pre,str) then ();
-  case(DAE.NAMEMOD(ident = n)::subs,prior,pre,str)
-    equation
-      false = Util.listContainsWithCompareFunc(n,prior,stringEq);
-      verifySingleMod2(subs,n::prior,pre,str);
-      then
-        ();
-  case(DAE.NAMEMOD(ident = n)::subs,prior,pre,str)
-    equation
-      true = Util.listContainsWithCompareFunc(n,prior,stringEq);
-      s1 = makePrefixString(pre);
-      Error.addMessage(Error.MULTIPLE_MODIFIER, {n,s1});
-      then
-        fail();
-  end matchcontinue;
-end verifySingleMod2;
-
-protected function makePrefixString "
-helper function for verifySingleMod, pretty output
-"
-input Prefix.Prefix pre;
-output String str;
-algorithm str := matchcontinue(pre)
-  case(Prefix.NOPRE()) then "from top scope";
-  case(pre)
-    equation
-      str = "from calling scope: " +& PrefixUtil.printPrefixStr(pre);
-    then str;
-  end matchcontinue;
-end makePrefixString;
 
 protected function classdefElts2
 "function: classdeElts2
@@ -12933,15 +12875,16 @@ algorithm
       Absyn.Path path;
       String name_,ret;
       Absyn.Import imp;
-      Option<Absyn.Info> info;
+      Option<Absyn.Info> infoOpt;
+      Absyn.Info info;
 
   case(SCode.EXTENDS(path,_,_))
     equation ret = Absyn.pathString(path);
     then (ret,NONE());
-  case(SCode.CLASSDEF(name = name_))
-    then (name_,NONE());
-  case(SCode.COMPONENT(component = name_, info=info))
-    then (name_,info);
+  case(SCode.CLASSDEF(name = name_, classDef=SCode.CLASS(info = info)))
+    then (name_,SOME(info));
+  case(SCode.COMPONENT(component = name_, info=infoOpt))
+    then (name_,infoOpt);
   case(SCode.IMPORT(imp))
     equation name_ = Absyn.printImportString(imp);
       then (name_,NONE());

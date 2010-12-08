@@ -328,6 +328,17 @@ algorithm
   (outCache,cref_1) := prefixToCref2(cache,env,inIH,pre, SOME(cref));
 end prefixCref;
 
+public function prefixCrefNoContext "function: prefixCrefNoContext
+  Prefix a ComponentRef variable by adding the supplied prefix to
+  it and returning a new ComponentRef.
+  LS: Changed to call prefixToCref which is more general now"
+  input Prefix.Prefix inPre;
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  (_, outCref) := prefixToCref2(Env.emptyCache(), {}, InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
+end prefixCrefNoContext;
+
 public function prefixToCref "function: prefixToCref
   Convert a prefix to a component reference."
   input Prefix.Prefix pre;
@@ -359,6 +370,8 @@ algorithm
       
     
     case (cache,env,inIH,Prefix.NOPRE(),NONE()) then fail();
+    case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
+      
     case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
@@ -418,6 +431,37 @@ algorithm
         cref_1;
   end matchcontinue;
 end prefixToCrefOpt2;
+
+public function makeCrefFromPrefixNoFail
+"@author:adrpo
+   Similar to prefixToCref but it doesn't fail for NOPRE or NOCOMPPRE,
+   it will just create an empty cref in these cases"
+  input Prefix.Prefix pre;
+  output DAE.ComponentRef cref;
+algorithm
+  cref := matchcontinue(pre)
+    local
+      DAE.ComponentRef c;
+    
+    case(Prefix.NOPRE())
+      equation
+        c = ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {});
+      then
+        c;
+        
+    case(Prefix.PREFIX(Prefix.NOCOMPPRE(), _))
+      equation
+        c = ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {});
+      then
+        c;        
+    
+    case(pre)
+      equation
+        c = prefixToCref(pre);
+      then
+        c;
+  end matchcontinue;
+end makeCrefFromPrefixNoFail;
 
 protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
   input Env.Cache cache;
@@ -1094,5 +1138,18 @@ algorithm
       then (localCache,stmt);
   end matchcontinue;
 end prefixElse;
+
+public function makePrefixString "helper function for Mod.verifySingleMod, pretty output"
+  input Prefix.Prefix pre;
+  output String str;
+algorithm 
+  str := matchcontinue(pre)
+    case(Prefix.NOPRE()) then "from top scope";
+    case(pre)
+      equation
+        str = "from calling scope: " +& printPrefixStr(pre);
+      then str;
+  end matchcontinue;
+end makePrefixString;
 
 end PrefixUtil;
