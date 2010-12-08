@@ -38,8 +38,7 @@ docs: mkbuilddirs
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 
-testfast:
-	(cd testsuite; time $(MAKE) -f Makefile fast)
+testfast: test
 
 test:
 	(cd testsuite; time $(MAKE) -f Makefile)
