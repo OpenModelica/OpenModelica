@@ -4742,13 +4742,13 @@ algorithm
         cre = Expression.crefExp(cr);
         initialEquation = BackendDAE.EQUATION(cre, e, source);
         epos = listLength(v1)+1;
-        var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE);
+        var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
       then
         ((var,(initialEquation :: eqns,var1::v,kn,epos::v1,pos::v2,pos+1)));
     
    case ((var,(eqns,v,kn,v1,v2,pos)))
      equation
-        var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM);
+        var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM());
      then ((var,(eqns,v,var1::kn,v1,v2,pos)));
   end matchcontinue;
 end createInitialParamAssignments;

@@ -1360,14 +1360,14 @@ public function dumpAliasVariables "function: dumpAliasVariables
 
   dump AliasVariables.
 "
-  input BackendDAE.AliasVariables aliasVars;
+  input BackendDAE.AliasVariables inAliasVars;
 protected
-    HashTable2.HashTable varMappings;
-    BackendDAE.Variables aliasVars;
-    String sl;
-    Integer l;
+  HashTable2.HashTable varMappings;
+  BackendDAE.Variables aliasVars;
+  String sl;
+  Integer l;
 algorithm
-  BackendDAE.ALIASVARS(varMappings,aliasVars) := aliasVars;
+  BackendDAE.ALIASVARS(varMappings,aliasVars) := inAliasVars;
   l := BackendVariable.varsSize(aliasVars);
   sl := intString(l);
   print("AliasVariables: ");
@@ -1379,8 +1379,8 @@ end dumpAliasVariables;
 
 protected function dumpAliasVariable
 "autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<HashTable2.HashTable>> inTpl;
- output tuple<BackendDAE.Var, tuple<HashTable2.HashTable>> outTpl;
+ input tuple<BackendDAE.Var, HashTable2.HashTable> inTpl;
+ output tuple<BackendDAE.Var, HashTable2.HashTable> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
