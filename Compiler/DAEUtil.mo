@@ -2675,8 +2675,8 @@ algorithm
     case (dae as DAE.DAE(elts))
       equation
         pv = getParameterVars(dae,HashTable2.emptyHashTable());
-        ht = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
-        (elts1,_) = traverseDAE2(elts, evaluateAnnotationVisitor, ht);
+        (ht,true) = evaluateAnnotation1(dae,pv,HashTable2.emptyHashTable());
+        (elts1,(_,_)) = traverseDAE2(elts, evaluateAnnotationVisitor, (ht,0));
       then
         DAE.DAE(elts1);
     case (dae) then dae;
@@ -2685,33 +2685,39 @@ end evaluateAnnotation;
 
 protected function evaluateAnnotationVisitor "
 Author: Frenkel TUD, 2010-12"
-  input tuple<DAE.Exp,HashTable2.HashTable> itpl;
-  output tuple<DAE.Exp,HashTable2.HashTable> otpl;
+  input tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer>> itpl;
+  output tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer>> otpl;
 algorithm
   otpl := matchcontinue itpl
     local
       DAE.Exp exp;
-      HashTable2.HashTable ht;
-    case ((exp,ht)) then Expression.traverseExp(exp,evaluateAnnotationTraverse,ht);
+      tuple<HashTable2.HashTable,Integer> extra_arg;
+    case ((exp,extra_arg)) then Expression.traverseExp(exp,evaluateAnnotationTraverse,extra_arg);
   end matchcontinue;
 end evaluateAnnotationVisitor;
 
 protected function evaluateAnnotationTraverse "
 Author: Frenkel TUD, 2010-12"
-  input tuple<DAE.Exp, HashTable2.HashTable> itpl;
-  output tuple<DAE.Exp, HashTable2.HashTable> otpl;
+  input tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer>> itpl;
+  output tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer>> otpl;
 algorithm
   otpl := matchcontinue (itpl)
     local
       DAE.ComponentRef cr;
       HashTable2.HashTable ht;
       DAE.Exp exp,e1;
+      Integer i;
     
-    case((exp as DAE.CREF(componentRef=cr),ht))
+    case((exp as DAE.CREF(componentRef=cr),(ht,i)))
       equation
         e1 = BaseHashTable.get(cr,ht);
       then 
-        ((e1,ht));
+        ((e1,(ht,i)));
+    case((exp as DAE.CREF(componentRef=cr),(ht,i)))
+      equation
+        failure(_ = BaseHashTable.get(cr,ht));
+      then 
+        ((exp,(ht,i+1)));
     case(itpl) then itpl;
   end matchcontinue;
 end evaluateAnnotationTraverse;
@@ -2763,8 +2769,9 @@ public function evaluateAnnotation1
   input HashTable2.HashTable inPV;
   input HashTable2.HashTable inHt;
   output HashTable2.HashTable ouHt;
+  output Boolean hasEvaluate;
 algorithm
-  (ouHt) := matchcontinue (inDAElist,inPV,inHt)
+  (ouHt,hasEvaluate) := matchcontinue (inDAElist,inPV,inHt)
     local
       list<DAE.Element> rest,sublist;
       DAE.Element el;
@@ -2774,36 +2781,37 @@ algorithm
       SCode.Annotation anno;
       list<SCode.Annotation> annos;
       DAE.Exp e,e1;
-    case (DAE.DAE({}),_,ht) then ht;
+      Boolean b,b1;
+    case (DAE.DAE({}),_,ht) then (ht,false);
     case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),pv,ht)
       equation
-        ht1 = evaluateAnnotation1(DAE.DAE(sublist),pv,ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+        (ht1,b) = evaluateAnnotation1(DAE.DAE(sublist),pv,ht);
+        (ht2,b1) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        ht2;
+        (ht2,b or b1);
     case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
         true = hasevaluateAnnotation({anno});
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+        (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        ht2;
+        (ht2,true);
     case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
       equation
         SCode.CLASS_COMMENT(annotations=annos) = comment;
         true = hasevaluateAnnotation(annos);
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
-        ht2 = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
+        (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        ht2;        
+        (ht2,true);        
     case (DAE.DAE(el :: rest),pv,ht)
       equation
-        ht1 = evaluateAnnotation1(DAE.DAE(rest),pv,ht);
+        (ht1,b) = evaluateAnnotation1(DAE.DAE(rest),pv,ht);
       then
-        ht1;
+        (ht1,b);
   end matchcontinue;
 end evaluateAnnotation1;
 
@@ -2817,13 +2825,15 @@ algorithm
     local
       HashTable2.HashTable pv;
       DAE.Exp e,e1,e2;
+      Integer i;
     case (e,_)
       equation
         true = Expression.isConst(e);
       then e;
     case (e,pv)
       equation
-        ((e1,_)) = Expression.traverseExp(e,evaluateAnnotationTraverse,pv);
+        ((e1,(_,i))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0));
+        true = intEq(i,0);
         e2 = evaluateParameter(e1,pv);
       then
         e2;
