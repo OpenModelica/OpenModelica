@@ -2735,6 +2735,7 @@ algorithm
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
       DAE.Exp e;
+      Option<DAE.VariableAttributes> dae_var_attr;
     case (DAE.DAE({}),ht) then ht;
     case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),ht)
       equation
@@ -2748,8 +2749,9 @@ algorithm
         ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
         ht2;
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)))):: rest),ht)
+    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr))):: rest),ht)
       equation
+        e = getStartAttrFail(dae_var_attr);
         ht1 = BaseHashTable.add((cr,e),ht);
         ht2 = getParameterVars(DAE.DAE(rest),ht1);
       then
@@ -2830,6 +2832,10 @@ algorithm
       equation
         true = Expression.isConst(e);
       then e;
+    case (e,_)
+      equation
+        {} = Expression.extractCrefsFromExp(e);
+      then e;        
     case (e,pv)
       equation
         ((e1,(_,i))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(pv,0));
