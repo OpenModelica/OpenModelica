@@ -111,11 +111,13 @@ public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 
 protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
   },NONE(),NONE()),NONE());
 
 protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("simulationOptions",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeFrontend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeBackend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -136,7 +138,65 @@ protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResu
     ("timeBackend",    Values.REAL(0.0)),
     ("timeFrontend",   Values.REAL(0.0))    
   };
-    
+
+
+public
+uniontype SimulationOptions "these are the simulation/buildModel* options"
+  record SIMULATION_OPTIONS "simulation/buildModel* options"
+    DAE.Exp startTime "start time, default 0.0";
+    DAE.Exp stopTime "stop time, default 1.0";
+    DAE.Exp numberOfIntervals "number of intervals, default 500";
+    DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+    DAE.Exp tolerance "tolerance, default 1e-6";
+    DAE.Exp method "method, default 'dassl'";
+    DAE.Exp fileNamePrefix "file name prefix, default ''";
+    DAE.Exp storeInTemp "store in temp, default false";    
+    DAE.Exp noClean "no cleaning, default false";
+    DAE.Exp options "options, default ''";
+    DAE.Exp outputFormat "output format, default 'plt'";
+  end SIMULATION_OPTIONS;
+end SimulationOptions;
+
+public constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
+public constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
+public constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
+public constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
+public constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
+public constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
+public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
+public constant DAE.Exp defaultStoreInTemp       = DAE.BCONST(false)   "default storeInTemp";
+public constant DAE.Exp defaultNoClean           = DAE.BCONST(false)   "default noClean";
+public constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
+public constant DAE.Exp defaultOutputFormat      = DAE.SCONST("plt")   "default outputFormat";
+
+public constant SimulationOptions defaultSimulationOptions =
+  SIMULATION_OPTIONS(
+    defaultStartTime,
+    defaultStopTime,
+    defaultNumberOfIntervals,
+    defaultStepSize,
+    defaultTolerance,
+    defaultMethod,    
+    defaultFileNamePrefix,
+    defaultStoreInTemp,
+    defaultNoClean,
+    defaultOptions,
+    defaultOutputFormat
+    ) "default simulation options";
+
+public constant list<String> simulationOptionsNames =
+  {
+    "startTime",
+    "stopTime",
+    "numberOfIntervals",
+    "tolerance",
+    "method",
+    "fileNamePrefix",
+    "storeInTemp",    
+    "noClean",
+    "options",
+    "outputFormat"    
+  } "names of simulation options";
 
 public function getSimulationResultType
   output DAE.Type t;
@@ -146,6 +206,7 @@ end getSimulationResultType;
 
 public function createSimulationResult
   input String resultFile;
+  input String options;  
   input String message;
   input list<tuple<String,Values.Value>> inAddResultValues "additional values in reversed order; expected values see in CevalScript.simulationResultType_full";
   output Values.Value res;
@@ -162,18 +223,19 @@ algorithm
   vals := Util.if_(RTOpts.getRunningTestsuite(), {}, 
                    Util.listMap(resultValues, Util.tuple22)); 
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
-    Values.STRING(resultFile)::Values.STRING(message)::vals,
-    "resultFile"::"messages"::fields,-1);
+    Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
+    "resultFile"::"simulationOptions"::"messages"::fields,-1);
 end createSimulationResult;
 
 public function createSimulationResultFailure
   input String message;
+  input String options;
   output Values.Value res;
 protected
   list<Values.Value> vals;
   list<String> fields;
 algorithm
-  res := createSimulationResult("", message, zeroAdditionalSimulationResultValues);
+  res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
 protected function buildCurrentSimulationResultExp
@@ -184,6 +246,306 @@ algorithm
   cref := ComponentReference.makeCrefIdent("currentSimulationResult",DAE.ET_OTHER(),{});
   outExp := Expression.makeCrefExp(cref,DAE.ET_OTHER());
 end buildCurrentSimulationResultExp;
+
+
+public function buildSimulationOptions
+"@author: adrpo
+  builds a SimulationOptions record from the given input"
+  input DAE.Exp startTime "start time, default 0.0";
+  input DAE.Exp stopTime "stop time, default 1.0";
+  input DAE.Exp numberOfIntervals "number of intervals, default 500";
+  input DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
+  input DAE.Exp tolerance "tolerance, default 1e-6";
+  input DAE.Exp method "method, default 'dassl'";
+  input DAE.Exp fileNamePrefix "file name prefix, default ''";
+  input DAE.Exp storeInTemp "store in temp, default false";
+  input DAE.Exp noClean "no cleaning, default false";
+  input DAE.Exp options "options, default ''";  
+  input DAE.Exp outputFormat "output format, default 'plt'";
+  output SimulationOptions outSimulationOptions;
+algorithm
+  outSimulationOptions := 
+    SIMULATION_OPTIONS(
+    startTime,
+    stopTime,
+    numberOfIntervals,
+    stepSize,
+    tolerance,
+    method,
+    fileNamePrefix,
+    storeInTemp,
+    noClean,
+    options,    
+    outputFormat
+  );
+end buildSimulationOptions;
+
+public function getSimulationOption
+"@author: adrpo
+  get the value from simulation option"
+  input SimulationOptions inSimOpt;
+  input String optionName;
+  output DAE.Exp outOptionValue;
+algorithm
+  outOptionValue := matchcontinue(inSimOpt, optionName)
+    local
+      DAE.Exp e; String name, msg;
+    
+    case (SIMULATION_OPTIONS(startTime = e),         "startTime")         then e;
+    case (SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
+    case (SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
+    case (SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
+    case (SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
+    case (SIMULATION_OPTIONS(method = e),            "method")            then e;
+    case (SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
+    case (SIMULATION_OPTIONS(storeInTemp = e),       "storeInTemp")       then e;
+    case (SIMULATION_OPTIONS(options = e),           "options")           then e;
+    case (SIMULATION_OPTIONS(noClean = e),           "noClean")           then e;
+    case (SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
+    case (_,                                         name)
+      equation
+        msg = "Unknown simulation option: " +& name;
+        Error.addCompilerWarning(msg);
+      then 
+        fail();
+  end matchcontinue;
+end getSimulationOption;
+
+public function buildSimulationOptionsFromModelExperimentAnnotation
+"@author: adrpo
+  retrieve annotation(experiment(....)) values and build a SimulationOptions object to return"
+  input Interactive.InteractiveSymbolTable inSymTab;
+  input Absyn.Path inModelPath;
+  input String inFileNamePrefix;
+  output SimulationOptions outSimOpt;
+algorithm
+  outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix)
+    local
+      SimulationOptions defaults, simOpt;
+      String experimentAnnotationStr;
+      list<Interactive.InteractiveStmt> stmts;
+      list<Absyn.NamedArg> named;
+      String msg;
+    
+    // search inside annotation(experiment(...))
+    case (inSymTab, inModelPath, inFileNamePrefix)
+      equation
+        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        
+        experimentAnnotationStr = 
+          Interactive.getNamedAnnotation(
+            inModelPath, 
+            Interactive.getSymbolTableAST(inSymTab), 
+            "experiment", 
+            Interactive.getExperimentAnnotationString);
+                // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
+        
+        // jump to next case if the annotation is empty  
+        false = stringEq(experimentAnnotationStr, "{}");
+        
+        // get rid of '{' and '}'
+        experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "{", "");
+        experimentAnnotationStr = System.stringReplace(experimentAnnotationStr, "}", "");
+        
+        (Interactive.ISTMTS({Interactive.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(_, named)))}, _),
+         msg) = Parser.parsestringexp("experiment(" +& experimentAnnotationStr +& ");\n");
+        true = stringEq(msg, "Ok");
+        
+        simOpt = populateSimulationOptions(defaults, named);
+      then
+        simOpt;
+
+    // if we fail, just use the defaults
+    case (inSymTab, inModelPath, inFileNamePrefix)
+      equation        
+        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+      then
+        defaults;
+  end matchcontinue;
+end buildSimulationOptionsFromModelExperimentAnnotation;
+
+protected function setFileNamePrefixInSimulationOptions
+  input  SimulationOptions inSimOpt;
+  input  String inFileNamePrefix;
+  output SimulationOptions outSimOpt;
+protected
+  DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat;  
+algorithm
+  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, storeInTemp, noClean, options, outputFormat) := inSimOpt;
+  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), storeInTemp, noClean, options, outputFormat);
+end setFileNamePrefixInSimulationOptions;
+
+protected function getConst
+"@author: adrpo
+  Tranform a literal Absyn.Exp to DAE.Exp with the given DAE.ExpType"
+  input  Absyn.Exp inAbsynExp;
+  input DAE.ExpType inExpType;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inAbsynExp, inExpType)
+    local
+      Integer i; Real r;
+      Absyn.Exp exp;
+    
+    case (Absyn.INTEGER(i), DAE.ET_INT())  then DAE.ICONST(i);
+    case (Absyn.REAL(r),    DAE.ET_REAL()) then DAE.RCONST(r);
+        
+    case (Absyn.INTEGER(i), DAE.ET_REAL()) equation r = intReal(i); then DAE.RCONST(r);    
+    case (Absyn.REAL(r),    DAE.ET_INT())  equation i = realInt(r); then DAE.ICONST(i);
+    
+    case (exp,    _)  
+      equation 
+        print("CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& "\n"); 
+      then 
+        fail();
+  end matchcontinue;
+end getConst;
+
+protected function populateSimulationOptions
+"@auhtor: adrpo
+  populate simulation options"
+  input SimulationOptions inSimOpt;
+  input list<Absyn.NamedArg> inExperimentSettings;
+  output SimulationOptions outSimOpt;
+algorithm
+  outSimOpt := matchcontinue(inSimOpt, inExperimentSettings)
+    local
+      Absyn.Exp exp;
+      list<Absyn.NamedArg> rest;
+      SimulationOptions simOpt;
+      DAE.Exp startTime;
+      DAE.Exp stopTime;
+      DAE.Exp numberOfIntervals;
+      DAE.Exp stepSize;
+      DAE.Exp tolerance;
+      DAE.Exp method;
+      DAE.Exp fileNamePrefix;
+      DAE.Exp storeInTemp;
+      DAE.Exp noClean;
+      DAE.Exp options;      
+      DAE.Exp outputFormat;
+      Real rStepSize, rStopTime, rStartTime;
+      Integer iNumberOfIntervals;
+      String name,msg;
+      
+    case (inSimOpt, {}) then inSimOpt;
+    
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
+      equation
+        tolerance = getConst(exp, DAE.ET_REAL()); 
+        simOpt = populateSimulationOptions(
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat),
+             rest);
+      then
+        simOpt;    
+    
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
+      equation
+        startTime = getConst(exp, DAE.ET_REAL());
+        simOpt = populateSimulationOptions(
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat),
+             rest);
+      then
+        simOpt;
+
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
+      equation
+        stopTime = getConst(exp, DAE.ET_REAL()); 
+        simOpt = populateSimulationOptions(
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat),
+             rest);
+      then
+        simOpt;
+
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
+      equation
+        numberOfIntervals = getConst(exp, DAE.ET_INT()); 
+        simOpt = populateSimulationOptions(
+          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                             fileNamePrefix,storeInTemp,noClean,options,outputFormat),
+             rest);
+      then
+        simOpt;
+
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
+      equation
+        DAE.RCONST(rStepSize) = getConst(exp, DAE.ET_REAL()); 
+        // a bit different for Interval, handle it LAST!!!!
+        SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                           fileNamePrefix,storeInTemp,noClean,options,outputFormat) = 
+          populateSimulationOptions(inSimOpt, rest);
+       
+       DAE.RCONST(rStartTime) = startTime;
+       DAE.RCONST(rStopTime) = startTime;
+       
+       iNumberOfIntervals = realInt(realDiv(realSub(rStopTime, rStartTime), rStepSize));
+       
+       numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
+       stepSize = DAE.RCONST(rStepSize);
+       
+       simOpt = SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+                                   fileNamePrefix,storeInTemp,noClean,options,outputFormat);
+      then
+        simOpt;
+
+    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat), 
+          Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
+      equation
+        msg = "Ignoring unknown experiment annotation option: " +& name +& " = " +& Dump.printExpStr(exp);
+        Error.addCompilerWarning(msg);
+        simOpt = populateSimulationOptions(inSimOpt, rest);
+      then
+        simOpt;
+  end matchcontinue;
+end populateSimulationOptions;
+
+protected function simOptionsAsString
+"@author: adrpo
+  Gets the simulation options as string"
+  input list<DAE.Exp> inExpLst;
+  output String str;
+algorithm
+  str := matchcontinue(inExpLst)
+    local 
+      list<String> simOptsValues, simOptsNames, simOpts;
+      list<DAE.Exp> lst;      
+    
+    case (inExpLst) 
+      equation
+        // ignore the model name
+        _::lst = inExpLst;
+        // build a list with the values  
+        simOptsValues = Util.listMap(lst, ExpressionDump.printExpStr);
+        // trim " from strings!
+        simOptsValues = Util.listMap2(simOptsValues, System.stringReplace, "\"", "\'");
+        
+        str = Util.buildMapStr(simulationOptionsNames, simOptsValues, " = ", ", ");
+      then
+        str;
+    
+    // on failure
+    case (inExpLst)
+      equation
+        // ignore the model name
+        _::lst = inExpLst;
+        // build a list with the values  
+        simOptsValues = Util.listMap(lst, ExpressionDump.printExpStr);
+        // trim " from strings!
+        simOptsValues = Util.listMap2(simOptsValues, System.stringReplace, "\"", "\'");
+        
+        str = Util.stringDelimitList(simOptsValues, ", ");
+      then
+        str;
+  end matchcontinue;
+end simOptionsAsString;
 
 public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
@@ -250,6 +612,7 @@ algorithm
       AbsynDep.Depends dep; AbsynDep.AvlTree uses;
       DAE.InlineType inlineType;
       DAE.ExpType ty;
+      list<DAE.Exp> expLst;
     
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {DAE.CREF(componentRef = cr)}),
         (st as Interactive.SYMBOLTABLE(
@@ -619,21 +982,21 @@ algorithm
         /* adrpo: see if the model exists before simulation! */
     case (cache,env,(exp as
         DAE.CALL(path = Absyn.IDENT(name = "simulate"),
-          expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_)),
+          expLst = expLst as DAE.CODE(Absyn.C_TYPENAME(className),_)::_)),
           (st_1 as Interactive.SYMBOLTABLE(
             ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = iv, compiledFunctions = cf)),msg)
       equation
         crefCName = Absyn.pathToCref(className);
         false = Interactive.existClass(crefCName, p);
         errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
-        simValue = createSimulationResultFailure(errMsg);
+        simValue = createSimulationResultFailure(errMsg, simOptionsAsString(expLst));
       then
         (cache,simValue,st_1);
         
     case (cache,env,(exp as
         DAE.CALL(
           path = Absyn.IDENT(name = "simulate"),
-          expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_)),
+          expLst = expLst as DAE.CODE(Absyn.C_TYPENAME(className),_)::_)),
           (st_1 as Interactive.SYMBOLTABLE(
             ast = p,
             explodedAst = sp,
@@ -657,9 +1020,12 @@ algorithm
         result_file = stringAppendList({executable,"_res.",outputFormat_str});
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
-        simValue = createSimulationResult(result_file, System.readFile("output.log"),
-          ("timeTotal", Values.REAL(timeTotal)) :: 
-          ("timeSimulation", Values.REAL(timeSimulation)) ::
+        simValue = createSimulationResult(
+           result_file, 
+           simOptionsAsString(expLst), 
+           System.readFile("output.log"),
+           ("timeTotal", Values.REAL(timeTotal)) :: 
+           ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
       then
@@ -668,7 +1034,7 @@ algorithm
     case (cache,env,
         DAE.CALL(
           path = Absyn.IDENT(name = "simulate"),
-          expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
+          expLst = expLst as DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
           (st as Interactive.SYMBOLTABLE(
             ast = p,
             explodedAst = sp,
@@ -680,16 +1046,19 @@ algorithm
         errorStr = Error.printMessagesStr();
         str = Absyn.pathString(className);
         res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
-        simValue = createSimulationResultFailure(res);
+        simValue = createSimulationResultFailure(res, simOptionsAsString(expLst));
       then
         (cache,simValue,st);
         
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "simulate"),
-      expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
+      expLst = expLst as DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
       (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         str = Absyn.pathString(className);
-        simValue = createSimulationResultFailure("Simulation failed for model: " +& str +& "\nEnvironment variable OPENMODELICAHOME not set.");
+        simValue = createSimulationResultFailure(
+          "Simulation failed for model: " +& str +& 
+          "\nEnvironment variable OPENMODELICAHOME not set.", 
+          simOptionsAsString(expLst));
       then
         (cache,simValue,st);
         

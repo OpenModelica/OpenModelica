@@ -1820,6 +1820,7 @@ algorithm
       list<String> vars;
       list<Values.Value> vals;
       Absyn.Class cls,refactoredClass;
+      list<DAE.Exp> simOptions;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -2313,6 +2314,33 @@ algorithm
         resstr = getNamedAnnotation(modelpath, p, "Documentation", getDocumentationAnnotationString);
         RTOpts.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getDocumentationAnnotation");
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getExperimentAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        modelpath = Absyn.crefToPath(cr);
+        ErrorExt.setCheckpoint("getExperimentAnnotation");
+        resstr = getNamedAnnotation(modelpath, p, "experiment", getExperimentAnnotationString);
+        ErrorExt.rollBack("getExperimentAnnotation");
+      then
+        (resstr,st);
+        
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getSimulationOptions");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        modelpath = Absyn.crefToPath(cr);
+        ErrorExt.setCheckpoint("getSimulationOptions");
+        // ignore the name of the model
+        (_, _::simOptions) = Static.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);        
+        resstr = 
+          "{" +& 
+          ExpressionDump.printExpListStr(simOptions) +& 
+          "} /* startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat */";
+        ErrorExt.rollBack("getSimulationOptions");
       then
         (resstr,st);
 
@@ -11998,7 +12026,7 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotation;
 
-protected function getNamedAnnotation
+public function getNamedAnnotation
 "function: getNamedAnnotation
   This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
@@ -13369,6 +13397,59 @@ algorithm
   end matchcontinue;
 end getAnnotationValue;
 
+public function getExperimentAnnotationString
+"@author: adrpo
+ gets the experiment annotation values"
+  input Option<Absyn.Modification> mod;
+  output String experimentStr;
+algorithm
+  experimentStr := matchcontinue (mod)
+    local 
+      list<Absyn.ElementArg> arglst;
+      list<String> strs;
+      String s;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      equation
+        strs = getExperimentAnnotationString2(arglst);
+        s = Util.stringDelimitList(strs,",");
+        s = stringAppendList({"{", s, "}"});
+      then 
+        s;
+    
+  end matchcontinue;
+end getExperimentAnnotationString;
+
+protected function getExperimentAnnotationString2
+"function getExperimentAnnotationString2
+  Helper function to getExperimentAnnotationString"
+  input list<Absyn.ElementArg> eltArgs;
+  output list<String> strs;
+algorithm
+  strs := matchcontinue (eltArgs)
+    local
+      Absyn.Exp exp;
+      list<Absyn.ElementArg> xs;
+      String name, s;
+      list<String> ss;
+
+    case ({}) then {};
+
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = name),
+          modification=SOME(Absyn.CLASSMOD(expOption=SOME(exp))))::xs)
+      equation
+          s =  name +& "=" +& Dump.printExpStr(exp);
+          ss = getExperimentAnnotationString2(xs);
+      then s::ss;
+    
+    case (_::xs)
+      equation
+          ss = getExperimentAnnotationString2(xs);
+      then ss;
+
+    end matchcontinue;
+end getExperimentAnnotationString2;
+
 protected function getDocumentationAnnotationString
   input Option<Absyn.Modification> mod;
   output String docStr;
@@ -13396,7 +13477,7 @@ end getDocumentationAnnotationString;
 
 protected function getDocumentationAnnotationString2
 "function getDocumentationAnnotationString2
-  Helper function to getNamedAnnotationString"
+  Helper function to getDocumentationAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
   output list<String> strs;
 algorithm
@@ -19218,7 +19299,7 @@ algorithm
  end matchcontinue;
 end getComponentInClass;
 
-protected function setSymbolTableAST
+public function setSymbolTableAST
   input InteractiveSymbolTable inSymTab;
   input Absyn.Program inAST;
   output InteractiveSymbolTable outSymTab;
@@ -19236,6 +19317,15 @@ algorithm
       then SYMBOLTABLE(inAST, d, e, i, v, c, l);
   end matchcontinue;
 end setSymbolTableAST;
+
+public function getSymbolTableAST
+  input InteractiveSymbolTable inSymTab;
+  output Absyn.Program outAST;
+algorithm
+  outAST := matchcontinue(inSymTab)    
+    case (SYMBOLTABLE(ast = outAST)) then outAST;
+  end matchcontinue;
+end getSymbolTableAST;
 
 protected function getFunctionsInProgram
   input Absyn.Program prog;

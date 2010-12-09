@@ -294,6 +294,8 @@ public constant ErrorID META_TYPE_MISMATCH_PATTERN=5022;
 public constant ErrorID META_DECONSTRUCTOR_NOT_RECORD=5023;
 public constant ErrorID META_MATCHEXP_RESULT_TYPES=5024;
 
+public constant ErrorID COMPILER_WARNING = 6000;
+
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
@@ -661,8 +663,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_TYPE_MISMATCH_PATTERN,TRANSLATION(),ERROR(),"Type mismatch in pattern\nactual type:\n  %s\nexpected type:\n  %s"),
           (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s"),
           (META_MATCHEXP_RESULT_TYPES,TRANSLATION(),ERROR(),"Match expression has mismatched result types:%s"),
-          (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s")
+          (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s"),
 
+          (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };
 
 protected import ErrorExt;
@@ -1056,6 +1059,19 @@ algorithm
       then fail();
   end match;
 end assertion;
+
+public function addCompilerWarning
+"Used to make a compiler warning "
+  input String message;  
+algorithm
+  _ := match (message)
+    case (message)
+      equation
+        addMessage(COMPILER_WARNING, {message});
+      then 
+        ();
+  end match;
+end addCompilerWarning;
 
 end Error;
 

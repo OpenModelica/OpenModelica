@@ -7230,4 +7230,35 @@ algorithm
   end matchcontinue;
 end listThreadMapAllValue;
 
+public function buildMapStr "function: buildMapStr
+  Takes two lists of the same type and builds a string like x = val1, y = val2, ....
+  Example: listThread({1,2,3},{4,5,6},'=',',') => 1=4, 2=5, 3=6"
+  input list<String> inLst1;
+  input list<String> inLst2;
+  input String inMiddleDelimiter;
+  input String inEndDelimiter;
+  output String outStr;
+algorithm
+  outStr := matchcontinue (inLst1,inLst2, inMiddleDelimiter, inEndDelimiter)
+    local
+      list<String> r_1,c,d,ra,rb;
+      String fa,fb, md, ed, str;
+    
+    case ({},{}, md, ed) then "";
+    
+    case ({fa},{fb}, md, ed)
+      equation
+        str = stringAppendList({fa, md, fb}); 
+      then
+        str;
+    
+    case (fa :: ra,fb :: rb, md, ed)
+      equation
+        str = buildMapStr(ra, rb, md, ed);
+        str = stringAppendList({fa, md, fb, ed, str});
+      then
+        str;
+  end matchcontinue;
+end buildMapStr;
+
 end Util;
