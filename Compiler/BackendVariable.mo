@@ -324,12 +324,12 @@ algorithm
 /*  See Modelica Spec 3.2 page 88:
     For constants and parameters, the attribute fixed is by default true. For other variables
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
-    case (v) // states are by default fixed. 
+*/    case (v) // states are by default fixed. 
       equation
         BackendDAE.STATE() = varKind(v);
       then
         true;
-*/
+
     case (_) then false;  /* rest defaults to false*/
   end matchcontinue;
 end varFixed;
