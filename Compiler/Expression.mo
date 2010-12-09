@@ -4515,8 +4515,15 @@ algorithm
       then   
         true;                     
     
-    case (DAE.END()) then true;   
-    
+    case (DAE.END()) then true;
+      
+    case (DAE.REDUCTION(expr=e1,range=e2))
+      equation
+        true = isConst(e1);
+        true = isConst(e2);
+      then   
+        true;  
+        
     case (_) then false;
 
   end matchcontinue;

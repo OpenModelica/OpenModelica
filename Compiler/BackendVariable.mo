@@ -301,7 +301,7 @@ end setVarFixed;
 public function varFixed
 "function: varFixed
   author: PA
-  Extacts the fixed attribute of a variable.
+  Extracts the fixed attribute of a variable.
   The default fixed value is used if not found. Default is true for parameters
   (and constants) and false for variables."
   input BackendDAE.Var inVar;
@@ -312,20 +312,24 @@ algorithm
     local
       Boolean fixed;
       BackendDAE.Var v;
-    case (v as BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(DAE.BCONST(fixed)),_,_,_,_,_)))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(_,_,_,SOME(DAE.BCONST(fixed)),_,_,_)))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(_,_,SOME(DAE.BCONST(fixed)),_,_,_)))) then fixed;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,SOME(DAE.BCONST(fixed)),_,_,_)))) then fixed;
-    case (v) /* param is fixed */
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
+    case (v) /* params are by default fixed */
       equation
         BackendDAE.PARAM() = varKind(v);
       then
         true;
-    case (v) /* states are by default fixed. */
+/*  See Modelica Spec 3.2 page 88:
+    For constants and parameters, the attribute fixed is by default true. For other variables
+    fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
+    case (v) // states are by default fixed. 
       equation
         BackendDAE.STATE() = varKind(v);
       then
         true;
+*/
     case (_) then false;  /* rest defaults to false*/
   end matchcontinue;
 end varFixed;
@@ -346,6 +350,24 @@ algorithm
       then sv;
    end matchcontinue;
 end varStartValue;
+
+public function varStartValueFail
+"function varStartValueFail
+  author: Frenkel TUD
+  Returns the DAE.StartValue of a variable if there is one. 
+  Otherwise fail"
+  input BackendDAE.Var v;
+  output DAE.Exp sv;
+algorithm
+  sv := matchcontinue(v)
+    local
+      Option<DAE.VariableAttributes> attr;
+    case (BackendDAE.VAR(values = attr))
+      equation
+        sv=DAEUtil.getStartAttrFail(attr);
+      then sv;
+   end matchcontinue;
+end varStartValueFail;
 
 public function varBindExp
 "function varBindExp
@@ -373,7 +395,7 @@ algorithm
     local
       DAE.StateSelect stateselect;
       BackendDAE.Var v;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(stateselect),_,_,_)))) then stateselect;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption=SOME(stateselect))))) then stateselect;
     case (_) then DAE.DEFAULT();
   end matchcontinue;
 end varStateSelect;

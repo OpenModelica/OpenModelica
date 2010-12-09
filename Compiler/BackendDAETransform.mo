@@ -1193,7 +1193,9 @@ algorithm
       list<String> es;
       String es_1;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
-      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;      
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;  
+      DAE.Exp stateexp,stateexpcall,dummyderexp; 
+      DAE.ExpType tp;  
 
     case (dae,m,mt,nv,nf,i,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
@@ -1218,7 +1220,11 @@ algorithm
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
-        (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
+        stateexp = Expression.crefExp(state);
+        tp = Expression.typeof(stateexp);
+        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
+        dummyderexp = Expression.crefExp(dummy_der);        
+        (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
@@ -1433,8 +1439,8 @@ protected function replaceDummyDer
   outputs:  (BackendDAE,
              IncidenceMatrix,
              IncidenceMatrixT)"
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   input BackendDAE.BackendDAE inBackendDAE3;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix4;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT5;
@@ -1444,43 +1450,39 @@ protected function replaceDummyDer
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
   (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inComponentRef1,inComponentRef2,inBackendDAE3,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
+  matchcontinue (inExp1,inExp2,inBackendDAE3,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
     local
-      DAE.ComponentRef state,dummy,dummyder;
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.Variables v_1,v,kv,ev;
       BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns_1,eqns,seqns,ie,ie1;
+      BackendDAE.EquationArray eqns_1,eqns,seqns,seqns1,ie,ie1;
       array<BackendDAE.MultiDimEquation> ae,ae1,ae2,ae3;
       array<DAE.Algorithm> al,al1,al2,al3;
       BackendDAE.EventInfo wc;
       list<BackendDAE.Value> rest;
       BackendDAE.ExternalObjectClasses eoc;
-      DAE.Exp stateexp,stateexpcall,dummyderexp;
-      DAE.ExpType tp;
-      
+      DAE.Exp stateexpcall,dummyderexp;
 
-    case (state,dummy,dae,m,mt,{}) then (dae,m,mt);
+    case (stateexpcall,dummyderexp,BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,{})
+      equation
+        (ie1,(al1,ae1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
+        (seqns1,(al2,ae2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
+       then (BackendDAE.DAE(v,kv,ev,av,eqns,seqns1,ie1,ae2,al2,wc,eoc),m,mt);
 
-    case (state,dummyder,BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        stateexp = Expression.crefExp(state);
-        tp = Expression.typeof(stateexp);
-        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
-        dummyderexp = Expression.crefExp(dummyder);
         (eqn_1,al1,ae1,_) = traverseBackendDAEExpsEqn(eqn, al, ae, replaceDummyDer2Exp,(stateexpcall,dummyderexp));
-        (ie1,(al2,ae2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-        (eqn_1,al3,ae3,v_1) = traverseBackendDAEExpsEqn(eqn_1,al2,ae2,replaceDummyDerOthersExp,v);
+        (eqn_1,al2,ae2,v_1) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,replaceDummyDerOthersExp,v);
         eqns_1 = BackendEquation.equationSetnth(eqns, e_1, eqn_1)
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, BackendDAE.DAE(v_1,kv,ev,av,eqns_1,seqns,ie1,ae3,al3,wc,eoc), m, mt, rest);
+        (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.DAE(v_1,kv,ev,av,eqns_1,seqns,ie,ae2,al2,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
 
@@ -1516,7 +1518,7 @@ algorithm
       equation
          (e1,algs1,ae1,ext_arg_1) = traverseBackendDAEExpsEqn(e,algs,ae,func,ext_arg);
       then
-        ((e,(algs,ae,func,ext_arg)));      
+        ((e1,(algs1,ae1,func,ext_arg_1)));      
     case inTpl then inTpl;
   end matchcontinue;      
 end traversereplaceDummyDer;      
@@ -1803,7 +1805,7 @@ algorithm
       BackendDAE.Value idx;
       DAE.ComponentRef name,dummyvar_cr,var;
       DAE.ElementSource source "origin of equation";
-      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<DAE.VariableAttributes> dae_var_attr,dae_var_attr1;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -1819,8 +1821,10 @@ algorithm
     case (var,BackendDAE.DAE(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc))
       equation
         ((BackendDAE.VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
-        dummyvar_cr = ComponentReference.crefPrefixDer(var);
-        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,tp,NONE(),NONE(),dim,0,source,dae_var_attr,comment,flowPrefix,streamPrefix);
+        dummyvar_cr = ComponentReference.crefPrefixDer(name);
+        /* start value is not the same */
+        dae_var_attr1 = DAEUtil.setStartAttr(dae_var_attr,DAE.RCONST(0.0));       
+        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,tp,NONE(),NONE(),dim,0,source,dae_var_attr1,comment,flowPrefix,streamPrefix);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addVar(dummyvar, vars);

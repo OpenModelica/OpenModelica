@@ -888,7 +888,7 @@ protected function dumpVars2
 algorithm
   _ := matchcontinue (inVarLst,inInteger)
     local
-      String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
+      String varnostr,dirstr,str,path_str,comment_str,s,indx_str,sstart;
       list<String> paths_lst,path_strs;
       BackendDAE.Value varno_1,indx,varno;
       BackendDAE.Var v;
@@ -905,6 +905,7 @@ algorithm
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
       DAE.InstDims arrayDim;
+      Boolean b;
 
     case ({},_) then ();
 
@@ -935,7 +936,7 @@ algorithm
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = DAEDump.dumpCommentOptionStr(comment);
-        print("= ");
+        print(" = ");
         s = ExpressionDump.printExpStr(e);
         print(s);
         print(" ");
@@ -979,7 +980,10 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
-        print(" ");
+        b = DAEUtil.hasStartAttr(dae_var_attr);
+        sstart = DAEUtil.getStartAttrString(dae_var_attr);
+        sstart = Util.if_(b,sstart,"0.0");
+        print(stringAppendList({"(start= ",sstart,") "}));
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
