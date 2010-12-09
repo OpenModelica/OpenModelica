@@ -4716,8 +4716,8 @@ algorithm
     case (Absyn.MUL()) then " * ";
     case (Absyn.DIV()) then " / ";
     case (Absyn.POW()) then " ^ ";
-    case (Absyn.UMINUS()) then " -";
-    case (Absyn.UPLUS()) then " +";
+    case (Absyn.UMINUS()) then "-";
+    case (Absyn.UPLUS()) then "+";
     /* element-wise arithmetic operators */
     case (Absyn.ADD_EW()) then " .+ ";
     case (Absyn.SUB_EW()) then " .- ";

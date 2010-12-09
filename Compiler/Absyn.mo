@@ -2043,7 +2043,7 @@ algorithm
   end matchcontinue;
 end stringListPath;
 
-public function pathTwoLastIdents "Returns the two last idens of a path"
+public function pathTwoLastIdents "Returns the two last idents of a path"
   input Path p;
   output Path twoLast;
   protected
