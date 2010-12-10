@@ -1581,10 +1581,10 @@ algorithm
       BackendDAE.Value numnodes_1,numnodes,aindx;
       list<BackendDAE.Equation> res,res1;
       list<DAE.Exp> inputs,outputs;
-    case ({},_,0,_) then ({},{});
-    case (inputs,outputs,0,aindx)
+    case (inputs as (_::_),{},0,aindx)
       then
-        ({},{BackendDAE.ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource)});
+        ({},{BackendDAE.ALGORITHM(aindx,inputs,{},DAE.emptyElementSource)});
+    case (_,_,0,_) then ({},{});
     case (inputs,outputs,numnodes,aindx)
       equation
         numnodes_1 = numnodes - 1;
