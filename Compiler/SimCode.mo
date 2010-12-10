@@ -6047,7 +6047,7 @@ algorithm
         ((v,BackendDAE.EQUATION(e,startv,source)::eqns));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.DUMMY_STATE(),values = attr,source=source)),eqns)) /* add equations for variables with fixed = true */
       equation
-        false = BackendVariable.varFixed(v);
+        true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
