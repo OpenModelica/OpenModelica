@@ -10936,7 +10936,7 @@ algorithm
         (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
         cr = ComponentReference.crefStripLastSubs(cr);
         exps = makeASUBArrayAdressing2(essl, pre);
-        crefExp = Expression.makeCrefExp(cr, ty);
+        crefExp = Expression.crefExp(cr);
         exp1 = Expression.makeASUB(crefExp, exps);
       then
         exp1;
