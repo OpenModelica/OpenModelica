@@ -606,13 +606,6 @@ algorithm
       true = RTOpts.eliminationLevel() > 1;
       true = Expression.isConst(e);
       then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e),src);
-        
-      // a = der(b), a not state;
-      case (BackendDAE.EQUATION(e1 as DAE.CREF(componentRef = _),e2 as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = _)}),src),swap)
-        equation
-          true = RTOpts.eliminationLevel() > 0;
-          true = RTOpts.eliminationLevel() <> 3;
-        then (e1,e2,src);        
   end matchcontinue;
 end simpleEquation;
 

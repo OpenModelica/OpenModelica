@@ -221,6 +221,13 @@ algorithm
         e = simplifyAsub(e, sub) "For arbitrary vector operations, e.g (a+b-c)[1] => a[1]+b[1]-c[1]" ;
       then
         e;
+
+    // all other asubs
+    case DAE.ASUB(exp = e,sub = exps)
+      equation
+        e1 = simplify1(e);
+      then
+        DAE.ASUB(e1,exps);
     
     // unary operations
     case ((exp as DAE.UNARY(operator = op,exp = e1))) 
