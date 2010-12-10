@@ -34,7 +34,7 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "Version: 2.0";
+QString Helper::applicationVersion = "Version: 1.6.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
 QString Helper::omcServerName = "OMEdit";
@@ -69,6 +69,7 @@ int Helper::tabWidth = 20;
 qreal Helper::shapesStrokeWidth = 5.0;
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
+QString Helper::ModelicaSimulationOutputFormats = "mat,csv,plt,empty";
 
 QString GUIMessages::getMessage(int type)
 {
@@ -81,7 +82,7 @@ QString GUIMessages::getMessage(int type)
     case NO_OPEN_MODEL:
         return "There is no open Model to simulate.";
     case NO_SIMULATION_STARTTIME:
-        return "Simulation Start Time is not defined. Default value (0) will be used.";
+        return "Simulation Start Time is not defined. Default value (0.0) will be used.";
     case NO_SIMULATION_STOPTIME:
         return "Simulation Stop Time is not defined.";
     case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:

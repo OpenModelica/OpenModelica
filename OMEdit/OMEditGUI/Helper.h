@@ -63,6 +63,7 @@ public:
     static qreal globalDiagramXScale;
     static qreal globalDiagramYScale;
     static QString ModelicaSimulationMethods;
+    static QString ModelicaSimulationOutputFormats;
     static int treeIndentation;
     static QSize iconSize;
     static QSize buttonIconSize;

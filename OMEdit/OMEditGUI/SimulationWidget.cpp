@@ -37,7 +37,7 @@ SimulationWidget::SimulationWidget(MainWindow *parent)
     : QDialog(parent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
-    setMinimumSize(375, 370);
+    setMinimumSize(375, 350);
     mpParentMainWindow = parent;
 
     setUpForm();
@@ -50,7 +50,7 @@ SimulationWidget::~SimulationWidget()
 
 void SimulationWidget::setUpForm()
 {
-    mpSimulationHeading = new QLabel(tr("Simulation Center"));
+    mpSimulationHeading = new QLabel(tr("Simulation"));
     mpSimulationHeading->setFont(QFont("", Helper::headingFontSize));
 
     line = new QFrame();
@@ -74,14 +74,11 @@ void SimulationWidget::setUpForm()
     mpOutputIntervalGroup = new QGroupBox(tr("Output Interval"));
     mpNumberofIntervalLabel = new QLabel(tr("Number of Intervals:"));
     mpNumberofIntervalsTextBox = new QLineEdit(tr("500"));
-    mpOutputIntervalLabel = new QLabel(tr("Output Interval:"));
-    mpOutputIntervalTextBox = new QLineEdit;
 
     gridOutputIntervalLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
     gridOutputIntervalLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
-    gridOutputIntervalLayout->addWidget(mpOutputIntervalLabel, 1, 0);
-    gridOutputIntervalLayout->addWidget(mpOutputIntervalTextBox, 1, 1);
     mpOutputIntervalGroup->setLayout(gridOutputIntervalLayout);
+
     // Integration Interval
     QGridLayout *gridIntegrationLayout = new QGridLayout;
     mpIntegrationGroup = new QGroupBox(tr("Integration"));
@@ -90,15 +87,17 @@ void SimulationWidget::setUpForm()
     mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
     mpToleranceLabel = new QLabel(tr("Tolerance:"));
     mpToleranceTextBox = new QLineEdit(tr("0.0001"));
-    mpFixedStepSizeLabel = new QLabel(tr("Fixed Step Size:"));
-    mpFixedStepSizeTextBox = new QLineEdit;
+    mpOutputFormatLabel = new QLabel(tr("Output Format:"));
+    mpOutputFormatComboBox = new QComboBox;
+    mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
+    mpOutputFormatComboBox->setCurrentIndex(mpOutputFormatComboBox->findText("plt"));
 
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
     gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
     gridIntegrationLayout->addWidget(mpToleranceLabel, 1, 0);
     gridIntegrationLayout->addWidget(mpToleranceTextBox, 1, 1);
-    gridIntegrationLayout->addWidget(mpFixedStepSizeLabel, 2, 0);
-    gridIntegrationLayout->addWidget(mpFixedStepSizeTextBox, 2, 1);
+    gridIntegrationLayout->addWidget(mpOutputFormatLabel, 3, 0);
+    gridIntegrationLayout->addWidget(mpOutputFormatComboBox, 3, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
 
     // Add the validators
@@ -106,9 +105,11 @@ void SimulationWidget::setUpForm()
     doubleValidator->setBottom(0);
     mpStartTimeTextBox->setValidator(doubleValidator);
     mpStopTimeTextBox->setValidator(doubleValidator);
-    mpNumberofIntervalsTextBox->setValidator(doubleValidator);
-    mpOutputIntervalTextBox->setValidator(doubleValidator);
     mpToleranceTextBox->setValidator(doubleValidator);
+
+    QIntValidator *intValidator = new QIntValidator(this);
+    intValidator->setBottom(1);
+    mpNumberofIntervalsTextBox->setValidator(intValidator);
 
     // Create the buttons
     mpSimulateButton = new QPushButton(tr("Simulate!"));
@@ -134,8 +135,33 @@ void SimulationWidget::setUpForm()
     setLayout(mainLayout);
 }
 
+void SimulationWidget::initializeFields()
+{
+    ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
+
+    if (!projectTab)
+    {
+        return;
+    }
+
+    // if project tab is available...
+    // get the simulation options....
+    QString result = mpParentMainWindow->mpOMCProxy->getSimulationOptions(projectTab->mModelNameStructure);
+    result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
+    QStringList simulationOptionsList = StringHandler::getStrings(result);
+
+    // since we always get simulationOptions so just get the values from array
+    mpStartTimeTextBox->setText(simulationOptionsList.at(0));
+    mpStopTimeTextBox->setText(simulationOptionsList.at(1));
+    mpNumberofIntervalsTextBox->setText(simulationOptionsList.at(2));
+    mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat(), 'f'));
+    mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(StringHandler::removeFirstLastQuotes(
+                                                                 simulationOptionsList.at(4))));
+}
+
 void SimulationWidget::show()
 {
+    initializeFields();
     setVisible(true);
 }
 
@@ -145,7 +171,7 @@ void SimulationWidget::simulate()
     {
         QString simualtionParameters;
         if (mpStartTimeTextBox->text().isEmpty())
-            simualtionParameters.append(tr("startTime=0"));
+            simualtionParameters.append(tr("startTime=0.0"));
         else
             simualtionParameters.append(tr("startTime=")).append(mpStartTimeTextBox->text());
         simualtionParameters.append(tr(", stopTime=")).append(mpStopTimeTextBox->text());
@@ -153,13 +179,15 @@ void SimulationWidget::simulate()
             simualtionParameters.append(tr(", numberOfIntervals=500"));
         else
             simualtionParameters.append(tr(", numberOfIntervals=")).append(mpNumberofIntervalsTextBox->text());
-        if (!mpOutputIntervalTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", outputInterval=")).append(mpOutputIntervalTextBox->text());
-        simualtionParameters.append(tr(", method=")).append(mpMethodComboBox->currentText());
+        if (mpMethodComboBox->currentText().isEmpty())
+            simualtionParameters.append(tr(", method=\"dassl\""));
+        else
+            simualtionParameters.append(tr(", method=")).append("\"")
+                    .append(mpMethodComboBox->currentText()).append("\"");
         if (!mpToleranceTextBox->text().isEmpty())
             simualtionParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
-        if (!mpFixedStepSizeTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", fixedStepSize=")).append(mpFixedStepSizeTextBox->text());
+        simualtionParameters.append(tr(", outputFormat=")).append("\"")
+                            .append(mpOutputFormatComboBox->currentText()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
 
@@ -172,7 +200,7 @@ void SimulationWidget::simulate()
         }
 
         // show simulation progress bar
-        int endtime = mpNumberofIntervalsTextBox->text().toInt() * mpStopTimeTextBox->text().toInt();
+        int endtime = mpNumberofIntervalsTextBox->text().toDouble() * mpStopTimeTextBox->text().toDouble();
         QProgressDialog progressBar(this, Qt::WindowTitleHint);
         progressBar.setMinimum(0);
         progressBar.setMaximum(endtime);
@@ -199,10 +227,25 @@ void SimulationWidget::simulate()
         }
         else
         {
-            mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure).append("_res.plt"));
-            mpParentMainWindow->plotdock->show();
-            mpParentMainWindow->mpMessageWidget->printGUIMessage("Simulated '" +
-                                                                  projectTab->mModelNameStructure + "' successfully!");
+            // if simualtion output format is not plt then dont show plot window.
+            // only show user the message that result file is created.
+            if (mpOutputFormatComboBox->currentText().compare("plt") == 0)
+            {
+                mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure)
+                                                                    .append("_res.plt"));
+                mpParentMainWindow->plotdock->show();
+                mpParentMainWindow->mpMessageWidget->printGUIMessage(QString("Simulated '")
+                                                                     .append(projectTab->mModelNameStructure)
+                                                                     .append("' successfully!"));
+            }
+            else
+            {
+                mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulation result file is created at ")
+                                                                         .append(StringHandler::removeFirstLastQuotes(mpParentMainWindow->mpOMCProxy->changeDirectory()))
+                                                                         .append("/").append(projectTab->mModelNameStructure)
+                                                                         .append("_res.")
+                                                                         .append(mpOutputFormatComboBox->currentText()));
+            }
         }
         progressBar.setValue(endtime);
         progressBar.hide();
@@ -223,7 +266,7 @@ bool SimulationWidget::validate()
         return false;
     }
 
-    if (mpStopTimeTextBox->text().toInt() <= mpStartTimeTextBox->text().toInt())
+    if (mpStopTimeTextBox->text().toDouble() <= mpStartTimeTextBox->text().toDouble())
     {
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
                                                                   GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME));

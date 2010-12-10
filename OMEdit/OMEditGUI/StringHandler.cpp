@@ -285,3 +285,17 @@ QString StringHandler::removeLastWordAfterDot(QString value)
         return value;
     }
 }
+
+QString StringHandler::removeComment(QString value)
+{
+    if (value.isEmpty())
+    {
+        return "";
+    }
+    value = value.trimmed();
+
+    int startPos = value.indexOf("/*");
+    int endPos = value.indexOf("*/");
+    // + 2 to remove */ from the string as well.
+    return value.remove(startPos, (endPos - startPos) + 2);
+}

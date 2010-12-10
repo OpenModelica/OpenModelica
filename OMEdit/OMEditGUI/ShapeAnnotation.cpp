@@ -193,23 +193,24 @@ void ShapeAnnotation::moveRight()
 void ShapeAnnotation::rotateClockwise()
 {
     qreal rotation = this->rotation();
-    qreal rotateIncrement = 90;
+    qreal rotateIncrement = -90;
 
     if (rotation == -270)
         this->setRotation(0);
     else
-        this->setRotation(rotation - rotateIncrement);
+        this->setRotation(rotation + rotateIncrement);
 }
 
 void ShapeAnnotation::rotateAntiClockwise()
 {
+
     qreal rotation = this->rotation();
-    qreal rotateIncrement = -90;
+    qreal rotateIncrement = 90;
 
     if (rotation == 270)
         this->setRotation(0);
     else
-        this->setRotation(rotation - rotateIncrement);
+        this->setRotation(rotation + rotateIncrement);
 }
 
 void ShapeAnnotation::resetRotation()

@@ -67,8 +67,8 @@ public:
     ~OMCProxy();
     void getPreviousCommand();
     void getNextCommand();
-    void addCommandMap(QString expression, QString result);
-    QString getCommandMap(QString expression);
+    void addExpressionInCommandMap(QString expression, QString result);
+    QString getCommandFromMap(QString expression);
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};
@@ -111,7 +111,7 @@ public:
     QList<ComponentsProperties*> getComponents(QString className);
     QStringList getComponentAnnotations(QString className);
     QString getDocumentationAnnotation(QString className);
-    QString changeDirectory(QString directory);
+    QString changeDirectory(QString directory = QString());
     bool loadFile(QString fileName);
     bool createClass(QString type, QString className);
     bool createSubClass(QString type, QString className, QString parentClassName);
@@ -145,6 +145,7 @@ public:
     bool plotParametric(QString modelName, QString plotVariables);
     bool visualize(QString modelName);
     QString checkModel(QString modelName);
+    QString getSimulationOptions(QString modelName);
 public slots:
     void openOMCLogger();
     void catchException();

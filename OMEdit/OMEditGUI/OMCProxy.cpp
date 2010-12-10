@@ -112,12 +112,13 @@ void OMCProxy::getNextCommand()
     mCommandsList.removeFirst();
 }
 
-void OMCProxy::addCommandMap(QString expression, QString result)
+void OMCProxy::addExpressionInCommandMap(QString expression, QString result)
 {
-    mCommandsMap.insert(expression, result);
+    if (expression.contains("Modelica."))
+        mCommandsMap.insert(expression, result);
 }
 
-QString OMCProxy::getCommandMap(QString expression)
+QString OMCProxy::getCommandFromMap(QString expression)
 {
     QMap<QString, QString>::iterator it;
     for (it = mCommandsMap.begin(); it != mCommandsMap.end(); ++it)
@@ -292,20 +293,8 @@ void OMCProxy::sendCommand(QString expression)
     // Send command to server
     try
     {
-        // check the expression in IconCommandsMap
-        QString expressionResult = getCommandMap(expression);
-        if (expressionResult.isEmpty())
-        {
-            mResult = mOMC->sendExpression(expression.toLatin1());
-            logOMCMessages(expression);
-            // only store the command if expression has "Modelica." in it, we don't want to store user defined models
-            if (expression.contains("Modelica."))
-                addCommandMap(expression, getResult());
-        }
-        else
-        {
-            mResult = expressionResult;
-        }
+        mResult = mOMC->sendExpression(expression.toLatin1());
+        logOMCMessages(expression);
     }
     catch(CORBA::Exception&)
     {
@@ -318,7 +307,7 @@ void OMCProxy::sendCommand(QString expression)
         {
             QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
                                   QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
-                                  .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
+                                  .append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
             restartApplication();
         }
     }
@@ -610,8 +599,21 @@ QList<IconParameters*> OMCProxy::getParameters(QString className)
 
 QStringList OMCProxy::getParameterNames(QString className)
 {
-    sendCommand("getParameterNames(" + className + ")");
-    QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
+    QString result;
+    QString expression = "getParameterNames(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        result = StringHandler::removeFirstLastCurlBrackets(getResult());
+    }
+    else
+    {
+        result = expressionResult;
+    }
+
     if (result.isEmpty())
         return QStringList();
     else
@@ -639,26 +641,62 @@ bool OMCProxy::setParameterValue(QString className, QString parameter, QString v
 //! Gets the Icon Annotation of a specified class from OMC.
 //! @param className is the name of the class.
 QString OMCProxy::getIconAnnotation(QString className)
-{    
-    sendCommand("getIconAnnotation(" + className + ")");
-    return getResult();
+{
+    QString expression = "getIconAnnotation(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 QString OMCProxy::getDiagramAnnotation(QString className)
 {
-    sendCommand("getDiagramAnnotation(" + className + ")");
-    return getResult();
+    QString expression = "getDiagramAnnotation(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 int OMCProxy::getConnectionCount(QString className)
 {
-    sendCommand("getConnectionCount(" + className + ")");
-    if (!getResult().isEmpty())
+    QString result;
+    QString expression = "getConnectionCount(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        result = getResult();
+    }
+    else
+    {
+        result = expressionResult;
+    }
+
+    if (!result.isEmpty())
     {
         bool ok;
-        int result = getResult().toInt(&ok);
+        int result_number = result.toInt(&ok);
         if (ok)
-            return result;
+            return result_number;
         else
             return 0;
     }
@@ -668,27 +706,61 @@ int OMCProxy::getConnectionCount(QString className)
 
 QString OMCProxy::getNthConnection(QString className, int num)
 {
-    QString number;
-    sendCommand("getNthConnection(" + className + ", " + number.setNum(num) + ")");
-    return getResult();
+    QString expression = "getNthConnection(" + className + ", " + QString::number(num) + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 {
-    QString number;
-    sendCommand("getNthConnectionAnnotation(" + className + ", " + number.setNum(num) + ")");
-    return getResult();
+    QString expression = "getNthConnectionAnnotation(" + className + ", " + QString::number(num) + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 int OMCProxy::getInheritanceCount(QString className)
 {
-    sendCommand("getInheritanceCount(" + className + ")");
-    if (!getResult().isEmpty())
+    QString result;
+    QString expression = "getInheritanceCount(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        result = getResult();
+    }
+    else
+    {
+        result = expressionResult;
+    }
+
+    if (!result.isEmpty())
     {
         bool ok;
-        int result = getResult().toInt(&ok);
+        int result_number = result.toInt(&ok);
         if (ok)
-            return result;
+            return result_number;
         else
             return 0;
     }
@@ -698,17 +770,40 @@ int OMCProxy::getInheritanceCount(QString className)
 
 QString OMCProxy::getNthInheritedClass(QString className, int num)
 {
-    QString number;
-    sendCommand("getNthInheritedClass(" + className + ", " + number.setNum(num) + ")");
-    return getResult();
+    QString expression = "getNthInheritedClass(" + className + ", " + QString::number(num) + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
 {
-    sendCommand("getComponents(" + className + ")");
+    QString result;
+    QString expression = "getComponents(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        result = getResult();
+    }
+    else
+    {
+        result = expressionResult;
+    }
 
     QList<ComponentsProperties*> components;
-    QStringList list = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
+    QStringList list = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(result));
 
     for (int i = 0 ; i < list.size() ; i++)
     {
@@ -720,20 +815,49 @@ QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
 
 QStringList OMCProxy::getComponentAnnotations(QString className)
 {
-    sendCommand("getComponentAnnotations(" + className + ")");
-    return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
+    QString expression = "getComponentAnnotations(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(getResult()));
+    }
+    else
+    {
+        return StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(expressionResult));
+    }
 }
 
 QString OMCProxy::getDocumentationAnnotation(QString className)
 {
-    sendCommand("getDocumentationAnnotation(" + className + ")");
-    return getResult();
+    QString expression = "getDocumentationAnnotation(" + className + ")";
+    // check the expression in CommandsMap
+    QString expressionResult = getCommandFromMap(expression);
+    if (expressionResult.isEmpty())
+    {
+        sendCommand(expression);
+        addExpressionInCommandMap(expression, getResult());
+        return getResult();
+    }
+    else
+    {
+        return expressionResult;
+    }
 }
 
 QString OMCProxy::changeDirectory(QString directory)
 {
-    directory = directory.replace("\\", "/");
-    sendCommand("cd(\"" + directory + "\")");
+    if (directory.isEmpty())
+    {
+        sendCommand("cd()");
+    }
+    else
+    {
+        directory = directory.replace("\\", "/");
+        sendCommand("cd(\"" + directory + "\")");
+    }
     return getResult();
 }
 
@@ -973,7 +1097,8 @@ bool OMCProxy::instantiateModel(QString modelName)
 bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 {
     sendCommand("simulate(" + modelName + "," + simualtionParameters + ")");
-    if (getResult().contains("res.plt"))
+    //! @todo Make it more stable. Checking res. as a string is not good here.
+    if (getResult().contains("res."))
         return true;
     else
         return false;
@@ -1009,6 +1134,12 @@ bool OMCProxy::visualize(QString modelName)
 QString OMCProxy::checkModel(QString modelName)
 {
     sendCommand("checkModel(" + modelName + ")");
+    return getResult();
+}
+
+QString OMCProxy::getSimulationOptions(QString modelName)
+{
+    sendCommand("getSimulationOptions(" + modelName + ")");
     return getResult();
 }
 

@@ -47,6 +47,7 @@ public:
     void setUpForm();
     void show();
     bool validate();
+    void initializeFields();
 
     MainWindow *mpParentMainWindow;
 private:
@@ -60,15 +61,13 @@ private:
     QGroupBox *mpOutputIntervalGroup;
     QLabel *mpNumberofIntervalLabel;
     QLineEdit *mpNumberofIntervalsTextBox;
-    QLabel *mpOutputIntervalLabel;
-    QLineEdit *mpOutputIntervalTextBox;
     QGroupBox *mpIntegrationGroup;
     QLabel *mpMethodLabel;
     QComboBox *mpMethodComboBox;
     QLabel *mpToleranceLabel;
     QLineEdit *mpToleranceTextBox;
-    QLabel *mpFixedStepSizeLabel;
-    QLineEdit *mpFixedStepSizeTextBox;
+    QLabel *mpOutputFormatLabel;
+    QComboBox *mpOutputFormatComboBox;
     QPushButton *mpCancelButton;
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
