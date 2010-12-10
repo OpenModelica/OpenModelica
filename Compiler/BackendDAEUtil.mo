@@ -1360,7 +1360,7 @@ algorithm
     case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr, ty = ty) :: _)), sub = subs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
-        e = Expression.makeCrefExp(cr, ty);
+        e = Expression.crefExp(cr);
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
@@ -1369,7 +1369,7 @@ algorithm
     case (DAE.ASUB(exp = DAE.MATRIX(scalar = (((DAE.CREF(componentRef = cr, ty = ty), _) :: _) :: _)), sub = subs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
-        e = Expression.makeCrefExp(cr, ty);
+        e = Expression.crefExp(cr);
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
