@@ -386,6 +386,283 @@ function intString
   external \"builtin\";
 end intString;
 
+/* Real functions */
+function realAdd
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := r1+r2;
+end realAdd;
+
+function realSub
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := r1-r2;
+end realSub;
+
+function realMul
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := r1*r2;
+end realMul;
+
+function realDiv
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := r1/r2;
+end realDiv;
+
+function realMod
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := mod(r1,r2);
+end realMod;
+
+function realPow
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := r1^r2;
+end realPow;
+
+function realMax
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := max(r1,r2);
+end realMax;
+
+function realMin
+  input Real r1;
+  input Real r2;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := min(r1,r2);
+end realMin;
+
+function realAbs
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := abs(x);
+end realAbs;
+
+function realNeg
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := -x;
+end realNeg;
+
+function realCos
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := cos(x);
+end realCos;
+
+function realCosh
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := cosh(x);
+end realCosh;
+
+function realAcos
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := acos(x);
+end realAcos;
+
+function realSin
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := sin(x);
+end realSin;
+
+function realSinh
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := sinh(x);
+end realSinh;
+
+function realAsin
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := asin(x);
+end realAsin;
+
+function realAtan
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := atan(x);
+end realAtan;
+
+function realAtan2
+  input Real x1;
+  input Real x2;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := atan2(x1,x2);
+end realAtan2;
+
+function realTanh
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := tanh(x);
+end realTanh;
+
+function realExp
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := exp(x);
+end realExp;
+
+function realLn
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := log(x);
+end realLn;
+
+function realLog10
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := log10(x);
+end realLog10;
+
+function realCeil
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := ceil(x);
+end realCeil;
+
+function realFloor
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := floor(x);
+end realFloor;
+
+function realSqrt
+  input Real x;
+  output Real y;
+  annotation(Inline = true);
+algorithm
+  y := sqrt(x);
+end realSqrt;
+
+function realLt
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 < x2;
+end realLt;
+
+function realLe
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 <= x2;
+end realLe;
+
+function realEq
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 == x2;
+end realEq;
+
+function realNe
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 <> x2;
+end realNe;
+
+function realGe
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 >= x2;
+end realGe;
+
+function realGt
+  input Real x1;
+  input Real x2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := x1 > x2;
+end realGt;
+
+function realInt
+  input Real r;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := integer(r);
+end realInt;
+
+function realString
+  input Real r;
+  output String str;
+external \"builtin\";
+end realString;
 "
 ;
 
@@ -3169,44 +3446,6 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
-
-        // Real Operations
-        env = Env.extendFrameT(env, "realAdd", realReal2real);
-        env = Env.extendFrameT(env, "realSub", realReal2real);
-        env = Env.extendFrameT(env, "realMul", realReal2real);
-        env = Env.extendFrameT(env, "realDiv", realReal2real);
-        env = Env.extendFrameT(env, "realMod", realReal2real);
-        env = Env.extendFrameT(env, "realPow", realReal2real);
-        env = Env.extendFrameT(env, "realMax", realReal2real);
-        env = Env.extendFrameT(env, "realMin", realReal2real);
-
-        env = Env.extendFrameT(env, "realAbs", real2real);
-        env = Env.extendFrameT(env, "realNeg", real2real);
-        env = Env.extendFrameT(env, "realCos", real2real);
-        env = Env.extendFrameT(env, "realCosh", real2real);
-        env = Env.extendFrameT(env, "realAcos", real2real);
-        env = Env.extendFrameT(env, "realSin", real2real);
-        env = Env.extendFrameT(env, "realSinh", real2real);
-        env = Env.extendFrameT(env, "realAsin", real2real);
-        env = Env.extendFrameT(env, "realAtan", real2real);
-        env = Env.extendFrameT(env, "realAtan2", realReal2real);
-        env = Env.extendFrameT(env, "realTanh", real2real);
-        env = Env.extendFrameT(env, "realExp", real2real);
-        env = Env.extendFrameT(env, "realLn", real2real);
-        env = Env.extendFrameT(env, "realLog10", real2real);
-        env = Env.extendFrameT(env, "realCeil", real2real);
-        env = Env.extendFrameT(env, "realFloor", real2real);
-        env = Env.extendFrameT(env, "realSqrt", real2real);
-
-        env = Env.extendFrameT(env, "realLt", realReal2bool);
-        env = Env.extendFrameT(env, "realLe", realReal2bool);
-        env = Env.extendFrameT(env, "realEq", realReal2bool);
-        env = Env.extendFrameT(env, "realNe", realReal2bool);
-        env = Env.extendFrameT(env, "realGe", realReal2bool);
-        env = Env.extendFrameT(env, "realGt", realReal2bool);
-
-        env = Env.extendFrameT(env, "realInt", real2int);
-        env = Env.extendFrameT(env, "realString", real2string);
 
         // String Character Conversion Operations
         env = Env.extendFrameT(env, "stringCharInt", string2int);
