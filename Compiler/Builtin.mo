@@ -44,14 +44,155 @@ package Builtin
   such as unit, start, etc."
 
 public import Absyn;
-public import SCode;
-public import Env;
-public import RTOpts;
 public import DAE;
+public import Env;
+public import Error;
+public import RTOpts;
+public import SCode;
 
 // protected imports
 protected import ClassInf;
+protected import Parser;
+protected import SCodeUtil;
+protected import Util;
 protected import Values;
+
+protected constant String initialFunctionStr =
+"
+function der \"type for builtin operator der has unit type parameter to be able to express that
+derivative of expression means an addition of 1/s on the unit dimension\"
+  input Real x(unit=\"'p\");
+  output Real dx(unit=\"'p/s\");
+external \"builtin\";
+end der;
+
+function ceil
+  input Real x;
+  output Real y;
+external \"builtin\";
+end ceil;
+
+function floor
+  input Real x;
+  output Real y;
+external \"builtin\";
+end floor;
+
+function sqrt
+  input Real x(unit=\"'p\");
+  output Real y(unit=\"'p(1/2)\");
+external \"builtin\";
+end sqrt;
+
+function sin
+  input Real x;
+  output Real y;
+external \"builtin\";
+end sin;
+
+function cos
+  input Real x;
+  output Real y;
+external \"builtin\";
+end cos;
+
+function tan
+  input Real x;
+  output Real y;
+external \"builtin\";
+end tan;
+
+function sinh
+  input Real x;
+  output Real y;
+external \"builtin\";
+end sinh;
+
+function cosh
+  input Real x;
+  output Real y;
+external \"builtin\";
+end cosh;
+
+function tanh
+  input Real x;
+  output Real y;
+external \"builtin\";
+end tanh;
+
+function arcsin
+  input Real x;
+  output Real y;
+external \"builtin\";
+end arcsin;
+
+function arccos
+  input Real x;
+  output Real y;
+external \"builtin\";
+end arccos;
+
+function arctan
+  input Real x;
+  output Real y;
+external \"builtin\";
+end arctan;
+
+function asin
+  input Real x;
+  output Real y;
+external \"builtin\";
+end asin;
+
+function acos
+  input Real x;
+  output Real y;
+external \"builtin\";
+end acos;
+
+function atan
+  input Real x;
+  output Real y;
+external \"builtin\";
+end atan;
+
+function atan2
+  input Real x1;
+  input Real x2;
+  output Real y;
+external \"builtin\";
+end atan2;
+
+function exp
+  input Real x(unit=\"1\");
+  output Real y(unit=\"1\");
+external \"builtin\";
+end exp;
+
+function log
+  input Real x(unit=\"1\");
+  output Real y(unit=\"1\");
+external \"builtin\";
+end log;
+
+function ln
+  input Real x(unit=\"1\");
+  output Real y(unit=\"1\");
+external \"builtin\";
+end ln;
+
+function log10
+  input Real x(unit=\"1\");
+  output Real y(unit=\"1\");
+external \"builtin\";
+end log10;
+
+function print
+  input String str;
+external \"builtin\";
+end print;
+"
+;
 
 // Predefined DAE.Types
 // Real arrays
@@ -277,109 +418,6 @@ protected constant DAE.Type stringIntInt2string=(
               DAE.T_STRING_DEFAULT,
               DAE.NO_INLINE()),
               NONE());
-
-
-/* type for builtin operator der has unit type parameter to be able to express that derivative of expression
- means an addition of 1/s on the unit dimension */
-protected constant DAE.Type derType=(
-          DAE.T_FUNCTION({("x",(DAE.T_REAL(
-          {
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }
-          ),NONE()))},
-          /* Return type*/
-          (DAE.T_REAL({
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type dimesionlessReal2DimensionlessReal=(
-          DAE.T_FUNCTION({("x",(DAE.T_REAL(
-          {
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }
-          ),NONE()))},
-          /* Return type*/
-          (DAE.T_REAL({
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type sqrtint2real=(
-          DAE.T_FUNCTION({("x",(DAE.T_INTEGER(
-          {
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }
-          ),NONE()))},
-          /* Return type*/
-          (DAE.T_REAL({
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type sqrtreal2real=(
-          DAE.T_FUNCTION({("x",(DAE.T_REAL(
-          {
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }
-          ),NONE()))},
-          /* Return type*/
-          (DAE.T_REAL({
-            DAE.TYPES_VAR(
-              "unit",
-              DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-              false,
-              DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
-              NONE()
-              )
-          }),NONE()),DAE.NO_INLINE()),NONE());
 
 protected constant DAE.Type real2real=(
           DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
@@ -2444,10 +2482,12 @@ public function initialEnv "function: initialEnv
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;
-  list<Env.Frame> envb;
+  list<Env.Frame> env;
   Env.Cache cache;
 algorithm
   (outCache,env) := matchcontinue(inCache)
+    local
+      list<Absyn.Class> initialClasses;
 
   	// First look for cached version
     case (cache) equation
@@ -2478,7 +2518,6 @@ algorithm
       env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "edge", bool2bool);
-      env = Env.extendFrameT(env, "der", derType);
       /* Removed due to handling in static.mo
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2Real);
@@ -2489,34 +2528,15 @@ algorithm
       env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);
       env = Env.extendFrameT(env, "rem", intInt2int);
-      env = Env.extendFrameT(env, "ceil", real2real);
-      envb = Env.extendFrameT(env, "floor", real2real);
-      env = Env.extendFrameT(envb, "boolean", bool2bool);
-      env = Env.extendFrameT(envb, "boolean", real2bool);
-      env = Env.extendFrameT(envb, "boolean", int2bool);
-      env = Env.extendFrameT(envb, "integer", real2int);
+      env = Env.extendFrameT(env, "boolean", bool2bool);
+      env = Env.extendFrameT(env, "boolean", real2bool);
+      env = Env.extendFrameT(env, "boolean", int2bool);
+      env = Env.extendFrameT(env, "integer", real2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
       env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
       env = Env.extendFrameT(env, "sign", real2real);
-      env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
-      env = Env.extendFrameT(env, "cos", real2real);
-      env = Env.extendFrameT(env, "tan", real2real);
-      env = Env.extendFrameT(env, "tanh", real2real);
-      env = Env.extendFrameT(env, "sinh", real2real);
-      env = Env.extendFrameT(env, "cosh", real2real);
-      env = Env.extendFrameT(env, "arcsin", real2real);
-      env = Env.extendFrameT(env, "arccos", real2real);
-      env = Env.extendFrameT(env, "arctan", real2real);
-      env = Env.extendFrameT(env, "asin", real2real);
-      env = Env.extendFrameT(env, "acos", real2real);
-      env = Env.extendFrameT(env, "atan", real2real);
-      env = Env.extendFrameT(env, "atan2", realReal2real);
       env = Env.extendFrameT(env, "substring", stringIntInt2string);
-      env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
-      env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
-      env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);
-      env = Env.extendFrameT(env, "log10", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ndims", array1dimint2int) "PR. Add the built in array functions here. Also do it for real, string and bool" ;
       env = Env.extendFrameT(env, "ndims", array2dimint2int);
       env = Env.extendFrameT(env, "ndims", array3dimint2int);
@@ -2920,8 +2940,6 @@ algorithm
       env = Env.extendFrameT(env, "cross", array3dimrealArray3dimreal2array3dimreal);
       env = Env.extendFrameT(env, "skew", array1dimint2array3dimint);
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
-      env = Env.extendFrameT(env, "sqrt", sqrtint2real);
-      env = Env.extendFrameT(env, "sqrt", sqrtreal2real);
       env = Env.extendFrameT(env, "mod", realReal2real);
       env = Env.extendFrameT(env, "mod", intInt2int);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
@@ -2936,8 +2954,11 @@ algorithm
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
 
       env = Env.extendFrameT(env, "classDirectory", void2string);
-      env = Env.extendFrameT(env, "print", string2void) "MetaModelica extension added by default; useful for debugging";
       env = initialEnvMetaModelica(env);
+      
+      Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
+      env = Env.extendFrameClasses(env, listReverse(Util.listFold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
+      
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;
@@ -3090,6 +3111,27 @@ algorithm
     case env then env;
   end matchcontinue;
 end initialEnvMetaModelica;
+
+protected constant Integer memoryIndex = 3;
+
+public function getInitialFunctions
+  output Absyn.Program initialProgram;
+algorithm
+  initialProgram := matchcontinue ()
+    local
+      String msg;
+    /*case ()
+      equation
+        initialProgram = getGlobalRoot...
+      then initialProgram;*/
+    case ()
+      equation
+        (initialProgram,msg) = Parser.parsestring(initialFunctionStr);
+        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
+        //setGlobalRoot...
+      then initialProgram;
+  end matchcontinue;
+end getInitialFunctions;
 
 end Builtin;
 

@@ -49,6 +49,7 @@ public import Absyn;
 public import RTOpts;
 public import SCode;
 
+protected import Builtin;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -77,6 +78,7 @@ algorithm
       SCode.Program sp;
       InstanceHierarchy.InstanceHierarchy ih;
       Boolean hasExpandableConnectors;
+      list<Absyn.Class> inClasses,initialClasses;
 
     case (inProgram)
       equation
@@ -84,13 +86,17 @@ algorithm
         setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());        
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
-        inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
+        Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
 
+        Absyn.PROGRAM(classes=initialClasses) = Builtin.getInitialFunctions();
+        
         // set the external flag that signals the presence of inner/outer components in the model
         System.setHasInnerOuterDefinitions(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
-        sp = translate2(inProgram);
+        sp = Util.listFold(inClasses, translate2, {});
+        sp = Util.listFold(initialClasses, translate2, sp);
+        sp = listReverse(sp);
         //sp = SCodeFlatten.flatten(sp);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
@@ -101,43 +107,16 @@ algorithm
   end matchcontinue;
 end translateAbsyn2SCode;
 
-protected function translate2
-"function: translate2
-  This function takes an Absyn.Program
-  and constructs a SCode.Program from it."
-  input Absyn.Program inProgram;
-  output SCode.Program outProgram;
+public function translate2
+"Folds an Absyn.Program into SCode.Program."
+  input Absyn.Class inClass;
+  input SCode.Program acc;
+  output SCode.Program outAcc;
+protected
+  SCode.Class cl;
 algorithm
-  outProgram := matchcontinue (inProgram)
-    local
-      SCode.Class c_1;
-      SCode.Program cs_1;
-      Absyn.Class c;
-      list<Absyn.Class> cs,cs2;
-      Absyn.Within w;
-      Absyn.Program p;
-      Absyn.TimeStamp ts;
-
-    case (Absyn.PROGRAM(classes = {})) then {};
-    case (Absyn.PROGRAM(classes = (c :: cs),within_ = w,globalBuildTimes=ts))
-      equation
-        c_1 = translateClass(c);
-        /* MetaModelica extension. x07simbj */
-        //cs2 = MetaUtil.createMetaClasses(c); /*Find the records in the union type and extend the ast
-                                                //with the records as metarecords.
-                                            //  */
-        //cs = listAppend(cs2,cs);
-        /* */
-        cs_1 = translate2(Absyn.PROGRAM(cs,w,ts));
-      then
-        (c_1 :: cs_1);
-
-    case (p)
-      equation
-        Debug.fprint("failtrace", "-SCodeUtil.translateAbsyn2SCode2 failed\n");
-      then
-        fail();
-  end matchcontinue;
+  cl := translateClass(inClass);
+  outAcc := cl :: acc;
 end translate2;
 
 public function translateClass
