@@ -2787,6 +2787,7 @@ template functionHeader(Function fn, Boolean inFunc)
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
+    case EXTERNAL_FUNCTION(language="builtin") then '#define <%underscorePath(name)%> <%extName%><%\n%>'
     case EXTERNAL_FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
@@ -2973,7 +2974,7 @@ template extFunctionName(String name, String language)
   match language
   case "C" then '<%name%>'
   case "FORTRAN 77" then '<%name%>_'
-  else "UNSUPPORTED_LANGUAGE"
+  else '<%\n%>#error "UNSUPPORTED_LANGUAGE: <%language%>"<%\n%>'
 end extFunctionName;
 
 template extFunDefArgs(list<SimExtArg> args, String language)
@@ -2981,7 +2982,7 @@ template extFunDefArgs(list<SimExtArg> args, String language)
   match language
   case "C" then (args |> arg => extFunDefArg(arg) ;separator=", ")
   case "FORTRAN 77" then (args |> arg => extFunDefArgF77(arg) ;separator=", ")
-  else "UNSUPPORTED_LANGUAGE"
+  else '<%\n%>#error "UNSUPPORTED_LANGUAGE: <%language%>"<%\n%>'
 end extFunDefArgs;
 
 template extReturnType(SimExtArg extArg)
@@ -3142,7 +3143,7 @@ case FUNCTION(__) then
     MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%if outVars then (outVars |> var hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    <%if outVars then (outVars |> var hasindex i1 from 1 => writeOutVar(var, i1, "C") ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
   >>
@@ -3156,10 +3157,10 @@ template functionBodyExternalFunction(Function fn, Boolean inFunc)
  "Generates the body for an external function (just a wrapper)."
 ::=
 match fn
-case EXTERNAL_FUNCTION(__) then
+case efn as EXTERNAL_FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = if outVars then '<%fname%>_rettype' else "void"
+  let retType = if outVars then (match language case "builtin" then '<%efn.extName%>_rettype' else '<%fname%>_rettype') else "void"
   let &preExp = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
   // make sure the variable is named "out", doh!
@@ -3171,7 +3172,7 @@ case EXTERNAL_FUNCTION(__) then
       varInit(var, retVar, i1, &varDecls /*BUFD*/, &outputAlloc /*BUFC*/)
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
-  <<
+  let fnBody = <<
   <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>' ;separator=", "%>)
   {
     <%varDecls%>
@@ -3182,6 +3183,9 @@ case EXTERNAL_FUNCTION(__) then
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     return <%if outVars then retVar%>;
   }
+  >>
+  <<
+  <%match language case "builtin" then "" else fnBody%>
 
   <% if inFunc then
   <<
@@ -3190,8 +3194,8 @@ case EXTERNAL_FUNCTION(__) then
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
-    out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
-    <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n"%>
+    out = <% match language case "builtin" then "" else "_" %><%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
+    <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1, language) ;separator="\n"%>
     return 0;
   }
   >> %>
@@ -3439,7 +3443,7 @@ case ET_COMPLEX(varLst=vl) then
 end readInVarRecordMembers;
 
 
-template writeOutVar(Variable var, Integer index)
+template writeOutVar(Variable var, Integer index, String language)
  "Generates code for writing a variable to outVar."
 
 ::=
@@ -3450,7 +3454,7 @@ template writeOutVar(Variable var, Integer index)
     >>
   case VARIABLE(__) then
     <<
-    write_<%varType(var)%>(outVar, &out.targ<%index%>);
+    write_<%varType(var)%>(outVar, &out<%match language case "builtin" then "" else '.targ<%index%>'%>);
     >>
 end writeOutVar;
 

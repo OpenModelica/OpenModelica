@@ -1315,7 +1315,8 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;      
-      DAE.InlineType inlineType;      
+      DAE.InlineType inlineType;
+      String lang;
     
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
       equation
@@ -1332,12 +1333,16 @@ algorithm
       then
         ();
       
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts)::_),type_ = t)
+    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_))
+      then
+        ();
+
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(returnType=lang))::_),type_ = t)
       equation
         fstr = Absyn.pathString(fpath);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         daestr = dumpElementsStr(daeElts);
-        str = stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+        str = stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});
         Print.printBuf(str);
       then
         ();
@@ -3357,7 +3362,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, inlineTypeStr,daestr;
+      String fstr, inlineTypeStr,daestr,lang;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -3379,7 +3384,11 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts)::_),type_ = t), str)
+      case (DAE.FUNCTION(functions=(DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_)), str)
+      then
+        str;
+
+      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(returnType=lang))::_),type_ = t), str)
       equation
         fstr = Absyn.pathString(fpath);
         str = IOStream.append(str, "function ");
@@ -3387,7 +3396,7 @@ algorithm
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
         str = IOStream.append(str, "\n");
         str = dumpElementsStream(daeElts, str);
-        str = IOStream.appendList(str, {"\nexternal \"C\";\nend ",fstr,";\n\n"});        
+        str = IOStream.appendList(str, {"\nexternal \"",lang,"\";\nend ",fstr,";\n\n"});        
       then
         str;
 
