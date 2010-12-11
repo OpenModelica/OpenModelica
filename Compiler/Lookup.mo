@@ -2148,6 +2148,12 @@ algorithm
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
+        (cache,SCode.CLASS(restriction = SCode.R_FUNCTION()),_) = lookupClass(cache,i_env,path,false);
+        // External functions without external declaration have parts. We don't consider them builtin.
+      then (cache,false);
+    case (cache,path)
+      equation
+        (cache,i_env) = Builtin.initialEnv(cache);
         (cache,_::_) = lookupFunctionsInEnv2(cache,i_env,path,true,Absyn.dummyInfo);
       then
         (cache,true);

@@ -44,149 +44,6 @@
 
 extern "C" {
 
-/* Boolean Operations */
-modelica_metatype boxptr_boolAnd(modelica_metatype b1, modelica_metatype b2)
-{
-  return ((b1 != 0) && (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
-}
-
-modelica_metatype boxptr_boolOr(modelica_metatype b1, modelica_metatype b2)
-{
-  return ((b1 != 0) || (b2 != 0) ? mmc_mk_icon(1) : mmc_mk_icon(0));
-}
-
-modelica_metatype boxptr_boolEq(modelica_metatype b1, modelica_metatype b2)
-{
-  return mmc_mk_icon(b1 == b2);
-}
-
-modelica_metatype boxptr_boolNot(modelica_metatype b)
-{
-  return (b == 0 ? mmc_mk_icon(1) : mmc_mk_icon(0));
-}
-
-modelica_metatype boxptr_boolString(modelica_metatype b)
-{
-  return mmc_mk_scon(boolString(b));
-}
-
-/* Integer Operations */
-intAdd_rettype intAdd(modelica_integer i1, modelica_integer i2)
-{
-  return i1+i2;
-}
-
-intSub_rettype intSub(modelica_integer i1, modelica_integer i2)
-{
-  return i1-i2;
-}
-
-intMul_rettype intMul(modelica_integer i1, modelica_integer i2)
-{
-  return i1*i2;
-}
-
-intDiv_rettype intDiv(modelica_integer i1, modelica_integer i2)
-{
-  return i1/i2;
-}
-
-intMod_rettype intMod(modelica_integer i1, modelica_integer i2)
-{
-  return ((unsigned long) i1) % ((unsigned long) i2);
-}
-
-intMax_rettype intMax(modelica_integer i1, modelica_integer i2)
-{
-  return i1 > i2 ? i1 : i2;
-}
-
-intMin_rettype intMin(modelica_integer i1, modelica_integer i2)
-{
-  return i1 < i2 ? i1 : i2;
-}
-
-modelica_metatype boxptr_intAdd(modelica_metatype i1, modelica_metatype i2)
-{
-  return (void*) ((long)i1+(long)i2);
-}
-
-modelica_metatype boxptr_intSub(modelica_metatype i1, modelica_metatype i2)
-{
-  return (void*) ((long)i1-(long)i2);
-}
-
-modelica_metatype boxptr_intMul(modelica_metatype i1, modelica_metatype i2)
-{
-  // Unbox first to avoid overflow
-  return mmc_mk_icon(mmc__unbox__integer(i1)*mmc__unbox__integer(i2));
-}
-
-modelica_metatype boxptr_intDiv(modelica_metatype i1, modelica_metatype i2)
-{
-  return mmc_mk_icon((long)i1/(long)i2);
-}
-
-modelica_metatype boxptr_intMod(modelica_metatype i1, modelica_metatype i2)
-{
-  return (void*) ((unsigned long)i1%(unsigned long)i2);
-}
-
-modelica_metatype boxptr_intMax(modelica_metatype i1, modelica_metatype i2)
-{
-  return i1 > i2 ? i1 : i2;
-}
-
-modelica_metatype boxptr_intMin(modelica_metatype i1, modelica_metatype i2)
-{
-  return i1 < i2 ? i1 : i2;
-}
-
-intLt_rettype intLt(modelica_integer i1, modelica_integer i2)
-{
-  return i1 < i2;
-}
-
-intLe_rettype intLe(modelica_integer i1, modelica_integer i2)
-{
-  return i1 <= i2;
-}
-
-intEq_rettype intEq(modelica_integer i1, modelica_integer i2)
-{
-  return i1 == i2;
-}
-
-intNe_rettype intNe(modelica_integer i1, modelica_integer i2)
-{
-  return i1 != i2;
-}
-
-intGe_rettype intGe(modelica_integer i1, modelica_integer i2)
-{
-  return i1 >= i2;
-}
-
-intGt_rettype intGt(modelica_integer i1, modelica_integer i2)
-{
-  return i1 > i2;
-}
-
-intAbs_rettype intAbs(modelica_integer i)
-{
-  return abs(i);
-}
-
-intNeg_rettype intNeg(modelica_integer i)
-{
-  return -i;
-}
-
-intReal_rettype intReal(modelica_integer i)
-{
-  return (modelica_real) i;
-}
-
 intString_rettype intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
@@ -195,39 +52,12 @@ intString_rettype intString(modelica_integer i)
   return strdup(buffer);
 }
 
-modelica_metatype boxptr_intEq(modelica_metatype i1, modelica_metatype i2)
-{
-  return mmc_mk_bcon(i1 == i2);
-}
-
-modelica_metatype boxptr_intLt(modelica_metatype i1, modelica_metatype i2)
-{
-  return mmc_mk_bcon(i1 < i2);
-}
-
-modelica_metatype boxptr_intGt(modelica_metatype i1, modelica_metatype i2)
-{
-  return mmc_mk_bcon(i1 > i2);
-}
-
-modelica_metatype boxptr_intAbs(modelica_metatype i)
-{
-  return mmc_mk_icon(abs(mmc__unbox__integer(i)));
-}
-
-modelica_metatype boxptr_intNeg(modelica_metatype i)
-{
-  return mmc_mk_icon(-(mmc__unbox__integer(i)));
-}
-
-modelica_metatype boxptr_intReal(modelica_metatype i)
-{
-  return mmc_mk_rcon(mmc__unbox__integer(i));
-}
-
 modelica_metatype boxptr_intString(modelica_metatype i)
 {
-  return mmc_mk_scon(intString(mmc__unbox__integer(i)));
+  char *buf = (char*) intString(mmc__unbox__integer(i));
+  void *res = mmc_mk_scon(buf);
+  free(buf);
+  return res;
 }
 
 /* String Character Conversion */

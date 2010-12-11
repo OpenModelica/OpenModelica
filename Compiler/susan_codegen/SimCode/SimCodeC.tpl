@@ -3200,7 +3200,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   }
   >> %>
   
-  <%boxedFn%>
+  <%match language case "builtin" then "" else boxedFn%>
   >>
 end functionBodyExternalFunction;
 
@@ -4943,6 +4943,18 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     'fabs(<%var1%>)'
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="div"), expLst={e1,e2}, ty = ET_INT()) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'ldiv(<%var1%>,<%var2%>).quot'
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="div"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'trunc(<%var1%>/<%var2%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={array}) then

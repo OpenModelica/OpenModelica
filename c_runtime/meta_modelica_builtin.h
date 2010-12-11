@@ -43,80 +43,8 @@
 extern "C" {
 #endif
 
-/* Boolean Operations */
-typedef modelica_boolean boolAnd_rettype;
-typedef modelica_boolean boolOr_rettype;
-typedef modelica_boolean boolNot_rettype;
-typedef modelica_boolean boolEq_rettype;
-typedef modelica_string boolString_rettype;
-
-#define boolAnd(X,Y) ((X) && (Y))
-#define boolOr(X,Y) ((X) || (Y))
-#define boolEq(X,Y) ((X) == (Y))
-#define boolNot(X) (!(X))
-#define boolString(X) ((char*)((X) ? "true" : "false"))
-
-modelica_metatype boxptr_boolAnd(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_boolOr(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_boolEq(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_boolNot(modelica_metatype);
-modelica_metatype boxptr_boolString(modelica_metatype);
-
-/* Integer Operations */
-typedef modelica_integer intAdd_rettype;
-typedef modelica_integer intSub_rettype;
-typedef modelica_integer intMul_rettype;
-typedef modelica_integer intDiv_rettype;
-typedef modelica_integer intMod_rettype;
-typedef modelica_integer intMax_rettype;
-typedef modelica_integer intMin_rettype;
-
-intAdd_rettype intAdd(modelica_integer, modelica_integer);
-intSub_rettype intSub(modelica_integer, modelica_integer);
-intMul_rettype intMul(modelica_integer, modelica_integer);
-intDiv_rettype intDiv(modelica_integer, modelica_integer);
-intMod_rettype intMod(modelica_integer, modelica_integer);
-intMax_rettype intMax(modelica_integer, modelica_integer);
-intMin_rettype intMin(modelica_integer, modelica_integer);
-
-modelica_metatype boxptr_intAdd(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intSub(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intMul(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intDiv(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intMod(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intMax(modelica_metatype, modelica_metatype);
-modelica_metatype boxptr_intMin(modelica_metatype, modelica_metatype);
-
-typedef modelica_boolean intLt_rettype;
-typedef modelica_boolean intLe_rettype;
-typedef modelica_boolean intEq_rettype;
-typedef modelica_boolean intNe_rettype;
-typedef modelica_boolean intGe_rettype;
-typedef modelica_boolean intGt_rettype;
-
-intLt_rettype intLt(modelica_integer, modelica_integer);
-intLe_rettype intLe(modelica_integer, modelica_integer);
-intEq_rettype intEq(modelica_integer, modelica_integer);
-intNe_rettype intNe(modelica_integer, modelica_integer);
-intGe_rettype intGe(modelica_integer, modelica_integer);
-intGt_rettype intGt(modelica_integer, modelica_integer);
-
-typedef modelica_integer intAbs_rettype;
-typedef modelica_integer intNeg_rettype;
-typedef modelica_real intReal_rettype;
 typedef modelica_string intString_rettype;
-
-intAbs_rettype intAbs(modelica_integer);
-intNeg_rettype intNeg(modelica_integer);
-intReal_rettype intReal(modelica_integer);
 intString_rettype intString(modelica_integer);
-
-modelica_metatype boxptr_intEq(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_intLt(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_intGt(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_intAbs(modelica_metatype);
-modelica_metatype boxptr_intNeg(modelica_metatype);
-modelica_metatype boxptr_intReal(modelica_metatype);
 modelica_metatype boxptr_intString(modelica_metatype);
 
 /* String Character Conversion */

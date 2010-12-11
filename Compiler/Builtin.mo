@@ -194,6 +194,201 @@ end print;
 "
 ;
 
+protected constant String initialFunctionStrMM =
+"
+function boolAnd
+  input Boolean b1;
+  input Boolean b2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := b1 and b2;
+end boolAnd;
+
+function boolOr
+  input Boolean b1;
+  input Boolean b2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := b1 or b2;
+end boolOr;
+
+function boolNot
+  input Boolean b;
+  output Boolean nb;
+  annotation(Inline = true);
+algorithm
+  nb := not b;
+end boolNot;
+
+function boolEq
+  input Boolean b1;
+  input Boolean b2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := b1 == b2;
+end boolEq;
+
+function boolString
+  input Boolean b;
+  output String str;
+  annotation(Inline = true);
+algorithm
+  str := if b then \"true\" else \"false\";
+end boolString;
+
+function intAdd
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := i1 + i2;
+end intAdd;
+
+function intSub
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := i1 - i2;
+end intSub;
+
+function intMul
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := i1 * i2;
+end intMul;
+
+function intDiv
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := div(i1,i2);
+end intDiv;
+
+function intMod
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := mod(i1,i2);
+end intMod;
+
+function intMax
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := max(i1,i2);
+end intMax;
+
+function intMin
+  input Integer i1;
+  input Integer i2;
+  output Integer i;
+  annotation(Inline = true);
+algorithm
+  i := min(i1,i2);
+end intMin;
+
+function intAbs
+  input Integer i;
+  output Integer oi;
+  annotation(Inline = true);
+algorithm
+  oi := abs(i);
+end intAbs;
+
+function intNeg
+  input Integer i;
+  output Integer oi;
+  annotation(Inline = true);
+algorithm
+  oi := -i;
+end intNeg;
+
+function intLt
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 < i2;
+end intLt;
+
+function intLe
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 <= i2;
+end intLe;
+
+function intEq
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 == i2;
+end intEq;
+
+function intNe
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 <> i2;
+end intNe;
+
+function intGe
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 >= i2;
+end intGe;
+
+function intGt
+  input Integer i1;
+  input Integer i2;
+  output Boolean b;
+  annotation(Inline = true);
+algorithm
+  b := i1 > i2;
+end intGt;
+
+function intReal
+  input Integer i;
+  output Real r;
+  annotation(Inline = true);
+algorithm
+  r := i;
+end intReal;
+
+function intString
+  input Integer i;
+  output String s;
+  external \"builtin\";
+end intString;
+
+"
+;
+
 // Predefined DAE.Types
 // Real arrays
 protected constant DAE.Type T_REAL_ARRAY_DEFAULT =
@@ -2482,7 +2677,6 @@ public function initialEnv "function: initialEnv
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;
-  list<Env.Frame> env;
   Env.Cache cache;
 algorithm
   (outCache,env) := matchcontinue(inCache)
@@ -2976,35 +3170,6 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
 
-        // Boolean Operations
-        env = Env.extendFrameT(env, "boolAnd", boolBool2bool);
-        env = Env.extendFrameT(env, "boolOr", boolBool2bool);
-        env = Env.extendFrameT(env, "boolNot", bool2bool);
-        env = Env.extendFrameT(env, "boolEq", boolBool2bool);
-        env = Env.extendFrameT(env, "boolString", bool2string);
-
-        // Integer Operations
-        env = Env.extendFrameT(env, "intAdd", intInt2int);
-        env = Env.extendFrameT(env, "intSub", intInt2int);
-        env = Env.extendFrameT(env, "intMul", intInt2int);
-        env = Env.extendFrameT(env, "intDiv", intInt2int);
-        env = Env.extendFrameT(env, "intMod", intInt2int);
-        env = Env.extendFrameT(env, "intMax", intInt2int);
-        env = Env.extendFrameT(env, "intMin", intInt2int);
-
-        env = Env.extendFrameT(env, "intAbs", int2int);
-        env = Env.extendFrameT(env, "intNeg", int2int);
-
-        env = Env.extendFrameT(env, "intLt", intInt2bool);
-        env = Env.extendFrameT(env, "intLe", intInt2bool);
-        env = Env.extendFrameT(env, "intEq", intInt2bool);
-        env = Env.extendFrameT(env, "intNe", intInt2bool);
-        env = Env.extendFrameT(env, "intGe", intInt2bool);
-        env = Env.extendFrameT(env, "intGt", intInt2bool);
-
-        env = Env.extendFrameT(env, "intReal", int2real);
-        env = Env.extendFrameT(env, "intString", int2string);
-
         // Real Operations
         env = Env.extendFrameT(env, "realAdd", realReal2real);
         env = Env.extendFrameT(env, "realSub", realReal2real);
@@ -3126,7 +3291,15 @@ algorithm
       then initialProgram;*/
     case ()
       equation
+        false = RTOpts.acceptMetaModelicaGrammar();
         (initialProgram,msg) = Parser.parsestring(initialFunctionStr);
+        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
+        //setGlobalRoot...
+      then initialProgram;
+    case ()
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (initialProgram,msg) = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM);
         Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
         //setGlobalRoot...
       then initialProgram;
