@@ -44,10 +44,12 @@ class ModelicaEditor : public QTextEdit
 public:
     ModelicaEditor(ProjectTab *pParent = 0);
     QString getModelName();
+    bool validateModelicaText();
     void findText(const QString &text, bool forward);
 
     ProjectTab *mpParentProjectTab;
     QString mLastValidText;
+    QString mErrorString;
     QWidget *mpFindWidget;
     QLabel *mpSearchLabelImage;
     QLabel *mpSearchLabel;
@@ -64,8 +66,6 @@ public slots:
     void updateButtons();
     void findNextText();
     void findPreviuosText();
-protected:
-    virtual void focusOutEvent(QFocusEvent *e);
 };
 
 class ModelicaTextSettings;

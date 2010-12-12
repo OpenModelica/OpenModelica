@@ -85,11 +85,14 @@ public:
     GraphicsView(int iconType, ProjectTab *parent = 0);
     void addComponentObject(Component *icon);
     void deleteComponentObject(Component *icon);
+    void deleteAllComponentObjects();
     Component* getComponentObject(QString componentName);
     QString getUniqueComponentName(QString iconName, int number = 1);
     bool checkComponentName(QString iconName);
     void addShapeObject(ShapeAnnotation *shape);
     void deleteShapeObject(ShapeAnnotation *shape);
+    void deleteAllShapesObject();
+    void removeAllConnectors();
 
     QList<Component*> mComponentsList;
     QList<ShapeAnnotation*> mShapesList;
@@ -145,16 +148,6 @@ protected:
     virtual void contextMenuEvent(QContextMenuEvent *event);
 };
 
-//class GraphicsViewScroll : public QScrollArea
-//{
-//public:
-//    GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent = 0);
-
-//    GraphicsView *mpGraphicsView;
-//protected:
-//    virtual void scrollContentsBy(int dx, int dy);
-//};
-
 class ProjectTabWidget; //Forward declaration
 class ModelicaEditor;
 class ModelicaTextHighlighter;
@@ -190,6 +183,7 @@ public:
     bool isChild();
     void setModelFilePathLabel(QString filePath);
     QString getModelicaTypeLabel();
+    QToolButton* getModelicaTextToolButton();
 
     ProjectTabWidget *mpParentProjectTabWidget;
     GraphicsView *mpGraphicsView;

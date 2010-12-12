@@ -92,13 +92,13 @@ QString GUIMessages::getMessage(int type)
     case MODEL_ALREADY_EXISTS:
         return "%1 %2 already exits %3.";
     case ITEM_ALREADY_EXISTS:
-        return "An item with the same name alresady exists. Please try some other name.";
+        return "An item with the same name already exists. Please try some other name.";
     case OPEN_MODELICA_HOME_NOT_FOUND:
         return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
     case ERROR_OCCURRED:
-        return "Following Error has occurred. \n\n %1.";
+        return "Following Error has occurred. \n\n%1";
     case ERROR_IN_MODELICA_TEXT:
-        return "Following Errors are found in Modelica Text. \n\n %1.";
+        return "Following Errors are found in Modelica Text. \n\n%1";
     case UNDO_OR_FIX_ERRORS:
         return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
     case NO_OPEN_MODELICA_KEYWORDS:

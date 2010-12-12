@@ -255,6 +255,14 @@ void GraphicsView::deleteComponentObject(Component *component)
     mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(component->getName(), mpParentProjectTab->mModelNameStructure);
 }
 
+void GraphicsView::deleteAllComponentObjects()
+{
+    foreach (Component *component, mComponentsList)
+    {
+        component->deleteMe();
+    }
+}
+
 Component* GraphicsView::getComponentObject(QString componentName)
 {
     foreach (Component *component, mComponentsList)
@@ -302,6 +310,24 @@ void GraphicsView::addShapeObject(ShapeAnnotation *shape)
 void GraphicsView::deleteShapeObject(ShapeAnnotation *shape)
 {
     mShapesList.removeOne(shape);
+}
+
+void GraphicsView::deleteAllShapesObject()
+{
+    foreach (ShapeAnnotation *shape, mShapesList)
+    {
+        shape->deleteMe();
+    }
+}
+
+void GraphicsView::removeAllConnectors()
+{
+    int i = 0;
+    while(i != mConnectorsVector.size())
+    {
+        this->removeConnector(mConnectorsVector[i]);
+        i = 0;   //Restart iteration if map has changed
+    }
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
@@ -772,11 +798,11 @@ void GraphicsView::removeConnector(Connector* pConnector)
         QString endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
 
         if (pMainWindow->mpOMCProxy->deleteConnection(startComponentName + "." + startIconCompName,
-                                                      endComponentName + "." + endIconCompName,
-                                                      mpParentProjectTab->mModelNameStructure))
+                                                       endComponentName + "." + endIconCompName,
+                                                       mpParentProjectTab->mModelNameStructure))
         {
-            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconncted: (" + startComponentName + "." + startIconCompName +
-                                                              ", " + endComponentName + "." + endIconCompName + ")");
+//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconncted: (" + startComponentName + "." + startIconCompName +
+//                                                              ", " + endComponentName + "." + endIconCompName + ")");
         }
         else
         {
@@ -1116,6 +1142,16 @@ void ProjectTab::showDiagramView(bool checked)
 {
     if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
         return;
+
+    // if user has changed from Modelica Text View
+    // if some errors in Modelica Text View then show Modelica Text View again
+    if (!mpModelicaEditor->validateModelicaText())
+    {
+        showModelicaTextView(true);
+        mpModelicaTextToolButton->setChecked(true);
+        return;
+    }
+
     // Enable the main window
     emit disableMainWindow(false);
     mpModelicaEditorWidget->hide();
@@ -1128,6 +1164,16 @@ void ProjectTab::showIconView(bool checked)
 {
     if (!checked or (checked and mpGraphicsView->isVisible()))
         return;
+
+    // if user has changed from Modelica Text View
+    // if some errors in Modelica Text View then show Modelica Text View again
+    if (!mpModelicaEditor->validateModelicaText())
+    {
+        showModelicaTextView(true);
+        mpModelicaTextToolButton->setChecked(true);
+        return;
+    }
+
     // Enable the main window
     emit disableMainWindow(false);
     mpModelicaEditorWidget->hide();
@@ -1164,28 +1210,34 @@ bool ProjectTab::loadModelFromText(QString modelName)
         modelNameStructure = StringHandler::removeLastWordAfterDot(mModelNameStructure)
                              .append(".").append(modelName);
         // if model with this name already exists
-        if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+        if (mModelNameStructure.compare(modelNameStructure) != 0)
         {
-            return loadSubModel(modelName);
-        }
-        else
-        {
-            pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
-            return false;
+            if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+            {
+                return loadSubModel(modelName);
+            }
+            else
+            {
+                pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+                return false;
+            }
         }
     }
     // if a model is a root model then
     else
     {
         modelNameStructure = modelName;
-        if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+        if (mModelNameStructure.compare(modelNameStructure) != 0)
         {
-            return loadRootModel(mpModelicaEditor->toPlainText());
-        }
-        else
-        {
-            pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
-            return false;
+            if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+            {
+                return loadRootModel(mpModelicaEditor->toPlainText());
+            }
+            else
+            {
+                pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+                return false;
+            }
         }
     }
 }
@@ -1208,14 +1260,14 @@ bool ProjectTab::loadSubModel(QString model)
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     // if model text is fine then
-//    if (pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure), model))
-//    {
-        updateModel(model);
+    if (pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure), model))
+    {
+        updateModel(StringHandler::getFirstWordBeforeDot(StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult())));
         return true;
-//    }
-//    // if there is some error in model then dont accept it
-//    else
-//        return false;
+    }
+    // if there is some error in model then dont accept it
+    else
+        return false;
 }
 
 //! Gets the components of the model and place them in the GraphicsView.
@@ -1396,8 +1448,12 @@ QString ProjectTab::getModelicaTypeLabel()
     return mpModelicaTypeLabel->text();
 }
 
+QToolButton* ProjectTab::getModelicaTextToolButton()
+{
+    return mpModelicaTextToolButton;
+}
+
 //! Notifies the model that its corresponding text has changed.
-//! @see loadModelFromText(QString name)
 //! @see loadRootModel(QString model)
 //! @see loadSubModel(QString model)
 //! @see updateModel(QString name)
@@ -1407,14 +1463,99 @@ bool ProjectTab::ModelicaEditorTextChanged()
     QString modelName = mpModelicaEditor->getModelName();
     if (!modelName.isEmpty())
     {
-        if (loadModelFromText(modelName))
-            return true;
+        QString modelNameStructure;
+        // if a model is a sub model then
+        if (mModelNameStructure.contains("."))
+        {
+            modelNameStructure = StringHandler::removeLastWordAfterDot(mModelNameStructure)
+                                 .append(".").append(modelName);
+            // if model with this name already exists
+            if (mModelNameStructure.compare(modelNameStructure) != 0)
+            {
+                if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+                {
+                    if (!loadSubModel(mpModelicaEditor->toPlainText()))
+                        return false;
+                }
+                else
+                {
+                    pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+                    return false;
+                }
+            }
+            if (pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure),
+                                                        mpModelicaEditor->toPlainText()))
+            {
+                // clear the complete view before loading the models again
+                mpDiagramGraphicsView->removeAllConnectors();
+                mpDiagramGraphicsView->deleteAllComponentObjects();
+                mpDiagramGraphicsView->deleteAllShapesObject();
+                mpGraphicsView->removeAllConnectors();
+                mpGraphicsView->deleteAllComponentObjects();
+                mpGraphicsView->deleteAllShapesObject();
+                // load model again so that we have models and connectors correctly.
+                pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure),
+                                                        mpModelicaEditor->toPlainText());
+                // get the model components and connectors now
+                getModelComponents();
+                getModelConnections();
+                // change the modelica tree node type accordingly
+                ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
+                node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
+                node->setIcon(0, node->getModelicaNodeIcon(node->mType));
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        // if a model is a root model then
         else
-            return false;
+        {
+            modelNameStructure = modelName;
+            if (mModelNameStructure.compare(modelNameStructure) != 0)
+            {
+                if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
+                {
+                    if (!loadRootModel(mpModelicaEditor->toPlainText()))
+                        return false;
+                }
+                else
+                {
+                    pMainWindow->mpOMCProxy->setResult(GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS));
+                    return false;
+                }
+            }
+            if (pMainWindow->mpOMCProxy->saveModifiedModel(mpModelicaEditor->toPlainText()))
+            {
+                // clear the complete view before loading the models again
+                mpDiagramGraphicsView->removeAllConnectors();
+                mpDiagramGraphicsView->deleteAllComponentObjects();
+                mpDiagramGraphicsView->deleteAllShapesObject();
+                mpGraphicsView->removeAllConnectors();
+                mpGraphicsView->deleteAllComponentObjects();
+                mpGraphicsView->deleteAllShapesObject();
+                // load model again so that we have models and connectors correctly.
+                pMainWindow->mpOMCProxy->saveModifiedModel(mpModelicaEditor->toPlainText());
+                // get the model components and connectors now
+                getModelComponents();
+                getModelConnections();
+                // change the modelica tree node type accordingly
+                ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
+                node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
+                node->setIcon(0, node->getModelicaNodeIcon(node->mType));
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
     else
     {
-        pMainWindow->mpOMCProxy->setResult("Unknown error occurred.");
+        pMainWindow->mpOMCProxy->setResult(mpModelicaEditor->mErrorString);
         return false;
     }
 }
@@ -1606,7 +1747,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     Q_UNUSED(column);
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
     ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
-                                        StringHandler::DIAGRAM, true, false, this);
+                                        StringHandler::ICON, true, false, this);
     newTab->mModelName = treeNode->mName;
     newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
@@ -1616,7 +1757,6 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     diagram = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
                             StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
                             newTab->mpGraphicsView);
-
 
     Component *oldIconComponent = mpParentMainWindow->mpLibrary->getComponentObject(newTab->mModelNameStructure);
     Component *newIconComponent;
@@ -1738,7 +1878,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             {
                 QMessageBox::critical(this, Helper::applicationName + " - Error",
                                      GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                     arg(pMainWindow->mpOMCProxy->getResult()), tr("OK"));
+                                     arg(pMainWindow->mpOMCProxy->getErrorString()), tr("OK"));
                 return false;
             }
         }
@@ -1754,7 +1894,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         {
             QMessageBox::critical(this, Helper::applicationName + " - Error",
                                  GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                 arg(pMainWindow->mpOMCProxy->getResult()), tr("OK"));
+                                 arg(pMainWindow->mpOMCProxy->getErrorString()), tr("OK"));
             return false;
         }
     }
