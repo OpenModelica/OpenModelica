@@ -162,7 +162,6 @@ class ProjectTab : public QWidget
 {
     Q_OBJECT
 private:
-    ModelicaEditor *mpModelicaEditor;
     ModelicaTextHighlighter *mpModelicaTextHighlighter;
     QStatusBar *mpProjectStatusBar;
     QButtonGroup *mpViewsButtonGroup;
@@ -197,6 +196,8 @@ public:
     GraphicsScene *mpGraphicsScene;
     GraphicsView *mpDiagramGraphicsView;
     GraphicsScene *mpDiagramGraphicsScene;
+    QWidget *mpModelicaEditorWidget;
+    ModelicaEditor *mpModelicaEditor;
     QString mModelFileName;
     QString mModelName;
     QString mModelNameStructure;
@@ -257,6 +258,8 @@ public slots:
     void updateTabIndexes();
     void enableProjectToolbar();
     void disableProjectToolbar();
+protected:
+    virtual void keyPressEvent(QKeyEvent *event);
 };
 
 #endif // PROJECTTABWIDGET_H

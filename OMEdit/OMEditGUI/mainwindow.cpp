@@ -641,6 +641,7 @@ void MainWindow::disableMainWindow(bool disable)
 {
     menubar->setDisabled(disable);
     fileToolBar->setDisabled(disable);
+    shapesToolBar->setDisabled(disable);
     //editToolBar->setDisabled(disable);
     simulationToolBar->setDisabled(disable);
     viewToolBar->setDisabled(disable);

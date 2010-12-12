@@ -49,5 +49,9 @@
         <file>Resources/icons/line-shape.png</file>
         <file>Resources/icons/rectangle-shape.png</file>
         <file>Resources/icons/polygon-shape.png</file>
+        <file>Resources/icons/search.png</file>
+        <file>Resources/icons/next.png</file>
+        <file>Resources/icons/previous.png</file>
+        <file>Resources/icons/exit.png</file>
     </qresource>
 </RCC>

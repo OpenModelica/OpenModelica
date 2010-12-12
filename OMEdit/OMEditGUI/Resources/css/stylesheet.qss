@@ -26,6 +26,10 @@ QTreeWidget::item {
 QTextEdit, QLineEdit {
     border: 1px solid gray;
 }
+QTextEdit#ModelicaEditor {
+    selection-background-color: #3399FF;
+    selection-color: white;
+}
 
 QGraphicsView {
     border: 1px solid gray;
@@ -43,4 +47,8 @@ QStatusBar#PojectStatusBar::item {
 QStatusBar#PojectStatusBar QLabel {
     margin: 0px;
     padding: 0px 0px 0px 1px;
+}
+
+QPushButton#ModelicaEditorSearchButtons {
+
 }

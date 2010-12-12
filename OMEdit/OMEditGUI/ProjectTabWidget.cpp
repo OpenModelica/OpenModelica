@@ -1025,16 +1025,35 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpProjectStatusBar->addPermanentWidget(mpViewTypeLabel, 10);
     mpProjectStatusBar->addPermanentWidget(mpModelFilePathLabel, 65);
 
+    // create the layout for Modelica Editor
+    QHBoxLayout *modelicaEditorHorizontalLayout = new QHBoxLayout;
+    modelicaEditorHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpSearchLabelImage);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpSearchLabel);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpSearchTextBox);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpPreviuosButton);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpNextButton);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpMatchCaseCheckBox);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpMatchWholeWordCheckBox);
+    modelicaEditorHorizontalLayout->addWidget(mpModelicaEditor->mpCloseButton);
+    mpModelicaEditor->mpFindWidget->setLayout(modelicaEditorHorizontalLayout);
+    QVBoxLayout *modelicaEditorVerticalLayout = new QVBoxLayout;
+    modelicaEditorVerticalLayout->setContentsMargins(0, 0, 0, 0);
+    modelicaEditorVerticalLayout->addWidget(mpModelicaEditor);
+    modelicaEditorVerticalLayout->addWidget(mpModelicaEditor->mpFindWidget);
+    mpModelicaEditorWidget = new QWidget;
+    mpModelicaEditorWidget->setLayout(modelicaEditorVerticalLayout);
+
     QVBoxLayout *tabLayout = new QVBoxLayout;
     tabLayout->setContentsMargins(2, 2, 2, 2);
     tabLayout->addWidget(mpProjectStatusBar);
     tabLayout->addWidget(mpGraphicsView);
     tabLayout->addWidget(mpDiagramGraphicsView);
-    tabLayout->addWidget(mpModelicaEditor);
+    tabLayout->addWidget(mpModelicaEditorWidget);
     setLayout(tabLayout);
 
     // Hide the modelica text view, icon view and show diagram view
-    mpModelicaEditor->hide();
+    mpModelicaEditorWidget->hide();
     mpDiagramGraphicsView->hide();
     mpIconToolButton->setChecked(true);
 
@@ -1099,7 +1118,7 @@ void ProjectTab::showDiagramView(bool checked)
         return;
     // Enable the main window
     emit disableMainWindow(false);
-    mpModelicaEditor->hide();
+    mpModelicaEditorWidget->hide();
     mpGraphicsView->hide();
     mpDiagramGraphicsView->show();
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::DIAGRAM));
@@ -1111,7 +1130,7 @@ void ProjectTab::showIconView(bool checked)
         return;
     // Enable the main window
     emit disableMainWindow(false);
-    mpModelicaEditor->hide();
+    mpModelicaEditorWidget->hide();
     mpDiagramGraphicsView->hide();
     mpGraphicsView->show();
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ICON));
@@ -1119,7 +1138,7 @@ void ProjectTab::showIconView(bool checked)
 
 void ProjectTab::showModelicaTextView(bool checked)
 {
-    if (!checked or (checked and mpModelicaEditor->isVisible()))
+    if (!checked or (checked and mpModelicaEditorWidget->isVisible()))
         return;
     // Disable the main window
     emit disableMainWindow(true);
@@ -1131,7 +1150,8 @@ void ProjectTab::showModelicaTextView(bool checked)
     // get the modelica text of the model
     mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
     mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
-    mpModelicaEditor->show();
+    mpModelicaEditor->setFocus();
+    mpModelicaEditorWidget->show();
 }
 
 bool ProjectTab::loadModelFromText(QString modelName)
@@ -1962,4 +1982,22 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->shapesToolBar->setEnabled(false);
         mToolBarEnabled = false;
     }
+}
+
+void ProjectTabWidget::keyPressEvent(QKeyEvent *event)
+{
+    ProjectTab *pCurrentTab = getCurrentTab();
+    if (!pCurrentTab)
+        return;
+
+    if (!pCurrentTab->mpModelicaEditorWidget->isVisible())
+        return;
+
+    if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_F)
+    {
+        pCurrentTab->mpModelicaEditor->mpFindWidget->show();
+        pCurrentTab->mpModelicaEditor->mpSearchTextBox->setFocus();
+    }
+
+    QTabWidget::keyPressEvent(event);
 }

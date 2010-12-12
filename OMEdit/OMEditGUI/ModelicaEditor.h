@@ -44,11 +44,26 @@ class ModelicaEditor : public QTextEdit
 public:
     ModelicaEditor(ProjectTab *pParent = 0);
     QString getModelName();
+    void findText(const QString &text, bool forward);
 
     ProjectTab *mpParentProjectTab;
     QString mLastValidText;
+    QWidget *mpFindWidget;
+    QLabel *mpSearchLabelImage;
+    QLabel *mpSearchLabel;
+    QLineEdit *mpSearchTextBox;
+    QToolButton *mpPreviuosButton;
+    QToolButton *mpNextButton;
+    QCheckBox *mpMatchCaseCheckBox;
+    QCheckBox *mpMatchWholeWordCheckBox;
+    QToolButton *mpCloseButton;
 signals:
     bool focusOut();
+public slots:
+    void hideFindWidget();
+    void updateButtons();
+    void findNextText();
+    void findPreviuosText();
 protected:
     virtual void focusOutEvent(QFocusEvent *e);
 };
@@ -61,6 +76,8 @@ class ModelicaTextHighlighter : public QSyntaxHighlighter
 public:
     ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent = 0);
     void initializeSettings();
+    void highlightMultiLine(const QString &text, QRegExp &startExpression, QRegExp &endExpression,
+                            QTextCharFormat &format);
 
     ModelicaTextSettings *mpModelicaTextSettings;
 protected:
@@ -73,6 +90,7 @@ private:
     };
     QVector<HighlightingRule> mHighlightingRules;
 
+    QRegExp mQuotesExpression;
     QRegExp mCommentStartExpression;
     QRegExp mCommentEndExpression;
 

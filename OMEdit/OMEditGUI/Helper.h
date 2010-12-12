@@ -102,7 +102,8 @@ public:
         SAVED_MODEL,
         COMMENT_SAVE_ERROR,
         ATTRIBUTES_SAVE_ERROR,
-        CHILD_MODEL_SAVE
+        CHILD_MODEL_SAVE,
+        SEARCH_STRING_NOT_FOUND
     };
 
     static QString getMessage(int type);

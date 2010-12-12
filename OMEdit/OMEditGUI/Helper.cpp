@@ -127,6 +127,8 @@ QString GUIMessages::getMessage(int type)
         return "Following Error has occurred while saving component attributes. \n\n %1.";
     case CHILD_MODEL_SAVE:
         return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
+    case SEARCH_STRING_NOT_FOUND:
+        return "The search string '%1' is not found.";
     default:
         return "";
     }

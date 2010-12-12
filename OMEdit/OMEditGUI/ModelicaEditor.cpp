@@ -40,9 +40,46 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTabStopWidth(Helper::tabWidth);
+    setObjectName(tr("ModelicaEditor"));
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(ModelicaEditorTextChanged()));
+
+    mpFindWidget = new QWidget;
+    mpFindWidget->setContentsMargins(0, 0, 0, 0);
+    mpFindWidget->hide();
+
+    mpSearchLabelImage = new QLabel;
+    mpSearchLabelImage->setPixmap(QPixmap(":/Resources/icons/search.png"));
+    mpSearchLabel = new QLabel(tr("Search"));
+    mpSearchTextBox = new QLineEdit;
+    connect(mpSearchTextBox, SIGNAL(textChanged(QString)), SLOT(updateButtons()));
+    connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(findNextText()));
+
+    mpPreviuosButton = new QToolButton;
+    mpPreviuosButton->setAutoRaise(true);
+    mpPreviuosButton->setText(tr("Previous"));
+    mpPreviuosButton->setIcon(QIcon(":/Resources/icons/previous.png"));
+    mpPreviuosButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    connect(mpPreviuosButton, SIGNAL(clicked()), SLOT(findPreviuosText()));
+
+    mpNextButton = new QToolButton;
+    mpNextButton->setAutoRaise(true);
+    mpNextButton->setText(tr("Next"));
+    mpNextButton->setIcon(QIcon(":/Resources/icons/next.png"));
+    mpNextButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    connect(mpNextButton, SIGNAL(clicked()), SLOT(findNextText()));
+
+    mpMatchCaseCheckBox = new QCheckBox(tr("Match case"));
+    mpMatchWholeWordCheckBox = new QCheckBox(tr("Match whole word"));
+
+    mpCloseButton = new QToolButton;
+    mpCloseButton->setAutoRaise(true);
+    mpCloseButton->setIcon(QIcon(":/Resources/icons/exit.png"));
+    connect(mpCloseButton, SIGNAL(clicked()), SLOT(hideFindWidget()));
+
+    // make previous and next buttons disabled for first time
+    updateButtons();
 }
 
 QString ModelicaEditor::getModelName()
@@ -66,6 +103,74 @@ QString ModelicaEditor::getModelName()
         }
     }
     return QString();
+}
+
+void ModelicaEditor::findText(const QString &text, bool forward)
+{
+    QTextCursor currentTextCursor = textCursor();
+    QTextDocument::FindFlags options;
+
+    if (currentTextCursor.hasSelection())
+    {
+        currentTextCursor.setPosition(forward ? currentTextCursor.position() : currentTextCursor.anchor(),
+                                      QTextCursor::MoveAnchor);
+    }
+
+    if (!forward)
+        options |= QTextDocument::FindBackward;
+
+    if (mpMatchCaseCheckBox->isChecked())
+        options |= QTextDocument::FindCaseSensitively;
+
+    if (mpMatchWholeWordCheckBox->isChecked())
+        options |= QTextDocument::FindWholeWords;
+
+    bool found = true;
+    QTextCursor newTextCursor = document()->find(text, currentTextCursor, options);
+    if (newTextCursor.isNull())
+    {
+        QTextCursor ac(document());
+        ac.movePosition(options & QTextDocument::FindBackward ? QTextCursor::End : QTextCursor::Start);
+        newTextCursor = document()->find(text, ac, options);
+        if (newTextCursor.isNull())
+        {
+            found = false;
+            newTextCursor = currentTextCursor;
+        }
+    }
+    setTextCursor(newTextCursor);
+
+    if (mpSearchTextBox->text().isEmpty())
+        found = true;
+
+    if (!found)
+    {
+        QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow,
+                                 Helper::applicationName + " - Information",
+                                 GUIMessages::getMessage(GUIMessages::SEARCH_STRING_NOT_FOUND).arg(text), "OK");
+    }
+}
+
+void ModelicaEditor::hideFindWidget()
+{
+    mpFindWidget->hide();
+}
+
+void ModelicaEditor::updateButtons()
+{
+    const bool enable = !mpSearchTextBox->text().isEmpty();
+    mpPreviuosButton->setEnabled(enable);
+    mpNextButton->setEnabled(enable);
+}
+
+void ModelicaEditor::findNextText()
+{
+    findText(mpSearchTextBox->text(), true);
+}
+
+void ModelicaEditor::findPreviuosText()
+{
+    findText(mpSearchTextBox->text(), false);
 }
 
 void ModelicaEditor::focusOutEvent(QFocusEvent *e)
@@ -195,8 +300,34 @@ void ModelicaTextHighlighter::initializeSettings()
     rule.mFormat = mQuotationFormat;
     mHighlightingRules.append(rule);
 
+    mQuotesExpression = QRegExp("\"");
     mCommentStartExpression = QRegExp("/\\*");
     mCommentEndExpression = QRegExp("\\*/");
+}
+
+void ModelicaTextHighlighter::highlightMultiLine(const QString &text, QRegExp &startExpression, QRegExp &endExpression,
+                                                 QTextCharFormat &format)
+{
+    int startIndex = 0;
+    if (previousBlockState() != 1)
+        startIndex = startExpression.indexIn(text);
+
+    while (startIndex >= 0)
+    {
+        int endIndex = endExpression.indexIn(text, startIndex);
+        int textLength;
+        if (endIndex == -1)
+        {
+            setCurrentBlockState(1);
+            textLength = text.length() - startIndex;
+        }
+        else
+        {
+            textLength = endIndex - startIndex + endExpression.matchedLength();
+        }
+        setFormat(startIndex, textLength, format);
+        startIndex = startExpression.indexIn(text, startIndex + textLength);
+    }
 }
 
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
@@ -214,27 +345,9 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
         }
     }
     setCurrentBlockState(0);
-
-    int startIndex = 0;
-    if (previousBlockState() != 1)
-    startIndex = mCommentStartExpression.indexIn(text);
-
-    while (startIndex >= 0)
-    {
-        int endIndex = mCommentEndExpression.indexIn(text, startIndex);
-        int commentLength;
-        if (endIndex == -1)
-        {
-            setCurrentBlockState(1);
-            commentLength = text.length() - startIndex;
-        }
-        else
-        {
-            commentLength = endIndex - startIndex + mCommentEndExpression.matchedLength();
-        }
-        setFormat(startIndex, commentLength, mMultiLineCommentFormat);
-        startIndex = mCommentStartExpression.indexIn(text, startIndex + commentLength);
-    }
+    highlightMultiLine(text, mCommentStartExpression, mCommentEndExpression, mMultiLineCommentFormat);
+//    setCurrentBlockState(0);
+//    highlightMultiLine(text, mQuotesExpression, mQuotesExpression, mQuotationFormat);
 }
 
 void ModelicaTextHighlighter::settingsChanged()
