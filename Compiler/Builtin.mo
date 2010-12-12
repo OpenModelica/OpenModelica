@@ -55,7 +55,6 @@ protected import ClassInf;
 protected import Parser;
 protected import SCodeUtil;
 protected import Util;
-protected import Values;
 
 protected constant String initialFunctionStr =
 "
@@ -613,6 +612,97 @@ function stringHashSdbm
 external \"builtin\";
 end stringHashSdbm;
 
+function listAppend
+  input list<TypeA> lst1;
+  input list<TypeA> lst2;
+  output list<TypeA> lst;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listAppend;
+  
+function listReverse
+  input list<TypeA> inLst;
+  output list<TypeA> outLst;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listReverse;
+
+function listLength
+  input list<TypeA> lst;
+  output Integer length;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listLength;
+
+function listMember
+  input TypeA element;
+  input list<TypeA> lst;
+  output Boolean isMember;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listMember;
+
+function listGet
+  input list<TypeA> lst;
+  input Integer index;
+  output TypeA element;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listGet;
+
+function listNth
+  input list<TypeA> lst;
+  input Integer index;
+  output TypeA element;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  element := listGet(lst,index+1);
+end listNth;
+
+function listRest
+  input list<TypeA> lst;
+  output list<TypeA> rest;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  (_::rest) := lst;
+end listRest;
+
+function listHead
+  input list<TypeA> lst;
+  output TypeA head;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  (head::_) := lst;
+end listHead;
+
+function listDelete
+  input list<TypeA> inLst;
+  input Integer index;
+  output list<TypeA> outLst;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listDelete;
+
+function listEmpty
+  input list<TypeA> lst;
+  output Boolean isEmpty;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listEmpty;
+  
+function cons
+  input TypeA element;
+  input list<TypeA> inLst;
+  output list<TypeA> outLst;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  outLst := element::inLst;
+end cons;
+
 function arrayLength
   input array<TypeA> arr;
   output Integer length;
@@ -675,7 +765,6 @@ function arrayCopy
   replaceable type TypeA subtypeof Any;
 external \"builtin\";
 end arrayCopy;
-
 
 function arrayAdd \"An arrayAppend operation would be more useful; this might be slow if used improperly!\"
   input array<TypeA> arr;
@@ -759,9 +848,14 @@ end referenceEq;
 
 function clock
   output Real t;
-external \"builtin\" t=mmc_clock();
+external \"builtin\";
 end clock;
 
+function optionNone
+  input Option<TypeA> opt;
+  output Boolean isNone;
+external \"builtin\";
+end optionNone;
 "
 ;
 
@@ -3581,25 +3675,8 @@ algorithm
     case (env)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-
-        // List Operations
-        env = Env.extendFrameT(env, "listAppend", listAListA2listA);
-        env = Env.extendFrameT(env, "listReverse", listA2listA);
-        env = Env.extendFrameT(env, "listLength", list2int);
-        env = Env.extendFrameT(env, "listMember", AlistA2boolean);
-        env = Env.extendFrameT(env, "listGet", listAInt2A);
-        env = Env.extendFrameT(env, "listNth", listAInt2A);
-        env = Env.extendFrameT(env, "listRest", listA2listA);
-        env = Env.extendFrameT(env, "listDelete", listAint2listA);
-        env = Env.extendFrameT(env, "listEmpty", list2boolean);
-        env = Env.extendFrameT(env, "cons", AlistA2listA);
-
-        // Option Operations
-        env = Env.extendFrameT(env, "optionNone", option2boolean);
-
         // getGlobalRoot can not be represented by a regular function...
-        env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
-        
+        env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);        
       then env;
     case env then env;
   end matchcontinue;

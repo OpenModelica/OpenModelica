@@ -1092,6 +1092,7 @@ algorithm
     case "stringAppendList" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringAppendList;
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
+    case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
     // Box/Unbox
     case "mmc_mk_bcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
     case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
@@ -2938,6 +2939,40 @@ algorithm
         (cache,Values.LIST(valList),st);
   end matchcontinue;
 end cevalListAppend;
+
+protected function cevalListReverse
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp,exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList,valList1,valList2;
+    case (cache,env,{exp1},impl,st,msg)
+      equation
+        (cache,Values.LIST(valList1),st) = ceval(cache,env, exp1, impl, st,NONE(), msg);
+        valList = listReverse(valList1);
+      then
+        (cache,Values.LIST(valList),st);
+  end matchcontinue;
+end cevalListReverse;
 
 protected function extractValueStringChar
   input Values.Value val;

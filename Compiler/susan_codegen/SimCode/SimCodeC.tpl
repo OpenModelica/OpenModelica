@@ -2787,7 +2787,6 @@ template functionHeader(Function fn, Boolean inFunc)
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
-    case EXTERNAL_FUNCTION(language="builtin") then '#define <%underscorePath(name)%> <%extName%><%\n%>'
     case EXTERNAL_FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
@@ -3143,7 +3142,7 @@ case FUNCTION(__) then
     MMC_TRY_TOP()
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
-    <%if outVars then (outVars |> var hasindex i1 from 1 => writeOutVar(var, i1, "C") ;separator="\n") else "write_noretcall(outVar);"%>
+    <%if outVars then (outVars |> var hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
   >>
@@ -3160,7 +3159,7 @@ match fn
 case efn as EXTERNAL_FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = if outVars then (match language case "builtin" then '<%efn.extName%>_rettype' else '<%fname%>_rettype') else "void"
+  let retType = if outVars then '<%fname%>_rettype' else "void"
   let &preExp = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
   // make sure the variable is named "out", doh!
@@ -3185,7 +3184,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   }
   >>
   <<
-  <%match language case "builtin" then "" else fnBody%>
+  <%fnBody%>
 
   <% if inFunc then
   <<
@@ -3194,13 +3193,13 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%retType%> out;
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
-    out = <% match language case "builtin" then "" else "_" %><%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
-    <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1, language) ;separator="\n"%>
+    out = _<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
+    <%outVars |> var as VARIABLE(__) hasindex i1 from 1 => writeOutVar(var, i1) ;separator="\n"%>
     return 0;
   }
   >> %>
   
-  <%match language case "builtin" then "" else boxedFn%>
+  <%boxedFn%>
   >>
 end functionBodyExternalFunction;
 
@@ -3443,7 +3442,7 @@ case ET_COMPLEX(varLst=vl) then
 end readInVarRecordMembers;
 
 
-template writeOutVar(Variable var, Integer index, String language)
+template writeOutVar(Variable var, Integer index)
  "Generates code for writing a variable to outVar."
 
 ::=
@@ -3454,7 +3453,7 @@ template writeOutVar(Variable var, Integer index, String language)
     >>
   case VARIABLE(__) then
     <<
-    write_<%varType(var)%>(outVar, &out<%match language case "builtin" then "" else '.targ<%index%>'%>);
+    write_<%varType(var)%>(outVar, &out.targ<%index%>);
     >>
 end writeOutVar;
 

@@ -1249,6 +1249,13 @@ algorithm
         (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, libs);
       then
         (fns, rt_2, decls, includes, libs);
+    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(returnType="builtin"))::_)::rest,accfns,rt,decls,includes,libs)
+      equation
+        // skip over builtin functions
+        (fns, rt_2, decls, includes, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, libs);
+      then
+        (fns, rt_2, decls, includes, libs);
+
     case ((fel :: rest), accfns, rt, decls, includes, libs)
       equation
         (fn, rt_1, decls, includes, libs) = elaborateFunction(fel, rt, decls, includes, libs);

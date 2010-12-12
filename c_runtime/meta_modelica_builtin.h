@@ -88,26 +88,18 @@ typedef modelica_metatype listAppend_rettype;
 typedef modelica_integer listLength_rettype;
 typedef modelica_boolean listMember_rettype;
 typedef modelica_metatype listGet_rettype;
-typedef modelica_metatype listNth_rettype;
-typedef modelica_metatype listRest_rettype;
 typedef modelica_integer listEmpty_rettype;
 typedef modelica_metatype listDelete_rettype;
-typedef modelica_metatype cons_rettype;
 
 listReverse_rettype listReverse(modelica_metatype);
 listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
 listLength_rettype listLength(modelica_metatype);
 listMember_rettype listMember(modelica_metatype, modelica_metatype);
 listGet_rettype listGet(modelica_metatype, modelica_integer);
-listNth_rettype listNth(modelica_metatype, modelica_integer);
-listRest_rettype listRest(modelica_metatype);
 #define listEmpty(LST) MMC_NILTEST(LST)
 listDelete_rettype listDelete(modelica_metatype, modelica_integer);
-#define cons(X,XS) mmc_mk_cons(X,XS)
 
-#define boxptr_cons mmc_mk_cons
 modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_listNth(modelica_metatype,modelica_metatype);
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;

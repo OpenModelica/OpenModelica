@@ -325,34 +325,10 @@ listGet_rettype listGet(modelica_metatype lst, modelica_integer i)
   MMC_THROW(); /* List was not long enough */
 }
 
-listNth_rettype listNth(modelica_metatype lst, modelica_integer i)
-{
-  return listGet(lst,i+1);
-}
-
 modelica_metatype boxptr_listGet(modelica_metatype lst, modelica_metatype i)
 {
   return listGet(lst,MMC_UNTAGFIXNUM(i));
 }
-
-modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
-{
-  return listGet(lst,MMC_UNTAGFIXNUM(i)+1);
-}
-
-listRest_rettype listRest(modelica_metatype lst)
-{
-  if (MMC_NILTEST(lst))
-    MMC_THROW();
-  return MMC_CDR(lst);
-}
-
-/*
-listEmpty_rettype listEmpty(modelica_metatype lst)
-{
-  return MMC_NILTEST(lst) ? 1 : 0;
-}
-*/
 
 listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 {
