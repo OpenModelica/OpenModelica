@@ -3187,7 +3187,7 @@ algorithm
       then
         res;
     
-    // relation: cr1 == cr2, where cr1 and cr2 are the same 
+    // relation: cr1 == cr2, where cr1 and cr2 are the same
     case(_,DAE.EQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) 
       equation
         true = ComponentReference.crefEqual(cr1,cr2);
@@ -3201,6 +3201,15 @@ algorithm
       then 
         DAE.BCONST(false);
     
+    // true AND e => e
+    // TODO: Check if false AND e => false is ok, or if zero-crossing screw us over
+    case (_,DAE.AND(),DAE.BCONST(true),e) then e;
+    case (_,DAE.AND(),e,DAE.BCONST(true)) then e;
+    // false OR e => e
+    // TODO: Check if true or e => true is ok, or if zero-crossing screw us over
+    case (_,DAE.OR(),DAE.BCONST(false),e) then e;
+    case (_,DAE.OR(),e,DAE.BCONST(false)) then e;
+
     // nothing else to simplify
     case (e,_,_,_) then e;
   end matchcontinue;
