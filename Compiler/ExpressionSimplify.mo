@@ -2593,7 +2593,8 @@ algorithm
       Operator op;
       Boolean b,b1,b2;
       DAE.Exp exp1,exp2,val;
-      Real re1,re2,re3;      
+      Real re1,re2,re3;
+      String str,s1,s2;      
     
     case (DAE.ADD(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
@@ -2620,6 +2621,12 @@ algorithm
         re3 = e1_1 +. re2;
       then
         DAE.RCONST(re3);
+    
+    case (DAE.ADD(ty = _),DAE.SCONST(string = s1),DAE.SCONST(string = s2))
+      equation
+        str = s1 +& s2;
+      then
+        DAE.SCONST(str);
     
     case (DAE.SUB(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
