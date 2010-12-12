@@ -133,8 +133,15 @@ static int value_to_type_desc(void *value, type_description *desc)
   case Values__OPTION_3dBOX1:
     desc->type = TYPE_DESC_MMC;
     desc->data.mmc = value_to_mmc(value);
+    if (desc->data.mmc == 0) {
+      c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed\n", NULL, 0);
+      return -1;
+    }
     break;
     /* unsupported */
+  case Values__META_5fARRAY_3dBOX1:
+    c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.META_ARRAY\n", NULL, 0);
+    return -1;
   case Values__ENUM_5fLITERAL_3dBOX2:
     c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.ENUM\n", NULL, 0);
     return -1;
@@ -490,13 +497,23 @@ static void *value_to_mmc(void* value)
       data = MMC_CDR(data);
     }
     /* Transform list by first reversing it to preserve the order */
-    return listReverse(tmp);;
+    return listReverse(tmp);
+  };
+  case Values__META_5fARRAY_3dBOX1: {
+    void* data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
+    void* tmp = mmc_mk_nil();
+    while (!MMC_NILTEST(data)) {
+      tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
+      data = MMC_CDR(data);
+    }
+    return listArray(listReverse(tmp));
   };
   case Values__META_5fTUPLE_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
     int len=0;
     void *tmp = data;
     void **data_mmc;
+    void *res;
 
     while (!MMC_NILTEST(tmp)) {
       len++; tmp = RML_CDR(tmp);
@@ -508,7 +525,9 @@ static void *value_to_mmc(void* value)
       data_mmc[len++] = value_to_mmc(RML_CAR(tmp));
       tmp = RML_CDR(tmp);
     }
-    return mmc_mk_box_arr(len, 0, data_mmc);
+    res = mmc_mk_box_arr(len, 0, data_mmc);
+    free(data_mmc);
+    return res;
   };
   case Values__ENUM_5fLITERAL_3dBOX2:
   case Values__CODE_3dBOX1:
@@ -517,7 +536,9 @@ static void *value_to_mmc(void* value)
     return 0;
   default:
     /* unsupported */
-    fprintf(stderr, "%s:%d: Error, unknown type\n", __FILE__, __LINE__);
+    fprintf(stderr, "%s:%d: Error, unknown type", __FILE__, __LINE__);
+    printAny(value);
+    fprintf(stderr, "\n");
     return 0;
   }
 }

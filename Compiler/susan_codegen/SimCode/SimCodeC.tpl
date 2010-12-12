@@ -5062,6 +5062,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     '((modelica_integer)<%castedVar%>)'
   
+  case CALL(tuple_=false, builtin=true, path=IDENT(name="clock"), expLst={}) then
+    'mmc_clock()'
+
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="mmc_get_field"),
             expLst={s1, ICONST(integer=i)}) then

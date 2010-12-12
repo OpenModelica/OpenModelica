@@ -116,7 +116,6 @@ optionNone_rettype optionNone(modelica_metatype);
 /* Array Operations */
 typedef modelica_integer arrayLength_rettype;
 typedef modelica_metatype arrayGet_rettype;
-typedef modelica_metatype arrayNth_rettype;
 typedef modelica_metatype arrayCreate_rettype;
 typedef modelica_metatype arrayList_rettype;
 typedef modelica_metatype listArray_rettype;
@@ -126,7 +125,6 @@ typedef modelica_metatype arrayAdd_rettype;
 
 arrayLength_rettype arrayLength(modelica_metatype);
 arrayGet_rettype arrayGet(modelica_metatype, modelica_integer);
-arrayGet_rettype arrayNth(modelica_metatype, modelica_integer);
 arrayCreate_rettype arrayCreate(modelica_integer, modelica_metatype);
 arrayList_rettype arrayList(modelica_metatype);
 listArray_rettype listArray(modelica_metatype);
@@ -134,18 +132,14 @@ arrayUpdate_rettype arrayUpdate(modelica_metatype, modelica_integer, modelica_me
 arrayCopy_rettype arrayCopy(modelica_metatype);
 arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
 
-modelica_metatype boxptr_arrayNth(modelica_metatype, modelica_metatype);
-
 /* Misc Operations */
-typedef modelica_metatype if__exp_rettype;
 typedef modelica_integer tick_rettype;
-typedef modelica_real mmc__clock_rettype;
+typedef modelica_real mmc_clock_rettype;
 
-if__exp_rettype if__exp(modelica_boolean, modelica_metatype, modelica_metatype);
 void boxptr_print(modelica_metatype);
 void print(modelica_string);
 tick_rettype tick();
-mmc__clock_rettype mmc__clock();
+mmc_clock_rettype mmc_clock();
 void equality(modelica_metatype, modelica_metatype);
 
 /* Weird RML stuff */

@@ -4094,47 +4094,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
 
-protected function elabBuiltinClock " => x"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1, s2_1;
-      DAE.ExpType tp;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2,s;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.Const c, c1, c2;
-      list<DAE.Exp> expList;
-      String fnName;
-      Prefix.Prefix pre;
-    case (cache,env,{},{},impl,pre,info)
-      equation
-        s = Absyn.CALL(Absyn.CREF_IDENT("mmc_clock", {}), Absyn.FUNCTIONARGS({},{}));
-        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
-      then
-        (cache,s1_1,prop);
-
-    case (_,_,_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinClock failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinClock;
-
 protected function makePreLst
 "function: makePreLst
   Takes a list of expressions and makes a list of pre - expressions"
@@ -6756,7 +6715,6 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
-    case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
   end match;
 end elabBuiltinHandler;
 

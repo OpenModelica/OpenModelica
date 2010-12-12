@@ -171,7 +171,7 @@ class_type returns [void* ast] :
   ;
 
 identifier returns [char* str] :
-  (id=IDENT|id=DER|id=CODE) {str = (char*)$id.text->chars;}
+  (id=IDENT|id=DER|id=CODE|id=EQUALITY|id=INITIAL) {str = (char*)$id.text->chars;}
   ;
 
 class_specifier returns [void* ast, void* name] :

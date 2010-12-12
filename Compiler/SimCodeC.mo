@@ -26813,6 +26813,15 @@ algorithm
       then (txt, a_preExp, a_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "clock"), expLst = {}),
+           _,
+           a_preExp,
+           a_varDecls )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("mmc_clock()"));
+      then (txt, a_preExp, a_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "mmc_get_field"), expLst = {i_s1, DAE.ICONST(integer = i_i)}),
            a_context,
            a_preExp,

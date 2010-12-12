@@ -163,7 +163,7 @@ function log10
 external \"builtin\";
 end log10;
 
-function print
+function print \"Not standard Modelica, but very useful for debugging.\"
   input String str;
 external \"builtin\";
 end print;
@@ -574,7 +574,7 @@ function stringAppend
   input String s1;
   input String s2;
   output String s;
-  annotation(Inline=true);
+  annotation(Inline = true);
 algorithm
   s := s1 + s2;
 end stringAppend;
@@ -583,7 +583,7 @@ function stringEq
   input String s1;
   input String s2;
   output Boolean b;
-  annotation(Inline=true);
+  annotation(Inline = true);
 algorithm
   b := s1 == s2;
 end stringEq;
@@ -612,6 +612,156 @@ function stringHashSdbm
   output Integer hash;
 external \"builtin\";
 end stringHashSdbm;
+
+function arrayLength
+  input array<TypeA> arr;
+  output Integer length;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayLength;
+
+function arrayGet
+  input array<TypeA> arr;
+  input Integer index;
+  output TypeA value;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayGet;
+
+function arrayNth
+  input array<TypeA> arr;
+  input Integer index;
+  output TypeA value;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  value := arrayGet(arr,index+1);
+end arrayNth;
+
+function arrayCreate
+  input Integer size;
+  input TypeA initialValue;
+  output array<TypeA> arr;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayCreate;
+
+function arrayList
+  input array<TypeA> arr;
+  output list<TypeA> lst;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayList;
+
+function listArray
+  input list<TypeA> lst;
+  output array<TypeA> arr;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end listArray;
+
+function arrayUpdate
+  input array<TypeA> arr;
+  input Integer index;
+  input TypeA newValue;
+  output array<TypeA> newArray \"same as the input array; not really needed here\";
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayUpdate;
+
+function arrayCopy
+  input array<TypeA> arr;
+  output array<TypeA> copy;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayCopy;
+
+
+function arrayAdd \"An arrayAppend operation would be more useful; this might be slow if used improperly!\"
+  input array<TypeA> arr;
+  input TypeA a;
+  output array<TypeA> copy;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end arrayAdd;
+
+function anyString
+  input TypeA a;
+  output String str;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end anyString;
+
+function printAny
+  input TypeA a;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end printAny;
+
+function debug_print
+  input String str;
+  input TypeA a;
+  replaceable type TypeA subtypeof Any;
+  annotation(Inline = true);
+algorithm
+  print(str);
+  print(anyString(a));
+end debug_print;
+
+function tick
+  output Integer t;
+external \"builtin\";
+end tick;
+
+function equality
+  input TypeA a1;
+  input TypeA a2;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end equality;
+
+function setGlobalRoot
+  input Integer index;
+  input TypeA value;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end setGlobalRoot;
+
+function valueConstructor
+  input TypeA value;
+  output Integer ctor;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end valueConstructor;
+
+function valueSlots
+  input TypeA value;
+  output Integer slots;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end valueSlots;
+
+function valueEq
+  input TypeA a1;
+  input TypeA a2;
+  output Boolean b;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end valueEq;
+
+function referenceEq
+  input TypeA a1;
+  input TypeA a2;
+  output Boolean b;
+  replaceable type TypeA subtypeof Any;
+external \"builtin\";
+end referenceEq;
+
+function clock
+  output Real t;
+external \"builtin\" t=mmc_clock();
+end clock;
+
 "
 ;
 
@@ -3431,7 +3581,6 @@ algorithm
     case (env)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
 
         // List Operations
         env = Env.extendFrameT(env, "listAppend", listAListA2listA);
@@ -3445,37 +3594,11 @@ algorithm
         env = Env.extendFrameT(env, "listEmpty", list2boolean);
         env = Env.extendFrameT(env, "cons", AlistA2listA);
 
-        // Array Operations
-        env = Env.extendFrameT(env, "arrayLength", marrayAny2int);
-        env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);
-        env = Env.extendFrameT(env, "arrayNth", marrayAInt2A);
-        env = Env.extendFrameT(env, "arrayCreate", intA2marrayA);
-        env = Env.extendFrameT(env, "arrayList", marrayA2listA);
-        env = Env.extendFrameT(env, "listArray", listA2marrayA);
-        env = Env.extendFrameT(env, "arrayUpdate", marrayAIntA2marrayA);
-        env = Env.extendFrameT(env, "arrayCopy", marrayA2marrayA);
-        env = Env.extendFrameT(env, "arrayAdd", marrayAA2marrayA);
-
         // Option Operations
         env = Env.extendFrameT(env, "optionNone", option2boolean);
 
-        // Misc Operations
-        env = Env.extendFrameT(env, "if_exp", boolBoxedBoxed2boxed);
-        env = Env.extendFrameT(env, "printAny", a2void);
-        env = Env.extendFrameT(env, "debug_print", stringBoxed2void);
-        env = Env.extendFrameT(env, "tick", void2int);
-        env = Env.extendFrameT(env, "equality", AA2void);
-        // There is a C function called clock which does not return a double...
-        env = Env.extendFrameT(env, "mmc_clock", void2real);
-        env = Env.extendFrameT(env, "clock", void2real);
-
-        // Global State
+        // getGlobalRoot can not be represented by a regular function...
         env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
-        env = Env.extendFrameT(env, "setGlobalRoot", intBoxedNoRetcall);
-        env = Env.extendFrameT(env, "valueConstructor", boxed2int);
-        env = Env.extendFrameT(env, "valueSlots", boxed2int);
-        env = Env.extendFrameT(env, "valueEq", AA2bool);
-        env = Env.extendFrameT(env, "referenceEq", AA2bool);
         
       then env;
     case env then env;

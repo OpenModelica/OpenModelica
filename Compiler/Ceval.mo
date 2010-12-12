@@ -996,7 +996,7 @@ algorithm
         (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
       then
         (cache,v,st);
-    case (cache,env,DAE.CALL(path = path,expLst = args,builtin = builtin),impl,st,_,msg) /* buildin: as true */
+    case (cache,env,DAE.CALL(path = path,expLst = args,builtin = true),impl,st,_,msg)
       equation
         id = Absyn.pathString(path);
         handler = cevalBuiltinHandler(id);
@@ -1034,9 +1034,9 @@ protected function cevalBuiltinHandler
     output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
   end HandlerFunc;
 algorithm
-  handler :=
-  matchcontinue (inIdent)
-    local String id;
+  handler := match (inIdent)
+    local
+      String id,str;
     case "floor" then cevalBuiltinFloor;
     case "ceil" then cevalBuiltinCeil;
     case "abs" then cevalBuiltinAbs;
@@ -1105,11 +1105,11 @@ algorithm
     //case "delay" then cevalBuiltinDelay;
     case id
       equation
-        Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
-        Debug.fprintln("ceval", id);
+        true = RTOpts.debugFlag("ceval");
+        Debug.traceln("No cevalBuiltinHandler found for " +& id);
       then
         fail();
-  end matchcontinue;
+  end match;
 end cevalBuiltinHandler;
 
 protected function cevalCallFunction "function: cevalCallFunction
@@ -1203,7 +1203,7 @@ algorithm
       then
         fail();
         
-    case (cache,env, DAE.CALL(path = funcpath), vallst, impl, st, dim, msg)
+    case (cache,env, DAE.CALL(path = funcpath, builtin = false), vallst, impl, st, dim, msg)
       equation
         false = RTOpts.debugFlag("noevalfunc");
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
@@ -1244,7 +1244,7 @@ algorithm
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,// (impl as true)
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, builtin = false)),vallst,impl,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),dim,msg)
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1266,7 +1266,7 @@ algorithm
     
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,// impl as true
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, builtin = false)),vallst,impl,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),dim,msg)
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1294,7 +1294,7 @@ algorithm
     //  Put back the check and write another rule for the false case that generates the function
     //  2007-10-20 partially fixed BZ*
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),dim,msg) // yeha! we have a symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1337,7 +1337,7 @@ algorithm
       then
         (cache,newval,NONE());*/
 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,NONE(),dim,msg) // crap! we have no symboltable!
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,NONE(),dim,msg) // crap! we have no symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));

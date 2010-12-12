@@ -481,16 +481,6 @@ arrayAdd_rettype arrayAdd(modelica_metatype arr, modelica_metatype val)
   return res;
 }
 
-arrayNth_rettype arrayNth(modelica_metatype arr, modelica_integer ix)
-{
-  return arrayGet(arr, ix+1);
-}
-
-modelica_metatype boxptr_arrayNth(modelica_metatype arr, modelica_metatype ix)
-{
-  return arrayGet(arr, MMC_UNTAGFIXNUM(ix)+1);
-}
-
 /* Misc Operations */
 tick_rettype tick()
 {
@@ -508,7 +498,7 @@ void print(modelica_string str)
   fprintf(stdout, "%s", str);
 }
 
-mmc__clock_rettype mmc__clock()
+mmc_clock_rettype mmc_clock()
 {
   static double start_t;
   static int init = 1;
@@ -518,11 +508,6 @@ mmc__clock_rettype mmc__clock()
     return 0.0;
   }
   return (clock()-start_t)/CLOCKS_PER_SEC;
-}
-
-if__exp_rettype if__exp(modelica_boolean cond, modelica_metatype in1, modelica_metatype in2)
-{
-  return cond ? in1 : in2;
 }
 
 void equality(modelica_metatype in1, modelica_metatype in2)

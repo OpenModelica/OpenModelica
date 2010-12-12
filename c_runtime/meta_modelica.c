@@ -203,7 +203,18 @@ void debug__print(const char* prefix, void* any)
   printAny(any);
 }
 
-void printAny(void* any) /* For debugging */
+static char *anyStringBuf = 0;
+int anyStringBufSize = 0;
+
+inline static void checkAnyStringBufSize(int ix, int szNewObject)
+{
+  if (anyStringBufSize-ix < szNewObject+1) {
+    anyStringBuf = realloc(anyStringBuf, anyStringBufSize*2);
+    anyStringBufSize *= 2;
+  }
+}
+
+inline static int anyStringWork(void* any, int ix)
 {
   mmc_uint_t hdr;
   int numslots;
@@ -211,95 +222,140 @@ void printAny(void* any) /* For debugging */
   int i;
   void *data;
   struct record_description *desc;
-  fflush(NULL);
 
   if ((0 == ((mmc_sint_t)any & 1))) {
-    fprintf(stderr, "%ld", (long) ((mmc_sint_t)any)>>1);
-    return;
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "%ld", (long) ((mmc_sint_t)any)>>1);
+    return ix;
   }
   
   hdr = MMC_GETHDR(any);
 
   if (hdr == MMC_NILHDR) {
-    fprintf(stderr, "{}");
-    return;
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, "{}");
+    return ix;
   }
 
   if (hdr == MMC_REALHDR) {
-    fprintf(stderr, "%.7g", (double) mmc_prim_get_real(any));
-    return;
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "%.7g", (double) mmc_prim_get_real(any));
+    return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {
-    fprintf(stderr, "\"%s\"", MMC_STRINGDATA(any));
-    return;
+    checkAnyStringBufSize(ix,strlen(MMC_STRINGDATA(any)));
+    ix += sprintf(anyStringBuf+ix, "\"%s\"", MMC_STRINGDATA(any));
+    return ix;
   }
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
   
   if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
-    fprintf(stderr, "MetaArray(");
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "MetaArray(");
     for (i=1; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-      printAny(data);
-      if (i!=numslots)
-        fprintf(stderr, ", ");
+      ix = anyStringWork(data, ix);
+      if (i!=numslots) {
+        checkAnyStringBufSize(ix,2);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
     }
-    fprintf(stderr, ")");
-    return;
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
   }
   if (numslots>0 && ctor > 1) { /* RECORD */
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
-    fprintf(stderr, "%s(", desc->name);
+    checkAnyStringBufSize(ix,strlen(desc->name)+2);
+    ix += sprintf(anyStringBuf+ix, "%s(", desc->name);
     for (i=2; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-      fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
-      printAny(data);
-      if (i!=numslots)
-        fprintf(stderr, ", ");
+      checkAnyStringBufSize(ix,strlen(desc->fieldNames[i-2])+3);
+      ix += sprintf(anyStringBuf+ix, "%s = ", desc->fieldNames[i-2]);
+      ix = anyStringWork(data,ix);
+      if (i!=numslots) {
+        checkAnyStringBufSize(ix,2);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
     }
-    fprintf(stderr, ")");
-    return;
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
   }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
-    fprintf(stderr, "(");
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, "(");
     for (i=0; i<numslots; i++) {
-      printAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)));
-      if (i!=numslots-1)
-        fprintf(stderr, ", ");
+      ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)),ix);
+      if (i!=numslots-1) {
+        checkAnyStringBufSize(ix,2);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
     }
-    fprintf(stderr, ")");
-    return;
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
   }
 
   if (numslots==0 && ctor==1) /* NONE() */ {
-    fprintf(stderr, "NONE()");
+    checkAnyStringBufSize(ix,6);
+    ix += sprintf(anyStringBuf+ix, "NONE()");
     return;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    fprintf(stderr, "SOME(");
-    printAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
-    fprintf(stderr, ")");
-    return;
+    checkAnyStringBufSize(ix,5);
+    ix += sprintf(anyStringBuf+ix, "SOME)");
+    ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)),ix);
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
-    fprintf(stderr, "{");
-    printAny(MMC_CAR(any));
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, "{");
+    ix = anyStringWork(MMC_CAR(any),ix);
     any = MMC_CDR(any);
     while (!MMC_NILTEST(any)) {
-      fprintf(stderr, ", ");
-      printAny(MMC_CAR(any));
+      checkAnyStringBufSize(ix,2);
+      ix += sprintf(anyStringBuf+ix, ", ");
+      ix = anyStringWork(MMC_CAR(any),ix);
       any = MMC_CDR(any);
     }
-    fprintf(stderr, "}");
-    return;
+    checkAnyStringBufSize(ix,1);
+    ix += sprintf(anyStringBuf+ix, "}");
+    return ix;
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  EXIT(1);
+  EXIT(1);  
+}
+
+modelica_string anyString(void* any)
+{
+  if (anyStringBufSize == 0) {
+    anyStringBuf = malloc(8192);
+    anyStringBufSize = 8192;
+  }
+  *anyStringBuf = '\0';
+  anyStringWork(any,0);
+  char* res = strdup(anyStringBuf);
+  return res;
+}
+
+void printAny(void* any)
+{
+  if (anyStringBufSize == 0) {
+    anyStringBuf = malloc(8192);
+    anyStringBufSize = 8192;
+  }
+  *anyStringBuf = '\0';
+  anyStringWork(any,0);
+  fputs(stderr, anyStringBuf);
 }
 
 void printTypeOfAny(void* any) /* for debugging */
