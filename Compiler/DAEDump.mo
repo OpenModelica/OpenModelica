@@ -1259,6 +1259,7 @@ algorithm
   str := matchcontinue(it)
     case(DAE.NO_INLINE()) then "No inline";
     case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
+    case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
     case(DAE.NORM_INLINE()) then "Inline before index reduction";
   end matchcontinue;
 end printInlineTypeStr;

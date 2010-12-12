@@ -10588,6 +10588,9 @@ algorithm
     case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
     then DAE.NORM_INLINE();
 
+    case(SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    then DAE.EARLY_INLINE();
+
     case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
     then DAE.AFTER_INDEX_RED_INLINE();
 

@@ -267,6 +267,9 @@ public uniontype InlineType
   record NORM_INLINE "Normal inline, inline as soon as possible"
   end NORM_INLINE;
 
+  record EARLY_INLINE "Inline even earlier than NORM_INLINE. This will display the inlined code in the flattened model and also works for functions calling other functions that should be inlined."
+  end EARLY_INLINE;
+  
   record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
   end NO_INLINE;
 

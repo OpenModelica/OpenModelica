@@ -175,7 +175,7 @@ function boolAnd
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := b1 and b2;
 end boolAnd;
@@ -184,7 +184,7 @@ function boolOr
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := b1 or b2;
 end boolOr;
@@ -192,7 +192,7 @@ end boolOr;
 function boolNot
   input Boolean b;
   output Boolean nb;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   nb := not b;
 end boolNot;
@@ -201,7 +201,7 @@ function boolEq
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := b1 == b2;
 end boolEq;
@@ -209,7 +209,7 @@ end boolEq;
 function boolString
   input Boolean b;
   output String str;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   str := if b then \"true\" else \"false\";
 end boolString;
@@ -218,7 +218,7 @@ function intAdd
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := i1 + i2;
 end intAdd;
@@ -227,7 +227,7 @@ function intSub
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := i1 - i2;
 end intSub;
@@ -236,7 +236,7 @@ function intMul
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := i1 * i2;
 end intMul;
@@ -245,7 +245,7 @@ function intDiv
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := div(i1,i2);
 end intDiv;
@@ -254,7 +254,7 @@ function intMod
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := mod(i1,i2);
 end intMod;
@@ -263,7 +263,7 @@ function intMax
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := max(i1,i2);
 end intMax;
@@ -272,7 +272,7 @@ function intMin
   input Integer i1;
   input Integer i2;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := min(i1,i2);
 end intMin;
@@ -280,7 +280,7 @@ end intMin;
 function intAbs
   input Integer i;
   output Integer oi;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   oi := abs(i);
 end intAbs;
@@ -288,7 +288,7 @@ end intAbs;
 function intNeg
   input Integer i;
   output Integer oi;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   oi := -i;
 end intNeg;
@@ -297,7 +297,7 @@ function intLt
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 < i2;
 end intLt;
@@ -306,7 +306,7 @@ function intLe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 <= i2;
 end intLe;
@@ -315,7 +315,7 @@ function intEq
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 == i2;
 end intEq;
@@ -324,7 +324,7 @@ function intNe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 <> i2;
 end intNe;
@@ -333,7 +333,7 @@ function intGe
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 >= i2;
 end intGe;
@@ -342,7 +342,7 @@ function intGt
   input Integer i1;
   input Integer i2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := i1 > i2;
 end intGt;
@@ -350,7 +350,7 @@ end intGt;
 function intReal
   input Integer i;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := i;
 end intReal;
@@ -366,7 +366,7 @@ function realAdd
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := r1+r2;
 end realAdd;
@@ -375,7 +375,7 @@ function realSub
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := r1-r2;
 end realSub;
@@ -384,7 +384,7 @@ function realMul
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := r1*r2;
 end realMul;
@@ -393,7 +393,7 @@ function realDiv
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := r1/r2;
 end realDiv;
@@ -402,7 +402,7 @@ function realMod
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := mod(r1,r2);
 end realMod;
@@ -411,7 +411,7 @@ function realPow
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := r1^r2;
 end realPow;
@@ -420,7 +420,7 @@ function realMax
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := max(r1,r2);
 end realMax;
@@ -429,7 +429,7 @@ function realMin
   input Real r1;
   input Real r2;
   output Real r;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   r := min(r1,r2);
 end realMin;
@@ -437,7 +437,7 @@ end realMin;
 function realAbs
   input Real x;
   output Real y;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   y := abs(x);
 end realAbs;
@@ -445,7 +445,7 @@ end realAbs;
 function realNeg
   input Real x;
   output Real y;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   y := -x;
 end realNeg;
@@ -454,7 +454,7 @@ function realLt
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 < x2;
 end realLt;
@@ -463,7 +463,7 @@ function realLe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 <= x2;
 end realLe;
@@ -472,7 +472,7 @@ function realEq
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 == x2;
 end realEq;
@@ -481,7 +481,7 @@ function realNe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 <> x2;
 end realNe;
@@ -490,7 +490,7 @@ function realGe
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 >= x2;
 end realGe;
@@ -499,7 +499,7 @@ function realGt
   input Real x1;
   input Real x2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := x1 > x2;
 end realGt;
@@ -507,7 +507,7 @@ end realGt;
 function realInt
   input Real r;
   output Integer i;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   i := integer(r);
 end realInt;
@@ -573,7 +573,7 @@ function stringAppend
   input String s1;
   input String s2;
   output String s;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   s := s1 + s2;
 end stringAppend;
@@ -582,7 +582,7 @@ function stringEq
   input String s1;
   input String s2;
   output Boolean b;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   b := s1 == s2;
 end stringEq;
@@ -655,7 +655,7 @@ function listNth
   input Integer index;
   output TypeA element;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   element := listGet(lst,index+1);
 end listNth;
@@ -664,7 +664,7 @@ function listRest
   input list<TypeA> lst;
   output list<TypeA> rest;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   (_::rest) := lst;
 end listRest;
@@ -673,7 +673,7 @@ function listHead
   input list<TypeA> lst;
   output TypeA head;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   (head::_) := lst;
 end listHead;
@@ -698,7 +698,7 @@ function cons
   input list<TypeA> inLst;
   output list<TypeA> outLst;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outLst := element::inLst;
 end cons;
@@ -723,7 +723,7 @@ function arrayNth
   input Integer index;
   output TypeA value;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   value := arrayGet(arr,index+1);
 end arrayNth;
@@ -791,7 +791,7 @@ function debug_print
   input String str;
   input TypeA a;
   replaceable type TypeA subtypeof Any;
-  annotation(Inline = true);
+  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   print(str);
   print(anyString(a));

@@ -1042,18 +1042,6 @@ algorithm
   end matchcontinue;
 end getAllMatchingElements;
 
-public function isNormalInlineFunc "
-Author BZ
-"
-input DAE.Function inElem;
-output Boolean b;
-algorithm
-  b := matchcontinue(inElem)
-    case(DAE.FUNCTION(inlineType=DAE.NORM_INLINE)) then true;
-    case(_) then false;
-  end matchcontinue;
-end isNormalInlineFunc;
-
 public function findAllMatchingElements "function findAllMatchingElements
   author:  adrpo
   Similar to getMatchingElements but gets two conditions and returns two lists. The functions are copied to both."
@@ -1119,20 +1107,6 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end isAfterIndexInlineFunc;
-
-public function isEqualInlineType "
-Author BZ
-"
-input DAE.InlineType a1,a2;
-output Boolean b;
-algorithm
-  b := matchcontinue(a1,a2)
-    case(DAE.NO_INLINE(),DAE.NO_INLINE()) then true;
-    case(DAE.NORM_INLINE,DAE.NORM_INLINE) then true;
-    case(DAE.AFTER_INDEX_RED_INLINE,DAE.AFTER_INDEX_RED_INLINE) then true;
-    case(_,_) then false;
-  end matchcontinue;
-end isEqualInlineType;
 
 public function isParameter "function isParameter
   author: LS

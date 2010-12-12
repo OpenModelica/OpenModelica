@@ -90,6 +90,7 @@ protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Connect;
+protected import DAEDump;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -97,6 +98,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Inline;
 protected import Inst;
 protected import InnerOuter;
 protected import Lookup;
@@ -8626,6 +8628,8 @@ algorithm
       list<SCode.Element> comps;
       DAE.ComponentRef cr;
       Absyn.InnerOuter innerOuter;
+      DAE.FunctionTree functionTree;
+      list<DAE.InlineType> inlineTypes;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8816,6 +8820,8 @@ algorithm
         (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE(),true);
         /* Instantiate any implicit record constructors needed and add them to the dae function tree */
         cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
+        functionTree = Env.getFunctionTree(cache);
+        ((call_exp,_)) = Inline.inlineCall((call_exp,(SOME(functionTree),{DAE.EARLY_INLINE()})));
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
       then
         (cache,expProps);

@@ -955,7 +955,7 @@ algorithm
   end matchcontinue;
 end inlineExp;
 
-protected function inlineCall
+public function inlineCall
 "function: inlineCall
 	replaces an inline call with the expression from the function"
 	input tuple<DAE.Exp, Functiontuple> inTuple;
@@ -984,7 +984,7 @@ algorithm
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
-        // for inlinecals in functions
+        // for inlinecalls in functions
         ((newExp1,fns1)) = Expression.traverseExp(newExp,inlineCall,fns);
       then
         ((newExp1,fns));
