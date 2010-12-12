@@ -1054,9 +1054,6 @@ algorithm
     case "atan2" then cevalBuiltinAtan2;
     case "log" then cevalBuiltinLog;
     case "log10" then cevalBuiltinLog10;
-    case "arcsin" then cevalBuiltinAsin;
-    case "arccos" then cevalBuiltinAcos;
-    case "arctan" then cevalBuiltinAtan;    
     case "integer" then cevalBuiltinInteger;
     case "boolean" then cevalBuiltinBoolean;
     case "mod" then cevalBuiltinMod;

@@ -786,7 +786,6 @@ algorithm
   end matchcontinue;
 end translateClassdefExternaldecls;
 
-// Changed from protected to public. KS
 public function translateEitemlist
 "function: translateEitemlist
   This function converts a list of Absyn.ElementItem to a list of SCode.Element.
@@ -1820,5 +1819,13 @@ algorithm
     case (_, prefix) then exp;
   end matchcontinue;
 end prefixUnqualifiedCrefsFromExp;
+
+public function getImportFromElement
+"Gets the Absyn.Import from an SCode.Element (fails if the element is not SCode.IMPORT)"
+  input SCode.Element elt;
+  output Absyn.Import imp;
+algorithm
+  SCode.IMPORT(imp) := elt;
+end getImportFromElement;
 
 end SCodeUtil;

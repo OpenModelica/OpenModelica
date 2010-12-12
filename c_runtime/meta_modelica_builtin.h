@@ -60,42 +60,27 @@ typedef modelica_integer stringHash_rettype;
 typedef modelica_integer stringHashDjb2_rettype;
 typedef modelica_integer stringHashSdbm_rettype;
 typedef modelica_metatype stringListStringChar_rettype;
-typedef modelica_string listStringCharString_rettype;
 typedef modelica_string stringAppendList_rettype;
-typedef modelica_string_const stringAppendListExt_rettype;
-typedef modelica_string stringAppend_rettype;
 typedef modelica_integer stringLength_rettype;
 typedef modelica_integer stringCompare_rettype;
-typedef modelica_boolean stringEq_rettype;
 typedef modelica_string stringGetStringChar_rettype;
 typedef modelica_string stringUpdateStringChar_rettype;
-typedef modelica_string stringCharListString_rettype;
 
 stringInt_rettype stringInt(modelica_string);
 stringListStringChar_rettype stringListStringChar(modelica_string);
-listStringCharString_rettype listStringCharString(modelica_metatype);
 stringAppendList_rettype stringAppendList(modelica_metatype);
-stringAppendListExt_rettype stringAppendListExt(modelica_metatype);
-stringAppend_rettype stringAppend(modelica_string_const,modelica_string_const);
+modelica_string_const stringAppend(modelica_string_const,modelica_string_const);
 stringLength_rettype stringLength(modelica_string_const);
 stringCompare_rettype stringCompare(modelica_string,modelica_string);
-stringEq_rettype stringEq(modelica_string,modelica_string);
 stringGetStringChar_rettype stringGetStringChar(modelica_string,modelica_integer);
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string, modelica_string, modelica_integer);
-#define stringCharListString(X) stringAppendList(X)
 stringHash_rettype stringHash(modelica_string_const);
 stringHashDjb2_rettype stringHashDjb2(modelica_string_const);
 stringHashSdbm_rettype stringHashSdbm(modelica_string_const);
 
-modelica_metatype boxptr_stringEq(modelica_metatype,modelica_metatype);
-modelica_metatype boxptr_stringAppend(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_stringHash(modelica_metatype);
 modelica_metatype boxptr_stringHashDjb2(modelica_metatype);
 modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
-
-#define stringEqual_rettype stringEq_rettype
-#define stringEqual         stringEq
-#define boxptr_stringEqual  boxptr_stringEq
 
 /* List Operations */
 typedef modelica_metatype listReverse_rettype;

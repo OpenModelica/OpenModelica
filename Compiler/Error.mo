@@ -554,7 +554,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (PROPAGATE_START_VALUE,TRANSLATION(),WARNING(),
           "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),
           (SEMI_SUPPORTED_FUNCTION,TRANSLATION(),WARNING(),
-          "Using non-standardized function %s in component %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
+          "Using non-standardized function %s. For full conformance with language specification please use the appropriate function %s or the Modelica.Math library"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
           "Error, %s"),
           (ARRAY_INDEX_OUT_OF_BOUNDS,TRANSLATION(),ERROR(),

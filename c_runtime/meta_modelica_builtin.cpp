@@ -179,25 +179,6 @@ stringListStringChar_rettype stringListStringChar(modelica_string str)
   return listReverse(revRes);
 }
 
-listStringCharString_rettype listStringCharString(modelica_metatype lst)
-{
-  int lstLen, i;
-  char* res;
-  void* car;
-  lstLen = listLength(lst);
-  res = (char*) malloc(sizeof(char)*lstLen+1);
-  for (i=0; i<lstLen /* MMC_NILTEST not required */ ; i++, lst = MMC_CDR(lst)) {
-    car = MMC_CAR(lst);
-    if (1 != MMC_HDRSTRLEN(MMC_GETHDR(car))) {
-     free_modelica_string(&res);
-     MMC_THROW();
-    }
-    res[i] = MMC_STRINGDATA(car)[0];
-  }
-  res[lstLen] = '\0';
-  return res;
-}
-
 stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
@@ -225,34 +206,6 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
   return res_head;
 }
 
-/* OMC declares this const, but we don't always use it in that manner... */
-stringAppendListExt_rettype stringAppendListExt(modelica_metatype lst)
-{
-  return stringAppendList(lst);
-}
-
-stringAppend_rettype stringAppend(modelica_string_const s1, modelica_string_const s2)
-{
-  int len1 = strlen(s1);
-  int len2 = strlen(s2);
-  char* str = (char*) malloc(len1+len2+1);
-
-  memcpy(str, s1, len1);
-  memcpy(str + len1, s2, len2 + 1);
-  str[len1+len2] = '\0';
-  return str;
-}
-
-modelica_metatype boxptr_stringAppend(modelica_metatype str1, modelica_metatype str2)
-{
-  const char* s1 = MMC_STRINGDATA(str1);
-  const char* s2 = MMC_STRINGDATA(str2);
-  char* str = (char*) stringAppend(s1,s2);
-  modelica_metatype res = mmc_mk_scon(str);
-  free(str);
-  return res;
-}
-
 stringLength_rettype stringLength(modelica_string_const str)
 {
   return strlen(str);
@@ -266,11 +219,6 @@ stringCompare_rettype stringCompare(modelica_string str1, modelica_string str2)
   if (res > 0)
     return 1;
   return 0;
-}
-
-stringEq_rettype stringEq(modelica_string str1, modelica_string str2)
-{
-  return 0 == strcmp(str1,str2) ? 1 : 0;
 }
 
 stringGetStringChar_rettype stringGetStringChar(modelica_string str, modelica_integer ix)
@@ -301,9 +249,16 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string str, model
   return res;
 }
 
-modelica_metatype boxptr_stringEq(modelica_metatype str1, modelica_metatype str2)
+modelica_string_const stringAppend(modelica_string_const s1, modelica_string_const s2)
 {
-  return mmc_mk_icon(stringEq(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2)));
+  int len1 = strlen(s1);
+  int len2 = strlen(s2);
+  char* str = (char*) malloc(len1+len2+1);
+
+  memcpy(str, s1, len1);
+  memcpy(str + len1, s2, len2 + 1);
+  str[len1+len2] = '\0';
+  return str;
 }
 
 /* List Operations */

@@ -6794,76 +6794,42 @@ protected function isBuiltinFunc "function: isBuiltinFunc
   is a builtin function, which either has a elabBuiltinHandler function
   or can be found in the builtin environment."
   input Env.Cache inCache;
-  input Absyn.Path inPath;
-  input Prefix.Prefix inPrefix;
+  input Absyn.Path inPath "the path of the found function";
   output Env.Cache outCache;
   output Boolean outBoolean;
   output Absyn.Path outPath "make the path non-FQ";
 algorithm
-  (outCache,outBoolean,outPath) := matchcontinue (inCache,inPath,inPrefix)
+  (outCache,outBoolean,outPath) := matchcontinue (inCache,inPath)
     local
       Ident id;
       Absyn.Path path;
       Env.Cache cache;
-      Prefix.Prefix pre;
-    case (cache,Absyn.IDENT(name = id),_)
+    case (cache,Absyn.IDENT(name = id))
       equation
         _ = elabBuiltinHandler(id);
       then
         (cache,true,inPath);
-    case (cache, Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)),_)
+    case (cache,Absyn.QUALIFIED("OpenModelicaInternal",Absyn.IDENT(name = id)))
       equation
         _ = elabBuiltinHandlerInternal(id);
       then
         (cache,true,inPath);
-    case (cache,Absyn.FULLYQUALIFIED(path),pre)
+    case (cache,Absyn.FULLYQUALIFIED(path))
       equation
-        (cache,true,path) = isBuiltinFunc(cache,path,pre);
+        (cache,true,path) = isBuiltinFunc(cache,path);
       then
         (cache,true,path);
-    case (cache, Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
-      then
-        (cache,true,inPath);
+    case (cache,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot"))) then (cache,true,inPath);
     
-    case (cache,path,pre)
+    case (cache,path)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = path);
         (cache,true) = Lookup.isInBuiltinEnv(cache,path);
-        checkSemiSupportedFunctions(path,pre);
       then
         (cache,true,inPath);
-    case (cache,_,_) then (cache,false,inPath);
+    case (cache,path) then (cache,false,path);
   end matchcontinue;
 end isBuiltinFunc;
-
-protected function checkSemiSupportedFunctions "Checks for special functions like arccos, ln, etc
-that are not covered by the specification, but is used in many libraries and is available in Dymola"
-input Absyn.Path path;
-input Prefix.Prefix inPrefix;
-algorithm
-  _ := matchcontinue(path,inPrefix)
-  local
-    Prefix.Prefix pre;
-    String ps;
-    case(Absyn.IDENT("arcsin"),pre) equation
-      ps = PrefixUtil.printPrefixStr3(pre);
-      Error.addMessage(Error.SEMI_SUPPORTED_FUNCTION,{"arcsin",ps});
-      then ();
-    case(Absyn.IDENT("arccos"),pre) equation
-      ps = PrefixUtil.printPrefixStr3(pre);
-      Error.addMessage(Error.SEMI_SUPPORTED_FUNCTION,{"arccos",ps});
-      then ();
-    case(Absyn.IDENT("arctan"),pre) equation
-      ps = PrefixUtil.printPrefixStr3(pre);
-      Error.addMessage(Error.SEMI_SUPPORTED_FUNCTION,{"arctan",ps});
-      then ();
-    case(Absyn.IDENT("ln"),pre) equation
-      ps = PrefixUtil.printPrefixStr3(pre);
-      Error.addMessage(Error.SEMI_SUPPORTED_FUNCTION,{"ln",ps});
-      then ();
-     case(_,_) then ();
-  end matchcontinue;
-end checkSemiSupportedFunctions;
 
 protected function elabCallBuiltin "function: elabCallBuiltin
 
@@ -8867,7 +8833,7 @@ algorithm
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
-        (cache,builtin,fn_1) = isBuiltinFunc(cache,fn_1,pre);
+        (cache,builtin,fn_1) = isBuiltinFunc(cache,fn_1);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         const = Util.if_(RTOpts.debugFlag("rml"), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
@@ -10745,11 +10711,10 @@ algorithm
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
-        (cache, isBuiltinFn, path) = isBuiltinFunc(cache,path,pre);
-        {t} = typelist;
+        (cache,{t}) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
+        (cache, isBuiltinFn, path) = isBuiltinFunc(cache,path);
         (tt,optPath) = t;
-        t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "builtin functions store NONE() there";
+        t = (tt, Util.if_(isBuiltinFn, SOME(path), optPath)) "some builtin functions store NONE() there";
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);

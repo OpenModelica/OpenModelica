@@ -120,24 +120,6 @@ function tanh
 external \"builtin\";
 end tanh;
 
-function arcsin
-  input Real x;
-  output Real y;
-external \"builtin\";
-end arcsin;
-
-function arccos
-  input Real x;
-  output Real y;
-external \"builtin\";
-end arccos;
-
-function arctan
-  input Real x;
-  output Real y;
-external \"builtin\";
-end arctan;
-
 function asin
   input Real x;
   output Real y;
@@ -174,12 +156,6 @@ function log
   output Real y(unit=\"1\");
 external \"builtin\";
 end log;
-
-function ln
-  input Real x(unit=\"1\");
-  output Real y(unit=\"1\");
-external \"builtin\";
-end ln;
 
 function log10
   input Real x(unit=\"1\");
@@ -475,127 +451,6 @@ algorithm
   y := -x;
 end realNeg;
 
-function realCos
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := cos(x);
-end realCos;
-
-function realCosh
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := cosh(x);
-end realCosh;
-
-function realAcos
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := acos(x);
-end realAcos;
-
-function realSin
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := sin(x);
-end realSin;
-
-function realSinh
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := sinh(x);
-end realSinh;
-
-function realAsin
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := asin(x);
-end realAsin;
-
-function realAtan
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := atan(x);
-end realAtan;
-
-function realAtan2
-  input Real x1;
-  input Real x2;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := atan2(x1,x2);
-end realAtan2;
-
-function realTanh
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := tanh(x);
-end realTanh;
-
-function realExp
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := exp(x);
-end realExp;
-
-function realLn
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := log(x);
-end realLn;
-
-function realLog10
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := log10(x);
-end realLog10;
-
-function realCeil
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := ceil(x);
-end realCeil;
-
-function realFloor
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := floor(x);
-end realFloor;
-
-function realSqrt
-  input Real x;
-  output Real y;
-  annotation(Inline = true);
-algorithm
-  y := sqrt(x);
-end realSqrt;
-
 function realLt
   input Real x1;
   input Real x2;
@@ -663,6 +518,135 @@ function realString
   output String str;
 external \"builtin\";
 end realString;
+
+function stringCharInt
+  input String ch;
+  output Integer i;
+external \"builtin\";
+end stringCharInt;
+
+function intStringChar
+  input Integer i;
+  output String ch;
+external \"builtin\";
+end intStringChar;
+
+function stringInt
+  input String str;
+  output Integer i;
+external \"builtin\";
+end stringInt;
+
+function stringListStringChar
+  input String str;
+  output list<String> chars;
+external \"builtin\";
+end stringListStringChar;
+
+function stringAppendList
+  input list<String> strs;
+  output String str;
+external \"builtin\";
+end stringAppendList;
+
+function stringLength
+  input String str;
+  output Integer i;
+external \"builtin\";
+end stringLength;
+
+function stringGetStringChar
+  input String str;
+  input Integer index;
+  output String ch;
+external \"builtin\";
+end stringGetStringChar;
+
+function stringUpdateStringChar
+  input String str;
+  input String newch;
+  input Integer index;
+  output String news;
+external \"builtin\";
+end stringUpdateStringChar;
+
+function stringAppend
+  input String s1;
+  input String s2;
+  output String s;
+  annotation(Inline=true);
+algorithm
+  s := s1 + s2;
+end stringAppend;
+
+function stringEq
+  input String s1;
+  input String s2;
+  output Boolean b;
+  annotation(Inline=true);
+algorithm
+  b := s1 == s2;
+end stringEq;
+
+function stringCompare
+  input String s1;
+  input String s2;
+  output Integer cmp;
+external \"builtin\";
+end stringCompare;
+
+function stringHash
+  input String str;
+  output Integer hash;
+external \"builtin\";
+end stringHash;
+
+function stringHashDjb2
+  input String str;
+  output Integer hash;
+external \"builtin\";
+end stringHashDjb2;
+
+function stringHashSdbm
+  input String str;
+  output Integer hash;
+external \"builtin\";
+end stringHashSdbm;
+"
+;
+
+protected constant String builtinImports =
+"
+/* These imports were used in e.g. MSL 1.6. They should not be here anymore...
+   If you need them, uncomment and recompile; they are not standard Modelica.
+  import arcsin = asin;
+  import arccos = acos;
+  import arctan = atan;
+  import ln = log;
+*/
+"
+;
+
+protected constant String builtinImportsMM =
+"
+  import listStringCharString = stringAppendList;
+  import stringCharListString = stringAppendList;
+  import stringEqual = stringEq;
+  import realCos = cos;
+  import realCosh = cosh;
+  import realAcos = acos;
+  import realSin = sin;
+  import realSinh = sinh;
+  import realAsin = asin;
+  import realAtan = atan;
+  import realAtan2 = atan2;
+  import realTanh = tanh;
+  import realExp = exp;
+  import realLn = log;
+  import realLog10 = log10;
+  import realCeil = ceil;
+  import realFloor = floor;
+  import realSqrt = sqrt;
 "
 ;
 
@@ -2686,7 +2670,7 @@ public function isACos
 algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arccos")) then ();
+    case (Absyn.IDENT(name = "acos")) then ();
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
   end matchcontinue;
@@ -2697,7 +2681,7 @@ public function isASin
 algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arcsin")) then ();
+    case (Absyn.IDENT(name = "asin")) then ();
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
   end matchcontinue;
@@ -2708,7 +2692,7 @@ public function isATan
 algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan")) then ();
+    case (Absyn.IDENT(name = "atan")) then ();
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
   end matchcontinue;
@@ -2719,7 +2703,7 @@ public function isATan2
 algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan2")) then ();
+    case (Absyn.IDENT(name = "atan2")) then ();
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
   end matchcontinue;
@@ -2959,6 +2943,7 @@ algorithm
   (outCache,env) := matchcontinue(inCache)
     local
       list<Absyn.Class> initialClasses;
+      list<Absyn.Import> imports;
 
   	// First look for cached version
     case (cache) equation
@@ -3429,7 +3414,8 @@ algorithm
       
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
       env = Env.extendFrameClasses(env, listReverse(Util.listFold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
-      
+      imports = getInitialImports();        
+      env = Util.listFoldR(imports, Env.extendFrameI, env);
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;
@@ -3446,27 +3432,6 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
-
-        // String Character Conversion Operations
-        env = Env.extendFrameT(env, "stringCharInt", string2int);
-        env = Env.extendFrameT(env, "intStringChar", int2string);
-
-        // String Operations
-        env = Env.extendFrameT(env, "stringInt", string2int);
-        env = Env.extendFrameT(env, "stringListStringChar", string2listOfString);
-        env = Env.extendFrameT(env, "listStringCharString", listOfString2string);
-        env = Env.extendFrameT(env, "stringCharListString", listOfString2string); // same as above, but with the old RML name
-        env = Env.extendFrameT(env, "stringAppendList", listOfString2string);
-        env = Env.extendFrameT(env, "stringLength", string2int);
-        env = Env.extendFrameT(env, "stringGetStringChar", stringInt2string);
-        env = Env.extendFrameT(env, "stringAppend", stringString2string);
-        env = Env.extendFrameT(env, "stringUpdateStringChar", stringStringInteger2string);
-        env = Env.extendFrameT(env, "stringEq", stringString2boolean);
-        env = Env.extendFrameT(env, "stringEqual", stringString2boolean);
-        env = Env.extendFrameT(env, "stringCompare", stringString2int);
-        env = Env.extendFrameT(env, "stringHash", string2int);
-        env = Env.extendFrameT(env, "stringHashDjb2", string2int);
-        env = Env.extendFrameT(env, "stringHashSdbm", string2int);
 
         // List Operations
         env = Env.extendFrameT(env, "listAppend", listAListA2listA);
@@ -3511,6 +3476,7 @@ algorithm
         env = Env.extendFrameT(env, "valueSlots", boxed2int);
         env = Env.extendFrameT(env, "valueEq", AA2bool);
         env = Env.extendFrameT(env, "referenceEq", AA2bool);
+        
       then env;
     case env then env;
   end matchcontinue;
@@ -3519,6 +3485,7 @@ end initialEnvMetaModelica;
 protected constant Integer memoryIndex = 3;
 
 public function getInitialFunctions
+"Fetches the Absyn.Program representation of the functions (and other classes) in the initial environment"
   output Absyn.Program initialProgram;
 algorithm
   initialProgram := matchcontinue ()
@@ -3544,6 +3511,31 @@ algorithm
       then initialProgram;
   end matchcontinue;
 end getInitialFunctions;
+
+public function getInitialImports
+"Fetches the list of imports that are implicitly added in the initial environment.
+Most of these are renaming imports, e.g. import arccos = acos."
+  output list<Absyn.Import> imports;
+algorithm
+  imports := matchcontinue ()
+    local
+      Absyn.Program initialProgram;
+      list<Absyn.ElementItem> eitems;
+      String msg,str;
+    case ()
+      equation
+        str = Util.if_(RTOpts.acceptMetaModelicaGrammar(), builtinImportsMM, "");
+        str = stringAppendList({"package Builtin ", builtinImports, " ", str, " end Builtin;"});
+        (initialProgram,msg) = Parser.parsestring(str);
+        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
+        Absyn.PROGRAM(classes = {Absyn.CLASS(name = "Builtin", body = Absyn.PARTS(classParts = {Absyn.PUBLIC(eitems)}))}) = initialProgram;
+      then Util.listMap(SCodeUtil.translateEitemlist(eitems,false), SCodeUtil.getImportFromElement);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to get initial imports"});
+      then fail();
+  end matchcontinue;
+end getInitialImports;
 
 end Builtin;
 
