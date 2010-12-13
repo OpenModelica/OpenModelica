@@ -224,6 +224,18 @@ algorithm
       then
         (cache,Values.LIST(es_1),stOpt);
 
+    case (cache,env,DAE.BOX(exp=e1),impl,stOpt,dimOpt,msg)
+      equation
+        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
+      then
+        (cache,v,stOpt);
+
+    case (cache,env,DAE.UNBOX(exp=e1),impl,stOpt,dimOpt,msg)
+      equation
+        (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
+      then
+        (cache,v,stOpt);
+
     case (cache,env,DAE.CONS(car=e1,cdr=e2),impl,stOpt,dimOpt,msg)
       equation
         (cache,v,stOpt) = ceval(cache,env,e1,impl,stOpt,dimOpt,msg);
@@ -1093,14 +1105,6 @@ algorithm
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
     case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
-    // Box/Unbox
-    case "mmc_mk_bcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_mk_rcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_mk_scon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_unbox_integer" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_unbox_real" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
-    case "mmc_unbox_string" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -2982,35 +2986,6 @@ algorithm
     case Values.STRING(str) equation 1 = stringLength(str); then str;
   end matchcontinue;
 end extractValueStringChar;
-
-protected function cevalNoBoxUnbox
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      list<Env.Frame> env;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Msg msg;
-      Env.Cache cache;
-      Values.Value val;
-    case (cache,env,{exp},impl,st,msg)
-      equation
-        (cache,val,st) = ceval(cache,env, exp, impl, st,NONE(), msg);
-      then
-        (cache,val,st);
-  end matchcontinue;
-end cevalNoBoxUnbox;
 
 protected function cevalCat "function: cevalCat
   evaluates the cat operator given a list of

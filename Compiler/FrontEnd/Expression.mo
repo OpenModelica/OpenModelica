@@ -1193,6 +1193,17 @@ algorithm
   end matchcontinue;
 end unboxExpType;
 
+public function unboxExp
+"takes an expression and unboxes it if it is boxed"
+	input DAE.Exp e;
+	output DAE.Exp outExp;
+algorithm
+  outExp := match (e)
+    case(DAE.BOX(e)) then e;
+    else e;
+  end match;
+end unboxExp;
+
 public function subscriptExp
 "function: subscriptExp
   Returns the expression in a subscript index.
@@ -1468,6 +1479,7 @@ algorithm
       list<DAE.Exp> explist;
       list<Type> tylist;
       Absyn.Path p;
+      String msg;
     
     case (DAE.ICONST(integer = _)) then DAE.ET_INT();
     case (DAE.RCONST(real = _)) then DAE.ET_REAL();
@@ -1511,9 +1523,12 @@ algorithm
       then DAE.ET_METATYPE();
     case (DAE.META_OPTION(NONE())) then DAE.ET_METATYPE();
     case (DAE.METARECORDCALL(path=_)) then DAE.ET_METATYPE();
+    case (DAE.BOX(_)) then DAE.ET_METATYPE();
+    case (DAE.UNBOX(ty = tp)) then tp;
     case e
       equation
-        Debug.fprintln("failtrace", "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e));
+        msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
   end matchcontinue;
 end typeof;
@@ -3675,6 +3690,20 @@ algorithm
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.META_OPTION(SOME(e1_1)),ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.BOX(e1)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e,ext_arg_2)) = rel((DAE.BOX(e1_1),ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
+    case ((e as DAE.UNBOX(e1,tp)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e,ext_arg_2)) = rel((DAE.UNBOX(e1_1,tp),ext_arg_1));
       then
         ((e,ext_arg_2));
 

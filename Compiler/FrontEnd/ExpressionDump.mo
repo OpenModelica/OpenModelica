@@ -862,6 +862,20 @@ algorithm
       then
         s_1;
     
+    case (DAE.BOX(e1), _, _, _)
+      equation
+        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s_1 = stringAppendList({"#(",s1,")"});
+      then
+        s_1;
+
+    case (DAE.UNBOX(e1,_), _, _, _)
+      equation
+        s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
+        s_1 = stringAppendList({"unbox(",s1,")"});
+      then
+        s_1;
+
     // MetaModelica Uniontype Constructor
     case (DAE.METARECORDCALL(path = fcn, args=args), _, _, _)
       equation
@@ -2039,6 +2053,22 @@ algorithm
         Print.printBuf("  end ");
         Print.printBuf(Dump.printMatchType(matchTy));
       then ();
+
+    case (DAE.BOX(e),_)
+      equation
+        Print.printBuf("#(");
+        printExp(e);
+        Print.printBuf(")");
+      then
+        ();
+
+    case (DAE.UNBOX(exp=e),_)
+      equation
+        Print.printBuf("unbox(");
+        printExp(e);
+        Print.printBuf(")");
+      then
+        ();
 
     case (e,_)
       equation

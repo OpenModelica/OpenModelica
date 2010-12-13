@@ -50,7 +50,7 @@ void mmc_prim_set_real(struct mmc_real *p, double d)
     p->data[1] = u.data[1];
 }
 
-mmc_mk_rcon_rettype mmc_mk_rcon(double d)
+void* mmc_mk_rcon(double d)
 {
     struct mmc_real *p = mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
     mmc_prim_set_real(p, d);
@@ -303,7 +303,7 @@ inline static int anyStringWork(void* any, int ix)
   if (numslots==0 && ctor==1) /* NONE() */ {
     checkAnyStringBufSize(ix,6);
     ix += sprintf(anyStringBuf+ix, "NONE()");
-    return;
+    return ix;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
@@ -343,8 +343,7 @@ modelica_string anyString(void* any)
   }
   *anyStringBuf = '\0';
   anyStringWork(any,0);
-  char* res = strdup(anyStringBuf);
-  return res;
+  return strdup(anyStringBuf);
 }
 
 void printAny(void* any)
@@ -355,7 +354,7 @@ void printAny(void* any)
   }
   *anyStringBuf = '\0';
   anyStringWork(any,0);
-  fputs(stderr, anyStringBuf);
+  fputs(anyStringBuf, stderr);
 }
 
 void printTypeOfAny(void* any) /* for debugging */

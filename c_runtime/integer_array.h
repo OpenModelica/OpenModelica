@@ -273,7 +273,7 @@ static inline int* data_of_integer_array(integer_array_t *a)
   res = (int*) a->data;
   data = (modelica_integer*) a->data;
   for (i=0; i<n; i++)
-    res[i] = (int) data[i]; // TODO: Check int out of range?
+    res[i] = (int) data[i]; /* TODO: Check int out of range? */
   return res;
 }
 #endif

@@ -1142,6 +1142,15 @@ uniontype Exp "Expressions
     list<MatchCase> cases;
     ExpType et;
   end MATCHEXPRESSION;
+  
+  record BOX
+    Exp exp;
+  end BOX;
+
+  record UNBOX
+    Exp exp;
+    ExpType ty;
+  end UNBOX;
 
   /* --- */
 

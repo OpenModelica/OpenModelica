@@ -48,6 +48,7 @@ public import SCode;
 public import Values;
 
 protected import ComponentReference;
+protected import DAEDump;
 protected import DAEUtil;
 protected import Expression;
 protected import Types;
@@ -1752,12 +1753,9 @@ algorithm
       DAE.ComponentRef cref1,cref2;
       String str;
     // remove unbox calls from simple types
-    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae,current)))
+    case((DAE.UNBOX(exp = e as DAE.CALL(path=orig_p)),(p,inputs,dae,current)))
       equation
-        true = isSimpleArg(args);
-        str = Absyn.pathString(orig_p);
-        true = Util.strncmp(str,"mmc",3);
-        e = Util.listFirst(args);
+        true = Absyn.pathEqual(p,orig_p);
       then
         ((e,(p,inputs,dae,current)));
     // fix recursive calls
@@ -1776,6 +1774,7 @@ algorithm
         failure(_ = DAEUtil.getNamedFunctionFromList(orig_p,dae)); // if function exists, do not replace call
         crefs = Util.listMap(inputs,DAEUtil.varCref);
         args2 = Util.listMap(crefs,Expression.crefExp);
+        args = Util.listMap(args,Expression.unboxExp); // Unbox args here
         args_1 = listAppend(args,args2);
         ty_1 = Expression.unboxExpType(ty);
       then

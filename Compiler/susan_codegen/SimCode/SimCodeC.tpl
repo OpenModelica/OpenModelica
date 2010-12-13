@@ -3318,9 +3318,9 @@ case VARIABLE(__) then
   else
     let shortType = mmcExpTypeShort(ty)
     if shortType then
-      let type = 'mmc__unbox__<%shortType%>_rettype'
-      let tmpVar = tempDecl('mmc__unbox__<%shortType%>_rettype', &varDecls)
-      let &varBox += '<%tmpVar%> = mmc__unbox__<%shortType%>(<%crefStr(varname)%>);<%\n%>'
+      let type = 'mmc_unbox_<%shortType%>_rettype'
+      let tmpVar = tempDecl('mmc_unbox_<%shortType%>_rettype', &varDecls)
+      let &varBox += '<%tmpVar%> = mmc_unbox_<%shortType%>(<%crefStr(varname)%>);<%\n%>'
       tmpVar
     else 
       crefStr(varname)*/
@@ -3338,9 +3338,9 @@ case ET_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
   let shortType = mmcExpTypeShort(varType)
-  let type = 'mmc__unbox__<%shortType%>_rettype'
-  let tmpVar = tempDecl('mmc__unbox__<%shortType%>_rettype', &varDecls)
-  let &preExp += '<%tmpVar%> = mmc__unbox__<%shortType%>(<%varName%>);<%\n%>'
+  let ty = 'modelica_<%shortType%>'
+  let tmpVar = tempDecl(ty, &varDecls)
+  let &preExp += '<%tmpVar%> = mmc_unbox_<%shortType%>(<%varName%>);<%\n%>'
   tmpVar
 end unboxVariable;
 
@@ -3380,12 +3380,12 @@ end funArgBox;
 template mmcConstructorType(ExpType type)
 ::=
   match type
-  case ET_INT(__) then 'mmc_mk_icon_rettype'
-  case ET_BOOL(__) then 'mmc_mk_icon_rettype'
-  case ET_REAL(__) then 'mmc_mk_rcon_rettype'
-  case ET_STRING(__) then 'mmc_mk_scon_rettype'
-  case ET_ENUMERATION(__) then 'mmc_mk_icon_rettype'
-  case ET_ARRAY(__) then 'mmc_mk_acon_rettype'
+  case ET_INT(__)
+  case ET_BOOL(__)
+  case ET_REAL(__)
+  case ET_STRING(__)
+  case ET_ENUMERATION(__)
+  case ET_ARRAY(__)
   case ET_COMPLEX(__) then 'modelica_metatype'
 end mmcConstructorType;
 
@@ -4491,7 +4491,9 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as META_OPTION(__)     then daeExpMetaOption(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as METARECORDCALL(__)  then daeExpMetarecordcall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as MATCHEXPRESSION(__) then daeExpMatch(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  else "UNKNOWN_EXP"
+  case e as BOX(__)             then daeExpBox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  else '<%\n%>#error "UNKNOWN_EXP <%ExpressionDump.printExpStr(exp)%>"<%\n%>'
 end daeExp;
 
 
@@ -4552,6 +4554,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
           >>
     else
       // The array subscript denotes a slice
+
       let arrName = contextArrayCref(cr, context)
       let arrayType = expTypeArray(ty)
       let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
@@ -4923,6 +4926,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(tuple_=false, builtin=true, ty = ET_ENUMERATION(__),
             path=IDENT(name="min"), expLst={e1,e2}) then
+
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'std::min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'  
@@ -5494,6 +5498,27 @@ template daeExpMatchCases(list<MatchCase> cases, Text res, Text prefix, Text onP
   >>
 end daeExpMatchCases;
 
+template daeExpBox(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp
+case exp as BOX(__) then
+  let ty = expTypeFromExpShort(exp.exp)
+  let res = daeExp(exp.exp,context,&preExp,&varDecls)
+  'mmc_mk_<%ty%>(<%res%>)'
+end daeExpBox;
+
+template daeExpUnbox(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp
+case exp as UNBOX(__) then
+  let ty = expTypeShort(exp.ty)
+  let res = daeExp(exp.exp,context,&preExp,&varDecls)
+  'mmc_unbox_<%ty%>(<%res%>)'
+end daeExpUnbox;
+
+
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
@@ -5865,6 +5890,8 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case ASUB(__)          then expTypeFromExpFlag(exp, flag)
   case REDUCTION(__)     then expTypeFromExpFlag(expr, flag)
+  case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
+  case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   else "expTypeFromExpFlag:ERROR"
 end expTypeFromExpFlag;
 

@@ -676,6 +676,13 @@ package DAE
       list<MatchCase> cases;
       ExpType et;
     end MATCHEXPRESSION;
+    record BOX
+      Exp exp;
+    end BOX;
+    record UNBOX
+      Exp exp;
+      ExpType ty;
+    end UNBOX;
   end Exp;
   
   uniontype MatchCase
@@ -1591,6 +1598,13 @@ package Expression
   end typeof;
 
 end Expression;
+
+package ExpressionDump
+  function printExpStr
+    input DAE.Exp e;
+    output String s;
+  end printExpStr;
+end ExpressionDump;
 
 package RTOpts
   function acceptMetaModelicaGrammar

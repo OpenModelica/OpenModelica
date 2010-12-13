@@ -105,23 +105,6 @@ struct mmc_string {
     char data[1];	/* `bytes' elements + terminating '\0' */
 };
 
-#define mmc__mk__bcon_rettype mmc_mk_bcon_rettype
-#define mmc__mk__bcon(X) mmc_mk_bcon(X)
-#define mmc__mk__icon_rettype mmc_mk_icon_rettype
-#define mmc__mk__icon(X) mmc_mk_icon(X)
-#define mmc__mk__rcon_rettype mmc_mk_rcon_rettype
-#define mmc__mk__rcon(X) mmc_mk_rcon(X)
-#define mmc__mk__scon_rettype mmc_mk_scon_rettype
-#define mmc__mk__scon(X) mmc_mk_scon(X)
-#define mmc__mk__acon_rettype mmc_mk_acon_rettype
-#define mmc__mk__acon(X) (&(X))
-
-typedef modelica_metatype mmc_mk_bcon_rettype;
-typedef modelica_metatype mmc_mk_icon_rettype;
-typedef modelica_metatype mmc_mk_rcon_rettype;
-typedef modelica_metatype mmc_mk_scon_rettype;
-typedef modelica_metatype mmc_mk_acon_rettype;
-
 static void *mmc_alloc_bytes(unsigned nbytes)
 {
   void *p;
@@ -141,14 +124,14 @@ static void *mmc_alloc_words(unsigned nwords)
 #define MMC_TRUE (mmc_mk_icon(1))
 #define mmc_mk_bcon(X) (X != 0 ? MMC_TRUE : MMC_FALSE)
 
-static inline mmc_mk_icon_rettype mmc_mk_icon(int i)
+static inline void* mmc_mk_icon(int i)
 {
     return MMC_IMMEDIATE(MMC_TAGFIXNUM((mmc_sint_t)i));
 }
 
-mmc_mk_rcon_rettype mmc_mk_rcon(double d);
+void* mmc_mk_rcon(double d);
 
-static inline mmc_mk_scon_rettype mmc_mk_scon(const char *s)
+static inline void* mmc_mk_scon(const char *s)
 {
     unsigned nbytes = strlen(s);
     unsigned header = MMC_STRINGHDR(nbytes);
@@ -353,10 +336,16 @@ typedef base_array_t      mmc__unbox__array_rettype;
 
 modelica_real mmc_prim_get_real(void *p);
 
-#define mmc__unbox__integer(X) MMC_UNTAGFIXNUM(X)
-#define mmc__unbox__real(X) mmc_prim_get_real(X)
-#define mmc__unbox__string(X) MMC_STRINGDATA(X)
-#define mmc__unbox__array(X) (*((base_array_t*)X))
+#define mmc_mk_integer mmc_mk_icon
+#define mmc_mk_boolean mmc_mk_bcon
+#define mmc_mk_string mmc_mk_scon
+#define mmc_mk_real mmc_mk_rcon
+
+#define mmc_unbox_boolean(X) MMC_UNTAGFIXNUM(X)
+#define mmc_unbox_integer(X) MMC_UNTAGFIXNUM(X)
+#define mmc_unbox_real(X) mmc_prim_get_real(X)
+#define mmc_unbox_string(X) MMC_STRINGDATA(X)
+#define mmc_unbox_array(X) (*((base_array_t*)X))
 
 #include <setjmp.h>
 

@@ -54,7 +54,7 @@ intString_rettype intString(modelica_integer i)
 
 modelica_metatype boxptr_intString(modelica_metatype i)
 {
-  char *buf = (char*) intString(mmc__unbox__integer(i));
+  char *buf = (char*) intString(mmc_unbox_integer(i));
   void *res = mmc_mk_scon(buf);
   free(buf);
   return res;

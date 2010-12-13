@@ -427,8 +427,45 @@ algorithm
         (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE(),NONE()), valueLst, DAE.C_CONST(),Prefix.NOPRE());
       then
         outExp;
+
+    case (e as DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = expl))
+      equation
+        expl = Util.listMap(expl, simplify1);
+        {DAE.LIST(valList = expl)} = expl;
+       then simplifyStringAppendList(expl,{});
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function simplifyStringAppendList
+"
+stringAppendList({abc,def,String(time),ghi,jkl}) => stringAppendList({abcdef,String(time),ghijkl})
+stringAppendList({abc,def,ghi,jkl}) => abcdefghijkl
+stringAppendList({}) => abcdefghijkl
+"
+  input list<DAE.Exp> expl;
+  input list<DAE.Exp> acc;
+  output DAE.Exp exp;
+algorithm
+  exp := match (expl,acc)
+    local
+      String s1,s2,s;
+      DAE.Exp exp,exp1,exp2;
+      list<DAE.Exp> rest;
+    case ({},{}) then DAE.SCONST("");
+    case ({},{exp}) then exp;
+    case ({},{exp1,exp2}) then DAE.BINARY(exp2,DAE.ADD(DAE.ET_STRING()),exp1);
+    case ({},acc)
+      equation
+        acc = listReverse(acc);
+        exp = DAE.LIST(DAE.ET_STRING(),acc);
+      then Static.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
+    case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc)
+      equation
+        s = s2 +& s1;
+      then simplifyStringAppendList(rest,DAE.SCONST(s)::acc);
+    case (exp::rest,acc) then simplifyStringAppendList(rest,exp::acc);
+  end match;
+end simplifyStringAppendList;
 
 protected function simplifyBuiltinConstantCalls "simplifies some builtin calls if constant arguments"
   input DAE.Exp exp "assumes already simplified call arguments";
@@ -3210,12 +3247,12 @@ algorithm
     
     // true AND e => e
     // TODO: Check if false AND e => false is ok, or if zero-crossing screw us over
-    case (_,DAE.AND(),DAE.BCONST(true),e) then e;
-    case (_,DAE.AND(),e,DAE.BCONST(true)) then e;
+    case (_,DAE.AND(),e1 as DAE.BCONST(b),e2) then Util.if_(b,e2,e1);
+    case (_,DAE.AND(),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e1,e2);
     // false OR e => e
     // TODO: Check if true or e => true is ok, or if zero-crossing screw us over
-    case (_,DAE.OR(),DAE.BCONST(false),e) then e;
-    case (_,DAE.OR(),e,DAE.BCONST(false)) then e;
+    case (_,DAE.OR(),e1 as DAE.BCONST(b),e2) then Util.if_(b,e1,e2);
+    case (_,DAE.OR(),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e2,e1);
 
     // nothing else to simplify
     case (e,_,_,_) then e;

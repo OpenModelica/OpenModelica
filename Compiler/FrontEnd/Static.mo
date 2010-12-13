@@ -1921,6 +1921,7 @@ algorithm
       equation
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
+        tty = Types.unboxedFunctionType(tty);
         (cache,args,_,_,tty as (_,SOME(p)),_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, pre, info);
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
@@ -14002,15 +14003,14 @@ algorithm _ := matchcontinue(op)
   end matchcontinue;
 end verifyOp;
 
-protected function makeBuiltinCall
+public function makeBuiltinCall
   "Create a DAE.CALL with the given data for a call to a builtin function."
   input String name;
   input list<DAE.Exp> args;
   input DAE.ExpType result_type;
   output DAE.Exp call;
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name), args, false, true, result_type,
-      DAE.NO_INLINE());
+  call := DAE.CALL(Absyn.IDENT(name),args,false,true,result_type,DAE.NO_INLINE());
 end makeBuiltinCall;
 
 protected function unevaluatedFunctionVariability
