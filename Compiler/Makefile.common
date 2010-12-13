@@ -160,10 +160,10 @@ BackendDAEEXT.mo \
 
 
 # all modules
-SRCMO = $(FRONTEND) $(BACKEND) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
-ALLMO = $(SRCMO) $(EXTERNAL)
-SRCC = $(SRCMO:%.mo=%.c)
-SRCH=	$(SRCC:%.c=%.h)
-SRCSIG=	$(ALLMO:%.mo=%.sig)
-SRCSIGX=	$(ALLMO:%.mo=%.sigx)
-SRCO=	$(SRCC:.c=.o)
+SRCMO   = $(FRONTEND) $(BACKEND) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
+ALLMO   = $(SRCMO) $(EXTERNAL)
+SRCC    = $(SRCMO:%.mo=%.c)
+SRCH    = $(SRCC:%.c=%.h)
+SRCSIG  = $(ALLMO:%.mo=%.sig)
+SRCSIGX = $(ALLMO:%.mo=%.sigx)
+SRCO    = $(SRCC:.c=.o)
