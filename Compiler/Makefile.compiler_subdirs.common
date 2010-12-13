@@ -16,7 +16,7 @@ SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 SQLITE3=
 
 .SUFFIXES: .o .mo .h .c
-.PHONY: .depend all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
+.PHONY: all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
 
 vpath %.mo $(FRONTEND_DIR)
 vpath %.mo $(BACKEND_DIR)
