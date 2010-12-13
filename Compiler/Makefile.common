@@ -20,109 +20,150 @@ $(srcdir)/runtime/runtime.a \
 $(srcdir)/../c_runtime/libc_runtime.a \
 $(srcdir)/modpar/libmodpar.a
 
-# The Susan-generated MO sources
-SUSANMO= \
-SimCodeC.mo \
-SimCodeCSharp.mo \
-SimCodeFMU.mo \
-TplCodegen.mo \
-Unparsing.mo
+FRONTEND_DIR=$(srcdir)/FrontEnd
+BACKEND_DIR=$(srcdir)/BackEnd
+TEMPLATE_DIR=$(srcdir)/Template
+SCRIPT_DIR=$(srcdir)/Script
+UTIL_DIR=$(srcdir)/Util
+MAIN_DIR=$(srcdir)/Main
+ALL_DIRS = $(FRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR)
+RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR)
+RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR)
 
-SRCMO= \
+FRONTEND = \
 Absyn.mo \
 AbsynDep.mo \
 Algorithm.mo \
-BackendDAE.mo \
-BackendDump.mo \
-BackendDAECreate.mo \
-BackendDAEOptimize.mo \
-BackendDAETransform.mo \
-BackendDAEUtil.mo \
-BackendEquation.mo \
-BackendVariable.mo \
-BaseHashTable.mo \
 Builtin.mo \
 Ceval.mo \
-CevalScript.mo \
 CevalFunction.mo \
 ClassInf.mo \
 ClassLoader.mo \
 ComponentReference.mo \
 Connect.mo \
-Constants.mo \
+ConnectUtil.mo \
 ConnectionGraph.mo \
+Constants.mo \
 DAE.mo \
-DAEUtil.mo \
 DAEDump.mo \
-Derive.mo \
-Debug.mo \
+DAEUtil.mo \
+Dependency.mo \
 Dump.mo \
 DumpGraphviz.mo \
 Env.mo \
-Error.mo \
+ExpandableConnectors.mo \
 Expression.mo \
 ExpressionDump.mo \
-ExpressionSolve.mo \
 ExpressionSimplify.mo \
-ExpandableConnectors.mo \
-SCode.mo \
-SCodeUtil.mo \
-SCodeFlatten.mo \
 Graphviz.mo \
+Inline.mo \
+InnerOuter.mo \
+Inst.mo \
+InstExtends.mo \
+InstSection.mo \
+InstanceHierarchy.mo \
+Lookup.mo \
+MMath.mo \
+MetaUtil.mo \
+Mod.mo \
+ModUtil.mo \
+Patternm.mo \
+Prefix.mo \
+PrefixUtil.mo \
+SCode.mo \
+SCodeFlatten.mo \
+SCodeUtil.mo \
+Static.mo \
+Types.mo \
+UnitAbsyn.mo \
+UnitAbsynBuilder.mo \
+UnitChecker.mo \
+Values.mo \
+ValuesUtil.mo
+
+
+BACKEND = \
+BackendDAE.mo \
+BackendDAECreate.mo \
+BackendDAEOptimize.mo \
+BackendDAETransform.mo \
+BackendDAEUtil.mo \
+BackendDump.mo \
+BackendEquation.mo \
+BackendVarTransform.mo \
+BackendVariable.mo \
+DAEQuery.mo \
+Derive.mo \
+ExpressionSolve.mo \
+PartFn.mo \
+SimCode.mo \
+TaskGraph.mo \
+XMLDump.mo
+
+TEMPLATE = \
+SimCodeC.mo \
+SimCodeCSharp.mo \
+SimCodeFMU.mo \
+Tpl.mo \
+TplAbsyn.mo \
+TplCodegen.mo \
+TplMain.mo \
+TplParser.mo \
+Unparsing.mo \
+# CompiledTemplates.mo \
+# TemplCG.mo
+
+UTIL = \
+BaseHashTable.mo \
+Debug.mo \
+Error.mo \
 HashTable.mo \
 HashTable2.mo \
 HashTable3.mo \
 HashTable5.mo \
 HashTableCG.mo \
 HashTableStringToPath.mo \
-Inline.mo \
-Inst.mo \
-InstExtends.mo \
-InstSection.mo \
-Interactive.mo \
-Lookup.mo \
-Main.mo \
-MMath.mo \
-MetaUtil.mo \
-Mod.mo \
-ModUtil.mo \
-PartFn.mo \
-Patternm.mo \
-Prefix.mo \
-PrefixUtil.mo \
-Static.mo \
-SimCode.mo \
-$(SUSANMO) \
-Types.mo \
-TaskGraph.mo \
-Tpl.mo \
-TplAbsyn.mo \
-TplParser.mo \
-TplMain.mo \
+IOStream.mo \
 Util.mo \
-UnitAbsyn.mo \
-UnitAbsynBuilder.mo \
-UnitChecker.mo \
-Values.mo \
-ValuesUtil.mo \
 VarTransform.mo \
-BackendVarTransform.mo \
-Refactor.mo \
-DAEQuery.mo \
-XMLDump.mo \
-InstanceHierarchy.mo \
-InnerOuter.mo \
-ConnectUtil.mo \
-Dependency.mo \
-IOStream.mo
+# Not used by OpenModelica!
+# HashTable4.mo \
+# HashTable6.mo \
 
-# These are externally defined MO modules
-ALLMO = $(SRCMO) BackendDAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
-		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo \
-		OptManager.mo UnitParserExt.mo SimulationResults.mo IOStreamExt.mo Database.mo  
 
-SRCC=	$(SRCMO:.mo=.c)
-SRCH=	$(SRCMO:.mo=.h)
-SRCSIG=	$(ALLMO:.mo=.sig)
-SRCSIGX=	$(ALLMO:.mo=.sigx)
+SCRIPT = \
+CevalScript.mo \
+Interactive.mo \
+Refactor.mo
+
+MAIN = \
+Main.mo 
+
+EXTERNAL = \
+Corba.mo \
+DynLoad.mo \
+ErrorExt.mo \
+Database.mo \
+Parser.mo \
+UnitParserExt.mo \
+IOStreamExt.mo \
+OptManager.mo \
+Print.mo \
+RTOpts.mo \
+Settings.mo \
+SimulationResults.mo \
+Socket.mo \
+System.mo \
+TaskGraphExt.mo \
+BackendDAEEXT.mo \
+
+
+
+# all modules
+SRCMO = $(FRONTEND) $(BACKEND) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
+ALLMO = $(SRCMO) $(EXTERNAL)
+SRCC = $(SRCMO:%.mo=%.c)
+SRCH=	$(SRCC:%.c=%.h)
+SRCSIG=	$(ALLMO:%.mo=%.sig)
+SRCSIGX=	$(ALLMO:%.mo=%.sigx)
 SRCO=	$(SRCC:.c=.o)

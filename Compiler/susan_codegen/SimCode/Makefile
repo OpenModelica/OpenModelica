@@ -8,23 +8,23 @@ all : SimCodeC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo
 SimCodeC.mo : SimCodeC.tpl SimCodeTV.mo
 	@echo " ** SimCodeC template compilation ** "
 	$(OMC) $<
-	cp -pf $@ ../../
+	cp -pf $@ ../../Template/
 	@echo " "
 
 SimCodeCSharp.mo : SimCodeCSharp.tpl SimCodeTV.mo
 	@echo " ** SimCodeCSharp template compilation ** "
 	$(OMC) $<
-	cp -pf $@ ../../
+	cp -pf $@ ../../Template/
 	@echo " "
 
 SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo
 	@echo " ** SimCodeFMU template compilation ** "
 	$(OMC) $<
-	cp -pf $@ ../../
+	cp -pf $@ ../../Template/
 	@echo " "	
 
 Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	@echo " ** Unparsing template compilation ** "
 	$(OMC) $<
-	cp -pf $@ ../../
+	cp -pf $@ ../../Template/
 	@echo " "	

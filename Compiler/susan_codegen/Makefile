@@ -6,7 +6,7 @@ all : TplCodegen.mo
 TplCodegen.mo : TplCodegen.tpl
 	@echo " ** TplCodegen generation ** "
 	$(OMC) +d=failtrace TplCodegen.tpl
-	cp -puf TplCodegen.mo ../
+	cp -puf TplCodegen.mo ../Template/
 	@echo " "
 
 test :

@@ -5,7 +5,7 @@
 
 include $(srcdir)/Makefile.common
 
-all : .testvariables $(ALLMO) $(SRCSIGX)
+all : .testvariables .depend $(ALLMO) $(SRCSIGX)
 	# Updated dependencies; reload make and compile the target
 	$(MAKE) -f $(MAKETARGET) $(PROG)
 
@@ -16,10 +16,18 @@ SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 SQLITE3=
 
 .SUFFIXES: .o .mo .h .c
-.PHONY: all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
+.PHONY: .depend all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
 
-$(ALLMO): %.mo : $(srcdir)/%.mo
-	cp $< $@
+vpath %.mo $(FRONTEND_DIR)
+vpath %.mo $(BACKEND_DIR)
+vpath %.mo $(TEMPLATE_DIR)
+vpath %.mo $(SCRIPT_DIR)
+vpath %.mo $(UTIL_DIR)
+vpath %.mo $(MAIN_DIR)
+
+.depend: $(ALLMO)
+	-$(RM) .depend
+	time $(RMLHOME)/bin/rml $(RML_INCLUDE_ALL_DIRS) -fdump-depends $(SRCMO) > .depend
 
 $(SRCO): %.o : %.c %.h
 	$(RMLC) $(RMLCFLAGS) -c $<
@@ -48,16 +56,17 @@ parser: $(SRCHSRCDIR)
 modpar: $(SRCHSRCDIR)
 	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
-clean:
-	rm -f $(ALLMO)
+clean:	
 	for d in ../runtime/ ../../Parser/ ../modpar/; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
-	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx)
+	$(RM) -f .depend
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ \
+	$(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) 
 
 reallyclean: clean
-	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(ALLMO:.mo=.srz) $(PROG)$(EXEEXT) 
+	$(RM) -f $(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) $(PROG)$(EXEEXT) 
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLMO)
@@ -66,4 +75,4 @@ Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
 
 ## dependencies
-include $(srcdir)/.depend
+-include .depend
