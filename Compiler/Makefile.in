@@ -74,13 +74,13 @@ dinstall: install_scripts $(PROGD)
 nodepend:
 	(cd omc_release && $(MAKE))
 
-omc_release: .depend
+omc_release:
 	(cd omc_release && $(MAKE))
 
-omc_debug: .depend
+omc_debug:
 	(cd omc_debug && $(MAKE))
 
-omc_profiler: .depend
+omc_profiler:
 	(cd omc_profiler && $(MAKE))
 
 #vctarget:
@@ -102,7 +102,7 @@ test:
 #		(cd $$d ; $(MAKE)) \
 #	done
 
-clean: .depend
+clean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
@@ -111,7 +111,7 @@ clean: .depend
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
 
-dclean: .depend
+dclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
@@ -120,7 +120,7 @@ dclean: .depend
 	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES)
 
-reallyclean: .depend
+reallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
@@ -128,7 +128,7 @@ reallyclean: .depend
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
-dreallyclean: .depend
+dreallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
@@ -151,10 +151,6 @@ OpenModelicaBootstrappingHeader.h: Absyn.mo Interactive.mo Values.mo GenerateOMC
 	@mv $@.new $@
 endif
 $(SUSANMO): simcode
-
-.depend: $(ALLMO)
-	-$(RM) .depend
-	time $(RML) -fdump-depends $(SRCMO) > .depend
 
 .PRECIOUS: Makefile
 

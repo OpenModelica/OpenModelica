@@ -33,7 +33,7 @@ LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml \
 PROG = omc
 RMLC	= @rmlc_bin@
 RML	= $(RMLHOME)/bin/rml
-RMLCFLAGS = -Wr,-Wshow-warnings@RML_TRACE@
+RMLCFLAGS = -Wr,-Wshow-warnings@RML_TRACE@,$(RMLC_INCLUDE_ALL_DIRS)
 
 MAKETARGET = Makefile
 include $(srcdir)/Makefile.compiler_subdirs.common
