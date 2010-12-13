@@ -982,8 +982,8 @@ algorithm
         dumpKind(kind);
         b = DAEUtil.hasStartAttr(dae_var_attr);
         sstart = DAEUtil.getStartAttrString(dae_var_attr);
-        sstart = Util.if_(b,sstart,"0.0");
-        print(stringAppendList({"(start= ",sstart,") "}));
+        sstart = Util.if_(b,stringAppendList({"(start = ",sstart,") "})," ");
+        print(sstart);
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);

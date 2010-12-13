@@ -1666,6 +1666,8 @@ algorithm
         (helpVarInfo, dlow2) = generateHelpVarInfo(dlow, comps);
         n_h = listLength(helpVarInfo);
 
+        dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+
         residualEquations = createResidualEquations(dlow2, ass1, ass2);
         nres = listLength(residualEquations);
 
@@ -1686,7 +1688,7 @@ algorithm
                                                 contBlocks, helpVarInfo);
         nonStateDiscEquations = createEquations(false, useZerocrossing(), true, false, false, dlow2, ass1, ass2,
                                                 discBlocks, helpVarInfo);
-        initialEquations = createInitialEquations(dlow2,functionTree);
+        initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
@@ -4599,54 +4601,16 @@ end failUnlessResidual;
 
 protected function createInitialEquations
   input BackendDAE.BackendDAE dlow;
-  input DAE.FunctionTree funcs;
   output list<SimEqSystem> initialEquations;
 algorithm
-  initialEquations := matchcontinue (dlow,funcs)
+  initialEquations := matchcontinue (dlow)
     local
-      BackendDAE.Variables vars,knvars,exObj,initvars,initknvars;
-      BackendDAE.EquationArray orderedEqs,removedEqs;
+      BackendDAE.Variables vars,knvars;
       array<DAE.Algorithm> algs;
-      list<BackendDAE.Equation> eqns_lst,eqns_lst1,initialEquationsTmp,initialEquationsTmp2;
-      list<BackendDAE.Var> initv,initv1,initkn,initkn1;
-      Integer unfixed,unfixed1;
-      BackendDAE.BackendDAE dae;
-
-   
-    case (dae as BackendDAE.DAE(orderedVars=vars,knownVars=knvars),funcs)
-      equation
-        true = RTOpts.debugFlag("initdlowdump");
-        // generate the initial equation system
-        /* change vars 
-          - parameters with fixed=false : become variable
-          - parameters with fixed=true : noting to do
-          
-          - variables with fixed=true : become parameter with start value else add start exp to equations
-          - variables with fixed=false and const bindExp : become parameter
-          - variables with fixed=false and not const bindExp : add bindExp to equations  
-          - variables with fixed=false nothing to do 
-          
-          - add variables for state derivatives 
-          
-          - all equations: 
-            - replace der(DAE.CREF(_)) with DER.DAE.CREF(_)
-            - collect equations from when equations with condition "initial()"
-
-					- all equations are : ordered equations, removed equations and initial equations          
-        */                                      
-        // vars
-        ((initv,initkn,eqns_lst,unfixed)) = BackendVariable.traverseBackendDAEVars(vars,createInitialVars,({},{},{},0));
-        // kvars
-        ((initv1,initkn1,eqns_lst1,unfixed1)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialVars,(initv,initkn,eqns_lst,unfixed));
-        initvars = BackendDAEUtil.listVar(initv1);        
-        initknvars = BackendDAEUtil.listVar(initkn1);  
-        // check unfixed vars
-        initialEquations =  createInitialEquations1(unfixed1,initvars,initknvars,eqns_lst1,dae,funcs);
-      then
-        initialEquations;   
+      list<BackendDAE.Equation> initialEquationsTmp,initialEquationsTmp2;
     
     // this is the old version if the new fails 
-    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs),_)
+    case (BackendDAE.DAE(orderedVars=vars, knownVars=knvars,algorithms=algs))
       equation
         // vars
         initialEquationsTmp2 = BackendVariable.traverseBackendDAEVars(vars,createInitialAssignmentsFromStart,{});
@@ -4661,257 +4625,13 @@ algorithm
       then
         initialEquations;
     
-    case (_,_)
+    case (_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createInitialEquations failed"});
       then
         fail();
   end matchcontinue;
 end createInitialEquations;
-
-protected function createInitialEquations1
-  input Integer inInteger;
-  input BackendDAE.Variables inVariables;
-  input BackendDAE.Variables inKnownVariables;
-  input list<BackendDAE.Equation> inEqnsLst;
-  input BackendDAE.BackendDAE dlow;
-  input DAE.FunctionTree funcs;
-  output list<SimEqSystem> initialEquations;
-algorithm
-  initialEquations := matchcontinue (inInteger,inVariables,inKnownVariables,inEqnsLst,dlow,funcs)
-    local
-      BackendDAE.Variables vars,knvars,exObj,initvars,initknvars;
-      BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs,initEqns,emptyeqns;
-      array<BackendDAE.MultiDimEquation> arrayEqs,arrayEqs1;
-      array<DAE.Algorithm> algs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.ExternalObjectClasses extObjClasses;
-      list<BackendDAE.Equation> eqns_lst,initialEquationsTmp,initialEquationsTmp2,eqns_lst5,eqns_lst4,eqns_lst3,eqns_lst2,eqns_lst1;
-      list<BackendDAE.Var> initv,initv1,initkn,initkn1;
-      BackendDAE.AliasVariables alisvars;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
-      Integer unfixed,unfixed1;
-      array<Integer> v1,v2;
-      list<Integer> lv1,lv2;
-      list<list<Integer>> comps;
-      list<BackendDAE.Var> lv,lkn;
-      list<HelpVarInfo> helpVarInfo;      
-      BackendDAE.BackendDAE initdlow,initdlow1,initdlow2;
-      list<BackendDAE.WhenClause> whenClauseLst;
-   
-    // noting unfixed then no initialisation is needed
-    case (unfixed,_,_,_,_,_)
-      equation
-        true = intEq(unfixed,0);
-      then 
-        {};
-   
-    case (unfixed,initvars,initknvars,eqns_lst,BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=exObj,orderedEqs=orderedEqs,removedEqs=removedEqs,
-           initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
-      equation
-        // equations
-        BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
-        ((eqns_lst2,_)) = BackendEquation.traverseBackendDAEEqns(orderedEqs,createInitialEqns,({},whenClauseLst));
-        ((eqns_lst3,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,createInitialEqns,(eqns_lst2,whenClauseLst));
-        ((eqns_lst4,_)) = BackendEquation.traverseBackendDAEEqns(initialEqs,createInitialEqns,(eqns_lst3,whenClauseLst));
-        eqns_lst5 = listAppend(eqns_lst4,eqns_lst);
-        
-         // sort the equations         
-        emptyeqns = BackendDAEUtil.listEquation({});
-        initEqns = BackendDAEUtil.listEquation(eqns_lst5);
-        alisvars = BackendDAEUtil.emptyAliasVariables();
-        arrayEqs1 = Util.arrayMap(arrayEqs,replaceDerOpMultiDimEquations);
-        initdlow = BackendDAE.DAE(initvars,initknvars,exObj,alisvars,initEqns,emptyeqns,emptyeqns,arrayEqs1,algs,eventInfo,extObjClasses);   
-        Debug.fcall("initdlowdump", print,"Init DAE:\n"); 
-        Debug.fcall("initdlowdump", BackendDump.dump,initdlow);
-        m = BackendDAEUtil.incidenceMatrix(initdlow,BackendDAE.ABSOLUTE());
-        mT = BackendDAEUtil.transposeMatrix(m);
-       (v1,v2,initdlow1,m,mT) = BackendDAETransform.matchingAlgorithm(initdlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT(), BackendDAE.KEEP_SIMPLE_EQN()),funcs);
-        Debug.fcall("initdlowdump", BackendDump.dump,initdlow1);
-        Debug.fcall("initdlowdump", BackendDump.dumpIncidenceMatrix,m);
-        Debug.fcall("initdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
-        Debug.fcall("initdlowdump", BackendDump.dumpMatching,v1);
-        (comps) = BackendDAETransform.strongComponents(m, mT, v1, v2);
-        Debug.fcall("initdlowdump", BackendDump.dumpComponents,comps);        
-
-        (helpVarInfo, initdlow2) = generateHelpVarInfo(initdlow1, comps);        
-        initialEquations = createEquations(false, false, true, false, false, initdlow2, v1, v2, comps, helpVarInfo);
-      then
-        initialEquations;   
-
-    case (_,_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createInitialEquations1 failed"});
-      then
-        fail();
-  end matchcontinue;
-end createInitialEquations1;
-
-protected function createInitialVars
-" function createInitialVars
- autor: Frenkel TUD 2010-12"
- input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<BackendDAE.Var>,list<BackendDAE.Equation>,Integer>> inTpl;
- output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<BackendDAE.Var>,list<BackendDAE.Equation>,Integer>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)  
-    local
-      BackendDAE.Var var,var1;
-      list<BackendDAE.Var> vars,knvars,vars1;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.VarKind kind;
-      DAE.Exp e,ecr;
-      DAE.ComponentRef cr;
-      Integer unfixed,unfixed1;
-
-    // remove dummy var      
-    case ((var as (BackendDAE.VAR(varName=DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}))),(vars,knvars,eqns,unfixed)))
-      equation
-        vars1 = addDerivativeVar(var,vars);
-      then
-        ((var,(vars1,knvars,eqns,unfixed)));
-
-    // parameters with fixed=false : become variable
-    case ((var,(vars,knvars,eqns,unfixed)))
-      equation
-        true = BackendVariable.isParam(var);
-        false = BackendVariable.varFixed(var);
-        var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
-      then
-        ((var,(var1::vars,knvars,eqns,unfixed+1)));
-    case ((var,(vars,knvars,eqns,unfixed)))
-      equation
-        true = BackendVariable.isParam(var);
-      then
-        ((var,(vars,var::knvars,eqns,unfixed)));
-            
-     // variables with fixed=true : become parameter with start value else add bindexp to equations
-     // variables with fixed=false and const bindExp : become parameter
-     // variables with fixed=false and not const bindExp : add bindExp to equations  
-    case ((var,(vars,knvars,eqns,unfixed)))
-      equation
-        kind = BackendVariable.varKind(var);
-        BackendVariable.isVarKindVariable(kind);
-        true = BackendVariable.varFixed(var);
-        _ = BackendVariable.varStartValueFail(var);
-        var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM());
-        vars1 = addDerivativeVar(var,vars);
-      then
-        ((var,(vars1,var1::knvars,eqns,unfixed)));
-    case ((var,(vars,knvars,eqns,unfixed))) 
-      equation
-        kind = BackendVariable.varKind(var);
-        BackendVariable.isVarKindVariable(kind);
-        e = BackendVariable.varBindExp(var);
-        cr = BackendVariable.varCref(var);
-        ecr = Expression.crefExp(cr);
-        var1 = fixStateVar(var);
-        vars1 = addDerivativeVar(var,vars);
-        unfixed1 = Util.if_(BackendVariable.varFixed(var),unfixed,unfixed+1); 
-      then
-        ((var,(var1::vars1,knvars,BackendDAE.EQUATION(ecr,e,DAE.emptyElementSource)::eqns,unfixed1)));
-
-    case ((var,(vars,knvars,eqns,unfixed))) 
-      equation
-        var1 = fixStateVar(var);
-        vars1 = addDerivativeVar(var,vars);
-      then
-        ((var,(var1::vars1,knvars,eqns,unfixed)));
-
-    case (inTpl) then inTpl;
-  end matchcontinue;
-end createInitialVars;
-
-protected function addDerivativeVar
-"autor: Frenkel TUD 2010-11
-    add variables for state derivatives"
- input BackendDAE.Var inVar;
- input list<BackendDAE.Var> inVars;
- output list<BackendDAE.Var> outVars;
-algorithm
-  outVars:=
-  matchcontinue (inVar,inVars)
-    local
-      BackendDAE.Var var,dvar;
-      list<BackendDAE.Var> vars;
-      DAE.VarDirection dir;
-      BackendDAE.Type tp;
-      list<DAE.Subscript> dim;
-      DAE.ComponentRef cr,dcr;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-    case (var,vars)
-      equation
-        true = BackendVariable.isStateVar(var);
-        BackendDAE.VAR(cr,_,dir,tp,_,_,dim,_,source,dae_var_attr,comment,flowPrefix,streamPrefix) = var;
-        dcr = ComponentReference.crefPrefixDer(cr);
-        dvar = BackendDAE.VAR(dcr,BackendDAE.VARIABLE(),dir,tp,NONE(),NONE(),dim,0,source,dae_var_attr,comment,flowPrefix,streamPrefix);
-      then dvar::vars;
-    case (var,vars) then vars; 
-  end matchcontinue;
-end addDerivativeVar;
-
-protected function fixStateVar
-"autor: Frenkel TUD 2010-11
-    change var kind from STATE to VARIABLE"
- input BackendDAE.Var inVar;
- output BackendDAE.Var outVar;
-algorithm
-  outVar:=
-  matchcontinue (inVar)
-    local
-      BackendDAE.Var var,var1;
-    case (var)
-      equation
-        true = BackendVariable.isStateVar(var);
-        var1 = BackendVariable.setVarKind(var,BackendDAE.DUMMY_STATE());   
-      then var1;
-    case (var)
-      equation
-        var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());   
-      then var1;
-  end matchcontinue;
-end fixStateVar;
-
-protected function createInitialEqns
-"autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Equation, tuple<list<BackendDAE.Equation>,list<BackendDAE.WhenClause>>> inTpl;
- output tuple<BackendDAE.Equation, tuple<list<BackendDAE.Equation>,list<BackendDAE.WhenClause>>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Equation e,e1;
-      DAE.Exp exp,exp1,ecr;
-      DAE.ComponentRef cr;
-      DAE.ElementSource source;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.WhenEquation weqn;
-      list<BackendDAE.WhenClause> whenClauseLst;
-
-    // only when eqns with initial() 
-    case ((e as BackendDAE.WHEN_EQUATION(whenEquation=weqn,source=source),(eqns,whenClauseLst)))
-      equation
-        
-      then ((e,(eqns,whenClauseLst)));
-
-    case ((e as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=exp,source=source),(eqns,whenClauseLst)))
-      equation
-         exp1 = replaceDerOpInExp(exp);
-         ecr = Expression.crefExp(cr);
-      then ((e,(BackendDAE.EQUATION(ecr,exp1,source)::eqns,whenClauseLst)));
-
-    case ((e,(eqns,whenClauseLst)))
-      equation
-         (e1,_) = BackendEquation.traverseBackendDAEExpsEqn(e,replaceDerOpInExpCond,NONE());
-      then ((e,(e1::eqns,whenClauseLst)));
-    case inTpl then inTpl; 
-  end matchcontinue;
-end createInitialEqns;
 
 protected function createParameterEquations
   input BackendDAE.BackendDAE dlow;

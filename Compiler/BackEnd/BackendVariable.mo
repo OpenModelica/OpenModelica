@@ -324,13 +324,13 @@ algorithm
 /*  See Modelica Spec 3.2 page 88: 
     For constants and parameters, the attribute fixed is by default true. For other variables
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
-*/  case (v) // states are by default fixed. 
+  case (v) // states are by default fixed. 
       equation
         BackendDAE.STATE() = varKind(v);
         fixed = RTOpts.debugFlag("initdlowdump");
       then
         not fixed;
-
+*/
     case (_) then false;  /* rest defaults to false*/
   end matchcontinue;
 end varFixed;
@@ -757,6 +757,19 @@ algorithm
       then rhsIndex < lhsIndex;
   end matchcontinue;
 end varIndexComparer;
+
+public function isConst
+"function: isConst
+  Return true if variable is a constant."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    case BackendDAE.VAR(varKind = BackendDAE.CONST()) then true;
+    case (_) then false;
+  end matchcontinue;
+end isConst;
 
 public function isParam
 "function: isParam

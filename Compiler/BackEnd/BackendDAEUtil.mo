@@ -75,6 +75,9 @@ protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
 
+/*************************************************
+ * checkBackendDAE and stuff 
+ ************************************************/
 
 public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMsg
   author: Frenkel TUD
@@ -245,6 +248,424 @@ algorithm
 		case inTuple then inTuple;
 	end matchcontinue;
 end traversecheckBackendDAEExp;
+
+/*************************************************
+ * Initialisation and stuff 
+ ************************************************/
+
+public function checkInitialSystem"function: checkInitialSystem
+  author: Frenkel TUD 2010-12
+
+  - check if the inital conditions full specified and fix it 
+  if not.
+"
+
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := matchcontinue (inDAE,funcs)
+    local
+      BackendDAE.Variables variables,knvars,exObj,initvars,initknvars;
+      BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
+      array<DAE.Algorithm> algs;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;      
+      Integer nie,nie1,nie2,unfixed,unfixed1;
+      BackendDAE.BackendDAE dae,dae1;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      list<DAE.ComponentRef> vars,varsws,states,statesws,vars1,varsws1,states1,statesws1;
+   
+    case (dae as BackendDAE.DAE(orderedVars=variables,knownVars=knvars,externalObjects=exObj,orderedEqs=orderedEqs,removedEqs=removedEqs,
+           initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
+      equation
+        /* count the unfixed variables */
+        // vars
+        ((vars,varsws,states,statesws,unfixed)) = BackendVariable.traverseBackendDAEVars(variables,countInitialVars,({},{},{},{},0));
+        // kvars
+        ((vars,varsws,states,statesws,unfixed1)) = BackendVariable.traverseBackendDAEVars(knvars,countInitialVars,(vars,varsws,states,statesws,unfixed));
+        /* count the equations */
+        nie = equationSize(initialEqs);
+        BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
+        ((nie1,_)) = BackendEquation.traverseBackendDAEEqns(orderedEqs,countInitialEqns,(nie,whenClauseLst));
+        ((nie2,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,countInitialEqns,(nie1,whenClauseLst));
+        dae1 = checkInitialSystem1(unfixed1,nie2,dae,funcs,vars,varsws,states,statesws);
+      then
+        dae;   
+    
+    case (dae,_)
+      equation
+        print("- BackendDAEUtil.checkInitialSystem failed\n");
+      then
+        dae;
+  end matchcontinue;
+end checkInitialSystem;
+
+protected function checkInitialSystem1"function: checkInitialSystem
+  author: Frenkel TUD 2010-12"
+  input Integer inUnfixed;
+  input Integer inInitialEqns;
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree funcs;
+  input list<DAE.ComponentRef> inVars;
+  input list<DAE.ComponentRef> inVarsWS;
+  input list<DAE.ComponentRef> inStates;
+  input list<DAE.ComponentRef> inStatesWS;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := matchcontinue (inUnfixed,inInitialEqns,inDAE,funcs,inVars,inVarsWS,inStates,inStatesWS)
+    local
+      BackendDAE.Variables vars,knvars,exObj,vars1,knvars1;
+      BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
+      array<DAE.Algorithm> algs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.ExternalObjectClasses extObjClasses;
+      BackendDAE.AliasVariables alisvars;
+      BackendDAE.BackendDAE dae1;
+   
+    // unfixed equal equations
+    case (inUnfixed,inInitialEqns,inDAE,_,_,_,_,_)
+      equation
+        true = intEq(inUnfixed,inInitialEqns);
+      then 
+        inDAE;
+  
+    // unfixed less than equations
+    case (inUnfixed,inInitialEqns,inDAE,_,_,_,_,_)
+      equation
+        true = intLt(inUnfixed,inInitialEqns);
+      then 
+        inDAE;  
+   
+    // unfixed grather than equations
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,orderedEqs=orderedEqs,removedEqs=removedEqs,
+           initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
+      equation
+        true = RTOpts.debugFlag("dumpInit");
+        print("Warning initial conditions not fully specified.\n"); 
+        print("Variables with fixed=false: ");print(intString(inUnfixed)); print("\n");
+        print("Number of equations for initialisation: ");print(intString(inInitialEqns)); print("\n");
+        true = intGt(inUnfixed,inInitialEqns);
+        // change fixed to true until equal equations
+        (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);        
+        dae1 = BackendDAE.DAE(vars1,knvars1,exObj,alisvars,orderedEqs,removedEqs,initialEqs,arrayEqs,algs,eventInfo,extObjClasses);
+      then 
+        dae1;    
+   
+    // unfixed grather than equations
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(orderedVars=vars,knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,orderedEqs=orderedEqs,removedEqs=removedEqs,
+           initialEqs=initialEqs,arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
+      equation
+        true = intGt(inUnfixed,inInitialEqns);
+        // change fixed to true until equal equations
+        (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);        
+        dae1 = BackendDAE.DAE(vars1,knvars1,exObj,alisvars,orderedEqs,removedEqs,initialEqs,arrayEqs,algs,eventInfo,extObjClasses);
+      then 
+        dae1;     
+
+    case (_,_,inDAE,_,_,_,_,_)
+      equation
+        print("- BackendDAEUtil.checkInitialSystem1 failed\n");
+      then
+        inDAE;
+  end matchcontinue;
+end checkInitialSystem1;
+
+protected function countInitialVars
+" function countInitialVars
+ autor: Frenkel TUD 2010-12"
+ input tuple<BackendDAE.Var, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef>,Integer>> inTpl;
+ output tuple<BackendDAE.Var, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<DAE.ComponentRef>,Integer>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)  
+    local
+      BackendDAE.Var var;
+      list<DAE.ComponentRef> vars,varsws,states,statesws;
+      Integer unfixed;
+      BackendDAE.VarKind kind;
+      DAE.ComponentRef cr;
+      String s,scr;
+
+    // constants
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isConst(var);
+      then 
+        ((var,(vars,varsws,states,statesws,unfixed)));
+    // parameters with fixed=false : become variable
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isParam(var);
+        false = BackendVariable.varFixed(var);
+      then
+        ((var,(vars,varsws,states,statesws,unfixed+1)));
+    // parameters with fixed=true
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isParam(var);
+      then
+        ((var,(vars,varsws,states,statesws,unfixed)));
+
+    // states with fixed=true    
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isStateVar(var);
+        true = BackendVariable.varFixed(var);
+      then
+        ((var,(vars,varsws,states,statesws,unfixed+1 /*for derivative*/)));
+    // states with fixed=false and start value
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isStateVar(var);
+        false = BackendVariable.varFixed(var);
+        _ = BackendVariable.varStartValueFail(var);
+        cr = BackendVariable.varCref(var);
+      then
+        ((var,(vars,varsws,states,cr::statesws,unfixed+2/*+1 for derivative*/)));
+    // states with fixed=false and without start value
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.isStateVar(var);
+        false = BackendVariable.varFixed(var);
+        cr = BackendVariable.varCref(var);
+      then
+        ((var,(vars,varsws,cr::states,statesws,unfixed+2/*+1 for derivative*/)));
+
+    // vars with fixed=true    
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = BackendVariable.varFixed(var);
+        kind = BackendVariable.varKind(var);
+        BackendVariable.isVarKindVariable(kind);
+      then
+        ((var,(vars,varsws,states,statesws,unfixed)));
+  
+    // vars with fixed=false and bound expression    
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        false = BackendVariable.varFixed(var);
+        kind = BackendVariable.varKind(var);
+        BackendVariable.isVarKindVariable(kind);
+        _ = BackendVariable.varBindExp(var);
+      then
+        ((var,(vars,varsws,states,statesws,unfixed)));  
+        
+    // vars with fixed=false and start value
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        false = BackendVariable.varFixed(var);
+        kind = BackendVariable.varKind(var);
+        BackendVariable.isVarKindVariable(kind);
+        _ = BackendVariable.varStartValueFail(var);
+        cr = BackendVariable.varCref(var);
+      then
+        ((var,(vars,cr::varsws,states,statesws,unfixed+1)));
+    // vars with fixed=false and without start value
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        false = BackendVariable.varFixed(var);
+        kind = BackendVariable.varKind(var);
+        BackendVariable.isVarKindVariable(kind);
+        cr = BackendVariable.varCref(var);
+      then
+        ((var,(cr::vars,varsws,states,statesws,unfixed+1)));            
+
+    // vars with no case print
+    case ((var,(vars,varsws,states,statesws,unfixed)))
+      equation
+        true = RTOpts.debugFlag("dumpInit");
+        cr = BackendVariable.varCref(var);
+        scr = ComponentReference.printComponentRefStr(cr);
+        s = stringAppendList({"countInitialVars: No case for  ",scr,"\n"});
+        print(s);        
+      then
+        ((var,(vars,varsws,states,statesws,unfixed))); 
+
+    case (inTpl) then inTpl; 
+
+  end matchcontinue;
+end countInitialVars;
+
+protected function countInitialEqns
+"autor: Frenkel TUD 2010-11"
+ input tuple<BackendDAE.Equation, tuple<Integer,list<BackendDAE.WhenClause>>> inTpl;
+ output tuple<BackendDAE.Equation, tuple<Integer,list<BackendDAE.WhenClause>>> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Equation e;
+      DAE.ComponentRef cr;
+      BackendDAE.WhenEquation weqn;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      Integer nie;
+
+    // only when eqns with initial() 
+    case ((e as BackendDAE.WHEN_EQUATION(whenEquation=weqn),(nie,whenClauseLst)))
+      equation
+        
+      then ((e,(nie,whenClauseLst)));
+
+    case ((e,(nie,whenClauseLst)))
+      then ((e,(nie+1,whenClauseLst)));
+  end matchcontinue;
+end countInitialEqns;
+
+protected function fixInitalVars"function: fixInitalVars
+  author: Frenkel TUD 2010-12"
+  input Integer inUnfixed;
+  input Integer inInitialEqns;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables inKnVariables;
+  input list<DAE.ComponentRef> inVars;
+  input list<DAE.ComponentRef> inVarsWS;
+  input list<DAE.ComponentRef> inStates;
+  input list<DAE.ComponentRef> inStatesWS;  
+  output BackendDAE.Variables outVariables;
+  output BackendDAE.Variables outKnVariables;
+algorithm
+  (outVariables,outKnVariables) := matchcontinue (inUnfixed,inInitialEqns,inVariables,inKnVariables,inVars,inVarsWS,inStates,inStatesWS)
+    local
+      BackendDAE.Variables variables,knvariables,variables1,knvariables1;
+      list<DAE.ComponentRef> vars,varsws,states,statesws;
+      DAE.ComponentRef cr;
+      BackendDAE.Var var,var1;
+      Integer unfixed,ine;
+      String scr,s;
+   
+    case (unfixed,ine,inVariables,inKnVariables,{},{},{},{})
+      then 
+        (inVariables,inKnVariables);   
+   
+    // unfixed equal equations
+    case (unfixed,ine,inVariables,inKnVariables,_,_,_,_)
+      equation
+        true = intEq(unfixed,ine);
+      then 
+        (inVariables,inKnVariables);
+  
+    // first states with start value
+    case (unfixed,ine,inVariables,inKnVariables,vars,varsws,states,cr::statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1); 
+
+    // then variables with start value
+    case (unfixed,ine,inVariables,inKnVariables,vars,cr::varsws,states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);  
+    case (unfixed,ine,inVariables,inKnVariables,vars,cr::varsws,states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inKnVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inKnVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,inVariables,variables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);         
+
+    // then states 
+    case (unfixed,ine,inVariables,inKnVariables,vars,varsws,cr::states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);  
+
+    // then variables 
+    case (unfixed,ine,inVariables,inKnVariables,cr::vars,varsws,states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,variables,inKnVariables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);   
+   case (unfixed,ine,inVariables,inKnVariables,cr::vars,varsws,states,statesws)
+      equation
+        // get Var 
+        ((var :: _),_) = BackendVariable.getVar(cr, inKnVariables);         
+        // add Warning
+        warningInitialSystem(cr);
+        // set fixed=true        
+        var1 = BackendVariable.setVarFixed(var,true);
+        // update variables 
+        variables = BackendVariable.addVar(var1,inKnVariables);
+        (variables1,knvariables1) = fixInitalVars(inUnfixed-1,inInitialEqns,inVariables,variables,vars,varsws,states,statesws);
+      then 
+        (variables1,knvariables1);
+        
+    case (_,_,inVariables,inKnVariables,_,_,_,_)
+      equation
+        true = RTOpts.debugFlag("dumpInit");
+        print("- BackendDAEUtil.fixInitalVars failed\n");
+      then
+        (inVariables,inKnVariables);
+
+    case (_,_,inVariables,inKnVariables,_,_,_,_)
+      then
+        (inVariables,inKnVariables);
+
+  end matchcontinue;
+end fixInitalVars;
+
+
+protected function warningInitialSystem
+  input DAE.ComponentRef cr;
+algorithm
+  _ :=
+  matchcontinue (cr)
+    local
+      String scr,s;
+    case (cr)
+      equation
+        true = RTOpts.debugFlag("dumpInit");
+        scr = ComponentReference.printComponentRefStr(cr);
+        s = stringAppendList({"Set ",scr," fixed=true.\n"});
+        print(s);
+      then
+        ();
+    case (_) then ();
+  end matchcontinue;  
+end warningInitialSystem;
 
 /************************************************************
   Util function at Backend using for lowering and other stuff
