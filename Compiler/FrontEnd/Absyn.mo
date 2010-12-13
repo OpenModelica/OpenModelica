@@ -2113,6 +2113,30 @@ algorithm
   end matchcontinue;
 end pathPrefix;
 
+public function prefixPath
+  "Prefixes a path with an identifier."
+  input Ident prefix;
+  input Path path;
+  output Path outPath;
+algorithm
+  outPath := QUALIFIED(prefix, path);
+end prefixPath;
+
+public function prefixOptPath
+  "Prefixes an optional path with an identifier."
+  input Ident prefix;
+  input Option<Path> optPath;
+  output Option<Path> outPath;
+algorithm
+  outPath := match(prefix, optPath)
+    local
+      Path path;
+
+    case (_, NONE()) then SOME(IDENT(prefix));
+    case (_, SOME(path)) then SOME(QUALIFIED(prefix, path));
+  end match;
+end prefixOptPath;
+
 public function pathSuffixOf "returns true if suffix_path is a suffix of path"
   input Path suffix_path;
   input Path path;
@@ -3021,10 +3045,11 @@ Appends a path to optional 'base'-path.
   input Option<Path> basePath;
   input Path lastPath;
   output Path mergedPath;
-algorithm mergedPath := matchcontinue(basePath, lastPath)
-  case(NONE(),lastPath) then lastPath;
-  case(SOME(mergedPath), lastPath) then pathAppendList({mergedPath,lastPath});
-end matchcontinue;
+algorithm 
+  mergedPath := match(basePath, lastPath)
+    case(NONE(), _) then lastPath;
+    case(SOME(mergedPath), _) then joinPaths(mergedPath, lastPath);
+  end match;
 end optPathAppend;
 
 public function pathAppendList "function: pathAppendList
@@ -3195,6 +3220,35 @@ algorithm
       then CREF_FULLYQUALIFIED(c);
   end matchcontinue;
 end pathToCref;
+
+public function pathToCrefWithSubs
+  "This function converts a Path to a ComponentRef, and applies the given
+  subscripts to the last identifier."
+  input Path inPath;
+  input list<Subscript> inSubs;
+  output ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match(inPath, inSubs)
+    local
+      Ident i;
+      ComponentRef c;
+      Path p;
+
+    case (IDENT(name = i), _) then CREF_IDENT(i, inSubs);
+
+    case (QUALIFIED(name = i, path = p), _)
+      equation
+        c = pathToCrefWithSubs(p, inSubs);
+      then
+        CREF_QUAL(i, {}, c);
+
+    case (FULLYQUALIFIED(p), _)
+      equation
+        c = pathToCrefWithSubs(p, inSubs);
+      then
+        CREF_FULLYQUALIFIED(c);
+  end match;
+end pathToCrefWithSubs;
 
 public function crefFirstIdent "
 Returns the base-name of the Absyn.componentReference"
