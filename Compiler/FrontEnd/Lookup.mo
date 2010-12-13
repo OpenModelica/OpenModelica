@@ -123,14 +123,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()))}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
       then
         (cache, t, env);
 
@@ -1654,9 +1654,9 @@ algorithm
     /* function_name cardinality */
     case (env,"cardinality")
       then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),NONE()),NONE()))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE()),
+                              DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE()),
             (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),NONE()),NONE()))},
-                              DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE())};
+                              DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE())};
 
   end matchcontinue;
 end createGenericBuiltinFunctions;

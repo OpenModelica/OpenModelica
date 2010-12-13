@@ -164,6 +164,7 @@ end log10;
 
 function print \"Not standard Modelica, but very useful for debugging.\"
   input String str;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end print;
 "
@@ -756,6 +757,7 @@ function arrayUpdate
   input TypeA newValue;
   output array<TypeA> newArray \"same as the input array; not really needed here\";
   replaceable type TypeA subtypeof Any;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end arrayUpdate;
 
@@ -784,6 +786,7 @@ end anyString;
 function printAny
   input TypeA a;
   replaceable type TypeA subtypeof Any;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end printAny;
 
@@ -791,7 +794,7 @@ function debug_print
   input String str;
   input TypeA a;
   replaceable type TypeA subtypeof Any;
-  annotation(__OpenModelica_EarlyInline = true);
+  annotation(__OpenModelica_Impure = true);
 algorithm
   print(str);
   print(anyString(a));
@@ -799,6 +802,7 @@ end debug_print;
 
 function tick
   output Integer t;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end tick;
 
@@ -813,6 +817,7 @@ function setGlobalRoot
   input Integer index;
   input TypeA value;
   replaceable type TypeA subtypeof Any;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end setGlobalRoot;
 
@@ -843,11 +848,13 @@ function referenceEq
   input TypeA a2;
   output Boolean b;
   replaceable type TypeA subtypeof Any;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end referenceEq;
 
 function clock
   output Real t;
+  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end clock;
 
@@ -1091,22 +1098,9 @@ protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
 
 protected
 replaceable type Type_a subtypeof Any;
-constant DAE.Type nil2real=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+constant DAE.Type nil2real=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-protected constant DAE.Type nil2bool=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type record2str=(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")),{},NONE(),NONE()),NONE()))},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type strStr2bool=(DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT),("y",DAE.T_STRING_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type real2string=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type int2string =(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type bool2string =(
-          DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+protected constant DAE.Type nil2bool=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type stringIntInt2string=(
           DAE.T_FUNCTION(
@@ -1116,56 +1110,53 @@ protected constant DAE.Type stringIntInt2string=(
               ("z",DAE.T_INTEGER_DEFAULT)
               },
               DAE.T_STRING_DEFAULT,
-              DAE.NO_INLINE()),
+              DAE.FUNCTION_ATTRIBUTES_DEFAULT),
               NONE());
 
 protected constant DAE.Type real2real=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type real2int=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2real=(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realReal2real=(
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2int=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> int2bool=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant tuple<DAE.TType, Option<Type_a>> enumeration2int=(
           DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}),NONE()))},
-          DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type intInt2int=(
           DAE.T_FUNCTION(
           {("x",DAE.T_INTEGER_DEFAULT),
-          ("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          ("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type intInt2bool=(
           DAE.T_FUNCTION(
           {("x",DAE.T_INTEGER_DEFAULT),
-          ("y",DAE.T_INTEGER_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
+          ("y",DAE.T_INTEGER_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type bool2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type boolBool2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT),("y",DAE.T_BOOL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type real2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realReal2bool=(
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
+          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 // for semiLinear and delay
 protected constant DAE.Type realRealReal2real=(
@@ -1173,1087 +1164,1087 @@ protected constant DAE.Type realRealReal2real=(
           {("x",DAE.T_REAL_DEFAULT),
            ("y",DAE.T_REAL_DEFAULT),
            ("z",DAE.T_REAL_DEFAULT)},
-          DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realRealReal2Real=(
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT),("z",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT),("z",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type anyNonExpandableConnector2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type anyExpandableConnector2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_2_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_3_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_4_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_4_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_5_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_5_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_6_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_6_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_7_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_7_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimint2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_8_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_8_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2int=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_2_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_3_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_3_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_4_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_4_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_5_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_5_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_6_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_6_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_7_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_7_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_8_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_8_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_1_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_2_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_3_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_3_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_4_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_4_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_5_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_5_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_6_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_6_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_7_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_7_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2string=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_8_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_8_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2int=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2bool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_1_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_2_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_3_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_4_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_4_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_5_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_5_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_6_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_6_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_7_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_7_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimintInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_8_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_8_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimrealInt2int=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_1_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_2_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_3_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_3_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_4_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_4_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_5_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_5_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_6_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_6_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_7_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_7_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstringInt2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_STRING_ARRAY_8_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_8_DEFAULT),("y",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimboolInt2int=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT), ("y",DAE.T_INTEGER_DEFAULT)}, 
-            DAE.T_INTEGER_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_INTEGER_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimint2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimint2matrixint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimint2array2dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimint2array3dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_3_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimint2array4dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_4_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_4_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimint2array5dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_5_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_5_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimint2array6dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_6_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_6_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimint2array7dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_7_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_7_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimint2array8dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_8_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_8_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2array1dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)}, T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2array2dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)}, T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2array3dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, T_REAL_ARRAY_3_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)}, T_REAL_ARRAY_3_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2array4dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, T_REAL_ARRAY_4_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)}, T_REAL_ARRAY_4_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2array5dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, T_REAL_ARRAY_5_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)}, T_REAL_ARRAY_5_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2array6dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, T_REAL_ARRAY_6_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)}, T_REAL_ARRAY_6_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2array7dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, T_REAL_ARRAY_7_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)}, T_REAL_ARRAY_7_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2array8dimreal=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, T_REAL_ARRAY_8_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)}, T_REAL_ARRAY_8_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2array1dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_1_DEFAULT)}, T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_1_DEFAULT)}, T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2array2dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_2_DEFAULT)}, T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_2_DEFAULT)}, T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2array3dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_3_DEFAULT)}, T_STRING_ARRAY_3_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_3_DEFAULT)}, T_STRING_ARRAY_3_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2array4dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_4_DEFAULT)}, T_STRING_ARRAY_4_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_4_DEFAULT)}, T_STRING_ARRAY_4_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2array5dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_5_DEFAULT)}, T_STRING_ARRAY_5_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_5_DEFAULT)}, T_STRING_ARRAY_5_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2array6dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_6_DEFAULT)}, T_STRING_ARRAY_6_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_6_DEFAULT)}, T_STRING_ARRAY_6_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2array7dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_7_DEFAULT)}, T_STRING_ARRAY_7_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_7_DEFAULT)}, T_STRING_ARRAY_7_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2array8dimstring=(
-          DAE.T_FUNCTION({("x", T_STRING_ARRAY_8_DEFAULT)}, T_STRING_ARRAY_8_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_STRING_ARRAY_8_DEFAULT)}, T_STRING_ARRAY_8_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2array1dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)}, T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2array2dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)}, T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2array3dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, T_BOOL_ARRAY_3_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)}, T_BOOL_ARRAY_3_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2array4dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, T_BOOL_ARRAY_4_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)}, T_BOOL_ARRAY_4_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2array5dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, T_BOOL_ARRAY_5_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)}, T_BOOL_ARRAY_5_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2array6dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, T_BOOL_ARRAY_6_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)}, T_BOOL_ARRAY_6_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2array7dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, T_BOOL_ARRAY_7_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)}, T_BOOL_ARRAY_7_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2array8dimbool=(
-          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, T_BOOL_ARRAY_8_DEFAULT, DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)}, T_BOOL_ARRAY_8_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2vectorreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_2_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_3_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_4_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_5_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_6_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_7_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2matrixreal=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_8_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_1_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_2_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_3_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_4_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_5_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_6_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_7_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2vectorstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_8_DEFAULT)},
-          T_STRING_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_1_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_2_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_3_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_4_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_5_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_6_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_7_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2matrixstring=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_8_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2vectorint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2vectorbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)},
-            T_BOOL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_1_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_2_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_3_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_4_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_5_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_6_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_7_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2matrixbool=(
           DAE.T_FUNCTION({("x", T_BOOL_ARRAY_8_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2matrixint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-            T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+            T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type real2matrixreal=(
           DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type string2matrixstring=(
           DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},
-          T_STRING_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_STRING_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type bool2matrixbool=(
           DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},
-            T_BOOL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_BOOL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type vectorVector2int=(
           DAE.T_FUNCTION(
@@ -2261,90 +2252,90 @@ protected constant DAE.Type vectorVector2int=(
           ("x",
           T_INT_ARRAY_1_DEFAULT),
           ("y",
-          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type vectorVector2real=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT), ("y", T_REAL_ARRAY_1_DEFAULT)}, 
-            DAE.T_REAL_DEFAULT, DAE.NO_INLINE()),NONE());
+            DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2arrayNxN=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_NxN_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_NxN_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array1dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array2dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array3dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_3_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array4dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_4_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_4_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array5dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_5_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_5_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array6dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_6_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_6_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array7dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_7_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_7_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type int2array8dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_8_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_8_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n1int2arrayint=(
           DAE.T_FUNCTION({("x1",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n2int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_2_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_2_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n3int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_3_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n4int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_4_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_4_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n5int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_INTEGER_DEFAULT),
           ("x5",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_5_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_5_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n6int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_INTEGER_DEFAULT),
           ("x5",DAE.T_INTEGER_DEFAULT),("x6",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_6_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_6_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n7int2arrayint=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_INTEGER_DEFAULT),
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_INTEGER_DEFAULT),
           ("x5",DAE.T_INTEGER_DEFAULT),("x6",DAE.T_INTEGER_DEFAULT),("x7",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_7_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_7_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n8int2arrayint=(
           DAE.T_FUNCTION(
@@ -2352,50 +2343,50 @@ protected constant DAE.Type n8int2arrayint=(
           ("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_INTEGER_DEFAULT),
           ("x5",DAE.T_INTEGER_DEFAULT),("x6",DAE.T_INTEGER_DEFAULT),("x7",DAE.T_INTEGER_DEFAULT),
           ("x8",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_8_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_8_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n1real2arrayreal=(
           DAE.T_FUNCTION({("x1",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n2real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_2_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_2_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n3real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_3_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_3_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n4real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT),("x4",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_4_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_4_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n5real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT),("x4",DAE.T_REAL_DEFAULT),
           ("x5",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_5_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_5_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n6real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT),("x4",DAE.T_REAL_DEFAULT),
           ("x5",DAE.T_REAL_DEFAULT),("x6",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_6_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_6_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n7real2arrayreal=(
           DAE.T_FUNCTION(
           {("x1",DAE.T_REAL_DEFAULT),
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT),("x4",DAE.T_REAL_DEFAULT),
           ("x5",DAE.T_REAL_DEFAULT),("x6",DAE.T_REAL_DEFAULT),("x7",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_7_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_7_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type n8real2arrayreal=(
           DAE.T_FUNCTION(
@@ -2403,34 +2394,34 @@ protected constant DAE.Type n8real2arrayreal=(
           ("x2",DAE.T_REAL_DEFAULT),("x3",DAE.T_REAL_DEFAULT),("x4",DAE.T_REAL_DEFAULT),
           ("x5",DAE.T_REAL_DEFAULT),("x6",DAE.T_REAL_DEFAULT),("x7",DAE.T_REAL_DEFAULT),
           ("x8",DAE.T_REAL_DEFAULT)},
-            T_REAL_ARRAY_8_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_8_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type intInt2vectorreal=(
           DAE.T_FUNCTION(
           {("x",DAE.T_INTEGER_DEFAULT),
           ("y",DAE.T_INTEGER_DEFAULT)},
-            T_REAL_ARRAY_1_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realRealInt2vectorreal=(
           DAE.T_FUNCTION(
           {("x",DAE.T_REAL_DEFAULT),
           ("y",DAE.T_REAL_DEFAULT),
           ("n",DAE.T_INTEGER_DEFAULT)},
-          T_REAL_ARRAY_DEFAULT, DAE.NO_INLINE()),NONE());
+          T_REAL_ARRAY_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimint2array3dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_3_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_3_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2array3dimreal=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_1_DEFAULT)},
-            T_REAL_ARRAY_3_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_3_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimrealArray3dimreal2array3dimreal = (
           DAE.T_FUNCTION(
@@ -2439,20 +2430,20 @@ protected constant DAE.Type array3dimrealArray3dimreal2array3dimreal = (
           T_REAL_ARRAY_3_DEFAULT),
           ("y",
           T_REAL_ARRAY_3_DEFAULT)},
-            T_REAL_ARRAY_3_DEFAULT, DAE.NO_INLINE()),NONE());
+            T_REAL_ARRAY_3_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2real=(
           DAE.T_FUNCTION(
           {
           ("x",
-          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE()) "T_ARRAY is appearently not constant. To bad!" ;
+          T_INT_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE()) "T_ARRAY is appearently not constant. To bad!" ;
 
 protected constant DAE.Type array2dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE()) "Legal syntax: val array2one= (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY(1,DAE.T_REAL_DEFAULT),NONE()))}, TYPES.T_INTEGER)
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE()) "Legal syntax: val array2one= (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY(1,DAE.T_REAL_DEFAULT),NONE()))}, TYPES.T_INTEGER)
 For size(A) to transpose A
 val array1dimint2array1dimint = ... already defined" ;
 
@@ -2461,238 +2452,238 @@ protected constant DAE.Type array3dimint2array1dimint=(
           {
           ("x",
           T_INT_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array9dimint2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_INT_ARRAY_9_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array9dimreal2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_REAL_ARRAY_9_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array9dimstring2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_STRING_ARRAY_9_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_1_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array2dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_2_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array3dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_3_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array4dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_4_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array5dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_5_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array6dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_6_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array7dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_7_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array8dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_8_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array9dimbool2array1dimint=(
           DAE.T_FUNCTION(
           {
           ("x",
           T_BOOL_ARRAY_9_DEFAULT)},
-          T_INT_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 
 // MetaModelica extension. KS
@@ -2700,148 +2691,13 @@ protected constant DAE.Type typeBoxedAny = (DAE.T_BOXED((DAE.T_NOTYPE(),NONE()))
 protected constant DAE.Type typeA = (DAE.T_POLYMORPHIC("Type_A"),NONE());
 
 protected constant DAE.Type int2boxed = (
-          DAE.T_FUNCTION({("index",DAE.T_INTEGER_DEFAULT)},DAE.T_BOXED_DEFAULT,DAE.NO_INLINE()),NONE());
-protected constant DAE.Type intBoxedNoRetcall = (
-          DAE.T_FUNCTION({("index",DAE.T_INTEGER_DEFAULT),("value",DAE.T_BOXED_DEFAULT)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type listA2listA=(
-          DAE.T_FUNCTION({("x",(DAE.T_LIST(typeA),NONE()))},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type listAListA2listA=(
-          DAE.T_FUNCTION({("x1",(DAE.T_LIST(typeA),NONE())),("x2",(DAE.T_LIST(typeA),NONE()))},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type listAInt2A=(
-          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE())),("ix",DAE.T_INTEGER_DEFAULT)},(typeA),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type listAint2listA=(
-          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE())),("ix",DAE.T_INTEGER_DEFAULT)},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type list2int=(
-          DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE()))},(DAE.T_INTEGER_DEFAULT),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type list2boolean=(
-          DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type AlistA2boolean=(
-          DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type AlistA2listA=(
-          DAE.T_FUNCTION({("el",typeA),("lst",(DAE.T_LIST(typeA),NONE()))},(DAE.T_LIST(typeA),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type boxed2int=(
-          DAE.T_FUNCTION({("x",typeBoxedAny)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type boxed2any=(
-          DAE.T_FUNCTION({("x",typeBoxedAny)},((DAE.T_NOTYPE(),NONE())),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type option2boolean=(
-          DAE.T_FUNCTION({("x",(DAE.T_METAOPTION((DAE.T_ANYTYPE(NONE()),NONE())),NONE()))},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type anyInteger2any=(
-          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE())),("x2",DAE.T_INTEGER_DEFAULT)},(DAE.T_NOTYPE(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type anyAnyString2any=(
-          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE())),("x2",(DAE.T_NOTYPE(),NONE())),("x3",DAE.T_STRING_DEFAULT)},(DAE.T_NOTYPE(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type anyIntegerInteger2boolean=(
-          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE())),("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type string2void =(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({("index",DAE.T_INTEGER_DEFAULT)},DAE.T_BOXED_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type void2string =(
-          DAE.T_FUNCTION({},(DAE.T_STRING({}),NONE()),DAE.NO_INLINE()),NONE());
+          DAE.T_FUNCTION({},(DAE.T_STRING({}),NONE()),DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-protected constant DAE.Type a2void =(
-          DAE.T_FUNCTION({("x1",typeA)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringBoxed2void =(
-          DAE.T_FUNCTION({("msg",DAE.T_STRING_DEFAULT),("val",DAE.T_BOXED_DEFAULT)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type void2int =(
-          DAE.T_FUNCTION({},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type void2real =(
-          DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type boolBoxedBoxed2boxed =(
-          DAE.T_FUNCTION({("x1",DAE.T_BOOL_DEFAULT),("x2",typeBoxedAny),("x3",typeBoxedAny)},typeBoxedAny,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type AA2void =(
-          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},(DAE.T_NORETCALL(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type AA2bool =(
-          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-// MetaModelica Array Functions. sjoelund
-protected constant DAE.Type array1d2int =(
-          DAE.T_FUNCTION({("x1",T_NOTYPE_ARRAY_1_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-// arrayGet
-protected constant DAE.Type array1dAnyInt2any =(
-          DAE.T_FUNCTION({("x1",T_NOTYPE_ARRAY_1_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},(DAE.T_NOTYPE(),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type array1dIntInt2int =(
-          DAE.T_FUNCTION({("x1",T_INT_ARRAY_1_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type array1dRealInt2real =(
-          DAE.T_FUNCTION({("x1",T_REAL_ARRAY_1_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type array1dBoolInt2bool =(
-          DAE.T_FUNCTION({("x1",T_BOOL_ARRAY_1_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type array1dStringInt2string =(
-          DAE.T_FUNCTION({("x1",T_STRING_ARRAY_1_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-// MetaModelica builtin array functions
-protected constant DAE.Type intA2marrayA =(
-          DAE.T_FUNCTION({("x1",DAE.T_INTEGER_DEFAULT),("x2",(DAE.T_POLYMORPHIC("A"),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayAny2int =(
-          DAE.T_FUNCTION({("x1",(DAE.T_ANYTYPE(NONE()),NONE()))},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayAInt2A =(
-          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE())),("x2",DAE.T_INTEGER_DEFAULT)},(DAE.T_POLYMORPHIC("A"),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayA2listA =(
-          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()))},(DAE.T_LIST((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type listA2marrayA =(
-          DAE.T_FUNCTION({("x1",(DAE.T_LIST((DAE.T_POLYMORPHIC("A"),NONE())),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayAIntA2marrayA =(
-          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE())),("x2",DAE.T_INTEGER_DEFAULT),("x3",(DAE.T_POLYMORPHIC("A"),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayA2marrayA =(
-          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-protected constant DAE.Type marrayAA2marrayA =(
-          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE())),("x2",(DAE.T_POLYMORPHIC("A"),NONE()))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE())),NONE()),DAE.NO_INLINE()),NONE());
-
-// String functions. sjoelund
 protected constant DAE.Type string2string=(
-          DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringString2string=(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT),("x2",DAE.T_STRING_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringInt2string=(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT),("x2",DAE.T_INTEGER_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringString2boolean=(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT),("x2",DAE.T_STRING_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringString2int=(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT),("x2",DAE.T_STRING_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type stringStringInteger2string=(
-          DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT),("x2",DAE.T_STRING_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type string2int=(
-          DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type string2listOfString=(
-          DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},(DAE.T_LIST(DAE.T_STRING_DEFAULT),NONE()),DAE.NO_INLINE()),NONE());
-
-protected constant DAE.Type listOfString2string=(
-          DAE.T_FUNCTION({("x",(DAE.T_LIST(DAE.T_STRING_DEFAULT),NONE()))},DAE.T_STRING_DEFAULT,DAE.NO_INLINE()),NONE());
-
-
-
-
+          DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2real=(
           DAE.T_FUNCTION(
@@ -2850,7 +2706,7 @@ protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2real=(
           ("y",T_REAL_ARRAY_1_DEFAULT),
           ("z",T_REAL_ARRAY_1_DEFAULT)
           },
-          DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimreal=(
           DAE.T_FUNCTION(
           {
@@ -2858,21 +2714,21 @@ protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimrea
           ("y",T_REAL_ARRAY_1_DEFAULT),
           ("z",T_REAL_ARRAY_1_DEFAULT)
           },
-          T_REAL_ARRAY_1_DEFAULT,DAE.NO_INLINE()),NONE());
+          T_REAL_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 protected constant DAE.Type realrealreal2real=(
           DAE.T_FUNCTION(
           {
           ("x",DAE.T_REAL_DEFAULT),
           ("y",DAE.T_REAL_DEFAULT),
           ("z",DAE.T_REAL_DEFAULT)
-          },DAE.T_REAL_DEFAULT,DAE.NO_INLINE()),NONE());
+          },DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 protected constant DAE.Type intintint2int =(
           DAE.T_FUNCTION(
           {
           ("x",DAE.T_INTEGER_DEFAULT),
           ("y",DAE.T_INTEGER_DEFAULT),
           ("z",DAE.T_INTEGER_DEFAULT)
-          },DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE()),NONE());
+          },DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 public function variableIsBuiltin "Returns true if cref is a builtin variable.
 Currently only 'time' is a builtin variable.

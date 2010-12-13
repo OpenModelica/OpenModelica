@@ -2685,7 +2685,7 @@ public function makeFunctionType "function: makeFunctionType
 "
   input Absyn.Path p;
   input list<Var> vl;
-  input DAE.InlineType isInline;
+  input DAE.FunctionAttributes functionAttributes;
   output Type outType;
   list<Var> invl,outvl;
   list<FuncArg> fargs;
@@ -2702,7 +2702,7 @@ algorithm
 	Debug.fcall (\"ft\", print_type, rettype) &
 	Debug.fprint (\"ft\", \" >\")
 " ;
-  outType := (DAE.T_FUNCTION(fargs,rettype,isInline),SOME(p));
+  outType := (DAE.T_FUNCTION(fargs,rettype,functionAttributes),SOME(p));
 end makeFunctionType;
 
 public function makeEnumerationType
@@ -5530,7 +5530,7 @@ algorithm
       list<Type> tys,tys1,tys2,rest;
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
-      DAE.InlineType inline1,inline2;
+      DAE.FunctionAttributes functionAttributes,functionAttributes1,functionAttributes2;
       Option<Absyn.Path> op1;
 
     case ((DAE.T_POLYMORPHIC(id),_),prefix,bindings,info)
@@ -5559,14 +5559,14 @@ algorithm
       equation
         tys = Util.listMap3(tys, fixPolymorphicRestype2, prefix, bindings, info);
       then ((DAE.T_TUPLE(tys),NONE()));
-    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1),prefix,bindings,info)
+    case ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1),prefix,bindings,info)
       equation
         names1 = Util.listMap(args1, Util.tuple21);
         tys1 = Util.listMap(args1, Util.tuple22);
         tys1 = Util.listMap3(tys1, fixPolymorphicRestype2, prefix, bindings, info);
         ty1 = fixPolymorphicRestype2(ty1,prefix,bindings,info);
         args1 = Util.listThreadTuple(names1,tys1);
-        ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
+        ty1 = (DAE.T_FUNCTION(args1,ty1,functionAttributes),op1);
       then ty1;
  
     // Add Uniontype, Function reference(?)
@@ -5722,7 +5722,8 @@ algorithm
       Type ty1,ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
-    case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1,_)),SOME(path)))
+      DAE.FunctionAttributes functionAttributes;
+    case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1,functionAttributes)),SOME(path)))
       equation
         funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
@@ -5730,7 +5731,7 @@ algorithm
         (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,DAE.NO_INLINE());
+        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,functionAttributes);
         ty2 = (tty2,SOME(path));
       then ty2;
       /* Maybe add this case when standard Modelica gets function references?
@@ -5999,7 +6000,7 @@ algorithm
       String id,id1,id2;
       list<String> names1;
       list<DAE.FuncArg> args1,args2;
-      DAE.InlineType inline1,inline2;
+      DAE.FunctionAttributes functionAttributes1,functionAttributes2;
       Option<Absyn.Path> op1;
       Boolean fromOtherFunction;
     case ((ty1 as (DAE.T_POLYMORPHIC(id1),_))::tys1,(ty2 as (DAE.T_POLYMORPHIC(id2),_))::tys2,solvedBindings)
@@ -6051,7 +6052,7 @@ algorithm
         ty1 = (DAE.T_METATUPLE(tys1),NONE());
       then (ty1::rest,solvedBindings);
     
-    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1)::_,(DAE.T_FUNCTION(args2,ty2,inline2),_)::rest,solvedBindings)
+    case ((DAE.T_FUNCTION(args1,ty1,functionAttributes1),op1)::_,(DAE.T_FUNCTION(args2,ty2,functionAttributes2),_)::rest,solvedBindings)
       equation
         names1 = Util.listMap(args1, Util.tuple21);
         tys1 = Util.listMap(args1, Util.tuple22);
@@ -6059,7 +6060,7 @@ algorithm
         (ty1::tys1,solvedBindings) = solveBindingsThread(ty1::tys1,ty2::tys2,false,solvedBindings);
         tys1 = Util.listMap(tys1, boxIfUnboxedType);
         args1 = Util.listThreadTuple(names1,tys1);
-        ty1 = (DAE.T_FUNCTION(args1,ty1,inline1),op1);
+        ty1 = (DAE.T_FUNCTION(args1,ty1,functionAttributes1),op1);
       then (ty1::rest,solvedBindings);
     
     case (tys1,ty::tys2,_)
@@ -6135,7 +6136,7 @@ algorithm
       String id;
       list<String> names;
       Option<Absyn.Path> op;
-      DAE.InlineType inline;
+      DAE.FunctionAttributes functionAttributes;
     case ((DAE.T_LIST(ty),_),_)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
@@ -6152,7 +6153,7 @@ algorithm
         tys = replaceSolvedBindings(tys,solvedBindings,false);
         ty = (DAE.T_METATUPLE(tys),NONE());
       then ty;
-    case ((DAE.T_FUNCTION(args,ty,inline),op),solvedBindings)
+    case ((DAE.T_FUNCTION(args,ty,functionAttributes),op),solvedBindings)
       equation
         tys = Util.listMap(args, Util.tuple22);
         tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
@@ -6160,7 +6161,7 @@ algorithm
         ty::tys = Util.listMap(tys, boxIfUnboxedType);
         names = Util.listMap(args, Util.tuple21);
         args = Util.listThreadTuple(names,tys);
-        ty = (DAE.T_FUNCTION(args,ty,inline),op);
+        ty = (DAE.T_FUNCTION(args,ty,functionAttributes),op);
       then ty;
     case ((DAE.T_POLYMORPHIC(id),_),_)
       equation
@@ -6416,7 +6417,7 @@ algorithm
       EqualityConstraint eq;
       ClassInf.State state;
       list<DAE.FuncArg> farg;
-      DAE.InlineType il;
+      DAE.FunctionAttributes functionAttributes;
     case (((DAE.T_INTEGER(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_REAL(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_STRING(_),_),_),_) equation tpl = fn(tpl); then tpl;
@@ -6483,11 +6484,11 @@ algorithm
         ty = (DAE.T_COMPLEX(state,vars,SOME(ty),eq),op);
         tpl = fn((ty,a));
       then tpl;
-    case (((DAE.T_FUNCTION(farg,ty,il),op),a),_)
+    case (((DAE.T_FUNCTION(farg,ty,functionAttributes),op),a),_)
       equation
         (farg,a) = traverseFuncArg(farg,a,fn);
         ((ty,a)) = traverseType((ty,a),fn);
-        ty = (DAE.T_FUNCTION(farg,ty,il),op);
+        ty = (DAE.T_FUNCTION(farg,ty,functionAttributes),op);
         tpl = fn((ty,a));
       then tpl;
     case ((ty,_),_)
@@ -6613,16 +6614,16 @@ algorithm
       list<Type> tys1;
       list<String> names1;
       Type ty1;
-      DAE.InlineType inline1;
+      DAE.FunctionAttributes functionAttributes;
       Option<Absyn.Path> op1;      
-    case ((DAE.T_FUNCTION(args1,ty1,inline1),op1))
+    case ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1))
       equation
         names1 = Util.listMap(args1, Util.tuple21);
         tys1 = Util.listMap(args1, Util.tuple22);
         tys1 = Util.listMap(tys1, unboxedType);
         ty1 = unboxedType(ty1);
         args1 = Util.listThreadTuple(names1,tys1);
-      then ((DAE.T_FUNCTION(args1,ty1,inline1),op1));
+      then ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1));
   end match;
 end unboxedFunctionType;
 

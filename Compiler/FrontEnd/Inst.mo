@@ -10747,7 +10747,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       Boolean partialPrefix;
-      DAE.InlineType isInline;
+      DAE.FunctionAttributes functionAttributes;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
       DAE.DAElist dae,dae2;     
@@ -10761,12 +10761,12 @@ algorithm
     case (cache,env,ih,overloadname,(fn :: fns))
       equation 
         (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=SCode.R_FUNCTION(),info=info)),cenv) = Lookup.lookupClass(cache, env, fn, true);
-        (cache,_,ih,_,DAE.DAE(daeElts),_,(DAE.T_FUNCTION(args,tp,isInline),_),st,_,_) = 
+        (cache,_,ih,_,DAE.DAE(daeElts),_,(DAE.T_FUNCTION(args,tp,functionAttributes),_),st,_,_) = 
            instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(),
              DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));
         (cache,ovlfpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(id));
-        ty = (DAE.T_FUNCTION(args,tp,isInline),SOME(ovlfpath));
+        ty = (DAE.T_FUNCTION(args,tp,functionAttributes),SOME(ovlfpath));
         env_1 = Env.extendFrameT(env, overloadname, ty);
         (cache,env_2,ih,resfns) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
         // TODO: Fix inline here 
@@ -11759,7 +11759,7 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
-        functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
+        functype = Types.makeFunctionType(p, vl, getFunctionAttributes(cl));
       then
         functype;
     case (_, ClassInf.ENUMERATION(path = p), _, SOME(enumtype), _, _)
@@ -11874,7 +11874,7 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,cl)
       equation
-        functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
+        functype = Types.makeFunctionType(p, vl, getFunctionAttributes(cl));
       then
         functype;
     case (p, ClassInf.ENUMERATION(path = _), _, SOME(enumtype), _)
@@ -15211,5 +15211,26 @@ algorithm
         ();
   end matchcontinue;
 end checkSelfReference;                
+
+protected function getFunctionAttributes
+"Looks at the annotations of an SCode.Class to create the function attributes,
+i.e. Inline and Purity"
+  input SCode.Class cl;
+  output DAE.FunctionAttributes attr;
+algorithm
+  attr := matchcontinue (cl)
+    local
+      SCode.Restriction restriction;
+      Boolean isExt,purity;
+      DAE.InlineType inline;
+    case (SCode.CLASS(restriction=restriction))
+      equation
+        inline = isInlineFunc2(cl);
+        isExt = false; // TODO: We need to check for "builtin" annotation... SCode.restrictionEqual(restriction,SCode.R_EXT_FUNCTION());
+        purity = not (isExt or DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure"));
+        //print("getFunctionAttributes: " +& boolString(purity) +& boolString(isExt) +& boolString(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure")) +& "\n");
+      then DAE.FUNCTION_ATTRIBUTES(inline,purity);
+  end matchcontinue;
+end getFunctionAttributes;
 
 end Inst;

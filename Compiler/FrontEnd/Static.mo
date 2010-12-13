@@ -1948,12 +1948,12 @@ algorithm
       DAE.Type resType,tty,tty_1;
       list<DAE.FuncArg> args,args_1;
       Option<Absyn.Path> po;
-      DAE.InlineType  isInline;
-    case(slots,(DAE.T_FUNCTION(args,resType,isInline),po))
+      DAE.FunctionAttributes functionAttributes;
+    case(slots,(DAE.T_FUNCTION(args,resType,functionAttributes),po))
       equation
         args = stripExtraArgsFromType2(slots,args);
       then
-        ((DAE.T_FUNCTION(args,resType,isInline),po));
+        ((DAE.T_FUNCTION(args,resType,functionAttributes),po));
     case(_,_)
       equation
         Debug.fprintln("failtrace","- Static.stripExtraArgsFromType failed");
@@ -8603,7 +8603,7 @@ algorithm
       Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath,fpath;
       list<Absyn.Exp> args,t4;
       list<Absyn.NamedArg> nargs, translatedNArgs;
-      Boolean impl,tuple_,builtin;
+      Boolean impl,tuple_,builtin,isPure;
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
       list<DAE.Type> typelist,ktypelist,tys,ltypes;
@@ -8713,7 +8713,7 @@ algorithm
     /* Record constructors, user defined or implicit */ // try the hard stuff first
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
       equation
-        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE()),_)),_)
+        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),_),_)),_)
           = Lookup.lookupType(cache,env, fn, NONE());
 //        print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
@@ -8791,14 +8791,14 @@ algorithm
          in the function type of the user function and check both the
          function name and the function\'s type." ;
         Util.setStatefulBoolean(stopElab,true);
-        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots) =
+        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inline)),_),vect_dims,slots) =
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin,fn_1) = isBuiltinFunc(cache,fn_1);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
-        const = Util.if_(RTOpts.debugFlag("rml"), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+        const = Util.if_(RTOpts.debugFlag("rml") or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
@@ -9549,16 +9549,17 @@ algorithm
       Option<Absyn.Path> p;
       DAE.DAElist dae;
       Prefix.Prefix pre;
+      DAE.FunctionAttributes functionAttributes;
 
     // We found a match.
-    case (cache,env,args,nargs,((t as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype, inline = isInline),p)) :: trest),checkTypes,impl,pre,info)
+    case (cache,env,args,nargs,((t as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype, functionAttributes = functionAttributes),p)) :: trest),checkTypes,impl,pre,info)
       equation
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {},pre,info);
         dims = slotsVectorizable(newslots);
         polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,p);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
-        t = (DAE.T_FUNCTION(params,restype,isInline),p);
+        t = (DAE.T_FUNCTION(params,restype,functionAttributes),p);
         t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
       then
         (cache,args_1,clist,restype,t,dims,newslots);
@@ -9591,12 +9592,12 @@ algorithm
     local
       Option<Absyn.Path> optPath;
       list<DAE.FuncArg> slotParams,params; DAE.Type restype;
-      DAE.InlineType isInline;
+      DAE.FunctionAttributes functionAttributes;
     case(tp,_,true) then tp;
       /* When not checking types, create function type by looking at the filled slots */
-    case(tp as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype,inline = isInline),optPath),slots,false) equation
+    case(tp as (DAE.T_FUNCTION(params,restype,functionAttributes),optPath),slots,false) equation
       slotParams = funcargLstFromSlots(slots);
-    then ((DAE.T_FUNCTION(slotParams,restype,isInline),optPath));
+    then ((DAE.T_FUNCTION(slotParams,restype,functionAttributes),optPath));
   end matchcontinue;
 end createActualFunctype;
 

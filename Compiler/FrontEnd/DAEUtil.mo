@@ -2768,7 +2768,7 @@ algorithm
     case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
-        true = hasevaluateAnnotation({anno});
+        true = hasBooleanNamedAnnotation1({anno},"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
         (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
@@ -2777,7 +2777,7 @@ algorithm
     case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
       equation
         SCode.CLASS_COMMENT(annotations=annos) = comment;
-        true = hasevaluateAnnotation(annos);
+        true = hasBooleanNamedAnnotation1(annos,"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
         (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
@@ -2820,74 +2820,96 @@ algorithm
   end matchcontinue;
 end evaluateParameter;
 
-protected function hasevaluateAnnotation
-"function: hasevaluateAnnotation
-  check if the Evaluate annotation is present in comment"
+public function hasBooleanNamedAnnotation
+  input SCode.Class inClass;
+  input String namedAnnotation;
+  output Boolean hasAnn;
+algorithm
+  hasAnn := matchcontinue(inClass,namedAnnotation)
+    local
+      list<SCode.Annotation> anns;
+
+    case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)),namedAnnotation)
+      then hasBooleanNamedAnnotation1(anns,namedAnnotation);
+
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)),namedAnnotation)
+      then hasBooleanNamedAnnotation1(anns,namedAnnotation);
+    else false;
+  end matchcontinue;
+end hasBooleanNamedAnnotation;
+
+protected function hasBooleanNamedAnnotation1
+"check if the named annotation is present"
   input list<SCode.Annotation> inAnnos;
+  input String annotationName;
   output Boolean outB;
 algorithm
-  outB := matchcontinue (inAnnos)
+  outB := matchcontinue (inAnnos,annotationName)
     local
       Boolean b;
       list<SCode.Annotation> rest;
       SCode.Mod mod;
-    case (SCode.ANNOTATION(modification = mod) :: rest)
+    case (SCode.ANNOTATION(modification = mod) :: rest,annotationName)
       equation
-        true = hasevaluateAnnotation2(mod);
+        true = hasBooleanNamedAnnotation2(mod,annotationName);
       then
         true;
-    case (SCode.ANNOTATION(modification = mod) :: rest)
+    case (SCode.ANNOTATION(modification = mod) :: rest,annotationName)
       equation
-        false = hasevaluateAnnotation2(mod);
-        b = hasevaluateAnnotation(rest);
+        false = hasBooleanNamedAnnotation2(mod,annotationName);
+        b = hasBooleanNamedAnnotation1(rest,annotationName);
       then
         b;
   end matchcontinue;
-end hasevaluateAnnotation;
+end hasBooleanNamedAnnotation1;
 
-protected function hasevaluateAnnotation2
-"function: hasevaluateAnnotation2
-  check if the Evaluate annotation is present in comment"
+protected function hasBooleanNamedAnnotation2
+"check if the named annotation is present"
   input SCode.Mod inMod;
+  input String annotationName;
   output Boolean outB;
 algorithm
-  (outB) := matchcontinue (inMod)
+  (outB) := matchcontinue (inMod,annotationName)
     local
       Boolean b;
       list<SCode.SubMod> subModLst;    
-    case (SCode.MOD(subModLst=subModLst))
+    case (SCode.MOD(subModLst=subModLst),annotationName)
       equation
-        b = hasevaluateAnnotation3(subModLst);
+        b = hasBooleanNamedAnnotation3(subModLst,annotationName);
       then
         b;
   end matchcontinue;
-end hasevaluateAnnotation2;
+end hasBooleanNamedAnnotation2;
 
-protected function hasevaluateAnnotation3
-"function: hasevaluateAnnotation3
-  check if the Evaluate annotation is present in comment"
+protected function hasBooleanNamedAnnotation3
+"check if the named annotation is present in comment"
   input list<SCode.SubMod> inSubModes;
+  input String namedAnnotation;
   output Boolean outB;
 algorithm
-  (outB) := matchcontinue (inSubModes)
+  (outB) := matchcontinue (inSubModes,namedAnnotation)
     local
       Boolean b;
       list<SCode.SubMod> rest;
       SCode.SubMod submod;
       SCode.Mod mod;
-    case (SCode.NAMEMOD(ident = "Evaluate",A=SCode.MOD(absynExpOption=SOME((Absyn.BOOL(value=true),_)))) :: rest) then true;
-    case (SCode.IDXMOD(an=mod) :: rest)
+      String id;
+    case (SCode.NAMEMOD(ident = id,A=SCode.MOD(absynExpOption=SOME((Absyn.BOOL(value=true),_)))) :: rest,namedAnnotation)
       equation
-        true = hasevaluateAnnotation2(mod);
+        true = id ==& namedAnnotation;
+      then true;
+    case (SCode.IDXMOD(an=mod) :: rest,namedAnnotation)
+      equation
+        true = hasBooleanNamedAnnotation2(mod,namedAnnotation);
       then
         true;
-    case (submod :: rest)
+    case (submod :: rest,namedAnnotation)
       equation
-        b = hasevaluateAnnotation3(rest);
+        b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
       then
         b;
   end matchcontinue;
-end hasevaluateAnnotation3;
+end hasBooleanNamedAnnotation3;
 
 protected function selectBranches
 "@author: adrpo

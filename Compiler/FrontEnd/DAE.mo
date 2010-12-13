@@ -734,7 +734,7 @@ public uniontype TType "-TType contains the actual type"
   record T_FUNCTION
     list<FuncArg> funcArg "funcArg" ;
     Type funcResultType "funcResultType ; Only single-result" ;
-    InlineType inline;
+    FunctionAttributes functionAttributes;
   end T_FUNCTION;
 
   record T_TUPLE
@@ -754,6 +754,17 @@ public uniontype TType "-TType contains the actual type"
   end T_META_ARRAY;
 
 end TType;
+
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(NO_INLINE(),true); 
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false); 
+
+public
+uniontype FunctionAttributes
+  record FUNCTION_ATTRIBUTES
+    InlineType inline;
+    Boolean isPure;
+  end FUNCTION_ATTRIBUTES;
+end FunctionAttributes;
 
 public
 uniontype Dimension
