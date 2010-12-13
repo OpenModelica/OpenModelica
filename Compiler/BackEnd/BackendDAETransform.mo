@@ -1755,7 +1755,7 @@ algorithm
         ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
         ((e, vars_1));
@@ -1764,7 +1764,7 @@ algorithm
       equation
         ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
         ((e, vars_1));
@@ -1773,7 +1773,7 @@ algorithm
       equation
         ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
         ((e, vars_1));
