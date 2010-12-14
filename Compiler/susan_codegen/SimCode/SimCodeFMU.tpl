@@ -247,7 +247,7 @@ match simVar
   let valueReference = '<%offset%><%index%>'
   let variability = getVariablity(varKind)
   let description = if comment then 'description="<%comment%>"' 
-  let alias = 'noAlias'  //TODO get the right information about alias {noAlias,alias,negatedAlias}
+  let alias = getAliasVar(aliasvar)
   <<
   name="<%crefStr(name)%>" 
   valueReference="<%valueReference%>" 
@@ -267,6 +267,16 @@ match varKind
   case CONST(__) then "constant"
   else "continuous"
 end getVariablity;
+
+template getAliasVar(AliasVariable aliasvar)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+match aliasvar
+  case NOALIAS(__) then "noAlias"
+  case ALIAS(__) then "alias"
+  case NEGATEDALIAS(__) then "negatedAlias"
+  else "noAlias"
+end getAliasVar;
 
 template ScalarVariableType(DAE.ExpType type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
  "Generates code for ScalarVariable Type file for FMU target."

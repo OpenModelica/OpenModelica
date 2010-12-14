@@ -256,8 +256,19 @@ package SimCode
       DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
+      AliasVariable aliasvar; 
     end SIMVAR;
   end SimVar;
+  
+  uniontype AliasVariable
+    record NOALIAS end NOALIAS;
+    record ALIAS 
+      DAE.ComponentRef varName;
+    end ALIAS;
+    record NEGATEDALIAS 
+      DAE.ComponentRef varName;
+    end NEGATEDALIAS;
+  end AliasVariable;
   
   uniontype Function
     record FUNCTION    

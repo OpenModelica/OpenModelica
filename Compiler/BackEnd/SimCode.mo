@@ -83,6 +83,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
+protected import HashTable2;
 protected import SCodeUtil;
 protected import SimCodeC;
 protected import SimCodeCSharp;
@@ -236,8 +237,19 @@ uniontype SimVar
     // arrayCref is the name of the array if this variable is the first in that
     // array
     Option<DAE.ComponentRef> arrayCref;
+    AliasVariable aliasvar; 
   end SIMVAR;
 end SimVar;
+
+uniontype AliasVariable
+  record NOALIAS end NOALIAS;
+  record ALIAS 
+    DAE.ComponentRef varName;
+  end ALIAS;
+  record NEGATEDALIAS 
+    DAE.ComponentRef varName;
+  end NEGATEDALIAS;
+end AliasVariable;
 
 // Represents a Modelica or MetaModelica function.
 // TODO: I believe some of these fields can be removed. Check to see what is
@@ -584,7 +596,7 @@ algorithm
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false,NONE());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false,NONE(),NOALIAS());
   end matchcontinue;
 end cref2simvar;
 
@@ -3356,7 +3368,7 @@ algorithm
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt, true);
         jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true,  skipDiscInAlgorithm, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
-        simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
+        simVarsDisc = Util.listMap1(disc_var, dlowvarToSimvar,NONE());
         discEqs = extractDiscEqs(disc_eqn, disc_var);
         // adrpo: TODO! FIXME! THIS FUNCTION is madness!
         //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
@@ -4859,7 +4871,7 @@ algorithm
         v = ass2[eqn_1 + 1];
         (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
-        simvar = dlowvarToSimvar(dlowvar);
+        simvar = dlowvarToSimvar(dlowvar,NONE());
       then
         (simvar :: crs);
     
@@ -4871,7 +4883,7 @@ algorithm
         v = ass2[eqn_1 + 1];
         (dlowvar as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dlow, ass1, ass2, rest, blocks);
-        simvar = dlowvarToSimvar(dlowvar);
+        simvar = dlowvarToSimvar(dlowvar,NONE());
       then
         (simvar :: crs);
     
@@ -4964,18 +4976,20 @@ algorithm
       BackendDAE.Variables knvars;
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
+      BackendDAE.AliasVariables aliasVars;
       list<DAE.ComponentRef> initCrefs;
     case (BackendDAE.DAE(orderedVars = vars,
                         knownVars = knvars,
                         externalObjects = extvars,
+                        aliasVars = aliasVars,
                         initialEqs=ie))
       equation
         /* Extract from variable list */  
-        varsOut = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{})); 
+        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{}),aliasVars)); 
         /* Extract from known variable list */
-        varsOut = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,varsOut);
+        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars));
         /* Extract from external object list */
-        varsOut = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,varsOut);
+        ((varsOut,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars));
         /* sort variables on index */
         varsOut = sortSimvarsOnIndex(varsOut);
         /* Index of algebraic and parameters need 
@@ -4990,8 +5004,8 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
- input tuple<BackendDAE.Var, SimVars> inTpl;
- output tuple<BackendDAE.Var, SimVars> outTpl;
+ input tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables>> inTpl;
+ output tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables>> outTpl;
 algorithm
   outTpl:= matchcontinue (inTpl)      
     local
@@ -5006,12 +5020,13 @@ algorithm
       DAE.Stream streamPrefix;
       list<BackendDAE.Var> vs;
       SimVars vars,varsTmp1,varsTmp2;
-    case ((var,vars))
+      BackendDAE.AliasVariables aliasVars;
+    case ((var,(vars,aliasVars)))
       equation
-        varsTmp1 = extractVarFromVar(var);
+        varsTmp1 = extractVarFromVar(var,aliasVars);
         varsTmp2 = mergeVars(varsTmp1, vars);
       then
-        ((var,varsTmp2));
+        ((var,(varsTmp2,aliasVars)));
     case (inTpl) then inTpl;
   end matchcontinue;
 end extractVarsFromList;
@@ -5020,10 +5035,11 @@ end extractVarsFromList;
 // of algvars for example
 protected function extractVarFromVar
   input BackendDAE.Var dlowVar;
+  input BackendDAE.AliasVariables aliasVars;
   output SimVars varsOut;
 algorithm
   varsOut :=
-  matchcontinue (dlowVar)
+  matchcontinue (dlowVar,aliasVars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -5040,7 +5056,7 @@ algorithm
       list<SimVar> extObjVars;
       SimVar simvar;
       SimVar derivSimvar;
-    case (dlowVar)
+    case (dlowVar,aliasVars)
       equation
         /* start with empty lists */
         stateVars = {};
@@ -5057,7 +5073,7 @@ algorithm
         stringParamVars = {};
         extObjVars = {};
         /* extract the sim var */
-        simvar = dlowvarToSimvar(dlowVar);
+        simvar = dlowvarToSimvar(dlowVar,SOME(aliasVars));
         derivSimvar = derVarFromStateVar(simvar);
         /* figure out in which lists to put it */
         stateVars = addSimvarIfTrue(
@@ -5108,19 +5124,19 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE()))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
-               isDiscrete, NONE());      
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref)))
+               isDiscrete, NONE(),NOALIAS());      
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
         SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
-               isDiscrete, SOME(arrayCref));
+               isDiscrete, SOME(arrayCref),NOALIAS());
   end matchcontinue;
 end derVarFromStateVar;
 
@@ -5288,12 +5304,13 @@ algorithm
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       Integer index_;
+      AliasVariable aliasvar;
       list<SimVar> rest,rest2;
     case ({},_) then {};  
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar)::rest,index_)
       equation
        rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar)::rest2);
    end matchcontinue; 
 end rewriteIndex;
 
@@ -5379,13 +5396,14 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
+      AliasVariable aliasvar;
       String varNameStr;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initCrefs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar);
     case (_, _)
       then simvarIn;
   end matchcontinue;
@@ -5459,6 +5477,50 @@ algorithm
   end matchcontinue;
 end addSimVarToHashTable;
 
+
+protected function getAliasVar
+  input BackendDAE.Var inVar;
+  input Option<BackendDAE.AliasVariables> inAliasVars;
+  output AliasVariable outAlias;
+algorithm
+  outAlias :=
+  matchcontinue (inVar,inAliasVars)
+    local
+      DAE.ComponentRef name;
+      HashTable2.HashTable varMappings;
+      BackendDAE.Variables aliasVars;
+      BackendDAE.Var var;
+      DAE.Exp e;
+      AliasVariable alias;
+    case (BackendDAE.VAR(varName=name),SOME(BackendDAE.ALIASVARS(varMappings,aliasVars)))
+      equation
+        ((var :: _),_) = BackendVariable.getVar(name,aliasVars);
+        // does not work
+        //e = BaseHashTable.get(name,varMappings);
+        e = BackendVariable.varBindExp(var);
+        alias = getAliasVar1(e);        
+      then alias;
+    case(_,_) then NOALIAS();
+  end matchcontinue;
+end getAliasVar;
+
+protected function getAliasVar1
+  input DAE.Exp inExp;
+  output AliasVariable outAlias;
+algorithm
+  outAlias :=
+  matchcontinue (inExp)
+    local
+      DAE.ComponentRef name;
+      HashTable2.HashTable varMappings;
+      BackendDAE.Variables aliasVars;
+      BackendDAE.Var var;
+    case (DAE.CREF(componentRef=name)) then ALIAS(name); 
+    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name))) then NEGATEDALIAS(name);
+    case(_) then NOALIAS();
+  end matchcontinue;
+end getAliasVar1;
 
 protected function getArrayCref
   input BackendDAE.Var var;
@@ -7248,10 +7310,11 @@ end typesVar;
 
 protected function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
+  input Option<BackendDAE.AliasVariables> optAliasVars;
   output SimVar simVar;
 algorithm
   simVar :=
-  matchcontinue (dlowVar)
+  matchcontinue (dlowVar,optAliasVars)
     local
       Expression.ComponentRef cr, origname;
       BackendDAE.VarKind kind;
@@ -7269,6 +7332,7 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
+      AliasVariable aliasvar;
     case ((dlowVar as BackendDAE.VAR(varName = cr,
                                  varKind = kind,
                                  varDirection = dir,
@@ -7278,7 +7342,7 @@ algorithm
                                  comment = comment,
                                  varType = tp,
                                  flowPrefix = flowPrefix,
-                                 streamPrefix = streamPrefix)))
+                                 streamPrefix = streamPrefix)),optAliasVars)
     equation
       commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
       (unit, displayUnit) = extractVarUnit(dae_var_attr);
@@ -7287,9 +7351,10 @@ algorithm
       type_ = BackendDAEUtil.makeExpType(tp);
       isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
       arrayCref = getArrayCref(dlowVar);
+      aliasvar = getAliasVar(dlowVar,optAliasVars);
     then
       SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete,
-             arrayCref);
+             arrayCref,aliasvar);
   end matchcontinue;
 end dlowvarToSimvar;
 
@@ -7306,7 +7371,7 @@ algorithm
       SimVar sv;
     case ((v,sv_lst))
       equation
-        sv = dlowvarToSimvar(v);
+        sv = dlowvarToSimvar(v,NONE());
       then ((v,sv::sv_lst));
     case inTpl then inTpl; 
   end matchcontinue;
