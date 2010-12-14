@@ -86,6 +86,7 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+protected import Builtin;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
@@ -6337,6 +6338,57 @@ algorithm
   end matchcontinue;
 end elabBuiltinString;
 
+protected function elabBuiltinSubString "
+  author: PA
+  This function handles the built-in String operator."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+    local
+      DAE.Exp exp, expStart, expStop;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2,tp3;
+      DAE.Const c1, c2, c3, c;
+      list<DAE.Const> constlist;
+      DAE.ExpType tp_1,etp;
+      list<Env.Frame> env;
+      Absyn.Exp e, start, stop;
+      Boolean impl,scalar;
+      list<DAE.Exp> expl,expl_1,args_1;
+      list<Integer> dims;
+      Env.Cache cache;
+      DAE.Properties prop;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<Slot> slots,newslots;
+      DAE.DAElist dae,dae1,dae2;
+      Prefix.Prefix pre;
+    
+    // handle most of the stuff
+    case (cache,env,args as {e,start,stop},nargs,impl,pre,info)
+      equation
+        (cache,exp,DAE.PROP(tp1,c1),_) = elabExp(cache, env, e, impl, NONE(), true, pre, info);
+        true = Types.isString(tp1);
+        (cache,expStart,DAE.PROP(tp2,c2),_) = elabExp(cache, env, start, impl, NONE(), true, pre, info);
+        true = Types.isInteger(tp2);
+        (cache,expStop,DAE.PROP(tp3,c3),_) = elabExp(cache, env, stop, impl, NONE(), true, pre, info);
+        true = Types.isInteger(tp3);        
+        c = Util.listFold({c1, c2, c3}, Types.constAnd, DAE.C_CONST());
+        exp = makeBuiltinCall("substring", {exp, expStart, expStop}, DAE.ET_STRING());
+      then
+        (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
+  end matchcontinue;
+end elabBuiltinSubString;
+
 protected function elabBuiltinLinspace "
   author: PA
 
@@ -6718,6 +6770,8 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
+      
+    case "substring" then elabBuiltinSubString;
   end match;
 end elabBuiltinHandler;
 
@@ -6780,7 +6834,16 @@ algorithm
         (cache,true,path) = isBuiltinFunc(cache,path);
       then
         (cache,true,path);
+    
     case (cache,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot"))) then (cache,true,inPath);
+    
+    // elaborate substring (Modelica.Utilities.Strings.substring(string, startIndex, endIndex)
+    case (cache,inPath)
+      equation
+        Builtin.isSubstring(inPath);
+        _ = elabBuiltinHandler("substring");
+      then 
+        (cache,true,inPath);    
     
     case (cache,path)
       equation
@@ -9223,7 +9286,7 @@ protected function vectorizeCall "function: vectorizeCall
 algorithm
   (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties)
     local
-      DAE.Exp e,vect_exp,vect_exp_1;
+      DAE.Exp e,vect_exp,vect_exp_1,arg;
       tuple<DAE.TType, Option<Absyn.Path>> e_type,tp,tp_1;
       DAE.Properties prop;
       DAE.ExpType exp_type;
@@ -9237,6 +9300,9 @@ algorithm
       list<DAE.Dimension> ad;
       list<Slot> slots;
       DAE.ExpType etp;
+      DAE.ComponentRef crefID;
+      String tickID;
+    
     case (e,{},_,prop) then (e,prop);
     
     // If the dimension is not defined we can't vectorize the call. If we are running
@@ -9248,6 +9314,23 @@ algorithm
         (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop);
       then 
         (vect_exp_1, prop);
+        
+    /* Scalar expression, i.e function call with unknown dimensions 
+    case (e as DAE.CALL(path = fn,expLst = {arg},tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim as DAE.DIM_UNKNOWN()) :: ad,slots,DAE.PROP(tp,c)) 
+      equation         
+        exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
+        tickID = "i_" +& Util.tickStr();
+        crefID = ComponentReference.makeCrefIdent(tickID, DAE.ET_INT(), {});
+        vect_exp = 
+         DAE.REDUCTION(
+           fn, 
+           DAE.ASUB(arg, {DAE.CREF(crefID, DAE.ET_INT())}), 
+           tickID, 
+           DAE.RANGE(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()}), DAE.ICONST(1), NONE(), DAE.END()));
+        tp = Types.liftArray(tp, dim);
+        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
+      then
+        (vect_exp_1,prop);*/
         
     /* Scalar expression, i.e function call */
     case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim :: ad),slots,DAE.PROP(tp,c)) 
