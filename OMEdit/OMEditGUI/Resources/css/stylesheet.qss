@@ -30,6 +30,9 @@ QTextEdit#ModelicaEditor {
     selection-background-color: #3399FF;
     selection-color: white;
 }
+QTextEdit#MessagesTextBox {
+    border: none;
+}
 
 QGraphicsView {
     border: 1px solid gray;

@@ -72,13 +72,14 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     messagedock = new QDockWidget(tr(" Messages"), this);
     messagedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
     messagedock->setContentsMargins(0, 0, 1, 0);
+    messagedock->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
+                             | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     mpMessageWidget = new MessageWidget(this);
-    mpMessageWidget->setReadOnly(true);
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     mpMessageWidget->printGUIMessage("OMEdit, " + Helper::applicationVersion);
     if (!mExitApplication)
-        mpMessageWidget->printGUIInfoMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
+        mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
 
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
@@ -246,7 +247,8 @@ void MainWindow::createActions()
     cutAction->setShortcut(QKeySequence("Ctrl+x"));
 
     copyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
-    copyAction->setShortcut(QKeySequence("Ctrl+c"));
+    //copyAction->setShortcut(QKeySequence("Ctrl+c"));
+    //! @todo opening this will stop copying data from messages window.
 
     pasteAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
     pasteAction->setShortcut(QKeySequence("Ctrl+v"));

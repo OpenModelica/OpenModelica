@@ -170,6 +170,7 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 //! @param event contains information of the drop operation.
 void GraphicsView::dropEvent(QDropEvent *event)
 {
+    this->setFocus();
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly() or (mIconType == StringHandler::DIAGRAM))
     {
@@ -505,6 +506,18 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     {
         emit keyPressRight();
     }
+//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_Plus)
+//    {
+//        this->zoomIn();
+//    }
+//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_Minus)
+//    {
+//        this->zoomOut();
+//    }
+//    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_0)
+//    {
+//        this->resetZoom();
+//    }
     else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_A)
     {
         this->selectAll();
@@ -1140,6 +1153,7 @@ void ProjectTab::hasChanged()
 
 void ProjectTab::showDiagramView(bool checked)
 {
+    mpDiagramGraphicsView->setFocus();
     if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
         return;
 
@@ -1162,6 +1176,7 @@ void ProjectTab::showDiagramView(bool checked)
 
 void ProjectTab::showIconView(bool checked)
 {
+    mpGraphicsView->setFocus();
     if (!checked or (checked and mpGraphicsView->isVisible()))
         return;
 
@@ -1503,6 +1518,18 @@ bool ProjectTab::ModelicaEditorTextChanged()
                 ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
                 node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
                 node->setIcon(0, node->getModelicaNodeIcon(node->mType));
+                // if mType is package then check the child models
+                if (node->mType == StringHandler::PACKAGE)
+                {
+                    QStringList modelsList = pMainWindow->mpOMCProxy->getClassNames(mModelNameStructure);
+                    foreach (QString model, modelsList)
+                    {
+                        pMainWindow->mpLibrary->addModelFiles(model,
+                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure),
+                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure));
+                    }
+
+                }
                 return true;
             }
             else
@@ -1545,6 +1572,19 @@ bool ProjectTab::ModelicaEditorTextChanged()
                 ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
                 node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
                 node->setIcon(0, node->getModelicaNodeIcon(node->mType));
+                // if mType is package then check the child models
+                if (node->mType == StringHandler::PACKAGE)
+                {
+                    pMainWindow->mpLibrary->mpModelicaTree->removeChildNodes(node);
+                    QStringList modelsList = pMainWindow->mpOMCProxy->getClassNames(mModelNameStructure);
+                    foreach (QString model, modelsList)
+                    {
+                        pMainWindow->mpLibrary->addModelFiles(model,
+                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure),
+                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure)
+                                                          + tr(".") + model);
+                    }
+                }
                 return true;
             }
             else
@@ -1740,6 +1780,8 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
     newTab->mModelNameStructure = modelStructure + modelName;
     newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
     setCurrentWidget(newTab);
+    // make the icon view visible and focused for key press events
+    newTab->showIconView(true);
 }
 
 void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
@@ -1774,6 +1816,8 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
                                         false, newTab->mpDiagramGraphicsView);
     }
     setCurrentWidget(newTab);
+    // make the icon view visible and focused for key press events
+    newTab->showIconView(true);
 }
 
 //! Saves current project.
@@ -2130,13 +2174,17 @@ void ProjectTabWidget::keyPressEvent(QKeyEvent *event)
     if (!pCurrentTab)
         return;
 
-    if (!pCurrentTab->mpModelicaEditorWidget->isVisible())
-        return;
-
-    if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_F)
+    if (pCurrentTab->mpModelicaEditorWidget->isVisible())
     {
-        pCurrentTab->mpModelicaEditor->mpFindWidget->show();
-        pCurrentTab->mpModelicaEditor->mpSearchTextBox->setFocus();
+        if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_F)
+        {
+            pCurrentTab->mpModelicaEditor->mpFindWidget->show();
+            pCurrentTab->mpModelicaEditor->mpSearchTextBox->setFocus();
+        }
+        else if (event->key() == Qt::Key_Escape)
+        {
+            pCurrentTab->mpModelicaEditor->mpFindWidget->hide();
+        }
     }
 
     QTabWidget::keyPressEvent(event);

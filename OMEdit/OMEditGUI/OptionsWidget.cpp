@@ -36,8 +36,9 @@
 ModelicaTextSettings::ModelicaTextSettings()
 {
     // set default values, will be handy if we are unable to create the xml file
-    setFontFamily("Courier");
-    setFontSize(8);
+    setFontFamily(qApp->font().family());       // get system font
+    //setFontFamily("Courier");
+    setFontSize(10);
     setTextRuleColor("0, 0, 0");                // black
     setKeywordRuleColor("255, 0, 0");           // red
     setTypeRuleColor("0, 139, 0");              // dark green
@@ -167,7 +168,7 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
 
 void OptionsWidget::getSettings()
 {
-    QString filePath = QString(QDir::tempPath()).append("/").append(Helper::settingsFileName);
+    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
     QFile settingsFile(filePath);
     // check if the file exists, if it exists then get the settings
     if (!settingsFile.exists())
@@ -365,7 +366,7 @@ void OptionsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previo
 void OptionsWidget::reject()
 {
     // read the old settings from the file
-    QString filePath = QString(QDir::tempPath()).append("/").append(Helper::settingsFileName);
+    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
     readSettings(filePath);
     // set the fields back to default values
     dynamic_cast<ModelicaTextEditorPage*>(mpPagesWidget->widget(0))->initializeFields();
@@ -375,7 +376,7 @@ void OptionsWidget::reject()
 void OptionsWidget::saveSettings()
 {
     // delete the settings file and create a new one
-    QString filePath = QString(QDir::tempPath()).append("/").append(Helper::settingsFileName);
+    QString filePath = QString(qApp->applicationDirPath()).append("/").append(Helper::settingsFileName);
     QFile::remove(filePath);
     // create a new file now
     createSettings(filePath);

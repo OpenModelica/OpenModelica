@@ -81,6 +81,7 @@ public:
     void createActions();
     ModelicaTreeNode* getNode(QString name);
     void deleteNode(ModelicaTreeNode *item);
+    void removeChildNodes(ModelicaTreeNode *item);
 
     LibraryWidget *mpParentLibraryWidget;
 private:

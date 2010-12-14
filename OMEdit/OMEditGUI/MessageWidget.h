@@ -41,26 +41,70 @@
 #ifndef MESSAGEWIDGET_H
 #define MESSAGEWIDGET_H
 
+#include <QTabWidget>
 #include <QPlainTextEdit>
 
 class MainWindow;
+class GeneralMessages;
+class InfoMessages;
+class WarningMessages;
+class ErrorMessages;
 
-class MessageWidget : public QTextEdit
+class MessageWidget : public QTabWidget
 {
     Q_OBJECT
-private:
-    void setMessageColor(int type);
-
 public:
-    MessageWidget(MainWindow *pParent=0);
-    void printGUIMessage(QString message);
-    void printGUIErrorMessage(QString message);
-    void printGUIWarningMessage(QString message);
-    void printGUIInfoMessage(QString message);
-    QSize sizeHint() const;
+    MessageWidget(MainWindow *pParent = 0);
 
     MainWindow *mpParentMainWindow;
-    enum OMEditMessage {Error, Warning, Info};
+    GeneralMessages *mpGeneralMessages;
+    InfoMessages *mpInfoMessages;
+    WarningMessages *mpWarningMessages;
+    ErrorMessages *mpErrorMessages;
+
+    void printGUIMessage(QString message);
+    void printGUIInfoMessage(QString message);
+    void printGUIWarningMessage(QString message);
+    void printGUIErrorMessage(QString message);
+};
+
+class Messages : public QTextEdit
+{
+    Q_OBJECT
+public:
+    Messages(MessageWidget *pParent=0);
+    QSize sizeHint() const;
+    void printGUIMessage(QString message);
+
+    MessageWidget *mpMessageWidget;
+};
+
+class GeneralMessages : public Messages
+{
+    Q_OBJECT
+public:
+    GeneralMessages(MessageWidget *pParent=0);
+};
+
+class InfoMessages : public Messages
+{
+    Q_OBJECT
+public:
+    InfoMessages(MessageWidget *pParent=0);
+};
+
+class WarningMessages : public Messages
+{
+    Q_OBJECT
+public:
+    WarningMessages(MessageWidget *pParent=0);
+};
+
+class ErrorMessages : public Messages
+{
+    Q_OBJECT
+public:
+    ErrorMessages(MessageWidget *pParent=0);
 };
 
 #endif // MESSAGEWIDGET_H

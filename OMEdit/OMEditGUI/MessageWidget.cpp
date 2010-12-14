@@ -42,14 +42,55 @@
 #include "mainwindow.h"
 
 MessageWidget::MessageWidget(MainWindow *pParent)
-    : QTextEdit(pParent)
+    : QTabWidget(pParent)
 {
     mpParentMainWindow = pParent;
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    // creates general messages window
+    mpGeneralMessages = new GeneralMessages(this);
+    addTab(mpGeneralMessages, QString("General"));
+    // creates info messages window
+    mpInfoMessages = new InfoMessages(this);
+    addTab(mpInfoMessages, QString("Info"));
+    // creates warning messages window
+    mpWarningMessages = new WarningMessages(this);
+    addTab(mpWarningMessages, QString("Warning"));
+    // creates error messages window
+    mpErrorMessages = new ErrorMessages(this);
+    addTab(mpErrorMessages, QString("Error"));
+
+    setObjectName(tr("MessagesTab"));
 }
 
-QSize MessageWidget::sizeHint() const
+void MessageWidget::printGUIMessage(QString message)
+{
+    mpGeneralMessages->printGUIMessage(message);
+}
+
+void MessageWidget::printGUIInfoMessage(QString message)
+{
+    mpInfoMessages->printGUIMessage(message);
+}
+
+void MessageWidget::printGUIWarningMessage(QString message)
+{
+    mpWarningMessages->printGUIMessage(message);
+}
+
+void MessageWidget::printGUIErrorMessage(QString message)
+{
+    mpErrorMessages->printGUIMessage(message);
+}
+
+Messages::Messages(MessageWidget *pParent)
+    : QTextEdit(pParent)
+{
+    setReadOnly(true);
+    setObjectName(tr("MessagesTextBox"));
+
+    mpMessageWidget = pParent;
+}
+
+QSize Messages::sizeHint() const
 {
     QSize size = QTextEdit::sizeHint();
     //Set very small height. A minimum apperantly stops at resonable size.
@@ -57,50 +98,32 @@ QSize MessageWidget::sizeHint() const
     return size;
 }
 
-void MessageWidget::setMessageColor(int type)
+void Messages::printGUIMessage(QString message)
 {
-    if (type == Error)
-    {
-        setTextColor("RED");
-    }
-    else if (type == Warning)
-    {
-        setTextColor("ORANGE");
-    }
-    else if (type == Info)
-    {
-        setTextColor("GREEN");
-    }
-    else
-    {
-        setTextColor("BLACK");
-    }
-}
-
-void MessageWidget::printGUIMessage(QString message)
-{
-    //! @todo make better
-    setMessageColor(-1);
     append(message);
+    mpMessageWidget->setCurrentWidget(this);
 }
 
-void MessageWidget::printGUIErrorMessage(QString message)
+GeneralMessages::GeneralMessages(MessageWidget *pParent)
+    : Messages(pParent)
 {
-    //! @todo make better
-    setMessageColor(Error);
-    append(QString("Error: ").append(message));
+    setTextColor("BLACK");
 }
 
-void MessageWidget::printGUIWarningMessage(QString message)
+InfoMessages::InfoMessages(MessageWidget *pParent)
+    : Messages(pParent)
 {
-    //! @todo make better
-    setMessageColor(Warning);
-    append(QString("Warning: ").append(message));
+    setTextColor("GREEN");
 }
 
-void MessageWidget::printGUIInfoMessage(QString message)
+WarningMessages::WarningMessages(MessageWidget *pParent)
+    : Messages(pParent)
 {
-    //! @todo make better
-    setMessageColor(Info);
-    append(QString("Info: ").append(message));
+    setTextColor("ORANGE");
+}
+
+ErrorMessages::ErrorMessages(MessageWidget *pParent)
+    : Messages(pParent)
+{
+    setTextColor("RED");
 }

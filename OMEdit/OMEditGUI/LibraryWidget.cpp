@@ -161,6 +161,19 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
     //delete item;
 }
 
+void ModelicaTree::removeChildNodes(ModelicaTreeNode *item)
+{
+    int count = item->childCount();
+
+    for (int i = 0 ; i < count ; i++)
+    {
+        ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item->child(i));
+        deleteNode(treeNode);
+    }
+    // Delete the node from list as well
+    mModelicaTreeNodesList.removeOne(item);
+}
+
 void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure)
 {
     ModelicaTreeNode *newTreePost;
@@ -209,7 +222,7 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
             isFound = true;
         }
     }
-    // if the tab is found in current tabs and removed tabs then user has loaded a new model, just open it then
+    // if the tab is not found in current tabs and removed tabs then user has loaded a new model, just open it then
     if (!isFound)
     {
         ProjectTab *newTab;
@@ -223,6 +236,8 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
             newTab->mIsSaved = true;
         }
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
+        // make the icon view visible and focused for key press events
+        newTab->showIconView(true);
     }
     // unset the cursor
     unsetCursor();
@@ -308,7 +323,7 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
     {
         // print the message before deleting node,
         // because after delete node is not available to print message :)
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(treeNode->mName + " deleted successfully.");
+        pMainWindow->mpMessageWidget->printGUIInfoMessage("'" + treeNode->mName + "' deleted successfully.");
         deleteNode(treeNode);
         if (treeNode->childCount())
             qDeleteAll(treeNode->takeChildren());
