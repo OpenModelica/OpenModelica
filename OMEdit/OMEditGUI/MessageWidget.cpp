@@ -41,6 +41,12 @@
 #include "MessageWidget.h"
 #include "mainwindow.h"
 
+//! @class MessageWidget
+//! @brief It creates a tab based messages window.
+//! It contains three tabs four tabs General, Info, Warning and Error.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MainWindow object.
 MessageWidget::MessageWidget(MainWindow *pParent)
     : QTabWidget(pParent)
 {
@@ -61,28 +67,41 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     setObjectName(tr("MessagesTab"));
 }
 
+//! Calls the GeneralMessage::printGUIMessage
+//! @param message is the string that is passed.
 void MessageWidget::printGUIMessage(QString message)
 {
     mpGeneralMessages->printGUIMessage(message);
 }
 
+//! Calls the InfoMessage::printGUIMessage
+//! @param message is the string that is passed.
 void MessageWidget::printGUIInfoMessage(QString message)
 {
     mpInfoMessages->printGUIMessage(message);
 }
 
+//! Calls the WarningMessage::printGUIMessage
+//! @param message is the string that is passed.
 void MessageWidget::printGUIWarningMessage(QString message)
 {
     mpWarningMessages->printGUIMessage(message);
 }
 
+//! Calls the ErrorMessage::printGUIMessage
+//! @param message is the string that is passed.
 void MessageWidget::printGUIErrorMessage(QString message)
 {
     mpErrorMessages->printGUIMessage(message);
 }
 
+//! @class Messages
+//! @brief It is the base class for all types of messages.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 Messages::Messages(MessageWidget *pParent)
-    : QTextEdit(pParent)
+    : QTextEdit(pParent), mMessageCounter(0)
 {
     setReadOnly(true);
     setObjectName(tr("MessagesTextBox"));
@@ -90,6 +109,7 @@ Messages::Messages(MessageWidget *pParent)
     mpMessageWidget = pParent;
 }
 
+//! Reimplementation of sizeHint function. Defines the minimum height for QTextEdit.
 QSize Messages::sizeHint() const
 {
     QSize size = QTextEdit::sizeHint();
@@ -98,32 +118,90 @@ QSize Messages::sizeHint() const
     return size;
 }
 
+//! Displays the message.
+//! @param message is the string that is displayed.
 void Messages::printGUIMessage(QString message)
 {
-    append(message);
+    append(message + tr("\n"));
     mpMessageWidget->setCurrentWidget(this);
 }
 
+//! @class GeneralMessages
+//! @brief This class is inherited from Messages. It is used to display general messages.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 GeneralMessages::GeneralMessages(MessageWidget *pParent)
     : Messages(pParent)
 {
     setTextColor("BLACK");
 }
 
+//! Reimplementation of Messages::printGUIMessage function.
+void GeneralMessages::printGUIMessage(QString message)
+{
+    append(message);
+}
+
+//! @class InfoMessages
+//! @brief This class is     inherited from Messages. It is used to display info messages.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 InfoMessages::InfoMessages(MessageWidget *pParent)
     : Messages(pParent)
 {
     setTextColor("GREEN");
 }
 
+//! Reimplementation of Messages::printGUIMessage function.
+void InfoMessages::printGUIMessage(QString message)
+{
+    mMessageCounter++;
+    append(QString("---- Info ").append(QString::number(mMessageCounter)).append(" : ")
+           .append(QTime::currentTime().toString()).append(" ----"));
+
+    Messages::printGUIMessage(message);
+}
+
+//! @class WarningMessages
+//! @brief This class is inherited from Messages. It is used to display warning messages.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 WarningMessages::WarningMessages(MessageWidget *pParent)
     : Messages(pParent)
 {
     setTextColor("ORANGE");
 }
 
+//! Reimplementation of Messages::printGUIMessage function.
+void WarningMessages::printGUIMessage(QString message)
+{
+    mMessageCounter++;
+    append(QString("---- Warning ").append(QString::number(mMessageCounter)).append(" : ")
+           .append(QTime::currentTime().toString()).append(" ----"));
+
+    Messages::printGUIMessage(message);
+}
+
+//! @class ErrorMessages
+//! @brief This class is inherited from Messages. It is used to display error messages.
+
+//! Constructor
+//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 ErrorMessages::ErrorMessages(MessageWidget *pParent)
     : Messages(pParent)
 {
     setTextColor("RED");
+}
+
+//! Reimplementation of Messages::printGUIMessage function.
+void ErrorMessages::printGUIMessage(QString message)
+{
+    mMessageCounter++;
+    append(QString("---- Error ").append(QString::number(mMessageCounter)).append(" : ")
+           .append(QTime::currentTime().toString()).append(" ----"));
+
+    Messages::printGUIMessage(message);
 }

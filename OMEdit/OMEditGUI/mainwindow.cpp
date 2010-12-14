@@ -593,9 +593,13 @@ void MainWindow::checkModel()
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
     if (pCurrentTab)
     {
-        CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure,
-                                                        this);
-        widget->show();
+        // validate the modelica text before checking the model
+        if (pCurrentTab->mpModelicaEditor->validateText())
+        {
+            CheckModelWidget *widget = new CheckModelWidget(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure,
+                                                            this);
+            widget->show();
+        }
     }
 }
 

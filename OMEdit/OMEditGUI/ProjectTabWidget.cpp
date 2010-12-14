@@ -949,8 +949,8 @@ GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
     mpParentProjectTab = parent;
 
     // only attach the haschanged slot if we are viewing the icon view.
-    if (mIconType == StringHandler::ICON)
-        connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
+    // if (mIconType == StringHandler::ICON)
+    connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
 //GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
@@ -1096,8 +1096,8 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpDiagramGraphicsView->hide();
     mpIconToolButton->setChecked(true);
 
-    connect(this, SIGNAL(disableMainWindow(bool)),
-            mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
+//    connect(this, SIGNAL(disableMainWindow(bool)),
+//            mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
     connect(this, SIGNAL(updateAnnotations()), SLOT(updateModelAnnotations()));
 }
 
@@ -1153,21 +1153,17 @@ void ProjectTab::hasChanged()
 
 void ProjectTab::showDiagramView(bool checked)
 {
-    mpDiagramGraphicsView->setFocus();
-    if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
-        return;
-
-    // if user has changed from Modelica Text View
-    // if some errors in Modelica Text View then show Modelica Text View again
-    if (!mpModelicaEditor->validateModelicaText())
+    // validate the modelica text before switching to diagram view
+    if (!mpModelicaEditor->validateText())
     {
-        showModelicaTextView(true);
         mpModelicaTextToolButton->setChecked(true);
         return;
     }
 
-    // Enable the main window
-    emit disableMainWindow(false);
+    mpDiagramGraphicsView->setFocus();
+    if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
+        return;
+
     mpModelicaEditorWidget->hide();
     mpGraphicsView->hide();
     mpDiagramGraphicsView->show();
@@ -1176,21 +1172,17 @@ void ProjectTab::showDiagramView(bool checked)
 
 void ProjectTab::showIconView(bool checked)
 {
-    mpGraphicsView->setFocus();
-    if (!checked or (checked and mpGraphicsView->isVisible()))
-        return;
-
-    // if user has changed from Modelica Text View
-    // if some errors in Modelica Text View then show Modelica Text View again
-    if (!mpModelicaEditor->validateModelicaText())
+    // validate the modelica text before switching to icon view
+    if (!mpModelicaEditor->validateText())
     {
-        showModelicaTextView(true);
         mpModelicaTextToolButton->setChecked(true);
         return;
     }
 
-    // Enable the main window
-    emit disableMainWindow(false);
+    mpGraphicsView->setFocus();
+    if (!checked or (checked and mpGraphicsView->isVisible()))
+        return;
+
     mpModelicaEditorWidget->hide();
     mpDiagramGraphicsView->hide();
     mpGraphicsView->show();
@@ -1202,7 +1194,7 @@ void ProjectTab::showModelicaTextView(bool checked)
     if (!checked or (checked and mpModelicaEditorWidget->isVisible()))
         return;
     // Disable the main window
-    emit disableMainWindow(true);
+    //emit disableMainWindow(true);
     emit updateModelAnnotations();
 
     mpGraphicsView->hide();
@@ -1261,14 +1253,14 @@ bool ProjectTab::loadRootModel(QString model)
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     // if model text is fine then
-    if (pMainWindow->mpOMCProxy->saveModifiedModel(model))
-    {
-        updateModel(StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult()));
+//    if (pMainWindow->mpOMCProxy->saveModifiedModel(model))
+//    {
+        updateModel(model);
         return true;
-    }
-    // if there is some error in model then dont accept it
-    else
-        return false;
+//    }
+//    // if there is some error in model then dont accept it
+//    else
+//        return false;
 }
 
 bool ProjectTab::loadSubModel(QString model)
@@ -1277,7 +1269,10 @@ bool ProjectTab::loadSubModel(QString model)
     // if model text is fine then
     if (pMainWindow->mpOMCProxy->updateSubClass(StringHandler::removeLastWordAfterDot(mModelNameStructure), model))
     {
-        updateModel(StringHandler::getFirstWordBeforeDot(StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult())));
+        QString modelName = StringHandler::getFirstWordBeforeDot(StringHandler::removeFirstLastCurlBrackets(pMainWindow->mpOMCProxy->getResult()));
+        updateModel(modelName);
+        //! @todo since we have created an extra model with the same name so delete it. Fix this ugly thing.
+        pMainWindow->mpOMCProxy->deleteClass(mModelNameStructure);
         return true;
     }
     // if there is some error in model then dont accept it
@@ -1474,6 +1469,8 @@ QToolButton* ProjectTab::getModelicaTextToolButton()
 //! @see updateModel(QString name)
 bool ProjectTab::ModelicaEditorTextChanged()
 {
+    // make mIsSaved to false inorder to save the changes to file as well.
+    mIsSaved = false;
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     QString modelName = mpModelicaEditor->getModelName();
     if (!modelName.isEmpty())
@@ -1521,13 +1518,20 @@ bool ProjectTab::ModelicaEditorTextChanged()
                 // if mType is package then check the child models
                 if (node->mType == StringHandler::PACKAGE)
                 {
+                    pMainWindow->mpLibrary->mpModelicaTree->removeChildNodes(node);
+                    QStringList modelsList = pMainWindow->mpOMCProxy->getClassNames(mModelNameStructure);
+                    foreach (QString model, modelsList)
+                    {
+                        pMainWindow->mpLibrary->addModelFiles(model, mModelNameStructure,
+                                                              mModelNameStructure + tr(".") + model);
+                    }/*
                     QStringList modelsList = pMainWindow->mpOMCProxy->getClassNames(mModelNameStructure);
                     foreach (QString model, modelsList)
                     {
                         pMainWindow->mpLibrary->addModelFiles(model,
                                                           StringHandler::removeLastWordAfterDot(mModelNameStructure),
                                                           StringHandler::removeLastWordAfterDot(mModelNameStructure));
-                    }
+                    }*/
 
                 }
                 return true;
@@ -1545,7 +1549,7 @@ bool ProjectTab::ModelicaEditorTextChanged()
             {
                 if (!pMainWindow->mpOMCProxy->existClass(modelNameStructure))
                 {
-                    if (!loadRootModel(mpModelicaEditor->toPlainText()))
+                    if (!loadRootModel(modelNameStructure))
                         return false;
                 }
                 else
@@ -1696,7 +1700,7 @@ int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 //! Reimplemented function to remove the Tab.
 void ProjectTabWidget::removeTab(int index)
 {
-    mpParentMainWindow->disableMainWindow(false);
+    //mpParentMainWindow->disableMainWindow(false);
     // if tab is saved and user is just closing it then save it to mRemovedTabsList, so that we can open it later on
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
     QTabWidget::removeTab(index);
@@ -1846,6 +1850,10 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     if (pCurrentTab->isReadOnly())
         return;
 
+    // validate the modelica text before saving the model
+    if (!pCurrentTab->mpModelicaEditor->validateText())
+        return;
+
     // if model is a child model then give user a message and return
     if (pCurrentTab->isChild())
     {
@@ -1874,7 +1882,10 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
         {
             if (saveModel(saveAs))
             {
-                tabName.chop(1);
+                // make sure we only trim * and not any letter of model name.
+                if (tabName.endsWith('*'))
+                    tabName.chop(1);
+
                 setTabText(index, tabName);
                 pCurrentTab->mIsSaved = true;
             }
@@ -1930,6 +1941,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     // if saving the file second time
     else
     {
+        pMainWindow->mpOMCProxy->setSourceFile(pCurrentTab->mModelNameStructure, pCurrentTab->mModelFileName);
         if (pMainWindow->mpOMCProxy->save(pCurrentTab->mModelNameStructure))
         {
             return true;

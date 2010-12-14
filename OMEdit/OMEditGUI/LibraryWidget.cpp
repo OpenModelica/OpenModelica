@@ -157,8 +157,6 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
             pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
         }
     }
-    // Delete the complete tree node now
-    //delete item;
 }
 
 void ModelicaTree::removeChildNodes(ModelicaTreeNode *item)
@@ -170,8 +168,9 @@ void ModelicaTree::removeChildNodes(ModelicaTreeNode *item)
         ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item->child(i));
         deleteNode(treeNode);
     }
-    // Delete the node from list as well
-    mModelicaTreeNodesList.removeOne(item);
+    // remove the items from the tree as well
+    if (item->childCount())
+        qDeleteAll(item->takeChildren());
 }
 
 void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure)
@@ -271,6 +270,14 @@ void ModelicaTree::renameClass()
 
 void ModelicaTree::checkModelicaModel()
 {
+    // validate the modelica text before checking the model
+    ProjectTab *pCurrentTab = mpParentLibraryWidget->mpParentMainWindow->mpProjectTabs->getCurrentTab();
+    if (pCurrentTab)
+    {
+        if (!pCurrentTab->mpModelicaEditor->validateText())
+            return;
+    }
+
     CheckModelWidget *widget = new CheckModelWidget(mpParentLibraryWidget->mSelectedModelicaNode->mName,
                                                     mpParentLibraryWidget->mSelectedModelicaNode->mNameStructure,
                                                     mpParentLibraryWidget->mpParentMainWindow);
@@ -332,7 +339,7 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node)
     }
     else
     {
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                                                           .arg(pMainWindow->mpOMCProxy->getResult())
                                                           .append("while deleting " + treeNode->mName));
         return false;

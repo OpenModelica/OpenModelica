@@ -44,8 +44,8 @@ class ModelicaEditor : public QTextEdit
 public:
     ModelicaEditor(ProjectTab *pParent = 0);
     QString getModelName();
-    bool validateModelicaText();
     void findText(const QString &text, bool forward);
+    bool validateText();
 
     ProjectTab *mpParentProjectTab;
     QString mLastValidText;

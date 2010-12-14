@@ -77,6 +77,8 @@ public:
     void printGUIMessage(QString message);
 
     MessageWidget *mpMessageWidget;
+protected:
+    int mMessageCounter;
 };
 
 class GeneralMessages : public Messages
@@ -84,6 +86,7 @@ class GeneralMessages : public Messages
     Q_OBJECT
 public:
     GeneralMessages(MessageWidget *pParent=0);
+    void printGUIMessage(QString message);
 };
 
 class InfoMessages : public Messages
@@ -91,6 +94,7 @@ class InfoMessages : public Messages
     Q_OBJECT
 public:
     InfoMessages(MessageWidget *pParent=0);
+    void printGUIMessage(QString message);
 };
 
 class WarningMessages : public Messages
@@ -98,6 +102,7 @@ class WarningMessages : public Messages
     Q_OBJECT
 public:
     WarningMessages(MessageWidget *pParent=0);
+    void printGUIMessage(QString message);
 };
 
 class ErrorMessages : public Messages
@@ -105,6 +110,7 @@ class ErrorMessages : public Messages
     Q_OBJECT
 public:
     ErrorMessages(MessageWidget *pParent=0);
+    void printGUIMessage(QString message);
 };
 
 #endif // MESSAGEWIDGET_H

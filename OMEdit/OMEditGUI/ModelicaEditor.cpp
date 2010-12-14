@@ -95,45 +95,6 @@ QString ModelicaEditor::getModelName()
     return modelName;
 }
 
-bool ModelicaEditor::validateModelicaText()
-{
-    if (document()->isModified())
-    {
-        // if the user makes few mistakes in the text then dont let him change the perspective
-        if (!emit focusOut())
-        {
-            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-            QMessageBox *msgBox = new QMessageBox(pMainWindow);
-            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
-            msgBox->setIcon(QMessageBox::Critical);
-            msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
-                            .arg(pMainWindow->mpOMCProxy->getResult()));
-            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
-            msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
-            msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
-
-            int answer = msgBox->exec();
-
-            switch (answer)
-            {
-            case QMessageBox::AcceptRole:
-                document()->setModified(false);
-                // revert back to last valid block
-                setText(mLastValidText);
-                return true;
-            case QMessageBox::RejectRole:
-                document()->setModified(true);
-                return false;
-            default:
-                // should never be reached
-                document()->setModified(true);
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 void ModelicaEditor::findText(const QString &text, bool forward)
 {
     QTextCursor currentTextCursor = textCursor();
@@ -178,6 +139,49 @@ void ModelicaEditor::findText(const QString &text, bool forward)
                                  Helper::applicationName + " - Information",
                                  GUIMessages::getMessage(GUIMessages::SEARCH_STRING_NOT_FOUND).arg(text), "OK");
     }
+}
+
+bool ModelicaEditor::validateText()
+{
+    if (document()->isModified())
+    {
+        // if the user makes few mistakes in the text then dont let him change the perspective
+        if (!emit focusOut())
+        {
+            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+            QMessageBox *msgBox = new QMessageBox(pMainWindow);
+            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
+            msgBox->setIcon(QMessageBox::Critical);
+            msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
+                            .arg(pMainWindow->mpOMCProxy->getResult()));
+            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
+            msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
+            msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
+
+            int answer = msgBox->exec();
+
+            switch (answer)
+            {
+            case QMessageBox::AcceptRole:
+                document()->setModified(false);
+                // revert back to last valid block
+                setText(mLastValidText);
+                return true;
+            case QMessageBox::RejectRole:
+                document()->setModified(true);
+                return false;
+            default:
+                // should never be reached
+                document()->setModified(true);
+                return false;
+            }
+        }
+        else
+        {
+            document()->setModified(false);
+        }
+    }
+    return true;
 }
 
 void ModelicaEditor::hideFindWidget()

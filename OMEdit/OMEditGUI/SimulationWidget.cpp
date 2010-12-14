@@ -161,6 +161,13 @@ void SimulationWidget::initializeFields()
 
 void SimulationWidget::show()
 {
+    // validate the modelica text before simulating the model
+    ProjectTab *pCurrentTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
+    if (pCurrentTab)
+    {
+        if (!pCurrentTab->mpModelicaEditor->validateText())
+            return;
+    }
     initializeFields();
     setVisible(true);
 }
@@ -213,20 +220,30 @@ void SimulationWidget::simulate()
 
         if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simualtionParameters))
         {
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage("Unable to simulate the Model '" +
-                                                                      projectTab->mModelNameStructure + "'");
             QString result = mpParentMainWindow->mpOMCProxy->getResult();
             int startPos = result.indexOf("messages");
             int endPos = result.indexOf("timeFrontend");
             // add 10 to startPos to remove 'messages = ' word and remove -16 to remove timeFrontend from the end
             QString message = result.mid(startPos + 10, (endPos - startPos) - 16);
             message = StringHandler::removeFirstLastQuotes(message).trimmed();
-            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(
+            mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Unable to simulate the Model '")
+                                                                      .append(projectTab->mModelNameStructure)
+                                                                      .append("'\n")
+                                                                      .append(QString(GUIMessages::getMessage(
                                                                       GUIMessages::ERROR_OCCURRED))
-                                                                      .arg(message));
+                                                                      .arg(message)));
         }
         else
         {
+            QString result = mpParentMainWindow->mpOMCProxy->getResult();
+            int startPos = result.indexOf("messages");
+            int endPos = result.indexOf("timeFrontend");
+            // add 10 to startPos to remove 'messages = ' word and remove -16 to remove timeFrontend from the end
+            QString message = result.mid(startPos + 10, (endPos - startPos) - 16);
+            message = StringHandler::removeFirstLastQuotes(message).trimmed();
+            if (!message.isEmpty())
+                message = QString(" with message:\n").append(message);
+
             // if simualtion output format is not plt then dont show plot window.
             // only show user the message that result file is created.
             if (mpOutputFormatComboBox->currentText().compare("plt") == 0)
@@ -234,9 +251,10 @@ void SimulationWidget::simulate()
                 mpParentMainWindow->mpPlotWidget->readPlotVariables(QString(projectTab->mModelNameStructure)
                                                                     .append("_res.plt"));
                 mpParentMainWindow->plotdock->show();
-                mpParentMainWindow->mpMessageWidget->printGUIMessage(QString("Simulated '")
-                                                                     .append(projectTab->mModelNameStructure)
-                                                                     .append("' successfully!"));
+                mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '")
+                                                                         .append(projectTab->mModelNameStructure)
+                                                                         .append("' successfully!")
+                                                                         .append(message));
             }
             else
             {
@@ -244,7 +262,8 @@ void SimulationWidget::simulate()
                                                                          .append(StringHandler::removeFirstLastQuotes(mpParentMainWindow->mpOMCProxy->changeDirectory()))
                                                                          .append("/").append(projectTab->mModelNameStructure)
                                                                          .append("_res.")
-                                                                         .append(mpOutputFormatComboBox->currentText()));
+                                                                         .append(mpOutputFormatComboBox->currentText())
+                                                                         .append(message));
             }
         }
         progressBar.setValue(endtime);

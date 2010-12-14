@@ -47,7 +47,7 @@
 #include <omniORB4/CORBA.h>
 
 //! @class OMCProxy
-//! @brief The OMCProxy is a singleton class. It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
+//! @brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
 
 //! Constructor
 //! @param mOMC is the CORBA object.
