@@ -447,6 +447,32 @@ case SIMCODE(__) then
   >>
 end eventUpdateFunction;
 
+template getEventIndicatorFunction(SimCode simCode)
+ "Generates get event indicator function for c file."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  // Used to get event indicators
+  void getEventIndicator(ModelInstance* comp, int i) {
+  }
+  
+  >>
+end getEventIndicatorFunction;
+
+template getRealFunction(SimCode simCode)
+ "Generates getReal function for c file."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  
+  void getReal(ModelInstance* comp, const fmiValueReference vr) {
+  }
+  
+  >>
+end getRealFunction;
+
 template fmuMakefile(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
 ::=
