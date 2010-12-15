@@ -1,19 +1,40 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
-  <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Cardinality Dependent Connection Equations&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">CardinalityResistor&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In certain cases there is a need to let the behavior of a model be dependent on the number of connections to certain connectors of the model. Below is an example class containing a conditional if-clause equation with a condition that is a parameter expression (the built-in function cardinality has parameter variability), i.e.the condition does not change during simulation. The function &lt;span style=" font-family:Courier New;">cardinality&lt;/span>(&lt;span style=" font-style:italic;">c&lt;/span>) with formal parameter &lt;span style=" font-style:italic;">c&lt;/span> returns the total number of (internal and external) occurrences of the connector &lt;span style=" font-style:italic;">c&lt;/span> in &lt;span style=" font-family:Courier New;">connect&lt;/span> statements in the total model.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>model CardinalityResistor
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Cardinality Dependent Connection Equations&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">CardinalityResistor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In certain cases there is a need to let the behavior of a model be dependent on the number of connections to certain connectors of the model. Below is an example class containing a conditional if-clause equation with a condition that is a parameter expression (the built-in function cardinality has parameter variability), i.e.the condition does not change during simulation. The function &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">cardinality&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">(&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">c&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">) with formal parameter &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">c&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> returns the total number of (internal and external) occurrences of the connector &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">c&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> in &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">connect&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> statements in the total model.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <Input>model CardinalityResistor
   extends Modelica.Electrical.Analog.Interfaces.OnePort;
   parameter Real R(unit = "Ohm")    "Resistance";
 equation
@@ -31,50 +52,87 @@ equation
   // Resistor equation
   v = R * i;
 end CardinalityResistor;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of CardinalityResistor &lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>model circuit
+          <Output>{CardinalityResistor}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of CardinalityResistor &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <Input>model circuit
   CardinalityResistor R1( R=100 );
   Modelica.Electrical.Analog.Basic.Ground Gnd;
-  Modelica.Electrical.Analog.Sources.SineVoltage U1;
+  Modelica.Electrical.Analog.Sources.SineVoltage U1(freqHz = 5, V = 110);
 equation
   connect( R1.n, U1.n );
   connect( R1.p, Gnd.p );
   connect( U1.p, Gnd.p );
 end circuit;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate it!&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( circuit ) //??Error</Input>
-     <Output>record
-    resultFile = "circuit_res.plt"
-end record
-OMC-ERROR:
-"Variable V not found in scope Modelica.Electrical.Analog.Interfaces.VoltageSource
-Illegal to instantiate partial class SignalSource
-"</Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( R1.v );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/24.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/24.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqOCPfgAAAAlwSFlzAAALEwAACxMBAJqcGAAABXlJREFUeJzt3YGSoyoQBVDM/3/0zmSTiShyG7oh3Xhv1dtKJoj2GZRM1Lz0YKpJ394A7yEQCIFACARCIBACgRAIhEAgBAIhEAiBQAgEQiAQAoEQCIRAIAQCIRAIgUAIBEIgEBlQeqSfPB8dF3g//7xwahI6omLS//9ScYGUtRH3GSWSYt4wOdDvQEkflueztPvBIrkoZnvl0+a1i+0WyMk4gs67WEa22w1vCfQcQOm9F2UH7N2/qXyYihzxQRq9mE4/WSPSaR6+dOtp/s4hEAiBQAgEQiAQAoEQCIRAIAQCIRAIgUAIBEIgEAKBEAiEQCAEAiEQCIFACASCgW5OWCt/wbNc7cGnvAgEXiQQeDF1nAjctuzqh8gZMIIyl/BGtZPKrwsV2jo8g8QmMp7miwMm9CiyBbqSCExkCVRTCCtkCFQ3iCokABIKIYGgQmYjSFB/SCIrIFHtNwYSlh5QyAZIXHg8IROghrLDCVkANR18owkZTPNtk1O0qUw/glorDiakBmqvN5aQHqh9nbcC6hoOkYSUQJ27SyAhLVDfWtcCqjTpLjSOkGoEKcoMI6QBUhUZReh7QEGEFEDKCpcH0g6BIENIAaRd9TJA5SYG5YUQ6h1BFjtIiJ2sG8hi5QsDGf3yAwgdy98fcSrf5WJUWTyg7HKXVGrxjFlh/oWqQFcXUNkdXf0fp2tAj8/3vuQxrCoy0OvxeQSZFuVdqHyQzv49LWML5FyoY5o3rohAKL6F2oHM61kMyP6Y4fso1PzX/IBqogNlz4YU41mIQCCNQINKcSzkA8ixUBvQsDpCA+2aEKjeYmAZboVagEa+o3P7brEJaOSGLAA0uASnQgQC8QPkVEg+zQ/ffp/HafEImrD1BAIJDTRl4z0KEQhECDRp0x0KyYBmTTAOJzLZND9tu0MCPWZutzshEdDErSYQSEigqRvtTYhAh5wud8FL7DY5NTxsarz/XHfGSq5+/Pd/2Su/esyz9ZYmZ/YKX+u7AFHczDIqk3eyw+rScUjBDqYDTRY6ru1wsQaBwNpuD4RW5hFoqtAsoPwWhobGpdbZH/XnmyOsNuO5KtSs+Qqzy26O11fLGv88KjTeLhsbbsZ7RWog2OK0NejXjMvYyo3hAMo0BVv+HaCm33MqVn0B1DI2JSNoezWsdwnSDAQXOGx6sf22e3UFoP3NC+UxcdH4ar/ZSo1hx4U7KarZLofwp0fYyRem+d/MmOol67gzkGgVRtP8gIwXsgJSb0hfxl8sIWrlF8jJ5Tb3BRJ27xhosNACQEOFpH0TCMTvNP/wceG66xE0UGgVoO/fXeQbyMH9ac6BBgkRyK5T70BDhIyBlhNq6tH9CCIQype/CsM/kPm3zeiAhF/yNjW2Qo29pdPT4/mtxYBaO8vO4BVPTX4fyFSoG+jv6fGcHj4ZNT52Qs09VYBej7/P4wlI9CVv82P2V317PwGm+d8YAXV0EwTISGhlIAuhnj6iAFkMoa4u/P81/45eaBRQT7cDogbq6yAOkFpofSCdUOfSgYB0Qr3LRgLS7GTdi4YCUgiNBFpBqF821gjqLVRx9AoG1CekObpHA+oS0sx+8YDaq1W9fwoH1C6ke4MZD6h1QCjfgAeb5p9pqlj7QVLAEdQkpP6gLSSQXEj/QWRMILGQ/lO2oEDCyg0+pw0LJKjd5IP+qECC0WFztjHiNP8KADA6Gxt3BAECq7PVkYEqCHaX6IcGuoQwvIWhVr6fqzuusxUsSj/rTrX8AEBnDuMbYIrlv7+MIATQ42m05Q/sIhhBbuf5LNsAnN/E38UGp1J++rvw9c4JPs2Pz83LxyEQCIFACARCIBACgRAIhEAgBAIhEAiBQAgEQiAQAoEQCIRAIAQC+QckHNprAK0ragAAAABJRU5ErkJggg==</Image>
-    </TextCell>
-   </GroupCell>
+          <Output>{circuit}</Output>
+        </GraphCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Simulate it!&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <Input>simulate( circuit ) //??Error</Input>
+          <Output>record SimulationResult
+    resultFile = "circuit_res.plt",
+    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'circuit', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
+    messages = "",
+    timeFrontend = 0.0413658719194758,
+    timeBackend = 0.0024344574519946,
+    timeSimCode = 0.00126287000163429,
+    timeTemplates = 0.00395406399416686,
+    timeCompile = 1.32900159098433,
+    timeSimulation = 0.135778220416282,
+    timeTotal = 1.51384226207521
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="25" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="50" closed="false" YLabel="" Area="v1wufF10ghDAXINGl+Lo+D/wfDE/qucVQGwtEFear8o=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+          <Data Id="0" Label="R1.v">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</Data>
+          <Data Id="0" Label="time">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</Data>
+          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="R1.v" Color="#ff0000"/>
+          <Input>plot( R1.v );</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Output">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/OpenModelica1.6.0/tmp/OMNotebook_tempfiles/57.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/OpenModelica1.6.0/tmp/OMNotebook_tempfiles/57.png">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</Image>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>
