@@ -79,7 +79,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   SET(OMC_MODELDIR ${dir})  
   # generate model.mos 
   FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/c_runtime)
-  CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}.mos)
+  CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}_FMU.mos)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
@@ -92,7 +92,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
-                     COMMAND ${OMC_DEBUG} ${Flags} ${dir}/${model}.mos
+                     COMMAND ${OMC_DEBUG} ${Flags} ${dir}/${model}_FMU.mos
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
   # target fuer OM_OUTPUT

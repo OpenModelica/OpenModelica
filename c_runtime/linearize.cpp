@@ -49,7 +49,7 @@ string array2string(double* array, int row, int col){
 			else
 				retVal << array[k++] << ",";
 		}
-		if (!((i+1) == row) and !(col == 0))
+		if (!((i+1) == row) && !(col == 0))
 			retVal << ";";
 	}
     return retVal.str();

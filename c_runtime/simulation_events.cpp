@@ -729,8 +729,8 @@ int CheckForNewEvent(int flag) {
 			//if (sim_verbose){ cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
 			//				"check gout[" << i << "] = " << gout[i] << endl;
 			//}
-			if ( (gout[i] < 0 and gout_old[i] > 0) ||
-				 (gout[i] > 0 and gout_old[i] < 0)	) {
+			if ( (gout[i] < 0 && gout_old[i] > 0) ||
+				 (gout[i] > 0 && gout_old[i] < 0)	) {
 				if (sim_verbose) {
 					cout << "adding event " << i << " at time: "
 					<< globalData->timeValue << endl;
@@ -942,8 +942,8 @@ int CheckZeroCrossings(long int *eventid) {
 	  //	  	  	  	    "check gout[" << i << "] = " << gout[i] << endl;
 	  //}
 	  //Found event in left section
-	  if ((gout[i] < 0 and gout_old[i] > 0) ||
-		  (gout[i] > 0 and gout_old[i] < 0)) {
+	  if ((gout[i] < 0 && gout_old[i] > 0) ||
+		  (gout[i] > 0 && gout_old[i] < 0)) {
 		  *eventid = i;
 		  return 1;
 	  }

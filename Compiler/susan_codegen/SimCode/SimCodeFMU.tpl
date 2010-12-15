@@ -321,14 +321,24 @@ case SIMCODE(__) then
   
   // include fmu header files, typedefs and macros
   #include "fmiModelFunctions.h"
+  #include "fmu_model_interface.h"
+
+  void setStartValues(ModelInstance *comp);
+  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo);
+  void getEventIndicator(ModelInstance* comp, int i);
+  void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
+  fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
+
+  <%ModelDefineData(modelInfo)%>
   
   // implementation of the Model Exchange functions
   #include "fmu_model_interface.c"
-  
-  <%ModelDefineData(modelInfo)%>
+ 
   <%setStartValues(simCode)%>
   <%initializeFunction(initialEquations)%>
+  <%getEventIndicatorFunction(simCode)%>
   <%eventUpdateFunction(simCode)%>
+  <%getRealFunction(simCode)%>
   
   >>
 end fmumodel_identifierFile;
@@ -364,7 +374,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,varInfo.numBoolParams)
   <%vars.stringParamVars |> var => DefineVariables(var,"2") ;separator="\n"%>
   
   // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%crefStr(name)%>_'  ;separator=", "%> }
+  #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
   
   >>
 end ModelDefineData;
@@ -380,7 +390,7 @@ match simVar
 end DefineDerivativeVariables;
 
 template dervativeNameCStyle(ComponentRef cr)
- "Generates the name of a dervative in c style, replaces ( with _"
+ "Generates the name of a derivative in c style, replaces ( with _"
 ::=
   match cr
   case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
@@ -393,7 +403,7 @@ match simVar
   case SIMVAR(__) then
   let description = if comment then '// "<%comment%>"'
   <<
-  #define <%crefStr(name)%>_ <%prefix%><%index%> <%description%>
+  #define <%cref(name)%>_ <%prefix%><%index%> <%description%>
   >>
 end DefineVariables;
 
@@ -420,7 +430,7 @@ template initializeFunction(list<SimEqSystem> initialEquations)
   <<
   // Used to set the first time event, if any.
   void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
-  {
+
     <%varDecls%>
   
     <%eqPart%>
@@ -467,7 +477,8 @@ match simCode
 case SIMCODE(__) then
   <<
   
-  void getReal(ModelInstance* comp, const fmiValueReference vr) {
+  fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
+    return 0.0;
   }
   
   >>

@@ -46,6 +46,11 @@
 
 #include "tables.h"
 
+#ifdef _MSC_VER
+#define fmin min
+#define fmax max
+#endif
+
 //extern char *model_dir; // defined somewhere else (where?)
 
 namespace {
