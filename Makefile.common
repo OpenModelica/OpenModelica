@@ -63,6 +63,9 @@ t:
 testlibraries:
 	(cd testsuite/libraries; time $(MAKE) -f Makefile)
 
+testlibrariemsl31:
+	(cd testsuite/libraries/msl31/simulate; time $(MAKE) -f Makefile)
+
 testSummary:
 	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
 
