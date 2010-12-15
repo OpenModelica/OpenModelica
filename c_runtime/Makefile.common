@@ -66,7 +66,8 @@ solver_dasrt.h \
 solver_main.h \
 string_array.h \
 utility.h \
-linearize.h
+linearize.h \
+fmu_model_interface.h
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a
