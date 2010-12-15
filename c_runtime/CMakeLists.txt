@@ -7,6 +7,7 @@ MESSAGE(" omc is " ${OMC_DEBUG})
 
 ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(sendData)
+ADD_SUBDIRECTORY(ModelicaExternalC)
 
 # -------------------------------------------------------------
 # MACRO definitions
@@ -42,7 +43,10 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
@@ -54,7 +58,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -66,6 +70,50 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 #ENDFOREACH(model ${model_sources})
 ENDMACRO(BUILDMODEL)
 
+# MACRO BUILDMODEL
+MACRO(BUILDMODELFMU model dir Flags CSRC)
+
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
+
+  SET(OMC_MODELNAME ${model})  
+  SET(OMC_MODELDIR ${dir})  
+  # generate model.mos 
+  FIND_FILE(MOSFILE_IN model_fmu.in PATHS ${OMCTRUNCHOME}/c_runtime)
+  CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}.mos)
+  
+  # Variablen fuer openmodelica2sarturis
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+  # custom command fuer openmodelicacompiler
+  ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
+                     COMMAND ${OMC_DEBUG} ${Flags} ${dir}/${model}.mos
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
+
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  
+  ADD_LIBRARY(${model} ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+
+  # Dependencies
+  ADD_DEPENDENCIES(${model} ${model}codegen)
+  
+  IF(MODELS_INSTALL)
+    INSTALL(TARGETS ${model} ARCHIVE DESTINATION ${MODELS_INSTALL_PATH})
+    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt DESTINATION ${MODELS_INSTALL_PATH})
+  ENDIF(MODELS_INSTALL)
+#ENDFOREACH(model ${model_sources})
+ENDMACRO(BUILDMODELFMU)
 
 
 # Check if example files are to be exported
@@ -137,7 +185,7 @@ if(WIN32)
 #add_definitions(/MT)
 endif(WIN32)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
-TARGET_LINK_LIBRARIES(sim c_runtime f2c)
+TARGET_LINK_LIBRARIES(sim c_runtime f2c ModelicaExternalC)
 
 # Install
 INSTALL(TARGETS c_runtime sim

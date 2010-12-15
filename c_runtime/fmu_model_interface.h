@@ -1,3 +1,5 @@
+#ifndef __FMU_MODEL_INTERFACE_H__
+#define __FMU_MODEL_INTERFACE_H__
 /******************************************************************************
  *fmuTemplate.h
  ******************************************************************************/
@@ -41,3 +43,5 @@ fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
     return fmiSetString(comp, &vr, 1, &value);
 }
 
+
+#endif

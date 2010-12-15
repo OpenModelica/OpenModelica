@@ -819,7 +819,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
     local
-      String filenameprefix,file_dir;
+      String filenameprefix,file_dir,resstr;
       list<SCode.Class> p_1;
       DAE.DAElist dae;
       list<Env.Frame> env;
@@ -879,8 +879,17 @@ algorithm
            ("timeBackend",  Values.REAL(timeBackend)),
            ("timeFrontend", Values.REAL(timeFrontend))
            };   
+        resstr = Absyn.pathString(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
-        (cache,Values.STRING("SimCode: The model has been translated to FMU"),st,indexed_dlow,libs,file_dir, resultValues);
+        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+    case (_,_,className,_,_,_, _)
+      equation        
+        resstr = Absyn.pathString(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to FMU"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then
+        fail();        
   end matchcontinue;
 end translateModelFMU;
 
