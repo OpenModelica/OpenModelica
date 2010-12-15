@@ -67,7 +67,10 @@ solver_main.h \
 string_array.h \
 utility.h \
 linearize.h \
-fmu_model_interface.h
+fmu_model_interface.h \
+fmiModelFunctions.h \
+fmiModelTypes.h \
+
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a
