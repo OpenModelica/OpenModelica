@@ -245,7 +245,7 @@ public slots:
     bool saveModel(bool saveAs);
     bool closeProjectTab(int index);
     bool closeAllProjectTabs();
-    void openModel();
+    void openModel(QString fileName = QString());
     void resetZoom();
     void zoomIn();
     void zoomOut();

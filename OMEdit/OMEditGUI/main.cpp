@@ -40,9 +40,11 @@
 int main(int argc, char *argv[])
 {
     Q_INIT_RESOURCE(resource_omedit);
+    // read the second argument if specified by user.
+    QString fileName = argv[1];
     // adding style sheet
-    argc += 1;
-    argv[1] = "-stylesheet=:/Resources/css/stylesheet.qss";
+    argc++;
+    argv[(argc - 1)] = "-stylesheet=:/Resources/css/stylesheet.qss";
 
     QApplication a(argc, argv);
     QPixmap pixmap(":/Resources/icons/omeditor_splash.png");
@@ -51,6 +53,11 @@ int main(int argc, char *argv[])
     splashScreen.show();
 
     MainWindow mainwindow(&splashScreen);
+    // if user has requested to open the file by passing it in argument then,
+    if (!fileName.isEmpty())
+    {
+        mainwindow.mpProjectTabs->openModel(fileName);
+    }
     mainwindow.showMaximized();
     splashScreen.finish(&mainwindow);
     if (mainwindow.mExitApplication)        // if there is some issue in running the application.

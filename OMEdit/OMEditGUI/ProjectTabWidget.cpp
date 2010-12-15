@@ -2045,20 +2045,27 @@ bool ProjectTabWidget::closeAllProjectTabs()
 
 //! Loads a model from a file and opens it in a new project tab.
 //! @see saveModel(bool saveAs)
-void ProjectTabWidget::openModel()
+void ProjectTabWidget::openModel(QString fileName)
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose File"),
-                                                    QDir::currentPath() + QString("/../.."),
-                                                    Helper::omFileOpenText);
     if (fileName.isEmpty())
-        return;
+    {
+        QString name = QFileDialog::getOpenFileName(this, tr("Choose File"),
+                                                        QDir::currentPath() + QString("/../.."),
+                                                        Helper::omFileOpenText);
+        if (name.isEmpty())
+            return;
+        else
+            fileName = name;
+    }
 
     // create new OMC instance and load the file in it
     OMCProxy *omc = new OMCProxy(mpParentMainWindow, false);
     // if error in loading file
     if (!omc->loadFile(fileName))
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE));
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE))
+                          .append(omc->getErrorString());
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
     }
     // get the class names now to check if they are already loaded or not
