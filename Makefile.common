@@ -64,7 +64,8 @@ testlibraries:
 	(cd testsuite/libraries; time $(MAKE) -f Makefile)
 
 testlibrariemsl31:
-	(cd testsuite/libraries/msl31/simulate; time $(MAKE) -f Makefile)
+	(cd testsuite/libraries/msl31/simulate; time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
+	echo "log is in testsuite/libraries/msl31/simulate/testsuite-msl31-trace.txt"
 
 testSummary:
 	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
