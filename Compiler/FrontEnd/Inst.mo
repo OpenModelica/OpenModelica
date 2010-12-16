@@ -15122,11 +15122,22 @@ protected function handleStreamConnectors
   output DAE.DAElist outDAE;
 algorithm
   outDAE := matchcontinue(isTopScope, inSets, inDAE)
-    case (false, _, _) then inDAE;
+    
+    case (false, _, _) 
+      then 
+        inDAE;
+    
+    // do not do this phase when getHasStreamConnectors() = false
+    case (true, _, _) 
+      equation
+        false = System.getHasStreamConnectors();
+      then
+        inDAE;    
+    
+    // only do this phase when getHasStreamConnectors() = true
     case (true, _, _)
       equation
-        (inDAE, _, _) = DAEUtil.traverseDAE(inDAE, DAEUtil.emptyFuncTree,
-          handleStreamOperators, inSets);
+        (inDAE, _, _) = DAEUtil.traverseDAE(inDAE, DAEUtil.emptyFuncTree, handleStreamOperators, inSets);
       then
         inDAE;
   end matchcontinue;

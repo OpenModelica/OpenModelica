@@ -3766,10 +3766,11 @@ algorithm
   end matchcontinue;
 end traverseDAEFunc;
 
-public function traverseDAE2 "
-Author: BZ, 2008-12
-This function traverses all dae exps.
-NOTE, it also traverses DAE.VAR(componenname) as an expression."
+
+public function traverseDAE2 
+"@author: BZ, 2008-12, adrpo, 2010-12
+  This function traverses all dae exps.
+  NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input list<DAE.Element> daeList;
   input FuncExpType func;
   input Type_a extraArg;
@@ -3779,6 +3780,30 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   replaceable type Type_a subtypeof Any;
 algorithm
   (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
+    local
+      list<DAE.Element> lst;
+    
+    case (daeList,func,extraArg) 
+      equation
+        (lst,extraArg) = traverseDAE2_tail(daeList,func,extraArg, {});
+      then (lst,extraArg);
+  end matchcontinue;
+end traverseDAE2;
+
+protected function traverseDAE2_tail 
+"@uthor: adrpo, 2010-12
+  This function is a tail recursive function that traverses all dae exps.
+  NOTE, it also traverses DAE.VAR(componenname) as an expression."
+  input list<DAE.Element> daeList;
+  input FuncExpType func;
+  input Type_a extraArg;
+  input list<DAE.Element> accumulator;
+  output list<DAE.Element> traversedDaeList;
+  output Type_a oextraArg;
+  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg,accumulator)
     local
       DAE.ComponentRef cr,cr2,cr1,cr1_2;
       list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
@@ -3811,183 +3836,282 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
   
-    case({},_,extraArg) then ({},extraArg);
+    case({},_,extraArg,accumulator)
+      equation
+        accumulator = listReverse(accumulator);
+      then 
+        (accumulator,extraArg);
   
-    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg)
+    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg,accumulator)
       equation
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::accumulator);
+      then 
+        (dae2,extraArg);
  
-    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg)
+    case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg,accumulator)
       equation
         ((_,extraArg)) = func((Expression.crefExp(cr), extraArg));
         (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);
         (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.DEFINE(cr,e,source)::dae,func,extraArg)
+    case(DAE.DEFINE(cr,e,source)::dae,func,extraArg,accumulator)
       equation
         ((e2,extraArg)) = func((e, extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.DEFINE(cr2,e2,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.DEFINE(cr2,e2,source)::accumulator);
+      then 
+        (dae2,extraArg);
   
-    case(DAE.INITIALDEFINE(cr,e,source)::dae,func,extraArg)
+    case(DAE.INITIALDEFINE(cr,e,source)::dae,func,extraArg,accumulator)
       equation
         ((e2,extraArg)) = func((e, extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIALDEFINE(cr2,e2,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIALDEFINE(cr2,e2,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.EQUEQUATION(cr,cr1,source)::dae,func,extraArg)
+    case(DAE.EQUEQUATION(cr,cr1,source)::dae,func,extraArg,accumulator)
       equation
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         ((DAE.CREF(cr1_2,_),extraArg)) = func((Expression.crefExp(cr1), extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.EQUEQUATION(cr2,cr1_2,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.EQUEQUATION(cr2,cr1_2,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.EQUATION(e1,e2,source)::dae,func,extraArg)
+    case(DAE.EQUATION(e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.EQUATION(e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.EQUATION(e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg)
+    case(DAE.COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.COMPLEX_EQUATION(e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.COMPLEX_EQUATION(e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg)
+    case(DAE.ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
         ((e22, extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.ARRAY_EQUATION(idims,e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg)
+    case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
         ((e22, extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,func,extraArg)
+    case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,func,extraArg,accumulator)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
-        ({elt2}, extraArg)= traverseDAE2({elt},func,extraArg);
-        (elist2, extraArg) = traverseDAE2(elist,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::dae2,extraArg);
+        ({elt2}, extraArg)= traverseDAE2_tail({elt},func,extraArg,{});
+        (elist2, extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.WHEN_EQUATION(e1,elist,NONE(),source)::dae,func,extraArg)
+    case(DAE.WHEN_EQUATION(e1,elist,NONE(),source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
-        (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.WHEN_EQUATION(e11,elist2,NONE(),source)::dae2,extraArg);
+        (elist2,extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.WHEN_EQUATION(e11,elist2,NONE(),source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.INITIALEQUATION(e1,e2,source)::dae,func,extraArg)
+    case(DAE.INITIALEQUATION(e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIALEQUATION(e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIALEQUATION(e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg)
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.COMP(id,elist,source,cmt)::dae,func,extraArg)
+    case(DAE.COMP(id,elist,source,cmt)::dae,func,extraArg,accumulator)
       equation
-        (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.COMP(id,elist2,source,cmt)::dae2,extraArg);
+        (elist2,extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.COMP(id,elist2,source,cmt)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae,func,extraArg)
+    case(DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae,func,extraArg,accumulator)
       equation
         (f1,extraArg) =  traverseDAEFunc(f1,func,extraArg);
         (f2,extraArg) =  traverseDAEFunc(f2,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.EXTOBJECTCLASS(path,f1,f2,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.ASSERT(e1,e2,source)::dae,func,extraArg)
+    case(DAE.ASSERT(e1,e2,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         ((e22,extraArg)) = func((e2,extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.ASSERT(e11,e22,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.ASSERT(e11,e22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.TERMINATE(e1,source)::dae,func,extraArg)
+    case(DAE.TERMINATE(e1,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.TERMINATE(e11,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.TERMINATE(e11,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.NORETCALL(path,expl,source)::dae,func,extraArg)
+    case(DAE.NORETCALL(path,expl,source)::dae,func,extraArg,accumulator)
       equation
         (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.NORETCALL(path,expl,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.NORETCALL(path,expl,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.REINIT(cr,e1,source)::dae,func,extraArg)
+    case(DAE.REINIT(cr,e1,source)::dae,func,extraArg,accumulator)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr),extraArg));
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.REINIT(cr2,e11,source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.REINIT(cr2,e11,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg)
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg,accumulator)
       equation
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg)
+    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg,accumulator)
       equation
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2,extraArg);
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg)
+    case(DAE.IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg,accumulator)
       equation
         (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
         (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
-        (elist22,extraArg) = traverseDAE2(elist2,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2,extraArg);
+        (elist22,extraArg) = traverseDAE2_tail(elist2,func,extraArg,{});
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.IF_EQUATION(conds_1,tbs_1,elist22,source)::accumulator);
+      then 
+        (dae2,extraArg);
         
-    case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg)
+    case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg,accumulator)
       equation
         (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
         (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
-        (elist22,extraArg) = traverseDAE2(elist2,func,extraArg);
-        (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-      then (DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2,extraArg);
+        (elist22,extraArg) = traverseDAE2_tail(elist2,func,extraArg,{});
+        (dae2,extraArg) = 
+          traverseDAE2_tail(
+            dae,func,extraArg,
+            DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22,source)::accumulator);
+      then 
+        (dae2,extraArg);
     
     // Empty function call - stefan
-    case(DAE.NORETCALL(_, _, _)::dae,func,extraArg)
+    case(DAE.NORETCALL(_, _, _)::dae,func,extraArg,accumulator)
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
-      then fail();
+      then 
+        fail();
         
-    case(elt::_,_,_)
+    case(elt::_,_,_,accumulator)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"DAEUtil.traverseDAE not implemented correctly"});
         str = DAEDump.dumpElementsStr({elt});
+        str = "DAEUtil.traverseDAE not implemented correctly for element:" +& str; 
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
         print(str);
-      then fail();
+      then 
+        fail();
   end matchcontinue;
-end traverseDAE2;
+end traverseDAE2_tail;
 
 public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
   Author: BZ, 2008-12

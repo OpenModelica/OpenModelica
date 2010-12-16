@@ -713,28 +713,28 @@ RML_END_LABEL
 
 /*
  * @author: adrpo
- * side effect to set if we have expandable conenctors in a program
+ * side effect to set if we have expandable connectors in a program
  */
 RML_BEGIN_LABEL(System__getHasExpandableConnectors)
 {
-  rmlA0 = hasExpandableConnector ? RML_TRUE : RML_FALSE;
+  rmlA0 = hasExpandableConnectors ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 /*
  * @author: adrpo
- * side effect to get if we have expandable conenctors in a program
+ * side effect to get if we have expandable connectors in a program
  */
 RML_BEGIN_LABEL(System__setHasExpandableConnectors)
 {
-  hasExpandableConnector = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  hasExpandableConnectors = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 /*
  * @author: adrpo
- * side effect to set if we have expandable conenctors in a program
+ * side effect to set if we have expandable connectors in a program
  */
 RML_BEGIN_LABEL(System__getHasInnerOuterDefinitions)
 {
@@ -744,7 +744,7 @@ RML_BEGIN_LABEL(System__getHasInnerOuterDefinitions)
 RML_END_LABEL
 /*
  * @author: adrpo
- * side effect to get if we have expandable conenctors in a program
+ * side effect to get if we have expandable connectors in a program
  */
 RML_BEGIN_LABEL(System__setHasInnerOuterDefinitions)
 {
@@ -752,6 +752,28 @@ RML_BEGIN_LABEL(System__setHasInnerOuterDefinitions)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+/*
+ * @author: adrpo
+ * side effect to set if we have stream connectors in a program
+ */
+RML_BEGIN_LABEL(System__getHasStreamConnectors)
+{
+  rmlA0 = hasStreamConnectors ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+/*
+ * @author: adrpo
+ * side effect to get if we have stream connectors in a program
+ */
+RML_BEGIN_LABEL(System__setHasStreamConnectors)
+{
+  hasStreamConnectors = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 /*
  * @author ppriv

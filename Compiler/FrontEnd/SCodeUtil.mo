@@ -94,6 +94,8 @@ algorithm
         System.setHasInnerOuterDefinitions(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
+        // set the external flag that signals the presence of expandable connectors in the model
+        System.setHasStreamConnectors(false);
         sp = Util.listFold(inClasses, translate2, {});
         sp = Util.listFold(initialClasses, translate2, sp);
         sp = listReverse(sp);
@@ -1092,7 +1094,8 @@ algorithm
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
         // Debug.fprintln("translate", "translating component: " +& n);
-        setHasInnerOuterDefinitionsHandler(io);
+        setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
+        setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, false, Absyn.NON_EACH());
         pa_1 = translateVariability(variability) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
@@ -1126,6 +1129,23 @@ algorithm
       then ();
   end matchcontinue;
 end setHasInnerOuterDefinitionsHandler;
+
+protected function setHasStreamConnectorsHandler
+"@author: adrpo
+ This function will set the external flag that signals
+ that a model has stream connectors"
+  input Boolean streamPrefix;
+algorithm
+  _ := matchcontinue (streamPrefix)
+    // no stream prefix
+    case (false) then ();
+    // has stream prefix
+    case (true)
+      equation
+         System.setHasStreamConnectors(true);
+      then ();
+  end matchcontinue;
+end setHasStreamConnectorsHandler;
 
 protected function translateRedeclarekeywords
 "function: translateRedeclarekeywords

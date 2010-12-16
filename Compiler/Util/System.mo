@@ -518,6 +518,22 @@ public function getHasExpandableConnectors
   external "C" System_getHasExpandableConnectors() annotation(Library = "omcruntime");
 end getHasExpandableConnectors;
 
+public function setHasStreamConnectors
+"@author: adrpo
+ sets the external flag that signals the
+ presence of stream connectors in a model"
+  input Boolean hasStream;
+  external "C" System_setHasStreamConnectors(hasStream) annotation(Library = "omcruntime");
+end setHasStreamConnectors;
+
+public function getHasStreamConnectors
+"@author: adrpo
+ retrieves the external flag that signals the
+ presence of stream connectors in a model"
+  output Boolean hasStream;
+  external "C" System_getHasStreamConnectors() annotation(Library = "omcruntime");
+end getHasStreamConnectors;
+
 public function setHasInnerOuterDefinitions
 "@author: adrpo
  sets the external flag that signals the presence

@@ -189,12 +189,12 @@ extern int System_strcmp(const char *str1, const char *str2)
 
 extern int System_getHasExpandableConnectors()
 {
-  return hasExpandableConnector;
+  return hasExpandableConnectors;
 }
 
 extern void System_setHasExpandableConnectors(int b)
 {
-  hasExpandableConnector = b;
+  hasExpandableConnectors = b;
 }
 
 extern int System_getHasInnerOuterDefinitions()
@@ -206,6 +206,17 @@ extern void System_setHasInnerOuterDefinitions(int b)
 {
   hasInnerOuterDefinitions = b;
 }
+
+extern int System_getHasStreamConnectors()
+{
+  return hasStreamConnectors;
+}
+
+extern void System_setHasStreamConnectors(int b)
+{
+  hasStreamConnectors = b;
+}
+
 
 extern void* System_strtok(const char *str0, const char *delimit)
 {
