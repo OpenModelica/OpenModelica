@@ -76,8 +76,8 @@ bool change(modelica_boolean& var);
 bool change(const char*& var);
 
 double Sample(double t, double start ,double interval);
-double sample(double start ,double interval);
-void initSample(double start);
+double sample(double start ,double interval, int hindex);
+void initSample(double start,double stop);
 
 double Less(double a,double b);
 double LessEq(double a,double b);
@@ -85,10 +85,11 @@ double Greater(double a,double b);
 double GreaterEq(double a,double b);
 
 void checkTermination();
+int checkForSampleEvent();
 
 extern long inUpdate;
 extern int euler_in_use;
-const int IterationMax = 100;
+const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
 	if (euler_in_use){ \
@@ -167,23 +168,32 @@ extern long* zeroCrossingEnabled;
 int
 function_onlyZeroCrossings(double* gout ,double* t);
 
-int CheckForNewEvent(int flag);
+int CheckForNewEvent(int *sampleactived);
 
-void EventHandle();
+int EventHandle(int);
 
-void FindRoot();
+void FindRoot(double*);
 
 int checkForDiscreteChanges();
 
-void InitialZeroCrossings();
+void SaveZeroCrossings();
+
+void activateSampleEvents();
 
 double BiSection(double*, double*, double*, double*, long int*);
 
 int CheckZeroCrossings(long int*);
 
+int function_updateSample();
+
 #define INTERVAL 1
 #define NOINTERVAL 0
 
 extern double TOL;
+
+void debugPrintHelpVars();
+void deactivateSampleEvent();
+void deactivateSampleEventsandEquations();
+void debugSampleEvents();
 
 #endif

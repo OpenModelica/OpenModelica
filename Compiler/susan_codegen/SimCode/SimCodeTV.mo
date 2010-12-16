@@ -23,6 +23,7 @@ package SimCode
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
+  type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
   type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
   
   uniontype SimCode
@@ -45,6 +46,8 @@ package SimCode
       list<DAE.Statement> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
+      list<SampleCondition> sampleConditions;
+      list<SimEqSystem> sampleEquations;
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
@@ -183,6 +186,7 @@ package SimCode
       DAE.ComponentRef left;
       DAE.Exp right;
       list<tuple<DAE.Exp, Integer>> conditions;
+      Option<SimEqSystem> elseWhen;
     end SES_WHEN;
   end SimEqSystem;
 

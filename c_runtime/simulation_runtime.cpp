@@ -130,11 +130,11 @@ double newTime(double t, double step, double stop)
   }
 
   // Small gain taking hints from the scheduled sample events. Needs to be done better.
-  while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
-    globalData->curSampleTimeIx++;
-  if (globalData->curSampleTimeIx && globalData->curSampleTimeIx < globalData->nSampleTimes && newTime > globalData->sampleTimes[globalData->curSampleTimeIx]) {
-    newTime = globalData->sampleTimes[globalData->curSampleTimeIx++] + 1e-15;
-  } 
+  //while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
+  //  globalData->curSampleTimeIx++;
+  //if (globalData->curSampleTimeIx && globalData->curSampleTimeIx < globalData->nSampleTimes && newTime > globalData->sampleTimes[globalData->curSampleTimeIx]) {
+  //  newTime = globalData->sampleTimes[globalData->curSampleTimeIx++] + 1e-15;
+  //}
   // Do not exceed the stop time.
   if (newTime > stop) {
     newTime = stop;
@@ -259,7 +259,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
   globalData->lastEmittedTime = start;
   globalData->forceEmit=0;
 
-  initSample(start);
+  initSample(start,stop);
   initDelay(start);
 
   if (measure_time_flag)
@@ -328,6 +328,7 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
 
   if (method == "") {
     if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
+    //retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
     retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   } else  if (method == std::string("euler")) {
     if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
@@ -338,6 +339,9 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   } else  if (method == std::string("dassl2")) {
     if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
     retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+  } else  if (method == std::string("dasslold")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   } else  if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: "<< method <<", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER." << endl;

@@ -163,6 +163,7 @@ public constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default 
 public constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
 public constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
 public constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
+public constant DAE.Exp dassl2Method             = DAE.SCONST("dassl2")"new method for testing";
 public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
 public constant DAE.Exp defaultStoreInTemp       = DAE.BCONST(false)   "default storeInTemp";
 public constant DAE.Exp defaultNoClean           = DAE.BCONST(false)   "default noClean";
@@ -177,6 +178,22 @@ public constant SimulationOptions defaultSimulationOptions =
     defaultStepSize,
     defaultTolerance,
     defaultMethod,    
+    defaultFileNamePrefix,
+    defaultStoreInTemp,
+    defaultNoClean,
+    defaultOptions,
+    defaultOutputFormat
+    ) "default simulation options";
+    
+//For testing with dassl2
+public constant SimulationOptions dassl2SimulationOptions =
+  SIMULATION_OPTIONS(
+    defaultStartTime,
+    defaultStopTime,
+    defaultNumberOfIntervals,
+    defaultStepSize,
+    defaultTolerance,
+    dassl2Method,    
     defaultFileNamePrefix,
     defaultStoreInTemp,
     defaultNoClean,
@@ -321,16 +338,19 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
 algorithm
   outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix)
     local
-      SimulationOptions defaults, simOpt;
+      SimulationOptions defaults, simOpt,methodbyflag;
       String experimentAnnotationStr;
       list<Interactive.InteractiveStmt> stmts;
       list<Absyn.NamedArg> named;
       String msg;
+      Boolean methodflag;
     
     // search inside annotation(experiment(...))
     case (inSymTab, inModelPath, inFileNamePrefix)
       equation
-        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        methodflag = RTOpts.debugFlag("SetNewDassl");
+        methodbyflag = Util.if_(methodflag,dassl2SimulationOptions,defaultSimulationOptions);
+        defaults = setFileNamePrefixInSimulationOptions(methodbyflag, inFileNamePrefix);
         
         experimentAnnotationStr = 
           Interactive.getNamedAnnotation(
@@ -357,8 +377,10 @@ algorithm
 
     // if we fail, just use the defaults
     case (inSymTab, inModelPath, inFileNamePrefix)
-      equation        
-        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+      equation
+        methodflag = RTOpts.debugFlag("SetNewDassl");
+        methodbyflag = Util.if_(methodflag,dassl2SimulationOptions,defaultSimulationOptions);    
+        defaults = setFileNamePrefixInSimulationOptions(methodbyflag, inFileNamePrefix);
       then
         defaults;
   end matchcontinue;

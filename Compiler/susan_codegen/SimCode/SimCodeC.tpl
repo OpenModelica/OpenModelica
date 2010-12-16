@@ -121,7 +121,9 @@ case SIMCODE(__) then
   
   <%functionHandleZeroCrossing(zeroCrossingsNeedSave)%>
   
-  <%functionInitSample(zeroCrossings)%>
+  <%functionInitSample(sampleConditions)%>
+  
+  <%functionSampleEquations(sampleEquations)%>
 
   <%functionUpdateDependents(allEquations, helpVarInfo)%>
   
@@ -1177,11 +1179,11 @@ template functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave)
   >>
 end functionHandleZeroCrossing;
 
-template functionInitSample(list<ZeroCrossing> zeroCrossings)
+template functionInitSample(list<SampleCondition> sampleConditions)
   "Generates function initSample() in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let timeEventCode = timeEventsTpl(zeroCrossings, &varDecls /*BUFD*/)
+  let timeEventCode = timeEventsTpl(sampleConditions, &varDecls /*BUFD*/)
   <<
   /* Initializes the raw time events of the simulation using the now
      calcualted parameters. */
@@ -1193,6 +1195,28 @@ template functionInitSample(list<ZeroCrossing> zeroCrossings)
   >>
 end functionInitSample;
 
+template functionSampleEquations(list<SimEqSystem> sampleEqns)
+ "Generates function for sample equations."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let eqs = (sampleEqns |> eq =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
+    ;separator="\n")
+  <<
+  int function_updateSample()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%eqs%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+>>
+end functionSampleEquations;
+ 
 template functionUpdateDependents(list<SimEqSystem> allEquations,
                                   list<HelpVarInfo> helpVarInfo)
  "Generates function in simulation file."
@@ -1754,7 +1778,7 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
+  let zeroCrossingsCode = zeroCrossingsTpl2(zeroCrossings, &varDecls /*BUFD*/)
   <<
   int function_onlyZeroCrossings(double *gout,double *t)
   {
@@ -2018,6 +2042,38 @@ template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  >>
 end generateLinearMatrixes;
 
+template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+    zeroCrossingTpl2(i0, relation_, &varDecls /*BUFD*/)
+  ;separator="\n")
+end zeroCrossingsTpl2;
+
+
+template zeroCrossingTpl2(Integer index, Exp relation, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case RELATION(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let op = zeroCrossingOpFunc(operator)
+    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index%>, <%op%>(<%e1%>, <%e2%>));
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+  << >>
+  else
+    <<
+    // UNKNOWN ZERO CROSSING for <%index%>
+    >>
+end zeroCrossingTpl2;
+
+
 template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."
 ::=
@@ -2055,15 +2111,13 @@ template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     >>
 end zeroCrossingTpl;
 
-
-template timeEventsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+template timeEventsTpl(list<SampleCondition> sampleConditions, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."
 ::=
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    timeEventTpl(i0, relation_, &varDecls /*BUFD*/)
+  (sampleConditions |> (relation_,index)  =>
+    timeEventTpl(index, relation_, &varDecls /*BUFD*/)
   ;separator="\n")
 end timeEventsTpl;
-
 
 template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing."
@@ -2073,7 +2127,7 @@ template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     <<
     /* <%index%> Not a time event */
     >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+  case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
     let &preExp = buffer "" /*BUFD*/
     let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -2085,7 +2139,7 @@ template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     >>
   else
     <<
-    ZERO CROSSING ERROR
+    /* UNKNOWN ZERO CROSSING for <%index%> */
     >>
 end timeEventTpl;
 
@@ -2316,7 +2370,8 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation."
 ::=
 match eq
-case SES_WHEN(__) then
+//case SES_WHEN(left=left, right=right,conditions=conditions) then
+case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
@@ -2336,8 +2391,66 @@ case SES_WHEN(__) then
     <%cref(left)%> = pre(<%cref(left)%>);
   }
   >>
+  case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+  let &preExp = buffer "" /*BUFD*/
+  let &helpInits = buffer "" /*BUFD*/
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'edge(localData->helpVars[<%hidx%>])'
+    ;separator=" || ")
+  let &preExp2 = buffer "" /*BUFD*/
+  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
+  <<
+  <%preExp%>
+  <%helpInits%>
+  if (<%helpIf%>) {
+    <%preExp2%>
+    <%cref(left)%> = <%exp%>;
+  }
+  <%elseWhen%>
+  else {
+    <%cref(left)%> = pre(<%cref(left)%>);
+  }
+  >> 
 end equationWhen;
 
+template equationElseWhen(SimEqSystem eq, Context context, Text &preExp /*BUFD*/, Text &helpInits /*BUFD*/, Text &varDecls /*BUFP*/)
+ "Generates a else when equation."
+::=
+match eq
+case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'edge(localData->helpVars[<%hidx%>])'
+    ;separator=" || ")
+  let &preExp2 = buffer "" /*BUFD*/
+  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  else if (<%helpIf%>) {
+    <%preExp2%>
+    <%cref(left)%> = <%exp%>;
+  }
+  >>
+case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'edge(localData->helpVars[<%hidx%>])'
+    ;separator=" || ")
+  let &preExp2 = buffer "" /*BUFD*/
+  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
+  <<
+  else if (<%helpIf%>) {
+    <%preExp2%>
+    <%cref(left)%> = <%exp%>;
+  }
+  <%elseWhen%>
+  >>  
+end equationElseWhen;
 
 template simulationFunctionsFile(String filePrefix, list<Function> functions)
  "Generates the content of the C file for functions in the simulation case."

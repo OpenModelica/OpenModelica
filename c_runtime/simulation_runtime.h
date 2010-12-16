@@ -170,6 +170,12 @@ typedef struct sample_raw_time_st {
   int zc_index;
 } sample_raw_time;
 
+typedef struct sample_time_st {
+  double events;
+  int zc_index;
+  int activated;
+} sample_time;
+
 typedef struct sim_DATA {
   /* this is the data structure for saving important data for this simulation. */
   /* Each generated function have a DATA* parameter wich contain the data. */
@@ -238,7 +244,7 @@ typedef struct sim_DATA {
   sample_raw_time* rawSampleExps;
   long nRawSamples;
   // The queue of sample time events to be processed.
-  double* sampleTimes; // Warning: Not implemented yet!
+  sample_time* sampleTimes; // Warning: Not implemented yet!
   long curSampleTimeIx;
   long nSampleTimes;
 } DATA;

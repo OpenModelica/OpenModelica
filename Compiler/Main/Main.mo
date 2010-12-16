@@ -920,6 +920,8 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       SimCode.SimulationSettings simSettings;
+      String methodbyflag;
+      Boolean methodflag;
 
     case (cache,env,classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */
       equation
@@ -939,7 +941,9 @@ algorithm
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
-        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","plt");        
+        methodflag = RTOpts.debugFlag("SetNewDassl");
+        methodbyflag = Util.if_(methodflag,"dassl2","dassl");
+        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,methodbyflag,"","plt");        
         (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, Env.getFunctionTree(cache), classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
       then
         ();

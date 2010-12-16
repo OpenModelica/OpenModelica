@@ -308,6 +308,137 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqn;
 
+public function traverseBackendDAEExpsEqnListOutEqn
+"function: traverseBackendDAEExpsEqnList
+  author: Frenkel TUD 2010-11
+  traverse all expressions of a list of Equations. It is possible to change the equations"
+  replaceable type Type_a subtypeof Any;  
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Equation> inlistchangedEquations;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Equation> outchangedEquations;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEquations,outchangedEquations,outTypeA) := matchcontinue(inEquations,inlistchangedEquations,func,inTypeA)
+  local 
+       BackendDAE.Equation e,e1;
+       list<BackendDAE.Equation> res,eqns, changedeqns;
+       Type_a ext_arg_1,ext_arg_2;
+    case({},changedeqns,func,inTypeA) then ({},changedeqns,inTypeA);
+    case(e::res,changedeqns,func,inTypeA)
+     equation
+      (e1,false,ext_arg_1) = traverseBackendDAEExpsEqnOutEqn(e,func,inTypeA);
+      (eqns,changedeqns,ext_arg_2)  = traverseBackendDAEExpsEqnListOutEqn(res,changedeqns,func,ext_arg_1);
+    then 
+      (e1::eqns,changedeqns,ext_arg_2);
+    case(e::res,changedeqns,func,inTypeA)
+     equation
+      (e1,true,ext_arg_1) = traverseBackendDAEExpsEqnOutEqn(e,func,inTypeA);
+      changedeqns = listAppend(changedeqns,{e1});
+      (eqns,changedeqns,ext_arg_2)  = traverseBackendDAEExpsEqnListOutEqn(res,changedeqns,func,ext_arg_1);
+    then 
+      (e1::eqns,changedeqns,ext_arg_2);      
+    end matchcontinue;
+end traverseBackendDAEExpsEqnListOutEqn;
+
+public function traverseBackendDAEExpsEqnOutEqn
+ "function: traverseBackendDAEExpsEqnOutEqn
+  copy of traverseBackendDAEExpsEqn
+  author: Frenkel TUD 2010-11
+  traverse all expressions of a Equation. It is possible to change the equation.
+  additinal the equation is passed to FuncExpTyp.
+  "
+  replaceable type Type_a subtypeof Any;  
+  input BackendDAE.Equation inEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.Equation outEquation;
+  output Boolean outflag;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEquation,outflag,outTypeA):=  matchcontinue (inEquation,func,inTypeA)
+    local
+      DAE.Exp e1,e2,e,e_1,e_2;
+      list<DAE.Exp> expl,expl1,exps,exps1;
+      DAE.ExpType tp;
+      DAE.ComponentRef cr,cr1;
+      BackendDAE.WhenEquation elsePart,elsePart1;
+      DAE.ElementSource source;
+      Integer index;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3;
+      BackendDAE.Equation eq;
+      Boolean b1,b2,b3,bres;
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),func,inTypeA)
+      equation
+        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+        bres = Util.boolOrList({b1,b2});
+      then
+        (BackendDAE.EQUATION(e_1,e_2,source),bres,ext_arg_2);
+    case (BackendDAE.ARRAY_EQUATION(index=index,crefOrDerCref = expl,source=source),func,inTypeA)
+      equation
+        //(exps,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+      then
+        (BackendDAE.ARRAY_EQUATION(index,expl,source),false,inTypeA);
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source),func,inTypeA)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr,tp);
+        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+        bres = Util.boolOrList({b1,b2});
+      then
+        (BackendDAE.SOLVED_EQUATION(cr1,e_2,source),bres,ext_arg_2);
+    case (eq as BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),func,inTypeA)
+      equation
+        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA)); 
+      then
+        (BackendDAE.RESIDUAL_EQUATION(e_1,source),b1,ext_arg_1);
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left = cr,right = e2,elsewhenPart=NONE()),source = source),func,inTypeA)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr,tp);
+        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+        bres = Util.boolOrList({b1,b2}); 
+      then
+       (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,NONE()),source),bres,ext_arg_2);
+    case (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(index=index,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),func,inTypeA)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr,tp);
+        ((DAE.CREF(cr1,_),b1,ext_arg_1)) = func((e1,inTypeA));
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));  
+        (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),b3,ext_arg_3) = traverseBackendDAEExpsEqnOutEqn(BackendDAE.WHEN_EQUATION(elsePart,source),func,ext_arg_2);
+        bres = Util.boolOrList({b1,b2,b3});
+      then
+        (BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(index,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
+    case (BackendDAE.ALGORITHM(index = index,in_ = expl,out = exps,source=source),func,inTypeA)
+      equation
+        //(expl1,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
+        //(exps1,ext_arg_2) = traverseBackendDAEExpList(exps,func,ext_arg_1);
+      then
+        (BackendDAE.ALGORITHM(index,expl,exps,source),false,inTypeA);
+    case (BackendDAE.COMPLEX_EQUATION(index = index, lhs = e1, rhs = e2,source=source),func,inTypeA)
+      equation
+        ((e_1,b1,ext_arg_1)) = func((e1,inTypeA)); 
+        ((e_2,b2,ext_arg_2)) = func((e2,ext_arg_1));
+        bres = Util.boolOrList({b1,b2});
+      then
+        (BackendDAE.COMPLEX_EQUATION(index,e_1,e_2,source),bres,ext_arg_2);
+  end matchcontinue;
+end traverseBackendDAEExpsEqnOutEqn;
+
 public function traverseBackendDAEExpList
 "function traverseBackendDAEExps
  author Frenkel TUD:

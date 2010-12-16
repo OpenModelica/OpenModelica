@@ -81,6 +81,66 @@ void leastSquare(long *nz, double *z, double *funcValue)
   }
 }
 
+void leastSquare2(long *nz, double *z, double *funcValue)
+{
+	int ind, indAct, indz;
+	int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+	for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
+		if (globalData->initFixed[indAct++]==0)
+			globalData->states[ind] = z[indz++];
+	// for real parameters
+	for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++)
+		if (globalData->initFixed[indAct++]==0)
+			globalData->parameters[ind] = z[indz++];
+
+	// for int parameters
+	for (ind=0,indAct=startIndPar+globalData->nParameters; ind<globalData->intVariables.nParameters; ind++) {
+		if (globalData->initFixed[indAct++]==0)
+			globalData->intVariables.parameters[ind] = (modelica_integer)z[indz++];
+	}
+
+	// for bool parameters
+	for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters; ind<globalData->boolVariables.nParameters; ind++) {
+		if (globalData->initFixed[indAct++]==0)
+			globalData->boolVariables.parameters[ind] = (modelica_boolean)z[indz++];
+	}
+
+	/*
+	 * functionODE_new();
+	 * functionAlgebraics();
+	 * functionDAE_output2();
+	 */
+	int needToIterate=0;
+	int IterationNum=0;
+	functionDAE(needToIterate);
+	if (sim_verbose){ sim_result->emit(); }
+	while (checkForDiscreteChanges() || needToIterate){
+		saveall();
+		functionDAE(needToIterate);
+		IterationNum++;
+		if (IterationNum>IterationMax) {
+			throw TerminateSimulationException(globalData->timeValue,
+					string("ERROR: Too many Iteration. System is not consistent!\n"));
+		}
+	}
+	/*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
+    if (globalData->initFixed[indAct++]==1)
+      globalData->algebraics [ind] = static_y[indy++];
+
+      Comment from Bernhard: Even though algebraic variables are "fixed", they are calculated from
+      the states, so they should be allowed to change when states vary,
+      and NOT be replaced by their initial values as above.
+	 */
+	initial_residual();
+
+	for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
+		*funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
+
+	if (sim_verbose) {
+		cout << "initial residual: " << *funcValue << endl;
+	}
+}
+
 /** function reportResidualValue
  **
  ** Returns -1 if residual is non-zero and prints appropriate error message.
@@ -122,7 +182,12 @@ int newuoa_initialization(long& nz,double *z)
 
   // Calculate the residual to verify that equations are consistent.
   double funcValue;
-  leastSquare(&nz,z,&funcValue);
+  if (euler_in_use){
+    leastSquare(&nz,z,&funcValue);
+  }else {
+	leastSquare2(&nz,z,&funcValue);
+  }
+
   delete [] W;
   return reportResidualValue(funcValue);
 }
