@@ -1,39 +1,39 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
-  <GroupCell closed="false" >
-    <GroupCell closed="false" >
-      <TextCell style="Title" >
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Empty Arrays&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <TextCell style="Text" >
+      <TextCell style="Text">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Empty arrays can function as a kind of null element for certain general operations such as concatenation operations or general formulations of certain kinds of equation systems. An empty array can not be constructed by { } or [ ]. Instead an empty array is created using some other constructor from which the type can be deduced, or explicilty declared as a variable. Array variables of unspecified size can be set equal to or assigned empty array values.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Empty Arrays&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
           <Input>class Empty
   Real f[0] = fill(1.,0); //An empty vector of type Real[0] since 1. is Real
   Real x[0];               // An empty vector variable x of type Real[0]
@@ -41,59 +41,72 @@ p, li { white-space: pre-wrap; }
   Real[0, 3] A;                    // An empty matrix variable A
   Real B[5, 0], C[0, 0];           // Empty matrices B and C
 
-  Real A[:, :]      = fill(0.0, 0, 1);      // A Real 0 x 1 matrix
-  Boolean B[:, :, :]  = fill (false, 0, 1, 0);  // A Boolean 0 x 1 x 0 array
+  //Real A[:, :]      = fill(0.0, 0, 1);      // A Real 0 x 1 matrix
+  //Boolean B[:, :, :]  = fill (false, 0, 1, 0);  // A Boolean 0 x 1 x 0 array
+
+  //The code used the previous two lines, and the omc compiler gave errors
+  //due to declaration of variables with same name with different type.
+  //After changing the variable names to A2 and B2 the problem was fixed.  
+  
+  Real A2[:, :]      = fill(0.0, 0, 1);      // A Real 0 x 1 matrix
+  Boolean B2[:, :, :]  = fill (false, 0, 1, 0);  // A Boolean 0 x 1 x 0 
+  
 end Empty;</Input>
           <Output>{Empty}</Output>
         </GraphCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of Empty&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>simulate( Empty )    //??Error - not yet implemented</Input>
             <Output>record SimulationResult
-    resultFile = "Simulation failed.
-[:2:3-2:25:readonly] Error: Variable f: Type mismatch in equation f[0]={} of type Real=Real[0]
-Error: Error duplicate elements (due to inherited elements) not identical, first element is:  Real A = fill(0.0, 0, 1); // from baseclass: &lt;nothing>
-, second element is:  Real A; // from baseclass: &lt;nothing>
-
-Error: Error occured while flattening model Empty
-"
+    resultFile = "Empty_res.plt",
+    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Empty', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
+    messages = "",
+    timeFrontend = 0.00792642640335573,
+    timeBackend = 0.000617257221239012,
+    timeSimCode = 0.000338660360464808,
+    timeTemplates = 0.00829888994271618,
+    timeCompile = 1.46765371017825,
+    timeSimulation = 0.225018822224612,
+    timeTotal = 1.70992542348259
 end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Output" >
+          <TextCell style="Output">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Adding Empty Arrays&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
           <Input>class AddEmpty
   Real[3, 0] A, B;
   Real[0, 0] C;
@@ -102,63 +115,69 @@ p, li { white-space: pre-wrap; }
 end AddEmpty;</Input>
           <Output>{AddEmpty}</Output>
         </GraphCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of AddEmpty&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>simulate( AddEmpty )    //??Error - not yet implemented</Input>
             <Output>record SimulationResult
-    resultFile = "AddEmpty_res.plt"
-end SimulationResult;
-OMC-ERROR: 
-"[:4:3-4:24:readonly] Error: Variable ab: Type mismatch in equation ab[1,0]={} + {} of type Real=Real[0]
-[:4:3-4:24:readonly] Error: Variable ab: Type mismatch in equation ab[2,0]={} + {} of type Real=Real[0]
-[:4:3-4:24:readonly] Error: Variable ab: Type mismatch in equation ab[3,0]={} + {} of type Real=Real[0]
-"</Output>
+    resultFile = "AddEmpty_res.plt",
+    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'AddEmpty', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
+    messages = "",
+    timeFrontend = 0.00391397510018731,
+    timeBackend = 0.000247238126633413,
+    timeSimCode = 0.000160146052082038,
+    timeTemplates = 0.00450371485761459,
+    timeCompile = 1.42909999734603,
+    timeSimulation = 0.151611517664955,
+    timeTotal = 1.5895798907403
+end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Output" >
+          <TextCell style="Output">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans'; font-size:10pt;">&lt;/p>
 &lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Using Empty Arrays&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">ABCDsystem&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model below shows how the equation section will shrink to &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y = D*u&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> when some variables are empty arrays.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
           <Input>model ABCDsystem
   parameter Integer n = 0;
   Real u[5] = {15, 4, 3, 9, 11};
@@ -170,47 +189,55 @@ equation
   der(x) = A*x + B*u;             // This will disappear since x is empty
   y = C*x + D*u;                  // Which is: y = D*u
 end ABCDsystem;</Input>
-          <Output>Ok</Output>
+          <Output>{ABCDsystem}</Output>
         </GraphCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of ABCDsystem&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>simulate( ABCDsystem )    //??Error - not yet implemented</Input>
             <Output>record SimulationResult
-    resultFile = "Simulation failed.
-"
+    resultFile = "ABCDsystem_res.plt",
+    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ABCDsystem', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
+    messages = "",
+    timeFrontend = 0.0169395132621604,
+    timeBackend = 0.0101010742985491,
+    timeSimCode = 0.00209956852058013,
+    timeTemplates = 0.0130913286465179,
+    timeCompile = 1.33004138794176,
+    timeSimulation = 0.100915479481331,
+    timeTotal = 1.4732546315244
 end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Take a look at the results at time=0:&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>val(D[2, 2],0)   //??val needed</Input>
-            <Output>[done]</Output>
+            <Output>1.0</Output>
           </GraphCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>val(y[2],0)</Input>
-            <Output>[done]</Output>
+            <Output>42.0</Output>
           </GraphCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
             <Input>val(u[1],0)</Input>
-            <Output>[done]</Output>
+            <Output>15.0</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
