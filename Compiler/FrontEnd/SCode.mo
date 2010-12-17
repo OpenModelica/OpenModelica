@@ -1808,7 +1808,7 @@ algorithm
   equal := matchcontinue(sub1,sub2)
     local
       Absyn.Exp e1,e2;
-    case(Absyn.NOSUB,Absyn.NOSUB) then true;
+    case(Absyn.NOSUB(),Absyn.NOSUB()) then true;
     case(Absyn.SUBSCRIPT(e1),Absyn.SUBSCRIPT(e2))
       equation
         equal=Absyn.expEqual(e1,e2);
@@ -3023,7 +3023,7 @@ algorithm
       then
         (Absyn.SUBSCRIPT(sub_exp), (traverser, arg));
 
-    case (Absyn.NOSUB, _) then (inSubscript, inTuple);
+    case (Absyn.NOSUB(), _) then (inSubscript, inTuple);
   end match;
 end traverseSubscriptExps;
 
@@ -3112,6 +3112,150 @@ algorithm
   end match;
 end traverseForIteratorExps;
 
+public function traverseStatementsList
+  "Calls traverseStatement on each statement in the given list."
+  input list<Statement> inStatements;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output list<Statement> outStatements;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Statement, Argument> inTuple;
+    output tuple<Statement, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  (outStatements, outTuple) :=
+    Util.listMapAndFold(inStatements, traverseStatements, inTuple);
+end traverseStatementsList;
+
+public function traverseStatements
+  "Traverses all statements in the given statement in a top-down approach where
+  the given function is applied to each statement found, beginning with the given
+  statement."
+  input Statement inStatement;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output Statement outStatement;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Statement, Argument> inTuple;
+    output tuple<Statement, Argument> outTuple;
+  end TraverseFunc;
+
+  TraverseFunc traverser;
+  Argument arg;
+  Statement stmt;
+algorithm
+  (traverser, arg) := inTuple;
+  ((stmt, arg)) := traverser((inStatement, arg));
+  (outStatement, outTuple) := traverseStatements2(stmt, (traverser, arg));
+end traverseStatements;
+  
+public function traverseStatements2
+  "Helper function to traverseStatements. Goes through each statement contained
+  in the given statement and calls traverseStatements on them."
+  input Statement inStatement;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output Statement outStatement;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Statement, Argument> inTuple;
+    output tuple<Statement, Argument> outTuple;
+  end TraverseFunc;
+algorithm
+  (outStatement, outTuple) := match(inStatement, inTuple)
+    local
+      TraverseFunc traverser;
+      Argument arg;
+      tuple<TraverseFunc, Argument> tup;
+      Absyn.Exp e;
+      list<Statement> stmts1, stmts2;
+      list<tuple<Absyn.Exp, list<Statement>>> branches;
+      Absyn.ForIterators iters;
+      Option<Comment> comment;
+      Absyn.Info info;
+      Statement stmt;
+
+    case (ALG_IF(e, stmts1, branches, stmts2, comment, info), (traverser, arg))
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
+        (branches, tup) = Util.listMapAndFold(branches, 
+          traverseBranchStatements, tup);
+        (stmts2, tup) = traverseStatementsList(stmts2, (traverser, arg));
+      then
+        (ALG_IF(e, stmts1, branches, stmts2, comment, info), tup);
+
+    case (ALG_FOR(iters, stmts1, comment, info), tup)
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+      then
+        (ALG_FOR(iters, stmts1, comment, info), tup);
+
+    case (ALG_WHILE(e, stmts1, comment, info), (traverser, arg))
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
+      then
+        (ALG_WHILE(e, stmts1, comment, info), tup);
+
+    case (ALG_WHEN_A(branches, comment, info), tup)
+      equation
+        (branches, tup) = Util.listMapAndFold(branches, 
+          traverseBranchStatements, tup);
+      then
+        (ALG_WHEN_A(branches, comment, info), tup);
+
+    case (ALG_TRY(stmts1, comment, info), tup)
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+      then
+        (ALG_TRY(stmts1, comment, info), tup);
+
+    case (ALG_CATCH(stmts1, comment, info), tup)
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+      then
+        (ALG_CATCH(stmts1, comment, info), tup);
+
+    case (ALG_FAILURE(stmts1, comment, info), tup)
+      equation
+        (stmts1, tup) = traverseStatementsList(stmts1, tup);
+      then
+        (ALG_FAILURE(stmts1, comment, info), tup);
+
+    else then (inStatement, inTuple);
+  end match;
+end traverseStatements2;
+
+protected function traverseBranchStatements
+  "Helper function to traverseStatements2. Calls traverseStatement each
+  statement in a given branch."
+  input tuple<Absyn.Exp, list<Statement>> inBranch;
+  input tuple<TraverseFunc, Argument> inTuple;
+  output tuple<Absyn.Exp, list<Statement>> outBranch;
+  output tuple<TraverseFunc, Argument> outTuple;
+
+  replaceable type Argument subtypeof Any;
+
+  partial function TraverseFunc
+    input tuple<Statement, Argument> inTuple;
+    output tuple<Statement, Argument> outTuple;
+  end TraverseFunc;
+
+  Absyn.Exp exp;
+  list<Statement> stmts;
+algorithm
+  (exp, stmts) := inBranch;
+  (stmts, outTuple) := traverseStatementsList(stmts, inTuple);
+  outBranch := (exp, stmts);
+end traverseBranchStatements;
+
 public function traverseStatementListExps
   "Traverses a list of statements and calls the given function on each
   expression found."
@@ -3132,8 +3276,9 @@ algorithm
 end traverseStatementListExps;
 
 public function traverseStatementExps
-  "Traverses a Statement, calling the given function on each Absyn.Exp it
-  encounters."
+  "Applies the given function to each expression in the given statement. This
+  function is intended to be used together with traverseStatements, and does NOT
+  descend into sub-statements."
   input Statement inStatement;
   input tuple<TraverseFunc, Argument> inTuple;
   output Statement outStatement;
@@ -3171,25 +3316,22 @@ algorithm
     case (ALG_IF(e1, stmts1, branches, stmts2, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (stmts1, tup) = traverseStatementListExps(stmts1, (traverser, arg));
-        (branches, tup) = Util.listMapAndFold(branches, traverseBranchExps, tup);
-        (stmts2, tup) = traverseStatementListExps(stmts2, (traverser, arg));
+        (branches, tup) = Util.listMapAndFold(branches, traverseBranchExps,
+          (traverser, arg));
       then
         (ALG_IF(e1, stmts1, branches, stmts2, comment, info), tup);
 
     case (ALG_FOR(iters, stmts1, comment, info), tup)
       equation
         (iters, tup) = Util.listMapAndFold(iters, traverseForIteratorExps, tup);
-        (stmts1, tup) = traverseStatementListExps(stmts1, tup);
       then
         (ALG_FOR(iters, stmts1, comment, info), tup);
 
     case (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (stmts1, tup) = traverseStatementListExps(stmts1, (traverser, arg));
       then
-        (ALG_WHILE(e1, stmts1, comment, info), tup);
+        (ALG_WHILE(e1, stmts1, comment, info), (traverser, arg));
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
@@ -3213,24 +3355,6 @@ algorithm
           (traverser, arg));
       then
         (ALG_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup);
-
-    case (ALG_TRY(stmts1, comment, info), tup)
-      equation
-        (stmts1, tup) = traverseStatementListExps(stmts1, tup);
-      then
-        (ALG_TRY(stmts1, comment, info), tup);
-
-    case (ALG_CATCH(stmts1, comment, info), tup)
-      equation
-        (stmts1, tup) = traverseStatementListExps(stmts1, tup);
-      then
-        (ALG_CATCH(stmts1, comment, info), tup);
-
-    case (ALG_FAILURE(stmts1, comment, info), tup)
-      equation
-        (stmts1, tup) = traverseStatementListExps(stmts1, tup);
-      then
-        (ALG_FAILURE(stmts1, comment, info), tup);
 
     else then (inStatement, inTuple);
   end match;
@@ -3258,8 +3382,8 @@ algorithm
   (traverser, arg) := inTuple;
   (exp, stmts) := inBranch;
   ((exp, arg)) := traverser((exp, arg));
-  (stmts, outTuple) := traverseStatementListExps(stmts, (traverser, arg));
   outBranch := (exp, stmts);
+  outTuple := (traverser, arg);
 end traverseBranchExps;
 
 end SCode;
