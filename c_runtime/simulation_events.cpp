@@ -402,7 +402,7 @@ double sample(double start, double interval, int hindex) {
     }
 }
 
-int compdbl(const void* a, const void* b) {
+static int compdbl(const void* a, const void* b) {
     const double *v1 = (const double *) a;
     const double *v2 = (const double *) b;
     const double diff = *v1 - *v2;
@@ -413,7 +413,7 @@ int compdbl(const void* a, const void* b) {
     return (*v1 > *v2 ? 1 : -1);
 }
 
-int compSample(const void* a, const void* b) {
+static int compSample(const void* a, const void* b) {
     const sample_time *v1 = (const sample_time *) a;
     const sample_time *v2 = (const sample_time *) b;
     const double diff = v1->events - v2->events;
@@ -424,7 +424,7 @@ int compSample(const void* a, const void* b) {
     return (v1->events >  v2->events ? 1 : -1);
 }
 
-int compSampleZC(const void* a, const void* b) {
+static int compSampleZC(const void* a, const void* b) {
     const sample_time *v1 = (const sample_time *) a;
     const sample_time *v2 = (const sample_time *) b;
     const double diff = v1->events - v2->events;
@@ -437,7 +437,7 @@ int compSampleZC(const void* a, const void* b) {
 }
 
 
-int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
+static int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
     size_t nuniq = 0;
     size_t i;
     void *a, *b, *c;
@@ -456,7 +456,7 @@ int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, con
 }
 
 // Array does not need to be sorted
-int filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
+static int filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
     size_t nuniq = 0;
     size_t i;
     void *b, *c;
@@ -496,15 +496,13 @@ void initSample(double start,double stop) {
         if (stop >= globalData->rawSampleExps[i].start)
             max_events += (int)(((stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval)+1);
     }
-    Samples = (sample_time*) malloc(max_events * sizeof(sample_time)+1);
-    // zero the malloc-ed region!
-    memset(Samples, 0, max_events * sizeof(sample_time)+1);
+    Samples = (sample_time*) calloc(max_events+1, sizeof(sample_time));
     for (i=0; i<num_samples; i++) {
         if (sim_verbose) printf("Generate times for sample(%f,%f)\n",globalData->rawSampleExps[i].start,globalData->rawSampleExps[i].interval);
         for (d=globalData->rawSampleExps[i].start; ix<max_events && d<=stop; d+= globalData->rawSampleExps[i].interval) {
             (Samples[ix]).events = d;
+            (Samples[ix]).activated = 0; // Not needed as we zeroed the whole region...
             (Samples[ix++]).zc_index = (globalData->rawSampleExps[i]).zc_index;
-            (Samples[ix]).activated = 0;
             if (sim_verbose) printf("Generate sample(%f,%f,%d)\n",d,globalData->rawSampleExps[i].interval, (globalData->rawSampleExps[i]).zc_index);
         }
     }
