@@ -449,7 +449,7 @@ static int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void
         } else {
             a = b;
             c = ((char*)base)+(i-nuniq)*size;
-            memcpy(c, b, size);
+            if (b!=c) memcpy(c, b, size); // Happens when nuniq==0
         }
     }
     return nmemb-nuniq;
@@ -466,7 +466,7 @@ static int filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int
             nuniq++;
         } else {
             c = ((char*)base)+(i-nuniq)*size;
-            memcpy(c, b, size);
+            if (b!=c) memcpy(c, b, size); // Happens when nuniq==0
         }
     }
     return nmemb-nuniq;
