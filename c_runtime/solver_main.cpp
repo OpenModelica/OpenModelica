@@ -193,19 +193,13 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     case 2:
         work_states = (double**) malloc((rungekutta_s+1)*sizeof(double*));
         for (int i=0; i<rungekutta_s+1; i++)
-        {
-            work_states[i] = (double*) malloc(globalData->nStates*sizeof(double));
-            memset(work_states[i], 0, globalData->nStates*sizeof(double));
-        }
+            work_states[i] = (double*) calloc(globalData->nStates, sizeof(double));
         break;
         // Enable inlining solvers
     case 4:
         work_states = (double**) malloc(inline_work_states_ndims*sizeof(double*));
         for (int i=0; i<inline_work_states_ndims; i++)
-        {
-            work_states[i] = (double*) malloc(globalData->nStates*sizeof(double));
-            memset(work_states[i], 0, globalData->nStates*sizeof(double));
-        }
+            work_states[i] = (double*) calloc(globalData->nStates, sizeof(double));
         break;
     }
 
