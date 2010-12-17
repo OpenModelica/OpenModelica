@@ -24,6 +24,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts
+	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
 
 debug: .testvariables mkbuilddirs settings omcd
