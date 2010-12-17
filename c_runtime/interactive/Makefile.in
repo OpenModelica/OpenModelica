@@ -21,7 +21,7 @@ libinteractive.a : $(OBJ)
 
 client : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
 	echo "Building client for interactive simulation ... "
-	g++ -o SampleClient/client client.cpp socket.cpp thread.cpp 
+	g++ -o SampleClient/client client.cpp socket.cpp thread.cpp -lpthread
 
 clean:
 	$(RM) -rf *.o *.a SampleClient/client

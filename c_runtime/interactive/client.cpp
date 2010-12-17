@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <cstdlib>
+#include <cstring>
 
 #include "thread.h"
 #include "socket.h"
