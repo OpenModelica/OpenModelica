@@ -282,16 +282,18 @@ namespace IAEX
         }
       }
 
-      /*
+#if 0
       QString html = doc_->toHtml();
       html += "<br><br>" + node->textHtml() + "<br>" + node->textOutputHtml();
       html.remove( "file:///" );
-      doc_->setHtml( html );*/
+      doc_->setHtml( html );
+#endif
 
       if( firstChild_ )
         firstChild_ = false;
     }
   }
+
 
   void PrinterVisitor::visitInputCellNodeAfter(InputCell *)
   {}
@@ -342,9 +344,30 @@ namespace IAEX
           html += "<br>";
         cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
 
+        if( node->isEvaluated() && !node->isClosed() )
+        {
+          QTextTableFormat tableFormatOutput;
+          tableFormatOutput.setBorder( 0 );
+          tableFormatOutput.setMargin( 6 );
+          tableFormatOutput.setColumns( 1 );
+          tableFormatOutput.setCellPadding( 8 );
+          QVector<QTextLength> constraints;
+          constraints << QTextLength(QTextLength::PercentageLength, 100);
+          tableFormatOutput.setColumnWidthConstraints(constraints);
+
+          cursor = tableCell.lastCursorPosition();
+          cursor.insertTable( 1, 1, tableFormatOutput );
+
+          QString outputHtml( node->textOutputHtml() );
+          outputHtml += "<br><br>";
+
+
+          outputHtml.remove( "file:///" );
+          cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
+        }
 
         // output table
-        if( node->isEvaluated() && !node->isClosed() )
+        if( node->isEvaluated() && !node->isClosed() && node->isQtPlot())
         {
           QTextTableFormat tableFormatOutput;
           tableFormatOutput.setBorder( 0 );
