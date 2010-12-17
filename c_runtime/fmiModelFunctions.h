@@ -129,6 +129,8 @@
 /* Version number */
 #define fmiVersion "1.0"
 
+extern "C" {
+
 /* Inquire version numbers of header files */
    DllExport const char* fmiGetModelTypesPlatform();
    DllExport const char* fmiGetVersion();
@@ -206,5 +208,5 @@
    DllExport fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], size_t nx);
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
    DllExport fmiStatus fmiTerminate                 (fmiComponent c);
-
+}
 #endif // fmiModelFunctions_h

@@ -1,6 +1,8 @@
 #ifndef __FMU_MODEL_INTERFACE_C__
 #define __FMU_MODEL_INTERFACE_C__
 
+extern "C" {
+
 // array of value references of states
 #if NUMBER_OF_REALS>0
 fmiValueReference vrStates[NUMBER_OF_STATES] = STATES;
@@ -507,5 +509,6 @@ fmiStatus fmiTerminate(fmiComponent c){
 	return fmiOK;
 }
 
+}
 
 #endif
