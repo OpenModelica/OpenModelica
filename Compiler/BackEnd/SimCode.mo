@@ -3225,13 +3225,12 @@ used for create Sample equations."
   input list<BackendDAE.Equation> inEqns;
   output list<SimEqSystem> outEqns;
 algorithm
-  outEqns := 
-  matchcontinue (inEqns)
+  outEqns := matchcontinue (inEqns)
     local
       BackendDAE.Equation eq;
       list<BackendDAE.Equation> eqns;
       list<SimEqSystem> simeqns;
-      string eqstr;
+      String eqstr;
       DAE.Exp e1,e2;
       DAE.ComponentRef cr;
     case ({}) then {};
