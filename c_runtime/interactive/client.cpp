@@ -1,7 +1,7 @@
 /* 
  * Simple client to test OMI. 
  *
- * Author: Per Östlund 
+ * Author: Per Östlund
  * Last revision: 2010-02-23
  */
 
@@ -13,7 +13,18 @@
 
 bool run = true;
 
-void* threadServerControl(void*)
+/* Windows and mingw32 */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+#define PTR_PORTABLE DWORD WINAPI
+
+#else
+
+#define PTR_PORTABLE void*
+
+#endif
+
+PTR_PORTABLE threadServerControl(void*)
 {
 	Socket s1;
 
@@ -40,7 +51,7 @@ void* threadServerControl(void*)
 	}
 }
 
-void* threadServerTransfer(void*)
+PTR_PORTABLE threadServerTransfer(void*)
 {
 	Socket s1;
 
@@ -67,7 +78,7 @@ void* threadServerTransfer(void*)
 	}
 }
 
-void* threadControlClient(void*)
+PTR_PORTABLE threadControlClient(void*)
 {
 	Socket s1;
 
@@ -115,7 +126,7 @@ void* threadControlClient(void*)
 			break;
 		}
 
-		usleep(500000);
+		delay(5);
 	}
 
 	run = false;
