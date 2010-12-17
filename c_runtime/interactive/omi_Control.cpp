@@ -121,15 +121,23 @@ void initialize() {
 	status = "stop";
 
 	if (debugControl)
-		cout << "***** Store the DataNames *****" << endl;
+	{
+		cout << "***** Store the DataNames *****" << endl; fflush(stdout);
+	}
+
 	fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
 			p_simDataNames_SimulationResult, p_simDataNamesFilterForTransfer);
+
 	if (debugControl)
-		cout << "***** End store the DataNames *****" << endl;
+	{
+		cout << "***** End store the DataNames *****" << endl; fflush(stdout);
+	}
 //TODO initDone is obsolete
 	initDone = true;
 	if (debugControl)
-		cout << "initialize done..." << endl;
+	{
+		cout << "initialize done..." << endl; fflush(stdout);
+	}
 }//End Initialize
 
 /**
@@ -137,7 +145,7 @@ void initialize() {
  * The settransferclienturl#ip#port#end operation have to be called first
  */
 void createProducerAndConsumer() {
-	std::cout << "Creating producers and consumers!" << std::endl;
+	std::cout << "Creating producers and consumers!" << std::endl; fflush(stdout);
 	if (transferDone) 
 	{
 		for(int i = 0; i < NUMBER_PRODUCER; ++i)
@@ -151,7 +159,9 @@ void createProducerAndConsumer() {
 		}
 	
 		if (debugControl)
-			cout << "create producer and consumer done..." << endl;
+		{
+			cout << "create producer and consumer done..." << endl; fflush(stdout);
+		}
 	} 
 	else 
 	{
@@ -171,7 +181,9 @@ void createControlClient() {
 		 */
 		threadClient.Create(threadClientControl);
 		if (debugControl)
-			cout << "create client done..." << endl;
+		{
+			cout << "create client done..." << endl; fflush(stdout);
+		}
 	}
 }
 
@@ -182,7 +194,9 @@ void createControlClient() {
  */
 void setControlClientIPandPort(string ip, int port){
 	if (debugControl)
-		cout << "Control Client IP and Port: " << ip << ":" << port << endl;
+	{
+		cout << "Control Client IP and Port: " << ip << ":" << port << endl; fflush(stdout);
+	}
 	control_client_ip = ip;
 	control_client_port = port;
 }
@@ -215,42 +229,48 @@ void resetControlServerPortToDefault(){
  * This function establishes the connection to a client's control server
  * respective user specific network configurations
  */
-void connectToControlServer(Socket* p_sock) {
-
-	if (control_client_ip != string("")) {
-		if (control_client_port != 0) {
-if (debugControl)
-				cout << "Connect to server with user specific ip and port, ip = " << control_client_ip << ", port = " << control_client_port
-						<< endl;
-						// Connect to server with user specific ip and port
-			(*p_sock).connect(control_client_ip,
-					control_client_port);
-		} else{
+void connectToControlServer(Socket* p_sock)
+{
+	if (control_client_ip != string(""))
+	{
+		if (control_client_port != 0)
+		{
 			if (debugControl)
-				cout
-						<< "Connect to server with user specific ip and default port (10500)"
-						<< endl;
-			// Connect to server with user specific ip and default port
-			(*p_sock).connect(control_client_ip,
-					control_default_client_port);
+			{
+				cout << "Connect to server with user specific ip and port, ip = " << control_client_ip << ", port = " << control_client_port << endl; fflush(stdout);
+			}
+			// Connect to server with user specific ip and port
+			(*p_sock).connect(control_client_ip, control_client_port);
 		}
-	} else {
-		if (control_client_port != 0) {
+		else
+		{
 			if (debugControl)
-				cout
-						<< "Connect to server on default IP(localhost) but user specific port"
-						<< endl;
+			{
+				cout << "Connect to server with user specific ip and default port (10500)"	<< endl; fflush(stdout);
+			}
+			// Connect to server with user specific ip and default port
+			(*p_sock).connect(control_client_ip, control_default_client_port);
+		}
+	}
+	else
+	{
+		if (control_client_port != 0)
+		{
+			if (debugControl)
+			{
+				cout << "Connect to server on default IP(localhost) but user specific port" << endl; fflush(stdout);
+			}
 			// Connect to server on default IP(localhost) but user specific port
-			(*p_sock).connect(control_default_client_ip,
-					control_client_port);
-		} else {
+			(*p_sock).connect(control_default_client_ip, control_client_port);
+		}
+		else
+		{
 			if (debugControl)
-				cout
-						<< "Connect to server on default IP(localhost) and default port (10500)"
-						<< endl;
+			{
+				cout << "Connect to server on default IP(localhost) and default port (10500)" << endl; fflush(stdout);
+			}
 			// Connect to server on default IP(localhost) and default port (10502)
-			(*p_sock).connect(control_default_client_ip,
-					control_default_client_port);
+			(*p_sock).connect(control_default_client_ip, control_default_client_port);
 		}
 	}
 }
@@ -267,14 +287,16 @@ if (debugControl)
 void reInitAll() {
 	SimStepData* p_ssdAtSimulationTime = getResultDataFirstStart();
 	if (debugControl)
-		cout << "p_ssdAtChangedSimulationTime->forTimeStep: "
-				<< p_ssdAtSimulationTime->forTimeStep << endl;
+	{
+		cout << "p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtSimulationTime->forTimeStep << endl; fflush(stdout);
+	}
 	setGlobalSimulationValuesFromSimulationStepData(p_ssdAtSimulationTime);
 	resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
 	resetSSDArrayWithNullSSD(); //overrides all SSD Slots with nullSSD elements
 	if (debugControl)
-		cout << "globalData->lastEmittedTime: " << get_lastEmittedTime()
-				<< endl;
+	{
+		cout << "globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+	}
 
 	*p_forZero = true;
 }
@@ -286,8 +308,9 @@ void reInitAll() {
 void changeParameterValues(double changedSimulationTime, string parameter) {
 
 	if (debugControl)
-		cout << "changeParameterValues --> time: " << changedSimulationTime
-				<< " parameter: " << parameter << endl;
+	{
+		cout << "changeParameterValues --> time: " << changedSimulationTime << " parameter: " << parameter << endl; fflush(stdout);
+	}
 
 	//If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
 	string preStatus = status;
@@ -297,19 +320,23 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
 	SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(get_stepSize(),
 			changedSimulationTime);
 	if (debugControl)
-		cout << "p_ssdAtChangedSimulationTime->forTimeStep: "
-				<< p_ssdAtChangedSimulationTime->forTimeStep << endl;
+	{
+		cout << "p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
+	}
 
-	if (p_ssdAtChangedSimulationTime->forTimeStep != -1) {
-
+	if (p_ssdAtChangedSimulationTime->forTimeStep != -1)
+	{
 		parseParameter(p_ssdAtChangedSimulationTime, parameter);
 		setGlobalSimulationValuesFromSimulationStepData(
 				p_ssdAtChangedSimulationTime);
 		resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
 		if (debugControl)
-			cout << "globalData->lastEmittedTime: " << get_lastEmittedTime()
-					<< endl;
-	} else {
+		{
+			cout << "globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+		}
+	}
+	else
+	{
 		createMessage("Error: Time is not stored anymore");
 	}
 	//If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
@@ -323,32 +350,46 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
  */
 void changeSimulationTime(double changedSimulationTime) {
 	if (debugControl)
-		cout << "time: " << changedSimulationTime << endl;
+	{
+		cout << "time: " << changedSimulationTime << endl; fflush(stdout);
+	}
 
 	double stepSize = get_stepSize();
 
 	//If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
 	string preStatus = status;
+
 	if (debugControl)
-		cout << "preStatus: " << preStatus << endl;
+	{
+		cout << "preStatus: " << preStatus << endl; fflush(stdout);
+	}
+
 	if (status.compare("start") == 0)
 		pauseSimulation();
+
 	if (debugControl)
-		cout << "preStatus: " << preStatus << endl;
+	{
+		cout << "preStatus: " << preStatus << endl; fflush(stdout);
+	}
+
 	SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(stepSize,
 			changedSimulationTime);
 	if (debugControl)
-		cout << "p_ssdAtChangedSimulationTime->forTimeStep: "
-				<< p_ssdAtChangedSimulationTime->forTimeStep << endl;
+	{
+		cout << "p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
+	}
 
-	if (p_ssdAtChangedSimulationTime->forTimeStep >= stepSize) {
-		setGlobalSimulationValuesFromSimulationStepData(
-				p_ssdAtChangedSimulationTime);
+	if (p_ssdAtChangedSimulationTime->forTimeStep >= stepSize)
+	{
+		setGlobalSimulationValuesFromSimulationStepData(p_ssdAtChangedSimulationTime);
 		resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
 		if (debugControl)
-			cout << "globalData->lastEmittedTime: " << get_lastEmittedTime()
-					<< endl;
-	} else {
+		{
+			cout << "globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+		}
+	}
+	else
+	{
 		createMessage("Error: Time is not stored anymore");
 	}
 
@@ -365,7 +406,10 @@ void changeSimulationTime(double changedSimulationTime) {
  */
 void setFilterForTransfer(string filterstring) {
 	if (debugControl)
-		cout << "filterstring: " << filterstring << endl;
+	{
+		cout << "filterstring: " << filterstring << endl; fflush(stdout);
+	}
+
 	parseNameTypes(filterstring);
 }
 
@@ -376,27 +420,32 @@ void setFilterForTransfer(string filterstring) {
 /**
  * Starts all producers and consumers, afterwards the simulation is running
  */
-void startSimulation() {
-
-	if (status.compare("start") != 0) {
+void startSimulation()
+{
+	if (status.compare("start") != 0)
+	{
 		mutexSimulationStatus->Lock();
 		simulationStatus = SimulationStatus::RUNNING;
 		waitForResume->Post(NUMBER_PRODUCER + NUMBER_CONSUMER);
 		mutexSimulationStatus->Unlock();
 
 		status = "start";
-		cout << "start done" << endl;
-	} else {
-		cout << "already started" << endl;
+
+		cout << "start done" << endl; fflush(stdout);
+	}
+	else
+	{
+		cout << "already started" << endl; fflush(stdout);
 	}
 }
 
 /**
  * interrupts the simulation but the actual state will be save
  */
-void pauseSimulation() {
-
-	if (status.compare("start") == 0) {
+void pauseSimulation()
+{
+	if (status.compare("start") == 0)
+	{
 		/*Try lock the mutex is necessary, because the producer and consumer threads are working on the
 		 * global data which is protected by a mutex
 		 * A lock in pause ensures that the threads finished their job before they will be interrupted
@@ -416,13 +465,14 @@ void pauseSimulation() {
 		releaseMutexSSD();
 
 		status = "pause";
-		cout << "pause done" << endl;
-	} else {
-		cout << "already paused or stopped" << endl;
+		cout << "pause done" << endl; fflush(stdout);
+	}
+	else
+	{
+		cout << "already paused or stopped" << endl; fflush(stdout);
 	}
 
-	cout << "[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]"
-			<< endl;
+	cout << "[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]" << endl; fflush(stdout);
 
 }
 
@@ -430,19 +480,24 @@ void pauseSimulation() {
  * Interrupts the simulation and reset all simulation data the beginning
  */
 void stopSimulation(void) {
-	if (status.compare("stop") != 0) {
+	if (status.compare("stop") != 0)
+	{
 		pauseSimulation();
 
 		reInitAll();
 
 		status = "stop";
-		cout << "stop done" << endl;
-	} else {
-		cout << "already stopped" << endl;
+
+		cout << "stop done" << endl; fflush(stdout);
+	}
+	else
+	{
+		cout << "already stopped" << endl; fflush(stdout);
 	}
 }
 
-void endSimulation() {
+void endSimulation()
+{
 	mutexSimulationStatus->Lock();
 	simulationStatus = SimulationStatus::STOPPED;
 	mutexSimulationStatus->Unlock();
@@ -458,8 +513,8 @@ void endSimulation() {
  * to all running control threads
  *
  */
-void shutDown(void) {
-
+void shutDown(void)
+{
 	shutDownSignal = true;
 }
 
@@ -491,8 +546,8 @@ void parseMessageFromClient(string message) {
 
 	/*SYSTEMTIME systime;
 	 GetSystemTime(&systime);
-	 cout << systime.wSecond << systime.wMilliseconds << endl;
-	 cout << operation << endl;*/
+	 cout << systime.wSecond << systime.wMilliseconds << endl; fflush(stdout);
+	 cout << operation << endl; fflush(stdout); */
 
 	//"start","pause","stop","shutdown","init","setfilter","changetime","changevalue", 
 	//string::npos is the maximum value for size_t
@@ -538,15 +593,23 @@ void parseMessageFromClient(string message) {
 			 * TODO 20100218 initDone, clientDone & transferDone should be checked further so the user can get an error message
 			 */
 			if (debugControl)
-				cout << "Operation: " << operation << endl;
+			{
+				cout << "Operation: " << operation << endl; fflush(stdout);
+			}
 
 			if (operation.compare("setcontrolclienturl") == 0) {
 				string ip = parseIP(attributes);
+
 				if (debugControl)
-					cout << ip << endl;
+				{
+					cout << ip << endl; fflush(stdout);
+				}
+
 				int port = parsePort(attributes);
 				if (debugControl)
-					cout << port << endl;
+				{
+					cout << port << endl; fflush(stdout);
+				}
 				setControlClientIPandPort(ip, port);
 				clientDone = true;
 				createControlClient();
@@ -743,7 +806,9 @@ void parseParameter(SimStepData* p_SSD, string parameter) {
  */
 void parseNameTypes(string filterstring) {
 	if (debugControl)
-		cout << filterstring << endl;
+	{
+		cout << filterstring << endl; fflush(stdout);
+	}
 	string::size_type checkForSharp;
 	/*
 	 * Filter for variables (state and algebraic)
@@ -768,7 +833,7 @@ void parseNameTypes(string filterstring) {
  * parses all names from a type (state, algebraic,...)
  */
 void parseNames(SimDataNamesFilter* p_SDN, char type, string names) {
-	//if(debugControl)cout << "Type: "<< type << " Name: " << names << endl;
+	//if(debugControl) { cout << "Type: "<< type << " Name: " << names << endl; fflush(stdout); }
 	string::size_type checkForDoublePoint = names.find_first_of(":");
 	if (checkForDoublePoint != string::npos) {
 		string name = names.substr(0, checkForDoublePoint);
@@ -786,7 +851,10 @@ void parseNames(SimDataNamesFilter* p_SDN, char type, string names) {
  */
 void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name) {
 	if (debugControl)
-		cout << "Type: " << type << " Name: " << name << endl;
+	{
+		cout << "Type: " << type << " Name: " << name << endl; fflush(stdout);
+	}
+
 	switch (type) {
 	case 'v':
 		//Check if the variable is an state or an algebraic and what index does it have
@@ -795,33 +863,40 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name)
 		int indexInFilterArr = 0;
 		for (int var = 0; var < nStates; var++, indexInFilterArr++) {
 			if (debugControl)
-				cout << "STATENAME: "
-						<< p_simDataNames_SimulationResult->statesNames[var]
-						<< endl;
+			{
+				cout << "STATENAME: " << p_simDataNames_SimulationResult->statesNames[var] << endl; fflush(stdout);
+			}
+
 			if (p_simDataNames_SimulationResult->statesNames[var] == name
 					&& p_SDN->variablesNames[indexInFilterArr] == string("")) {
 				p_SDN->variablesNames[indexInFilterArr] = name;
 				found = true;
 				if (debugControl)
-					cout << "VARFILTERNAME: " << name << endl;
+				{
+					cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
+				}
 				break;
 			}
 		}
 
 		if (!found) {
 			if (debugControl)
-				cout << "is not state" << endl;
+			{
+				cout << "is not state" << endl; fflush(stdout);
+			}
 			for (int var = 0; var < (nStates + nAlgebraic); var++, indexInFilterArr++) {
 				if (debugControl)
-					cout << "ALGNAME: "
-							<< p_simDataNames_SimulationResult->algebraicsNames[var]
-						<< endl;
+				{
+					cout << "ALGNAME: " << p_simDataNames_SimulationResult->algebraicsNames[var] << endl; fflush(stdout);
+				}
 				if (p_simDataNames_SimulationResult->algebraicsNames[var]
 						== name && p_SDN->variablesNames[indexInFilterArr]
 						== string("")) {
 					p_SDN->variablesNames[indexInFilterArr] = name;
 					if (debugControl)
-						cout << "VARFILTERNAME: " << name << endl;
+					{
+						cout << "VARFILTERNAME: " << name << endl; fflush(stdout);
+					}
 					break;
 				}
 			}
@@ -834,7 +909,9 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name)
 			if (p_SDN->parametersNames[var] == string("")) {
 				p_SDN->parametersNames[var] = name;
 				if (debugControl)
-					cout << "PARFILTERNAME: " << name << endl;
+				{
+					cout << "PARFILTERNAME: " << name << endl; fflush(stdout);
+				}
 				break;
 			}
 		}
@@ -842,7 +919,9 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter* p_SDN, char type, string name)
 
 	default:
 		if (debugControl)
-			cout << "Incorrect Type" << endl;
+		{
+			cout << "Incorrect Type" << endl; fflush(stdout);
+		}
 		break;
 	}
 }
@@ -908,7 +987,9 @@ void setValuesFrom_A_SSD(SimStepData* p_SSD, char type, string nameANDvalue) {
 
 			default:
 				if (debugControl)
-					cout << "Incorrect Type" << endl;
+				{
+					cout << "Incorrect Type" << endl; fflush(stdout);
+				}
 				break;
 			}
 		} else {
@@ -951,9 +1032,10 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
 		sock2.recv(operation);
 		if (operation.compare("") != 0) {
 			if (debugControl)
-				cout << "Client Message: ";
-			if (debugControl)
-				cout << operation << endl;
+			{
+				cout << "Client Message: "; fflush(stdout);
+				cout << operation << endl; fflush(stdout);
+			}
 			parseMessageFromClient(operation);
 		}
 	}
@@ -978,9 +1060,13 @@ THREAD_RET_TYPE threadClientControl(THREAD_PARAM_TYPE lpParam) {
 
 		bool status = sock.send(messageForClient);
 		if (status)
-			cout << "Message send: " << messageForClient << endl;
+		{
+			cout << "Message send: " << messageForClient << endl; fflush(stdout);
+		}
 		else
-			cout << "Fail to send" << endl;
+		{
+			cout << "Fail to send" << endl; fflush(stdout);
+		}
 	}
 	sock.close();
 

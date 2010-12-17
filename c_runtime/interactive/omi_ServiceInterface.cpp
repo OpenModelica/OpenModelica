@@ -537,47 +537,51 @@ void setIPandPortOfTransferClient(string ip, int port) {
 void printGlobalData(void) {
 	gdMutex.Lock();
 
-	cout << "OutPutGlobalData***********" << endl;
-	cout << "lastEmittedTime: " << globalData->lastEmittedTime
-			<< " --------------------" << endl;
+	cout << "OutPutGlobalData***********" << endl; fflush(stdout);
+	cout << "lastEmittedTime: " << globalData->lastEmittedTime  << " --------------------" << endl; fflush(stdout);
 
-	if (globalData->nStates > 0) {
-		cout << "---States---" << endl;
-		for (int t = 0; t < globalData->nStates; t++) {
-			cout << t << ": " << globalData->statesNames[t] << ": "
-					<< globalData->states[t] << endl;
+	if (globalData->nStates > 0)
+	{
+		cout << "---States---" << endl; fflush(stdout);
+		for (int t = 0; t < globalData->nStates; t++)
+		{
+			cout << t << ": " << globalData->statesNames[t] << ": " << globalData->states[t] << endl; fflush(stdout);
 		}
 	}
 
-	if (globalData->nAlgebraic > 0) {
-		cout << "---Algebraics---" << endl;
-		for (int t = 0; t < globalData->nAlgebraic; t++) {
-			cout << t << ": " << globalData->algebraicsNames[t] << ": "
-					<< globalData->algebraics[t] << endl;
+	if (globalData->nAlgebraic > 0)
+	{
+		cout << "---Algebraics---" << endl; fflush(stdout);
+		for (int t = 0; t < globalData->nAlgebraic; t++)
+		{
+			cout << t << ": " << globalData->algebraicsNames[t] << ": " << globalData->algebraics[t] << endl; fflush(stdout);
 		}
 	}
 
-	if (globalData->nParameters > 0) {
-		cout << "---Parmeters--- " << endl;
-		for (int t = 0; t < globalData->nParameters; t++) {
-			cout << t << ": " << globalData->parametersNames[t] << ": "
-					<< globalData->parameters[t] << endl;
+	if (globalData->nParameters > 0)
+	{
+		cout << "---Parmeters--- " << endl; fflush(stdout);
+		for (int t = 0; t < globalData->nParameters; t++)
+		{
+			cout << t << ": " << globalData->parametersNames[t] << ": "	<< globalData->parameters[t] << endl; fflush(stdout);
 		}
 	}
 
-	if (globalData->nInputVars > 0) {
-		cout << "---InputVars--- " << endl;
-		for (int t = 0; t < globalData->nInputVars; t++) {
-			cout << t << ": " << globalData->inputNames[t] << ": "
-					<< globalData->inputVars[t] << endl;
+	if (globalData->nInputVars > 0)
+	{
+		cout << "---InputVars--- " << endl; fflush(stdout);
+		for (int t = 0; t < globalData->nInputVars; t++)
+		{
+			cout << t << ": " << globalData->inputNames[t] << ": " << globalData->inputVars[t] << endl; fflush(stdout);
 		}
 	}
 
-	if (globalData->nInputVars > 0) {
-		cout << "---OutputVars--- " << endl;
-		for (int t = 0; t < globalData->nOutputVars; t++) {
-			cout << t << ": " << globalData->outputNames[t] << ": "
-					<< globalData->outputVars[t] << endl;
+	if (globalData->nInputVars > 0)
+	{
+		cout << "---OutputVars--- " << endl; fflush(stdout);
+		for (int t = 0; t < globalData->nOutputVars; t++)
+		{
+			cout << t << ": " << globalData->outputNames[t] << ": " << globalData->outputVars[t] << endl; fflush(stdout);
 		}
 	}
 

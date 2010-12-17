@@ -55,7 +55,10 @@ int calculate() {
 
 	getSimulationStartData(&stepSizeORG, &outputSteps,	&tolerance, &method, &outputFormat);
 	//TODO  20100217 pv catch correct stepSize value for calculation loop
-	if(debugCalculation) cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat;
+	if(debugCalculation)
+	{
+		cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat; fflush(stdout);
+	}
 
 	set_lastEmittedTime(start);
 	set_forceEmit(0);
@@ -100,7 +103,7 @@ int calculate() {
 				tolerance);
 
 		if (retVal != 0){
-			cout << "omi_Calculation: error occurred while calculating" << endl;
+			cout << "omi_Calculation: error occurred while calculating" << endl; fflush(stdout);
 			return 1;
 		}
 
@@ -111,8 +114,7 @@ int calculate() {
 		setResultData(p_SimStepData_from_Calculation); //ssd(tn) as parameter
 	}
 	//if (debugCalculation)
-		cout << "*** calculation end: calculationInterrupted -> "
-				<< calculationInterrupted << endl;
+		cout << "*** calculation end: calculationInterrupted -> " << calculationInterrupted << endl; fflush(stdout);
 	//return retVal; //TODO 20100210 pv Implement the return value correctly
 	return 0;
 }
@@ -130,37 +132,29 @@ void createSSDEntry() {
  * Prints out the actual calculated Simulation Step Data structure
  */
 void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
-	cout << "OutPutSSD-CALCULATION***********" << endl;
-	cout << "p_SimStepData_from_Calculation->lastEmittedTime: "
-			<< p_SimStepData_from_Calculation->forTimeStep
-			<< " --------------------" << endl;
+	cout << "OutPutSSD-CALCULATION***********" << endl; fflush(stdout);
+	cout << "p_SimStepData_from_Calculation->lastEmittedTime: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
 
-	cout << "---Parmeters--- " << endl;
-	for (int t = 0; t < nParameters; t++) {
-		cout << t << ": "
-				<< p_simDataNames_SimulationResult->parametersNames[t]<< ": "
-				<< p_SimStepData_from_Calculation->parameters[t] << endl;
+	cout << "---Parmeters--- " << endl; fflush(stdout);
+	for (int t = 0; t < nParameters; t++)
+	{
+		cout << t << ": " << p_simDataNames_SimulationResult->parametersNames[t]<< ": " << p_SimStepData_from_Calculation->parameters[t] << endl; fflush(stdout);
 	}
 
 	if (nAlgebraic > 0) {
-		cout << "---Algebraics---" << endl;
-		for (int t = 0; t < nAlgebraic; t++) {
-			cout << t << ": "
-					<< p_simDataNames_SimulationResult->algebraicsNames[t]<< ": "
-					<< p_SimStepData_from_Calculation->algebraics[t] << endl;
+		cout << "---Algebraics---" << endl; fflush(stdout);
+		for (int t = 0; t < nAlgebraic; t++)
+		{
+			cout << t << ": " << p_simDataNames_SimulationResult->algebraicsNames[t]<< ": "	<< p_SimStepData_from_Calculation->algebraics[t] << endl; fflush(stdout);
 		}
 	}
 
 	if (nStates > 0) {
-		cout << "---States---" << endl;
-		for (int t = 0; t < nStates; t++) {
-			cout << t << ": "
-					<< p_simDataNames_SimulationResult->statesNames[t]<< ": "
-					<< p_SimStepData_from_Calculation->states[t] << endl;
-			cout << t << ": "
-					<< p_simDataNames_SimulationResult->stateDerivativesNames[t]<< ": "
-					<< p_SimStepData_from_Calculation->statesDerivatives[t]
-					<< endl;
+		cout << "---States---" << endl; fflush(stdout);
+		for (int t = 0; t < nStates; t++)
+		{
+			cout << t << ": " << p_simDataNames_SimulationResult->statesNames[t]<< ": "	<< p_SimStepData_from_Calculation->states[t] << endl; fflush(stdout);
+			cout << t << ": " << p_simDataNames_SimulationResult->stateDerivativesNames[t]<< ": " << p_SimStepData_from_Calculation->statesDerivatives[t] << endl; fflush(stdout);
 		}
 	}
 }
@@ -171,7 +165,10 @@ void printSSDCalculation(long nStates, long nAlgebraic, long nParameters) {
 THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam){
 	int retValue = -1; //Not used yet
 
-	if(debugCalculation) cout << "*** threadSimulationCalculation" << endl;
+	if(debugCalculation)
+	{
+		cout << "*** threadSimulationCalculation" << endl; fflush(stdout);
+	}
 
 	p_sdnMutex->Lock();
 	long nStates = p_simdatanumbers->nStates;
@@ -194,7 +191,10 @@ THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam){
 
 	retValue = calculate();
 
-	if(debugCalculation) cout << "*****Calculation Thread End*****" << endl;
+	if(debugCalculation)
+	{
+		cout << "*****Calculation Thread End*****" << endl; fflush(stdout);
+	}
 
 	return (THREAD_RET_TYPE)retValue;
 }

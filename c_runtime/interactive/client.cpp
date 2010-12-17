@@ -6,25 +6,23 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <string>
+#include <cstdlib>
 
 #include "thread.h"
 #include "socket.h"
 
 bool run = true;
 
-/* Windows and mingw32 */
-#if defined(__MINGW32__) || defined(_MSC_VER)
+using namespace std;
 
-#define PTR_PORTABLE DWORD WINAPI
+string*   fileName = 0;
+fstream*  fileStream = 0;
+int shutDownInProgress = 0;
 
-#else
 
-#define PTR_PORTABLE void*
-
-#endif
-
-PTR_PORTABLE threadServerControl(void*)
+THREAD_RET_TYPE threadServerControl(void*)
 {
 	Socket s1;
 
@@ -32,26 +30,32 @@ PTR_PORTABLE threadServerControl(void*)
 	s1.bind(10500);
 	s1.listen();
 
-	std::cout << "Control server on: 127.0.0.1:10500" << std::endl;
+	cout << "Control server on: 127.0.0.1:10500" << endl; fflush(stdout);
 
 	Socket s2;
 	s1.accept(s2);
 
 	while(run)
 	{
-		std::string message;
+		string message;
 
 		if(!s2.recv(message))
 		{
-			std::cout << "threadServerControl: Failed to recieve message!" << std::endl;
-			return 0;
+			if (!shutDownInProgress)
+			{
+				cout << "threadServerControl: Failed to recieve message!" << endl; fflush(stdout);
+				return 0;
+			}
 		}
 
-		std::cout << "Server recieved message: " << message << std::endl;
+		if (!shutDownInProgress)
+		{
+			cout << "Server recieved message: " << message << endl; fflush(stdout);
+		}
 	}
 }
 
-PTR_PORTABLE threadServerTransfer(void*)
+THREAD_RET_TYPE threadServerTransfer(void*)
 {
 	Socket s1;
 
@@ -59,32 +63,38 @@ PTR_PORTABLE threadServerTransfer(void*)
 	s1.bind(10502);
 	s1.listen();
 
-	std::cout << "Transfer server on: 127.0.0.1:10502" << std::endl;
+	cout << "Transfer server on: 127.0.0.1:10502" << endl; fflush(stdout);
 
 	Socket s2;
 	s1.accept(s2);
 
 	while(run)
 	{
-		std::string message;
+		string message;
 
 		if(!s2.recv(message))
 		{
-			std::cout << "threadServerTransfer: Failed to recieve message!" << std::endl;
-			return 0;
+			if (!shutDownInProgress)
+			{
+				cout << "threadServerTransfer: Failed to recieve message!" << endl; fflush(stdout);
+				return 0;
+			}
 		}
 
-		std::cout << "Server recieved message: " << message << std::endl;
+		if (!shutDownInProgress)
+		{
+			cout << "Server recieved message: " << message << endl; fflush(stdout);
+		}
 	}
 }
 
-PTR_PORTABLE threadControlClient(void*)
+THREAD_RET_TYPE threadControlClient(void*)
 {
 	Socket s1;
 
 	s1.create();
 
-	int retries_left = 5;
+	int retries_left = 10;
 
 	for(; retries_left >= 0; --retries_left)
 	{
@@ -92,12 +102,12 @@ PTR_PORTABLE threadControlClient(void*)
 		{
 			if(retries_left)
 			{
-				std::cout << "Connect failed, retrying to connect to 127.0.0.1:10501" << std::endl;
+				cout << "Connect failed, retrying to connect to 127.0.0.1:10501" << endl; fflush(stdout);
 				continue;
 			}
 			else
 			{
-				std::cout << "Connect failed, max number of retries reached." << std::endl;
+				cout << "Connect failed, max number of retries reached." << endl; fflush(stdout);
 				run = false;
 				return 0;
 			}
@@ -109,42 +119,105 @@ PTR_PORTABLE threadControlClient(void*)
 
 	while(true)
 	{
-		std::string message;
-		std::cout << "enter operation: " << std::endl;
-		std::cin >> message;
-
-		std::cout << message << std::endl;
-
-		if(!s1.send(message))
+		string message;
+		cout << "Enter operation to be sent to server: " << endl; fflush(stdout);
+		if (!fileName) // no file, read from stdin
 		{
-			std::cout << "Failed to send message!" << std::endl;
-			break;
+			cin >> message;
+		}
+		else // some file, read from it
+		{
+			if (!fileStream->eof())
+			{
+				(*fileStream) >> message;
+			}
+			else
+			{
+				cout << "End of commands file: " << fileName->c_str() << " has been reached!" << endl; fflush(stdout);
+				cout << "Sending \"end\" to the server and exiting ..." << endl; fflush(stdout);
+			    message = "";
+			}
 		}
 
-		if(message == "end")
+		if (!message.empty())
 		{
-			break;
-		}
+			if (!message.compare(0,5,"delay")) // delay
+			{
+				// we have a delay in the text, see how much
+				string delayTime = message.substr(5,message.size()-5);
+				cout << "Command to delay the client for: " << delayTime << " seconds." << endl; fflush(stdout);
+				delay(atoi(delayTime.c_str()) * 1000);
+			    cout << "End delay of " << delayTime << " seconds." << endl; fflush(stdout);
+			}
+			else // send the message
+			{
+				cout << "Message to be send: " << message << endl; fflush(stdout);
 
-		delay(5);
+				if(!s1.send(message))
+				{
+					cout << "Failed to send message!" << endl; fflush(stdout);
+					break;
+				}
+
+				if(message.compare(0, 8, "shutdown") == 0)
+				{
+					cout << "Shuting down in 3 seconds .... due to shutdown message: " << message << endl; fflush(stdout);
+					delay(2000);
+					shutDownInProgress = 1;
+					delay(1000);
+					break;
+				}
+			}
+		}
+		else
+		{
+			cout << "Message: [is empty]" << endl; fflush(stdout);
+		}
 	}
 
 	run = false;
 	return 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
+	if (argc == 2)
+	{
+		if (strcmp(argv[1], "-help") == 0 && strcmp(argv[1], "/?") == 0)
+		{
+			cout << "usage: client [file-with-commands.txt] [-help|/?]" << endl; fflush(stdout);
+			exit(1);
+		}
+		fileName = new string(argv[1]);
+		fileStream = new fstream(fileName->c_str(), fstream::in);
+		if (fileStream->fail())
+		{
+			cout << "Unable to open file: " << fileName->c_str() << "!" << endl; fflush(stdout);
+			cout << "usage: client [file-with-commands.txt] [-help|/?]" << endl; fflush(stdout);
+			exit(1);
+		}
+	}
+
 	Thread serverControl;
 	Thread serverTransfer;
 	Thread clientControl;
 
 	serverControl.Create(threadServerControl);
+	delay(1000);
 	serverTransfer.Create(threadServerTransfer);
+	delay(1000);
 	clientControl.Create(threadControlClient);
+	delay(1000);
 
 	clientControl.Join();
 	serverTransfer.Join();
 	serverControl.Join();
+
+	if (fileName)
+	{
+		fileStream->close();
+	}
+
+	return 0;
 }
 

@@ -27,9 +27,9 @@ Socket::Socket() : m_sock(0) {
    WORD wVersionRequested;
    WSADATA wsaData;
    wVersionRequested = MAKEWORD (1, 1);
-   if (WSAStartup (wVersionRequested, &wsaData) != 0) {
-      cout << "Fehler beim Initialisieren von Winsock"
-           << endl;
+   if (WSAStartup (wVersionRequested, &wsaData) != 0)
+   {
+      cout << "Failed to start the windows sockets!" << endl; fflush(stdout);
       exit(1);
    }
 }
@@ -43,8 +43,9 @@ Socket::~Socket() {
 // Erzeugt das Socket  - TCP
 bool Socket::create() {
    m_sock = ::socket(AF_INET,SOCK_STREAM,0);
-   if (m_sock < 0) {
-      cout << "Fehler beim Anlegen eines Socket" << endl;
+   if (m_sock < 0)
+   {
+      cout << "Failed to create a TCP socket!" << endl;  fflush(stdout);
       exit(1);
    }
    return true;
@@ -53,8 +54,9 @@ bool Socket::create() {
 // Erzeugt das Socket  - UDP
 bool Socket::UDP_create() {
    m_sock = ::socket(AF_INET,SOCK_DGRAM,0);
-   if (m_sock < 0) {
-      cout << "Fehler beim Anlegen eines Socket" << endl;
+   if (m_sock < 0)
+   {
+      cout << "Failed to creat a UDP socket!" << endl; fflush(stdout);
       exit(1);
    }
    return true;
@@ -62,8 +64,10 @@ bool Socket::UDP_create() {
 
 // Erzeugt die Bindung an die Serveradresse
 // - genauer an einen bestimmten Port
-bool Socket::bind( const int port ) {
-   if ( ! is_valid() ) {
+bool Socket::bind( const int port )
+{
+   if ( ! is_valid() )
+   {
       return false;
    }
    m_addr.sin_family = AF_INET;
@@ -120,8 +124,9 @@ bool Socket::connect( const string &host, const int port ) {
        /* Für den Fall der Fälle: Wandle den Servernamen  *
         * bspw. "localhost" in eine IP-Adresse um         */
        host_info = gethostbyname( host.c_str() );
-       if (NULL == host_info) {
-          cout << "Unbekannter Server" << endl;
+       if (NULL == host_info)
+       {
+          cout << "Unknown host name: " << host.c_str() << "!" << endl; fflush(stdout);
           exit(1);
        }
        memcpy( (char *)&m_addr.sin_addr, host_info->h_addr,
@@ -161,8 +166,9 @@ int Socket::recv ( string& s ) const {
      s = buf;
      return status;
   }
-  else {
-     cout << "Fehler in Socket::recv" << endl;
+  else
+  {
+     cout << "Error in Socket::recv" << endl; fflush(stdout);
      exit(1);
      return 0;
   }
@@ -175,8 +181,9 @@ bool Socket::UDP_send( const string &addr, const string &s, const int port ) con
    int rc;
 
    h = gethostbyname(addr.c_str());
-   if (h == NULL) {
-      cout << "Unbekannter Host?" << endl;
+   if (h == NULL)
+   {
+      cout << "Socket::UDP_send: Unknown host address: " << addr.c_str() << "!" << endl; fflush(stdout);
       exit(1);
    }
    addr_sento.sin_family = h->h_addrtype;
@@ -186,9 +193,9 @@ bool Socket::UDP_send( const string &addr, const string &s, const int port ) con
    rc = sendto( m_sock, s.c_str(), s.size(), 0,
                  (struct sockaddr *) &addr_sento,
                   sizeof (addr_sento));
-   if (rc == SOCKET_ERROR) {
-      cout << "Konnte Daten nicht senden - sendto()"
-           << endl;
+   if (rc == SOCKET_ERROR)
+   {
+      cout << "Socket::UDP_send: Could not send data: " << s.c_str() << "!" << endl; fflush(stdout);
       exit(1);
    }
    return true;
@@ -204,12 +211,14 @@ int Socket::UDP_recv( string& s ) const {
    len = sizeof (addr_recvfrom);
    n = recvfrom ( m_sock, buf, MAXRECV, 0,
                   (struct sockaddr *) &addr_recvfrom, &len );
-   if (n == SOCKET_ERROR){
-      cout << "Fehler bei recvfrom()" << endl;
+   if (n == SOCKET_ERROR)
+   {
+      cout << "Socket::UDP_recv: failed to receive data!" << endl; fflush(stdout);
       exit(1);
       return 0;
    }
-   else {
+   else
+   {
       s = buf;
       return n;
    }
