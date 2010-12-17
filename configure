@@ -4676,7 +4676,7 @@ if test -n "$QMAKE"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for qmake arguments" >&5
 $as_echo_n "checking for qmake arguments... " >&6; }
   if test "Darwin" = `uname`; then
-    QMAKE="$QMAKE -spec macx-g++ -macx -o Makefile"
+    QMAKE="$QMAKE && sed -i.bak 's/-arch -Xarch/-Xarch/' Makefile"
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $QMAKE" >&5
 $as_echo "$QMAKE" >&6; }

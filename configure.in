@@ -306,7 +306,7 @@ AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
   if test "Darwin" = `uname`; then
-    QMAKE="$QMAKE -spec macx-g++ -macx -o Makefile"
+    QMAKE="$QMAKE && sed -i.bak 's/-arch -Xarch/-Xarch/' Makefile"
   fi
   AC_MSG_RESULT([$QMAKE])
 fi
