@@ -375,6 +375,7 @@ copied from Util.mo in OpenModelica
   input Type_a v;
   output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
+protected
   Integer len,newlen;
   array<Type_a> newarr;
 algorithm

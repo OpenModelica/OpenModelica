@@ -79,7 +79,7 @@ protected function setConnectSets
   input Connect.Sets inCS;
   input list<Connect.Set> inSets;
   output Connect.Sets outCS;
-
+protected
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
   list<Connect.StreamFlowConnect> sf;
@@ -93,7 +93,7 @@ protected function addConnectSet
   input Connect.Sets inCS;
   input Connect.Set inSet;
   output Connect.Sets outCS;
-  
+protected  
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
@@ -108,7 +108,7 @@ public function setOuterConnects
   input Connect.Sets inCS;
   input list<Connect.OuterConnect> inOuterConnects;
   output Connect.Sets outCS;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.StreamFlowConnect> sf;
@@ -122,7 +122,7 @@ public function addOuterConnect
   input Connect.Sets inCS;
   input Connect.OuterConnect inOuterConnect;
   output Connect.Sets outCS;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
@@ -137,7 +137,7 @@ public function setConnectionCrefs
   input Connect.Sets inCS;
   input list<DAE.ComponentRef> inConnectionCrefs;
   output Connect.Sets outCS;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> d;
   list<Connect.OuterConnect> o;
@@ -152,7 +152,7 @@ public function addConnectionCrefs
   input Connect.Sets inCS;
   input list<DAE.ComponentRef> inConnectionCrefs;
   output Connect.Sets outCS;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
@@ -169,7 +169,7 @@ public function addDeletedComponent
   input DAE.ComponentRef component;
   input Connect.Sets inSets;
   output Connect.Sets outSets;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
@@ -542,6 +542,7 @@ public function addEqu "function: addEqu
   input Connect.Face d2;
   input DAE.ElementSource source "the origin of the element";
   output Connect.Sets ss_1;
+protected
   Connect.Set s1,s2;
 algorithm
   s1 := findEquSet(ss, r1, d1, source);
@@ -559,6 +560,7 @@ public function addFlow "function: addFlow
   input Connect.Face d2;
   input DAE.ElementSource source "the element origin";
   output Connect.Sets ss_1;
+protected
   Connect.Set s1,s2;
 algorithm
   s1 := findFlowSet(ss, r1, d1, source);
@@ -806,7 +808,7 @@ public function addStreamFlowAssociation
   input DAE.ComponentRef inFlowCref;
   input Connect.Sets inSets;
   output Connect.Sets outSets;
-
+protected
   list<Connect.Set> sl;
   list<DAE.ComponentRef> c, d;
   list<Connect.OuterConnect> o;
@@ -833,7 +835,7 @@ public function getStreamFlowAssociation
   input DAE.ComponentRef inStreamCref;
   input Connect.Sets inSets;
   output DAE.ComponentRef outFlowCref;
-
+protected
   list<Connect.StreamFlowConnect> sf;
 algorithm
   Connect.SETS(streamFlowConnects = sf) := inSets;
@@ -847,7 +849,7 @@ protected function streamFlowConnectEqual
   input DAE.ComponentRef inStreamCref;
   input Connect.StreamFlowConnect inStreamFlowConnect;
   output Boolean isEqual;
-
+protected
   DAE.ComponentRef stream_cr;
 algorithm
   (stream_cr, _) := inStreamFlowConnect;
@@ -863,7 +865,7 @@ public function addStream "function: addStream
   input Connect.Face d2;
   input DAE.ElementSource source "the element origin";
   output Connect.Sets ss_1;
-
+protected
   Connect.Set s1,s2;
   DAE.ComponentRef f1, f2;
 algorithm
@@ -985,7 +987,7 @@ public function equations
   equations."
   input Connect.Sets inSets;
   output DAE.DAElist outDae;
-  
+protected
   list<Connect.Set> ss;
   list<DAE.DAElist> daes;
 algorithm
@@ -1088,6 +1090,7 @@ protected function flowEquations "function: flowEquations
   where this sum is equal to 0.0."
   input list<Connect.FlowSetElement> cs;
   output DAE.DAElist outDae;
+protected
   DAE.Exp sum;
   DAE.ElementSource source;
   list<DAE.ElementSource> lde;
@@ -1238,7 +1241,7 @@ protected function streamEquationGeneral
   input list<Connect.StreamSetElement> inOutsideElements;
   input list<Connect.StreamSetElement> inInsideElements;
   output DAE.DAElist outDae;
-
+protected
   list<Connect.StreamSetElement> outside;
   DAE.ComponentRef stream_cr;
   DAE.Exp cref_exp, outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
@@ -1265,7 +1268,7 @@ protected function streamSumEquationExp
   input list<Connect.StreamSetElement> inOutsideElements;
   input list<Connect.StreamSetElement> inInsideElements;
   output DAE.Exp outSumExp;
-
+protected
   DAE.Exp outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
 algorithm
   outSumExp := match(inOutsideElements, inInsideElements)
@@ -1338,7 +1341,7 @@ protected function streamFlowExp
   input Connect.StreamSetElement inElement;
   output DAE.Exp outStreamExp;
   output DAE.Exp outFlowExp;
-
+protected
   DAE.ComponentRef stream_cr, flow_cr;
 algorithm
   (stream_cr, flow_cr, _, _) := inElement;
@@ -1350,7 +1353,7 @@ protected function flowExp
   "Returns the flow component in a stream set element as an expression."
   input Connect.StreamSetElement inElement;
   output DAE.Exp outFlowExp;
-
+protected
   DAE.ComponentRef flow_cr;
 algorithm
   (_, flow_cr, _, _) := inElement;
@@ -1363,7 +1366,7 @@ protected function sumOutside1
   given a stream set element."
   input Connect.StreamSetElement inElement;
   output DAE.Exp outExp;
-
+protected
   DAE.Exp stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
@@ -1377,7 +1380,7 @@ protected function sumInside1
   given a stream set element."
   input Connect.StreamSetElement inElement;
   output DAE.Exp outExp;
-
+protected
   DAE.Exp stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
@@ -1391,7 +1394,7 @@ protected function sumOutside2
   given a stream set element."
   input Connect.StreamSetElement inElement;
   output DAE.Exp outExp;
-
+protected
   DAE.Exp flow_exp;
 algorithm
   flow_exp := flowExp(inElement);
@@ -1404,7 +1407,7 @@ protected function sumInside2
   given a stream set element."
   input Connect.StreamSetElement inElement;
   output DAE.Exp outExp;
-
+protected
   DAE.Exp flow_exp;
 algorithm
   flow_exp := flowExp(inElement);
@@ -1577,7 +1580,7 @@ protected function findEquSet
   input Connect.Face inFace;
   input DAE.ElementSource source;
   output Connect.Set outSet;
-
+protected
   list<Connect.Set> ss;
   Connect.EquSetElement s;
 algorithm
@@ -1658,7 +1661,7 @@ protected function findFlowSet
   input Connect.Face inFace;
   input DAE.ElementSource source;
   output Connect.Set outSet;
-
+protected
   list<Connect.Set> ss;
   Connect.FlowSetElement s;
 algorithm
@@ -2024,7 +2027,7 @@ protected function removeSet "function: removeSet
   input Connect.Sets inSets;
   input Connect.Set inSet;
   output Connect.Sets outSets;
-
+protected
   list<Connect.Set> sl;
 algorithm
   Connect.SETS(setLst = sl) := inSets;
@@ -2469,7 +2472,7 @@ public function checkConnectorBalance
   input list<DAE.Var> inVars;
   input Absyn.Path path;
   input Absyn.Info info;
-
+protected
   Integer potentials, flows, streams;
 algorithm
   (potentials, flows, streams) := countConnectorVars(inVars);
@@ -2610,7 +2613,7 @@ protected function sizeOfVariableList
   "Calls sizeOfVariable on a list of variables, and adds up the results."
   input list<DAE.Var> inVar;
   output Integer outSize;
-
+protected
   list<Integer> sizes;
 algorithm
   sizes := Util.listMap(inVar, sizeOfVariable);

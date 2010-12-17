@@ -95,6 +95,7 @@ public function dump "Relations
   function: dump
   Dumps a Graphviz Node on stdout."
   input Node node;
+protected
   Label nm;
 algorithm
   print("graph AST {\n");
@@ -143,6 +144,7 @@ protected function makeLabel "function: makeLabel
   Creates a label from a list of strings."
   input list<String> sl;
   output String s2;
+protected
   Label s0,s1;
 algorithm
   s0 := makeLabelReq(sl);
@@ -207,6 +209,7 @@ protected function nodename "function: nodename
   changed use of str as part of nodename, since it may contain spaces"
   input String str;
   output String s;
+protected
   Integer i;
   Label is;
 algorithm
@@ -219,6 +222,7 @@ protected function printEdge "function: printEdge
   Prints an edge between two nodes."
   input Ident n1;
   input Ident n2;
+protected
   Label str;
 algorithm
   str := makeEdge(n1, n2);
@@ -231,6 +235,7 @@ protected function makeEdge "function: makeEdge
   input Ident n1;
   input Ident n2;
   output String str;
+protected
   Label s;
 algorithm
   s := stringAppend(n1, " -- ");
@@ -242,6 +247,7 @@ protected function makeNode "function: makeNode
   input Ident nm;
   input Attributes attr;
   output String str;
+protected
   Label s,s_1;
 algorithm
   s := makeAttr(attr);
@@ -253,6 +259,7 @@ protected function makeAttr "function: makeAttr
   Creates a string from an Attribute list."
   input list<Attribute> l;
   output String str;
+protected
   Label res,s;
 algorithm
   res := makeAttrReq(l);

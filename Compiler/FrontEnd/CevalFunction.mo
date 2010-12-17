@@ -962,7 +962,7 @@ protected function extendEnvWithForScope
   output Env.Env outEnv;
   output DAE.Type outIterType;
   output DAE.ComponentRef outIterCref;
-
+protected
   DAE.ComponentRef iter_cr;
 algorithm
   outIterType := Types.expTypetoTypesType(inIterType);
@@ -985,7 +985,7 @@ protected function appendDimensions
   input Env.Env inEnv;
   output Env.Cache outCache;
   output DAE.Type outType;
-
+protected
   list<Integer> binding_dims;
 algorithm
   binding_dims := ValuesUtil.valueDimensions(
@@ -1350,7 +1350,7 @@ protected function updateVariableBinding
   input DAE.Type inType;
   input Values.Value inNewValue;
   output Env.Env outEnv;
-
+protected
   String var_name;
   DAE.Var var;
 algorithm
@@ -1379,7 +1379,7 @@ protected function getVariableTypeAndValue
   input Env.Env inEnv;
   output DAE.Type outType;
   output Values.Value outValue;
-
+protected
   DAE.Binding binding;
 algorithm
   (outType, binding) := getVariableTypeAndBinding(inCref, inEnv);
@@ -1691,7 +1691,7 @@ protected function findDependencies
   input DAE.ComponentRef inCref;
   input list<Dependency> inDependencies;
   output list<DAE.ComponentRef> outDependencies;
-
+protected
   list<DAE.ComponentRef> deps;
   list<list<DAE.ComponentRef>> dep_deps;
 algorithm

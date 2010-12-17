@@ -127,6 +127,7 @@ protected import Builtin;
 protected import Ceval;
 protected import ConnectUtil;
 protected import ComponentReference;
+protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
@@ -955,6 +956,7 @@ public function makeEnvFromProgram
   input SCode.Path c;
   output Env.Cache outCache;
   output Env.Env env_1;
+protected
   list<Env.Frame> env;
   Env.Cache cache;
 algorithm
@@ -9355,7 +9357,7 @@ protected function printDimStr
   The code is not included in the report."
   input list<DAE.Dimension> inDimensionLst;
   output String outString;
-
+protected
   list<String> dim_strings;
 algorithm
   dim_strings := Util.listMap(inDimensionLst, ExpressionDump.dimensionString);
@@ -10032,9 +10034,9 @@ algorithm
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
       equation
         inlineType = isInlineFunc2(c);
-        
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
+        Util.listMap01(daeElts,info,checkFunctionElement);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         derFuncs = getDeriveAnnotation(cd,fpath,cache,cenv,ih,pre,info);
@@ -11339,6 +11341,7 @@ public function instEnumeration
   input Option<SCode.Comment> cmt;
   input Absyn.Info info;
   output SCode.Class outClass;
+protected
   list<SCode.Element> comp;
 algorithm 
   comp := makeEnumComponents(l, info);
@@ -14398,6 +14401,7 @@ public function emptyInstHashTable
   Returns an empty InstHashTable.
   Using the bucketsize 100 and array size 10."
   output InstHashTable hashTable;
+protected
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;
@@ -15221,7 +15225,7 @@ algorithm
       then
         ();
   end matchcontinue;
-end checkSelfReference;                
+end checkSelfReference;
 
 protected function getFunctionAttributes
 "Looks at the annotations of an SCode.Class to create the function attributes,
@@ -15243,5 +15247,46 @@ algorithm
       then DAE.FUNCTION_ATTRIBUTES(inline,purity);
   end matchcontinue;
 end getFunctionAttributes;
+
+protected function checkFunctionElement
+"Verifies that an element of a function is correct, i.e.
+public input/output, protected variable/parameter/constant or algorithm section"
+  input DAE.Element elt;
+  input Absyn.Info info;
+algorithm
+  _ := match (elt,info)
+    local
+      DAE.ComponentRef cr;
+      String name,str;
+      DAE.ElementSource source;
+      // Until we fix warnings, we need to pass these through... Also, it's used in MSL
+    case (DAE.VAR(protection=DAE.PUBLIC()),_) then ();
+        /*
+    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.INPUT()),_) then ();
+    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.OUTPUT()),_) then ();
+    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.BIDIR(),kind=DAE.VARIABLE()),_)
+      equation
+        // TODO: Implement warnings for this case...
+      then ();
+    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PUBLIC()),_)
+      equation
+        name = ComponentReference.printComponentRefStr(cr);
+        Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"public","protected"},DAEUtil.getElementSourceFileInfo(source));
+      then fail();
+      */
+    case (DAE.VAR(protection=DAE.PROTECTED(),direction=DAE.BIDIR()),_) then ();
+    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PROTECTED()),_)
+      equation
+        name = ComponentReference.printComponentRefStr(cr);
+        Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"protected","public"},DAEUtil.getElementSourceFileInfo(source));
+      then fail();
+    case (DAE.ALGORITHM(algorithm_=_),_) then ();
+    else
+      equation
+        str = DAEDump.dumpElementsStr({elt});
+        Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_KIND,{str},info);
+      then fail();
+  end match;
+end checkFunctionElement;
 
 end Inst;

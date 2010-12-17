@@ -61,6 +61,7 @@ public function hashFunc
 "Calculates a hash value for Key"
   input Key cr;
   output Integer res;
+protected
   String crstr;
 algorithm
   crstr := ComponentReference.printComponentRefStr(cr);

@@ -406,6 +406,7 @@ protected function getPropExpType "function: getPropExpType
   getTypeExpType. Used by makeAssignment."
   input DAE.Properties p;
   output DAE.ExpType t;
+protected
   tuple<DAE.TType, Option<Absyn.Path>> ty;
 algorithm
   ty := Types.getPropType(p);

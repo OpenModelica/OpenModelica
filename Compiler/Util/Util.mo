@@ -4662,6 +4662,7 @@ public function arrayExpand "function: arrayExpand
   input Type_a v;
   output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
+protected
   Integer len,newlen;
   array<Type_a> newarr;
 algorithm
@@ -4679,6 +4680,7 @@ public function arrayNCopy "function arrayNCopy
   input Integer n;
   output array<Type_a> dst_1;
   replaceable type Type_a subtypeof Any;
+protected
   Integer n_1;
 algorithm
   n_1 := n - 1;
@@ -4691,6 +4693,7 @@ function for appending two arrays"
   input array<Type_a> arr2;
   output array<Type_a> out;
   replaceable type Type_a subtypeof Any;
+protected
   list<Type_a> l1,l2,l3;
 algorithm
   l1 := arrayList(arr1);
@@ -5171,6 +5174,7 @@ public function stringDelimitListNonEmptyElts "function stringDelimitListNonEmpt
   input list<String> lst;
   input String delim;
   output String str;
+protected
   list<String> lst1;
 algorithm
   lst1 := listSelect(lst, isNotEmptyString);

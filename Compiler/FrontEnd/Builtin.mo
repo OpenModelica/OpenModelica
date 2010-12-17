@@ -3038,6 +3038,7 @@ public function initialEnv "function: initialEnv
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;
+protected
   Env.Cache cache;
 algorithm
   (outCache,env) := matchcontinue(inCache)

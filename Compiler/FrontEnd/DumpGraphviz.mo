@@ -54,6 +54,7 @@ protected import Dump;
 public function dump "function: dump
   Dumps a Program to a Graphviz graph."
   input Absyn.Program p;
+protected
   Graphviz.Node r;
 algorithm
   r := buildGraphviz(p);
@@ -220,6 +221,7 @@ protected function makeBoolAttr "function: makeBoolAttr
   input String str;
   input Boolean flag;
   output Graphviz.Attribute outAttribute;
+protected
   Ident s;
 algorithm
   s := Dump.selectString(flag, "true", "false");
@@ -265,6 +267,7 @@ protected function printPath "function printPath
   Create a Node from a Path."
   input Absyn.Path p;
   output Node pn;
+protected
   Ident s;
 algorithm
   s := Absyn.pathString(p);

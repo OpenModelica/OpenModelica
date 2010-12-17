@@ -560,6 +560,7 @@ protected function dumpVars "function: dumpVars
   Dump variables to Print buffer."
   input list<DAE.Element> lst;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
+protected
   String str;
   IOStream.IOStream myStream;
 algorithm
@@ -3290,6 +3291,7 @@ public function ppStatementStream
   input DAE.Statement alg;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
+protected
   String tmp;
 algorithm
   tmp := Print.getString();

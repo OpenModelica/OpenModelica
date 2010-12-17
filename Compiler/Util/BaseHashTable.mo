@@ -65,6 +65,7 @@ public function emptyHashTableWork
   input Integer szArr;
   input FuncsTuple fntpl;
   output HashTable hashTable;
+protected
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;

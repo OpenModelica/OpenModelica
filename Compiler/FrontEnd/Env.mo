@@ -227,6 +227,7 @@ protected function newFrame "function: newFrame
   input Option<Ident> inName;
   input Option<ScopeType> inType;
   output Frame outFrame;
+protected
   AvlTree httypes;
   AvlTree ht;
   DAE.ComponentRef cref_;
@@ -2345,6 +2346,7 @@ public function getFunctionTree
 "Selector function"
   input Cache cache;
   output DAE.FunctionTree ft;
+protected
   array<DAE.FunctionTree> ef;
 algorithm
   CACHE(functions = ef) := cache;

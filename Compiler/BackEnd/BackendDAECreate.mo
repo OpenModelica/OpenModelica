@@ -1553,6 +1553,7 @@ protected function lowerAlgorithm
   input Integer aindx;
   output list<BackendDAE.Equation> lst;
   output list<BackendDAE.Equation> lst1 "algorithms with no outputs will be moved to known equations";
+protected
   list<DAE.Exp> inputs,outputs;
   BackendDAE.Value numnodes;
 algorithm
@@ -1887,6 +1888,7 @@ protected function transformDelayExpressions
 "Helper for processDelayExpressions()"
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
+protected
   DAE.Exp e;
   Integer i;
 algorithm
@@ -2598,6 +2600,7 @@ protected function differentZeroCrossing "function: differentZeroCrossing
   input BackendDAE.ZeroCrossing zc1;
   input BackendDAE.ZeroCrossing zc2;
   output Boolean res_1;
+protected
   Boolean res;
 algorithm
   res := sameZeroCrossing(zc1, zc2);
@@ -2616,6 +2619,7 @@ public function findZeroCrossings "function: findZeroCrossings
   input list<BackendDAE.WhenClause> wc;
   input list<DAE.Algorithm> algs;
   output list<BackendDAE.ZeroCrossing> res_1;
+protected
   list<BackendDAE.ZeroCrossing> res;
 algorithm
   res := findZeroCrossings2(vars, knvars,eq,multiDimEqs,1, wc, 1, algs);

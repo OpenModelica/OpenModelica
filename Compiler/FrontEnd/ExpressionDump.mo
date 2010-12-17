@@ -385,6 +385,7 @@ protected function printRow
 "function: printRow
   Print a list of expressions to the Print buffer."
   input list<tuple<DAE.Exp, Boolean>> es;
+protected
   list<DAE.Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
@@ -973,6 +974,7 @@ public function printRowStr
   input list<tuple<DAE.Exp, Boolean>> es;
   input String stringDelimiter;
   output String s;
+protected
   list<DAE.Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);

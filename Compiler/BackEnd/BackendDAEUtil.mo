@@ -83,6 +83,7 @@ public function checkBackendDAEWithErrorMsg"function: checkBackendDAEWithErrorMs
   author: Frenkel TUD
   run checkDEALow and prints all errors"
   input BackendDAE.BackendDAE inBackendDAE;
+protected
   list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
 algorithm  
   expCrefs := checkBackendDAE(inBackendDAE);
@@ -104,6 +105,7 @@ algorithm
     
     case ({}) then ();
     
+
     case (((e,crefs))::res)
       equation
         false = RTOpts.debugFlag("checkBackendDAE");
@@ -1074,6 +1076,7 @@ public function emptyVars
   Returns a Variable datastructure that is empty.
   Using the bucketsize 10000 and array size 1000."
   output BackendDAE.Variables outVariables;
+protected
   array<list<BackendDAE.CrefIndex>> arr;
   array<list<BackendDAE.StringIndex>> arr2;
   list<Option<BackendDAE.Var>> lst;
@@ -2591,6 +2594,7 @@ public function treeGet "function: treeGet
   input BackendDAE.BinTree bt;
   input BackendDAE.Key key;
   output BackendDAE.Value v;
+protected
   String keystr;
 algorithm
   keystr := ComponentReference.printComponentRefStr(key);
@@ -3748,6 +3752,7 @@ public function transposeMatrix
   i.e. which equations each variable is present in."
   input BackendDAE.IncidenceMatrix m;
   output BackendDAE.IncidenceMatrixT mt;
+protected
   list<list<BackendDAE.Value>> mlst,mtlst;
 algorithm
   mlst := arrayList(m);

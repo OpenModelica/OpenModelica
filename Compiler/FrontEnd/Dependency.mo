@@ -1302,6 +1302,7 @@ public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
   input Absyn.Path p_class;
   input Env.Env env;
   output Env.Env env_2;
+protected
   SCode.Class cl;
   String id;
   Boolean encflag;

@@ -1399,6 +1399,7 @@ protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   input Msg msg;
   output Env.Cache outCache;
   output Values.Value res;
+protected
   SCode.Class cdef;
   list<Env.Frame> env_1;
   String fid;
@@ -2993,6 +2994,7 @@ protected function cevalCat "function: cevalCat
   input list<Values.Value> v_lst;
   input Integer dim;
   output Values.Value outValue;
+protected
   list<Values.Value> v_lst_1;
 algorithm
   v_lst_1 := catDimension(v_lst, dim);

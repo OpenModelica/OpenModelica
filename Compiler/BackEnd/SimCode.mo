@@ -469,6 +469,7 @@ public function crefSubIsScalar
  scalar."
   input DAE.ComponentRef cref;
   output Boolean isScalar;
+protected
   list<DAE.Subscript> subs;
 algorithm
   subs := ComponentReference.crefSubs(cref);
@@ -7458,6 +7459,7 @@ protected function getCalledFunctionsInFunctions
   input list<Absyn.Path> accumulated;
   input DAE.FunctionTree funcs;
   output list<Absyn.Path> res;
+protected
   list<list<Absyn.Path>> pathslist;
 algorithm
   res := matchcontinue(paths,accumulated,funcs)

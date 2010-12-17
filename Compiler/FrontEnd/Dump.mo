@@ -3591,6 +3591,7 @@ end printSubscriptsStr;
 public function printPath "function: printPath
   Print a Path."
   input Absyn.Path p;
+protected
   Ident s;
 algorithm
   s := Absyn.pathString(p);
@@ -4808,6 +4809,7 @@ public function printSelect "function: printSelect
   input Boolean f;
   input String yes;
   input String no;
+protected
   Ident res;
 algorithm
   res := selectString(f, yes, no);

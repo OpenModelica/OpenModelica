@@ -555,6 +555,7 @@ protected function unparseArrayDescription "function: unparseArrayDescription
 "
   input list<Value> lst;
   output String str;
+protected
   String pt,s1,s2,s3,s4,s5,s6;
   Integer i1;
 algorithm

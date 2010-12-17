@@ -790,6 +790,7 @@ protected function resultGraphWithRoots
 "Creates an initial graph with given definite roots."
   input list<DAE.ComponentRef> roots;
   output HashTableCG.HashTable outTable;
+protected
   HashTableCG.HashTable table0;
   DAE.ComponentRef dummyRoot;
 algorithm

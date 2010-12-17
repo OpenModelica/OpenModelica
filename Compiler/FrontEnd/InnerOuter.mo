@@ -399,7 +399,7 @@ public function changeInnerOuterInOuterConnect
   "changes inner to outer and outer to inner where needed"
   input Connect.Sets inSets;
   output Connect.Sets outSets;
-
+protected
   list<Connect.OuterConnect> outerConnects;
 algorithm
   Connect.SETS(outerConnects = outerConnects) := inSets;
@@ -2060,6 +2060,7 @@ public function emptyInstHierarchyHashTable
   Returns an empty InstHierarchyHashTable.
   Using the bucketsize 100 and array size 10."
   output InstHierarchyHashTable hashTable;
+protected
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;

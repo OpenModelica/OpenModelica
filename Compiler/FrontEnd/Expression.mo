@@ -2457,6 +2457,7 @@ public function expAdd
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
+protected
   Type tp;
   Boolean b;
   Operator op;
@@ -2474,6 +2475,7 @@ public function expSub
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
+protected
   Type tp;
   Boolean b;
   Operator op;
@@ -2584,6 +2586,7 @@ public function expMul
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
+protected
   Type tp;
   Boolean b;
   Operator op;
@@ -2728,6 +2731,7 @@ function expDiv
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
+protected
   Type tp;
   Boolean b;
   Operator op;  
@@ -2848,6 +2852,7 @@ end makeListOfZeros;
 public function makeRealArrayOfZeros
   input Integer inDimension;
   output DAE.Exp outExp;
+protected
   list<DAE.Exp> l;
 algorithm
   l := makeListOfZeros(inDimension);
@@ -3430,6 +3435,7 @@ end replaceExpMatrix2;
 public function expressionCollector
    input tuple<DAE.Exp,list<DAE.Exp>> inExps;
    output tuple<DAE.Exp,list<DAE.Exp>> outExps;
+protected
    DAE.Exp exp;
    list<DAE.Exp> acc;
 algorithm
@@ -3744,6 +3750,7 @@ The extra argument is a tuple of the actul function to call on each subexpressio
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
     output tuple<DAE.Exp, Type_a> outTplExpTypeA;
   end FuncExpType;
+protected
   FuncExpType rel;
   DAE.Exp exp;
   Type_a ext_arg;
@@ -4563,6 +4570,7 @@ public function isNotConst
   Check if expression is not constant."
   input DAE.Exp e;
   output Boolean nb;
+protected
   Boolean b;
 algorithm
   b := isConst(e);

@@ -866,10 +866,11 @@ public function removeModList "
 Author BZ, 2009-07
 Delete a list of named modifiers
 "
-input DAE.Mod inMod;
-input list<String> remStrings;
-output DAE.Mod outMod;
-String s;
+  input DAE.Mod inMod;
+  input list<String> remStrings;
+  output DAE.Mod outMod;
+protected
+  String s;
 algorithm outMod := matchcontinue(inMod,remStrings)
   case(inMod,{}) then inMod;
   case(inMod, s::remStrings)
@@ -2687,6 +2688,7 @@ public function makeFunctionType "function: makeFunctionType
   input list<Var> vl;
   input DAE.FunctionAttributes functionAttributes;
   output Type outType;
+protected
   list<Var> invl,outvl;
   list<FuncArg> fargs;
   Type rettype;
@@ -3500,6 +3502,7 @@ As for now it will not check tuple of tuples ie. no recursion.
 "
   input Properties p;
   output Boolean ob;
+protected
   Boolean b1,b2;
 algorithm
   b1 := isPropTuple(p);
@@ -3529,6 +3532,7 @@ public function isPropArray "function: isPropArray
 "
   input Properties p;
   output Boolean b;
+protected
   Type t;
 algorithm
   t := getPropType(p);
@@ -4580,6 +4584,7 @@ protected function typeConvertMatrixRowToList
   input Boolean printFailtrace;
   output DAE.Exp out;
   output Type t1;
+protected
   DAE.Exp exp;
   list<DAE.Exp> elist_1;
   DAE.ExpType t;
@@ -5100,6 +5105,7 @@ protected function getAllExpsVars "function: getAllExpsVars
 "
   input list<Var> vars;
   output list<DAE.Exp> exps;
+protected
   list<list<DAE.Exp>> explist;
 algorithm
   explist := Util.listMap(vars, getAllExpsVar);

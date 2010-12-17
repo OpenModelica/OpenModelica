@@ -238,6 +238,8 @@ public constant ErrorID UNBALANCED_CONNECTOR = 150;
 public constant ErrorID RESTRICTION_VIOLATION=151;
 public constant ErrorID ZERO_STEP_IN_ARRAY_CONSTRUCTOR=152;
 public constant ErrorID RECURSIVE_SHORT_CLASS_DEFINITION=153;
+public constant ErrorID FUNCTION_ELEMENT_WRONG_PROTECTION=154;
+public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -664,6 +666,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s"),
           (META_MATCHEXP_RESULT_TYPES,TRANSLATION(),ERROR(),"Match expression has mismatched result types:%s"),
           (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s"),
+          (FUNCTION_ELEMENT_WRONG_PROTECTION,TRANSLATION(),ERROR(),"%s was declared %s but should be %s."),
+          (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };

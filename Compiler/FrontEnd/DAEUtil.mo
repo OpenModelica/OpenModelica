@@ -127,9 +127,10 @@ end expTypeArrayDimensions;
 public function derivativeOrder "
 Function to sort derivatives.
 Used for Util.sort"
-input tuple<Integer,DAE.derivativeCond> e1,e2; //greaterThanFunc
-output Boolean b;
-Integer i1,i2;
+  input tuple<Integer,DAE.derivativeCond> e1,e2; //greaterThanFunc
+  output Boolean b;
+protected
+  Integer i1,i2;
 algorithm
   b := matchcontinue(e1,e2)
     case((i1,_),(i2,_))
@@ -1382,6 +1383,7 @@ public function getVariableBindingsStr "function: getVariableBindingsStr
 "
   input list<DAE.Element> elts;
   output String str;
+protected
   list<DAE.Element> varlst;
 algorithm
   varlst := getVariableList(elts);
@@ -1933,6 +1935,7 @@ protected function toModelicaFormCref "function: toModelicaFormCref
   Helper function to toModelicaFormElts."
   input DAE.ComponentRef cr;
   output DAE.ComponentRef outComponentRef;
+protected
   String str,str_1;
   DAE.ExpType ty;
 algorithm
@@ -2082,6 +2085,7 @@ public function getAllExps "function: getAllExps
 "
   input list<DAE.Element> elements;
   output list<DAE.Exp> exps;
+protected
   list<list<DAE.Exp>> expslist;
 algorithm
   expslist := Util.listMap(elements, getAllExpsElement);
@@ -2091,6 +2095,7 @@ end getAllExps;
 public function getAllExpsFunctions
   input list<DAE.Function> elements;
   output list<DAE.Exp> exps;
+protected
   list<list<DAE.Exp>> expslist;
 algorithm
   expslist := Util.listMap(elements, getAllExpsFunction);
@@ -2134,6 +2139,7 @@ end getAllExpsFunction;
 protected function getFunctionsElements
   input list<DAE.Function> elements;
   output list<DAE.Element> els;
+protected
   list<list<DAE.Element>> elsList;
 algorithm
   elsList := Util.listMap(elements, getFunctionElements);
@@ -5419,6 +5425,7 @@ of all of their records."
   input list<DAE.Function> funcs;
   input list<DAE.Element> els;
   output list<Absyn.Path> outPaths;
+protected
   list<Absyn.Path> paths1,paths2;
 algorithm
   outPaths := matchcontinue (funcs, els)
