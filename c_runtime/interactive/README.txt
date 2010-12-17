@@ -2,6 +2,11 @@ Interactive simulation client code and application test
 =======================================================
 Last update: 2010-12-17 Adrian Pop [adrpo@ida.liu.se]
 
+Documentation:
+--------------
+See Chapter 5 in OpenModelica User's Guide for 
+more information on interactive simulation.
+
 Sample application:
 -------------------
 A complete application test is in:
@@ -9,7 +14,9 @@ https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/testsuite/interactive-sim
 user: anonymous
 pass: none   <-- write "none" without quotes here
 
-An already build application test executable for Windows is in SampleClient directory
+An already build application test executable for Windows is in:
+https://openmodelica.ida.liu.se/svn/OpenModelica/trunk/c_runtime/interactive/SampleClient 
+directory
 
 Code:
 -----
