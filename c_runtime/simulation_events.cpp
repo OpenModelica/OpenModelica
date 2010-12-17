@@ -497,6 +497,8 @@ void initSample(double start,double stop) {
             max_events += (int)(((stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval)+1);
     }
     Samples = (sample_time*) malloc(max_events * sizeof(sample_time)+1);
+    // zero the malloc-ed region!
+    memset(Samples, 0, max_events * sizeof(sample_time)+1);
     for (i=0; i<num_samples; i++) {
         if (sim_verbose) printf("Generate times for sample(%f,%f)\n",globalData->rawSampleExps[i].start,globalData->rawSampleExps[i].interval);
         for (d=globalData->rawSampleExps[i].start; ix<max_events && d<=stop; d+= globalData->rawSampleExps[i].interval) {
@@ -760,7 +762,7 @@ int checkForSampleEvent(){
         cout << "*** Next sample Time : " << ((globalData->sampleTimes[globalData->curSampleTimeIx]).events) << endl;
     }
     int b = 0;
-    int returnVal = 0;
+    // unused: int returnVal = 0;
     int tmpindex = globalData->curSampleTimeIx;
     b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
 
@@ -783,7 +785,7 @@ void activateSampleEvents(){
     }
     double a = globalData->timeValue;
     int b = 0;
-    int returnVal = 0;
+    // int returnVal = 0;
     int tmpindex = globalData->curSampleTimeIx;
     b = compdbl(&a,&((globalData->sampleTimes[tmpindex]).events));
 	while (b>=0){
