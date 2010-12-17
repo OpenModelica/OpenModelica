@@ -162,9 +162,8 @@ THREAD_RET_TYPE threadControlClient(void*)
 				if(message.compare(0, 8, "shutdown") == 0)
 				{
 					cout << "Shuting down in 3 seconds .... due to shutdown message: " << message << endl; fflush(stdout);
-					delay(2000);
 					shutDownInProgress = 1;
-					delay(1000);
+					delay(3000);
 					break;
 				}
 			}
