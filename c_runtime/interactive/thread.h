@@ -17,6 +17,7 @@
 	#include <semaphore.h>
 
 	typedef void* THREAD_RET_TYPE;
+    #define THREAD_RET_TYPE_NO_API THREAD_RET_TYPE
 	typedef void* THREAD_PARAM_TYPE;
 
 	typedef pthread_mutex_t MUTEX_HANDLE;

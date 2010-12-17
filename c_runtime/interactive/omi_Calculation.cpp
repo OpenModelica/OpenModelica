@@ -196,5 +196,5 @@ THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam){
 		cout << "*****Calculation Thread End*****" << endl; fflush(stdout);
 	}
 
-	return (THREAD_RET_TYPE)retValue;
+	return (THREAD_RET_TYPE_NO_API)retValue;
 }

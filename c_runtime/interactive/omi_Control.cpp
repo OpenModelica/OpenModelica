@@ -1042,7 +1042,7 @@ THREAD_RET_TYPE threadServerControl(THREAD_PARAM_TYPE lpParam) {
 	sock2.close();
 	sock1.close();
 	
-	return (THREAD_RET_TYPE)error;
+	return (THREAD_RET_TYPE_NO_API)error;
 }
 
 /**
