@@ -2359,8 +2359,8 @@ algorithm
   (outEqns, outIeqns,outAeqns,outAlgs,outVars) :=
   matchcontinue(vars,eqns,ieqns,aeqns,algs,functions)
     case(vars,eqns,ieqns,aeqns,algs,functions) equation
-      (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,expandDerExp,(vars,functions));
-      (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,expandDerExp,(vars,functions));
+      (eqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(eqns,traverserexpandDerExp,(vars,functions));
+      (ieqns,(vars,_)) = BackendEquation.traverseBackendDAEExpsEqnList(ieqns,traverserexpandDerExp,(vars,functions));
       (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
       (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
     then(eqns,ieqns,aeqns,algs,vars);
@@ -2399,7 +2399,7 @@ algorithm
   (outAlg,outVars) := matchcontinue(alg,vars)
   local list<Algorithm.Statement> stmts;
     case(DAE.ALGORITHM_STMTS(stmts),vars) equation
-      (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,expandDerExp,vars);
+      (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,traverserexpandDerExp,vars);
     then (DAE.ALGORITHM_STMTS(stmts),vars);
   end matchcontinue;
 end expandDerOperatorAlg;
@@ -2438,11 +2438,27 @@ algorithm
       DAE.ElementSource source "the element source";
 
     case(BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars) equation
-      ((e1,vars)) = Expression.traverseExp(e1,expandDerExp,vars);
-      ((e2,vars)) = Expression.traverseExp(e2,expandDerExp,vars);
+      ((e1,vars)) = traverserexpandDerExp((e1,vars));
+      ((e2,vars)) = traverserexpandDerExp((e2,vars));
     then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars);
   end matchcontinue;
 end expandDerOperatorArrEqn;
+
+protected function traverserexpandDerExp
+"Help function to e.g. traverserexpandDerExp"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local 
+      DAE.Exp e,e1;
+      tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
+    case((e,ext_arg)) equation
+      ((e1,ext_art1)) = Expression.traverseExp(e,expandDerExp,ext_arg);
+    then ((e1,ext_art1));
+    case tpl then tpl;
+  end matchcontinue;
+end traverserexpandDerExp;
 
 protected function expandDerExp
 "Help function to e.g. expandDerOperatorEqn"
