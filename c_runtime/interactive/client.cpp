@@ -95,7 +95,7 @@ THREAD_RET_TYPE threadControlClient(void*)
 
 	s1.create();
 
-	int retries_left = 10;
+	int retries_left = 5;
 
 	for(; retries_left >= 0; --retries_left)
 	{
@@ -103,14 +103,16 @@ THREAD_RET_TYPE threadControlClient(void*)
 		{
 			if(retries_left)
 			{
-				cout << "Connect failed, retrying to connect to 127.0.0.1:10501" << endl; fflush(stdout);
+				cout << "Connect failed, retrying to connect to 127.0.0.1:10501 after 2 seconds" << endl; fflush(stdout);
+				delay(2000);
 				continue;
 			}
 			else
 			{
 				cout << "Connect failed, max number of retries reached." << endl; fflush(stdout);
 				run = false;
-				return 0;
+				cout << "Exiting..." << endl; fflush(stdout);
+				exit(1);
 			}
 		}
 
