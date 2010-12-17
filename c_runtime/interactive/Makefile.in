@@ -19,8 +19,12 @@ all: libinteractive.a
 libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
 
+client : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
+	echo "Building client for interactive simulation ... "
+	g++ -o SampleClient/client client.cpp socket.cpp thread.cpp 
+
 clean:
-	$(RM) -rf *.o *.a
+	$(RM) -rf *.o *.a SampleClient/client
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
