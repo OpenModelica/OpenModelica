@@ -947,10 +947,12 @@ case EXTOBJINFO(__) then
       free(data->rawSampleExps);
       data->rawSampleExps = 0;
     }
+    /* adrpo: 2010-12-17 THIS IS WRONG as WE DO NOT ALLOCATE THIS in function initializeDataStruc!         
     if(flags & RAWSAMPLES && data->sampleTimes) {
       free(data->sampleTimes);
       data->sampleTimes = 0;
     }
+    */
   }
   >>
 end functionDeInitializeDataStruc;
