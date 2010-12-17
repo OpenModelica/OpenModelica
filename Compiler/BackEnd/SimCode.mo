@@ -6307,9 +6307,11 @@ algorithm
       Boolean tup,builtin_;
       DAE.ExpType exty;
       DAE.InlineType inty;
+    
     case ({},_,_,_) then ("",{});
-      //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty) :: el),i,helpVarIndex, false)
+    
+    //expand sample conditions with helpindex
+    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)) :: el,i,helpVarIndex, false)
       equation
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
@@ -6324,8 +6326,8 @@ algorithm
         res_1 = stringAppend(res, resx);
       then
         (res_1,(helpInfo :: helpVarInfoList));
-        //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty) :: el),i,helpVarIndex, true)
+    //expand sample conditions with helpindex
+    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)) :: el,i,helpVarIndex, true)
       equation
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
@@ -6340,6 +6342,7 @@ algorithm
         res_1 = stringAppend(res, resx);
       then
         (res_1,(helpInfo :: helpVarInfoList));
+    
     case ((e :: el),i,helpVarIndex, false)
       equation
         i_str = intString(i);
@@ -6356,6 +6359,7 @@ algorithm
         res_1 = stringAppend(res, resx);
       then
         (res_1,(helpInfo :: helpVarInfoList));
+    
     case ((e :: el),i,helpVarIndex, true)
       equation
         i_str = intString(i);
@@ -6372,6 +6376,7 @@ algorithm
         res_1 = stringAppend(res, resx);
       then
         (res_1,(helpInfo :: helpVarInfoList));
+    
     case (_,_,_,_)
       equation
         print("-build_when_condition_checks3 failed.\n");
