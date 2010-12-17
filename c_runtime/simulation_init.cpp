@@ -207,7 +207,10 @@ int simplex_initialization(long& nz,double *z)
 
   /* Start with stepping .5 in each direction. */
   for (ind=0;ind<nz;ind++)
-    STEP[ind]=.5;
+  {
+    STEP[ind] = 0.5;
+    VAR[ind]  = 0.0;
+  }
 
    double STOPCR,SIMP;
    long IPRINT, NLOOP,IQUAD,IFAULT,MAXF;
