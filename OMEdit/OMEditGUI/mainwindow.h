@@ -47,7 +47,7 @@
 #include <QProgressBar>
 
 #if (QT_VERSION < QT_VERSION_CHECK(4, 7, 0))
-	#error "OMEdit requires Qt 4.7.0 or newer"
+    #error "OMEdit requires Qt 4.7.0 or newer"
 #endif
 
 #include "OMCProxy.h"
@@ -178,8 +178,6 @@ private slots:
     void openUserManual();
     void openAbout();
     void toggleShapesButton();
-public slots:
-    void disableMainWindow(bool disable);
 private:
     void createActions();
     void createMenus();

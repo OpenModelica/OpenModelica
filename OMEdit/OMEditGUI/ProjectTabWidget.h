@@ -133,7 +133,6 @@ public slots:
     void zoomOut();
     void showGridLines(bool showLines);
     void selectAll();
-    void saveModelAnnotation();
     void addClassAnnotation();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
@@ -177,6 +176,8 @@ public:
     bool loadSubModel(QString model);
     void getModelComponents();
     void getModelConnections();
+    void getModelShapes(QString annotationString, int type);
+    void getModelIconDiagram();
     void setReadOnly(bool readOnly);
     bool isReadOnly();
     void setIsChild(bool isChild);
@@ -199,16 +200,12 @@ public:
     int mIconType;
     bool mIsSaved;
     int mTabPosition;
-signals:
-    void disableMainWindow(bool disable);
-    void updateAnnotations();
 public slots:
     void hasChanged();
     void showDiagramView(bool checked);
     void showIconView(bool checked);
     void showModelicaTextView(bool checked);
     bool ModelicaEditorTextChanged();
-    void updateModelAnnotations();
 };
 
 class MainWindow;

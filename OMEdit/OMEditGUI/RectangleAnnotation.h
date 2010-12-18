@@ -45,6 +45,7 @@ class RectangleAnnotation : public ShapeAnnotation
 public:
     RectangleAnnotation(QString shape, Component *pParent = 0);
     RectangleAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
+    RectangleAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
     QRectF boundingRect() const;
     QPainterPath shape() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
@@ -53,6 +54,7 @@ public:
     void updateEndPoint(QPointF point);
     void drawRectangleCornerItems();
     QString getShapeAnnotation();
+    void parseShapeAnnotation(QString shape, OMCProxy *omc);
 
     Component *mpCompnent;
 public slots:

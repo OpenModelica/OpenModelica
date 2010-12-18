@@ -880,61 +880,40 @@ void GraphicsView::selectAll()
     }
 }
 
-void GraphicsView::saveModelAnnotation()
-{
-//    // get the canvase positions
-//    int canvasXStart = -((int)sceneRect().width() / 2);
-//    int canvasYStart = -((int)sceneRect().height() / 2);
-//    int canvasXEnd = ((int)sceneRect().width() / 2);
-//    int canvasYEnd = ((int)sceneRect().height() / 2);
-
-//    // create the annotation string
-//    QString annotationString = "annotate=Diagram(";
-//    annotationString.append("coordinateSystem=CoordinateSystem(extent={{");
-//    annotationString.append(QString::number(canvasXStart)).append(", ");
-//    annotationString.append(QString::number(canvasYStart)).append("}, {");
-//    annotationString.append(QString::number(canvasXEnd)).append(", ");
-//    annotationString.append(QString::number(canvasYEnd)).append("}}))");
-
-//    // Send the annotation to OMC
-//    OMCProxy *pOMCProcy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-//    pOMCProcy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString);
-}
-
 void GraphicsView::addClassAnnotation()
 {
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-    QString annotationString;
-    annotationString.append("annotate=");
-
     int counter = 0;
+    QString annotationString;
 
+    annotationString.append("annotate=");
     if (mIconType == StringHandler::ICON)
     {
-        annotationString.append("Diagram(");
+       annotationString.append("Diagram(");
     }
     else if (mIconType == StringHandler::DIAGRAM)
     {
-        annotationString.append("Icon(");
+       annotationString.append("Icon(");
     }
     if (mShapesList.size() > 0)
     {
-        annotationString.append("graphics={");
-        foreach (ShapeAnnotation *shape, mShapesList)
-        {
-            annotationString.append(shape->getShapeAnnotation());
-            if (counter < mShapesList.size() - 1)
-                annotationString.append(",");
-            counter++;
-        }
-        annotationString.append("}");
+       annotationString.append("graphics={");
+       foreach (ShapeAnnotation *shape, mShapesList)
+       {
+           annotationString.append(shape->getShapeAnnotation());
+           if (counter < mShapesList.size() - 1)
+               annotationString.append(",");
+           counter++;
+       }
+       annotationString.append("}");
     }
     annotationString.append(")");
 
     // add the class annotation to model through OMC
     if (!pMainWindow->mpOMCProxy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString))
     {
-        pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation");
+       pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation " +
+                                                          pMainWindow->mpOMCProxy->getResult());
     }
 }
 
@@ -1095,10 +1074,6 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpModelicaEditorWidget->hide();
     mpDiagramGraphicsView->hide();
     mpIconToolButton->setChecked(true);
-
-//    connect(this, SIGNAL(disableMainWindow(bool)),
-//            mpParentProjectTabWidget->mpParentMainWindow, SLOT(disableMainWindow(bool)));
-    connect(this, SIGNAL(updateAnnotations()), SLOT(updateModelAnnotations()));
 }
 
 ProjectTab::~ProjectTab()
@@ -1193,9 +1168,6 @@ void ProjectTab::showModelicaTextView(bool checked)
 {
     if (!checked or (checked and mpModelicaEditorWidget->isVisible()))
         return;
-    // Disable the main window
-    //emit disableMainWindow(true);
-    emit updateModelAnnotations();
 
     mpGraphicsView->hide();
     mpDiagramGraphicsView->hide();
@@ -1428,6 +1400,149 @@ void ProjectTab::getModelConnections()
     }
 }
 
+//! Gets the shapes contained in the annotation string.
+void ProjectTab::getModelShapes(QString annotationString, int type)
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
+    if (annotationString.isEmpty())
+    {
+        return;
+    }
+    QStringList list = StringHandler::getStrings(annotationString);
+    QStringList shapesList;
+
+    if (pMainWindow->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        if (list.size() < 9)
+            return;
+
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
+    }
+    else if (pMainWindow->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        if (list.size() < 4)
+            return;
+
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)), '(', ')');
+    }
+
+    // Now parse the shapes available in list
+    foreach (QString shape, shapesList)
+    {
+        shape = StringHandler::removeFirstLastCurlBrackets(shape);
+        if (shape.startsWith("Line"))
+        {
+            shape = shape.mid(QString("Line").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            LineAnnotation *lineAnnotation = new LineAnnotation(shape, mpGraphicsView);
+            lineAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(lineAnnotation);
+                mpGraphicsView->scene()->addItem(lineAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(lineAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(lineAnnotation);
+            }
+            /*
+                before drawing the rectangle corner items add one point to line since drawrectanglecorneritems
+                deletes the one point. Why? because we end the line shape with double click which adds an extra
+                point to it. so we need to delete this point.
+            */
+            lineAnnotation->addPoint(QPoint(0, 0));
+            lineAnnotation->drawRectangleCornerItems();
+            lineAnnotation->setSelectionBoxPassive();
+        }
+        if (shape.startsWith("Polygon"))
+        {
+            shape = shape.mid(QString("Polygon").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            PolygonAnnotation *polygonAnnotation = new PolygonAnnotation(shape, mpGraphicsView);
+            polygonAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(polygonAnnotation);
+                mpGraphicsView->scene()->addItem(polygonAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(polygonAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(polygonAnnotation);
+            }
+            /*
+                before drawing the rectangle corner items add one point to polygon since drawrectanglecorneritems
+                deletes the one point. Why? because we end the polygon shape with double click which adds an extra
+                point to it. so we need to delete this point.
+            */
+            polygonAnnotation->addPoint(QPoint(0, 0));
+            polygonAnnotation->drawRectangleCornerItems();
+            polygonAnnotation->setSelectionBoxPassive();
+        }
+        if (shape.startsWith("Rectangle"))
+        {
+            shape = shape.mid(QString("Rectangle").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            RectangleAnnotation *rectangleAnnotation = new RectangleAnnotation(shape, mpGraphicsView);
+            rectangleAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(rectangleAnnotation);
+                mpGraphicsView->scene()->addItem(rectangleAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(rectangleAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(rectangleAnnotation);
+            }
+            rectangleAnnotation->drawRectangleCornerItems();
+            rectangleAnnotation->setSelectionBoxPassive();
+        }
+        if (shape.startsWith("Ellipse"))
+        {
+            shape = shape.mid(QString("Ellipse").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, mpGraphicsView);
+            ellipseAnnotation->setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable);
+            // add the shapeannotation item to shapes list
+            if (type == StringHandler::ICON)
+            {
+                mpGraphicsView->addShapeObject(ellipseAnnotation);
+                mpGraphicsView->scene()->addItem(ellipseAnnotation);
+            }
+            else if (type == StringHandler::DIAGRAM)
+            {
+                mpDiagramGraphicsView->addShapeObject(ellipseAnnotation);
+                mpDiagramGraphicsView->scene()->addItem(ellipseAnnotation);
+            }
+            ellipseAnnotation->drawRectangleCornerItems();
+            ellipseAnnotation->setSelectionBoxPassive();
+        }
+        if (shape.startsWith("Text"))
+        {
+            shape = shape.mid(QString("Text").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+        }
+    }
+}
+
+//! Gets the Icon and Diagram Annotation of the model and place them in the GraphicsView (Icon View).
+void ProjectTab::getModelIconDiagram()
+{
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    QString iconAnnotationString = pMainWindow->mpOMCProxy->getIconAnnotation(mModelNameStructure);
+    QString diagramAnnotationString = pMainWindow->mpOMCProxy->getDiagramAnnotation(mModelNameStructure);
+    // since in our application icon is interpreted as diagram so pass diagram to function......ugly fix it.
+    getModelShapes(iconAnnotationString, StringHandler::DIAGRAM);
+    // since in our application diagram is interpreted as icon so pass icon to function......ugly fix it.
+    getModelShapes(diagramAnnotationString, StringHandler::ICON);
+}
+
 void ProjectTab::setReadOnly(bool readOnly)
 {
     mReadOnly = readOnly;
@@ -1511,6 +1626,7 @@ bool ProjectTab::ModelicaEditorTextChanged()
                 // get the model components and connectors now
                 getModelComponents();
                 getModelConnections();
+                getModelIconDiagram();
                 // change the modelica tree node type accordingly
                 ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
                 node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
@@ -1572,6 +1688,7 @@ bool ProjectTab::ModelicaEditorTextChanged()
                 // get the model components and connectors now
                 getModelComponents();
                 getModelConnections();
+                getModelIconDiagram();
                 // change the modelica tree node type accordingly
                 ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
                 node->mType = pMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure);
@@ -1602,13 +1719,6 @@ bool ProjectTab::ModelicaEditorTextChanged()
         pMainWindow->mpOMCProxy->setResult(mpModelicaEditor->mErrorString);
         return false;
     }
-}
-
-//! Updates the annotations of all components.
-void ProjectTab::updateModelAnnotations()
-{
-    foreach (Component *icon, mpGraphicsView->mComponentsList)
-        icon->updateAnnotationString();
 }
 
 //! @class ProjectTabWidget
@@ -1692,7 +1802,6 @@ ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
 int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 {
     int position = QTabWidget::addTab(tab, tabName);
-    tab->mpGraphicsView->saveModelAnnotation();
     emit tabAdded();
     return position;
 }
@@ -1700,7 +1809,6 @@ int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 //! Reimplemented function to remove the Tab.
 void ProjectTabWidget::removeTab(int index)
 {
-    //mpParentMainWindow->disableMainWindow(false);
     // if tab is saved and user is just closing it then save it to mRemovedTabsList, so that we can open it later on
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
     QTabWidget::removeTab(index);
@@ -1758,6 +1866,7 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
     projectTab->mTabPosition = addTab(projectTab, modelName);
     projectTab->getModelComponents();
     projectTab->getModelConnections();
+    projectTab->getModelIconDiagram();
     setCurrentWidget(projectTab);
     /* when we add the models and connections to the model, GraphicsView hasChanged will be called
        which mark the model as not saved, so just make it save again manually. */

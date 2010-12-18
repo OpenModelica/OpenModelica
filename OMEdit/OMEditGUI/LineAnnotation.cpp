@@ -38,94 +38,7 @@ LineAnnotation::LineAnnotation(QString shape, Component *pParent)
 {
     // initialize all fields with default values
     initializeFields();
-
-    // parse the shape to get the list of attributes of Line.
-    QStringList list = StringHandler::getStrings(shape);
-    if (list.size() < 8)
-    {
-        return;
-    }
-
-    // if first item of list is true then the Line should be visible.
-    this->mVisible = static_cast<QString>(list.at(0)).contains("true");
-
-    int index = 0;
-    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
-    {
-        QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
-        mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
-        mOrigin.setY(static_cast<QString>(originList.at(1)).toFloat());
-
-        mRotation = static_cast<QString>(list.at(2)).toFloat();
-        index = 2;
-    }
-
-    // second item of list contains the points.
-    index = index + 1;
-    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
-
-    foreach (QString point, pointsList)
-    {
-        QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
-        if (linePoints.size() < 2)
-        {
-            return;
-        }
-
-        qreal x = static_cast<QString>(linePoints.at(0)).toFloat();
-        qreal y = static_cast<QString>(linePoints.at(1)).toFloat();
-        QPointF p (x, y);
-        this->mPoints.append(p);
-    }
-
-    // third item of list contains the color.
-    index = index + 1;
-    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
-    if (colorList.size() < 3)
-    {
-        return;
-    }
-
-    int red = static_cast<QString>(colorList.at(0)).toInt();
-    int green = static_cast<QString>(colorList.at(1)).toInt();
-    int blue = static_cast<QString>(colorList.at(2)).toInt();
-
-    this->mLineColor = QColor (red, green, blue);
-
-    // fourth item of list contains the Line Pattern.
-    index = index + 1;
-    QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
-    QMap<QString, Qt::PenStyle>::iterator it;
-    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
-    {
-        if (it.key().compare(linePattern) == 0)
-        {
-            this->mLinePattern = it.value();
-            break;
-        }
-    }
-
-    // fifth item of list contains the Line thickness.
-    index = index + 1;
-    this->mThickness = static_cast<QString>(list.at(index)).toFloat();
-
-    // sixth item of list contains the Line Arrows.
-    index = index + 1;
-    // Leave it for now.
-
-    // seventh item of list contains the Line Arrow Size.
-    index = index + 1;
-
-    // eighth item of list contains the smooth.
-    index = index + 1;
-    if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
-    {
-        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
-    }
-    else if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
-    {
-        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
-    }
+    parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
 }
 
 LineAnnotation::LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent)
@@ -133,6 +46,17 @@ LineAnnotation::LineAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParen
 {
     // initialize all fields with default values
     initializeFields();
+    mIsCustomShape = true;
+    setAcceptHoverEvents(true);
+    connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
+}
+
+LineAnnotation::LineAnnotation(QString shape, GraphicsView *graphicsView, QGraphicsItem *pParent)
+    : ShapeAnnotation(graphicsView, pParent)
+{
+    // initialize all fields with default values
+    initializeFields();
+    parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
     mIsCustomShape = true;
     setAcceptHoverEvents(true);
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
@@ -284,4 +208,95 @@ QString LineAnnotation::getShapeAnnotation()
 void LineAnnotation::updatePoint(int index, QPointF point)
 {
     mPoints.replace(index, point);
+}
+
+void LineAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
+{
+    // parse the shape to get the list of attributes of Line.
+    QStringList list = StringHandler::getStrings(shape);
+    if (list.size() < 8)
+    {
+        return;
+    }
+
+    // if first item of list is true then the Line should be visible.
+    this->mVisible = static_cast<QString>(list.at(0)).contains("true");
+
+    int index = 0;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+        mOrigin.setX(static_cast<QString>(originList.at(0)).toFloat());
+        mOrigin.setY(static_cast<QString>(originList.at(1)).toFloat());
+
+        mRotation = static_cast<QString>(list.at(2)).toFloat();
+        index = 2;
+    }
+
+    // second item of list contains the points.
+    index = index + 1;
+    QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
+
+    foreach (QString point, pointsList)
+    {
+        QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
+        if (linePoints.size() < 2)
+        {
+            return;
+        }
+
+        qreal x = static_cast<QString>(linePoints.at(0)).toFloat();
+        qreal y = static_cast<QString>(linePoints.at(1)).toFloat();
+        QPointF p (x, y);
+        this->mPoints.append(p);
+    }
+
+    // third item of list contains the color.
+    index = index + 1;
+    QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(index)));
+    if (colorList.size() < 3)
+    {
+        return;
+    }
+
+    int red = static_cast<QString>(colorList.at(0)).toInt();
+    int green = static_cast<QString>(colorList.at(1)).toInt();
+    int blue = static_cast<QString>(colorList.at(2)).toInt();
+
+    this->mLineColor = QColor (red, green, blue);
+
+    // fourth item of list contains the Line Pattern.
+    index = index + 1;
+    QString linePattern = StringHandler::getLastWordAfterDot(list.at(index));
+    QMap<QString, Qt::PenStyle>::iterator it;
+    for (it = this->mLinePatternsMap.begin(); it != this->mLinePatternsMap.end(); ++it)
+    {
+        if (it.key().compare(linePattern) == 0)
+        {
+            this->mLinePattern = it.value();
+            break;
+        }
+    }
+
+    // fifth item of list contains the Line thickness.
+    index = index + 1;
+    this->mThickness = static_cast<QString>(list.at(index)).toFloat();
+
+    // sixth item of list contains the Line Arrows.
+    index = index + 1;
+    // Leave it for now.
+
+    // seventh item of list contains the Line Arrow Size.
+    index = index + 1;
+
+    // eighth item of list contains the smooth.
+    index = index + 1;
+    if (omc->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("smooth.bezier");
+    }
+    else if (mpComponent->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
+    {
+        this->mSmooth = static_cast<QString>(list.at(index)).toLower().contains("true");
+    }
 }

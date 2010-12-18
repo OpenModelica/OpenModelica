@@ -855,6 +855,25 @@ void Component::getClassComponents(QString className, int type)
 //! this function is called for diagram view
 void Component::getClassComponents(QString className, int type, Component *pParent)
 {
+    // if component type is diagram then
+    if (type == StringHandler::DIAGRAM)
+    {
+        // get the diagram connections
+        int connections = mpOMCProxy->getConnectionCount(className);
+
+        for (int i = 1 ; i <= connections ; i++)
+        {
+            QString result = mpOMCProxy->getNthConnectionAnnotation(className, i);
+            if (result.contains("Line"))
+            {
+                result = result.mid(QString("Line").length());
+                result = StringHandler::removeFirstLastBrackets(result);
+                LineAnnotation *lineAnnotation = new LineAnnotation(result, pParent);
+                Q_UNUSED(lineAnnotation);
+            }
+        }
+    }
+
     int inheritanceCount = this->mpOMCProxy->getInheritanceCount(className);
 
     for(int i = 1 ; i <= inheritanceCount ; i++)
@@ -929,24 +948,6 @@ void Component::getClassComponents(QString className, int type, Component *pPare
             }
         }
         i++;
-    }
-    // if component type is diagram then
-    if (type == StringHandler::DIAGRAM)
-    {
-        // get the diagram connections
-        int connections = mpOMCProxy->getConnectionCount(className);
-
-        for (int i = 1 ; i <= connections ; i++)
-        {
-            QString result = mpOMCProxy->getNthConnectionAnnotation(className, i);
-            if (result.contains("Line"))
-            {
-                result = result.mid(QString("Line").length());
-                result = StringHandler::removeFirstLastBrackets(result);
-                LineAnnotation *lineAnnotation = new LineAnnotation(result, pParent);
-                Q_UNUSED(lineAnnotation);
-            }
-        }
     }
 }
 

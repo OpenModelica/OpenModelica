@@ -109,6 +109,13 @@ void Transformation::parseTransformationString3X(QString value)
     mWidth = mpComponent->boundingRect().width();
     mHeight = mpComponent->boundingRect().height();
 
+    // if mWidth and mHeight is zero then give it fixed with and height of 200. Otherwise OMEdit will crash!!!!
+    // e.g BusUsage crash problem!!!!!
+    if (mWidth < 1)
+        mWidth = 200.0;
+    if (mHeight < 1)
+        mHeight = 200.0;
+
     // get the visible value
     mVisible = static_cast<QString>(list.at(0)).contains("true");
     // origin x position
