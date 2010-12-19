@@ -9,12 +9,19 @@ CPPSRC = omi_Calculation.cpp omi_Control.cpp omi_ResultManager.cpp \
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	+= -O3 -I$(top_builddir)/c_runtime -I.
+CFLAGS	+= -O3 -I.. -I.
 CXXFLAGS = $(CFLAGS)
+CPPFLAGS = -Wall
 
 OBJ = $(CPPSRC:.cpp=.o)
 
 all: libinteractive.a
+
+omc_ServiceInterface.o: omi_ServiceInterface.cpp \
+  omi_ServiceInterface.h omi_Control.h omi_Transfer.h \
+  ../simulation_runtime.h ../simulation_input.h ../solver_dasrt.h \
+  ../solver_main.h ../options.h
+
 
 libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
