@@ -3067,16 +3067,11 @@ protected function makeZeroCrossing
   Constructs a BackendDAE.ZeroCrossing from an expression and lists of equation indices
   and when clause indices."
   input DAE.Exp inExp1;
-  input list<Integer> inIntegerLst2;
-  input list<Integer> inIntegerLst3;
+  input list<Integer> eq_ind;
+  input list<Integer> wc_ind;
   output BackendDAE.ZeroCrossing outZeroCrossing;
 algorithm
-  outZeroCrossing := matchcontinue (inExp1,inIntegerLst2,inIntegerLst3)
-    local
-      DAE.Exp e;
-      list<BackendDAE.Value> eq_ind,wc_ind;
-    case (e,eq_ind,wc_ind) then BackendDAE.ZERO_CROSSING(e,eq_ind,wc_ind);
-  end matchcontinue;
+  outZeroCrossing := BackendDAE.ZERO_CROSSING(inExp1,eq_ind,wc_ind);
 end makeZeroCrossing;
 
 protected function makeZeroCrossings
