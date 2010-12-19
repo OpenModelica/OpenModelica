@@ -353,9 +353,10 @@ template globalDataVarNamesArray(String name, list<SimVar> items)
     const char* <%name%>[1] = {""};
     >>
   case items then
-    let itemsStr = (items |> SIMVAR(__) => '"<%crefStr(name)%>"' ;separator=", ")
     <<
-    const char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
+    const char* <%name%>[<%listLength(items)%>] = {
+      <%items |> SIMVAR(__) => '"<%crefStr(name)%>"'; separator=",\n"%>
+    };
     >>
 end globalDataVarNamesArray;
 
@@ -369,9 +370,10 @@ template globalDataVarCommentsArray(String name, list<SimVar> items)
     const char* <%name%>[1] = {""};
     >>
   case items then
-    let itemsStr = (items |> SIMVAR(__) => '"<%comment%>"' ;separator=", ")
     <<
-    const char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
+    const char* <%name%>[<%listLength(items)%>] = {
+      <%items |> SIMVAR(__) => '"<%comment%>"'; separator=",\n"%>
+    };
     >>
 end globalDataVarCommentsArray;
 
@@ -634,7 +636,7 @@ template functionInitializeDataStruc()
     }
   
     if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
-    	returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
+      returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
         assert(returnData->stringVariables.parameters);
         memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
     } else {
@@ -642,7 +644,7 @@ template functionInitializeDataStruc()
     }
     
     if (flags & PARAMETERS && returnData->intVariables.nParameters) {
-    	returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
+      returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
         assert(returnData->intVariables.parameters);
         memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
     } else {
@@ -650,7 +652,7 @@ template functionInitializeDataStruc()
     }
     
     if (flags & PARAMETERS && returnData->boolVariables.nParameters) {
-    	returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
+      returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
         assert(returnData->boolVariables.parameters);
         memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
     } else {
@@ -1471,6 +1473,7 @@ template functionWhenCaseEquation(Option<WhenEquation> when, Text &varDecls /*BU
 ::=
 match when
 case SOME(weq as WHEN_EQ(__)) then
+
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(weq.right, contextSimulationDiscrete,
                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -1517,10 +1520,10 @@ case SIM_WHEN_CLAUSE(__) then
       let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
       'edge(localData->helpVars[<%hidx%>])'
-    ;separator=" || ")	
+    ;separator=" || ")  
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
-if reinits then	
+if reinits then  
 <<
 
   //For whenclause index: <%int%>
@@ -1537,28 +1540,28 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
  "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
-  	match reinit
-  	case REINIT(__) then 
-  		let &preExp = buffer "" /*BUFD*/
-  		let val = daeExp(value, contextSimulationDiscrete,
-        	         &preExp /*BUFC*/, &varDecls /*BUFD*/)
- 		<<
-  		<%preExp%>
+    match reinit
+    case REINIT(__) then 
+      let &preExp = buffer "" /*BUFD*/
+      let val = daeExp(value, contextSimulationDiscrete,
+                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
+     <<
+      <%preExp%>
                 <%cref(stateVar)%> = <%val%>;
                 needToIterate=1;
                 >>
-  	case TERMINATE(__) then 
-  		let &preExp = buffer "" /*BUFD*/
-		let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-		<<	
+    case TERMINATE(__) then 
+      let &preExp = buffer "" /*BUFD*/
+    let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<  
                 <%preExp%> 
                 MODELICA_TERMINATE(<%msgVar%>);
                 >>
-	case ASSERT(__) then 
+  case ASSERT(__) then 
     assertCommon(condition, message, contextSimulationDiscrete, &varDecls)
   ;separator="\n")
   <<
-   <%body%>	
+   <%body%>  
   >>
 end functionWhenReinitStatementThen;
 
@@ -1568,14 +1571,14 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
  "Generates re-init statement for when equation."
 ::=
   let body = (reinits |> reinit =>
-  	match reinit
-  	case REINIT(__) then 
-  		let val = daeExp(value, contextSimulationDiscrete,
-        	         &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  		'<%cref(stateVar)%> = pre(<%cref(stateVar)%>);';separator="\n"
-  	)
+    match reinit
+    case REINIT(__) then 
+      let val = daeExp(value, contextSimulationDiscrete,
+                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      '<%cref(stateVar)%> = pre(<%cref(stateVar)%>);';separator="\n"
+    )
   <<
-   <%body%>	
+   <%body%>  
   >>
 end functionWhenReinitStatementElse;
 
@@ -1743,8 +1746,8 @@ template functionODE_residual()
 end functionODE_residual;
 
 template functionDAE( list<SimEqSystem> allEquationsPlusWhen, 
-								list<SimWhenClause> whenClauses,
-								list<HelpVarInfo> helpVarInfo)
+                list<SimWhenClause> whenClauses,
+                list<HelpVarInfo> helpVarInfo)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1753,8 +1756,8 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
     ;separator="\n")
     
   let reinit = (whenClauses |> when hasindex i0 =>
-  		genreinits(when, &varDecls,i0)
-  	;separator="\n")
+      genreinits(when, &varDecls,i0)
+    ;separator="\n")
   <<
   int functionDAE(int &needToIterate)
   {
@@ -1822,27 +1825,27 @@ template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, Strin
       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let Vars_ = (JacVars |> var => 
-  		defvars(var)
-  		;separator="\n")
+      defvars(var)
+      ;separator="\n")
   let writeJac_ = (JacVars |> var => 
-  		writejac(var)
-  	;separator="\n") 	
+      writejac(var)
+    ;separator="\n")   
   <<
   int functionJac<%MatrixName%>(double *t, double *x, double *xd, double *jac)
   {
-  	state mem_state;
-  	
-  	double* statesBackup;
-  	double* statesDerivativesBackup;
-  	double timeBackup;
-  	
-  	timeBackup = localData->timeValue;
-  	statesBackup = localData->states;
-  	statesDerivativesBackup = localData->statesDerivatives;
-  	localData->timeValue = *t;
-  	localData->states = x;
-  	localData->statesDerivatives = xd;
-  	
+    state mem_state;
+    
+    double* statesBackup;
+    double* statesDerivativesBackup;
+    double timeBackup;
+    
+    timeBackup = localData->timeValue;
+    statesBackup = localData->states;
+    statesDerivativesBackup = localData->statesDerivatives;
+    localData->timeValue = *t;
+    localData->states = x;
+    localData->statesDerivatives = xd;
+    
     <%Vars_%>
     <%varDecls%>
   
@@ -1852,9 +1855,9 @@ template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, Strin
     restore_memory_state(mem_state);
     
     localData->states = statesBackup;
-  	localData->statesDerivatives = statesDerivativesBackup;
-  	localData->timeValue = timeBackup;
-  	
+    localData->statesDerivatives = statesDerivativesBackup;
+    localData->timeValue = timeBackup;
+    
     return 0;
   }
   
@@ -1866,9 +1869,9 @@ template defvars(SimVar item)
 ::=
 match item
 case SIMVAR(__) then 
-	<<
-	double <%cref(name)%>;
-	>>
+  <<
+  double <%cref(name)%>;
+  >>
 end defvars;
 
 template writejac(SimVar item)
@@ -1876,13 +1879,13 @@ template writejac(SimVar item)
 ::=
 match item
 case SIMVAR(name=name, index=index) then
-	match index
-	case -1 then
-	<<>>
-	case _ then
-	<<
-	jac[<%index%>] = <%cref(name)%>;
-	>>
+  match index
+  case -1 then
+  <<>>
+  case _ then
+  <<
+  jac[<%index%>] = <%cref(name)%>;
+  >>
 end writejac;
 
 template functionlinearmodel(ModelInfo modelInfo)
@@ -1902,33 +1905,33 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   int linear_model_frame(string &out, string A, string B, string C, string D, string x_startvalues, string u_startvalues)
   {
     string def_head("model linear_<%dotPath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n");
-	      
-	string def_init_states("  parameter Real x0[<%varInfo.numStateVars%>] = {");
-	string def_init_states_end("};\n");
+        
+    string def_init_states("  parameter Real x0[<%varInfo.numStateVars%>] = {");
+    string def_init_states_end("};\n");
 
     string def_init_inputs("  parameter Real u0[<%varInfo.numInVars%>] = {");
-	string def_init_inputs_end("};\n");
-	
-	<%vectorX%>
-	<%vectorU%>
-	<%vectorY%>
-	
-	<%matrixA%>
-	<%matrixB%>
-	<%matrixC%>
-	<%matrixD%>
-	
-	string def_Variable("\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n");
-	
-	string def_tail("equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n");
-		
+    string def_init_inputs_end("};\n");
+  
+    <%vectorX%>
+    <%vectorU%>
+    <%vectorY%>
+  
+    <%matrixA%>
+    <%matrixB%>
+    <%matrixC%>
+    <%matrixD%>
+  
+    string def_Variable("\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n");
+  
+    string def_tail("equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n");
+    
     out += def_head.data();
     out += def_init_states.data();
-	out += x_startvalues.data();
-	out += def_init_states_end.data();
-	out += def_init_inputs.data();
-	out += u_startvalues.data();
-	out += def_init_inputs_end.data();
+    out += x_startvalues.data();
+    out += def_init_states_end.data();
+    out += def_init_inputs.data();
+    out += u_startvalues.data();
+    out += def_init_inputs_end.data();
     out += def_matrixA_start.data();
     out += A.data();
     out += def_matrixA_end.data();
@@ -1944,8 +1947,8 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     out += def_vectorx.data();
     out += def_vectoru.data();
     out += def_vectory.data();
-	out += def_Variable.data();
-	out += def_tail.data();
+    out += def_Variable.data();
+    out += def_tail.data();
     return 0;
   }
 
@@ -1957,16 +1960,16 @@ template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize)
 ::=
   match simVars
   case {} then
-  	<<
-  	>>
+    <<
+    >>
   case (var :: restVars) then
     let rest = getVarName(restVars, arrayName, arraySize)
     let arrindex = decrementInt(arraySize,listLength(restVars))
     match var
     case SIMVAR(__) then 
-    	<<
-    	Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>
-    	>>
+      <<
+      Real <%arrayName%>_<%crefM(name)%> = <%arrayName%>[<%arrindex%>];\n  <%rest%>
+      >>
 end getVarName;
 
 template genMatrix(String name, Integer row, Integer col)
@@ -1974,24 +1977,24 @@ template genMatrix(String name, Integer row, Integer col)
 ::=
 match row
 case 0 then
-		<<
-		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
-    	string def_matrix<%name%>_end("");
-    	>>
+    <<
+    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
+    string def_matrix<%name%>_end("");
+    >>
 case _ then
-	match col
-	case 0 then
-		<<
-		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
-    	string def_matrix<%name%>_end("");
-    	>>
+  match col
+  case 0 then
+    <<
+    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
+    string def_matrix<%name%>_end("");
+    >>
     case _ then
-    	<<
-		string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = [");
-		string def_matrix<%name%>_end("];\n");
-    	>>
+    <<
+    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = [");
+    string def_matrix<%name%>_end("];\n");
+    >>
     end match
-end match	    	           
+end match                   
 end genMatrix;
 
 template genVector(String name, Integer numIn, Integer flag)
@@ -1999,46 +2002,46 @@ template genVector(String name, Integer numIn, Integer flag)
 ::=
 match flag
 case 0 then 
-	match numIn
-	case 0 then
-			<<
-			string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
-	    	>>
-	case _ then
-			<<
-			string def_vector<%name%>("  Real <%name%>[<%numIn%>](start=<%name%>0);\n");
-	    	>>
-	end match
+  match numIn
+  case 0 then
+      <<
+      string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
+      >>
+  case _ then
+      <<
+      string def_vector<%name%>("  Real <%name%>[<%numIn%>](start=<%name%>0);\n");
+      >>
+  end match
 case 1 then 
-	match numIn
-	case 0 then
-			<<
-			string def_vector<%name%>("  input Real <%name%>[<%numIn%>];\n");
-	    	>>
-	case _ then
-			<<
-			string def_vector<%name%>("  input Real <%name%>[<%numIn%>](start= <%name%>0);\n");
-	    	>>
-	end match
+  match numIn
+  case 0 then
+      <<
+      string def_vector<%name%>("  input Real <%name%>[<%numIn%>];\n");
+      >>
+  case _ then
+      <<
+      string def_vector<%name%>("  input Real <%name%>[<%numIn%>](start= <%name%>0);\n");
+      >>
+  end match
 case 2 then 
-	match numIn
-	case 0 then
-			<<
-			string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
-	    	>>
-	case _ then
-			<<
-			string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
-	    	>>
-	end match				    	           
+  match numIn
+  case 0 then
+      <<
+      string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+      >>
+  case _ then
+      <<
+      string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+      >>
+  end match                         
 end genVector;
 
 template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  "Generates Matrixes for Linear Model."
 ::=
   let jacMats = (JacobianMatrixes |> (eqs,vars,name) =>
-  	functionJac(eqs,vars,name)
-  	;separator="\n")
+    functionJac(eqs,vars,name)
+    ;separator="\n")
  <<
  <%jacMats%>
  >>
@@ -2566,12 +2569,12 @@ end simulationInitFile;
 
 template initVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
-	<<
-	<%match initialValue 
-	  case SOME(v) then initVal(v)
+  <<
+  <%match initialValue 
+    case SOME(v) then initVal(v)
       else "0.0 //default"
     %> //<%crefStr(name)%>
-    >>	
+    >>  
   ;separator="\n"
 end initVals;
 
@@ -2686,9 +2689,9 @@ end contextCref;
 template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
-	match context
-	case FUNCTION_CONTEXT(__) then "_" + name
-	else "$P" + name
+  match context
+  case FUNCTION_CONTEXT(__) then "_" + name
+  else "$P" + name
 end contextIteratorName;
 
 template cref(ComponentRef cr)
@@ -2793,18 +2796,18 @@ end arrayCrefCStr;
 
 template arrayCrefCStr2(ComponentRef cr)
 ::=
-	match cr
-	case CREF_IDENT(__) then '<%ident%>'
-	case CREF_QUAL(__) then '<%ident%>$P<%arrayCrefCStr2(componentRef)%>'
-	else "CREF_NOT_IDENT_OR_QUAL"
+  match cr
+  case CREF_IDENT(__) then '<%ident%>'
+  case CREF_QUAL(__) then '<%ident%>$P<%arrayCrefCStr2(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefCStr2;
 
 template arrayCrefStr(ComponentRef cr)
 ::=
-	match cr
-	case CREF_IDENT(__) then '<%ident%>'
-	case CREF_QUAL(__) then '<%ident%>.<%arrayCrefStr(componentRef)%>'
-	else "CREF_NOT_IDENT_OR_QUAL"
+  match cr
+  case CREF_IDENT(__) then '<%ident%>'
+  case CREF_QUAL(__) then '<%ident%>.<%arrayCrefStr(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
 template subscriptsStr(list<Subscript> subscripts)
@@ -3716,17 +3719,17 @@ template initRecordMembers(Variable var)
 ::=
 match var
 case VARIABLE(ty = ET_COMPLEX(complexClassType = RECORD(__))) then
-	let varName = contextCref(name,contextFunction)
-	(ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
+  let varName = contextCref(name,contextFunction)
+  (ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
 end initRecordMembers;
 
 template recordMemberInit(ExpVar v, Text varName)
 ::=
 match v
 case COMPLEX_VAR(tp = ET_ARRAY(__)) then 
-	let arrayType = expType(tp, true) 
-	let dims = (tp.arrayDimensions |> dim => dimension(dim) ;separator=", ")
-	'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(tp.arrayDimensions)%>, <%dims%>);'
+  let arrayType = expType(tp, true) 
+  let dims = (tp.arrayDimensions |> dim => dimension(dim) ;separator=", ")
+  'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(tp.arrayDimensions)%>, <%dims%>);'
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
@@ -3973,7 +3976,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_THROW(__)          then 'MMC_THROW();<%\n%>'
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
-  case s as STMT_REINIT(__) 		then algStmtReinit(s, context, &varDecls /*BUFD*/)
+  case s as STMT_REINIT(__)     then algStmtReinit(s, context, &varDecls /*BUFD*/)
   else "#error NOT_IMPLEMENTED_ALG_STATEMENT"
 end algStatement;
 
@@ -4047,7 +4050,7 @@ match stmt
 case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)	
+  let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)  
   if ispec then
     <<
     <%preExp%>
@@ -5193,6 +5196,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(tuple_=false, builtin=true, path=IDENT(name="clock"), expLst={}) then
     'mmc_clock()'
 
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="noEvent"),
+            expLst={e1}) then
+    daeExp(e1, context, &preExp, &varDecls)
+  
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="mmc_get_field"),
             expLst={s1, ICONST(integer=i)}) then

@@ -125,7 +125,6 @@ typedef modelica_real mod_rettype;
 typedef modelica_real    pre_rettype;
 typedef modelica_real    edge_rettype;
 typedef modelica_real    initial_rettype;
-typedef modelica_real    noEvent_rettype;
 typedef modelica_real    floor_rettype;
 typedef modelica_real    ceil_rettype;
 typedef modelica_real    sample_rettype;

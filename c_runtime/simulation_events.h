@@ -151,7 +151,6 @@ const int IterationMax = 200;
 #define RELATIONGREATEREQ(res,x,y)  RELATION(res,x,y,>=,>)
 #define RELATIONLESSEQ(res,x,y)     RELATION(res,x,y,<=,<)
 
-#define noEvent(arg) arg
 #define initial() localData->init
 
 int
