@@ -4676,80 +4676,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinMinMaxCommon;
 
-protected function elabBuiltinFloor "function: elabBuiltinFloor
-
-  This function elaborates on the builtin operator floor.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"floor",pre,info);
-      then
-        (cache,s1_1,prop);
-  end matchcontinue;
-end elabBuiltinFloor;
-
-protected function elabBuiltinCeil "function: elabBuiltinCeil
-
-  This function elaborates on the builtin operator ceil.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.Type ty;
-      DAE.Properties prop;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-
-    case (cache,env,{s1},_,impl,pre,info) /* impl */
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"ceil",pre,info);
-      then
-        (cache,s1_1,prop);
-  end matchcontinue;
-end elabBuiltinCeil;
-
 protected function elabBuiltinAbs "function: elabBuiltinAbs
 
   This function elaborates on the builtin operator abs
@@ -4792,48 +4718,6 @@ algorithm
         (cache,s1_1,prop);
   end matchcontinue;
 end elabBuiltinAbs;
-
-protected function elabBuiltinSqrt "function: elabBuiltinSqrt
-
-  This function elaborates on the builtin operator sqrt.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      Env.Cache cache;
-      list<DAE.Var> tpl;
-      DAE.Type ty,ty2;
-      DAE.Properties prop;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"sqrt",pre,info);
-      then
-        (cache,s1_1,prop);
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isIntegerOrSubTypeInteger,"sqrt",pre,info);
-      then
-        (cache,s1_1,prop);
-  end matchcontinue;
-end elabBuiltinSqrt;
 
 protected function elabBuiltinDiv "function: elabBuiltinDiv
 
@@ -6748,10 +6632,7 @@ algorithm
     case "pre" then elabBuiltinPre;
     case "initial" then elabBuiltinInitial;
     case "terminal" then elabBuiltinTerminal;
-    case "floor" then elabBuiltinFloor;
-    case "ceil" then elabBuiltinCeil;
     case "abs" then elabBuiltinAbs;
-    case "sqrt" then elabBuiltinSqrt;
     case "div" then elabBuiltinDiv;
     case "integer" then elabBuiltinInteger;
     case "boolean" then elabBuiltinBoolean;

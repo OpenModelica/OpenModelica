@@ -83,6 +83,12 @@ function sqrt
 external \"builtin\";
 end sqrt;
 
+function identity
+  input Integer arraySize;
+  output Integer[arraySize,arraySize] outArray;
+external \"builtin\";
+end identity;
+
 function sin
   input Real x;
   output Real y;
@@ -925,8 +931,6 @@ protected constant DAE.Type T_REAL_ARRAY_9_DEFAULT =
   (DAE.T_ARRAY(DAE.DIM_INTEGER(9), DAE.T_REAL_DEFAULT),NONE());
 
 // Integer arrays
-protected constant DAE.Type T_INT_ARRAY_NxN_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_INTEGER_DEFAULT),NONE())),NONE());
 protected constant DAE.Type T_INT_ARRAY_1_DEFAULT =
   (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_INTEGER_DEFAULT),NONE());
 protected constant DAE.Type T_INT_ARRAY_2_DEFAULT =
@@ -2258,10 +2262,6 @@ protected constant DAE.Type vectorVector2real=(
           DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT), ("y", T_REAL_ARRAY_1_DEFAULT)}, 
             DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-protected constant DAE.Type int2arrayNxN=(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
-          T_INT_ARRAY_NxN_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
 protected constant DAE.Type int2array1dimint=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
           T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
@@ -3348,7 +3348,6 @@ algorithm
       env = Env.extendFrameT(env, "transpose", array6dimstring2matrixstring);
       env = Env.extendFrameT(env, "outerproduct", vectorVector2int) "Only real and int makes sense here. And maybe bool." ;
       env = Env.extendFrameT(env, "outerproduct", vectorVector2real);
-      env = Env.extendFrameT(env, "identity", int2arrayNxN);
       env = Env.extendFrameT(env, "initial", nil2bool);
       env = Env.extendFrameT(env, "terminal", nil2bool);
       env = Env.extendFrameT(env, "diagonal", array1dimint2matrixint);
