@@ -408,6 +408,7 @@ algorithm
         failure(equality(restriction = Absyn.R_FUNCTION()));
       then
         ();
+    case (Absyn.PROGRAM(classes = {Absyn.CLASS(partialPrefix = true)}),st) then ();
     // Type check the function
     case (Absyn.PROGRAM(classes = {absyn_class}),st)
       equation
