@@ -376,6 +376,13 @@ algorithm
       then
         (cache,e_1,prop,st_3);
 
+    // adrpo: deal with DynamicSelect(literalExp, dynamicExp) by returning literalExp only!
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("DynamicSelect",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info)
+      equation
+        (cache,e_1,prop,st_1) = elabExp(cache,env, e1, impl, st, doVect, pre, info);
+      then
+        (cache,e_1,prop,st_1);
+
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info)

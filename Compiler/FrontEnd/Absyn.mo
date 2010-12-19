@@ -4461,28 +4461,27 @@ algorithm
 
     case ({}) then true;
     
-    // search return false if we have DynamicSelect, OnMouse*
-    case (MODIFICATION(componentRef = CREF_IDENT(name,_)) :: rest)
+    // skip "interaction" annotation!
+    case (MODIFICATION(componentRef = CREF_IDENT(name = "interaction")) :: rest)    
       equation
-        b1 = stringEq(name, "DynamicSelect");
-        b2 = (0 == System.strncmp("OnMouse", name, 7));
-        true = boolOr(b1, b2);        
+        b = onlyLiteralsInAnnotationMod(rest);
       then 
-        false;
+        b;
+
     
     // search inside, some(exp)
     case (MODIFICATION(modification = SOME(CLASSMOD(dive, expOpt))) :: rest)
       equation
-         b1 = onlyLiteralsInExpOpt(expOpt);
-         b2 = onlyLiteralsInAnnotationMod(dive);
-         b3 = onlyLiteralsInAnnotationMod(rest);
-         b = boolAnd(b1, boolAnd(b2, b3));
+        b1 = onlyLiteralsInExpOpt(expOpt);
+        b2 = onlyLiteralsInAnnotationMod(dive);
+        b3 = onlyLiteralsInAnnotationMod(rest);
+        b = boolAnd(b1, boolAnd(b2, b3));
       then 
         b;
         
     case (_ :: rest)
       equation
-         b = onlyLiteralsInAnnotationMod(rest);
+        b = onlyLiteralsInAnnotationMod(rest);
       then 
         b;
     
@@ -4501,14 +4500,22 @@ algorithm
   onlyLiterals := matchcontinue(inExpOpt)
     local
       Exp exp;
+      list<Exp> lst;
       Boolean b;
 
     case (NONE()) then true;
     
+    // DynamicSelect returns true! 
+    case (SOME(CALL(function_ = CREF_IDENT(name = "DynamicSelect")))) then true;
+    
     // search inside, some(exp)
     case (SOME(exp))
       equation
-         ((_, b)) = traverseExp(exp, onlyLiteralsInExp, true);
+         ((_, lst)) = traverseExp(exp, onlyLiteralsInExp, {});
+         // if list is empty (no crefs were added)
+         b = Util.isListEmpty(lst);
+         // debugging:
+         // print("Crefs in annotations: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
         b;
   end matchcontinue;        
@@ -4516,9 +4523,10 @@ end onlyLiteralsInExpOpt;
 
 protected function onlyLiteralsInExp 
 "@author: adrpo 
- Visitor function for checking if Absyn.Exp contains only literals, NO CREFS!"
-  input tuple<Exp, Boolean> tpl;
-  output tuple<Exp, Boolean> outTpl;
+ Visitor function for checking if Absyn.Exp contains only literals, NO CREFS!
+ It returns an empty list if it doesn't contain any crefs!"
+  input tuple<Exp, list<Exp>> tpl;
+  output tuple<Exp, list<Exp>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
     local 
@@ -4526,10 +4534,36 @@ algorithm
       Path cname,path,usesName,cname2;
       Exp e;
       ComponentRef cr;
-      Boolean b;
+      list<Exp> lst, lstArgs;
+      String name;
+      FunctionArgs fargs;
 
-    // crefs, return false
-    case((e as CREF(cr), _)) then ((e,false));
+    // first handle DynamicSelect 
+    case ((e as CALL(function_ = CREF_IDENT(name = "DynamicSelect"), functionArgs = fargs), lst))
+      equation
+        ((_, lstArgs)) = traverseExpFunctionArgs(fargs, onlyLiteralsInExp, {});
+        // if the lst is the same as the one got from args, return nothing
+        equality(lst = lstArgs);
+      then
+        ((e, {}));
+
+    // first handle all graphic enumerations! 
+    // FillPattern.*, Smooth.*, TextAlignment.*, etc!
+    case ((e as CREF(cr as CREF_QUAL(name=name)), lst))
+      equation
+        true = listMember(name,{
+                          "LinePattern",
+                          "Arrow",
+                          "FillPattern",
+                          "BorderPattern",
+                          "TextStyle", 
+                          "Smooth", 
+                          "TextAlignment"});
+      then 
+        ((e, lst));
+
+    // crefs, add to list
+    case ((e as CREF(cr), lst)) then ((e,e::lst));
     // anything else, return the same!
     case(tpl) then tpl;
 

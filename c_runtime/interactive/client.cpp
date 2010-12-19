@@ -156,6 +156,13 @@ THREAD_RET_TYPE threadControlClient(void*)
 			{
 				cout << "Message to be send: " << message << endl; fflush(stdout);
 
+				// set the shutDownInProgress flag so we don't get failure on receive messages
+				// from the transfer thread and server control thread
+				if(message.compare(0, 8, "shutdown") == 0)
+				{
+					shutDownInProgress = 1;
+				}
+
 				if(!s1.send(message))
 				{
 					cout << "Failed to send message!" << endl; fflush(stdout);
@@ -164,9 +171,9 @@ THREAD_RET_TYPE threadControlClient(void*)
 
 				if(message.compare(0, 8, "shutdown") == 0)
 				{
-					cout << "Shuting down in 3 seconds .... due to shutdown message: " << message << endl; fflush(stdout);
+					cout << "Shuting down in 2 seconds .... due to shutdown message: " << message << endl; fflush(stdout);
 					shutDownInProgress = 1;
-					delay(3000);
+					delay(2000);
 					break;
 				}
 			}
