@@ -16,8 +16,10 @@ JAVAMAKEFILE = Makefile
 INTERACTIVEMAKEFILE = Makefile
 EXTERNALCMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
-LIBSENDDATA = lib@LIBSENDDATA@.a
+LIBSENDDATA = @LIBSENDDATA@
 QMAKE=@QMAKE@
+CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
+
 include Makefile.common
 
 libsendData.a :

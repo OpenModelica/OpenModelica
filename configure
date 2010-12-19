@@ -4697,8 +4697,8 @@ if test "${with_sendData_Qt+set}" = set; then :
   if test -z "$QMAKE"; then
     as_fn_error $? "\"Cannot compile with libSendData unless qmake is present.\"" "$LINENO" 5 ;
   fi
-  LIBSENDDATA="sendData"
-  WITH_SENDDATA="1"
+  LIBSENDDATA="libsendData.a"
+  WITH_SENDDATA="#define CONFIG_WITH_SENDDATA 1"
   #if test "Darwin" = `uname`; then
   #  LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
   #  if test -d /opt/local/Library/Frameworks/; then
@@ -4734,9 +4734,9 @@ rm -f core conftest.err conftest.$ac_objext \
 
 else
 
-  LIBSENDDATA="sendDataHumbug"
-  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
-  WITH_SENDDATA="0"
+  LIBSENDDATA=""
+  LIBSENDDATA_LDFLAGS="$LDFLAGS"
+  WITH_SENDDATA="// #undef CONFIG_WITH_SENDDATA"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
 
@@ -4815,7 +4815,7 @@ fi
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile c_runtime/sendData/Makefile.humbug OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config"
 
 ac_config_commands="$ac_config_commands config.unix.h.fix"
 

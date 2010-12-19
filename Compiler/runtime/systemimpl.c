@@ -111,9 +111,13 @@ static int hasStreamConnectors = 0;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 
+#ifdef CONFIG_WITH_SENDDATA
 // SendData crap
 int getVariableListSize(const char* model);
 unsigned char getVariableList(const char* model, char* lst);
+void emulateStreamData(const char* data, const char*, const char*, const char*, const char*, int, int, int, int, int, const char*);
+void emulateStreamData2(const char*, const char*, int);
+#endif
 
 /*
  * Common implementations
@@ -132,7 +136,7 @@ static int stringContains(char *str,char c)
 
 static int filterString(char* buf,char* bufRes)
 {
-  int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
+  int i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
   char preChar,cc;
   char filterChars[] = "0123456789.\0";
   char numeric[] = "0123456789\0";
@@ -317,7 +321,6 @@ int SystemImpl__writeFile(const char* filename, const char* data)
 #endif
   FILE * file = NULL;
   int len = strlen(data); /* RML_HDRSTRLEN(RML_GETHDR(rmlA1)); */
-  int x = 0;
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
@@ -513,7 +516,7 @@ extern int SystemImpl__directoryExists(const char *str)
 char* SystemImpl__readFileNoNumeric(const char* filename)
 {
   char* buf, *bufRes;
-  int res,i,bufPointer = 0,numCount;
+  int res,bufPointer = 0,numCount;
   FILE * file = NULL;
   struct stat statstr;
   res = stat(filename, &statstr);
@@ -883,16 +886,30 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
   return 0;
 }
 
+static void addSendDataError(const char* functionName)
+{
+    c_add_message(156, /* WITHOUT_SENDDATA */
+      "SCRIPTING",
+      "ERROR",
+      "%s failed because OpenModelica was configured without sendData support.",
+      &functionName,
+      1);
+}
+
 static char* SystemImpl__getVariableNames(const char* model)
 {
+#ifdef CONFIG_WITH_SENDDATA
   int size = getVariableListSize(model);
   char *res;
   if(!size) return NULL;
   res = (char*)malloc(sizeof(char)*size +1);
   getVariableList(model, res);
   return res;
+#else
+  addSendDataError("getVariableNames");
+  return NULL;
+#endif
 }
-
 
 #ifdef __cplusplus
 }

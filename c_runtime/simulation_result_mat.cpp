@@ -41,8 +41,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 					     double tstart, double tstop)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
-  const char *timeValName = "Time";
-  const char *timeValDesc = "Simulation time [s]";
+  struct omc_varInfo timeValName = {"Time","Simulation time [s]","",-1,-1,-1,-1};
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
   
   const int rank = 9;
@@ -51,7 +50,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 		     globalData->boolVariables.nAlgebraic, 
 		     globalData->nParameters, globalData->intVariables.nParameters,
 		     globalData->boolVariables.nParameters };
-  const char **names[rank] = { &timeValName,
+  struct omc_varInfo* names[rank] = { &timeValName,
 			       globalData->statesNames,
 			       globalData->stateDerivativesNames,
 			       globalData->algebraicsNames,
@@ -61,16 +60,6 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 			       globalData->int_param_names,
 			       globalData->bool_param_names,
                              };
-  const char **descriptions[rank] = { &timeValDesc, 
-				      globalData->statesComments,
-				      globalData->stateDerivativesComments,
-				      globalData->algebraicsComments,
-				      globalData->int_alg_comments,
-				      globalData->bool_alg_comments,
-				      globalData->parametersComments,
-				      globalData->int_param_comments,
-				      globalData->bool_param_comments 
-                                    };
   const int nVars = globalData->nStates*2+globalData->nAlgebraic
     +globalData->intVariables.nAlgebraic +globalData->boolVariables.nAlgebraic;
   const int nParams = globalData->nParameters+globalData->intVariables.nParameters
@@ -89,13 +78,13 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     writeMatVer4Matrix("Aclass", 4, 11, Aclass, true); 
     
     // flatten variables' names
-    flattenStrBuf(rank, dims, names, stringMatrix, rows, cols, true);
+    flattenStrBuf(rank, dims, names, stringMatrix, rows, cols, true, false);
     // write `name' matrix
     writeMatVer4Matrix("name", rows, cols, stringMatrix, true);
     delete[] stringMatrix; stringMatrix = NULL;
     
     // flatten variables' comments
-    flattenStrBuf(rank, dims, descriptions, stringMatrix, rows, cols, false);
+    flattenStrBuf(rank, dims, names, stringMatrix, rows, cols, false, true);
     // write `description' matrix
     writeMatVer4Matrix("description", rows, cols, stringMatrix, true);
     delete[] stringMatrix; stringMatrix = NULL;
@@ -190,9 +179,9 @@ static inline void fixDerInName(char *str, size_t len)
 }
 
 long simulation_result_mat::flattenStrBuf(int rank, const int *dims, 
-					  const char ** const src[],
+					  struct omc_varInfo* src[],
 					  char* &dest, int& longest, int& nstrings,
-					  bool fixNames)
+					  bool fixNames, bool useComment)
 {
   int i,j;
   int len;
@@ -205,7 +194,7 @@ long simulation_result_mat::flattenStrBuf(int rank, const int *dims,
     nstrings += dims[i];
     // get length of longest string
     for(j = 0; j < dims[i]; ++j) {
-      len = strlen(src[i][j]);
+      len = strlen(useComment ? src[i][j].comment : src[i][j].name);
       if (len > longest) longest = len;
     }
   }
@@ -217,8 +206,8 @@ long simulation_result_mat::flattenStrBuf(int rank, const int *dims,
   char *ptr = dest;
   for (i = 0; i < rank; ++i)
     for (j = 0; j < dims[i]; ++j) {
-      strncpy(ptr,src[i][j],longest);
-      if (fixNames) fixDerInName(ptr,strlen(src[i][j]));
+      strncpy(ptr,useComment ? src[i][j].comment : src[i][j].name,longest);
+      if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i][j].comment : src[i][j].name));
       ptr += longest;
     }
   // return the size of the `dest' buffer

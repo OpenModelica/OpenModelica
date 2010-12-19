@@ -44,7 +44,6 @@
 #include <limits> /* adrpo - for std::numeric_limits in MSVC */
 #include "simulation_result_bin.h"
 #include "simulation_runtime.h"
-#include "sendData/sendData.h"
 #include <sstream>
 #include <time.h>
 

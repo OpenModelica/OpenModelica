@@ -131,7 +131,7 @@ double get_StateValue(int index){
 string get_StateName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->statesNames[index];
+  string temp_val =  globalData->statesNames[index].name;
 
   gdMutex.Unlock();
 
@@ -160,7 +160,7 @@ double get_StateDerivativesValue(int index){
 string get_StateDerivativesName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->stateDerivativesNames[index];
+  string temp_val =  globalData->stateDerivativesNames[index].name;
 
   gdMutex.Unlock();
 
@@ -189,7 +189,7 @@ double get_AlgebraicValue(int index){
 string get_AlgebraicName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->algebraicsNames[index];
+  string temp_val =  globalData->algebraicsNames[index].name;
 
   gdMutex.Unlock();
 
@@ -218,7 +218,7 @@ double get_ParameterValue(int index){
 string get_ParameterName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->parametersNames[index];
+  string temp_val =  globalData->parametersNames[index].name;
 
   gdMutex.Unlock();
 
@@ -247,7 +247,7 @@ double get_InputVarValue(int index){
 string get_InputVarName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->inputNames[index];
+  string temp_val =  globalData->inputNames[index].name;
 
   gdMutex.Unlock();
 
@@ -277,7 +277,7 @@ double get_OutputVarValue(int index){
 string get_OutputVarName(int index){
   gdMutex.Lock();
 
-  string temp_val =  globalData->outputNames[index];
+  string temp_val =  globalData->outputNames[index].name;
 
   gdMutex.Unlock();
 
@@ -406,22 +406,21 @@ void fillSimulationStepDataWithValuesFromGlobalData(SimStepData* p_SimStepData) 
 void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
     SimDataNames* p_simDataNames, SimDataNamesFilter* p_simDataNamesFilter) {
   gdMutex.Lock();
-
   int variablesNamesPos = 0;
   for (int i = 0; i < globalData->nStates; i++) {
-    p_simDataNames->statesNames[i] = globalData->statesNames[i];
+    p_simDataNames->statesNames[i] = globalData->statesNames[i].name;
     p_simDataNamesFilter->variablesNames[variablesNamesPos] = "";
     p_simDataNames->stateDerivativesNames[i]
-        = globalData->stateDerivativesNames[i];
+        = globalData->stateDerivativesNames[i].name;
     variablesNamesPos++;
   }
   for (int i = 0; i < globalData->nAlgebraic; i++) {
-    p_simDataNames->algebraicsNames[i] = globalData->algebraicsNames[i];
+    p_simDataNames->algebraicsNames[i] = globalData->algebraicsNames[i].name;
     p_simDataNamesFilter->variablesNames[variablesNamesPos] = "";
     variablesNamesPos++;
   }
   for (int i = 0; i < globalData->nParameters; i++) {
-    p_simDataNames->parametersNames[i] = globalData->parametersNames[i];
+    p_simDataNames->parametersNames[i] = globalData->parametersNames[i].name;
     p_simDataNamesFilter->parametersNames[i] = "";
   }
   gdMutex.Unlock();
@@ -545,7 +544,7 @@ void printGlobalData(void) {
     cout << "---States---" << endl; fflush(stdout);
     for (int t = 0; t < globalData->nStates; t++)
     {
-      cout << t << ": " << globalData->statesNames[t] << ": " << globalData->states[t] << endl; fflush(stdout);
+      cout << t << ": " << globalData->statesNames[t].name << ": " << globalData->states[t] << endl; fflush(stdout);
     }
   }
 
@@ -554,7 +553,7 @@ void printGlobalData(void) {
     cout << "---Algebraics---" << endl; fflush(stdout);
     for (int t = 0; t < globalData->nAlgebraic; t++)
     {
-      cout << t << ": " << globalData->algebraicsNames[t] << ": " << globalData->algebraics[t] << endl; fflush(stdout);
+      cout << t << ": " << globalData->algebraicsNames[t].name << ": " << globalData->algebraics[t] << endl; fflush(stdout);
     }
   }
 
@@ -563,7 +562,7 @@ void printGlobalData(void) {
     cout << "---Parmeters--- " << endl; fflush(stdout);
     for (int t = 0; t < globalData->nParameters; t++)
     {
-      cout << t << ": " << globalData->parametersNames[t] << ": "  << globalData->parameters[t] << endl; fflush(stdout);
+      cout << t << ": " << globalData->parametersNames[t].name << ": "  << globalData->parameters[t] << endl; fflush(stdout);
     }
   }
 
@@ -572,7 +571,7 @@ void printGlobalData(void) {
     cout << "---InputVars--- " << endl; fflush(stdout);
     for (int t = 0; t < globalData->nInputVars; t++)
     {
-      cout << t << ": " << globalData->inputNames[t] << ": " << globalData->inputVars[t] << endl; fflush(stdout);
+      cout << t << ": " << globalData->inputNames[t].name << ": " << globalData->inputVars[t] << endl; fflush(stdout);
     }
   }
 
@@ -581,7 +580,7 @@ void printGlobalData(void) {
     cout << "---OutputVars--- " << endl; fflush(stdout);
     for (int t = 0; t < globalData->nOutputVars; t++)
     {
-      cout << t << ": " << globalData->outputNames[t] << ": " << globalData->outputVars[t] << endl; fflush(stdout);
+      cout << t << ": " << globalData->outputNames[t].name << ": " << globalData->outputVars[t] << endl; fflush(stdout);
     }
   }
 

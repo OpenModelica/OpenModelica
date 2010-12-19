@@ -624,7 +624,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__sendData)
 {
-
+#ifdef CONFIG_WITH_SENDDATA
   char* data = RML_STRINGDATA(rmlA0);
   char* interpolation = RML_STRINGDATA(rmlA1);
  char* title = RML_STRINGDATA(rmlA2);
@@ -645,23 +645,28 @@ RML_BEGIN_LABEL(System__sendData)
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
 
-
-
   emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
+  RML_TAILCALLK(rmlSC);
+#else
+  addSendDataError("System.sendData");
+  RML_TAILCALLK(rmlFC);
+#endif
 
 //  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
-
-  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__sendData2)
 {
+#ifdef CONFIG_WITH_SENDDATA
   char* info = RML_STRINGDATA(rmlA0);
   char* data = RML_STRINGDATA(rmlA1);
   emulateStreamData2(info, data, 7778);
-
   RML_TAILCALLK(rmlSC);
+#else
+  addSendDataError("System.sendData2");
+  RML_TAILCALLK(rmlFC);
+#endif
 }
 RML_END_LABEL
 
@@ -706,7 +711,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getHasSendDataSupport)
 {
-  rmlA0 = CONFIG_WITH_SENDDATA ? RML_TRUE : RML_FALSE;
+#ifdef CONFIG_WITH_SENDDATA
+  rmlA0 = RML_TRUE;
+#else
+  rmlA0 = RML_FALSE;
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

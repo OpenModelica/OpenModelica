@@ -323,8 +323,8 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
   if test -z "$QMAKE"; then
     AC_MSG_ERROR("Cannot compile with libSendData unless qmake is present.");
   fi
-  LIBSENDDATA="sendData"
-  WITH_SENDDATA="1"
+  LIBSENDDATA="libsendData.a"
+  WITH_SENDDATA="#define CONFIG_WITH_SENDDATA 1"
   #if test "Darwin" = `uname`; then
   #  LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
   #  if test -d /opt/local/Library/Frameworks/; then
@@ -341,9 +341,9 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendData $LIBSENDDATA_LDFLAGS"
 ],
 [
-  LIBSENDDATA="sendDataHumbug"
-  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
-  WITH_SENDDATA="0"
+  LIBSENDDATA=""
+  LIBSENDDATA_LDFLAGS="$LDFLAGS"
+  WITH_SENDDATA="// #undef CONFIG_WITH_SENDDATA"
   AC_MSG_RESULT([disabled])
 ])
 
@@ -397,7 +397,7 @@ AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile c_runtime/sendData/Makefile.humbug OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/runtime/Makefile Compiler/modpar/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile c_runtime/ModelicaExternalC/Makefile OMEdit/OMEditGUI/Makefile.unix OMEdit/OMEditGUI/OMEdit.config"
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 

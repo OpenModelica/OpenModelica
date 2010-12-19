@@ -181,8 +181,7 @@ bool Semaphore::Post()
 	int sem_val;
 	bool success = false;
 
-	if(sem_getvalue(&semaphore_handle, &sem_val) == 0 && 
-			sem_val < impl->max_count)
+	if(sem_getvalue(&semaphore_handle, &sem_val) == 0 && sem_val < impl->max_count)
 	{
 		success = (sem_post(&semaphore_handle) == 0);
 	}

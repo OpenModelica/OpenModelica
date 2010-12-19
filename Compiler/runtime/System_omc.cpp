@@ -380,7 +380,31 @@ extern void System_freeLibrary(int _inLibHandle)
 
 extern int System_getHasSendDataSupport()
 {
-  return CONFIG_WITH_SENDDATA;
+#ifdef CONFIG_WITH_SENDDATA
+  return 1;
+#else
+  return 0;
+#endif
+}
+
+extern void System_sendData(const char* _data, const char* _title, const char* _xLabel, const char* _yLabel, const char* _interpolation, int _legend, int _grid, int _logX, int _logY, int _points, const char* _range)
+{
+#ifdef CONFIG_WITH_SENDDATA
+  emulateStreamData(_data, _title, _xLabel, _yLabel , _interpolation, _legend, _grid, _logX, _logY, _points, _range);
+#else
+  addSendDataError("System.sendData");
+  throw 1;
+#endif
+}
+
+extern void System_sendData2(const char* _info, const char* _data, int _port)
+{
+#ifdef CONFIG_WITH_SENDDATA
+  emulateStreamData2(_info, _data, _port);
+#else
+  addSendDataError("System.sendData2");
+  throw 1;
+#endif
 }
 
 extern int System_userIsRoot()

@@ -48,7 +48,6 @@ read_write.h \
 real_array.h \
 ringbuffer.h \
 rml_compatibility.h \
-sendData/humbug.h \
 sendData/sendData.h \
 simulation_delay.h \
 simulation_events.h \
@@ -62,6 +61,7 @@ simulation_result.h \
 simulation_result_mat.h \
 simulation_result_plt.h \
 simulation_runtime.h \
+simulation_varinfo.h \
 solver_dasrt.h \
 solver_main.h \
 string_array.h \
@@ -75,9 +75,11 @@ fmiModelTypes.h \
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a
 
-.PHONY : libsendData.a libsendDataHumbug.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
+.PHONY : libsendData.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
 
 all : install
+
+simulation_result_plt.o : $(CONFIG_H)
 
 #recompile all if a header changes!
 $(SIMOBJS) : $(HFILES)
@@ -101,14 +103,11 @@ libf2c/libf2c.a :
 	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
 	ranlib $@
 
-libsendDataHumbug.a :
-	$(MAKE) -C sendData -f Makefile.humbug
-
 install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
-	cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
+	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
 	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install || \

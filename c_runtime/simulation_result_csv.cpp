@@ -44,7 +44,6 @@
 #include <limits> /* adrpo - for std::numeric_limits in MSVC */
 #include "simulation_result_csv.h"
 #include "simulation_runtime.h"
-#include "sendData/sendData.h"
 #include <sstream>
 #include <time.h>
 
@@ -79,11 +78,11 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
 
   fprintf(fout, format, "time");
   for (int i = 0; i < globalData->nStates; i++)
- 	  fprintf(fout, format, globalData->statesNames[i]);
+ 	  fprintf(fout, format, globalData->statesNames[i].name);
   for (int i = 0; i < globalData->nStates; i++)
- 	  fprintf(fout, format, globalData->stateDerivativesNames[i]);
+ 	  fprintf(fout, format, globalData->stateDerivativesNames[i].name);
   for (int i = 0; i < globalData->nAlgebraic; i++)
- 	  fprintf(fout, format, globalData->algebraicsNames[i]);
+ 	  fprintf(fout, format, globalData->algebraicsNames[i].name);
   for (int i = 0; i < globalData->intVariables.nAlgebraic; i++)
     fprintf(fout, format, globalData->intVariables.algebraics[i]);
   for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++)

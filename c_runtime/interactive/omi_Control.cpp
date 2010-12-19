@@ -124,7 +124,6 @@ void initialize() {
 	{
 		cout << "***** Store the DataNames *****" << endl; fflush(stdout);
 	}
-
 	fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
 			p_simDataNames_SimulationResult, p_simDataNamesFilterForTransfer);
 

@@ -256,7 +256,7 @@ public function sendData
   input String yLabel;
   input Boolean points;
   input String range;
-  external "C" emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range) annotation(Library = "omcruntime");
+  external "C" System_sendData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range) annotation(Library = "omcruntime");
 end sendData;
 
 public function enableSendData
@@ -283,7 +283,7 @@ end setVariableFilter;
 public function sendData2
   input String info;
   input String data;
-  external "C" emulateStreamData2(info, data, 7778) annotation(Library = "omcruntime");
+  external "C" System_sendData2(info, data, 7778) annotation(Library = "omcruntime");
 end sendData2;
 
 public function writeFile

@@ -45,6 +45,7 @@
 #include "simulation_delay.h"
 #include "simulation_result.h"
 #include "simulation_inline_solver.h"
+#include "simulation_varinfo.h"
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "linearize.h"
@@ -212,26 +213,16 @@ typedef struct sim_DATA {
   DATA_BOOL boolVariables;
 
   const char*  modelName;
-  const char** statesNames;
-  const char** stateDerivativesNames;
-  const char** algebraicsNames;
-  const char** parametersNames;
-  const char** int_alg_names;
-  const char** int_param_names;
-  const char** bool_alg_names;
-  const char** bool_param_names;
-  const char** inputNames;
-  const char** outputNames;
-  const char** statesComments;
-  const char** stateDerivativesComments;
-  const char** algebraicsComments;
-  const char** parametersComments;
-  const char** inputComments;
-  const char** outputComments;
-  const char** int_alg_comments;
-  const char** int_param_comments;
-  const char** bool_alg_comments;
-  const char** bool_param_comments;
+  struct omc_varInfo* statesNames;
+  struct omc_varInfo* stateDerivativesNames;
+  struct omc_varInfo* algebraicsNames;
+  struct omc_varInfo* parametersNames;
+  struct omc_varInfo* int_alg_names;
+  struct omc_varInfo* int_param_names;
+  struct omc_varInfo* bool_alg_names;
+  struct omc_varInfo* bool_param_names;
+  struct omc_varInfo* inputNames;
+  struct omc_varInfo* outputNames;
 
   double startTime; //the start time of the simulation
   double timeValue; //the time for the simulation

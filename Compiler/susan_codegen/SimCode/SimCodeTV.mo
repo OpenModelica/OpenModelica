@@ -260,7 +260,8 @@ package SimCode
       DAE.ExpType type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
-      AliasVariable aliasvar; 
+      AliasVariable aliasvar;
+      Absyn.Info info;
     end SIMVAR;
   end SimVar;
   
@@ -520,6 +521,16 @@ package Absyn
     record MATCH end MATCH;
     record MATCHCONTINUE end MATCHCONTINUE;
   end MatchType;
+
+  uniontype Info
+    record INFO
+      String fileName;
+      Integer lineNumberStart;
+      Integer columnNumberStart;
+      Integer lineNumberEnd;
+      Integer columnNumberEnd;
+    end INFO;
+  end Info;
 
 end Absyn;
 

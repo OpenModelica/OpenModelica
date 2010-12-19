@@ -240,6 +240,7 @@ public constant ErrorID ZERO_STEP_IN_ARRAY_CONSTRUCTOR=152;
 public constant ErrorID RECURSIVE_SHORT_CLASS_DEFINITION=153;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_PROTECTION=154;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
+public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not use another index";
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -668,6 +669,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s"),
           (FUNCTION_ELEMENT_WRONG_PROTECTION,TRANSLATION(),ERROR(),"%s was declared %s but should be %s."),
           (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
+          (WITHOUT_SENDDATA,SCRIPTING(),ERROR(),"%s failed because OpenModelica was configured without sendData support."),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };

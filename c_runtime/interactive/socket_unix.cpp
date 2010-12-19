@@ -44,6 +44,7 @@ bool Socket::UDP_create()
 	}
 
 	m_socket_type = SOCK_DGRAM;
+  return true;
 }
 
 bool Socket::bind(const int port)

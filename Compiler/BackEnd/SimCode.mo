@@ -240,7 +240,8 @@ uniontype SimVar
     // arrayCref is the name of the array if this variable is the first in that
     // array
     Option<DAE.ComponentRef> arrayCref;
-    AliasVariable aliasvar; 
+    AliasVariable aliasvar;
+    Absyn.Info info; 
   end SIMVAR;
 end SimVar;
 
@@ -601,7 +602,7 @@ algorithm
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". "; 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false,NONE(),NOALIAS());
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), Absyn.dummyInfo);
   end matchcontinue;
 end cref2simvar;
 
@@ -5526,19 +5527,18 @@ algorithm
       DAE.ExpType type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_))
+      Absyn.Info info;
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, info))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
-          isDiscrete, NONE(),NOALIAS());      
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), info);
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, info))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
-          isDiscrete, SOME(arrayCref),NOALIAS());
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), info);
   end matchcontinue;
 end derVarFromStateVar;
 
@@ -5708,11 +5708,12 @@ algorithm
       Integer index_;
       AliasVariable aliasvar;
       list<SimVar> rest,rest2;
+      Absyn.Info info;
     case ({},_) then {};  
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info)::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info)::rest2);
   end matchcontinue; 
 end rewriteIndex;
 
@@ -5800,14 +5801,14 @@ algorithm
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
       String varNameStr;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar), initCrefs)
+      Absyn.Info info;
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
-        Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar);
-    case (_, _)
-    then simvarIn;
+        Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, info);
+    case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
 
@@ -7848,6 +7849,8 @@ algorithm
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
+      DAE.ElementSource source;
+      Absyn.Info info;
     case ((dlowVar as BackendDAE.VAR(varName = cr,
       varKind = kind,
       varDirection = dir,
@@ -7857,7 +7860,8 @@ algorithm
       comment = comment,
       varType = tp,
       flowPrefix = flowPrefix,
-      streamPrefix = streamPrefix)),optAliasVars)
+      streamPrefix = streamPrefix,
+      source = source)),optAliasVars)
       equation
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
@@ -7867,9 +7871,9 @@ algorithm
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = getArrayCref(dlowVar);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
+        info = DAEUtil.getElementSourceFileInfo(source);
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete,
-          arrayCref,aliasvar);
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, info);
   end matchcontinue;
 end dlowvarToSimvar;
 

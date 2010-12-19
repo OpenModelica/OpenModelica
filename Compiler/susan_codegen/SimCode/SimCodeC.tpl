@@ -221,32 +221,19 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   // from the simulation runtime.
   const char *_omc_force_solver=_OMC_FORCE_SOLVER;
   const int inline_work_states_ndims=_OMC_SOLVER_WORK_STATES_NDIMS;
-
-  <%globalDataVarNamesArray("state_names", vars.stateVars)%>
-  <%globalDataVarNamesArray("derivative_names", vars.derivativeVars)%>
-  <%globalDataVarNamesArray("algvars_names", vars.algVars)%>
-  <%globalDataVarNamesArray("input_names", vars.inputVars)%>
-  <%globalDataVarNamesArray("output_names", vars.outputVars)%>
-  <%globalDataVarNamesArray("param_names", vars.paramVars)%>
-  <%globalDataVarNamesArray("int_alg_names", vars.intAlgVars)%>
-  <%globalDataVarNamesArray("int_param_names", vars.intParamVars)%>
-  <%globalDataVarNamesArray("bool_alg_names", vars.boolAlgVars)%>
-  <%globalDataVarNamesArray("bool_param_names", vars.boolParamVars)%>
-  <%globalDataVarNamesArray("string_alg_names", vars.stringAlgVars)%>
-  <%globalDataVarNamesArray("string_param_names", vars.stringParamVars)%>
   
-  <%globalDataVarCommentsArray("state_comments", vars.stateVars)%>
-  <%globalDataVarCommentsArray("derivative_comments", vars.derivativeVars)%>
-  <%globalDataVarCommentsArray("algvars_comments", vars.algVars)%>
-  <%globalDataVarCommentsArray("input_comments", vars.inputVars)%>
-  <%globalDataVarCommentsArray("output_comments", vars.outputVars)%>
-  <%globalDataVarCommentsArray("param_comments", vars.paramVars)%>
-  <%globalDataVarCommentsArray("int_alg_comments", vars.intAlgVars)%>
-  <%globalDataVarCommentsArray("int_param_comments", vars.intParamVars)%>
-  <%globalDataVarCommentsArray("bool_alg_comments", vars.boolAlgVars)%>
-  <%globalDataVarCommentsArray("bool_param_comments", vars.boolParamVars)%>
-  <%globalDataVarCommentsArray("string_alg_comments", vars.stringAlgVars)%>
-  <%globalDataVarCommentsArray("string_param_comments", vars.stringParamVars)%>
+  <%globalDataVarInfoArray("state_names", vars.stateVars)%>
+  <%globalDataVarInfoArray("derivative_names", vars.derivativeVars)%>
+  <%globalDataVarInfoArray("algvars_names", vars.algVars)%>
+  <%globalDataVarInfoArray("input_names", vars.inputVars)%>
+  <%globalDataVarInfoArray("output_names", vars.outputVars)%>
+  <%globalDataVarInfoArray("param_names", vars.paramVars)%>
+  <%globalDataVarInfoArray("int_alg_names", vars.intAlgVars)%>
+  <%globalDataVarInfoArray("int_param_names", vars.intParamVars)%>
+  <%globalDataVarInfoArray("bool_alg_names", vars.boolAlgVars)%>
+  <%globalDataVarInfoArray("bool_param_names", vars.boolParamVars)%>
+  <%globalDataVarInfoArray("string_alg_names", vars.stringAlgVars)%>
+  <%globalDataVarInfoArray("string_param_names", vars.stringParamVars)%>
   
   <%vars.stateVars |> var =>
     globalDataVarDefine(var, "states")
@@ -344,38 +331,21 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
 end globalData;
 
 
-template globalDataVarNamesArray(String name, list<SimVar> items)
+template globalDataVarInfoArray(String name, list<SimVar> items)
  "Generates array with variable names in global data section."
 ::=
   match items
   case {} then
     <<
-    const char* <%name%>[1] = {""};
+    struct omc_varInfo <%name%>[1] = {{"","","",-1,-1,-1,-1}};
     >>
   case items then
     <<
-    const char* <%name%>[<%listLength(items)%>] = {
-      <%items |> SIMVAR(__) => '"<%crefStr(name)%>"'; separator=",\n"%>
+    struct omc_varInfo <%name%>[<%listLength(items)%>] = {
+      <%items |> var as SIMVAR(info=info as INFO(__)) => '{"<%crefStr(var.name)%>","<%var.comment%>","<%info.fileName%>",<%info.lineNumberStart%>,<%info.columnNumberStart%>,<%info.lineNumberEnd%>,<%info.columnNumberEnd%>}'; separator=",\n"%>
     };
     >>
-end globalDataVarNamesArray;
-
-
-template globalDataVarCommentsArray(String name, list<SimVar> items)
- "Generates array with variable comments in global data section."
-::=
-  match items
-  case {} then
-    <<
-    const char* <%name%>[1] = {""};
-    >>
-  case items then
-    <<
-    const char* <%name%>[<%listLength(items)%>] = {
-      <%items |> SIMVAR(__) => '"<%comment%>"'; separator=",\n"%>
-    };
-    >>
-end globalDataVarCommentsArray;
+end globalDataVarInfoArray;
 
 
 template globalDataVarDefine(SimVar simVar, String arrayName)
@@ -437,16 +407,16 @@ case MODELINFO(vars=SIMVARS(__)) then
   const char* getName(double* ptr)
   {
     <%vars.stateVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return state_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return state_names[<%index%>].name;'
     ;separator="\n"%>
     <%vars.derivativeVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return derivative_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return derivative_names[<%index%>].name;'
     ;separator="\n"%>
     <%vars.algVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return algvars_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return algvars_names[<%index%>].name;'
     ;separator="\n"%>
     <%vars.paramVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return param_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return param_names[<%index%>].name;'
     ;separator="\n"%>
     return "";
   }
@@ -454,10 +424,10 @@ case MODELINFO(vars=SIMVARS(__)) then
   const char* getName(modelica_integer* ptr)
   {
     <%vars.intAlgVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>].name;'
     ;separator="\n"%>
     <%vars.intParamVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return int_param_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return int_param_names[<%index%>].name;'
     ;separator="\n"%>
     return "";
   }
@@ -465,10 +435,10 @@ case MODELINFO(vars=SIMVARS(__)) then
   const char* getName(modelica_boolean* ptr)
   {
     <%vars.boolAlgVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>].name;'
     ;separator="\n"%>
     <%vars.boolParamVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return bool_param_names[<%index%>];'
+      'if (&<%cref(name)%> == ptr) return bool_param_names[<%index%>].name;'
     ;separator="\n"%>
     return "";
   }
@@ -754,67 +724,6 @@ template functionInitializeDataStruc()
       returnData->outputNames = output_names;
     } else {
       returnData->outputNames = 0;
-    }
-  
-    /*   comments  */
-    if(flags & STATESCOMMENTS) {
-      returnData->statesComments = state_comments;
-    } else {
-      returnData->statesComments = 0;
-    }
-  
-    if(flags & STATESDERIVATIVESCOMMENTS) {
-      returnData->stateDerivativesComments = derivative_comments;
-    } else {
-      returnData->stateDerivativesComments = 0;
-    }
-  
-    if(flags & ALGEBRAICSCOMMENTS) {
-      returnData->algebraicsComments = algvars_comments;
-    } else {
-      returnData->algebraicsComments = 0;
-    }
-
-    if(flags & ALGEBRAICSCOMMENTS) {
-      returnData->int_alg_comments = int_alg_comments;
-    } else {
-      returnData->int_alg_comments = 0;
-    }
-
-    if(flags & ALGEBRAICSCOMMENTS) {
-      returnData->bool_alg_comments = bool_alg_comments;
-    } else {
-      returnData->bool_alg_comments = 0;
-    }
-  
-    if(flags & PARAMETERSCOMMENTS) {
-      returnData->parametersComments = param_comments;
-    } else {
-      returnData->parametersComments = 0;
-    }
-    
-    if(flags & PARAMETERSCOMMENTS) {
-      returnData->int_param_comments = int_param_comments;
-    } else {
-      returnData->int_param_comments = 0;
-    }
-
-    if(flags & PARAMETERSCOMMENTS) {
-      returnData->bool_param_comments = bool_param_comments;
-    } else {
-      returnData->bool_param_comments = 0;
-    }
-  
-    if(flags & INPUTCOMMENTS) {
-      returnData->inputComments = input_comments;
-    } else {
-      returnData->inputComments = 0;
-    }
-  
-    if(flags & OUTPUTCOMMENTS) {
-      returnData->outputComments = output_comments;
-    } else {
-      returnData->outputComments = 0;
     }
   
     if(flags & RAWSAMPLES && returnData->nRawSamples) {

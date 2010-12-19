@@ -687,7 +687,7 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, const char** statesNames, const char** stateDerivativesNames, const char** algebraicsNames, const char** intAlgebraicsNames, const char** boolAlgebraicsNames)
+void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, struct omc_varInfo* statesNames, struct omc_varInfo* stateDerivativesNames, struct omc_varInfo* algebraicsNames, struct omc_varInfo* intAlgebraicsNames, struct omc_varInfo* boolAlgebraicsNames)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))
@@ -767,10 +767,10 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
 
   for(int i = 0; i < variableCount1; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i])))
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i].name)))
       continue;
     //		cout << statesNames[i] << endl;
-    *Static::out << QString(statesNames[i]);
+    *Static::out << QString(statesNames[i].name);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }
@@ -778,36 +778,36 @@ void initSendData(int variableCount1, int variableCount2, int variableCount3, in
 
   for(int i = 0; i < variableCount1; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(stateDerivativesNames[i])))
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(stateDerivativesNames[i].name)))
       continue;
-    *Static::out << QString(stateDerivativesNames[i]);
+    *Static::out << QString(stateDerivativesNames[i].name);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }
 
   for(int i = 0; i < variableCount2; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i])))
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i].name)))
       continue;
-    *Static::out << QString(algebraicsNames[i]);
+    *Static::out << QString(algebraicsNames[i].name);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }
 
   for(int i = 0; i < variableCount3; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(intAlgebraicsNames[i])))
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(intAlgebraicsNames[i].name)))
       continue;
-    *Static::out << QString(intAlgebraicsNames[i]);
+    *Static::out << QString(intAlgebraicsNames[i].name);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }
 
   for(int i = 0; i < variableCount4; ++i)
   {
-    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(boolAlgebraicsNames[i])))
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(boolAlgebraicsNames[i].name)))
       continue;
-    *Static::out << QString(boolAlgebraicsNames[i]);
+    *Static::out << QString(boolAlgebraicsNames[i].name);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }
