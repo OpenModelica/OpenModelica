@@ -210,6 +210,12 @@ function print \"Not standard Modelica, but very useful for debugging.\"
   annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end print;
+
+function classDirectory \"Not standard Modelica\"
+  output String str;
+  annotation(__OpenModelica_Impure = true);
+external \"builtin\";
+end classDirectory;
 "
 ;
 
@@ -3533,7 +3539,6 @@ algorithm
       */
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
 
-      env = Env.extendFrameT(env, "classDirectory", void2string);
       env = initialEnvMetaModelica(env);
       
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
