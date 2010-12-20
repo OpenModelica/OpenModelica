@@ -101,6 +101,7 @@ algorithm
       list<BackendDAE.MultiDimEquation> listae,listae1;
       list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
+      String msg;
     
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
@@ -164,27 +165,31 @@ algorithm
        then
         (BackendDAE.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     
-    case (BackendDAE.COMPLEX_EQUATION(index = _),_,_,_,_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(index = _, source = source),_,_,_,_,_,_)
       equation
-        print("- Derive.differentiateEquationTime on complex equations not impl yet.\n");
+        msg = "- Derive.differentiateEquationTime on complex equations not impl yet.";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     
-    case (BackendDAE.ARRAY_EQUATION(index = _),_,_,_,_,_,_)
+    case (BackendDAE.ARRAY_EQUATION(index = _, source = source),_,_,_,_,_,_)
       equation
-        print("- Derive.differentiateEquationTime on array equations not impl yet.\n");
+        msg = "- Derive.differentiateEquationTime on array equations not impl yet.";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     
-    case (BackendDAE.ALGORITHM(index = _),_,_,_,_,_,_)
+    case (BackendDAE.ALGORITHM(index = _, source = source),_,_,_,_,_,_)
       equation
-        print("- Derive.differentiateEquationTime on algorithm not impl yet.\n");
+        msg = "- Derive.differentiateEquationTime on algorithm not impl yet.";
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
     
     case (dae_equation,_,_,_,_,_,_)
       equation
-        print("- Derive.differentiateEquationTime failed\n");
+        msg = "- Derive.differentiateEquationTime failed.";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
   end matchcontinue;
