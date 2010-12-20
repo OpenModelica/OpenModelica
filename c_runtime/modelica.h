@@ -98,11 +98,9 @@ typedef modelica_real tanh_rettype;
 typedef modelica_real atan_rettype;
 typedef modelica_real exp_rettype;
 typedef modelica_real sqrt_rettype;
-typedef modelica_real arctan_rettype;
 typedef modelica_real atan2_rettype;
 typedef modelica_real div_rettype;
 typedef modelica_real mod_rettype;
-#define arctan atan
 
 /* Not correct - min,max,abs,rem may return integers.
  *  So don't generate code containing these types!
