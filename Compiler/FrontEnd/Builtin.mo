@@ -1143,12 +1143,6 @@ protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCo
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
-protected
-replaceable type Type_a subtypeof Any;
-constant DAE.Type nil2real=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
-protected constant DAE.Type nil2bool=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
 protected constant DAE.Type stringIntInt2string=(
           DAE.T_FUNCTION(
               {
@@ -2722,16 +2716,8 @@ protected constant DAE.Type array9dimbool2array1dimint=(
           T_BOOL_ARRAY_9_DEFAULT)},
           T_INT_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-
-// MetaModelica extension. KS
-protected constant DAE.Type typeBoxedAny = (DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE());
-protected constant DAE.Type typeA = (DAE.T_POLYMORPHIC("Type_A"),NONE());
-
 protected constant DAE.Type int2boxed = (
           DAE.T_FUNCTION({("index",DAE.T_INTEGER_DEFAULT)},DAE.T_BOXED_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
-protected constant DAE.Type void2string =(
-          DAE.T_FUNCTION({},(DAE.T_STRING({}),NONE()),DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type string2string=(
           DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
@@ -2759,13 +2745,6 @@ protected constant DAE.Type realrealreal2real=(
           ("y",DAE.T_REAL_DEFAULT),
           ("z",DAE.T_REAL_DEFAULT)
           },DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-protected constant DAE.Type intintint2int =(
-          DAE.T_FUNCTION(
-          {
-          ("x",DAE.T_INTEGER_DEFAULT),
-          ("y",DAE.T_INTEGER_DEFAULT),
-          ("z",DAE.T_INTEGER_DEFAULT)
-          },DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 public function variableIsBuiltin "Returns true if cref is a builtin variable.
 Currently only 'time' is a builtin variable.
