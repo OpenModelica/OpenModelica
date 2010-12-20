@@ -97,6 +97,12 @@ function floor
 external \"builtin\";
 end floor;
 
+function integer
+  input Real x;
+  output Integer y;
+external \"builtin\";
+end integer;
+
 function sqrt
   input Real x(unit=\"'p\");
   output Real y(unit=\"'p(1/2)\");
@@ -1139,12 +1145,6 @@ protected constant DAE.Type stringIntInt2string=(
 
 protected constant DAE.Type real2real=(
           DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
-protected constant DAE.Type real2int=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
-protected constant DAE.Type int2real=(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realReal2real=(
           DAE.T_FUNCTION(
@@ -3086,12 +3086,9 @@ algorithm
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar,NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
-      env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
-      env = Env.extendFrameT(env, "terminal", nil2real);
       env = Env.extendFrameT(env, "event", bool2bool);
       env = Env.extendFrameT(env, "switch", bool2bool);
       env = Env.extendFrameT(env, "timeEvent", realReal2bool);
-      env = Env.extendFrameT(env, "sample", realReal2bool);
       env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "edge", bool2bool);
@@ -3108,7 +3105,6 @@ algorithm
       env = Env.extendFrameT(env, "boolean", bool2bool);
       env = Env.extendFrameT(env, "boolean", real2bool);
       env = Env.extendFrameT(env, "boolean", int2bool);
-      env = Env.extendFrameT(env, "integer", real2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
       env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
@@ -3368,8 +3364,6 @@ algorithm
       env = Env.extendFrameT(env, "transpose", array6dimstring2matrixstring);
       env = Env.extendFrameT(env, "outerproduct", vectorVector2int) "Only real and int makes sense here. And maybe bool." ;
       env = Env.extendFrameT(env, "outerproduct", vectorVector2real);
-      env = Env.extendFrameT(env, "initial", nil2bool);
-      env = Env.extendFrameT(env, "terminal", nil2bool);
       env = Env.extendFrameT(env, "diagonal", array1dimint2matrixint);
       env = Env.extendFrameT(env, "diagonal", array1dimreal2matrixreal);
       env = Env.extendFrameT(env, "diagonal", array1dimbool2matrixbool);

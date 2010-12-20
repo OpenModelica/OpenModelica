@@ -4746,44 +4746,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinRem;
 
-protected function elabBuiltinInteger
-"function: elabBuiltinInteger
-  This function elaborates on the builtin operator integer, which extracts
-  the Integer value of a Real value."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.DAElist dae;
-      DAE.Type ty;
-      String exp_str;
-      Prefix.Prefix pre;
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) =
-          verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isIntegerOrRealOrSubTypeOfEither,"integer",pre,info);
-      then
-        (cache,s1_1,prop);
-  end matchcontinue;
-end elabBuiltinInteger;
-
 protected function elabBuiltinBoolean
 "function: elabBuiltinBoolean
   This function elaborates on the builtin operator boolean, which extracts
@@ -6376,7 +6338,6 @@ algorithm
     case "pre" then elabBuiltinPre;
     case "abs" then elabBuiltinAbs;
     case "div" then elabBuiltinDiv;
-    case "integer" then elabBuiltinInteger;
     case "boolean" then elabBuiltinBoolean;
     case "mod" then elabBuiltinMod;
     case "rem" then elabBuiltinRem;
