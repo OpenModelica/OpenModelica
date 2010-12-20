@@ -306,7 +306,13 @@ AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
   if test "Darwin" = `uname`; then
-    QMAKE="$QMAKE && sed -i.bak 's/-arch -/-/' Makefile"
+    QMAKE="$QMAKE && \
+      cat Makefile | \
+      sed 's/-arch i386/OMC_ARCH_i386/g' | \
+      sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
+      sed 's/-arch//g' | \
+      sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
+      mv Makefile.fixed"
   fi
   AC_MSG_RESULT([$QMAKE])
 fi
