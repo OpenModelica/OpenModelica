@@ -5180,50 +5180,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinEdge;
 
-protected function elabBuiltinSign "function: elabBuiltinSign
-
-  This function handles the built in sign operator.
-  sign(v) is expanded into (if v>0 then 1 else if v < 0 then -1 else 0)
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp_1,exp_2;
-      list<Env.Frame> env;
-      list<Absyn.Exp> expl;
-      Absyn.Exp exp;
-      Boolean impl;
-      DAE.Const c;
-      DAE.Type tp1,ty2,ty;
-      DAE.ExpType tp_1;
-      DAE.Exp zero,one,ret;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-
-    case (cache,env,{exp},_,impl,pre,info) /* Argument to sign must be an Integer or Real expression */
-      equation
-        (cache,exp_1,DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        ty2 = Types.arrayElementType(tp1);
-        Types.integerOrReal(ty2);
-        (cache,ret,(prop as DAE.PROP(ty,c))) = elabCallArgs(cache,env, Absyn.IDENT("sign"), {exp}, {}, impl,NONE(),pre,info);
-      then
-        (cache, ret, prop);
-  end matchcontinue;
-end elabBuiltinSign;
-
 protected function elabBuiltinDer
 "function: elabBuiltinDer
   This function handles the built in der operator."
@@ -6345,7 +6301,6 @@ algorithm
     case "differentiate" then elabBuiltinDifferentiate;
     case "noEvent" then elabBuiltinNoevent;
     case "edge" then elabBuiltinEdge;
-    case "sign" then elabBuiltinSign;
     case "der" then elabBuiltinDer;
     case "change" then elabBuiltinChange;
     case "cat" then elabBuiltinCat;

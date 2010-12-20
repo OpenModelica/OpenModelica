@@ -109,6 +109,17 @@ function sqrt
 external \"builtin\";
 end sqrt;
 
+function sign
+  input Real v;
+  output Integer _sign;
+external \"builtin\";
+/* We do this with external \"builtin\" for now. But maybe we should inline it instead...
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  _sign := noEvent(if v > 0 then 1 else if v < 0 then -1 else 0);
+ */
+end sign;
+
 function identity
   input Integer arraySize;
   output Integer[arraySize,arraySize] outArray;
@@ -3108,7 +3119,6 @@ algorithm
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
       env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
-      env = Env.extendFrameT(env, "sign", real2real);
       env = Env.extendFrameT(env, "substring", stringIntInt2string);
       env = Env.extendFrameT(env, "ndims", array1dimint2int) "PR. Add the built in array functions here. Also do it for real, string and bool" ;
       env = Env.extendFrameT(env, "ndims", array2dimint2int);

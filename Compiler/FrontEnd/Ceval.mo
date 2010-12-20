@@ -1969,9 +1969,9 @@ algorithm
         b1 = (rv >. 0.0);
         b2 = (rv <. 0.0);
         b3 = (rv ==. 0.0);
-        {(_,rv_1)} = Util.listSelect({(b1,1.0),(b2,-1.0),(b3,0.0)}, Util.tuple21);
+        {(_,iv_1)} = Util.listSelect({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
       then
-        (cache,Values.REAL(rv_1),st);
+        (cache,Values.INTEGER(iv_1),st);
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.INTEGER(iv),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
