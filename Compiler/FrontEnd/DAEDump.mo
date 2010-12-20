@@ -389,6 +389,26 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
+    case DAE.DAE((DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
+      equation
+        Print.printBuf("COMPLEX_EQUATION(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(" = ");
+        ExpressionDump.printExp(e2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();        
+    case DAE.DAE((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
+      equation
+        Print.printBuf("INITIAL_COMPLEX_EQUATION(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(" = ");
+        ExpressionDump.printExp(e2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();          
     case (DAE.DAE(elementLst = {})) then ();
     
     //BZ Could be nice to know when this failes (when new elements are introduced) 
