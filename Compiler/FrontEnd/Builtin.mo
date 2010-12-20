@@ -1164,11 +1164,11 @@ protected constant DAE.Type int2int=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
           DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-protected constant tuple<DAE.TType, Option<Type_a>> int2bool=(
+protected constant DAE.Type int2bool=(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},
           DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
-protected constant tuple<DAE.TType, Option<Type_a>> enumeration2int=(
+protected constant DAE.Type enumeration2int=(
           DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}),NONE()))},
           DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
