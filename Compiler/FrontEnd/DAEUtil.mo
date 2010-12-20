@@ -2169,47 +2169,46 @@ algorithm
   outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
 end crefToExp;
 
-public function verifyWhenEquation "
-Author BZ, 2008-09
-This function verifies when-equations.
+public function verifyWhenEquation
+"This function verifies when-equations.
 Returns the crefs written to, and also checks for illegal statements in when-body eqn's."
   input list<DAE.Element> inElems;
   output list<DAE.ComponentRef> leftSideCrefs;
-algorithm  leftSideCrefs := matchcontinue(inElems)
-  local
-    list<DAE.Element> elems1,oelems,moreWhen;
-    list<DAE.ComponentRef> crefs1,crefs2;
+algorithm
+  leftSideCrefs := match (inElems)
+    local
+      list<DAE.Element> elems1,oelems,moreWhen;
+      list<DAE.ComponentRef> crefs1,crefs2;
 
-  case({}) then {};
-    // no need to check elseWhen, they are beein handled in a reverse order, from inst.mo.
-  case(DAE.WHEN_EQUATION(equations=elems1)::moreWhen) then verifyWhenEquationStatements(elems1);
-  case(inElems) then verifyWhenEquationStatements(inElems);
-  case(inElems)
-    equation      
-      print("- DAEUtil.verifyWhenEquation FAILED on:" +& DAEDump.dumpElementsStr(inElems) +& "\n\n");
-    then 
-      fail();
-end matchcontinue;
+    case {} then {};
+      // no need to check elseWhen, they are being handled in a reverse order, from inst.mo.
+    case (DAE.WHEN_EQUATION(equations=elems1)::moreWhen)
+      equation
+        crefs1 = verifyWhenEquationStatements(elems1,{});
+      then listReverse(crefs1);
+    case (elems1)
+      equation
+        crefs1 = verifyWhenEquationStatements(elems1,{});
+      then listReverse(crefs1);
+  end match;
 end verifyWhenEquation;
 
 protected function verifyWhenEquationStatements2 ""
   input list<DAE.Exp> inExps;
+  input list<DAE.ComponentRef> acc;
   input DAE.ElementSource source "the element origin";
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs := matchcontinue(inExps,source)
+  leftSideCrefs := match(inExps,acc,source)
     local
       DAE.Exp e;
       list<DAE.ComponentRef> crefs1,crefs2;
-    case({},_) then {};
-    case(e::inExps,source)
+    case ({},acc,_) then acc;
+    case (e::inExps,acc,source)
       equation
-        crefs1 = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)});
-        crefs2 = verifyWhenEquationStatements2(inExps,source);
-        leftSideCrefs = listAppend(crefs1,crefs2);
-      then
-        leftSideCrefs;
-  end matchcontinue;
+        acc = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)},acc);
+      then verifyWhenEquationStatements2(inExps,acc,source);
+  end match;
 end verifyWhenEquationStatements2;
 
 protected function verifyWhenEquationStatements "
@@ -2217,11 +2216,12 @@ Author BZ, 2008-09
 Helper function for verifyWhenEquation
 TODO: add some error reporting for this."
   input list<DAE.Element> inElems;
+  input list<DAE.ComponentRef> acc;
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs:= matchcontinue (inElems)
+  leftSideCrefs:= match (inElems,acc)
     local
-      String s1,s2;
+      String s1,s2,msg;
       Integer i;
       list<DAE.Exp> e1,e2,e3,exps,explist1,explist2,exps1,exps2,exps3;
       DAE.Exp crefexp,exp,cond,ee1,ee2;
@@ -2247,144 +2247,73 @@ algorithm
       list<DAE.ExtArg> args;
       Option<Absyn.Annotation> ann;
       DAE.ElementSource source "the element origin";
-      list<list<DAE.ComponentRef>> crefslist;      
+      list<list<DAE.ComponentRef>> crefslist;
+      Boolean b;
 
-    case({}) then {};
+    case({},acc) then acc;
     
-    case(DAE.VAR(componentRef = _)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        lhsCrefs;
+    case(DAE.VAR(componentRef = _)::rest,acc)
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.DEFINE(componentRef = cref,exp = exp)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        cref::lhsCrefs;
+    case(DAE.DEFINE(componentRef = cref,exp = exp)::rest,acc)
+      then verifyWhenEquationStatements(rest,cref::acc);
     
-    case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        cref::lhsCrefs;
+    case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest,acc)
+      then verifyWhenEquationStatements(rest,cref::acc);
     
-    case(DAE.EQUATION(exp = DAE.TUPLE(exps1),source=source)::rest)
+    case(DAE.EQUATION(exp = DAE.TUPLE(exps1),source=source)::rest,acc)
       equation
-        crefs1 = verifyWhenEquationStatements2(exps1,source);
-        lhsCrefs = verifyWhenEquationStatements(rest);
-        lhsCrefs = listAppend(crefs1,lhsCrefs);
-      then
-        lhsCrefs;
+        acc = verifyWhenEquationStatements2(exps1,acc,source);
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.ARRAY_EQUATION(exp = DAE.CREF(cref, _)) :: rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        cref :: lhsCrefs;
+    case(DAE.ARRAY_EQUATION(exp = DAE.CREF(cref, _)) :: rest,acc)
+      then verifyWhenEquationStatements(rest,cref::acc);
     
-    case(DAE.EQUEQUATION(cr1=cref,cr2=_)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        cref::lhsCrefs;
+    case(DAE.EQUEQUATION(cr1=cref,cr2=_)::rest,acc)
+      then verifyWhenEquationStatements(rest,cref::acc);
 
-    case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb)::rest)
+    case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb,source = source)::rest,acc)
       equation
-        crefslist = Util.listMap(eqstrueb,verifyWhenEquationStatements);
-        crefs2 = verifyWhenEquationStatements(eqsfalseb);
-        crefslist = listAppend(crefslist,{crefs2});
-        (crefs1,true) = compareCrefList(crefslist);
-        lhsCrefs = verifyWhenEquationStatements(rest);
-        lhsCrefs = listAppend(crefs1,lhsCrefs);
-      then
-        lhsCrefs;
+        crefslist = Util.listMap1(eqstrueb,verifyWhenEquationStatements,{});
+        crefs2 = verifyWhenEquationStatements(eqsfalseb,{});
+        crefslist = crefs2::crefslist;
+        (crefs1,b) = compareCrefList(crefslist);
+        Error.assertionOrAddSourceMessage(b,Error.WHEN_EQ_LHS,{"All branches must write to the same variable"},getElementSourceFileInfo(source));
+        acc = listAppend(crefs1,acc);
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb,source=source)::rest)
-      equation
-        crefslist = Util.listMap(eqstrueb,verifyWhenEquationStatements);
-        crefs2 = verifyWhenEquationStatements(eqsfalseb);
-        (crefs1,false) = compareCrefList(crefslist);
-        s2 = DAEDump.dumpEquationStr(DAE.IF_EQUATION(exps,eqstrueb,eqsfalseb,source));
-        s1 = "Error in IF-equation: \n" +& s2 +& "\n " +& "\nAll branches must write to same variables \n";
-        print(s1);
-      then
-        fail();
+    case(DAE.ASSERT(condition=ee1,message=ee2)::rest,acc)
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.ALGORITHM(algorithm_ = alg)::rest)
-      equation
-        print("ALGORITHM not implemented for use inside when equation\n");
-      then
-        fail();
+    case(DAE.TERMINATE(message = _)::rest,acc)
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.INITIALALGORITHM(algorithm_ = alg)::rest)
-      equation
-        print("INITIALALGORITHM not allowed inside when equation\n");
-      then
-        fail();
-    
-    case(DAE.COMP(ident = _)::rest)
-      equation
-        print("COMP not implemented for use inside when equation\n");
-      then
-        fail();
+    case(DAE.REINIT(componentRef=cref,source=source)::rest,acc)
+      then verifyWhenEquationStatements(rest,acc);
 
-    case(DAE.ASSERT(condition=ee1,message=ee2)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        lhsCrefs;
-    
-    case(DAE.TERMINATE(message = _)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        lhsCrefs;
-    
-    case(DAE.REINIT(componentRef=cref)::rest)
-      equation
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        /*cref::*/lhsCrefs;
-
-    case(DAE.INITIAL_IF_EQUATION(condition1 = _)::rest)
-      equation print("INITIAL_IF_EQUATION not allowed inside when equation\n");
-      then
-        fail();
-    
-    case(DAE.INITIALEQUATION(exp1 = _)::rest)
-      equation print("INITIALEQUATION not allowed inside when equation\n");
-      then
-        fail();
-    
     // adrpo: TODO! FIXME! WHY??!! we might push values to a file writeFile(time);
-    case(DAE.NORETCALL(functionName=_)::rest)
-      equation 
-        lhsCrefs = verifyWhenEquationStatements(rest);
-      then
-        lhsCrefs;
+    case(DAE.NORETCALL(functionName=_)::rest,acc)
+      then verifyWhenEquationStatements(rest,acc);
     
-    case(DAE.WHEN_EQUATION(condition = _)::rest)
+    case(DAE.EQUATION(exp = exp, source=source)::rest,acc)
       equation
-        print(" When-equation inside when equation..?\n");
+        msg = ExpressionDump.printExpStr(exp);
+        Error.addSourceMessage(Error.WHEN_EQ_LHS,{msg},getElementSourceFileInfo(source));
+      then fail();
+    
+    case(DAE.WHEN_EQUATION(condition = _,source=source)::rest,acc)
+      equation
+        Error.addSourceMessage(Error.NESTED_WHEN,{},getElementSourceFileInfo(source));
       then
         fail();
     
-    case(DAE.INITIALDEFINE(componentRef = cref,exp = exp)::_)
+    case(el::_,acc)
       equation
-        print("INITIALDEFINE inside when equation, error");
+        msg = "- DAEUtil.verifyWhenEquationStatements failed on: " +& DAEDump.dumpElementsStr({el}); 
+        Error.addMessage(Error.INTERNAL_ERROR,{msg});
       then
         fail();
-    
-    // failure printing
-    case(el::_)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- DAEUtil.verifyWhenEquationStatements failed on: " +& 
-          DAEDump.dumpElementsStr({el}));
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end verifyWhenEquationStatements;
 
 protected function compareCrefList ""

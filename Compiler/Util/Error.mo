@@ -242,6 +242,7 @@ public constant ErrorID FUNCTION_ELEMENT_WRONG_PROTECTION=154;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
 public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not use another index";
 public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
+public constant ErrorID WHEN_EQ_LHS=158;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -426,7 +427,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 					"Unable to unroll for loop containing when statements or equations: %s\n"),
           (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
           (NESTED_WHEN, TRANSLATION(), ERROR(),
-          "In scope %s: Invalid nested when statements:\n%s\n"),
+          "Nested when statements are not allowed."),
           (INVALID_ENUM_LITERAL, TRANSLATION(), ERROR(),
           "%s Invalid use of reserved attribute name %s as enumeration literal."),
           (UNEXCPECTED_FUNCTION_INPUTS_WARNING,TRANSLATION(), WARNING(),
@@ -673,6 +674,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (FUNCTION_ELEMENT_WRONG_PROTECTION,TRANSLATION(),ERROR(),"%s was declared %s but should be %s."),
           (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
           (WITHOUT_SENDDATA,SCRIPTING(),ERROR(),"%s failed because OpenModelica was configured without sendData support."),
+          (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };
@@ -1068,6 +1070,23 @@ algorithm
       then fail();
   end match;
 end assertion;
+
+public function assertionOrAddSourceMessage
+"Used to make compiler-internal assertions. These messages are meant
+to be shown to a user when the condition is true."
+  input Boolean inCond;
+  input ErrorID inErrorID;
+  input MessageTokens inMessageTokens;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match (inCond, inErrorID, inMessageTokens, inInfo)
+    case (true,_,_,_) then ();
+    else
+      equation
+        addSourceMessage(inErrorID, inMessageTokens, inInfo);
+      then fail();
+  end match;
+end assertionOrAddSourceMessage;
 
 public function addCompilerWarning
 "Used to make a compiler warning "

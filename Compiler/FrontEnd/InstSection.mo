@@ -667,9 +667,7 @@ algorithm
     case (_, env, _, _, _, _, _, eq as SCode.EQ_WHEN(info = info), _, _, _)
       equation
         failure(checkForNestedWhen(eq));
-        scope_str = Env.printEnvPathStr(env);
-        eq_str = SCode.equationStr(eq);
-        Error.addSourceMessage(Error.NESTED_WHEN, {scope_str, eq_str}, info);
+        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
       then
         fail();
         
@@ -2532,9 +2530,7 @@ algorithm
     case (_,env,ih,_,alg as SCode.ALG_WHEN_A(branches = (_,sl)::_, info = info),_,_,_,_)
       equation
         true = containsWhenStatements(sl);
-        alg_str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
-        scope_str = Env.printEnvPathStr(env);
-        Error.addSourceMessage(Error.NESTED_WHEN, {scope_str, alg_str}, info);
+        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
       then fail();
 
     /* assert(cond,msg) */
