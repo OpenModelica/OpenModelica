@@ -691,8 +691,12 @@ assign_clause_a returns [void* ast] @declarations {
 
 equality_or_noretcall_equation returns [void* ast] :
   e1=simple_expression
-    (  EQUALS e2=expression {ast = Absyn__EQ_5fEQUALS(e1,e2);}
-    | {LA(1) != EQUALS && RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
+    (  (EQUALS | ass=ASSIGN) e2=expression
+      {
+        modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
+        ast = Absyn__EQ_5fEQUALS(e1,e2);
+      }
+    | {LA(1) != EQUALS && LA(1) != ASSIGN && RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
        {
          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
          ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);

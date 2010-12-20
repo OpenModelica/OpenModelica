@@ -213,7 +213,6 @@ end print;
 
 function classDirectory \"Not standard Modelica\"
   output String str;
-  annotation(__OpenModelica_Impure = true);
 external \"builtin\";
 end classDirectory;
 "
