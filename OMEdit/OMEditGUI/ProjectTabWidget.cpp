@@ -1307,9 +1307,9 @@ void ProjectTab::getModelComponents()
             //newComponent->setTransform(transformation->getTransformationMatrix());
             //! @todo We need to reset the matrix before applying tranformations.
             newComponent->resetTransform();
+            newComponent->scale(transformation->getScale(), transformation->getScale());
             newComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
             newComponent->setRotation(transformation->getRotateAngle());
-            newComponent->scale(transformation->getScale(), transformation->getScale());
         }
         i++;
     }

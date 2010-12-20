@@ -320,6 +320,7 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
             item->mpShapesList.append(ellipseAnnotation);
         }
         // don't parse the text annotation for library icon
+        //! @todo We don't show text for Library Icons.
         if (!libraryIcon)
         {
             if (shape.startsWith("Text"))

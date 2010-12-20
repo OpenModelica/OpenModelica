@@ -53,5 +53,6 @@
         <file>Resources/icons/next.png</file>
         <file>Resources/icons/previous.png</file>
         <file>Resources/icons/exit.png</file>
+        <file>Resources/icons/type-icon.png</file>
     </qresource>
 </RCC>

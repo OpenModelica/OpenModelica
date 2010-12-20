@@ -578,8 +578,10 @@ int OMCProxy::getClassRestriction(QString modelName)
         return StringHandler::FUNCTION;
     else if (getResult().toLower().contains("package"))
         return StringHandler::PACKAGE;
+    else if (getResult().toLower().contains("type"))
+        return StringHandler::TYPE;
     else
-        return 0;
+        return StringHandler::MODEL;
 }
 
 QList<IconParameters*> OMCProxy::getParameters(QString className)

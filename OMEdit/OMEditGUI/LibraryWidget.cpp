@@ -75,6 +75,8 @@ QIcon ModelicaTreeNode::getModelicaNodeIcon(int type)
         return QIcon(":/Resources/icons/function-icon.png");
     case StringHandler::PACKAGE:
         return QIcon(":/Resources/icons/package-icon.png");
+    case StringHandler::TYPE:
+        return QIcon(":/Resources/icons/type-icon.png");
     }
 }
 
