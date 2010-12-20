@@ -79,6 +79,7 @@ algorithm
       InstanceHierarchy.InstanceHierarchy ih;
       Boolean hasExpandableConnectors;
       list<Absyn.Class> inClasses,initialClasses;
+      list<String> names;
 
     case (inProgram)
       equation
@@ -98,7 +99,12 @@ algorithm
         System.setHasStreamConnectors(false);
         sp = Util.listFold(inClasses, translate2, {});
         sp = Util.listFold(initialClasses, translate2, sp);
+        names = Util.listMap(sp, SCode.className);
+        names = Util.sort(names,Util.strcmpBool);
+        (_,names) = Util.splitUniqueOnBool(names,stringEqual);
+        checkForDuplicateClassesInTopScope(names);
         sp = listReverse(sp);
+        
         //sp = SCodeFlatten.flatten(sp);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
@@ -1847,5 +1853,21 @@ public function getImportFromElement
 algorithm
   SCode.IMPORT(imp) := elt;
 end getImportFromElement;
+
+protected function checkForDuplicateClassesInTopScope
+"Verifies that the input is empty; else an error message is printed"
+  input list<String> duplicateNames;
+algorithm
+  _ := match duplicateNames
+    local
+      String msg;
+    case {} then ();
+    else
+      equation
+        msg = Util.stringDelimitList(duplicateNames, ",");
+        Error.addMessage(Error.DUPLICATE_CLASSES_TOP_LEVEL,{msg});
+      then fail();
+  end match;
+end checkForDuplicateClassesInTopScope;
 
 end SCodeUtil;

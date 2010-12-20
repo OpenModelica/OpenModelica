@@ -136,10 +136,6 @@ record Bitmap
 end Bitmap;
 
 // Constants.iconProgram:
-record CoordinateSystem
-  Real extent[2,2];
-end CoordinateSystem;
-
 record Icon
   CoordinateSystem coordinateSystem(extent={{-10.0,-10.0},{10.0,10.0}});
 end Icon;

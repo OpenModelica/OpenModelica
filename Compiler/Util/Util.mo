@@ -1146,12 +1146,28 @@ public function listMap "function: listMap
   replaceable type Type_b subtypeof Any;
 algorithm
   /* Fastest impl. on large lists, 10M elts takes about 3 seconds */
-  outTypeBLst := listMap_impl_2(inTypeALst,{},inFuncTypeTypeAToTypeB);
+  outTypeBLst := listReverse(listMap_impl(inTypeALst,{},inFuncTypeTypeAToTypeB));
 end listMap;
 
-function listMap_impl_2
-"@author adrpo
- this will work in O(2n) due to listReverse"
+public function listMap_reversed
+"listMap, but returns a reversed list"
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+  input  list<TypeA> inLst;
+  input  FuncTypeTypeVarToTypeVar fn;
+  output list<TypeB> outLst;
+  partial function FuncTypeTypeVarToTypeVar
+    input TypeA inTypeA;
+    output TypeB outTypeB;
+    replaceable type TypeA subtypeof Any;
+    replaceable type TypeB subtypeof Any;
+  end FuncTypeTypeVarToTypeVar;
+algorithm
+  outLst := listMap_impl(inLst,{},fn);
+end listMap_reversed;
+
+protected function listMap_impl
+"listMap implementation; uses an accumulator"
   replaceable type TypeA subtypeof Any;
   replaceable type TypeB subtypeof Any;
   input  list<TypeA> inLst;
@@ -1173,16 +1189,16 @@ algorithm
       list<TypeB> l, result;
     
     // revese at the end
-    case ({}, l, _) then listReverse(l);
+    case ({}, l, _) then l;
     // accumulate in front
     case (hd::rest, l, fn)
       equation
         hdChanged = fn(hd);
-        result = listMap_impl_2(rest, hdChanged::l, fn);
+        result = listMap_impl(rest, hdChanged::l, fn);
     then
         result;
   end matchcontinue;
-end listMap_impl_2;
+end listMap_impl;
 
 public function listMap_2 "function listMap_2
   Takes a list and a function over the elements returning a tuple of
@@ -7264,5 +7280,66 @@ algorithm
         str;
   end matchcontinue;
 end buildMapStr;
+
+public function splitUniqueOnBool
+"Takes a sorted list and returns two sorted lists:
+  * The first is the input with all duplicate elements removed
+  * The second is the removed elements
+"
+  input list<TypeA> sorted;
+  input Comp comp;
+  output list<TypeA> uniqueLst;
+  output list<TypeA> duplicateLst;
+  replaceable type TypeA subtypeof Any;
+  partial function Comp
+    input TypeA a1;
+    input TypeA a2;
+    output Boolean b;
+  end Comp;
+algorithm
+  (uniqueLst,duplicateLst) := splitUniqueOnBoolWork(sorted,comp,{},{});
+end splitUniqueOnBool;
+
+
+protected function splitUniqueOnBoolWork
+"Takes a sorted list and returns two sorted lists:
+  * The first is the input with all duplicate elements removed
+  * The second is the removed elements
+"
+  input list<TypeA> sorted;
+  input Comp comp;
+  input list<TypeA> uniqueAcc;
+  input list<TypeA> duplicateAcc;
+  output list<TypeA> uniqueLst;
+  output list<TypeA> duplicateLst;
+  replaceable type TypeA subtypeof Any;
+  partial function Comp
+    input TypeA a1;
+    input TypeA a2;
+    output Boolean b;
+  end Comp;
+algorithm
+  (uniqueLst,duplicateLst) := matchcontinue (sorted,comp,uniqueAcc,duplicateAcc)
+    local
+      TypeA a1,a2;
+      list<TypeA> rest;
+      Boolean b;
+    case ({},comp,uniqueAcc,duplicateAcc)
+      equation
+        uniqueAcc = listReverse(uniqueAcc);
+        duplicateAcc = listReverse(duplicateAcc);
+      then (uniqueAcc,duplicateAcc);
+    case ({a1},comp,uniqueAcc,duplicateAcc)
+      equation
+        uniqueAcc = listReverse(a1::uniqueAcc);
+        duplicateAcc = listReverse(duplicateAcc);
+      then (uniqueAcc,duplicateAcc);
+    case (a1::a2::rest,comp,uniqueAcc,duplicateAcc)
+      equation
+        b = comp(a1,a2);
+        (uniqueAcc,duplicateAcc) = splitUniqueOnBoolWork(a2::rest,comp,if_(b,uniqueAcc,a1::uniqueAcc),if_(b,a1::duplicateAcc,duplicateAcc));
+      then (uniqueAcc,duplicateAcc);
+  end matchcontinue;
+end splitUniqueOnBoolWork;
 
 end Util;

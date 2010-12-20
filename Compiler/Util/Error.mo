@@ -241,6 +241,7 @@ public constant ErrorID RECURSIVE_SHORT_CLASS_DEFINITION=153;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_PROTECTION=154;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
 public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not use another index";
+public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -523,6 +524,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 		      "Expression %s in for-statement must be an array type"),
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
 		      "Break statement found inside a loop"),
+          (DUPLICATE_CLASSES_TOP_LEVEL,TRANSLATION(),ERROR(),
+          "Duplicate classes on top level is not allowed (got %s)."),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Duplicate elements (due to inherited elements) not identical:\n\tfirst element is:  %s\tsecond element is: %s"),
           (DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,TRANSLATION(),WARNING(),
