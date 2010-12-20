@@ -44,6 +44,7 @@ public import Values;
 
 protected import Absyn;
 protected import BackendDAEUtil;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -2639,6 +2640,11 @@ algorithm
         (vLst,indxs) = getArrayVar(cr, vars);
       then
         (vLst,indxs);
+    case (cr,vars) /* check if record */
+      equation
+        (vLst,indxs) = getRecordVar(cr, vars);
+      then
+        (vLst,indxs);        
     /* failure
     case (cr,vars)
       equation
@@ -2839,6 +2845,39 @@ algorithm
         (vs_1,indxs_1);
   end matchcontinue;
 end getArrayVar2;
+
+protected function getRecordVar
+"function: getRecordVar
+  author: Frenkel TUD
+  Helper function to get_var, checks one record variable.
+  I.e. getrecord_var(v,<vars>) will for an record r(x,y) return
+  { r.x,r.y}"
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := matchcontinue (inComponentRef,inVariables)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ExpVar> varLst;
+      list<DAE.ComponentRef> crefs,crefs1;
+      list<list<BackendDAE.Var>> varslst;
+      list<list<Integer>> ilstlst;
+      list<BackendDAE.Var> vars;
+      list<Integer> ilst;
+    case (cr,inVariables)
+      equation
+        DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
+        crefs =  Util.listMap(varLst,ComponentReference.creffromVar);
+        crefs1 = Util.listMap1r(crefs,ComponentReference.joinCrefs,cr);
+        (varslst,ilstlst) = Util.listMap1_2(crefs1,getVar,inVariables);
+        vars = Util.listFlatten(varslst);
+        ilst = Util.listFlatten(ilstlst);
+      then
+        (vars,ilst);
+  end matchcontinue;
+end getRecordVar;
 
 public function mergeVariables
 "function: mergeVariables

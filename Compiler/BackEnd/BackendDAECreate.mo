@@ -1026,7 +1026,7 @@ algorithm
       Integer i;
       list<BackendDAE.Equation> complexEqs;
       list<BackendDAE.MultiDimEquation> arreqns;
-      DAE.ElementSource source "the element source";
+      DAE.ElementSource source;
 
     // normal first try to inline function calls and extend the equations
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
@@ -3278,7 +3278,6 @@ algorithm
       multiEqs2 = listAppend(multiEqs,multiEqs1);
     then
       ((complexEqs1,multiEqs2)); 
-  case(eqn,_) then (({eqn},{}));      
 end matchcontinue;
 end extendRecordEqns;
 

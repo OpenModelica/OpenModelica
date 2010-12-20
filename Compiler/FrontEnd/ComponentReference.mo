@@ -246,6 +246,23 @@ algorithm
   end matchcontinue;
 end pathToCref;
 
+public function creffromVar
+" function creffromVar
+  author: Frenkel TUD
+  generates a cref from DAE.ExpVar"
+  input DAE.ExpVar inVar;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := matchcontinue (inVar)
+    local
+      String name;
+      DAE.ExpType tp;
+    case DAE.COMPLEX_VAR(name=name,tp=tp)
+      then
+        makeCrefIdent(name,tp,{});
+  end matchcontinue;
+end creffromVar;
+
 public function unelabCref
 "function: unelabCref
   Transform an DAE.ComponentRef into Absyn.ComponentRef."

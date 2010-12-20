@@ -317,7 +317,7 @@ case SIMCODE(__) then
   
   // define class name and unique id
   #define MODEL_IDENTIFIER <%fileNamePrefix%>
-  #define MODEL_GUID "<%guid%>"
+  #define MODEL_GUID "{<%guid%>}"
   
   // include fmu header files, typedefs and macros
   #include "fmiModelFunctions.h"
