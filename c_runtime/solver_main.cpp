@@ -89,21 +89,7 @@ int dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y, fortran_inte
 }
 bool continue_MINE(fortran_integer* idid, double* atol, double *rtol);
 
-/* \brief
- * calculates a tiny step
- *
- * A tiny step is taken at initialization to check events. The tiny step is calculated as
- * 200*uround*max(abs(T0),abs(T1)) = 200*uround*abs(T1), when simulating from T0 to T1, and uround is the machine precision.
- */
-double calcTiny(double tout)
-{
-    double uround = dlamch_((char*)"P",1);
-    if (tout == 0.0) {
-        return 1000.0*uround;
-    } else {
-        return 1000.0*uround*fabs(tout);
-    }
-}
+double calcTinyStep(double start, double stop);
 
 fortran_integer info[15];
 double reltol = 1.0e-5;
@@ -266,7 +252,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     }
 
     // Do a tiny step to initialize ZeroCrossing that are fulfilled
-    globalData->current_stepsize = calcTiny(globalData->timeValue);
+    globalData->current_stepsize = calcTinyStep(start,stop);
     solver_main_step(flag,start,stop,reset);
     functionAlgebraics();
 

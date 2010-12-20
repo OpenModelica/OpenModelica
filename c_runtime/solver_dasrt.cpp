@@ -59,15 +59,17 @@ int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, double 
 * A tiny step is taken at initialization to check events. The tiny step is calculated as
 * 200*uround*max(abs(T0),abs(T1)) = 200*uround*abs(T1), when simulating from T0 to T1, and uround is the machine precision.
 */
-double calcTinyStep(double tout)
+double calcTinyStep(double start, double stop)
 {
-  double uround = dlamch_("P",1);
+  double uround = dlamch_((char*)"P",1);
+  double tout = stop-start;
   if (tout == 0.0) {
     return 1000.0*uround;
   } else {
     return 1000.0*uround*fabs(tout);
   }
 }
+
 /* Returns the index of the first root that is active*/
 int activeEvent(int nRoots, fortran_integer *jroot)
 {
@@ -90,7 +92,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   double tout;
   double rtol = 1.0e-5;
   double atol = 1.0e-5;
-  double uround = dlamch_("P",1);
+  double uround = dlamch_((char*)"P",1);
   fortran_integer idid = 0;
 
 
@@ -196,7 +198,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     }
 
 
-    tout = globalData->timeValue+calcTinyStep(globalData->timeValue); // take tiny step.
+    tout = globalData->timeValue+calcTinyStep(start,stop); // take tiny step.
     //saveall();
 
     function_updateDependents();
@@ -255,7 +257,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         //This is needed since state events are found by numerical interpolation and therefore it is not
         // certain that the event will cause the relation to trigger, e.g x < 0 might correspond to 0.000000000000000145 < 0
         info[0]=1;
-        tout=globalData->timeValue+calcTinyStep(tout);
+        tout=globalData->timeValue+calcTinyStep(start,stop);
         {
           long *tmp_jroot = new long[globalData->nZeroCrossing];
           int i;
