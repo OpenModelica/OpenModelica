@@ -126,6 +126,21 @@ function identity
 external \"builtin\";
 end identity;
 
+function semiLinear
+  input Real x;
+  input Real positiveSlope;
+  input Real negativeSlope;
+  output Real result;
+external \"builtin\";
+end semiLinear;
+
+function edge
+  input Boolean b;
+  output Boolean edgeEvent;
+  // TODO: Ceval parameters? Needed to remove the builtin handler
+external \"builtin\";
+end edge;
+
 function sin
   input Real x;
   output Real y;
@@ -1191,14 +1206,6 @@ protected constant DAE.Type real2bool=(
 protected constant DAE.Type realReal2bool=(
           DAE.T_FUNCTION(
           {("x",DAE.T_REAL_DEFAULT),("y",DAE.T_REAL_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
-
-// for semiLinear and delay
-protected constant DAE.Type realRealReal2real=(
-          DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT),
-           ("y",DAE.T_REAL_DEFAULT),
-           ("z",DAE.T_REAL_DEFAULT)},
-          DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
 
 protected constant DAE.Type realRealReal2Real=(
           DAE.T_FUNCTION(
@@ -3081,16 +3088,7 @@ algorithm
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar,NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
-      env = Env.extendFrameT(env, "event", bool2bool);
-      env = Env.extendFrameT(env, "switch", bool2bool);
-      env = Env.extendFrameT(env, "timeEvent", realReal2bool);
-      env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);
       env = Env.extendFrameT(env, "change", real2bool);
-      env = Env.extendFrameT(env, "edge", bool2bool);
-      /* Removed due to handling in static.mo
-      env = Env.extendFrameT(env, "delay", realReal2real);
-      env = Env.extendFrameT(env, "delay", realRealReal2Real);
-      */
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
       env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
@@ -3510,11 +3508,6 @@ algorithm
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
       env = Env.extendFrameT(env, "actualStream", real2real);
       env = Env.extendFrameT(env, "inStream", real2real);
-      /*
-      env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
-      env = Env.extendFrameT(env, "delay", realReal2real);
-      env = Env.extendFrameT(env, "delay", realRealReal2real);
-      */
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
 
       env = initialEnvMetaModelica(env);
