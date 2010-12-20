@@ -65,6 +65,26 @@ derivative of expression means an addition of 1/s on the unit dimension\"
 external \"builtin\";
 end der;
 
+function initial
+  output Boolean isInitial;
+  annotation(__OpenModelica_Impure = true);
+external \"builtin\";
+end initial;
+
+function terminal
+  output Boolean isTerminal;
+  annotation(__OpenModelica_Impure = true);
+external \"builtin\";
+end terminal;
+
+function sample
+  input Real start;
+  input Real interval;
+  output Boolean isSample;
+  annotation(__OpenModelica_Impure = true);
+external \"builtin\";
+end sample;
+
 function ceil
   input Real x;
   output Real y;

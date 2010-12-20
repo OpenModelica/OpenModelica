@@ -4083,86 +4083,6 @@ algorithm
   end matchcontinue;
 end mkLstPre;
 
-protected function elabBuiltinInitial "function: elabBuiltinInitial
-
-  This function elaborates the builtin operator \'initial()\'
-  Input is the arguments to the operator, which should be an empty list.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      list<Env.Frame> env;
-      Boolean impl;
-      Env.Cache cache;
-      Prefix.Prefix pre;
-      String sp;
-      DAE.Exp call;
-    case (cache,env,{},{},impl,_,info)
-      equation
-        call = makeBuiltinCall("initial", {}, DAE.ET_BOOL());
-      then (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
-
-    case (cache,env,_,_,_,pre,info)
-      equation
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {"initial takes no arguments",sp}, info);
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinInitial;
-
-protected function elabBuiltinTerminal "function: elabBuiltinTerminal
-
-  This function elaborates the builtin operator \'terminal()\'
-  Input is the arguments to the operator, which should be an empty list.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      list<Env.Frame> env;
-      Boolean impl;
-      Env.Cache cache;
-      Prefix.Prefix pre;
-      String sp;
-      DAE.Exp call;
-    case (cache,env,{},{},impl,_,info)
-      equation
-        call = makeBuiltinCall("terminal", {}, DAE.ET_BOOL());
-      then (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
-
-    case (cache,env,_,_,impl,pre,info)
-      equation
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,
-          {"terminal takes no arguments",sp}, info);
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinTerminal;
-
 protected function elabBuiltinArray "function: elabBuiltinArray
 
   This function elaborates the builtin operator \'array\'. For instance,
@@ -5429,63 +5349,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinDer;
 
-protected function elabBuiltinSample "function: elabBuiltinSample
-  author: PA
-
-  This function handles the built in sample operator.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp start_1,interval_1, call;
-      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2;
-      list<Env.Frame> env;
-      Absyn.Exp start,interval;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.DAElist dae,dae1,dae2;
-      Prefix.Prefix pre;
-      String sp;
-    case (cache,env,{start,interval},_,impl,pre,info)
-      equation
-        (cache,start_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, start, impl,NONE(),true,pre,info);
-        (cache,interval_1,DAE.PROP(tp2,_),_) = elabExp(cache,env, interval, impl,NONE(),true,pre,info);
-        Types.integerOrReal(tp1);
-        Types.integerOrReal(tp2);
-        call = makeBuiltinCall("sample", {start_1, interval_1}, DAE.ET_BOOL());
-      then
-        (cache, call, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
-
-    case (cache,env,{start,interval},_,impl,pre,info)
-      equation
-        (cache,start_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, start, impl,NONE(),true,pre,info);
-        failure(Types.integerOrReal(tp1));
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER_OR_REAL, {"First","sample", sp}, info);
-      then
-        fail();
-    case (cache,env,{start,interval},_,impl,pre,info)
-      equation
-        (cache,start_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, interval, impl,NONE(),true,pre,info);
-        failure(Types.integerOrReal(tp1));
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER_OR_REAL, {"Second","sample", sp}, info);
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinSample;
-
 protected function elabBuiltinChange "function: elabBuiltinChange
   author: PA
 
@@ -6511,8 +6374,6 @@ algorithm
     case "sum" then elabBuiltinSum;
     case "product" then elabBuiltinProduct;
     case "pre" then elabBuiltinPre;
-    case "initial" then elabBuiltinInitial;
-    case "terminal" then elabBuiltinTerminal;
     case "abs" then elabBuiltinAbs;
     case "div" then elabBuiltinDiv;
     case "integer" then elabBuiltinInteger;
@@ -6525,7 +6386,6 @@ algorithm
     case "edge" then elabBuiltinEdge;
     case "sign" then elabBuiltinSign;
     case "der" then elabBuiltinDer;
-    case "sample" then elabBuiltinSample;
     case "change" then elabBuiltinChange;
     case "cat" then elabBuiltinCat;
     case "identity" then elabBuiltinIdentity;
