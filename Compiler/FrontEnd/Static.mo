@@ -3986,125 +3986,6 @@ algorithm
   end matchcontinue;
 end validateBuiltinStreamOperator;
 
-protected function elabBuiltinMMCGetField "Fetches fields from a boxed datatype:
-Tuple: (a,b,c),2 => b
-Option: SOME(x),1 => x
-Metarecord: ut,0,\"field\" => ut[0].field - (first record in the record list of the uniontype - the field with the specified name)...
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      DAE.ExpType tp;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      DAE.Properties prop;
-      list<DAE.Exp> expList;
-      list<DAE.Type> tys;
-      Integer i;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-      String fieldName, str, utStr;
-      Absyn.Path p, p2;
-      list<DAE.Var> fields;
-      DAE.Var var;
-      Integer fieldNum;
-      Absyn.ComponentRef cref;
-    case (cache,env,{s1,Absyn.INTEGER(i)},{},impl,pre,info) /* Tuple */
-      equation
-        (cache,s1_1,DAE.PROP((DAE.T_METATUPLE(tys),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
-        ty = listNth(tys,i-1);
-        tp = Types.elabType(ty);
-        s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(i)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
-      then
-        (cache,s1_1,DAE.PROP(ty,c));
-
-    case (cache,env,{s1,Absyn.INTEGER(1)},{},impl,pre,info) /* Option */
-      equation
-        (cache,s1_1,DAE.PROP((DAE.T_METAOPTION(ty),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
-        tp = Types.elabType(ty);
-        s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(1)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
-      then
-        (cache,s1_1,DAE.PROP(ty,c));
-    case (cache,env,{s1,Absyn.CREF(cref),Absyn.STRING(fieldName)},{},impl,pre,info) /* Uniontype */
-      equation
-        (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),SOME(p)),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
-        p2 = Absyn.crefToPath(cref);
-        (cache,(DAE.T_METARECORD(fields = fields),_),env) = Lookup.lookupType(cache,env,p2,SOME(info));
-        (var as DAE.TYPES_VAR(type_ = ty)) = Types.varlistLookup(fields, fieldName);
-        fieldNum = Util.listPosition(var, fields)+2;
-        tp = Types.elabType(ty);
-        s1_1 = makeBuiltinCall("mmc_get_field", {s1_1, DAE.ICONST(fieldNum)}, tp);
-        ty = Util.if_(Types.isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
-      then
-        (cache,s1_1,DAE.PROP(ty,c));
-    case (_,_,_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinMMCGetField failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinMMCGetField;
-
-protected function elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal "mmc_uniontype_metarecord_typedef_equal(x,1,REC1) => bool"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      String s;
-      DAE.Exp s1_1;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      list<DAE.Exp> expList;
-      Integer i,numFields;
-      DAE.DAElist dae;
-      Prefix.Prefix pre;
-
-    case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields)},{},impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),_),c),_) = elabExp(cache, env, s1, impl,NONE(), true,pre,info);
-        expList = {s1_1, DAE.ICONST(i), DAE.ICONST(numFields)};
-        s1_1 = makeBuiltinCall("mmc_uniontype_metarecord_typedef_equal", 
-            expList, DAE.ET_BOOL());
-      then
-        (cache,s1_1,DAE.PROP(DAE.T_BOOL_DEFAULT,c));
-    case (_,_,_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
-
 protected function makePreLst
 "function: makePreLst
   Takes a list of expressions and makes a list of pre - expressions"
@@ -6687,8 +6568,6 @@ algorithm
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
   matchcontinue (inIdent)
     case "simplify" then elabBuiltinSimplify;
-    case "getField" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
-    case "uniontypeMetarecordTypedefEqual" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
   end matchcontinue;
 end elabBuiltinHandlerInternal;
 
