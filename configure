@@ -4682,7 +4682,7 @@ $as_echo_n "checking for qmake arguments... " >&6; }
       sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
       sed 's/-arch//g' | \
       sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
-      mv Makefile.fixed"
+      mv Makefile.fixed Makefile"
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $QMAKE" >&5
 $as_echo "$QMAKE" >&6; }

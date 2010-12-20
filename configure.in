@@ -312,7 +312,7 @@ if test -n "$QMAKE"; then
       sed 's/-arch x86_64/OMC_ARCH_x86_64/g' | \
       sed 's/-arch//g' | \
       sed 's/OMC_ARCH_/-arch /' > Makefile.fixed && \
-      mv Makefile.fixed"
+      mv Makefile.fixed Makefile"
   fi
   AC_MSG_RESULT([$QMAKE])
 fi
