@@ -14306,7 +14306,6 @@ end CachedInstItem;
 
 public
 type CachedInstItems = list<Option<CachedInstItem>>;
-constant Option<InstHashTable> instHashTable = NONE();
 
 public
 type Key = Absyn.Path "the env path + '.' + the class name";

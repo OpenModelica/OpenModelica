@@ -2015,6 +2015,20 @@ algorithm
       then
         ();
 
+    case (DAE.META_OPTION(NONE()),_)
+      equation
+        Print.printBuf("NONE()");
+      then
+        ();
+
+    case (DAE.META_OPTION(SOME(exp)),_)
+      equation
+        Print.printBuf("SOME(");
+        printExp(exp);
+        Print.printBuf(")");
+      then
+        ();
+
     case (DAE.META_TUPLE(es),_)
       equation
         Print.printBuf("Tuple(");

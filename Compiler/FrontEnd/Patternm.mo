@@ -460,7 +460,10 @@ algorithm
       DAE.ExpType et;
     case DAE.PAT_WILD() then "_";
     case DAE.PAT_AS(id,_,DAE.PAT_WILD()) then id;
-
+    case DAE.PAT_SOME(pat)
+      equation
+        str = patternStr(pat);
+      then "SOME(" +& str +& ")";
     case DAE.PAT_META_TUPLE(pats)
       equation
         str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
