@@ -54,8 +54,8 @@ Dynload_rml.o: systemimpl.h errorext.h rtopts.h ../Absyn.h ../Values.h ../../c_r
 Dynload_omc.o: systemimpl.h errorext.h rtopts.h ../OpenModelicaBootstrappingHeader.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
 Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
-Error_rml.o : errorext.cpp
-Error_omc.o : errorext.cpp
+Error_rml.o : errorext.cpp ErrorMessage.hpp
+Error_omc.o : errorext.cpp ErrorMessage.hpp
 System_rml.o : systemimpl.c config.h $(configUnix)
 System_omc.o : systemimpl.c config.h $(configUnix)
 RTOpts_rml.o : rtoptsimpl.c
@@ -74,6 +74,7 @@ Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c
 ptolemyio_rml.o : ptolemyio.cpp
 ptolemyio_omc.o : ptolemyio.cpp
+ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* sqlite/*.o

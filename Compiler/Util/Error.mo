@@ -243,6 +243,7 @@ public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
 public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not use another index";
 public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
 public constant ErrorID WHEN_EQ_LHS=158;
+public constant ErrorID GENERIC_ELAB_EXPRESSION=159;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -675,6 +676,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
           (WITHOUT_SENDDATA,SCRIPTING(),ERROR(),"%s failed because OpenModelica was configured without sendData support."),
           (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
+          (GENERIC_ELAB_EXPRESSION,TRANSLATION(),ERROR(),"Failed to elaborate expression: %s"),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };

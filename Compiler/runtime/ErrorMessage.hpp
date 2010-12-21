@@ -55,33 +55,36 @@ public:
 	       bool isReadOnly,	       
 	       std::string filename);
 
-  long getID() { return errorID_; };
+  long getID() const { return errorID_; };
   
-  std::string getType() { return messageType_; };
+  std::string getType() const { return messageType_; };
   
-  std::string getSeverity() { return severity_; };
+  std::string getSeverity() const { return severity_; };
 
   // Returns the expanded message with inserted tokens.
-  std::string getMessage();
+  std::string getMessage() const {return shortMessage;};
 
   // Returns the complete message in string format corresponding to a Modeica vector.
-  std::string getFullMessage();
+  std::string getFullMessage() const {return fullMessage;};
 
-  long getLineNo() { return startLineNo_; };
-  long getColumnNo() { return startColumnNo_; };
+  long getLineNo() const { return startLineNo_; };
+  long getColumnNo() const { return startColumnNo_; };
   /* adrpo added these new ones */
-  long getStartLineNo() { return startLineNo_; };
-  long getStartColumnNo() { return startColumnNo_; };
-  long getEndLineNo() { return endLineNo_; };
-  long getEndColumnNo() { return endColumnNo_; };
-  bool getIsFileReadOnly() { return isReadOnly_; };
-  std::string getFileName() { return filename_; };
+  long getStartLineNo() const { return startLineNo_; };
+  long getStartColumnNo() const { return startColumnNo_; };
+  long getEndLineNo() const { return endLineNo_; };
+  long getEndColumnNo() const { return endColumnNo_; };
+  bool getIsFileReadOnly() const { return isReadOnly_; };
+  std::string getFileName() const { return filename_; };
+  std::list<std::string> getTokens() const { return tokens_; };
 private:
   long errorID_;
   std::string messageType_;
   std::string severity_;
   std::string message_;
   std::list<std::string> tokens_;
+  std::string shortMessage;
+  std::string fullMessage;
   
   /* adrpo 2006-02-05 changed the ones below */
   long startLineNo_;
@@ -90,6 +93,9 @@ private:
   long endColumnNo_;
   bool isReadOnly_;
   std::string filename_;
+
+  std::string getMessage_();
+  std::string getFullMessage_();
 
 };
 

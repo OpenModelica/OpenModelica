@@ -220,15 +220,39 @@ function: elabExp
   output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
+  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) := elabExp2(inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
+end elabExp;
+
+protected function elabExp2 "
+function: elabExp
+  Static analysis of expressions means finding out the properties of
+  the expression.  These properties are described by the
+  `DAE.Properties\' type, and include the type and the variability of the
+  expression.  This function performs analysis, and returns an
+  `DAE.Exp\' and the properties."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inExp;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  input Integer numErrorMessages;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
     local
+      Boolean impl,a,b,havereal,doVect,correctTypes;
       Integer x,l,i,nmax;
       Real r;
+      String id,expstr,envstr,str1,str2,s,msg;
       DAE.Dimension dim1,dim2;
-      Boolean impl,a,b,havereal,doVect,correctTypes;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
-      Ident id,expstr,envstr,str1,str2,s;
       DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,exp_1,exp_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1,arrexp;
       DAE.Properties prop,prop_1,prop1,prop2,prop3;
       list<Env.Frame> env;
@@ -276,38 +300,38 @@ algorithm
     // The types below should contain the default values of the attributes of the builtin
     // types. But since they are default, we can leave them out for now, unit=\"\" is not 
     // that interesting to find out. 
-    case (cache,_,Absyn.INTEGER(value = i),impl,st,doVect,_,info) 
+    case (cache,_,Absyn.INTEGER(value = i),impl,st,doVect,_,info,_) 
     then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
       
-    case (cache,_,Absyn.REAL(value = r),impl,st,doVect,_,info)
+    case (cache,_,Absyn.REAL(value = r),impl,st,doVect,_,info,_)
       then
         (cache,DAE.RCONST(r),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()),st);
 
-    case (cache,_,Absyn.STRING(value = s),impl,st,doVect,_,info)
+    case (cache,_,Absyn.STRING(value = s),impl,st,doVect,_,info,_)
       then
         (cache,DAE.SCONST(s),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()),st);
 
-    case (cache,_,Absyn.BOOL(value = b),impl,st,doVect,_,info)
+    case (cache,_,Absyn.BOOL(value = b),impl,st,doVect,_,info,_)
       then
         (cache,DAE.BCONST(b),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),st);
 
-    case (cache,_,Absyn.END(),impl,st,doVect,_,info)
+    case (cache,_,Absyn.END(),impl,st,doVect,_,info,_)
     then (cache,DAE.END(),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
 
-    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info) // BoschRexroth specifics
+    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_) // BoschRexroth specifics
       equation
         false = OptManager.getOption("cevalEquation");
         (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
       then
         (cache,exp,DAE.PROP(ty,DAE.C_VAR()),st);
 
-    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_)
       equation
         (cache,SOME((exp,prop,_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
       then
         (cache,exp,prop,st);
 
-    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info) /* Binary and unary operations */
+    case (cache,env,(e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_) /* Binary and unary operations */
       equation
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
@@ -321,7 +345,7 @@ algorithm
       then
         (cache,exp_1,prop,st_2);
 
-    case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
+    case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
@@ -331,7 +355,7 @@ algorithm
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
-    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
+    case (cache,env,(e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
       equation
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Logical binary expressions" ;
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
@@ -343,7 +367,7 @@ algorithm
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_2);
-    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info)
+    case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info) "Logical unary expressions" ;
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
@@ -353,7 +377,7 @@ algorithm
         prop = DAE.PROP(rtype,c);
       then
         (cache,exp_1,prop,st_1);
-    case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info)
+    case (cache,env,(e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect,pre,info,_)
       equation
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Relations, e.g. a < b" ;
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
@@ -366,7 +390,7 @@ algorithm
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
       then
         (cache,exp_1,prop,st_2);
-    case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre,info) /* Conditional expressions */
+    case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre,info,_) /* Conditional expressions */
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "if expressions" ;
@@ -377,7 +401,7 @@ algorithm
         (cache,e_1,prop,st_3);
 
     // adrpo: deal with DynamicSelect(literalExp, dynamicExp) by returning literalExp only!
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("DynamicSelect",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("DynamicSelect",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,prop,st_1) = elabExp(cache,env, e1, impl, st, doVect, pre, info);
       then
@@ -385,7 +409,7 @@ algorithm
 
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info,_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,e_1,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
@@ -397,7 +421,7 @@ algorithm
       then
         (cache,e_1,prop1,st);
 
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("NONE",_),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = _)),impl,st,doVect,_,info)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("NONE",_),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = _)),impl,st,doVect,_,info,_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e_1 = DAE.META_OPTION(NONE());
@@ -419,7 +443,7 @@ algorithm
 
         /* If fail to elaborate e2 or e3 above check if cond is constant and make non-selected branch
          undefined. NOTE: Dirty hack to make MSL CombiTable models work!!! */
-    case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect,pre,info) /* Conditional expressions */
+    case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect,pre,info,_) /* Conditional expressions */
       equation
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         true = Types.isParameterOrConstant(Types.propAllConst(prop1));
@@ -429,7 +453,7 @@ algorithm
         /* TODO elseif part */
       then
         (cache,e_1,prop,st_2);
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info);
@@ -439,12 +463,12 @@ algorithm
       then
         (cache,e_1,prop,st_1);
     // stefan
-    case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect,pre,info)
+    case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect,pre,info,_)
       equation
         (cache,e1_1,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect,pre,info);
       then
         (cache,e1_1,prop,st_1);
-    case (cache,env,Absyn.TUPLE(expressions = es),impl,st,doVect,pre,info) /* PR. Get the properties for each expression in the tuple.
+    case (cache,env,Absyn.TUPLE(expressions = es),impl,st,doVect,pre,info,_) /* PR. Get the properties for each expression in the tuple.
     Each expression has its own constflag.
     */
       equation
@@ -452,7 +476,7 @@ algorithm
         (types,consts) = splitProps(props);
       then
         (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE()),DAE.TUPLE_CONST(consts)),st);
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterators=iterators)),impl,st,doVect,pre,info) /* Array-related expressions Elab reduction expressions, including array() constructor */
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterators=iterators)),impl,st,doVect,pre,info,_) /* Array-related expressions Elab reduction expressions, including array() constructor */
       equation
         (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterators, impl, st,doVect,pre,info);
         c = Types.propAllConst(prop);
@@ -460,20 +484,20 @@ algorithm
       then
         (cache,e_1,prop,st_1);
 
-    case (cache, env, Absyn.RANGE(start = _), impl, st, doVect, pre, info)
+    case (cache, env, Absyn.RANGE(start = _), impl, st, doVect, pre, info, _)
       equation
         (cache, e_1, prop, st_1) = elabRange(cache, env, inExp, impl, st, doVect, pre, info);
       then
         (cache, e_1, prop, st_1);
 
      // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
-   case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info)
+   case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info,_)
      equation
        true = RTOpts.acceptMetaModelicaGrammar();
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect,pre,info);
      then (cache,exp,prop,st);
 
-    case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect,pre,info,_)
       equation
         (cache,es_1,DAE.PROP(t,const)) = elabArray(cache,env, es, impl, st,doVect,pre,info) "array expressions, e.g. {1,2,3}" ;
         l = listLength(es_1);
@@ -487,7 +511,7 @@ algorithm
       then
         (cache,arrexp,DAE.PROP(arrtp,const),st);
 
-    case (cache,env,Absyn.MATRIX(matrix = ess),impl,st,doVect,pre,info)
+    case (cache,env,Absyn.MATRIX(matrix = ess),impl,st,doVect,pre,info,_)
       equation
         (cache,_,tps,_) = elabExpListList(cache, env, ess, impl, st,doVect,pre,info) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = Util.listListMap(tps, Types.getPropType);
@@ -503,7 +527,7 @@ algorithm
         t_2 = Types.unliftArray(t_1) "All elts promoted to matrix, therefore unlifting" ;
       then
         (cache,mexp_1,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE())),NONE()),c),st);
-    case (cache,env,Absyn.CODE(code = cn),impl,st,doVect,_,info)
+    case (cache,env,Absyn.CODE(code = cn),impl,st,doVect,_,info,_)
       equation
         tp = elabCodeType(env, cn) "Code expressions" ;
         tp_1 = Types.elabType(tp);
@@ -512,13 +536,13 @@ algorithm
         
        //-------------------------------------
        // Part of the MetaModelica extension. KS
-   case (cache,env,Absyn.ARRAY(es),impl,st,doVect,pre,info)
+   case (cache,env,Absyn.ARRAY(es),impl,st,doVect,pre,info,_)
      equation
        true = RTOpts.acceptMetaModelicaGrammar();
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST(es),impl,st,doVect,pre,info);
      then (cache,exp,prop,st);
 
-   case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect,pre,info)
+   case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect,pre,info,_)
      equation
        {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
 
@@ -541,7 +565,7 @@ algorithm
        prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
      then (cache,exp,prop,st);
 
-   case (cache,env,e as Absyn.CONS(e1,e2),impl,st,doVect,pre,info)
+   case (cache,env,e as Absyn.CONS(e1,e2),impl,st,doVect,pre,info,_)
      equation
        {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
        (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
@@ -554,13 +578,13 @@ algorithm
 
        // The Absyn.LIST() node is used for list expressions that are
        // transformed from Absyn.ARRAY()
-  case (cache,env,Absyn.LIST({}),impl,st,doVect,_,info)
+  case (cache,env,Absyn.LIST({}),impl,st,doVect,_,info,_)
     equation
       t = (DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE());
       prop = DAE.PROP(t,DAE.C_CONST());
     then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
 
-  case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,info)
+  case (cache,env,Absyn.LIST(es),impl,st,doVect,pre,info,_)
     equation
       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect,pre,info);
       typeList = Util.listMap(propList, Types.getPropType);
@@ -573,13 +597,16 @@ algorithm
        // ----------------------------------
 
       // Pattern matching has its own module that handles match expressions
-    case (cache,env,e as Absyn.MATCHEXP(matchTy = _),impl,st,doVect,pre,info)
+    case (cache,env,e as Absyn.MATCHEXP(matchTy = _),impl,st,doVect,pre,info,numErrorMessages)
       equation
-        (cache,exp,prop,st) = Patternm.elabMatchExpression(cache,env,e,impl,st,doVect,pre,info,Error.getNumErrorMessages());
+        (cache,exp,prop,st) = Patternm.elabMatchExpression(cache,env,e,impl,st,doVect,pre,info,numErrorMessages);
       then (cache,exp,prop,st);
 
-    case (cache,env,e,_,_,_,pre,info)
+    case (cache,env,e,_,_,_,pre,info,numErrorMessages)
       equation
+        true = numErrorMessages == Error.getNumErrorMessages();
+        msg = Dump.printExpStr(e);
+        Error.addSourceMessage(Error.GENERIC_ELAB_EXPRESSION,{msg},info);
         /* FAILTRACE REMOVE
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabExp failed: ");
@@ -595,8 +622,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end elabExp;
-
+end elabExp2;
 
 // Part of MetaModelica extension
 public function elabListExp "function: elabListExp

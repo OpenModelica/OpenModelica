@@ -56,6 +56,8 @@
   endColumnNo_ = 0;
   isReadOnly_ = false;
   filename_ = std::string("");
+  shortMessage = getMessage_();
+  fullMessage = getFullMessage_();
 }
 
 ErrorMessage::ErrorMessage(long errorID,
@@ -82,21 +84,22 @@ ErrorMessage::ErrorMessage(long errorID,
     message_(message),
     tokens_(tokens)
 {
+  shortMessage = getMessage_();
+  fullMessage = getFullMessage_();
 }
 
 /*
  * adrpo, 2006-02-05 changed position handling
  */
-std::string ErrorMessage::getMessage()
+std::string ErrorMessage::getMessage_()
 {
-  std::string fullMessage = message_;
   std::list<std::string>::iterator tok;
   std::string::size_type str_pos;
   for (tok=tokens_.begin(); tok != tokens_.end(); tok++) {
-    str_pos=fullMessage.find("%s");
-    if (str_pos < fullMessage.size())
+    str_pos=message_.find("%s");
+    if (str_pos < message_.size())
     {
-      fullMessage.replace(str_pos,2,*tok);
+      message_.replace(str_pos,2,*tok);
     }
     else
     {
@@ -110,21 +113,19 @@ std::string ErrorMessage::getMessage()
   if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
       endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/)
   {
-    return severity_+": "+fullMessage;
+    return severity_+": "+message_;
   }
   else
   {
-    return positionInfo + fullMessage;
+    return positionInfo + message_;
   }
 }
 
-std::string ErrorMessage::getFullMessage()
+std::string ErrorMessage::getFullMessage_()
 {
-  std::string message_text= getMessage();
-
   std::stringstream strbuf;
 
-  strbuf << "{\"" << message_text << "\", \"" <<
+  strbuf << "{\"" << shortMessage << "\", \"" <<
     messageType_ << "\", \"" <<
     severity_ << "\", \"" <<
     errorID_ <<  "\"}";

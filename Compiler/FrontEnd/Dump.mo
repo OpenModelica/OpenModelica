@@ -4164,6 +4164,7 @@ algorithm
     case (Absyn.CALL(function_ = _)) then 0;
     case (Absyn.PARTEVALFUNCTION(function_= _)) then 0;
     case (Absyn.ARRAY(arrayExp = _)) then 0;
+    case (Absyn.LIST(exps = _)) then 0;
     case (Absyn.MATRIX(matrix = _)) then 0;
     /* arithmetic operators */
     case (Absyn.BINARY(op = Absyn.POW())) then 1;
@@ -4408,7 +4409,15 @@ algorithm
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
-    
+
+    case Absyn.LIST(exps = es)
+      equation
+        s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;
+        s_1 = stringAppend("{", s);
+        s_2 = stringAppend(s_1, "}");
+      then
+        s_2;
+
     case Absyn.TUPLE(expressions = es)
       equation
         s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;

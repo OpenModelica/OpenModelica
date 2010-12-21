@@ -51,6 +51,7 @@ struct absyn_info{
 };
 // if error_on is true, message is added, otherwise not.
 static bool error_on=true;
+static int numErrorMessages=0;
 
 #include "ErrorMessage.hpp"
 static std::string currVariable("");
@@ -66,6 +67,19 @@ static void push_message(ErrorMessage *msg)
     std::cerr << msg->getFullMessage() << std::endl;
   else
     errorMessageQueue.push(msg);
+  if (msg->getSeverity().compare(std::string("Error")) == 0) numErrorMessages++;
+}
+
+/* pop the top of the message stack (and any duplicate messages that have also been added) */
+static void pop_message()
+{
+  ErrorMessage *msg = errorMessageQueue.top();
+  if (msg->getSeverity().compare(std::string("Error")) == 0) numErrorMessages--;
+  errorMessageQueue.pop();
+  int pop_more = errorMessageQueue.size() > 0 && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage();
+  delete msg;
+  if (pop_more)
+    pop_message();
 }
 
 /* Adds a message without file info. */
@@ -82,22 +96,10 @@ extern void add_message(int errorID,
   else {
     tmp=message;
   }
-  if(!haveInfo) {
-    ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
-    if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-      // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl; fflush(stderr);
-      push_message(msg);
-    }
-  } else {
-    ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens,
-        finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr/*not important?*/,finfo.fn);
-
-    if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-      // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
-      // std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl; fflush(stderr);
-      push_message(msg);
-    }
-  }
+  ErrorMessage *msg = haveInfo ?
+    new ErrorMessage((long)errorID, std::string(type ), std::string(severity), tmp, tokens, finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr,finfo.fn) :
+    new ErrorMessage((long)errorID, std::string(type ), std::string(severity), tmp, tokens);
+  push_message(msg);
 }
 
 /* Adds a message with file information */
@@ -124,10 +126,7 @@ void add_source_message(int errorID,
        (long)endCol,
        isReadOnly,
        std::string(filename));
-  if (errorMessageQueue.empty() || (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-    // std::cerr << "inserting error message "<< msg->getFullMessage() << std::endl; fflush(stderr);
-    push_message(msg);
-  }
+  push_message(msg);
 }
 
 extern "C"
@@ -163,8 +162,7 @@ static void printCheckpointStack(void)
     printf("%5d %s   message:", i, cp.second.c_str());
     while(errorMessageQueue.size() > cp.first && errorMessageQueue.size() > 0){
       res = errorMessageQueue.top()->getMessage()+string(" ")+res;
-      delete errorMessageQueue.top();
-      errorMessageQueue.pop();
+      pop_message();
     }
     printf("%s\n", res.c_str());
   }
@@ -217,7 +215,7 @@ extern void ErrorImpl__rollBack(const char* id)
         res = res+errorMessageQueue.top()->getMessage()+string("\n");
         printf( (string("Deleted: ") + res).c_str());
       }*/
-      errorMessageQueue.pop();
+      pop_message();
     }
     /*if(!errorMessageQueue.empty()){
       res = res+errorMessageQueue.top()->getMessage()+string("\n");
@@ -246,8 +244,7 @@ extern char* ErrorImpl__rollBackAndPrint(const char* id)
   if(checkPoints.size() > 0){
     while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
       res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-      delete errorMessageQueue.top();
-      errorMessageQueue.pop();
+      pop_message();
     }
     pair<int,string> cp;
     cp = checkPoints[checkPoints.size()-1];
@@ -318,22 +315,13 @@ extern void c_add_source_message(int errorID, const char* type, const char* seve
 }
 
 extern int ErrorImpl__getNumErrorMessages() {
-  int res=0;
-  stack<ErrorMessage*> queueCopy(errorMessageQueue);
-  while (!queueCopy.empty()) {
-  if (queueCopy.top()->getSeverity().compare(std::string("Error")) == 0) {
-    res++;
-  }
-  queueCopy.pop();
-  }
-  return res;
+  return numErrorMessages;
 }
 
 extern void ErrorImpl__clearMessages()
 {
   while(!errorMessageQueue.empty()) {
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
+    pop_message();
   }
 }
 
@@ -343,8 +331,7 @@ extern std::string ErrorImpl__getMessagesStr()
   std::string res("}");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getFullMessage() + res;
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
+    pop_message();
     if (!errorMessageQueue.empty()) { res = string(",") + res; }
   }
   res = string("{") + res;
@@ -357,8 +344,7 @@ extern std::string ErrorImpl__printMessagesStr()
   std::string res("");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
+    pop_message();
   }
   return res;
 }
