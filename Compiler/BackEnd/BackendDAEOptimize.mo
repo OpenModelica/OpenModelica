@@ -56,6 +56,7 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Builtin;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -200,14 +201,14 @@ algorithm
     case ({},funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc) then ({},{},mvars,repl,extlst,replc);
 
     case (e::eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc) equation
-      {e} = BackendVarTransform.replaceEquations({e},repl);
       {e} = BackendVarTransform.replaceEquations({e},replc);
+      {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
       failure(_ = BackendDAEUtil.treeGet(states, cr1)) "cr1 not state";
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
+      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
@@ -223,7 +224,7 @@ algorithm
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
+      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
@@ -233,8 +234,8 @@ algorithm
       // try next equation.
     case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc)
       equation
-        {eq1} = BackendVarTransform.replaceEquations({e},repl);
-        {eq2} = BackendVarTransform.replaceEquations({eq1},replc);
+        {eq1} = BackendVarTransform.replaceEquations({e},replc);
+        {eq2} = BackendVarTransform.replaceEquations({eq1},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
         (eqns_1,seqns_1,mvars_1,repl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars, states, outputs, repl, extlst,replc) "Not a simple variable, check rest" ;
@@ -246,25 +247,158 @@ end removeSimpleEquations2;
 protected function removeSimpleEquations3"
 Author: Frenkel TUD 2010-07 function removeSimpleEquations3
   helper for removeSimpleEquations2
-  if a element of a cref from typ array has to be replaced
-  the array have to extend"
+  if a cref has to be replaced the parent types 
+  have to be extended. For example x[2] has to be
+  replace all crefs x should be extended to {x[1],x[2],..}
+  to replace x[2]. The same for records"
   input list<DAE.ComponentRef> increflst;
   input VarTransform.VariableReplacements inrepl;
   input DAE.ComponentRef cr;
+  input Option<DAE.ComponentRef> precr;
   input DAE.Exp e;
   input DAE.ExpType t;
   output list<DAE.ComponentRef> outcreflst;
   output VarTransform.VariableReplacements outrepl;
 algorithm
-  (outcreflst,outrepl) := matchcontinue (increflst,inrepl,cr,e,t)
+  (outcreflst,outrepl) := matchcontinue (increflst,inrepl,cr,precr,e,t)
     local
-      list<DAE.ComponentRef> crlst;
-      VarTransform.VariableReplacements repl,repl_1;
+      list<DAE.ComponentRef> crlst,crlst1;
+      VarTransform.VariableReplacements repl,repl_1,repl_2;
       DAE.Exp e1;
-      DAE.ComponentRef sc;
-      DAE.ExpType ty;
+      DAE.ComponentRef sc,sc1,cr1,pcr;
+      list<DAE.Subscript> subscriptLst;
+      list<DAE.ExpVar> varLst;
+      list<DAE.Exp> expl;
+      DAE.ExpType ty,te;
+      DAE.Ident ident;
+      Absyn.Path name;
      
-     case (crlst,repl,cr,e,t)
+     // array ?
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={},componentRef=cr1),NONE(),e,t)
+      equation
+        sc = ComponentReference.makeCrefIdent(ident,ty,{});
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2);
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={},componentRef=cr1),SOME(pcr),e,t)
+      equation
+        sc1 = ComponentReference.makeCrefIdent(ident,ty,{});
+        sc = ComponentReference.joinCrefs(pcr,sc1);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2);
+/*                        
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={}),NONE(),e,t)
+      equation
+        sc = ComponentReference.makeCrefIdent(ident,ty,{});
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+      then
+        (sc::crlst,repl_1);        
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={}),SOME(pcr),e,t)
+      equation
+        sc1 = ComponentReference.makeCrefIdent(ident,ty,{});
+        sc = ComponentReference.joinCrefs(pcr,sc1);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+      then
+        (sc::crlst,repl_1);     
+*/     
+     // record ?
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
+      equation
+        sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
+        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2);
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=cr1),SOME(pcr),e,t)
+      equation
+        sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        sc = ComponentReference.joinCrefs(pcr,sc1);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
+        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2); 
+/*            
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE(),e,t)
+      equation
+        sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
+        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+      then
+        (sc::crlst,repl_1);        
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr),e,t)
+      equation
+        sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        sc = ComponentReference.joinCrefs(pcr,sc1);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
+        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+      then
+        (sc::crlst,repl_1);      
+*/     
+     // other
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
+      equation
+        sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        (crlst1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2);
+     case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=cr1),SOME(pcr),e,t)
+      equation
+        sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
+        sc = ComponentReference.joinCrefs(pcr,sc1);
+        (crlst1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
+      then
+        (crlst1,repl_2);     
+    
+     case (crlst,repl,cr,NONE(),e,t)
       equation
         // is Array
         (_::_) = ComponentReference.crefLastSubs(cr);
@@ -283,8 +417,28 @@ algorithm
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
       then
         (sc::crlst,repl_1);
+    case (crlst,repl,cr,SOME(pcr),e,t)
+      equation
+        // is Array
+        (_::_) = ComponentReference.crefLastSubs(cr);
+        // check if e is not array
+        false = Expression.isArray(e);
+        cr1 = ComponentReference.joinCrefs(pcr,cr);
+        // stripLastIdent
+        sc = ComponentReference.crefStripLastSubs(cr1);
+        ty = ComponentReference.crefLastType(cr);
+        // check List
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
+        // extend cr
+        e1 = Expression.makeCrefExp(sc,ty);
+        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
+
+        // add
+        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+      then
+        (sc::crlst,repl_1);
     
-    case (crlst,repl,_,_,_) then (crlst,repl);
+    case (crlst,repl,_,_,_,_) then (crlst,repl);
   end matchcontinue;
 end removeSimpleEquations3;
 
