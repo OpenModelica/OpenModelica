@@ -1159,7 +1159,7 @@ namespace IAEX
 			//expr = expr.simplified();
 
 
-			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+			QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
 			if( openmodelica.isEmpty() )
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 

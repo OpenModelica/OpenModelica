@@ -1456,7 +1456,7 @@ namespace IAEX {
 
       emit newExpr(expr);
 
-      QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+      QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
       if( openmodelica.isEmpty() )
         QMessageBox::critical( 0, 
            "OpenModelica Error", 

@@ -2657,9 +2657,9 @@ namespace IAEX
 		try
 		{
 			QDir dir;
-			QString help( getenv( "OPENMODELICAHOME" ) );
+			QString help = OmcInteractiveEnvironment::OpenModelicaHome();
 			if( help.isEmpty() )
-				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+				QMessageBox::critical( 0, "OpenModelica Error", "NotebookWindow::helpText could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
 			if( !help.endsWith("/") && !help.endsWith( "\\") )
 				help += "/";

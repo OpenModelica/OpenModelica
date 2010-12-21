@@ -49,13 +49,14 @@ namespace IAEX
   public:    
     static OmcInteractiveEnvironment* getInstance();
 		virtual QString getResult();
-		virtual QString getError();					// Added 2006-02-02 AF
+		virtual QString getError();
 		virtual void evalExpression(const QString expr);
-		virtual void closeConnection();				// Added 2006-02-02 AF
-		virtual void reconnect();					// Added 2006-02-02 AF
-		virtual bool startDelegate();				// Added 2006-02-09 AF
-		static bool startOMC();						// Added 2006-02-09 AF
-		static QString OMCVersion();				// Added 2006-08-17 AF
+		virtual void closeConnection();
+		virtual void reconnect();
+		virtual bool startDelegate();
+		static bool startOMC();
+		static QString OMCVersion();
+    static QString OpenModelicaHome();
 
 	private:
     static OmcInteractiveEnvironment* selfInstance;

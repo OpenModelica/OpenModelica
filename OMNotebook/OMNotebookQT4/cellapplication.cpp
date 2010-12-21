@@ -167,18 +167,14 @@ namespace IAEX
 		//Create a commandCenter.
 		cmdCenter_ = new CellCommandCenter(this);
 
-
 		// 2006-04-10 AF, use environment variable to find xml files
-		QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+		QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
 
 //		if( openmodelica.isEmpty() )
 		QDir d(openmodelica);
 		if(!d.exists(openmodelica))
 		{
-			QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME is missing or invalid" );
-
-			//			open(QString::null);
-//			return;
+			QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME="+openmodelica+" is not a valid directory" );
 			exit(1);
 		}
 
