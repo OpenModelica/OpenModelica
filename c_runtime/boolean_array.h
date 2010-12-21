@@ -83,7 +83,7 @@ void copy_boolean_array_data_mem(boolean_array_t* source, modelica_boolean* dest
 /* Copy boolean array*/
 void copy_boolean_array(boolean_array_t* source, boolean_array_t* dest);
 
-m_boolean* calc_boolean_index(int ndims, int* idx_vec, boolean_array_t* arr);
+m_boolean* calc_boolean_index(int ndims, _index_t* idx_vec, boolean_array_t* arr);
 m_boolean* calc_boolean_index_va(boolean_array_t* source,int ndims,va_list ap);
 
 void put_boolean_element(m_boolean value,int i1,boolean_array_t* dest);

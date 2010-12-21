@@ -163,7 +163,7 @@ void copy_integer_array(integer_array_t *source, integer_array_t *dest)
  a[1:3] := b;
 */
 
-static inline modelica_integer* calc_integer_index_spec(int ndims, int* idx_vec,
+static inline modelica_integer* calc_integer_index_spec(int ndims, _index_t* idx_vec,
                                                         integer_array_t* arr,
                                                         index_spec_t* spec)
 {
@@ -171,7 +171,7 @@ static inline modelica_integer* calc_integer_index_spec(int ndims, int* idx_vec,
 }
 
 /* Uses zero based indexing */
-modelica_integer* calc_integer_index(int ndims, int* idx_vec,
+modelica_integer* calc_integer_index(int ndims, _index_t* idx_vec,
                                      integer_array_t* arr)
 {
     return integer_ptrget(arr, calc_base_index(ndims, idx_vec, arr));
@@ -190,7 +190,7 @@ void print_integer_matrix(integer_array_t* source)
     modelica_integer value;
 
     if (source->ndims == 2) {
-        printf("%d X %d matrix:\n", source->dim_size[0], source->dim_size[1]);
+        printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for (i = 0; i < source->dim_size[0]; ++i) {
             for (j = 0; j < source->dim_size[1]; ++j) {
                 value = integer_get(source, i * source->dim_size[1] + j);
@@ -280,9 +280,9 @@ void indexed_assign_integer_array(integer_array_t* source,
                                   integer_array_t* dest,
                                   index_spec_t* dest_spec)
 {
-    int* idx_vec1;
-    int* idx_vec2;
-    int* idx_size;
+    _index_t* idx_vec1;
+    _index_t* idx_vec2;
+    _index_t* idx_size;
     int quit;
     int i,j;
     state mem_state;
@@ -346,9 +346,9 @@ void index_integer_array(integer_array_t* source,
                          index_spec_t* source_spec,
                          integer_array_t* dest)
 {
-    int* idx_vec1;
-    int* idx_vec2;
-    int* idx_size;
+    _index_t* idx_vec1;
+    _index_t* idx_vec2;
+    _index_t* idx_size;
     int quit;
     int j;
     int i;
@@ -1342,9 +1342,9 @@ void skew_integer_array(integer_array_t* x,integer_array_t* dest)
  ** create_index_spec defined in index_spec.c
  */
 
-modelica_integer* integer_array_make_index_array(integer_array_t *arr)
+_index_t* integer_array_make_index_array(integer_array_t *arr)
 {
-    return (modelica_integer *) arr->data;
+    return arr->data;
 }
 
 

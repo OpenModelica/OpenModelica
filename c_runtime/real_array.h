@@ -81,7 +81,7 @@ void copy_real_array_data_mem(real_array_t* source, modelica_real* dest);
 /* Copy real array*/
 void copy_real_array(real_array_t* source, real_array_t* dest);
 
-m_real* calc_real_index(int ndims, int* idx_vec, real_array_t* arr);
+m_real* calc_real_index(int ndims, _index_t* idx_vec, real_array_t* arr);
 m_real* calc_real_index_va(real_array_t* source,int ndims,va_list ap);
 
 void put_real_element(m_real value,int i1,real_array_t* dest);

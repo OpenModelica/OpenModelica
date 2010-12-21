@@ -83,7 +83,7 @@ void copy_integer_array_data_mem(integer_array_t* source,
 /* Copy integer array*/
 void copy_integer_array(integer_array_t* source, integer_array_t* dest);
 
-modelica_integer* calc_integer_index(int ndims,int* idx_vec,
+modelica_integer* calc_integer_index(int ndims,_index_t* idx_vec,
                                      integer_array_t* arr);
 modelica_integer* calc_integer_index_va(integer_array_t* source,int ndims,
                                         va_list ap);
@@ -251,7 +251,7 @@ void skew_integer_array(integer_array_t* x,integer_array_t* dest);
 static inline size_t integer_array_nr_of_elements(integer_array_t* a)
 { return base_array_nr_of_elements(a); }
 
-modelica_integer* integer_array_make_index_array(integer_array_t *arr);
+_index_t* integer_array_make_index_array(integer_array_t *arr);
 
 static inline void clone_reverse_integer_array_spec(integer_array_t* source,
                                                     integer_array_t* dest)

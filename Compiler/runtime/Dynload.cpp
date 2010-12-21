@@ -240,7 +240,7 @@ static int execute_function(void *in_arg, void **out_arg,
 }
 
 static void *generate_array(enum type_desc_e type, int curdim, int ndims,
-                     int *dim_size, void **data)
+                     _index_t *dim_size, void **data)
 {
   void *lst = (void *) mk_nil();
   void *dimLst = (void*) mk_nil();
@@ -665,7 +665,7 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
   }
 }
 
-static int get_array_sizes(int dims, int *dim_size, void *dimLst)
+static int get_array_sizes(int dims, _index_t *dim_size, void *dimLst)
 {
   int i;
   void *ptr = dimLst;
@@ -679,7 +679,7 @@ static int get_array_sizes(int dims, int *dim_size, void *dimLst)
   return 0;
 }
 
-static int get_array_data(int curdim, int dims, const int *dim_size,
+static int get_array_data(int curdim, int dims, const _index_t *dim_size,
                           void *arrdata, enum type_desc_e type, void **data)
 {
   void *ptr = arrdata;
@@ -747,15 +747,15 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
 
 static int parse_array(type_description *desc, void *arrdata, void *dimLst)
 {
-  int dims, *dim_size;
+  _index_t dims, *dim_size;
   void *data;
   assert(desc->type == TYPE_DESC_NONE);
   dims = get_array_type_and_dims(desc, arrdata);
   if (dims < 1) {
-    printf("dims: %d\n", dims);
+    printf("dims: %d\n", (int) dims);
     return -1;
   }
-  dim_size = (int*) malloc(sizeof(int) * dims);
+  dim_size = (_index_t*) malloc(sizeof(_index_t) * dims);
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
     desc->data.real_array.ndims = dims;

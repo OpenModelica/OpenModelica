@@ -49,7 +49,7 @@ m_integer integer_buffer[NR_INTEGER_ELEMENTS];
 m_string string_buffer[NR_STRING_ELEMENTS];
 m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
 m_integer size_buffer[NR_SIZE_ELEMENTS];
-int* index_buffer[NR_INDEX_ELEMENTS];
+_index_t* index_buffer[NR_INDEX_ELEMENTS];
 char char_buffer[NR_CHAR_ELEMENTS];
 
 
@@ -61,21 +61,21 @@ state get_memory_state()
 void print_current_state()
 {
   printf("=== Current state ===\n");
-  printf("real index: %d\n",current_state.real_buffer_ptr);
-  printf("integer index: %d\n",current_state.integer_buffer_ptr);
-  printf("string index: %d\n",current_state.string_buffer_ptr);
-  printf("boolean: %d\n",current_state.boolean_buffer_ptr);
-  printf("char: %d\n",current_state.char_buffer_ptr);
+  printf("real index: %d\n",(int)current_state.real_buffer_ptr);
+  printf("integer index: %d\n",(int)current_state.integer_buffer_ptr);
+  printf("string index: %d\n",(int)current_state.string_buffer_ptr);
+  printf("boolean: %d\n",(int)current_state.boolean_buffer_ptr);
+  printf("char: %d\n",(int)current_state.char_buffer_ptr);
 }
 
 void print_state(state s)
 {
   printf("=== State ===\n");
-  printf("real index: %d\n",s.real_buffer_ptr);
-  printf("integer index: %d\n",s.integer_buffer_ptr);
-  printf("string index: %d\n",s.string_buffer_ptr);
-  printf("boolean: %d\n",s.boolean_buffer_ptr);
-  printf("char: %d\n",s.char_buffer_ptr);
+  printf("real index: %d\n",(int)s.real_buffer_ptr);
+  printf("integer index: %d\n",(int)s.integer_buffer_ptr);
+  printf("string index: %d\n",(int)s.string_buffer_ptr);
+  printf("boolean: %d\n",(int)s.boolean_buffer_ptr);
+  printf("char: %d\n",(int)s.char_buffer_ptr);
 }
 
 void restore_memory_state(state restore_state)
@@ -154,7 +154,7 @@ m_boolean* boolean_alloc(int n)
 
 }
 
-int* size_alloc(int n)
+_index_t* size_alloc(int n)
 {
   _index_t start;
 
@@ -168,7 +168,7 @@ int* size_alloc(int n)
   /*  return start;*/
 }
 
-int** index_alloc(int n)
+_index_t** index_alloc(int n)
 {
   _index_t start;
 

@@ -74,8 +74,7 @@ void copy_string_array_data_mem(string_array_t* source,modelica_string_t* dest);
 /* Copy string array*/
 void copy_string_array(string_array_t* source, string_array_t* dest);
 
-modelica_string_t* calc_string_index(int ndims, int* idx_vec,
-                                     string_array_t* arr);
+modelica_string_t* calc_string_index(int ndims, _index_t* idx_vec, string_array_t* arr);
 modelica_string_t* calc_string_index_va(string_array_t* source,int ndims,
                                         va_list ap);
 

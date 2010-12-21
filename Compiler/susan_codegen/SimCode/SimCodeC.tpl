@@ -3877,6 +3877,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFD*/)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/)
+
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFD*/)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFD*/)
@@ -4503,7 +4504,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__)          then integer
+  case e as ICONST(__)          then '(modelica_integer) <%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as BCONST(__)          then if bool then "(1)" else "(0)"
@@ -4610,7 +4611,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
       case INDEX(__) then
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
-        (0), make_index_array(1, <%expPart%>), 'S'
+        (0), make_index_array(1, (int) <%expPart%>), 'S'
         >>
       case WHOLEDIM(__) then
         <<
@@ -4621,7 +4622,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
         let tmp = tempDecl("modelica_integer", &varDecls /*BUFD*/)
         let &preExp += '<%tmp%> = size_of_dimension_integer_array(<%expPart%>, 1);<%\n%>'
         <<
-        <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
+        (int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
         >>
     ;separator=", ")
   let tmp = tempDecl("index_spec_t", &varDecls /*BUFD*/)

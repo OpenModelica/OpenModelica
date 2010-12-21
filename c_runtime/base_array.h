@@ -40,7 +40,7 @@
 struct base_array_s
 {
   int ndims;
-  int *dim_size;
+  _index_t *dim_size;
   void *data;
 };
 
@@ -76,9 +76,9 @@ void check_base_array_dim_sizes_except(int k, base_array_t **elts, int n);
 int base_array_shape_eq(base_array_t *a, base_array_t *b);
 int base_array_one_element_ok(base_array_t *a);
 
-size_t calc_base_index_spec(int ndims, int *idx_vec,
+size_t calc_base_index_spec(int ndims, _index_t* idx_vec,
                             base_array_t *arr, index_spec_t *spec);
-size_t calc_base_index(int ndims, int *idx_vec, base_array_t *arr);
+size_t calc_base_index(int ndims, _index_t *idx_vec, base_array_t *arr);
 size_t calc_base_index_va(base_array_t *source, int ndims, va_list ap);
 
 int index_spec_fit_base_array(index_spec_t *s, base_array_t *a);

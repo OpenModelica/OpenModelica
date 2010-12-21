@@ -90,9 +90,9 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
     dest->index = index_alloc(nridx);
     dest->index_type = char_alloc(nridx);
     for (i = 0; i < nridx; ++i) {
-        dest->dim_size[i] = va_arg(ap, int);
-        dest->index[i] = va_arg(ap, int*);
-        dest->index_type[i] = (char) va_arg(ap,int); /* char is cast to int by va_arg.*/
+        dest->dim_size[i] = va_arg(ap, _index_t);
+        dest->index[i] = va_arg(ap, _index_t*);
+        dest->index_type[i] = (char) va_arg(ap,_index_t); /* char is cast to int by va_arg.*/
     }
     va_end(ap);
 }
@@ -102,16 +102,16 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
  * Creates an integer array of indices to be used by e.g.
  * create_index_spec above.
  */
-int* make_index_array(int nridx, ...)
+_index_t* make_index_array(int nridx, ...)
 {
     int i;
-    int* res;
+    _index_t* res;
     va_list ap;
     va_start(ap,nridx);
 
     res = size_alloc(nridx);
     for (i = 0; i < nridx; ++i) {
-        res[i] = va_arg(ap,int);
+        res[i] = va_arg(ap,_index_t);
     }
 
     return res;
@@ -135,7 +135,7 @@ void print_size_array(int size, size_t* arr)
  * The function returns 0 if new index is calculated and 1 if no more indices
  * are available (all indices traversed).
   */
-int next_index(int ndims, int* idx, int* size)
+int next_index(int ndims, _index_t* idx, _index_t* size)
 {
     int d = ndims - 1;
 
@@ -158,12 +158,12 @@ void print_index_spec(index_spec_t* spec)
 	for(i = 0; i < spec->ndims; ++i) {
         switch (spec->index_type[i]) {
         case 'S':
-			printf("%d", *spec->index[i]);
+			printf("%d", (int) *spec->index[i]);
             break;
         case 'A':
 			printf("{");
 			for (k = 0; k < spec->dim_size[i]; ++k) {
-				printf("%d", spec->index[i][k]);
+				printf("%d", (int) spec->index[i][k]);
 				if (k != (spec->dim_size[i] - 1)) printf(",");
 			}
 			printf("}");

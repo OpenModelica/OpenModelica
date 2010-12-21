@@ -86,9 +86,9 @@ modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, mo
 	char buf[400];
 	formatStr[0]='%';
 	if (leftJustified) {
-		sprintf(&formatStr[1],"-%dd",minLen);
+		sprintf(&formatStr[1],"-%dd",(int)minLen);
 	} else {
-		sprintf(&formatStr[1],"%dd",minLen);
+		sprintf(&formatStr[1],"%dd",(int)minLen);
 	}
 	sprintf(buf,formatStr,i);
 	return init_modelica_string(buf);
@@ -102,9 +102,9 @@ modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_
 	char buf[400];
 	formatStr[0]='%';
 	if (leftJustified) {
-		sprintf(&formatStr[1],"-%d.%dg",minLen,signDigits);
+		sprintf(&formatStr[1],"-%d.%dg",(int)minLen,(int)signDigits);
 	} else {
-		sprintf(&formatStr[1],"%d.%dg",minLen,signDigits);
+		sprintf(&formatStr[1],"%d.%dg",(int)minLen,(int)signDigits);
 	}
 	sprintf(buf,formatStr,r);
 	return init_modelica_string(buf);

@@ -80,7 +80,7 @@ void puttype(const type_description *desc)
     int d;
     fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
     for (d = 0; d < desc->data.real_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.real_array.dim_size[d]);
+      fprintf(stderr, "%d, ", (int) desc->data.real_array.dim_size[d]);
     fprintf(stderr, ")\n");
     if (desc->data.real_array.ndims == 1) {
       int e;
@@ -95,7 +95,7 @@ void puttype(const type_description *desc)
     int d;
     fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
     for (d = 0; d < desc->data.int_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.int_array.dim_size[d]);
+      fprintf(stderr, "%d, ", (int) desc->data.int_array.dim_size[d]);
     fprintf(stderr, ")\n");
     if (desc->data.int_array.ndims == 1) {
       int e;
@@ -109,7 +109,7 @@ void puttype(const type_description *desc)
     int d;
     fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
     for (d = 0; d < desc->data.bool_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.bool_array.dim_size[d]);
+      fprintf(stderr, "%d, ", (int) desc->data.bool_array.dim_size[d]);
     fprintf(stderr, ")\n");
     if (desc->data.bool_array.ndims == 1) {
       int e;
@@ -124,7 +124,7 @@ void puttype(const type_description *desc)
     int d;
     fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
     for (d = 0; d < desc->data.string_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.string_array.dim_size[d]);
+      fprintf(stderr, "%d, ", (int) desc->data.string_array.dim_size[d]);
     fprintf(stderr, ")\n");
     if (desc->data.string_array.ndims == 1) {
       int e;
@@ -333,7 +333,7 @@ int read_integer_array(type_description **descptr, integer_array_t *arr)
     /* Empty arrays automaticly get to be real arrays */
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
-      int *dim_size = desc->data.real_array.dim_size;
+      _index_t *dim_size = desc->data.real_array.dim_size;
       free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_INT_ARRAY;
       desc->data.int_array.ndims = dims;
@@ -363,7 +363,7 @@ int read_boolean_array(type_description **descptr, boolean_array_t *arr)
     /* Empty arrays automaticly get to be real arrays */
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
-      int *dim_size = desc->data.real_array.dim_size;
+      _index_t *dim_size = desc->data.real_array.dim_size;
       free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_BOOL_ARRAY;
       desc->data.bool_array.ndims = dims;
@@ -393,7 +393,7 @@ int read_string_array(type_description **descptr, string_array_t *arr)
     /* Empty arrays automaticly get to be real arrays */
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
-      int *dim_size = desc->data.real_array.dim_size;
+      _index_t *dim_size = desc->data.real_array.dim_size;
       free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_STRING_ARRAY;
       desc->data.string_array.ndims = dims;

@@ -42,18 +42,18 @@
 #define NR_INDEX_ELEMENTS   1000000
 #define NR_CHAR_ELEMENTS    10000
 
-typedef double m_real;
-typedef int    m_integer;
+typedef double      m_real;
+typedef long        m_integer;
 typedef const char* m_string;
 typedef signed char m_boolean;
-typedef int _index_t;
+typedef m_integer   _index_t;
 
 extern m_real real_buffer[NR_REAL_ELEMENTS];
 extern m_integer integer_buffer[NR_INTEGER_ELEMENTS];
 extern m_string string_buffer[NR_STRING_ELEMENTS];
 extern m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
 extern m_integer size_buffer[NR_SIZE_ELEMENTS];
-extern int* index_buffer[NR_INDEX_ELEMENTS];
+extern _index_t* index_buffer[NR_INDEX_ELEMENTS];
 extern char char_buffer[NR_CHAR_ELEMENTS];
 
 struct state_s {
@@ -84,8 +84,8 @@ m_real* real_alloc(int n);
 m_integer* integer_alloc(int n);
 m_string* string_alloc(int n);
 m_boolean* boolean_alloc(int n);
-int* size_alloc(int n);
-int** index_alloc(int n);
+_index_t* size_alloc(int n);
+_index_t** index_alloc(int n);
 char* char_alloc(int n);
 
 _index_t real_free(int n);

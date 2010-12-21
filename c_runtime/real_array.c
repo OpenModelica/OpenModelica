@@ -162,7 +162,7 @@ void copy_real_array(real_array_t *source, real_array_t *dest)
  a[1:3] := b;
 */
 
-static inline modelica_real *calc_real_index_spec(int ndims, int *idx_vec,
+static inline modelica_real *calc_real_index_spec(int ndims, _index_t *idx_vec,
                                                   real_array_t *arr,
                                                   index_spec_t *spec)
 {
@@ -170,7 +170,7 @@ static inline modelica_real *calc_real_index_spec(int ndims, int *idx_vec,
 }
 
 /* Uses zero based indexing */
-modelica_real *calc_real_index(int ndims, int *idx_vec, real_array_t *arr)
+modelica_real *calc_real_index(int ndims, _index_t *idx_vec, real_array_t *arr)
 {
     return real_ptrget(arr, calc_base_index(ndims, idx_vec, arr));
 }
@@ -187,7 +187,7 @@ void print_real_matrix(real_array_t *source)
     modelica_real value;
 
     if (source->ndims == 2) {
-        printf("%d X %d matrix:\n", source->dim_size[0], source->dim_size[1]);
+        printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for (i = 0; i < source->dim_size[0]; ++i) {
             for (j = 0; j < source->dim_size[1]; ++j) {
                 value = real_get(source, i * source->dim_size[1] + j);
@@ -276,9 +276,8 @@ void indexed_assign_real_array(real_array_t* source,
 			       real_array_t* dest,
 			       index_spec_t* dest_spec)
 {
-    int* idx_vec1;
-    /*int* idx_vec2;*/
-    int* idx_size;
+  _index_t* idx_vec1;
+  _index_t* idx_size;
 	int quit;
 	int i,j;
 	state mem_state;
@@ -353,9 +352,8 @@ void index_real_array(real_array_t* source,
                       index_spec_t* source_spec,
 		      real_array_t* dest)
 {
-    int* idx_vec1;
-    /* int* idx_vec2; */
-    int* idx_size;
+    _index_t* idx_vec1;
+    _index_t* idx_size;
     int quit;
     int j;
     int i;

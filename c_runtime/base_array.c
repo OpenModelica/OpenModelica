@@ -79,7 +79,7 @@ int base_array_ok(base_array_t *a)
     for (i = 0; i < a->ndims; ++i) {
         if (a->dim_size[i] < 0)
         {
-          fprintf(stderr, "base_array.c: array dimension size for dimension %d is < 0!\n", a->dim_size[i]); fflush(stderr);
+          fprintf(stderr, "base_array.c: array dimension size for dimension %d is < 0!\n", (int) a->dim_size[i]); fflush(stderr);
           return 0;
         }
     }
@@ -144,7 +144,7 @@ int base_array_shape_eq(base_array_t *a, base_array_t *b)
     for (i = 0; i < a->ndims; ++i) {
 	if (a->dim_size[i] != b->dim_size[i]) {
             fprintf(stderr, "a->dim_size[%d] != b->dim_size[%d], %d != %d\n",
-                    i, i, a->dim_size[i], b->dim_size[i]);
+                    i, i, (int) a->dim_size[i], (int) b->dim_size[i]);
             return 0;
         }
     }
@@ -172,7 +172,7 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
             if ((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i])) {
                 fprintf(stderr,
                         "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, s->index[i][0], i, a->dim_size[i]);
+                        i, (int) s->index[i][0], i, (int) a->dim_size[i]);
                 return 0;
             }
 	}
@@ -182,7 +182,7 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
                                 (s->index[i][j] > a->dim_size[i]))) {
                 fprintf(stderr,
                         "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, j, s->index[i][j], i, a->dim_size[i]);
+                        i, j, (int) s->index[i][j], i, (int) a->dim_size[i]);
                 return 0;
             }
 	}
@@ -226,7 +226,7 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
     dest->dim_size = size_alloc(ndims);
 
     for (i = 0; i < ndims; ++i) {
-        dest->dim_size[i] = va_arg(ap, int);
+        dest->dim_size[i] = va_arg(ap, _index_t);
     }
 
     return base_array_nr_of_elements(dest);
@@ -250,7 +250,7 @@ void clone_base_array_spec(base_array_t *source, base_array_t *dest)
  a[1:3] := b;
 */
 
-size_t calc_base_index_spec(int ndims, int *idx_vec,
+size_t calc_base_index_spec(int ndims, _index_t *idx_vec,
                             base_array_t *arr, index_spec_t *spec)
 {
     /* idx_vec is zero based */
@@ -279,7 +279,7 @@ size_t calc_base_index_spec(int ndims, int *idx_vec,
 }
 
 /* Uses zero based indexing */
-size_t calc_base_index(int ndims, int *idx_vec, base_array_t *arr)
+size_t calc_base_index(int ndims, _index_t *idx_vec, base_array_t *arr)
 {
     int i;
     size_t index = 0;
@@ -302,7 +302,7 @@ size_t calc_base_index_va(base_array_t *source, int ndims, va_list ap)
 
     index = 0;
     for (i = 0; i < ndims; ++i) {
-        dim_i = va_arg(ap, int) - 1;
+        dim_i = va_arg(ap, _index_t) - 1;
         index = index * source->dim_size[i] + dim_i;
     }
 

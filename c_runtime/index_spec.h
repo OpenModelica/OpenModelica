@@ -33,6 +33,7 @@
 #define INDEX_SPEC_H_
 
 #include "inline.h"
+#include "memory_pool.h"
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
@@ -44,10 +45,10 @@
 */
 struct index_spec_s
 {
-  int ndims;  /* number of indices/subscripts */
-  int* dim_size; /* size for each subscript */
+  _index_t ndims;  /* number of indices/subscripts */
+  _index_t* dim_size; /* size for each subscript */
   char* index_type;  /* type of each subscript, any of 'S','A' or 'W' */
-  int** index; /* all indices*/
+  _index_t** index; /* all indices*/
 };
 
 typedef struct index_spec_s index_spec_t;
@@ -55,10 +56,10 @@ typedef struct index_spec_s index_spec_t;
 int index_spec_ok(index_spec_t* s);
 void alloc_index_spec(index_spec_t* s);
 void create_index_spec(index_spec_t* dest, int nridx, ...);
-int* make_index_array(int nridx,...);
+_index_t* make_index_array(int nridx,...);
 static inline int imax(int i, int j)
 { return ((i < j) ? j : i); }
-int next_index(int ndims, int* idx, int* size);
+int next_index(int ndims, _index_t* idx, _index_t* size);
 
 void print_index_spec(index_spec_t* spec);
 
