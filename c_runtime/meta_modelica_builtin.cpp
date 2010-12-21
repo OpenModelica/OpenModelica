@@ -493,9 +493,10 @@ void equality(modelica_metatype in1, modelica_metatype in2)
 }
 
 /* Weird RML crap */
-static modelica_metatype global_roots[1024];
+static modelica_metatype global_roots[1024] = {0};
 
 getGlobalRoot_rettype getGlobalRoot(int ix) {
+  assert(global_roots[ix]);
   return global_roots[ix];
 }
 

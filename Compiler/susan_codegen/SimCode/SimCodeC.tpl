@@ -2631,11 +2631,9 @@ end subscriptsToCStr;
 
 template subscriptToCStr(Subscript subscript)
 ::=
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
   match subscript
-  case INDEX(__)
-  case SLICE(__) then daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case INDEX(exp=ICONST(integer=i)) then i
+  case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
@@ -2731,11 +2729,9 @@ template subscriptStr(Subscript subscript)
   Only works for constant integer indicies."
 
 ::=
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
   match subscript
-  case INDEX(__) 
-  case SLICE(__) then daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case INDEX(exp=ICONST(integer=i)) then i
+  case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
@@ -3076,10 +3072,8 @@ template extFunDefArg(SimExtArg extArg)
     <%typeStr%>
     >>
   case SIMEXTARGSIZE(cref=c) then
-    let name = contextCref(c,contextFunction)
-    let eStr = daeExpToString(exp)
     <<
-    size_t <%name%>_<%eStr%>
+    size_t
     >>
 end extFunDefArg;
 
@@ -3095,17 +3089,6 @@ template extFunDefArgF77(SimExtArg extArg)
   case SIMEXTARGEXP(__) then extFunDefArg(extArg)
   case SIMEXTARGSIZE(__) then 'int const *'
 end extFunDefArgF77;
-
-
-template daeExpToString(Exp exp)
- "Helper to extFunDefArg.
-  This only works for constants (or else the name of a temporary variable is
-  returned)."
-::=
-  let &preExp = buffer "" /*BUFD*/
-  let &varDecls = buffer "" /*BUFD*/
-  daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-end daeExpToString;
 
 
 template functionBodies(list<Function> functions)
@@ -3877,6 +3860,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_WHILE(__)          then algStmtWhile(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls /*BUFD*/)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/)
+
 
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls /*BUFD*/)
   case s as STMT_BREAK(__)          then 'break;<%\n%>'

@@ -308,7 +308,7 @@ inline static int anyStringWork(void* any, int ix)
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
     checkAnyStringBufSize(ix,5);
-    ix += sprintf(anyStringBuf+ix, "SOME)");
+    ix += sprintf(anyStringBuf+ix, "SOME(");
     ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)),ix);
     checkAnyStringBufSize(ix,1);
     ix += sprintf(anyStringBuf+ix, ")");
