@@ -122,6 +122,7 @@ private:
 	QVBoxLayout* layout_;
 	QString clipboard_;
 	QString omc_version_;
+  QString omhome;
   QString copyright_info_;
 
 	IAEX::InputCellDelegate* delegate_;
