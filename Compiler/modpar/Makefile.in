@@ -26,14 +26,15 @@ OBJECTS = Codegen.o \
 else
 OBJECTS = TaskGraphExt_stub.o
 endif
-all: libmodpar.a libmodparomc.a
+.PHONY: install
+install: libmodpar.a libmodparomc.a
+	cp libmodparomc.a $(builddir_lib)/omc	
 
 libmodpar.a: $(OBJECTS)
 	ar -sr $@ $(OBJECTS)
 
 libmodparomc.a: TaskGraphExt_stub_omc.o
 	ar -sr $@ $<
-	cp $@ $(builddir_lib)/omc
 
 INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
