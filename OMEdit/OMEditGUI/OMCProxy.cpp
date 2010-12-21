@@ -137,48 +137,14 @@ bool OMCProxy::startServer()
     try
     {
         QString msg;
-        QString omHome (Helper::OpenModelicaHome);
-        if (omHome.isEmpty())
-            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
-
-        QDir dir;
-
-        #ifdef WIN32
-            if( dir.exists( omHome + "\\bin\\omc.exe" ) )
-                    omHome += "\\bin\\";
-            else if( dir.exists( omHome + "\\omc.exe" ) )
-                    omHome += "";
-            else
-            {
-                msg = "Unable to find " + Helper::applicationName + " server, searched in:\n" +
-                        omHome + "\\bin\\\n" +
-                        omHome + "\n" +
-                        dir.absolutePath();
-
-                throw std::runtime_error(msg.toStdString().c_str());
-            }
-        #else /* unix */
-            if( dir.exists( omHome + "/bin/omc" ) )
-                    omHome += "/bin/";
-            else if( dir.exists( omHome + "/omc" ) )
-                    omHome += "";
-            else
-            {
-                msg = "Unable to find " + Helper::applicationName + " server, searched in:\n" +
-                  omHome + "/bin/\n" +
-                  omHome + "\n" +
-                  dir.absolutePath();
-
-                throw std::runtime_error(msg.toStdString().c_str());
-            }
-        #endif
-
+        const char *omhome = getenv("OPENMODELICAHOME");
         QString omcPath;
-
         #ifdef WIN32
-                omcPath = omHome + "omc.exe";
-        #else
-                omcPath = omHome + "omc";
+          if (!omhome)
+            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
+          omcPath = QString( omhome ) + "bin/omc.exe";
+        #else /* unix */
+          omcPath = (omhome ? QString(omhome)+"bin/omc" : "omc");
         #endif
 
         // Check the IOR file created by omc.exe
@@ -258,6 +224,8 @@ bool OMCProxy::startServer()
         mHasInitialized = false;
         return false;
     }
+    sendCommand("getInstallationDirectoryPath()");
+    Helper::OpenModelicaHome = getResult();
     QDir dir;
     if (!dir.exists(Helper::tmpPath)) {
      if (!dir.mkdir(Helper::tmpPath)) {
