@@ -456,7 +456,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
-        (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info);
+        (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
         e_1 = ExpressionSimplify.simplify(e_1);
         Debug.fprintln("sei", "elab_exp CALL done");
@@ -1566,7 +1566,7 @@ algorithm
         (cache,e_1,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,info) /* Function calls */
       equation
-        (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info);
+        (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info,Error.getNumErrorMessages());
       then
         (cache,e_1,prop);
     case (cache,env,Absyn.TUPLE(expressions = (es as (e1 :: rest))),impl,pre,info) /* PR. Get the properties for each expression in the tuple.
@@ -6523,13 +6523,14 @@ function: elabCall
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
+  input Integer numErrorMessages;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
+  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
@@ -6540,28 +6541,39 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Absyn.Path fn_1;
-      Ident fnstr,argstr,prestr;
+      Ident fnstr,argstr,prestr,s,name;
       list<Ident> argstrs;
       Env.Cache cache;
       DAE.DAElist dae;
       Prefix.Prefix pre;
 
-    case (cache,env,fn,args,nargs,impl,st,pre,info) /* impl LS: Check if a builtin function call, e.g. size()
+    case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size()
         and calculate if so */
       equation
         (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl, st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
         (cache,e,prop,st);
-    case (cache,env,fn,args,nargs,impl,st,pre,info)
+    case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)
       equation
         (cache,e,prop) = elabCallBuiltin(cache,env, fn, args, nargs, impl,pre,info) "Built in functions (e.g. \"pre\", \"der\"), have only possitional arguments" ;
       then
         (cache,e,prop,st);
 
-    /* Interactive mode */
-    case (cache,env,fn,args,nargs,(impl as true),st,pre,info)
+    case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)
       equation
-        false = hasBuiltInHandler(fn,args,pre,info);
+        true = hasBuiltInHandler(fn);
+        true = numErrorMessages == Error.getNumErrorMessages();
+        name = Absyn.printComponentRefStr(fn);
+        s = Util.stringDelimitList(Util.listMap(args, Dump.printExpStr), ", ");
+        s = stringAppendList({name,"(",s,")'.\n"});
+        prestr = PrefixUtil.printPrefixStr3(pre);
+        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
+      then fail();
+
+    /* Interactive mode */
+    case (cache,env,fn,args,nargs,(impl as true),st,pre,info,numErrorMessages)
+      equation
+        false = hasBuiltInHandler(fn);
         Debug.fprintln("sei", "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
@@ -6572,9 +6584,9 @@ algorithm
         (cache,e,prop,st);
 
     /* Non-interactive mode */
-    case (cache,env,fn,args,nargs,(impl as false),st,pre,info)
+    case (cache,env,fn,args,nargs,(impl as false),st,pre,info,numErrorMessages)
       equation
-        false = hasBuiltInHandler(fn,args,pre,info);
+        false = hasBuiltInHandler(fn);
         Debug.fprint("sei", "elab_call 4: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln("sei", fnstr);
@@ -6584,7 +6596,7 @@ algorithm
         Debug.fprintln("sei", fnstr);
       then
         (cache,e,prop,st);
-    case (cache,env,fn,args,nargs,impl,st,pre,info)
+    case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabCall failed\n");
@@ -6608,26 +6620,17 @@ Author: BZ, 2009-02
 Determine if a function has a builtin handler or not.
 "
   input Absyn.ComponentRef fn;
-  input list<Absyn.Exp> expl;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
   output Boolean b;
 algorithm
-  b := matchcontinue(fn,expl,inPrefix,info)
-    local String name,s,ps; list<String> lst;
-      Prefix.Prefix pre;
-    case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl,pre,info)
+  b := matchcontinue(fn)
+    local
+      String name;
+    case (Absyn.CREF_IDENT(name = name,subscripts = {}))
       equation
         _ = elabBuiltinHandler(name);
-        //print(" error, handler found for " +& name +& "\n");
-        lst = Util.listMap(expl, Dump.printExpStr);
-        s = Util.stringDelimitList(lst, ", ");
-        s = stringAppendList({name,"(",s,")'.\n"});
-        ps = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,ps}, info);
       then
         true;
-    case(_,_,_,_) then false;
+    else false;
   end matchcontinue;
 end hasBuiltInHandler;
 
