@@ -115,10 +115,8 @@ namespace IAEX
 
     try
     {
-      // 2006-02-28 AF, use environment varable to find omc.exe
       const char *omhome = getenv("OPENMODELICAHOME");
 
-      // 2006-03-14 AF, set omc loaction and parameters
       QString omc;
 #ifdef WIN32
       omc = QString( omhome ) + "bin/omc.exe";
