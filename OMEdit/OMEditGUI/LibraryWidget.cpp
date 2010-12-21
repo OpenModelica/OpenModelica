@@ -394,7 +394,6 @@ LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString toolt
 LibraryTree::LibraryTree(LibraryWidget *pParent)
     : QTreeWidget(pParent)
 {
-    mItemExpandCollapseClicked = false;
     mpParentLibraryWidget = pParent;
 
     setFrameShape(QFrame::NoFrame);
@@ -407,8 +406,8 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     createActions();
 
+    connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(treeItemPressed(QTreeWidgetItem*)));
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandLib(QTreeWidgetItem*)));
-    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)), SLOT(collapseLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
     connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showComponent(QTreeWidgetItem*,int)));
 }
@@ -600,10 +599,8 @@ bool LibraryTree::sortNodesAscending(const LibraryTreeNode *node1, const Library
 
 //! Makes a library expand.
 //! @param item is the library to show.
-//! @see collapseLib(QTreeWidgetItem *item)
 void LibraryTree::expandLib(QTreeWidgetItem *item)
 {
-    mItemExpandCollapseClicked = true;
     if (isTreeItemLoaded(item))
     {
         mTreeList.append(item->toolTip(0));
@@ -633,15 +630,6 @@ void LibraryTree::expandLib(QTreeWidgetItem *item)
 //    //mpTree->sortItems(0, Qt::AscendingOrder);
 //    // Remove the wait cursor
 //    unsetCursor();
-}
-
-//! Makes a library collapse.
-//! @param item is the library to show.
-//! @see collapseLib(QTreeWidgetItem *item)
-void LibraryTree::collapseLib(QTreeWidgetItem *item)
-{
-    Q_UNUSED(item);
-    mItemExpandCollapseClicked = true;
 }
 
 void LibraryTree::showContextMenu(QPoint point)
@@ -714,49 +702,36 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
     mpParentLibraryWidget->addComponentObject(libComponent);
 }
 
-void LibraryTree::mousePressEvent(QMouseEvent *event)
+void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
 {
-    QTreeWidget::mousePressEvent(event);
-
-    // if user has clicked on the expand/collapse button then return simply.
-    if (mItemExpandCollapseClicked)
-    {
-        mItemExpandCollapseClicked = false;
+    if (!item)
         return;
-    }
 
-    if ((event->button() == Qt::LeftButton))
+//  if item is package then return
+//  if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
+//      return;
+
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << item->toolTip(0);
+
+    QMimeData *mimeData = new QMimeData;
+    mimeData->setData("image/modelica-component", itemData);
+
+    qreal adjust = 35;
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(mimeData);
+
+    // get the component SVG to show on drag
+    LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(item->toolTip(0));
+
+    if (libraryComponent)
     {
-        QTreeWidgetItem *item = static_cast<QTreeWidgetItem*>(itemAt(event->pos()));
-        if (!item)
-            return;
-
-        // if item is package then return
-//        if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
-//            return;
-
-        QByteArray itemData;
-        QDataStream dataStream(&itemData, QIODevice::WriteOnly);
-        dataStream << item->toolTip(0);
-
-        QMimeData *mimeData = new QMimeData;
-        mimeData->setData("image/modelica-component", itemData);
-
-        qreal adjust = 35;
-        QDrag *drag = new QDrag(this);
-        drag->setMimeData(mimeData);
-
-        // get the component SVG to show on drag
-        LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(item->toolTip(0));
-
-        if (libraryComponent)
-        {
-            QPixmap pixmap = libraryComponent->getComponentPixmap(QSize(50, 50));
-            drag->setPixmap(pixmap);
-            drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
-        }
-        drag->exec(Qt::CopyAction);
+        QPixmap pixmap = libraryComponent->getComponentPixmap(QSize(50, 50));
+        drag->setPixmap(pixmap);
+        drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
     }
+    drag->exec(Qt::CopyAction);
 }
 
 //! Constructor.

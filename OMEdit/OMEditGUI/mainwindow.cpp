@@ -605,9 +605,11 @@ void MainWindow::checkModel()
 
 void MainWindow::openUserManual()
 {
-    QString userManualPath;
-    userManualPath = QString(Helper::OpenModelicaHome.replace("\\", "/"))
-                             .append("/share/doc/omedit/OMEdit-UserManual.pdf");
+//    QString userManualPath;
+//    userManualPath = >QString(Helper::OpenModelicaHome.replace("\\", "/"))
+//                             .append("/share/doc/omedit/OMEdit-UserManual.pdf");
+    QUrl userManualPath (QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
+                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
     QDesktopServices::openUrl(userManualPath);
 }
 

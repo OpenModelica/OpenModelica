@@ -117,7 +117,6 @@ class LibraryTree : public QTreeWidget
     Q_OBJECT
 private:
     QList<QString> mTreeList;
-    bool mItemExpandCollapseClicked;
 
     QAction *mpShowComponentAction;
     QAction *mpViewDocumentationAction;
@@ -138,15 +137,15 @@ public:
     LibraryWidget *mpParentLibraryWidget;
 private slots:
     void expandLib(QTreeWidgetItem *item);
-    void collapseLib(QTreeWidgetItem *item);
     void showContextMenu(QPoint point);
     void showComponent(QTreeWidgetItem *item, int column);
     void showComponent();
     void viewDocumentation();
     void checkLibraryModel();
     void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
-protected:
-    virtual void mousePressEvent(QMouseEvent *event);
+    void treeItemPressed(QTreeWidgetItem *item);
+//protected:
+//    virtual void mousePressEvent(QMouseEvent *event);
 };
 
 class LibraryWidget : public QWidget
