@@ -613,7 +613,7 @@ algorithm_annotation_list returns [void* ast] :
   ;
 
 equation returns [void* ast] :
-  ( e=equality_or_noretcall_equation 
+  ( ee=equality_or_noretcall_equation {e=ee.ast;}
   | e=conditional_equation_e
   | e=for_clause_e
   | e=connect_clause
@@ -629,7 +629,7 @@ equation returns [void* ast] :
   ;
 
 constraint returns [void* ast] :
-  ( e=equality_or_noretcall_equation 
+  ( ee=equality_or_noretcall_equation {e=ee.ast;}
   | e=conditional_equation_e
   | e=for_clause_e
   | e=connect_clause
@@ -694,12 +694,13 @@ equality_or_noretcall_equation returns [void* ast] :
     (  (EQUALS | ass=ASSIGN) e2=expression
       {
         modelicaParserAssert(ass==0,"Equations can not contain assignments (':='), use equality ('=') instead", equality_or_noretcall_equation, $ass->line, $ass->charPosition+1, $ass->line, $ass->charPosition+2);
-        ast = Absyn__EQ_5fEQUALS(e1,e2);
+        $ast = Absyn__EQ_5fEQUALS(e1,e2);
       }
-    | {LA(1) != EQUALS && LA(1) != ASSIGN && RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
+    | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
+         modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2),"A singleton expression in an equation section is required to be a function call", equality_or_noretcall_equation, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
-         ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
+         $ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
        }
     )
   ;
