@@ -953,6 +953,19 @@ algorithm
         (cache,Values.STRING(res),st);
         
     case (cache,env,
+        DAE.CALL(path = Absyn.IDENT(name = "getModelicaPath"),expLst = {}),
+        (st as Interactive.SYMBOLTABLE(
+          ast = p,
+          explodedAst = sp,
+          instClsLst = ic,
+          lstVarVal = iv,
+          compiledFunctions = cf)),msg)
+      equation
+        res = Settings.getModelicaPath();
+      then
+        (cache,Values.STRING(res),st);
+        
+    case (cache,env,
         DAE.CALL(path = Absyn.IDENT(name = "setModelicaPath"),expLst = {DAE.SCONST(string = cmd)}),
         (st as Interactive.SYMBOLTABLE(
           ast = p,
