@@ -237,7 +237,7 @@ bool OMCProxy::startServer()
     // set the temp directory.
     changeDirectory(Helper::tmpPath);
     // set the OpenModelicaLibrary variable.
-    getEnvironmentVar("OPENMODELICALIBRARY");
+    sendCommand("getModelicaPath()");
     Helper::OpenModelicaLibrary = StringHandler::removeFirstLastQuotes(getResult());
     return true;
 }
