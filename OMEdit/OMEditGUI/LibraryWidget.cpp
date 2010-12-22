@@ -704,6 +704,9 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
 
 void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
 {
+    if (qApp->mouseButtons() != Qt::LeftButton)
+        return;
+
     if (!item)
         return;
 

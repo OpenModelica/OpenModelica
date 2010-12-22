@@ -605,11 +605,15 @@ void MainWindow::checkModel()
 
 void MainWindow::openUserManual()
 {
-//    QString userManualPath;
-//    userManualPath = >QString(Helper::OpenModelicaHome.replace("\\", "/"))
-//                             .append("/share/doc/omedit/OMEdit-UserManual.pdf");
-    QUrl userManualPath (QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
+    QUrl userManualPath;
+    // since in MAC OS X the url adds extra quotes to it, so we need to handle it differently.
+#ifdef Q_OS_MAC
+    userManualPath = QUrl(QString("file:///").append(QString(getenv("OPENMODELICAHOME")))
                          .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
+#else
+    userManualPath = QUrl(QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
+                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
+#endif
     QDesktopServices::openUrl(userManualPath);
 }
 
