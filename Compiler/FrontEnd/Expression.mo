@@ -1525,6 +1525,7 @@ algorithm
     case (DAE.METARECORDCALL(path=_)) then DAE.ET_METATYPE();
     case (DAE.BOX(_)) then DAE.ET_METATYPE();
     case (DAE.UNBOX(ty = tp)) then tp;
+    case (DAE.SHARED_LITERAL(ty = tp)) then tp;
     case e
       equation
         msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
@@ -3728,6 +3729,11 @@ algorithm
         ((e,ext_arg_3)) = rel((DAE.MATCHEXPRESSION(matchTy,expl_1,localDecls,cases,tp),ext_arg_2));
       then
         ((e,ext_arg_3));
+
+    case (e as DAE.SHARED_LITERAL(index = _),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
 
     case (e,rel,ext_arg)
       equation

@@ -75,7 +75,7 @@ match functionCode
 case FUNCTIONCODE(__) then
   let filePrefix = name
   let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
-  let()= textFile(functionsFile(filePrefix, mainFunction, functions), '<%filePrefix%>.c')
+  let()= textFile(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
   let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
   let()= textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile')
   "" // Return empty result since result written to files directly
@@ -2516,7 +2516,8 @@ end commonHeader;
 
 template functionsFile(String filePrefix,
                        Function mainFunction,
-                       list<Function> functions)
+                       list<Function> functions,
+                       list<Exp> literals)
  "Generates the contents of the main C file for the function case."
 ::=
   <<
@@ -2526,6 +2527,9 @@ template functionsFile(String filePrefix,
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(stderr); }
 
   extern "C" {
+  
+  <%literals |> literal hasindex i0 from 0 => literalExpConst(literal,i0) ; separator="\n"%>
+  
   <%functionBody(mainFunction,true)%>
   <%functionBodies(functions)%>
   }
@@ -4515,6 +4519,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as MATCHEXPRESSION(__) then daeExpMatch(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as BOX(__)             then daeExpBox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   else '<%\n%>#error "UNKNOWN_EXP <%ExpressionDump.printExpStr(exp)%>"<%\n%>'
 end daeExp;
 
@@ -5545,6 +5550,12 @@ case exp as UNBOX(__) then
   'mmc_unbox_<%ty%>(<%res%>)'
 end daeExpUnbox;
 
+template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a match expression."
+::=
+match exp case exp as SHARED_LITERAL(__) then '_OMC_LIT<%exp.index%>'
+end daeExpSharedLiteral;
+
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
@@ -5919,6 +5930,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case REDUCTION(__)     then expTypeFromExpFlag(expr, flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
+  case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
   else "expTypeFromExpFlag:ERROR"
 end expTypeFromExpFlag;
 
@@ -6084,6 +6096,13 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   }
   >>
 end assertCommon;
+
+template literalExpConst(Exp lit, Integer index) "These should all be declared static X const"
+::=
+  match lit
+  case SCONST(__) then 'static modelica_string const _OMC_LIT<%index%> = "<%Util.escapeModelicaStringToCString(string)%>";'
+  else '<%\n%>#error "literalExpConst failed: <%printExpStr(lit)%>"<%\n%>'
+end literalExpConst;
 
 end SimCodeC;
 

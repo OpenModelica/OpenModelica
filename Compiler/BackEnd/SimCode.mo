@@ -61,6 +61,7 @@ public import Types;
 public import Env;
 public import Dependency;
 public import Interactive;
+public import HashTableExpToIndex;
 public import Absyn;
 public import Ceval;
 public import Tpl;
@@ -76,6 +77,7 @@ protected import BackendDAETransform;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
+protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -118,6 +120,7 @@ uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
     list<Function> functions;
+    list<DAE.Exp> literals "shared literals";
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
     list<SimEqSystem> allEquations;
@@ -167,6 +170,7 @@ uniontype FunctionCode
     String name;
     Function mainFunction "This function is special; the 'in'-function should be generated for it";
     list<Function> functions;
+    list<DAE.Exp> literals "shared literals";
     list<String> externalFunctionIncludes;
     MakefileParams makefileParams;
     list<RecordDeclaration> extraRecordDecls;
@@ -1057,20 +1061,74 @@ algorithm
       MakefileParams makefileParams;
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
+      list<DAE.Exp> literals;
     case (name, daeMainFunction, daeElements, metarecordTypes)
       equation
         // Create FunctionCode
-        /* TODO: Check if this is actually 100% certain to be the function given by name? */ 
-        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeMainFunction::daeElements, metarecordTypes);
+        (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeMainFunction::daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
+        literals = listReverse(literals);
+        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
-        fnCode = FUNCTIONCODE(name, mainFunction, fns, includes, makefileParams, extraRecordDecls);
+        fnCode = FUNCTIONCODE(name, mainFunction, fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then
         ();
   end matchcontinue;
 end translateFunctions;
+
+protected function replaceLiteralExp
+  "The tuples contain:
+  * The expression to be replaced (or not)
+  * Index of next literal
+  * HashTable Exp->Index (Number of the literal)
+  * The list of literals
+  "
+  input tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> inTpl;
+  output tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp exp,nexp;
+      Integer i,ix;
+      list<DAE.Exp> l;
+      DAE.ExpType et;
+      HashTableExpToIndex.HashTable ht;
+    case ((DAE.SHARED_LITERAL(index=_),_)) then inTpl;
+    case ((exp,_))
+      equation
+        failure(isLiteralExp(exp));
+      then inTpl;
+    case ((exp,(i,ht,l)))
+      equation
+        ix = BaseHashTable.get(exp,ht);
+        et = Expression.typeof(exp);
+        nexp = DAE.SHARED_LITERAL(ix,et);
+      then ((nexp,(i,ht,l)));
+    case ((exp,(i,ht,l)))
+      equation
+        ht = BaseHashTable.add((exp,i),ht);
+        et = Expression.typeof(exp);
+        nexp = DAE.SHARED_LITERAL(i,et);
+      then ((nexp,(i+1,ht,exp::l)));
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.replaceLiteralExp failed. Falling back to not replacing the literal."});
+      then inTpl;
+  end matchcontinue;
+end replaceLiteralExp;
+
+protected function isLiteralExp
+"Returns if the expression may be replaced by a constant literal"
+  input DAE.Exp exp;
+algorithm
+  _ := match exp
+    case DAE.SCONST(_) then ();
+    case DAE.SHARED_LITERAL(index=_) then ();
+    else fail();
+  end match;
+end isLiteralExp;
 
 protected function checkValidMainFunction
 "Verifies that an in-function can be generated.
@@ -1764,6 +1822,7 @@ algorithm
         
         simCode = SIMCODE(modelInfo,
           functions,
+          {},
           recordDecls,
           externalFunctionIncludes,
           allEquations,

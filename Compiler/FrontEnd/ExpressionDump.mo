@@ -893,6 +893,8 @@ algorithm
         s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
         s = stringAppendList({s1,s2,"\n","#cases#\n","end ",s1});
       then s;
+    
+    case (DAE.SHARED_LITERAL(index=_), _, _, _) then "#SHARED LITERAL#"; 
 
     case (e, _, _, _)
       equation

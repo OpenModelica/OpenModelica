@@ -3653,6 +3653,29 @@ algorithm
   end matchcontinue;
 end traverseDAEFuncLst;
 
+public function traverseDAEFunctions "Traverses the functions.
+Note: Only calls the top-most expressions If you need to also traverse the
+expression, use an extra helper function."
+  input list<DAE.Function> funcLst;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output list<DAE.Function> outFuncLst;
+  output Type_a oextraArg;
+  partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outFuncLst,oextraArg) := matchcontinue(funcLst,func,extraArg)
+    local
+      DAE.Function daeFunc;
+    case({},func,extraArg) then ({},extraArg);
+    case(daeFunc::funcLst,func,extraArg)
+      equation
+        (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
+        (funcLst,extraArg) = traverseDAEFunctions(funcLst,func,extraArg);
+      then (daeFunc::funcLst,extraArg);
+  end matchcontinue;
+end traverseDAEFunctions;
+
 protected function traverseDAEFunc
   input DAE.Function daeFn;
   input FuncExpType func;

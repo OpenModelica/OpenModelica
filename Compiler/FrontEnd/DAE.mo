@@ -1154,14 +1154,23 @@ uniontype Exp "Expressions
     ExpType et;
   end MATCHEXPRESSION;
   
-  record BOX
+  record BOX "MetaModelica boxed value"
     Exp exp;
   end BOX;
 
-  record UNBOX
+  record UNBOX "MetaModelica value unboxing (similar to a cast)"
     Exp exp;
     ExpType ty;
   end UNBOX;
+  
+  record SHARED_LITERAL
+    "Before code generation, we make a pass that replaces constant literals
+    with a SHARED_LITERAL expression. Any immutable type can be shared:
+    basic MetaModelica types and Modelica strings are fine. There is no point
+    to share Real, Integer, Boolean or Enum though."
+    Integer index;
+    ExpType ty "The type is required for code generation to work properly";
+  end SHARED_LITERAL;
 
   /* --- */
 

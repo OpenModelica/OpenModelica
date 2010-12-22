@@ -30,6 +30,7 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<Function> functions;
+      list<DAE.Exp> literals;
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
@@ -73,6 +74,7 @@ package SimCode
       String name;
       Function mainFunction;
       list<Function> functions;
+      list<DAE.Exp> literals;
       list<String> externalFunctionIncludes;
       MakefileParams makefileParams;
       list<RecordDeclaration> extraRecordDecls;
@@ -709,6 +711,10 @@ package DAE
       Exp exp;
       ExpType ty;
     end UNBOX;
+    record SHARED_LITERAL
+      Integer index;
+      ExpType ty;
+    end SHARED_LITERAL;
   end Exp;
   
   uniontype MatchCase
