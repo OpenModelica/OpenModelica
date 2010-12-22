@@ -301,33 +301,6 @@ algorithm
         (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
       then
         (crlst1,repl_2);
-/*                        
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={}),NONE(),e,t)
-      equation
-        sc = ComponentReference.makeCrefIdent(ident,ty,{});
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        e1 = Expression.makeCrefExp(sc,ty);
-        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
-      then
-        (sc::crlst,repl_1);        
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={}),SOME(pcr),e,t)
-      equation
-        sc1 = ComponentReference.makeCrefIdent(ident,ty,{});
-        sc = ComponentReference.joinCrefs(pcr,sc1);
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        e1 = Expression.makeCrefExp(sc,ty);
-        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
-      then
-        (sc::crlst,repl_1);     
-*/     
      // record ?
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
       equation
@@ -357,7 +330,7 @@ algorithm
       then
         (crlst1,repl_2); 
 /*            
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE(),e,t)
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE(),e as DAE.CREF(componentRef=ncr),t)
       equation
         sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         // check List
@@ -369,7 +342,7 @@ algorithm
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
       then
         (sc::crlst,repl_1);        
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr),e,t)
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr),e as DAE.CREF(componentRef=ncr),t)
       equation
         sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         sc = ComponentReference.joinCrefs(pcr,sc1);
@@ -381,8 +354,9 @@ algorithm
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
       then
-        (sc::crlst,repl_1);      
-*/     
+        (sc::crlst,repl_1);   
+ */       
+  
      // other
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
       equation
@@ -397,50 +371,41 @@ algorithm
         (crlst1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
       then
         (crlst1,repl_2);     
-    
-     case (crlst,repl,cr,NONE(),e,t)
-      equation
-        // is Array
-        (_::_) = ComponentReference.crefLastSubs(cr);
-        // check if e is not array
-        false = Expression.isArray(e);
-        // stripLastIdent
-        sc = ComponentReference.crefStripLastSubs(cr);
-        ty = ComponentReference.crefLastType(cr);
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        e1 = Expression.makeCrefExp(sc,ty);
-        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
 
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
-      then
-        (sc::crlst,repl_1);
-    case (crlst,repl,cr,SOME(pcr),e,t)
-      equation
-        // is Array
-        (_::_) = ComponentReference.crefLastSubs(cr);
-        // check if e is not array
-        false = Expression.isArray(e);
-        cr1 = ComponentReference.joinCrefs(pcr,cr);
-        // stripLastIdent
-        sc = ComponentReference.crefStripLastSubs(cr1);
-        ty = ComponentReference.crefLastType(cr);
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        e1 = Expression.makeCrefExp(sc,ty);
-        ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
-
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
-      then
-        (sc::crlst,repl_1);
-    
     case (crlst,repl,_,_,_,_) then (crlst,repl);
   end matchcontinue;
 end removeSimpleEquations3;
+
+protected function replaceCrefFromExp "function: replaceCrefFromExp
+  author: Frenkel TUD 2010-12
+  helper for removeSimpleEquations"
+ input tuple<DAE.Exp, VarTransform.VariableReplacements> inTpl;
+ output tuple<DAE.Exp, VarTransform.VariableReplacements> outTpl;  
+algorithm 
+  outTpl := matchcontinue(inTpl)
+    local 
+      VarTransform.VariableReplacements repl; 
+      DAE.ComponentRef cr,sc;
+      DAE.Exp e,e1,e2; 
+      list<DAE.Subscript> subs;
+    case((DAE.CREF(componentRef=cr), repl))
+      equation
+        (e) = VarTransform.getReplacement(repl, cr);
+        ((e1,_)) = Expression.traverseExp(e,replaceCrefFromExp,repl);
+      then
+        ((e1, repl ));  
+    case((DAE.CREF(componentRef=cr), repl))
+      equation
+        subs = ComponentReference.crefLastSubs(cr);
+        sc = ComponentReference.crefStripLastSubs(cr);
+        (e) = VarTransform.getReplacement(repl, sc);
+        e1 = Expression.applyExpSubscripts(e,subs);
+        ((e2,_)) = Expression.traverseExp(e1,replaceCrefFromExp,repl);
+      then
+        ((e2, repl ));          
+    case(inTpl) then inTpl;
+  end matchcontinue;
+end replaceCrefFromExp;
 
 protected function getOutputsFromAlgorithms"
 Author: Frenkel TUD 2010-09 function getOutputsFromAlgorithms
