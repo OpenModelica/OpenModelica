@@ -1967,6 +1967,13 @@ algorithm
   s := pathString2(path, ".");
 end pathString;
 
+public function pathHash "Hashes a path."
+  input Path path;
+  output Integer hash;
+algorithm
+  hash := stringHashDjb2(pathString(path));
+end pathHash;
+
 public function optPathString "function: optPathString
   Returns a path converted to string or an empty string if nothing exist"
   input Option<Path> inPathOption;
