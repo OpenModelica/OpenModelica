@@ -208,7 +208,7 @@ algorithm
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
@@ -224,7 +224,7 @@ algorithm
       BackendVariable.isVariable(cr1, vars, knvars) "cr1 not constant";
       false = BackendVariable.isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = BackendDAEUtil.treeGet(outputs, cr1)) "cr1 not output of algorithm";
-      (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
+      (extlst,_,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,NONE(),e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = BackendDAEUtil.treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
@@ -258,11 +258,12 @@ Author: Frenkel TUD 2010-07 function removeSimpleEquations3
   input DAE.Exp e;
   input DAE.ExpType t;
   output list<DAE.ComponentRef> outcreflst;
+  output list<DAE.ComponentRef> outcreflst1;
   output VarTransform.VariableReplacements outrepl;
 algorithm
-  (outcreflst,outrepl) := matchcontinue (increflst,inrepl,cr,precr,e,t)
+  (outcreflst,outcreflst1,outrepl) := matchcontinue (increflst,inrepl,cr,precr,e,t)
     local
-      list<DAE.ComponentRef> crlst,crlst1;
+      list<DAE.ComponentRef> crlst,crlst1,crlst_1;
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       DAE.Exp e1;
       DAE.ComponentRef sc,sc1,cr1,pcr;
@@ -284,9 +285,9 @@ algorithm
         ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
-        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2);
+        (crlst1,crlst_1,repl_2);
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst={},componentRef=cr1),SOME(pcr),e,t)
       equation
         sc1 = ComponentReference.makeCrefIdent(ident,ty,{});
@@ -298,9 +299,9 @@ algorithm
         ((e1,_)) = BackendDAEUtil.extendArrExp((e1,NONE()));
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
-        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2);
+        (crlst1,crlst_1,repl_2);
      // record ?
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
       equation
@@ -312,9 +313,9 @@ algorithm
         e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
-        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2);
+        (crlst1,crlst_1,repl_2);
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=cr1),SOME(pcr),e,t)
       equation
         sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
@@ -326,86 +327,109 @@ algorithm
         e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
         // add
         repl_1 = VarTransform.addReplacement(repl, sc, e1);
-        (crlst1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(sc::crlst,repl_1,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2); 
-/*            
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE(),e as DAE.CREF(componentRef=ncr),t)
+        (crlst1,crlst_1,repl_2); 
+            
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE(),e as DAE.CREF(componentRef=_),t)
+      then
+        (crlst,{cr},repl);        
+     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr),e as DAE.CREF(componentRef=_),t)
       equation
-        sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
-        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
+        sc = ComponentReference.joinCrefs(pcr,cr);
       then
-        (sc::crlst,repl_1);        
-     case (crlst,repl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr),e as DAE.CREF(componentRef=ncr),t)
-      equation
-        sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        sc = ComponentReference.joinCrefs(pcr,sc1);
-        // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,ComponentReference.crefEqualNoStringCompare,false));
-        // extend cr
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,sc);
-        e1 = DAE.CALL(name,expl,false,false,ty,DAE.NO_INLINE());
-        // add
-        repl_1 = VarTransform.addReplacement(repl, sc, e1);
-      then
-        (sc::crlst,repl_1);   
- */       
-  
+        (crlst,{sc},repl);     
      // other
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=cr1),NONE(),e,t)
       equation
         sc = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        (crlst1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2);
+        (crlst1,crlst_1,repl_2);
      case (crlst,repl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=cr1),SOME(pcr),e,t)
       equation
         sc1 = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         sc = ComponentReference.joinCrefs(pcr,sc1);
-        (crlst1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
+        (crlst1,crlst_1,repl_2) = removeSimpleEquations3(crlst,repl,cr1,SOME(sc),e,t);
       then
-        (crlst1,repl_2);     
+        (crlst1,crlst_1,repl_2);     
 
-    case (crlst,repl,_,_,_,_) then (crlst,repl);
+    case (crlst,repl,_,_,_,_) then (crlst,{},repl);
   end matchcontinue;
 end removeSimpleEquations3;
 
 protected function replaceCrefFromExp "function: replaceCrefFromExp
   author: Frenkel TUD 2010-12
   helper for removeSimpleEquations"
- input tuple<DAE.Exp, VarTransform.VariableReplacements> inTpl;
- output tuple<DAE.Exp, VarTransform.VariableReplacements> outTpl;  
+ input tuple<DAE.Exp, tuple<VarTransform.VariableReplacements,list<DAE.ComponentRef>>> inTpl;
+ output tuple<DAE.Exp, tuple<VarTransform.VariableReplacements,list<DAE.ComponentRef>>> outTpl;  
 algorithm 
   outTpl := matchcontinue(inTpl)
     local 
       VarTransform.VariableReplacements repl; 
+      list<DAE.ComponentRef> recordcrefs;
       DAE.ComponentRef cr,sc;
       DAE.Exp e,e1,e2; 
       list<DAE.Subscript> subs;
-    case((DAE.CREF(componentRef=cr), repl))
+    // as it is 
+    case((DAE.CREF(componentRef=cr), (repl,recordcrefs)))
       equation
         (e) = VarTransform.getReplacement(repl, cr);
-        ((e1,_)) = Expression.traverseExp(e,replaceCrefFromExp,repl);
+        ((e1,(_,_))) = Expression.traverseExp(e,replaceCrefFromExp,(repl,recordcrefs));
       then
-        ((e1, repl ));  
-    case((DAE.CREF(componentRef=cr), repl))
+        ((e1, (repl,recordcrefs) ));
+    // array elements 
+    case((DAE.CREF(componentRef=cr), (repl,recordcrefs)))
       equation
         subs = ComponentReference.crefLastSubs(cr);
         sc = ComponentReference.crefStripLastSubs(cr);
         (e) = VarTransform.getReplacement(repl, sc);
         e1 = Expression.applyExpSubscripts(e,subs);
-        ((e2,_)) = Expression.traverseExp(e1,replaceCrefFromExp,repl);
+        ((e2,(_,_))) = Expression.traverseExp(e1,replaceCrefFromExp,(repl,recordcrefs));
       then
-        ((e2, repl ));          
+        ((e2, (repl,recordcrefs) ));
+    // record elements 
+    case((DAE.CREF(componentRef=cr), (repl,recordcrefs)))
+      equation
+        e1 = replaceRecordCrefFromExp(cr,recordcrefs,repl);
+        ((e2,(_,_))) = Expression.traverseExp(e1,replaceCrefFromExp,(repl,recordcrefs));
+      then
+        ((e2, (repl,recordcrefs) ));  
     case(inTpl) then inTpl;
   end matchcontinue;
 end replaceCrefFromExp;
+
+protected function replaceRecordCrefFromExp "function: replaceRecordCrefFromExp
+  author: Frenkel TUD 2010-12
+  helper for removeSimpleEquations"
+ input DAE.ComponentRef inCref;
+ input list<DAE.ComponentRef> inRecCrefs;
+ input VarTransform.VariableReplacements inRepl; 
+ output DAE.Exp outExp;  
+algorithm 
+  outExp := matchcontinue(inCref,inRecCrefs,inRepl)
+    local 
+      VarTransform.VariableReplacements repl; 
+      list<DAE.ComponentRef> recordcrefs;
+      DAE.ComponentRef cr,sc,rcr,lcr,ncr;
+      DAE.Exp e,e1; 
+    case(cr,rcr::recordcrefs,repl)
+      equation
+        true = ComponentReference.crefPrefixOf(rcr,cr);
+        (e as DAE.CREF(componentRef=sc)) = VarTransform.getReplacement(repl, cr);
+        lcr = ComponentReference.crefStripPrefix(cr,rcr);
+        ncr = ComponentReference.joinCrefs(sc,lcr);
+        e1 = Expression.crefExp(ncr);
+      then
+        e1;  
+    case(cr,rcr::recordcrefs,repl)
+      equation
+        false = ComponentReference.crefPrefixOf(rcr,cr);
+        e = replaceRecordCrefFromExp(cr,recordcrefs,repl);
+      then
+        e;  
+  end matchcontinue;
+end replaceRecordCrefFromExp;
 
 protected function getOutputsFromAlgorithms"
 Author: Frenkel TUD 2010-09 function getOutputsFromAlgorithms
