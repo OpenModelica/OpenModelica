@@ -64,8 +64,8 @@ IOStreamExt_rml.o : IOStreamExt.c
 IOStreamExt_omc.o : IOStreamExt.c
 OptManager_rml.o : optmanager.cpp
 OptManager_omc.o : optmanager.cpp
-Settings_rml.o : settingsimpl.c
-Settings_omc.o : settingsimpl.c
+Settings_rml.o : settingsimpl.c config.h $(configUnix)
+Settings_omc.o : settingsimpl.c config.h $(configUnix)
 UnitParserExt_rml.o : unitparserext.cpp unitparser.h
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_rml.o : BackendDAEEXT.cpp

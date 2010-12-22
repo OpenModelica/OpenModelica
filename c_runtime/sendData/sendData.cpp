@@ -96,14 +96,15 @@ Connection::~Connection()
 const char* Connection::getExternalViewerFileName()
 {
   char* viewerPath = NULL;
-  string path( getenv( "OPENMODELICAHOME" ) );
-	if( path.empty() )
-		throw runtime_error( "Could not find environment variable OPENMODELICAHOME" );
-  path += "/bin/OMPlotWindow";
+  string path = "";
+  const char* omhome = getenv("OPENMODELICAHOME");
+  if (omhome)
+    path = string(omhome) + "/bin/";
+	path += "OMPlotWindow";
 #ifdef WIN32
   path += ".exe";
 #elif defined(__APPLE_CC__)
-  path += ".app";
+  // path += ".app"; // Actually, it's not an .app
 #endif
   viewerPath = strdup(path.c_str());
   // fprintf(stderr, "ViewerPath: %s", viewerPath);
@@ -115,66 +116,57 @@ const char* Connection::getExternalViewerFileName()
 bool Connection::startExternalViewer()
 {
   QString path = getExternalViewerFileName();
-  if(QFile::exists(path))
+  QProcess *plotViewerProcess = new QProcess();
+  QString tempPath(QDir::tempPath());
+  QString uniq; uniq.sprintf("%05.4f", (double)clock());
+  // fprintf(stderr, "uniq %s\n", uniq.toStdString().c_str());
+  QString tempFile = tempPath + "/OpenModelica-PlotViewer-" + uniq + "-.log";
+  plotViewerProcess->setWorkingDirectory(tempPath);
+  // cerr << "simulation runtime: redirecting the output to: " << tempFile.toStdString() << endl;
+  plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
+  plotViewerProcess->setStandardOutputFile(tempFile, QIODevice::Truncate);
+  plotViewerProcess->setProcessChannelMode(QProcess::MergedChannels);
+
+  // 2006-03-14 AF, start viewer
+  plotViewerProcess->start( path );
+
+  // wait until the process starts up ...
+  int ticks = 0;
+  while (1)
   {
-    QProcess *plotViewerProcess = new QProcess();
-    QString tempPath(QDir::tempPath());
-    QString uniq; uniq.sprintf("%05.4f", (double)clock());
-    // fprintf(stderr, "uniq %s\n", uniq.toStdString().c_str());
-    QString tempFile = tempPath + "/OpenModelica-PlotViewer-" + uniq + "-.log";
-    plotViewerProcess->setWorkingDirectory(tempPath);
-    // cerr << "simulation runtime: redirecting the output to: " << tempFile.toStdString() << endl;
-    plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
-    plotViewerProcess->setStandardOutputFile(tempFile, QIODevice::Truncate);
-    plotViewerProcess->setProcessChannelMode(QProcess::MergedChannels);
-
-    // 2006-03-14 AF, start viewer
-    plotViewerProcess->start( path );
-
-    // wait until the process starts up ...
-    int ticks = 0;
-    while (1)
-    {
-      ticks++;
+    ticks++;
 #if defined(WIN32)
-      if( plotViewerProcess->waitForStarted(500) ) break;
+    if( plotViewerProcess->waitForStarted(500) ) break;
 #else
-      if( plotViewerProcess->waitForStarted(-1) ) break;
+    if( plotViewerProcess->waitForStarted(-1) ) break;
 #endif
-      else
-      {
-        cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
-        cerr << "\n\t error: " << plotViewerProcess->errorString().toStdString() << "!" << endl;
-        return false;
-      }
-      if (ticks > 100)
-        break;
-    }
-    if (plotViewerProcess->state() == QProcess::NotRunning)
-    {
-      cerr << "\nsimulation runtime: the plot viewer: " << path.toStdString().c_str();
-      cerr << " doesn't want to start" << "\n\t error: " << plotViewerProcess->errorString().toStdString() << "!" << endl;
-      return false;
-    }
     else
     {
-      // we need to loose time until the process has time to do listen!
-      ticks = 0;
-      while (plotViewerProcess->state() != QProcess::Running)
-      {
-        sleep(1);
-        if (ticks > 2)
-          break;
-      }
-      sleep(2);
-      return true;
+      cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
+      cerr << "\n\t error: " << plotViewerProcess->errorString().toStdString() << "!" << endl;
+      return false;
     }
+    if (ticks > 100)
+      break;
+  }
+  if (plotViewerProcess->state() == QProcess::NotRunning)
+  {
+    cerr << "\nsimulation runtime: the plot viewer: " << path.toStdString().c_str();
+    cerr << " doesn't want to start" << "\n\t error: " << plotViewerProcess->errorString().toStdString() << "!" << endl;
+    return false;
   }
   else
   {
-    cerr << "simulation runtime: the plot viewer: " << \
-      path.toStdString().c_str() << " doesn't exist!" << endl;
-    return false;
+    // we need to loose time until the process has time to do listen!
+    ticks = 0;
+    while (plotViewerProcess->state() != QProcess::Running)
+    {
+      sleep(1);
+      if (ticks > 2)
+        break;
+    }
+    sleep(2);
+    return true;
   }
 }
 
@@ -1062,9 +1054,9 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
 
 bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
 {
-  QDir dir(QString(getenv("OPENMODELICAHOME")));
+  const char *omhome = getenv("OPENMODELICAHOME");
+  QDir dir((omhome ? QString(omhome) : QString("/")));
   dir.cd("tmp");
-
   QString filename;
 
   if(QString(model).isEmpty())
@@ -1142,8 +1134,9 @@ bool Static::enabled()
 
 QString getModelResultsFileName(const char* model)
 {
+  const char *omhome = getenv("OPENMODELICAHOME");
   QDir dirCurrentDir = QDir::current();
-  QDir dirOpenModelica(QString(getenv("OPENMODELICAHOME")));
+  QDir dirOpenModelica((omhome ? QString(omhome) : QString("/")));
   QString file1 = dirOpenModelica.path() + "/tmp/" + model;
   QString file2 = dirCurrentDir.path() + "/" + model;
   QString f;
