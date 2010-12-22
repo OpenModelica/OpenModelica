@@ -897,8 +897,8 @@ algorithm
 end extractListFromTuple;
 
 public function tryToConvertArrayToList
-"Convert an array, T[:], of a MetaModelica type into list. MetaModelica types
-can only be of array<T> type, not T[:].
+"Convert an array, T[:], of a MetaModelica type into list (done by a different function).
+MetaModelica types can only be of array<T> type, not T[:].
 This is mainly to produce better error messages."
   input DAE.Exp exp;
   input DAE.Type ty;
@@ -910,20 +910,9 @@ algorithm
       DAE.Type flatType;
     case (exp,ty)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
         (flatType,_) = Types.flattenArrayType(ty);
-        true = Types.isBoxedType(flatType) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
-        (exp,ty) = Types.matchType(exp, ty, (DAE.T_LIST(DAE.T_BOXED_DEFAULT),NONE()), false);
+        false = Types.isBoxedType(flatType) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
       then (exp,ty);
-    case (exp,ty)
-      equation
-        false = Types.isBoxedType(ty);
-      then (exp,ty);
-
-    case (exp,ty)
-      equation
-        Debug.fprintln("failtrace", "- Static.tryToConvertArrayToList failed");
-      then fail();
   end matchcontinue;
 end tryToConvertArrayToList;
 

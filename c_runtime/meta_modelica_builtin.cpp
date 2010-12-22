@@ -488,8 +488,10 @@ mmc_clock_rettype mmc_clock()
 
 void equality(modelica_metatype in1, modelica_metatype in2)
 {
-  if (!mmc_boxes_equal(in1, in2))
+  if (!mmc_boxes_equal(in1, in2)) {
+    // fprintf(stderr, "%s != %s\n", anyString(in1), anyString(in2));
     MMC_THROW();
+  }
 }
 
 /* Weird RML crap */

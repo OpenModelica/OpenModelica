@@ -8,6 +8,11 @@ package builtin
     output Integer result;
   end listLength;
   
+  function stringLength "Return the length of a string"
+    input String s;
+    output Integer result;
+  end stringLength;
+  
   function intAdd
     input Integer a;
     input Integer b;

@@ -550,8 +550,9 @@ algorithm
        (cache,e2_1,DAE.PROP((DAE.T_LIST(t2),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
        t1 = Types.getPropType(prop1);
        c1 = Types.propAllConst(prop1);
-       t = Types.superType(t1,t2);
+       t = Types.superType(t1,Types.unboxedType(t2));
        t = Types.superType(t,t); // For example TUPLE should be META_TUPLE; if it's only 1 argument, it might not be
+       t = Types.boxIfUnboxedType(t);
 
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
        (e2_1,_) = Types.matchType(e2_1, (DAE.T_LIST(t2),NONE()), (DAE.T_LIST(t),NONE()), true);
@@ -580,7 +581,7 @@ algorithm
        // transformed from Absyn.ARRAY()
   case (cache,env,Absyn.LIST({}),impl,st,doVect,_,info,_)
     equation
-      t = (DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE());
+      t = DAE.T_LIST_DEFAULT;
       prop = DAE.PROP(t,DAE.C_CONST());
     then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
 
@@ -591,6 +592,7 @@ algorithm
       constList = Types.getConstList(propList);
       c = Util.listFold(constList, Types.constAnd, DAE.C_CONST());
       (es_1, t) = Types.listMatchSuperType(es_1, typeList, true);
+      t = Types.boxIfUnboxedType(t);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);

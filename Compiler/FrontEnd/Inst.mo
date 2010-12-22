@@ -3713,6 +3713,7 @@ algorithm
         (cache,cenv,ih,tys,csets,oDA) =
         instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         ty = Util.listFirst(tys);
+        ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_LIST(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);

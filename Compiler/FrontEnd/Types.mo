@@ -4268,6 +4268,8 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
         (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
+        t2 = boxIfUnboxedType(t2);
+        (elist_1, _) = matchTypeList(elist_1, t1, t2, printFailtrace);
         t = elabType(t2);
         e_1 = DAE.LIST(t,elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
@@ -5210,6 +5212,7 @@ algorithm
     case ((DAE.T_LIST(ty),_))
       equation
         ty = unboxedType(ty);
+        ty = boxIfUnboxedType(ty);
       then ((DAE.T_LIST(ty),NONE()));
     case ((DAE.T_METATUPLE(tys),_))
       equation
@@ -5547,7 +5550,6 @@ algorithm
     case ((DAE.T_LIST(t1),_),prefix,bindings,info)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
-        t2 = unboxedType(t2);
       then ((DAE.T_LIST(t2),NONE()));
     case ((DAE.T_META_ARRAY(t1),_),prefix,bindings,info)
       equation
@@ -6146,7 +6148,6 @@ algorithm
     case ((DAE.T_LIST(ty),_),_)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
-        ty = unboxedType(ty);
         ty = (DAE.T_LIST(ty),NONE());
       then ty;
     case ((DAE.T_METAOPTION(ty),_),_)

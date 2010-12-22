@@ -1092,14 +1092,52 @@ algorithm
     local
       DAE.Exp exp,nexp;
       Integer i,ix;
+      String msg;
       list<DAE.Exp> l;
       DAE.ExpType et;
       HashTableExpToIndex.HashTable ht;
-    case ((DAE.SHARED_LITERAL(index=_),_)) then inTpl;
+      tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> t;
     case ((exp,_))
       equation
         failure(isLiteralExp(exp));
       then inTpl;
+    case ((exp,_))
+      equation
+        isTrivialLiteralExp(exp);
+      then inTpl;
+    case ((exp,t))
+      equation
+        exp = listToCons(exp);
+      then Expression.traverseExp(exp,replaceLiteralExp,t); // All sublists should also be added as literals...
+    case ((exp,_))
+      equation
+        failure(_ = listToCons(exp));
+      then replaceLiteralExp2(inTpl);
+    case ((exp,_))
+      equation
+        msg = "SimCode.replaceLiteralExp failed. Falling back to not replacing "+&ExpressionDump.printExpStr(exp)+&".";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then inTpl;
+  end matchcontinue;
+end replaceLiteralExp;
+
+protected function replaceLiteralExp2
+  "The tuples contain:
+  * The expression to be replaced (or not)
+  * Index of next literal
+  * HashTable Exp->Index (Number of the literal)
+  * The list of literals
+  "
+  input tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> inTpl;
+  output tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp exp,nexp;
+      Integer i,ix;
+      list<DAE.Exp> l;
+      DAE.ExpType et;
+      HashTableExpToIndex.HashTable ht;
     case ((exp,(i,ht,l)))
       equation
         ix = BaseHashTable.get(exp,ht);
@@ -1112,19 +1150,72 @@ algorithm
         et = Expression.typeof(exp);
         nexp = DAE.SHARED_LITERAL(i,et);
       then ((nexp,(i+1,ht,exp::l)));
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.replaceLiteralExp failed. Falling back to not replacing the literal."});
-      then inTpl;
   end matchcontinue;
-end replaceLiteralExp;
+end replaceLiteralExp2;
+
+protected function listToCons
+"Converts a DAE.LIST to a chain of DAE.CONS"
+  input DAE.Exp e;
+  output DAE.Exp o;
+algorithm
+  o := match e
+    local
+      list<DAE.Exp> es;
+      DAE.ExpType ty;
+    case DAE.LIST(ty,es as _::_) then listToCons2(ty,es);
+  end match;
+end listToCons;
+
+protected function listToCons2
+"Converts a DAE.LIST to a chain of DAE.CONS"
+  input DAE.ExpType ty;
+  input list<DAE.Exp> es;
+  output DAE.Exp o;
+algorithm
+  o := match (ty,es)
+    local
+      DAE.Exp e,car,cdr;
+    case (ty,{}) then DAE.LIST(ty,{});
+    case (ty,car::es)
+      equation
+        cdr = listToCons2(ty,es);
+      then DAE.CONS(ty,car,cdr);
+  end match;
+end listToCons2;
+
+protected function isTrivialLiteralExp
+"Succeeds if the expression should not be translated to a constant literal because it is too simple"
+  input DAE.Exp exp;
+algorithm
+  _ := match exp
+    case DAE.ICONST(_) then ();
+    case DAE.RCONST(_) then ();
+    case DAE.BCONST(_) then ();
+    case DAE.LIST(valList={}) then ();
+    case DAE.META_OPTION(NONE()) then ();
+    case DAE.SHARED_LITERAL(index=_) then ();
+    else fail();
+  end match;
+end isTrivialLiteralExp;
 
 protected function isLiteralExp
 "Returns if the expression may be replaced by a constant literal"
   input DAE.Exp exp;
 algorithm
   _ := match exp
+    local
+      DAE.Exp e1,e2;
+      list<DAE.Exp> expl;
     case DAE.SCONST(_) then ();
+    case DAE.ICONST(_) then ();
+    case DAE.RCONST(_) then ();
+    case DAE.BCONST(_) then ();
+    case DAE.META_OPTION(NONE()) then ();
+    case DAE.META_OPTION(SOME(exp)) equation isLiteralExp(exp); then ();
+    case DAE.BOX(exp) equation isLiteralExp(exp); then ();
+    case DAE.CONS(car = e1, cdr = e2) equation isLiteralExp(e1); isLiteralExp(e2); then ();
+    case DAE.LIST(valList = expl) equation Util.listMap0(expl,isLiteralExp); then ();
+    case DAE.META_TUPLE(expl) equation Util.listMap0(expl,isLiteralExp); then ();
     case DAE.SHARED_LITERAL(index=_) then ();
     else fail();
   end match;

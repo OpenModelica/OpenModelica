@@ -86,6 +86,28 @@ typedef int mmc_sint_t;
 #define MMC_INT_MAX ((1<<30)-1)
 #define MMC_INT_MIN (-(1<<30))
 
+#define MMC_DEFSTRUCTLIT(NAME,LEN,CON)	\
+    struct { \
+      mmc_uint_t header; \
+      const void *data[LEN]; \
+    } NAME = { MMC_STRUCTHDR(LEN,CON),
+#define MMC_DEFSTRUCT0LIT(NAME,CON) struct mmc_header NAME = { MMC_STRUCTHDR(0,CON) }
+#define MMC_REFSTRUCTLIT(NAME) MMC_TAGPTR(&(NAME).header)
+
+#define MMC_DEFSTRINGLIT(NAME,LEN,VAL)	\
+    struct {				\
+	    mmc_uint_t header;		\
+	    const char data[LEN+1];		\
+    } NAME = { MMC_STRINGHDR(LEN), VAL }
+#define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
+
+struct mmc_real_lit {	/* there must be no padding between `header' and `data' */
+    mmc_uint_t header;
+    double data;
+};
+#define MMC_DEFREALLIT(NAME,VAL) struct mmc_real_lit NAME = {MMC_REALHDR,VAL}
+#define MMC_REFREALLIT(NAME) MMC_TAGPTR(&(NAME).header)
+
 struct mmc_header {
     mmc_uint_t header;
 };
@@ -275,22 +297,15 @@ static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
     return MMC_TAGPTR(p);
 }
 
-extern const struct mmc_header mmc_prim_nil;
+static const MMC_DEFSTRUCT0LIT(mmc_nil,0);
+static const MMC_DEFSTRUCT0LIT(mmc_none,1);
 
-static inline void *mmc_mk_nil(void)
-{
-    return MMC_TAGPTR(&mmc_prim_nil);
-}
+#define mmc_mk_nil() MMC_REFSTRUCTLIT(mmc_nil)
+#define mmc_mk_none() MMC_REFSTRUCTLIT(mmc_none)
 
 static inline void *mmc_mk_cons(void *car, void *cdr)
 {
     return mmc_mk_box2(1, car, cdr);
-}
-
-static inline void *mmc_mk_none(void)
-{
-    static struct mmc_header none = { MMC_STRUCTHDR(0, 1 /* 0 is the empty list */) };
-    return MMC_TAGPTR(&none);
 }
 
 static inline void *mmc_mk_some(void *x)

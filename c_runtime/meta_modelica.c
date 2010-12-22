@@ -34,8 +34,6 @@
 
 jmp_buf *mmc_jumper;
 
-const struct mmc_header mmc_prim_nil = { MMC_NILHDR };
-
 union mmc_double_as_words {
     double d;
     mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];

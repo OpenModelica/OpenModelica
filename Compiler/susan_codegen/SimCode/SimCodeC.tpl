@@ -55,7 +55,7 @@ match simCode
 case SIMCODE(__) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, functions, externalFunctionIncludes, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, functions, literals), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
@@ -2366,12 +2366,15 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   >>  
 end equationElseWhen;
 
-template simulationFunctionsFile(String filePrefix, list<Function> functions)
+template simulationFunctionsFile(String filePrefix, list<Function> functions, list<Exp> literals)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
   #include "<%filePrefix%>_functions.h"
   extern "C" {
+  
+  <%literals |> literal hasindex i0 from 0 => literalExpConst(literal,i0) ; separator="\n"%>
+
   <%functionBodies(functions)%>
   }
   
@@ -5596,7 +5599,7 @@ template daeExpListToCons(list<Exp> listItems, Context context, Text &preExp /*B
  "Helper to daeExpList."
 ::=
   match listItems
-  case {} then "mmc_mk_nil()"
+  case {} then "MMC_REFSTRUCTLIT(mmc_nil)"
   case e :: rest then
     let expPart = daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let restList = daeExpListToCons(rest, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -6099,10 +6102,80 @@ end assertCommon;
 
 template literalExpConst(Exp lit, Integer index) "These should all be declared static X const"
 ::=
+  let name = '_OMC_LIT<%index%>'
+  let tmp = '_OMC_LIT_STRUCT<%index%>'
+  let meta = 'static modelica_metatype const <%name%>'
   match lit
-  case SCONST(__) then 'static modelica_string const _OMC_LIT<%index%> = "<%Util.escapeModelicaStringToCString(string)%>";'
+  case SCONST(__) then
+    let escstr = Util.escapeModelicaStringToCString(string)
+    <<
+    #define <%name%>_data "<%escstr%>"
+    static const size_t <%name%>_strlen = <%stringLength(escstr)%>;
+    static const char <%name%>[<%stringLength(string)%>+1] = <%name%>_data;
+    static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
+    <%meta%>_mmc = MMC_REFSTRINGLIT(<%tmp%>);
+    >>
+  case BOX(exp=SHARED_LITERAL(ty=ET_STRING(__),index=ix)) then
+    <<
+    #define <%name%> _OMC_LIT<%ix%>_mmc
+    >>
+
+    /*
+  case BOX(exp=exp as SCONST(__)) then
+    let escstr = Util.escapeModelicaStringToCString(exp.string)
+    <<
+    static const MMC_DEFSTRINGLIT(<%tmp%>,<%stringLength(escstr)%>,"<%escstr%>");
+    <%meta%> = MMC_REFSTRINGLIT(<%tmp%>);
+    >>
+    */
+  case BOX(exp=exp as ICONST(__)) then
+    <<
+    <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%exp.integer%>));
+    >>
+  case BOX(exp=exp as BCONST(__)) then
+    <<
+    <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%if exp.bool then 1 else 0%>));
+    >>
+  case BOX(exp=exp as RCONST(__)) then
+    <<
+    static const MMC_DEFREALLIT(<%tmp%>,<%exp.real%>);
+    <%meta%> = MMC_REFREALLIT(<%tmp%>);
+    >>
+  case CONS(__) then
+    <<
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car)%>,<%literalExpConstBoxedVal(cdr)%>}};
+    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    >>
+  case META_TUPLE(__) then
+    <<
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
+    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    >>
+  case META_OPTION(exp=SOME(exp)) then
+    <<
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp)%>}};
+    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    >>
   else '<%\n%>#error "literalExpConst failed: <%printExpStr(lit)%>"<%\n%>'
 end literalExpConst;
+
+template literalExpConstBoxedVal(Exp lit)
+::=
+  match lit
+  case ICONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%integer%>))'
+  case BCONST(__) then 'MMC_IMMEDIATE(MMC_TAGFIXNUM(<%bool%>))'
+  case LIST(valList={}) then
+    <<
+    MMC_REFSTRUCTLIT(mmc_nil)
+    >>
+  case META_OPTION(exp=NONE()) then
+    <<
+    MMC_REFSTRUCTLIT(mmc_none)
+    >>
+  case lit as SHARED_LITERAL(ty=ET_STRING(__)) then '_OMC_LIT<%lit.index%>_mmc'
+  case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
+  else '<%\n%>#error "literalExpConst2 failed: <%printExpStr(lit)%>"<%\n%>'
+end literalExpConstBoxedVal;
 
 end SimCodeC;
 
