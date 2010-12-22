@@ -36,7 +36,9 @@
 QString Helper::applicationName = "OMEdit";
 QString Helper::applicationVersion = "Version: 1.6.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
-QString Helper::OpenModelicaHome = getenv("OPENMODELICAHOME");
+// these two variables are set once we are connected to OMC......in OMCProxy::startServer().
+QString Helper::OpenModelicaHome = QString();
+QString Helper::OpenModelicaLibrary = QString();
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
@@ -48,8 +50,7 @@ QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).append(QString("/t
 QString Helper::tmpPath = QString("/tmp/OMEdit");
 #endif
 QString Helper::settingsFileName = QString("OMEdit-Settings.xml");
-// We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
-QString Helper::documentationBaseUrl = QString(getenv("OPENMODELICALIBRARY")).replace("\\", "/").append(QString("/Modelica/Images/"));
+QString Helper::documentationBaseUrl = QString("/Modelica/Images/");
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");

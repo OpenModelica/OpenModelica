@@ -225,7 +225,7 @@ bool OMCProxy::startServer()
         return false;
     }
     sendCommand("getInstallationDirectoryPath()");
-    Helper::OpenModelicaHome = getResult();
+    Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
     QDir dir;
     if (!dir.exists(Helper::tmpPath)) {
      if (!dir.mkdir(Helper::tmpPath)) {
@@ -234,7 +234,11 @@ bool OMCProxy::startServer()
        return false;
      }
     }
+    // set the temp directory.
     changeDirectory(Helper::tmpPath);
+    // set the OpenModelicaLibrary variable.
+    getEnvironmentVar("OPENMODELICALIBRARY");
+    Helper::OpenModelicaLibrary = StringHandler::removeFirstLastQuotes(getResult());
     return true;
 }
 

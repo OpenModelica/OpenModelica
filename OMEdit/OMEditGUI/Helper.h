@@ -45,6 +45,7 @@ public:
     static QString applicationVersion;
     static QString applicationIntroText;
     static QString OpenModelicaHome;
+    static QString OpenModelicaLibrary;
     static QString omcServerName;
     static QString omFileTypes;
     static QString omFileOpenText;

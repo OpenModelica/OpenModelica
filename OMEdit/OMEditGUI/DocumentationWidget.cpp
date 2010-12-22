@@ -93,7 +93,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
 {
     mpParentDocumentationWidget = pParent;
     // set the base url for documentation.
-    setBaseUrl(Helper::documentationBaseUrl);
+    // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
+    QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append(Helper::documentationBaseUrl);
+    setBaseUrl(baseUrl);
     // set page font settings
     settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
     settings()->setFontSize(QWebSettings::DefaultFontSize, 10);

@@ -607,13 +607,13 @@ void MainWindow::openUserManual()
 {
     QUrl userManualPath;
     // since in MAC OS X the url adds extra quotes to it, so we need to handle it differently.
-#ifdef Q_OS_MAC
-    userManualPath = QUrl(QString("file:///").append(QString(getenv("OPENMODELICAHOME")))
-                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
-#else
+//#ifdef Q_OS_MAC
+//    userManualPath = QUrl(QString("file:///").append(QString(getenv("OPENMODELICAHOME")))
+//                         .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
+//#else
     userManualPath = QUrl(QString("file:///").append(Helper::OpenModelicaHome.replace("\\", "/"))
                          .append("/share/doc/omedit/OMEdit-UserManual.pdf"));
-#endif
+//#endif
     QDesktopServices::openUrl(userManualPath);
 }
 
@@ -622,15 +622,16 @@ void MainWindow::openAbout()
     const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
     QString OMCVersion = mpOMCProxy->getVersion();
     QString aboutText = QString("OMEdit - ").append(Helper::applicationIntroText).append(" ")
-                        .append(Helper::applicationVersion).append(" Copyright ").append(dateStr + 7)
+                        .append(Helper::applicationVersion).append("\n")
+                        .append("Connected to OpenModelica ").append(OMCVersion).append("\n\n")
+                        .append("Copyright ").append(dateStr + 7)
                         .append(" Link").append(QChar(246, 0)).append("ping University.\n")
                         .append("Distributed under OSMC-PL and GPL, see www.openmodelica.org.\n\n")
-                        .append("Connected to OpenModelica ").append(OMCVersion).append("\n")
-                        .append("Created by Syed Adeel Asghar and Sonia Tariq as part of their final thesis.\n\n")
+                        .append("Created by Adeel Asghar and Sonia Tariq as part of their final thesis.\n\n")
                         .append("Supervisor: Dr. Mohsen Torabzadeh-Tari\n")
-                        .append("Advisor: Martin Sj").append(QChar(246, 0)).append("lund\n")
+                        .append("Advisor: Mr. Martin Sj").append(QChar(246, 0)).append("lund\n")
                         .append("Examiner: Prof. Peter Fritzson\n\n")
-                        .append("Special Thanks to Adrian Pop for helping in OMC related issues.");
+                        .append("Special Thanks to Dr. Adrian Pop for helping in OMC related issues.");
 
     QMessageBox::about(this, QString("About ").append(Helper::applicationName), aboutText);
 }
