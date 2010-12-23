@@ -3339,19 +3339,6 @@ template funArgUnbox(Variable var, Text &varDecls, Text &varBox)
 ::=
 match var
 case VARIABLE(__) then
-  /*match ty
-  case ET_COMPLEX(complexClassType = RECORD(__)) then
-    let varName = crefStr(varname)
-    unboxRecord(varName, ty, &varBox, &varDecls)
-  else
-    let shortType = mmcExpTypeShort(ty)
-    if shortType then
-      let type = 'mmc_unbox_<%shortType%>_rettype'
-      let tmpVar = tempDecl('mmc_unbox_<%shortType%>_rettype', &varDecls)
-      let &varBox += '<%tmpVar%> = mmc_unbox_<%shortType%>(<%crefStr(varname)%>);<%\n%>'
-      tmpVar
-    else 
-      crefStr(varname)*/
   let varName = contextCref(name,contextFunction)
   unboxVariable(varName, ty, &varBox, &varDecls)
 case FUNCTION_PTR(__) then // Function pointers don't need to be boxed.
@@ -5602,7 +5589,7 @@ template daeExpListToCons(list<Exp> listItems, Context context, Text &preExp /*B
   match listItems
   case {} then "MMC_REFSTRUCTLIT(mmc_nil)"
   case e :: rest then
-    let expPart = daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let restList = daeExpListToCons(rest, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     mmc_mk_cons(<%expPart%>, <%restList%>)
@@ -5617,7 +5604,7 @@ template daeExpCons(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case CONS(__) then
   let tmp = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
-  let carExp = daeExpMetaHelperConstant(car, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let carExp = daeExp(car, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let cdrExp = daeExp(cdr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let &preExp += '<%tmp%> = mmc_mk_cons(<%carExp%>, <%cdrExp%>);<%\n%>'
   tmp
@@ -5631,8 +5618,7 @@ template daeExpMetaTuple(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case META_TUPLE(__) then
   let start = daeExpMetaHelperBoxStart(listLength(listExp))
-  let args = (listExp |> e =>
-      daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let args = (listExp |> e => daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
   let tmp = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
   let &preExp += '<%tmp%> = mmc_mk_box<%start%>0<%if args then ", "%><%args%>);<%\n%>'
@@ -5648,7 +5634,7 @@ template daeExpMetaOption(Exp exp, Context context, Text &preExp /*BUFP*/,
   case META_OPTION(exp=NONE()) then
     "mmc_mk_none()"
   case META_OPTION(exp=SOME(e)) then
-    let expPart = daeExpMetaHelperConstant(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     'mmc_mk_some(<%expPart%>)'
 end daeExpMetaOption;
 
@@ -5662,7 +5648,7 @@ case METARECORDCALL(__) then
   let newIndex = incrementInt(index, 3)
   let argsStr = if args then
       ', <%args |> exp =>
-        daeExpMetaHelperConstant(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       ;separator=", "%>'
     else
       ""
@@ -5671,43 +5657,6 @@ case METARECORDCALL(__) then
   let &preExp += '<%tmp%> = <%box%>;<%\n%>'
   tmp
 end daeExpMetarecordcall;
-
-
-template daeExpMetaHelperConstant(Exp e, Context context, Text &preExp /*BUFP*/,
-                                  Text &varDecls /*BUFP*/)
- "Generates a constant meta modelica value."
-::=
-  let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  daeExpMetaHelperConstantNameType(expPart, Expression.typeof(e),
-                                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-end daeExpMetaHelperConstant;
-
-
-template daeExpMetaHelperConstantNameType(Text varname, ExpType type,
-                                          Text &preExp /*BUFP*/,
-                                          Text &varDecls /*BUFP*/)
- "Helper to daeExpMetaHelperConstant."
-::=
-  match type
-  case ET_INT(__)         then 'mmc_mk_icon(<%varname%>)'
-  case ET_BOOL(__)        then 'mmc_mk_icon(<%varname%>)'
-  case ET_REAL(__)        then 'mmc_mk_rcon(<%varname%>)'
-  case ET_STRING(__)      then 'mmc_mk_scon(<%varname%>)'
-  case ET_ENUMERATION(__) then 'mmc_mk_icon(<%varname%>)'
-  case ET_COMPLEX(name=cname) then
-    let start = daeExpMetaHelperBoxStart(incrementInt(listLength(varLst), 1))
-    let args = if varLst then
-        ', <%varLst |> v as COMPLEX_VAR(name=cvname) =>
-          let nameText = '<%varname%>.<%cvname%>'
-          daeExpMetaHelperConstantNameType(nameText, tp,
-                                           &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        ;separator=", "%>'
-      else
-        ""
-    'mmc_mk_box<%start%>2, &<%underscorePath(cname)%>__desc<%args%>)'
-  else varname
-end daeExpMetaHelperConstantNameType;
-
 
 template daeExpMetaHelperBoxStart(Integer numVariables)
  "Helper to determine how mmc_mk_box should be called."
