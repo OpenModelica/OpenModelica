@@ -985,6 +985,7 @@ algorithm
     case (Values.OPTION(SOME(v)))
       equation
         e = valueExp(v);
+        (e,_) = Types.matchType(e, Types.typeOfValue(v), DAE.T_BOXED_DEFAULT, true);
       then DAE.META_OPTION(SOME(e));
 
     case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
@@ -992,13 +993,18 @@ algorithm
     case (Values.META_TUPLE(vallist))
       equation
         explist = Util.listMap(vallist, valueExp);
+        typelist = Util.listMap(vallist, Types.typeOfValue);
+        (explist,_) = Types.matchTypeTuple(explist, typelist, Util.listMap(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
+
+    case (Values.LIST({})) then DAE.LIST(DAE.ET_OTHER(),{});
 
     case (Values.LIST(vallist))
       equation
         explist = Util.listMap(vallist, valueExp);
         typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,vt) = Types.listMatchSuperType(explist, typelist, true);
+        vt = Types.boxIfUnboxedType(Util.listReduce(typelist,Types.superType));
+        explist = Types.matchTypes(explist, typelist, vt, true);
         t = Types.elabType(vt);
       then DAE.LIST(t, explist);
 
@@ -1014,9 +1020,8 @@ algorithm
 
     case (v)
       equation
-        Debug.fprintln("failtrace", "ValuesUtil.valueExp failed for "+&valString(v)+&"\n");
-
-        Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valueExp failed"});
+        s = "ValuesUtil.valueExp failed for " +& valString(v);
+        Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
   end matchcontinue;
@@ -2034,9 +2039,9 @@ algorithm
       equation
         Print.printBuf("fail()");
       then ();
-    case _
+    else
       equation
-        Debug.fprintln("failtrace", "- ValuesUtil.valString2 failed");
+        Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valString2 failed"});
       then
         fail();
   end matchcontinue;

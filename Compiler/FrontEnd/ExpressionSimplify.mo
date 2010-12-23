@@ -428,11 +428,10 @@ algorithm
       then
         outExp;
 
-    case (e as DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = expl))
+    case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = {e}))
       equation
-        expl = Util.listMap(expl, simplify1);
-        {DAE.LIST(valList = expl)} = expl;
-       then simplifyStringAppendList(expl,{});
+        DAE.LIST(valList = expl) = simplify1(e);
+      then simplifyStringAppendList(expl,{});
   end matchcontinue;
 end simplifyBuiltinCalls;
 
@@ -452,17 +451,21 @@ algorithm
       DAE.Exp exp,exp1,exp2;
       list<DAE.Exp> rest;
     case ({},{}) then DAE.SCONST("");
-    case ({},{exp}) then exp;
-    case ({},{exp1,exp2}) then DAE.BINARY(exp2,DAE.ADD(DAE.ET_STRING()),exp1);
+    case ({},{exp}) then Expression.unboxExp(exp);
+    case ({},{exp1,exp2})
+      equation
+        exp1 = Expression.unboxExp(exp1);
+        exp2 = Expression.unboxExp(exp2);
+      then DAE.BINARY(exp2,DAE.ADD(DAE.ET_STRING()),exp1);
     case ({},acc)
       equation
         acc = listReverse(acc);
         exp = DAE.LIST(DAE.ET_STRING(),acc);
       then Static.makeBuiltinCall("stringAppendList",{exp},DAE.ET_STRING());
-    case (DAE.SCONST(s1)::rest,DAE.SCONST(s2)::acc)
+    case (DAE.BOX(DAE.SCONST(s1))::rest,DAE.BOX(DAE.SCONST(s2))::acc)
       equation
         s = s2 +& s1;
-      then simplifyStringAppendList(rest,DAE.SCONST(s)::acc);
+      then simplifyStringAppendList(rest,DAE.BOX(DAE.SCONST(s))::acc);
     case (exp::rest,acc) then simplifyStringAppendList(rest,exp::acc);
   end match;
 end simplifyStringAppendList;

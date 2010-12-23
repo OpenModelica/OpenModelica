@@ -5540,7 +5540,7 @@ match exp
 case exp as BOX(__) then
   let ty = expTypeFromExpShort(exp.exp)
   let res = daeExp(exp.exp,context,&preExp,&varDecls)
-  'mmc_mk_<%ty%>(<%res%>)'
+  'mmc_mk_<%ty%>(<%res%>) /* <%printExpStr(exp)%> */'
 end daeExpBox;
 
 template daeExpUnbox(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -6172,9 +6172,10 @@ template literalExpConstBoxedVal(Exp lit)
     <<
     MMC_REFSTRUCTLIT(mmc_none)
     >>
+  case BOX(__) then literalExpConstBoxedVal(exp)
   case lit as SHARED_LITERAL(ty=ET_STRING(__)) then '_OMC_LIT<%lit.index%>_mmc'
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
-  else '<%\n%>#error "literalExpConst2 failed: <%printExpStr(lit)%>"<%\n%>'
+  else '<%\n%>#error "literalExpConstBoxedVal failed: <%printExpStr(lit)%>"<%\n%>'
 end literalExpConstBoxedVal;
 
 end SimCodeC;

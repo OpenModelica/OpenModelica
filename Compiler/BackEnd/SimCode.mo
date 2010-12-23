@@ -1188,9 +1188,12 @@ protected function isTrivialLiteralExp
   input DAE.Exp exp;
 algorithm
   _ := match exp
+    case DAE.BOX(DAE.SCONST(_)) then fail();
+    case DAE.BOX(DAE.RCONST(_)) then fail();
+    case DAE.BOX(_) then ();
     case DAE.ICONST(_) then ();
-    case DAE.RCONST(_) then ();
     case DAE.BCONST(_) then ();
+    case DAE.RCONST(_) then ();
     case DAE.LIST(valList={}) then ();
     case DAE.META_OPTION(NONE()) then ();
     case DAE.SHARED_LITERAL(index=_) then ();

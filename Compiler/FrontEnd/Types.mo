@@ -1286,6 +1286,7 @@ algorithm
         explist = Util.listMap(vl, ValuesUtil.valueExp);
         ts = Util.listMap(vl, typeOfValue);
         (_,tp) = listMatchSuperType(explist, ts, true);
+        tp = boxIfUnboxedType(tp);
       then
         ((DAE.T_LIST(tp),NONE()));
 
@@ -1295,21 +1296,19 @@ algorithm
       then tp;
     case Values.OPTION(SOME(v))
       equation
-        tp = typeOfValue(v);
+        tp = boxIfUnboxedType(typeOfValue(v));
         tp = (DAE.T_METAOPTION(tp),NONE());
       then tp;
     case Values.META_TUPLE(valueLst = vs)
       equation
         ts = Util.listMap(vs, typeOfValue);
+        ts = Util.listMap(ts, boxIfUnboxedType);
       then
         ((DAE.T_METATUPLE(ts),NONE()));
-
     case (v)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Types.typeOfValue failed: ");
-        str = ValuesUtil.valString(v);
-        Debug.fprintln("failtrace", str);
+        str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;
@@ -3846,7 +3845,7 @@ algorithm
   end matchcontinue;
 end matchProp;
 
-protected function matchTypeList
+public function matchTypeList
   input list<DAE.Exp> exps;
   input Type expType;
   input Type expectedType;
@@ -4217,6 +4216,7 @@ algorithm
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
+        tys2 = Util.listMap(tys2, boxIfUnboxedType);
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
@@ -4231,6 +4231,7 @@ algorithm
         (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),expected);
     case (DAE.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
+        tys2 = Util.listMap(tys2, boxIfUnboxedType);
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
@@ -4297,28 +4298,32 @@ algorithm
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.BOX(e),t2);
+        e = Expression.boxExp(e);
+      then (e,t2);
 
     case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.BOX(e),t2);
+        e = Expression.boxExp(e);
+      then (e,t2);
 
     case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.BOX(e),t2);
+        e = Expression.boxExp(e);
+      then (e,t2);
 
     case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = (DAE.T_BOXED(t1),NONE());
         t = elabType(t2);
-      then (DAE.BOX(e),t2);
+        e = Expression.boxExp(e);
+      then (e,t2);
 
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
@@ -5191,7 +5196,10 @@ algorithm
   outType := matchcontinue ty
     local
       list<Type> tys;
-    case ((DAE.T_TUPLE(tys),_)) then ((DAE.T_METATUPLE(tys),NONE()));
+    case ((DAE.T_TUPLE(tys),_))
+      equation
+        tys = Util.listMap(tys, boxIfUnboxedType);
+      then ((DAE.T_METATUPLE(tys),NONE()));
     case ty then Util.if_(isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE()));
   end matchcontinue;
 end boxIfUnboxedType;
@@ -5311,28 +5319,38 @@ algorithm
     case ((DAE.T_TUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
         type_list1 = Util.listMap(type_list1, boxIfUnboxedType);
+        type_list2 = Util.listMap(type_list2, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, boxIfUnboxedType);
         type_list2 = Util.listMap(type_list2, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
     case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
+        type_list1 = Util.listMap(type_list1, boxIfUnboxedType);
+        type_list2 = Util.listMap(type_list2, boxIfUnboxedType);
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
       then ((DAE.T_METATUPLE(type_list1),NONE()));
 
     case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_))
       equation
+        t1 = boxIfUnboxedType(t1);
+        t2 = boxIfUnboxedType(t2);
         tp = superType(t1,t2);
       then ((DAE.T_LIST(tp),NONE()));
     case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
       equation
+        t1 = boxIfUnboxedType(t1);
+        t2 = boxIfUnboxedType(t2);
         tp = superType(t1,t2);
       then ((DAE.T_METAOPTION(tp),NONE()));
     case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_))
       equation
+        t1 = boxIfUnboxedType(t1);
+        t2 = boxIfUnboxedType(t2);
         tp = superType(t1,t2);
       then ((DAE.T_META_ARRAY(tp),NONE()));
 
@@ -5550,18 +5568,22 @@ algorithm
     case ((DAE.T_LIST(t1),_),prefix,bindings,info)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
+        t2 = boxIfUnboxedType(t2);
       then ((DAE.T_LIST(t2),NONE()));
     case ((DAE.T_META_ARRAY(t1),_),prefix,bindings,info)
       equation
         t2 = fixPolymorphicRestype2(t1,prefix,bindings, info);
+        t2 = boxIfUnboxedType(t2);
       then ((DAE.T_META_ARRAY(t2),NONE()));
     case ((DAE.T_METAOPTION(t1),_),prefix,bindings,info)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
+        t2 = boxIfUnboxedType(t2);
       then ((DAE.T_METAOPTION(t2),NONE()));
     case ((DAE.T_METATUPLE(tys),_),prefix,bindings,info)
       equation
         tys = Util.listMap3(tys, fixPolymorphicRestype2, prefix, bindings, info);
+        tys = Util.listMap(tys, boxIfUnboxedType);
       then ((DAE.T_METATUPLE(tys),NONE()));
     case ((DAE.T_TUPLE(tys),_),prefix,bindings,info)
       equation

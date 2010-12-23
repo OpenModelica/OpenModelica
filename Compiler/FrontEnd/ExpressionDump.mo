@@ -128,7 +128,10 @@ algorithm
         s = "DAE.ET_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci);
       then s;
     
-    case(_) then "#Expression.typeString failed#";
+    case (DAE.ET_METATYPE()) then "METATYPE";
+    case (DAE.ET_BOXED(_)) then "BOXED";
+    
+    case(_) then "#ExpressionDump.typeString failed#";
 
   end matchcontinue;
 end typeString;
@@ -563,6 +566,7 @@ algorithm
       list<DAE.Exp> aexpl;
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
       Absyn.MatchType matchTy;
+      DAE.ExpType et;
     
     case (DAE.END(), _, _, _) then "end";
     
@@ -894,7 +898,12 @@ algorithm
         s = stringAppendList({s1,s2,"\n","#cases#\n","end ",s1});
       then s;
     
-    case (DAE.SHARED_LITERAL(index=_), _, _, _) then "#SHARED LITERAL#"; 
+    case (DAE.SHARED_LITERAL(index=i,ty=et), _, _, _)
+      equation
+        s1 = intString(i);
+        s2 = typeString(et);
+        s = stringAppendList({"#SHARED_LITERAL_",s1," (",s2,")#"});
+      then s; 
 
     case (e, _, _, _)
       equation

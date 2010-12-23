@@ -591,8 +591,8 @@ algorithm
       typeList = Util.listMap(propList, Types.getPropType);
       constList = Types.getConstList(propList);
       c = Util.listFold(constList, Types.constAnd, DAE.C_CONST());
-      (es_1, t) = Types.listMatchSuperType(es_1, typeList, true);
-      t = Types.boxIfUnboxedType(t);
+      t = Types.boxIfUnboxedType(Util.listReduce(typeList, Types.superType));
+      es_1 = Types.matchTypes(es_1, typeList, t, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);

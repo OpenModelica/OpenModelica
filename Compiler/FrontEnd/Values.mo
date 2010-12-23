@@ -113,7 +113,7 @@ uniontype Value
     we need to propagate this value in order to avoid running the code over and over again.
     This is mostly an optimization."
   end META_FAIL;
-
+  
 end Value;
 
 public uniontype IntRealOp

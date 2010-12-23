@@ -773,24 +773,6 @@ end fixAstForUniontype;
 
 /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^END^OF^HELPERFUNCTIONS^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 
-public function fixMetaTuple "If a Values.Value is a META_TUPLE, and the property is PROP_TUPLE,
-convert the type to the correct format. Else return the type of a PROP"
-  input DAE.Properties prop;
-  output DAE.Type outType;
-algorithm
-  outType := matchcontinue (prop)
-    local
-      Option<Absyn.Path> path;
-      list<DAE.Type> tys;
-      DAE.Type ty;
-    case DAE.PROP_TUPLE((DAE.T_TUPLE(tys),path),_)
-      equation
-        ty = (DAE.T_METATUPLE(tys),path);
-      then ty;
-    case DAE.PROP(ty,_) then ty;
-  end matchcontinue;
-end fixMetaTuple;
-
 public function constructorCallTypeToNamesAndTypes "Fetches the field names
 and types from a record call or metarecord call"
   input DAE.Type inType;

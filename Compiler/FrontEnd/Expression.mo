@@ -1199,10 +1199,26 @@ public function unboxExp
 	output DAE.Exp outExp;
 algorithm
   outExp := match (e)
+    local
+      DAE.ExpType ty;
     case(DAE.BOX(e)) then e;
-    else e;
+    else
+      equation
+        ty = typeof(e);
+      then DAE.UNBOX(e,ty);
   end match;
 end unboxExp;
+
+public function boxExp
+"takes an expression and boxes it"
+	input DAE.Exp e;
+	output DAE.Exp outExp;
+algorithm
+  outExp := match (e)
+    case (DAE.BOX(_)) then e;
+    else DAE.BOX(e);
+  end match;
+end boxExp;
 
 public function subscriptExp
 "function: subscriptExp
