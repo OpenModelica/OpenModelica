@@ -2545,7 +2545,8 @@ algorithm
     */
     case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        failure((_,_) = getVar(cr, vars)) "adding when not existing previously" ;
+        failure((_,_) = getVar(cr, vars));
+        // print("adding when not existing previously\n");
         hval = HashTable2.hashFunc(cr);
         indx = intMod(hval, bsize);
         newpos = vararrayLength(varr);
@@ -2564,7 +2565,8 @@ algorithm
 
     case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        (_,{indx}) = getVar(cr, vars) "adding when already present => Updating value" ;
+        (_,{indx}) = getVar(cr, vars);
+        // print("adding when already present => Updating value\n");
         indx_1 = indx - 1;
         varr_1 = vararraySetnth(varr, indx_1, newv);
       then

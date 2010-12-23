@@ -4075,7 +4075,7 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,NONE(), msg);
         rv2 = intReal(ri);
-       (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
         rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
@@ -4083,9 +4083,8 @@ algorithm
       equation
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), msg);
-         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,NONE(), msg);
-       (cache,Values.INTEGER(di),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
-       ri_1 = ri1 - ri2 * di;
+        (cache,Values.INTEGER(di),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        ri_1 = ri1 - ri2 * di;
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())

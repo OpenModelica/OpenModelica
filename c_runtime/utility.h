@@ -43,9 +43,14 @@ int in_range_real(modelica_real i,
 		  modelica_real start,
 		  modelica_real stop);
 
+/* div is already defined in stdlib, so it's redefined here to modelica_div */
 modelica_real modelica_div(modelica_real x, modelica_real y);
-modelica_real modelica_mod(modelica_real x, modelica_real y);
-modelica_real mod_real(modelica_real x, modelica_real y);
-modelica_integer mod_integer(modelica_integer x, modelica_integer y);
+/* fmod in math.h does not work in the same way as mod defined by modelica, so
+ * we need to define our own mod. */
+modelica_real modelica_mod_real(modelica_real x, modelica_real y);
+modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y);
+
+modelica_real modelica_rem_real(modelica_real x, modelica_real y);
+modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y);
 
 #endif

@@ -110,15 +110,6 @@ typedef modelica_real mod_rettype;
  * bad typedef modelica_real rem_rettype;
  */
 
-/* div is already defined in stdlib, so it's redefined here to modelica_div so
- * that it can be implemented without changing the name. Hopefully no one uses
- * the stdlib div and includes this header... */
-#define div modelica_div
-
-/* fmod in math.h does not work in the same way as mod defined by modelica, so
- * we need to define our own mod. */
-#define mod modelica_mod
-
 /* Special Modelica builtin functions*/
 typedef modelica_real    pre_rettype;
 typedef modelica_real    edge_rettype;

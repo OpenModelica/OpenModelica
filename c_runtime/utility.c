@@ -55,17 +55,22 @@ modelica_real modelica_div(modelica_real x, modelica_real y)
 	return (modelica_real)((modelica_integer)(x/y));
 }
 
-modelica_real modelica_mod(modelica_real x, modelica_real y)
+modelica_real modelica_mod_real(modelica_real x, modelica_real y)
 {
 	return (x - floor(x/y) * y);
 }
 
-modelica_real mod_real(modelica_real x, modelica_real y)
-{
-	return modelica_mod(x, y);
-}
-
-modelica_integer mod_integer(modelica_integer x, modelica_integer y)
+modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)
 {
   return x % y;
+}
+
+modelica_real modelica_rem_real(modelica_real x, modelica_real y)
+{
+  return x - y*(modelica_div(x,y));
+}
+
+modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y)
+{
+  return x - y*((x/y));
 }

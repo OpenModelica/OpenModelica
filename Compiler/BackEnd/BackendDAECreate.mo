@@ -853,6 +853,7 @@ algorithm
     case ((DAE.T_STRING(_),_)) then BackendDAE.STRING();
     case ((DAE.T_ENUMERATION(names = strLst),_)) then BackendDAE.ENUMERATION(strLst);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then BackendDAE.EXT_OBJECT(path);
+    else equation print("lowerType failed\n"); then fail();
   end matchcontinue;
 end lowerType;
 
