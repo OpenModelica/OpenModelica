@@ -265,7 +265,6 @@ end AliasVariable;
 uniontype Function
   record FUNCTION
     Absyn.Path name;
-    list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
@@ -1234,7 +1233,7 @@ algorithm
   _ := matchcontinue (name,fn)
     local
       list<Variable> inVars;
-    case (_,FUNCTION(inVars = inVars))
+    case (_,FUNCTION(functionArguments = inVars))
       equation
         failure(_ = Util.listSelectFirst(inVars, isFunctionPtr));
       then ();
@@ -1248,6 +1247,29 @@ algorithm
       then fail();
   end matchcontinue;
 end checkValidMainFunction;
+
+public function isBoxedFunction
+"Verifies that an in-function can be generated.
+This is not the case if the input involves function-pointers."
+  input Function fn;
+  output Boolean b;
+algorithm
+  b := matchcontinue fn
+    local
+      list<Variable> inVars,outVars;
+    case (FUNCTION(functionArguments = inVars, outVars = outVars))
+      equation
+        Util.listMap0(inVars, isBoxedArg);
+        Util.listMap0(outVars, isBoxedArg);
+      then true;
+    case (EXTERNAL_FUNCTION(inVars = inVars, outVars = outVars))
+      equation
+        Util.listMap0(inVars, isBoxedArg);
+        Util.listMap0(outVars, isBoxedArg);
+      then true;
+    else false;
+  end matchcontinue;
+end isBoxedFunction;
 
 protected function isFunctionPtr
 "Checks if an input variable is a function pointer"
@@ -1263,6 +1285,17 @@ algorithm
     case _ then false;
   end matchcontinue;
 end isFunctionPtr;
+
+protected function isBoxedArg
+"Checks if a variable is a boxed datatype"
+  input Variable var;
+algorithm
+  _ := match var
+    case FUNCTION_PTR(tys = _) then ();
+    case VARIABLE(ty = DAE.ET_BOXED(_)) then ();
+    case VARIABLE(ty = DAE.ET_METATYPE()) then ();
+  end match;
+end isBoxedArg;
 
 /* Finds the called functions in BackendDAE and transforms them to a list of
  libraries and a list of Function uniontypes. */
@@ -1496,7 +1529,6 @@ algorithm
       partialPrefix=false), rt, recordDecls, includes, libs)
       equation
         outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
-        inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         funArgs = Util.listMap(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = Util.listFilter(daeElts, isVarQ);
@@ -1504,7 +1536,7 @@ algorithm
         algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
         bodyStmts = Util.listMap(algs, elaborateStatement);
       then
-        (FUNCTION(fpath,inVars,outVars,funArgs,varDecls,bodyStmts),rt_1,recordDecls,includes,libs);
+        (FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts),rt_1,recordDecls,includes,libs);
         
         // External functions.
     case (DAE.FUNCTION(path = fpath,
