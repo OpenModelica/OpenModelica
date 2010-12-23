@@ -550,9 +550,7 @@ algorithm
        (cache,e2_1,DAE.PROP((DAE.T_LIST(t2),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect,pre,info);
        t1 = Types.getPropType(prop1);
        c1 = Types.propAllConst(prop1);
-       t = Types.superType(t1,Types.unboxedType(t2));
-       t = Types.superType(t,t); // For example TUPLE should be META_TUPLE; if it's only 1 argument, it might not be
-       t = Types.boxIfUnboxedType(t);
+       t = Types.superType(Types.boxIfUnboxedType(t1),Types.boxIfUnboxedType(t2));
 
        (e1_1,_) = Types.matchType(e1_1, t1, t, true);
        (e2_1,_) = Types.matchType(e2_1, (DAE.T_LIST(t2),NONE()), (DAE.T_LIST(t),NONE()), true);
