@@ -1012,8 +1012,10 @@ algorithm
     case (Values.RECORD(path,vallist,namelst,ix))
       equation
         true = ix >= 0;
-        expl=Util.listMap(vallist,valueExp);
-      then DAE.METARECORDCALL(path,expl,namelst,ix);
+        explist = Util.listMap(vallist, valueExp);
+        typelist = Util.listMap(vallist, Types.typeOfValue);
+        (explist,_) = Types.matchTypeTuple(explist, typelist, Util.listMap(typelist, Types.boxIfUnboxedType), true);
+      then DAE.METARECORDCALL(path,explist,namelst,ix);
 
     case (Values.META_FAIL())
       then DAE.CALL(Absyn.IDENT("fail"),{},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());

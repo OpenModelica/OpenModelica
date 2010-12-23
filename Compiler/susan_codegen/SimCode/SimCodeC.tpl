@@ -5540,7 +5540,7 @@ match exp
 case exp as BOX(__) then
   let ty = expTypeFromExpShort(exp.exp)
   let res = daeExp(exp.exp,context,&preExp,&varDecls)
-  'mmc_mk_<%ty%>(<%res%>) /* <%printExpStr(exp)%> */'
+  'mmc_mk_<%ty%>(<%res%>)'
 end daeExpBox;
 
 template daeExpUnbox(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -6111,7 +6111,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     <<
     #define <%name%>_data "<%escstr%>"
     static const size_t <%name%>_strlen = <%stringLength(escstr)%>;
-    static const char <%name%>[<%stringLength(string)%>+1] = <%name%>_data;
+    static const char <%name%>[<%intAdd(1,stringLength(string))%>] = <%name%>_data;
     static const MMC_DEFSTRINGLIT(<%tmp%>,<%name%>_strlen,<%name%>_data);
     <%meta%>_mmc = MMC_REFSTRINGLIT(<%tmp%>);
     >>
@@ -6154,6 +6154,12 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   case META_OPTION(exp=SOME(exp)) then
     <<
     static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp)%>}};
+    <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
+    >>
+  case METARECORDCALL(__) then
+    let newIndex = intAdd(index, 3)
+    <<
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
     <%meta%> = MMC_REFSTRUCTLIT(<%tmp%>);
     >>
   else '<%\n%>#error "literalExpConst failed: <%printExpStr(lit)%>"<%\n%>'

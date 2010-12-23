@@ -795,7 +795,7 @@ public function generateModelCodeFMU
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, recordDecls, functions, outIndexedBackendDAE, dae2) :=
-  createFunctions(program, dae, indexedBackendDAE, functionTree, className);
+  createFunctions(dae, indexedBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
@@ -933,7 +933,7 @@ public function generateModelCode
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, recordDecls, functions, outIndexedBackendDAE, _) :=
-  createFunctions(program, dae, indexedBackendDAE, functionTree, className);
+  createFunctions(dae, indexedBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt, recordDecls); 
@@ -1067,7 +1067,7 @@ algorithm
         // Create FunctionCode
         (daeElements,(_,(_,_,literals))) = DAEUtil.traverseDAEFunctions(daeMainFunction::daeElements,Expression.traverseSubexpressionsHelper,(replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(24971),{})));
         literals = listReverse(literals);
-        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes);
+        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes, literals);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
         fnCode = FUNCTIONCODE(name, mainFunction, fns, literals, includes, makefileParams, extraRecordDecls);
@@ -1219,6 +1219,7 @@ algorithm
     case DAE.CONS(car = e1, cdr = e2) equation isLiteralExp(e1); isLiteralExp(e2); then ();
     case DAE.LIST(valList = expl) equation Util.listMap0(expl,isLiteralExp); then ();
     case DAE.META_TUPLE(expl) equation Util.listMap0(expl,isLiteralExp); then ();
+    case DAE.METARECORDCALL(args=expl) equation Util.listMap0(expl,isLiteralExp); then ();
     case DAE.SHARED_LITERAL(index=_) then ();
     else fail();
   end match;
@@ -1266,7 +1267,6 @@ end isFunctionPtr;
 /* Finds the called functions in BackendDAE and transforms them to a list of
  libraries and a list of Function uniontypes. */
 public function createFunctions
-  input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input BackendDAE.BackendDAE inBackendDAE;
   input DAE.FunctionTree functionTree;
@@ -1279,7 +1279,7 @@ public function createFunctions
   output DAE.DAElist outDAE;
 algorithm
   (libs, includes, recordDecls, functions, outBackendDAE, outDAE) :=
-  matchcontinue (inProgram,inDAElist,inBackendDAE,functionTree,inPath)
+  matchcontinue (inDAElist,inBackendDAE,functionTree,inPath)
     local
       list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
       list<String> debugpathstrs,libs1,libs2,includes1,includes2;
@@ -1293,7 +1293,7 @@ algorithm
       SimCode sc;
       DAE.FunctionTree funcs;
       
-    case (p,dae,dlow,functionTree,path)
+    case (dae,dlow,functionTree,path)
       equation
         // get all the used functions from the function tree
         funcelems = DAEUtil.getFunctionList(functionTree);
@@ -1306,10 +1306,10 @@ algorithm
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
         (includes1, libs1) = generateExternalObjectIncludes(dlow);
-        (fns, recordDecls, includes2, libs2) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
+        (fns, recordDecls, includes2, libs2) = elaborateFunctions(funcelems, {}, {}); // Do we need metarecords here as well?
       then
         (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), recordDecls, fns, dlow, dae);
-    case (_,_,_,_,_)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
       then
@@ -1386,6 +1386,7 @@ end generateExternalObjectInclude;
 protected function elaborateFunctions
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
+  input list<DAE.Exp> literals;
   output list<Function> functions;
   output list<RecordDeclaration> extraRecordDecls;
   output list<String> includes;
@@ -1394,7 +1395,8 @@ protected function elaborateFunctions
   list<Function> fns;
   list<String> outRecordTypes;
 algorithm
-  (functions, outRecordTypes, extraRecordDecls, includes, libs) := elaborateFunctions2(daeElements,{},{},{},{},{});
+  (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals,{},{});
+  (functions, outRecordTypes, extraRecordDecls, includes, libs) := elaborateFunctions2(daeElements,{},outRecordTypes,extraRecordDecls,{},{});
   (extraRecordDecls,_) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
 end elaborateFunctions;
 
