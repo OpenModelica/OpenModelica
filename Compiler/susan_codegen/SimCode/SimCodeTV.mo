@@ -418,6 +418,11 @@ package SimCode
     output DAE.Exp outExp;
   end hackMatrixReverseToCref;
 
+  function isBoxedFunction
+    input Function fn;
+    output Boolean b;
+  end isBoxedFunction;
+
 end SimCode;
 
 

@@ -2825,12 +2825,12 @@ template functionHeader(Function fn, Boolean inFunc)
     case FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
+      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn))%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
       <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn))%>
   
       <%extFunDef(fn)%>
       >> 
@@ -2929,8 +2929,9 @@ template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable>
 ::= functionHeaderImpl(fname, fargs, outVars, inFunc, false)
 end functionHeaderNormal;
 
-template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars)
-::= if acceptMetaModelicaGrammar() then functionHeaderImpl(fname, fargs, outVars, false, true)
+template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed)
+::= if acceptMetaModelicaGrammar() then
+    if isBoxed then '#define boxptr_<%fname%> _<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true)
 end functionHeaderBoxed;
 
 template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed)
@@ -3261,10 +3262,10 @@ template functionBodyBoxed(Function fn)
  "Generates code for a boxed version of a function. Extracts the needed data
   from a function and calls functionBodyBoxedImpl"
 ::=
-match fn
-case FUNCTION(__) then functionBodyBoxedImpl(name, functionArguments, outVars)
-case EXTERNAL_FUNCTION(__) then functionBodyBoxedImpl(name, funArgs, outVars)
-case RECORD_CONSTRUCTOR(__) then boxRecordConstructor(fn) 
+  match fn
+  case FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, functionArguments, outVars)
+  case EXTERNAL_FUNCTION(__) then if not isBoxedFunction(fn) then functionBodyBoxedImpl(name, funArgs, outVars)
+  case RECORD_CONSTRUCTOR(__) then boxRecordConstructor(fn) 
 end functionBodyBoxed;
 
 template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Variable> outvars)
