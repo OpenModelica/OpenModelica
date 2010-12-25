@@ -1109,6 +1109,7 @@ bool OMS::startServer()
       // get omhome
       delegate_->evalExpression( getOMHomeStr );
       omhome = delegate_->getResult();
+      omhome.remove( "\"" );
     }
     catch( exception &e )
     {
@@ -1120,7 +1121,7 @@ bool OMS::startServer()
       {
         // 2006-03-14 AF, wait before trying to reconnect,
         // give OMC time to start up
-        SleeperThread::msleep( 5000 );
+        SleeperThread::msleep( 3000 );
 
         delegate_ = new IAEX::OmcInteractiveEnvironment();
         omcNowStarted = true;
@@ -1133,6 +1134,7 @@ bool OMS::startServer()
         // get omhome
         delegate_->evalExpression( getOMHomeStr );
         omhome = delegate_->getResult();
+        omhome.remove( "\"" );
       }
     }
   }

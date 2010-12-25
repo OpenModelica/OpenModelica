@@ -119,9 +119,9 @@ namespace IAEX
 
       QString omc;
 #ifdef WIN32
-      omc = QString( omhome ) + "bin/omc.exe";
+      omc = QString( omhome ) + "/bin/omc.exe";
 #else /* unix */
-      omc = (omhome ? QString(omhome)+"bin/omc" : "omc");
+      omc = (omhome ? QString(omhome)+"/bin/omc" : "omc");
 #endif
 
       QStringList parameters;
