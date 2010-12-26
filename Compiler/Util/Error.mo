@@ -244,6 +244,7 @@ public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not
 public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
 public constant ErrorID WHEN_EQ_LHS=158;
 public constant ErrorID GENERIC_ELAB_EXPRESSION=159;
+public constant ErrorID EXTENDS_EXTERNAL=160;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -677,6 +678,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (WITHOUT_SENDDATA,SCRIPTING(),ERROR(),"%s failed because OpenModelica was configured without sendData support."),
           (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
           (GENERIC_ELAB_EXPRESSION,TRANSLATION(),ERROR(),"Failed to elaborate expression: %s"),
+          (EXTENDS_EXTERNAL,TRANSLATION(),WARNING(),"Ignoring external declaration of the extended class: %s."),
 
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s")
           };
@@ -1074,8 +1076,9 @@ algorithm
 end assertion;
 
 public function assertionOrAddSourceMessage
-"Used to make compiler-internal assertions. These messages are meant
-to be shown to a user when the condition is true."
+"Used to make assertions. These messages are meant to be shown to a user when
+the condition is true. If the Error-level of the message is Error, this function
+fails."
   input Boolean inCond;
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
@@ -1086,7 +1089,8 @@ algorithm
     else
       equation
         addSourceMessage(inErrorID, inMessageTokens, inInfo);
-      then fail();
+        failure((_,ERROR(),_) = lookupMessage(inErrorID));
+      then ();
   end match;
 end assertionOrAddSourceMessage;
 

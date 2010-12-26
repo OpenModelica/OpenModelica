@@ -1082,16 +1082,18 @@ algorithm
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
+        file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
-        {SCode.EXTENDS(path,mod,NONE())};
+        {SCode.EXTENDS(path,mod,NONE(),file_info)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
         // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE())), false, Absyn.NON_EACH());
         ann = translateAnnotation(absann);
+        file_info = Util.getOptionOrDefault(info, Absyn.dummyInfo);
       then
-        {SCode.EXTENDS(path,mod,SOME(ann))};
+        {SCode.EXTENDS(path,mod,SOME(ann),file_info)};
 
     case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 

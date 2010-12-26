@@ -5603,7 +5603,7 @@ algorithm
         (cache,env_2,ih);
 
     /* Extends elements */
-    case (cache,env,ih,mod,pre,csets,cistate,((SCode.EXTENDS(_,_,_),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,ih,mod,pre,csets,cistate,((SCode.EXTENDS(info=_),_) :: xs),allcomps,eqns,instdims,impl)
       equation
         (cache,env_2,ih) = addComponentsToEnv(cache,env, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -7974,7 +7974,7 @@ algorithm
         (cache,res,cl,type_mods);
 
     /* extended classes type Y = Real[3]; class X extends Y; */
-    case (cache,env,ih,mods,pre,SCode.CLASS(name = id,restriction = _,info=info,
+    case (cache,env,ih,mods,pre,SCode.CLASS(name = id,restriction = _,
                                          classDef = SCode.PARTS(elementLst=els,
                                                                 normalEquationLst={},
                                                                 initialEquationLst={},
@@ -7983,7 +7983,7 @@ algorithm
                                                                 externalDecl=_)),
           dims,impl)
       equation
-        (_,_,{SCode.EXTENDS(path, mod,_)},{}) = splitElts(els); // ONLY ONE extends!
+        (_,_,{SCode.EXTENDS(path, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
@@ -12885,8 +12885,9 @@ algorithm
       Option<Absyn.Info> infoOpt;
       Absyn.Info info;
 
-  case(SCode.EXTENDS(path,_,_))
-    equation ret = Absyn.pathString(path);
+  case(SCode.EXTENDS(baseClassPath=path))
+    equation
+      ret = Absyn.pathString(path);
     then (ret,NONE());
   case(SCode.CLASSDEF(name = name_, classDef=SCode.CLASS(info = info)))
     then (name_,SOME(info));
@@ -13462,6 +13463,7 @@ algorithm oltuple := matchcontinue(ltuple)
     Option<Absyn.Info> c12;
     Absyn.Path p;
     Option<SCode.Annotation> ann;
+    Absyn.Info info;
   case({}) then {};
   case(SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,c8,c10,c11,c12,c13)::rest )
     equation
@@ -13477,10 +13479,10 @@ algorithm oltuple := matchcontinue(ltuple)
     equation
       rest = traverseModAddFinal3(rest);
     then ele::rest;
-  case(SCode.EXTENDS(p,mod,ann)::rest)
+  case(SCode.EXTENDS(p,mod,ann,info)::rest)
     equation
        mod = traverseModAddFinal2(mod);
-    then SCode.EXTENDS(p,mod,ann)::rest;
+    then SCode.EXTENDS(p,mod,ann,info)::rest;
   case(_) equation print(" we failed with traverseModAddFinal3\n"); then fail();
 end matchcontinue;
 end traverseModAddFinal3;

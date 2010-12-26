@@ -302,11 +302,12 @@ protected
   Absyn.Path path;
   SCode.Mod mod;
   Option<SCode.Annotation> ann;
+  Absyn.Info info;
 algorithm
-  SCode.EXTENDS(path, mod, ann) := inExtends;
+  SCode.EXTENDS(path, mod, ann, info) := inExtends;
   (_, path, _) := lookupName(path, inEnv);
   mod := lookupModifier(mod, inEnv);
-  outExtends := SCode.EXTENDS(path, mod, ann);
+  outExtends := SCode.EXTENDS(path, mod, ann, info);
 end lookupExtends;
 
 protected function lookupEquation

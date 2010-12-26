@@ -118,12 +118,13 @@ algorithm
       Prefix.Prefix pre;
       SCode.Mod scodeMod;
       Boolean finalPrefix;
+      Absyn.Info info;
 
     /* no further elements to instantiate */
     case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
       
     /* instantiate a base class */
-    case (cache,env,ih,mod,pre,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
       equation
         // adrpo - here we need to check if we don't have recursive extends of the form:
         // package Icons
@@ -138,7 +139,7 @@ algorithm
 
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         
-        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
+        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,c,impl,info);
         
         (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         
@@ -196,12 +197,12 @@ algorithm
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 
     /* base class was not found */
-    case (cache,env,ih,mod,pre,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,_)
       equation
         failure((_,c,cenv) = Lookup.lookupClass(cache,env, tp, false));
         s = Absyn.pathString(tp);
         scope_str = Env.printEnvPathStr(env);
-        Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
+        Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str}, info);
       then
         fail();
 
@@ -426,7 +427,7 @@ algorithm
         cl = SCode.CLASS(name2,partialPrefix2,encapsulatedPrefix2,restriction2,classDef,info2);
         compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, cc2);
 
-        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods,NONE());
+        elt = SCode.EXTENDS(Absyn.IDENT(name2),mods,NONE(),info1);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE(),annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);
@@ -457,6 +458,7 @@ public function instDerivedClasses
   input DAE.Mod inMod;
   input SCode.Class inClass;
   input Boolean inBoolean;
+  input Absyn.Info info "File information of the extends element";
   output Env.Cache outCache;
   output Env.Env outEnv1;
   output InstanceHierarchy outIH;
@@ -467,7 +469,7 @@ public function instDerivedClasses
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
 algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean,info)
     local
       list<SCode.Element> elt_1,elt;
       list<Env.Frame> env,cenv;
@@ -482,34 +484,37 @@ algorithm
       InstanceHierarchy ih;
       Option<SCode.Comment> cmt;
       list<SCode.Enum> enumLst;
-      String n;      
+      String n,name;
+      Option<Absyn.ExternalDecl> extdecl;
       Absyn.Info info;
 
-    case (cache,env,ih,mod,SCode.CLASS(classDef =
+    case (cache,env,ih,mod,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
                       normalEquationLst = eq,initialEquationLst = ieq,
-                      normalAlgorithmLst = alg,initialAlgorithmLst = ialg)),_)
+                      normalAlgorithmLst = alg,initialAlgorithmLst = ialg,
+                      externalDecl = extdecl)),_,info)
       equation
         /* elt_1 = noImportElements(elt); */
+        Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl)
+    case (cache,env,ih,mod,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl,_)
       equation
         (cache,c,cenv) = Lookup.lookupClass(cache,env, tp, true);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,cenv,ih, mod, c, impl)
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,cenv,ih, mod, c, impl, info)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl)
+    case (cache,env,ih,mod,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_)
       equation
         c = Inst.instEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,env,ih, mod, c, impl);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,env,ih, mod, c, impl,info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (_,_,_,_,_,_)
+    else
       equation
         Debug.fprint("failtrace", "- Inst.instDerivedClasses failed\n");
       then
@@ -779,11 +784,11 @@ algorithm
         //Debug.fprintln("debug","fixClassdef " +& id);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc));
-    case (cache,env,SCode.EXTENDS(extendsPath,modifications,optAnnotation),ht)
+    case (cache,env,SCode.EXTENDS(extendsPath,modifications,optAnnotation,info),ht)
       equation
         //Debug.fprintln("debug","fix extends " +& SCode.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
-      then (cache,SCode.EXTENDS(extendsPath,modifications,optAnnotation));
+      then (cache,SCode.EXTENDS(extendsPath,modifications,optAnnotation,info));
     case (cache,env,SCode.IMPORT(imp = _),ht) then (cache,elt);
 
     case (cache,env,elt,ht)

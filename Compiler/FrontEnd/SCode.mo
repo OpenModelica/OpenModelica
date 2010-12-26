@@ -430,6 +430,7 @@ uniontype Element "- Elements
     Path baseClassPath "the extends path";
     Mod modifications  "the modifications applied to the base class";
     Option<Annotation> annotation_;
+    Absyn.Info info;
   end EXTENDS;
 
   record CLASSDEF "a local class definition"
@@ -1563,7 +1564,7 @@ public function elementEqual
        then 
          true;
      
-     case (EXTENDS(path1,mod1,_), EXTENDS(path2,mod2,_))      
+     case (EXTENDS(path1,mod1,_,_), EXTENDS(path2,mod2,_,_))      
        equation
          true = ModUtil.pathEqual(path1,path2);
          true = modEqual(mod1,mod2);

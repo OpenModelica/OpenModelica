@@ -244,7 +244,7 @@ algorithm
         fpath = makePath(scope, "$extends$");
         fpath = Absyn.joinPaths(fpath, path);
         fullCref = Absyn.pathToCref(fpath);
-        i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.NOMOD(), NONE()), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
+        i = createInstance(fullCref, ATTRIBUTES(SCode.EXTENDS(path, SCode.NOMOD(), NONE(), Absyn.dummyInfo), NONE(), NONE()), {}, emptyConnects, NONE(), NONE());
       then
         ({i}, emptyConnects);
 
@@ -285,7 +285,7 @@ algorithm
       then
         i::ihrest;
 
-    case (scope, (el as SCode.EXTENDS(path, _, _))::rest)
+    case (scope, (el as SCode.EXTENDS(baseClassPath=path))::rest)
       equation
         fpath = makePath(scope, "$extends$");
         fpath = Absyn.joinPaths(fpath, path);

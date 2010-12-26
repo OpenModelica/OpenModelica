@@ -1951,11 +1951,12 @@ algorithm
       Env.Env env1;
       String name;
       Absyn.Path fpath;
+      Absyn.Info info;
 
     /* a class with parts */
-    case (cache,env,cl as SCode.CLASS(name = name),mods)
+    case (cache,env,cl as SCode.CLASS(name = name,info = info),mods)
       equation
-        (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true);
+        (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true,info);
         env = Env.openScope(env, false, SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
