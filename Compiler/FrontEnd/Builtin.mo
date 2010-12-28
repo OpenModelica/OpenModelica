@@ -59,40 +59,13 @@ protected import SCodeUtil;
 protected import System;
 protected import Util;
 
-protected constant String builtinImports =
-"
 /* These imports were used in e.g. MSL 1.6. They should not be here anymore...
-   If you need them, uncomment and recompile; they are not standard Modelica.
+   If you need them, add them to the initial environment and recompile; they are not standard Modelica.
   import arcsin = asin;
   import arccos = acos;
   import arctan = atan;
   import ln = log;
 */
-"
-;
-
-protected constant String builtinImportsMM =
-"
-  import listStringCharString = stringAppendList;
-  import stringCharListString = stringAppendList;
-  import stringEqual = stringEq;
-  import realCos = cos;
-  import realCosh = cosh;
-  import realAcos = acos;
-  import realSin = sin;
-  import realSinh = sinh;
-  import realAsin = asin;
-  import realAtan = atan;
-  import realAtan2 = atan2;
-  import realTanh = tanh;
-  import realExp = exp;
-  import realLn = log;
-  import realLog10 = log10;
-  import realCeil = ceil;
-  import realFloor = floor;
-  import realSqrt = sqrt;
-"
-;
 
 // Predefined DAE.Types
 // Real arrays
@@ -2719,11 +2692,13 @@ algorithm
       String msg,str;
     case ()
       equation
-        str = Util.if_(RTOpts.acceptMetaModelicaGrammar(), builtinImportsMM, "");
-        str = stringAppendList({"package Builtin ", builtinImports, " ", str, " end Builtin;"});
-        (initialProgram,msg) = Parser.parsestring(str);
-        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
-        Absyn.PROGRAM(classes = {Absyn.CLASS(name = "Builtin", body = Absyn.PARTS(classParts = {Absyn.PUBLIC(eitems)}))}) = initialProgram;
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case ()
+      equation
+        str = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltinImports.mo";
+        initialProgram = Parser.parse(str);
+        Absyn.PROGRAM(classes = {Absyn.CLASS(name = "MetaModelicaBuiltinImports", body = Absyn.PARTS(classParts = {Absyn.PUBLIC(eitems)}))}) = initialProgram;
       then Util.listMap(SCodeUtil.translateEitemlist(eitems,false), SCodeUtil.getImportFromElement);
     else
       equation
