@@ -283,7 +283,7 @@ algorithm
 
     case (cache,env,lhs,ty,info)
       equation
-        str = Dump.printExpStr(lhs);
+        str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
   end match;

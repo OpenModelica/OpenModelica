@@ -3704,14 +3704,14 @@ algorithm
       then fail();
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecs,_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);        
         (cache,cenv,ih,tys,csets,oDA) =
-        instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{},csets);
         ty = Util.listFirst(tys);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_LIST(ty),NONE()));
@@ -3719,14 +3719,14 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,{ty},csets,oDA) =
-        instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_METAOPTION(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
@@ -3746,13 +3746,13 @@ algorithm
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecs,_),modifications = mod, attributes=DA),
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
-        (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{},csets);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_META_ARRAY(ty),NONE()));
         oDA = Absyn.mergeElementAttributes(DA,oDA);

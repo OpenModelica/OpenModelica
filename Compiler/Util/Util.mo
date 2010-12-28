@@ -7342,4 +7342,27 @@ algorithm
   end matchcontinue;
 end splitUniqueOnBoolWork;
 
+public function assoc
+"assoc(key,lst) => value, where lst is a tuple of (key,value) pairs.
+Does linear search using equality(). This means it is slow for large
+inputs (many elements or large elements); if you have large inputs, you
+should use a hash-table instead."
+  input Key key;
+  input list<tuple<Key,Val>> lst;
+  output Val val;
+  replaceable type Key subtypeof Any;
+  replaceable type Val subtypeof Any;
+algorithm
+  val := matchcontinue (key,lst)
+    local
+      Key k1,k2;
+      Val v;
+    case (k1,(k2,v)::_)
+      equation
+        equality(k1 = k2);
+      then v;
+    case (k1,_::lst) then assoc(k1,lst);
+  end matchcontinue;
+end assoc;
+
 end Util;

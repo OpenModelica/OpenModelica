@@ -3546,25 +3546,30 @@ public function getInitialFunctions
 algorithm
   initialProgram := matchcontinue ()
     local
+      Boolean b;
       String msg;
-    /*case ()
-      equation
-        initialProgram = getGlobalRoot...
-      then initialProgram;*/
+      list<tuple<Boolean,Absyn.Program>> assocLst;
     case ()
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
-        (initialProgram,msg) = Parser.parsestring(initialFunctionStr);
-        Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
-        //setGlobalRoot...
-      then initialProgram;
+        failure(_ = getGlobalRoot(memoryIndex));
+        setGlobalRoot(memoryIndex,{});
+      then fail();
     case ()
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (initialProgram,msg) = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM);
+        assocLst = getGlobalRoot(memoryIndex);
+      then Util.assoc(RTOpts.acceptMetaModelicaGrammar(), assocLst);
+    case ()
+      equation
+        b = RTOpts.acceptMetaModelicaGrammar();
+        (initialProgram,msg) = Parser.parsestring(initialFunctionStr +& Util.if_(b, initialFunctionStrMM, ""));
         Error.assertion(msg ==& "Ok", msg, Absyn.dummyInfo);
-        //setGlobalRoot...
+        assocLst = getGlobalRoot(memoryIndex);
+        setGlobalRoot(memoryIndex, (b,initialProgram)::assocLst);
       then initialProgram;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Builtin.getInitialFunctions failed."});
+      then fail();
   end matchcontinue;
 end getInitialFunctions;
 
