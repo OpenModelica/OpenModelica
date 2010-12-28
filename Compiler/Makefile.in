@@ -9,6 +9,7 @@
 srcdir= .
 top_builddir= ..
 builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib/omc/
 builddir_scripts=$(top_builddir)/build/share/omc/scripts
 
 ANTLR_HOME = @antlrhome@
@@ -40,7 +41,7 @@ SUBDIRS	= runtime modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug simcode
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug simcode builtin
 
 #all : debug
 all : release
@@ -74,13 +75,13 @@ dinstall: install_scripts $(PROGD)
 nodepend:
 	(cd omc_release && $(MAKE))
 
-omc_release: simcode
+omc_release: simcode builtin
 	(cd omc_release && $(MAKE))
 
-omc_debug: simcode
+omc_debug: simcode builtin
 	(cd omc_debug && $(MAKE))
 
-omc_profiler: simcode
+omc_profiler: simcode builtin
 	(cd omc_profiler && $(MAKE))
 
 #vctarget:
@@ -151,6 +152,9 @@ OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/Interactive.mo Front
 	@mv $@.new $@
 endif
 $(SUSANMO): simcode
+
+builtin:
+	cp FrontEnd/ModelicaBuiltin.mo FrontEnd/MetaModelicaBuiltin.mo $(builddir_lib)
 
 .PRECIOUS: Makefile
 
