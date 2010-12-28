@@ -132,6 +132,8 @@ stringInt_rettype stringHash(modelica_string_const str)
 stringInt_rettype stringHashDjb2(modelica_string_const str)
 {
   long res = djb2_hash((const unsigned char*)str);
+  res = abs(res);
+  // fprintf(stderr, "stringHashDjb2 %s-> %ld %ld %ld\n", str, res, mmc_mk_icon(res), mmc_unbox_integer(mmc_mk_icon(res)));
   return res;
 }
 

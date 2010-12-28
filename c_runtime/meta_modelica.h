@@ -146,9 +146,9 @@ static void *mmc_alloc_words(unsigned nwords)
 #define MMC_TRUE (mmc_mk_icon(1))
 #define mmc_mk_bcon(X) (X != 0 ? MMC_TRUE : MMC_FALSE)
 
-static inline void* mmc_mk_icon(int i)
+static inline void* mmc_mk_icon(mmc_sint_t i)
 {
-    return MMC_IMMEDIATE(MMC_TAGFIXNUM((mmc_sint_t)i));
+    return MMC_IMMEDIATE(MMC_TAGFIXNUM(i));
 }
 
 void* mmc_mk_rcon(double d);

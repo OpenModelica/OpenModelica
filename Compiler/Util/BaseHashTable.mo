@@ -93,7 +93,7 @@ public function add
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
-  output HashTable outHahsTable;
+  output HashTable outHashTable;
 
   replaceable type Key subtypeof Any;
   replaceable type Value subtypeof Any;
@@ -106,7 +106,7 @@ public function add
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
-  outHahsTable := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue (entry,hashTable)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
@@ -140,9 +140,15 @@ algorithm
         varr_1 = valueArraySetnth(varr, indx, newv);
       then ((hashvec,varr_1,bsize,n,fntpl));
     
-    case (_,_)
+    case ((v as (key,value)),(hashTable as (hashvec,varr,bsize,n,(hashFunc,_,_,_))))
       equation
-        print("- BaseHashTable.add failed\n");
+        print("- BaseHashTable.add failed: ");
+        print("bsize: ");
+        print(intString(bsize));
+        print(" key: ");
+        hval = hashFunc(key);
+        print(intString(hval));
+        print("\n");
       then
         fail();
   end matchcontinue;
