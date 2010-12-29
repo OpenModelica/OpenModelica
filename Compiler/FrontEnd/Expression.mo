@@ -4430,13 +4430,19 @@ algorithm
 end isZero;
 
 public function isConst
-"function: isConst
-  Returns true if an expression
-  is constant otherwise false"
+"Returns true if an expression is constant"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := isConstWork({inExp});
+end isConst;
+
+protected function isConstWork
+"Returns true if a list of expressions is constant"
+  input list<DAE.Exp> acc;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (acc)
     local
       Integer ival;
       Real rval;
@@ -4450,103 +4456,71 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
       list<tuple<DAE.Exp, Boolean>> aelstlst;      
     
-    case (DAE.ICONST(integer = ival)) then true;
-    case (DAE.RCONST(real = rval)) then true;
-    case (DAE.BCONST(bool = bval)) then true;
-    case (DAE.SCONST(string = sval)) then true;
-    case (DAE.ENUM_LITERAL(name = _)) then true;
+    case ({}) then true; 
+    case (DAE.ICONST(integer = _)::acc) then isConstWork(acc);
+    case (DAE.RCONST(real = _)::acc) then isConstWork(acc);
+    case (DAE.BCONST(bool = _)::acc) then isConstWork(acc);
+    case (DAE.SCONST(string = _)::acc) then isConstWork(acc);
+    case (DAE.ENUM_LITERAL(name = _)::acc) then isConstWork(acc);
 
-    case (DAE.UNARY(operator = op,exp = e))
+    case (DAE.UNARY(operator = op,exp = e)::acc) then isConstWork(e::acc);
+    
+    case (DAE.CAST(ty = t,exp = e)::acc) then isConstWork(e::acc);
+    
+    case (DAE.BINARY(e1,op,e2)::acc) then isConstWork(e1::e2::acc);
+    
+    case (DAE.IFEXP(e,e1,e2)::acc) then isConstWork(e::e1::e2::acc);
+    
+    case (DAE.LBINARY(exp1=e1,exp2=e2)::acc) then isConstWork(e1::e2::acc);
+    
+    case (DAE.LUNARY(exp=e)::acc) then isConstWork(e::acc);
+    
+    case (DAE.RELATION(exp1=e1,exp2=e2)::acc) then isConstWork(e1::e2::acc);
+    
+    case (DAE.ARRAY(array = ae)::acc)
       equation
-        res = isConst(e);
-      then
-        res;
+        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
+      then res;
     
-    case (DAE.CAST(ty = t,exp = e)) /* Casting to zero is still zero */
-      equation
-        res = isConst(e);
-      then
-        res;
-    
-    case (DAE.BINARY(e1,op,e2))
-      equation
-        true = isConst(e1);
-        true = isConst(e2);
-      then
-        true;
-    
-    case (DAE.IFEXP(e,e1,e2))
-      equation
-        true = isConst(e);
-        true = isConst(e1);
-        true = isConst(e2);
-      then
-        true;        
-    
-    case (DAE.LBINARY(exp1=e1,exp2=e2))
-      equation
-        true = isConst(e1);
-        true = isConst(e2);
-      then
-        true; 
-    
-    case (DAE.LUNARY(exp=e)) then isConst(e);
-    
-    case (DAE.RELATION(exp1=e1,exp2=e2))
-      equation
-        true = isConst(e1);
-        true = isConst(e2);
-      then
-        true;   
-    
-    case (DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isConst,true);
-    
-    case (DAE.MATRIX(scalar = scalar))  
+    case (DAE.MATRIX(scalar = scalar)::acc)  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-      then Util.listMapAllValue(ae,isConst,true);
+        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
+      then res;
     
-    case (DAE.RANGE(exp=e,expOption=NONE(),range=e1)) 
+    case (DAE.RANGE(exp=e,expOption=NONE(),range=e1)::acc) then isConstWork(e::e1::acc);  
+    
+    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2)::acc) then isConstWork(e::e1::e2::acc);
+    
+    case (DAE.PARTEVALFUNCTION(expList = ae)::acc)
       equation
-        true = isConst(e);
-      then isConst(e1);
+        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
+      then res;
     
-    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2)) 
+    case (DAE.TUPLE(PR = ae)::acc)
       equation
-        true = isConst(e);
-        true = isConst(e1);
-      then isConst(e2);
+        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
+      then res;
+
     
-    case (DAE.PARTEVALFUNCTION(expList = ae))  
-      then Util.listMapAllValue(ae,isConst,true);
-    
-    case (DAE.TUPLE(PR = ae))  
-      then Util.listMapAllValue(ae,isConst,true);
-    
-    case (DAE.ASUB(exp=e,sub=ae)) 
+    case (DAE.ASUB(exp=e,sub=ae)::acc) 
       equation
-        true = isConst(e);
-      then Util.listMapAllValue(ae,isConst,true);
+        res = Debug.bcallret1(isConstWork(e::ae), isConstWork, acc, false); 
+      then res;
     
-    case (DAE.SIZE(exp=e,sz=NONE())) then isConst(e);
+    case (DAE.SIZE(exp=e,sz=NONE())::acc) then isConstWork(e::acc);
     
-    case (DAE.SIZE(exp=e,sz=SOME(e1))) 
-      equation
-        true = isConst(e);
-      then isConst(e1);
+    case (DAE.SIZE(exp=e,sz=SOME(e1))::acc) then isConstWork(e::e1::acc);
     
-    case (DAE.END()) then true;
+    case (DAE.END()::acc) then isConstWork(acc);
       
-    case (DAE.REDUCTION(expr=e1,range=e2))
-      equation
-        true = isConst(e1);
-      then isConst(e2);
+    case (DAE.REDUCTION(expr=e1,range=e2)::acc) then isConstWork(e1::e2::acc);
         
     else false;
 
-  end matchcontinue;
-end isConst;
+  end match;
+end isConstWork;
 
 public function isNotConst
 "function isNotConst
@@ -6011,7 +5985,7 @@ public function subscriptEqual
   input list<Subscript> inSubscriptLst2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inSubscriptLst1,inSubscriptLst2)
+  outBoolean := match (inSubscriptLst1,inSubscriptLst2)
     local
       Boolean res;
       list<Subscript> xs1,xs2;
@@ -6022,30 +5996,19 @@ algorithm
     
     // wholedims as list heads, compare the rest
     case ((DAE.WHOLEDIM() :: xs1),(DAE.WHOLEDIM() :: xs2))
-      equation
-        res = subscriptEqual(xs1, xs2);
-      then
-        res;
+      then subscriptEqual(xs1, xs2);
     
     // slices as heads, compare the slice exps and then compare the rest
     case ((DAE.SLICE(exp = e1) :: xs1),(DAE.SLICE(exp = e2) :: xs2))
-      equation
-        res = subscriptEqual(xs1, xs2);
-        true = expEqual(e1, e2);
-      then
-        res;
+      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
     
     // indexes as heads, compare the index exps and then compare the rest
     case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
-      equation
-        res = subscriptEqual(xs1, xs2);
-        true = expEqual(e1, e2);
-      then
-        res;
+      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
     
     // subscripts are not equal, return false  
-    case (_,_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end subscriptEqual;
 
 public function subscriptConstants "

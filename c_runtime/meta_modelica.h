@@ -132,7 +132,7 @@ static void *mmc_alloc_bytes(unsigned nbytes)
   void *p;
   if( (p = malloc(nbytes)) == 0 ) {
     fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-    EXIT(1);
+    assert(p != 0);
   }
   return p;
 }
