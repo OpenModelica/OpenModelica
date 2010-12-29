@@ -3255,6 +3255,7 @@ case RECORD_CONSTRUCTOR(__) then
   }
 
   <%boxedFn%>
+
   >>
 end functionBodyRecordConstructor;
 
@@ -5085,6 +5086,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="integer"),
+            expLst={toBeCasted}) then
+    let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '((modelica_integer)<%castedVar%>)'
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="Integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     '((modelica_integer)<%castedVar%>)'
