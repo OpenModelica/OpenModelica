@@ -84,7 +84,7 @@ void *mmc_mk_box_no_assign(int slots, unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-int mmc_boxes_equal(void* lhs, void* rhs)
+valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
 {
   mmc_uint_t h_lhs;
   mmc_uint_t h_rhs;
@@ -133,7 +133,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
     for (i=2; i<=numslots; i++) {
       lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
-      if (0 == mmc_boxes_equal(lhs_data,rhs_data))
+      if (0 == valueEq(lhs_data,rhs_data))
         return 0;
     }
     return 1;
@@ -144,7 +144,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
       void *tlhs, *trhs;
       tlhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i+1));
       trhs = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i+1));
-      if (0 == mmc_boxes_equal(tlhs,trhs)) {
+      if (0 == valueEq(tlhs,trhs)) {
         return 0;
       }
     }
@@ -156,12 +156,12 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    return mmc_boxes_equal(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1)));
+    return valueEq(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1)),MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1)));
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     while (!MMC_NILTEST(lhs) && !MMC_NILTEST(rhs)) {
-      if (!mmc_boxes_equal(MMC_CAR(lhs),MMC_CAR(rhs)))
+      if (!valueEq(MMC_CAR(lhs),MMC_CAR(rhs)))
         return 0;
       lhs = MMC_CDR(lhs);
       rhs = MMC_CDR(rhs);

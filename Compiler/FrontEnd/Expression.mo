@@ -5510,8 +5510,7 @@ algorithm
         true = ModUtil.pathEqual(path1, path2);
         // fails if not all mapped calls return true
         Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
-      then
-        true;
+      then true;
     
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2))
@@ -5519,29 +5518,18 @@ algorithm
         true = ModUtil.pathEqual(path1, path2);
         // fails if not all mapped calls return true
         Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
-      then
-        true;
+      then true;
     
     // arrays
     case (DAE.ARRAY(ty = tp1,array = expl1),DAE.ARRAY(ty = tp2,array = expl2))
       equation
         equality(tp1 = tp2);
-        // fails if not all mapped calls return true
         Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
-      then
-        true;
+      then true;
     
     // matrix
     case (e1 as DAE.MATRIX(ty = _), e2 as DAE.MATRIX(ty = _))
-      equation
-        equality(e1 = e2); // TODO! FIXME! should use expEqual on elements
-      then
-        true;
-    case (e1 as DAE.MATRIX(ty = _), e2 as DAE.MATRIX(ty = _))
-      equation
-        failure(equality(e1 = e2)); // TODO! FIXME! should use expEqual on elements
-      then
-        false;
+      then valueEq(e1,e2); // TODO! FIXME! should use expEqual on elements
     
     // ranges [start:stop]
     case (DAE.RANGE(ty = tp1,exp = e11,expOption = NONE(),range = e13),DAE.RANGE(ty = tp2,exp = e21,expOption = NONE(),range = e23))
@@ -5629,7 +5617,47 @@ algorithm
       then false;
     */
     // not equal        
-    case (_,_) then false;
+    case (DAE.LIST(valList = expl1),DAE.LIST(valList = expl2))
+      equation
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
+      then true;
+
+    case (DAE.CONS(car = e11,cdr = e12),
+          DAE.CONS(car = e21,cdr = e22))
+      then expEqual(e11, e21) and expEqual(e12, e22);
+
+    case (DAE.META_TUPLE(listExp = expl1),DAE.META_TUPLE(listExp = expl2))
+      equation
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
+      then true;
+
+    case (DAE.META_OPTION(exp = NONE()),
+          DAE.META_OPTION(exp = NONE()))
+      then true;
+
+    case (DAE.META_OPTION(exp = SOME(e1)),
+          DAE.META_OPTION(exp = SOME(e2)))
+      then expEqual(e1, e2);
+
+    case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2))
+      equation
+        true = ModUtil.pathEqual(path1, path2);
+        Util.listThreadMapAllValue(expl1, expl2, expEqual, true);
+      then true;
+
+    case (e1 as DAE.MATCHEXPRESSION(matchType = _),
+          e2 as DAE.MATCHEXPRESSION(matchType = _))
+      then valueEq(e1,e2);
+
+    case (DAE.BOX(e1),DAE.BOX(e2))
+      then expEqual(e1, e2);
+
+    case (DAE.UNBOX(exp=e1),DAE.UNBOX(exp=e2))
+      then expEqual(e1, e2);
+
+    case (DAE.SHARED_LITERAL(index=i1),DAE.SHARED_LITERAL(index=i2)) then intEq(i1,i2);
+
+    else false;
   end matchcontinue;
 end expEqual;
 

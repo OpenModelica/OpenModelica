@@ -305,7 +305,7 @@ listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {
-    if (mmc_boxes_equal(MMC_CAR(lst), obj))
+    if (valueEq(MMC_CAR(lst), obj))
       return 1;
     lst = MMC_CDR(lst);
   }
@@ -490,7 +490,7 @@ mmc_clock_rettype mmc_clock()
 
 void equality(modelica_metatype in1, modelica_metatype in2)
 {
-  if (!mmc_boxes_equal(in1, in2)) {
+  if (!valueEq(in1, in2)) {
     // fprintf(stderr, "%s != %s\n", anyString(in1), anyString(in2));
     MMC_THROW();
   }

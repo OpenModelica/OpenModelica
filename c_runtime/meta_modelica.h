@@ -316,7 +316,9 @@ static inline void *mmc_mk_some(void *x)
 void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
-int mmc_boxes_equal(void*, void*);
+typedef modelica_integer valueEq_rettype;
+valueEq_rettype valueEq(modelica_metatype,modelica_metatype);
+
 void mmc__unbox(modelica_metatype box, void* res);
 
 typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
