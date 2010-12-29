@@ -1045,10 +1045,8 @@ algorithm
         ((subs as (_ :: _))) = crefLastSubs(cr);
         exps = Util.listMap(subs, Expression.subscriptExp);
         // fails if any mapped functions returns false
-        Util.listMapAllValue(exps, Expression.isOne, true);
-      then
-        true;
-    case (_) then false;
+      then Util.listMapAllValue(exps, Expression.isOne, true);
+    else false;
   end matchcontinue;
 end crefIsFirstArrayElt;
 

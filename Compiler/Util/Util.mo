@@ -7094,7 +7094,7 @@ algorithm
   end match;
 end listConsOption;
 
-function listMapAllValue
+public function listMapAllValue
 "@author adrpo
  applies a function to all elements in the lists and checks if all are the same
  as a given value"
@@ -7102,7 +7102,33 @@ function listMapAllValue
   replaceable type TypeB subtypeof Any;
   input  list<TypeA> inLst;
   input  FuncTypeTypeVarToTypeVar fn;
-  input  TypeB value;  
+  input  TypeB value;
+  output Boolean b;
+  partial function FuncTypeTypeVarToTypeVar
+    input TypeA inTypeA;
+    output TypeB outTypeB;
+    replaceable type TypeA subtypeof Any;
+    replaceable type TypeB subtypeof Any;
+  end FuncTypeTypeVarToTypeVar;
+algorithm
+  b := matchcontinue (inLst, fn, value)
+    case (inLst, fn, value)
+      equation
+        listMapAllValue2(inLst, fn, value);
+      then true;
+    else false;
+  end matchcontinue;
+end listMapAllValue;
+
+protected function listMapAllValue2
+"@author adrpo
+ applies a function to all elements in the lists and checks if all are the same
+ as a given value"
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+  input  list<TypeA> inLst;
+  input  FuncTypeTypeVarToTypeVar fn;
+  input  TypeB value;
   partial function FuncTypeTypeVarToTypeVar
     input TypeA inTypeA;
     output TypeB outTypeB;
@@ -7117,20 +7143,18 @@ algorithm
       list<TypeA> rest;
       list<TypeB> l, result;
     
-    
     case ({}, _, _) then ();
     
     case (hd::rest, fn, value)
       equation
         hdChanged = fn(hd);
         equality(hdChanged = value);
-        listMapAllValue(rest, fn, value);
-    then
-        ();
+        listMapAllValue2(rest, fn, value);
+      then ();
   end matchcontinue;
-end listMapAllValue;
+end listMapAllValue2;
 
-function listMap2AllValue
+public function listMap2AllValue
 "@author adrpo
  checks that the mapped function returns the same given value, otherwise fails"
   input list<Type_a> inTypeALst;

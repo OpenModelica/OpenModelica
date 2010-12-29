@@ -2233,9 +2233,7 @@ algorithm
         crs = Expression.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
         // fails if not all mapped calls return true
-        Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
-      then 
-        true;
+      then Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
 
     case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
       equation
@@ -2244,13 +2242,9 @@ algorithm
         crs = Expression.extractCrefsFromExp(e2);
         (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
         // fails if not all mapped calls return true
-        Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
-      then 
-        true;
+      then Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
 
-    case(cr,eqn,vars) 
-      then 
-        false;
+    else false;
   end matchcontinue;
 end isStateConstraintEquation;
 

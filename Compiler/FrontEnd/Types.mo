@@ -500,38 +500,35 @@ public function isRecordWithOnlyReals "Returns true if type is a record only con
   input Type tp;
   output Boolean b;
 algorithm
-  b := matchcontinue(tp)
+  b := match (tp)
     local 
       list<Boolean> bLst;
       list<Var> varLst;
     
     case((DAE.T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) 
-      equation
-        Util.listMapAllValue(Util.listMap(varLst,getVarType),isReal,true);
-      then
-        true;
+      then Util.listMapAllValue(Util.listMap(varLst,getVarType),isReal,true);
     
     // otherwise false
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRecordWithOnlyReals;
 
 public function getVarType "Return the Type of a Var"
   input Var v;
   output Type tp;
 algorithm
-  tp := matchcontinue(v)
+  tp := match (v)
     case(DAE.TYPES_VAR(type_ = tp)) then tp;
-  end matchcontinue;
+  end match;
 end getVarType;
 
 public function getVarName "Return the name of a Var"
   input Var v;
   output String name;
 algorithm
-  name := matchcontinue(v)
+  name := match (v)
     case(DAE.TYPES_VAR(name = name)) then name;
-  end matchcontinue;
+  end match;
 end getVarName;
 
 public function isReal "Returns true if type is Real"

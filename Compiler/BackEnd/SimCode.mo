@@ -5941,20 +5941,18 @@ algorithm
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
       /* no initial equations so nothing to do */
-    case (_, {})
-    then simvarsIn;
+    case (_, {}) then simvarsIn;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
       extObjVars), initCrefs)
       equation
-        Util.listMapAllValue(stateVars, simvarFixed,true);
+        true = Util.listMapAllValue(stateVars, simvarFixed,true);
         stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initCrefs);
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
         extObjVars);
-        /* not all were fixed so nothing to do */
-    case (_, _)
-    then simvarsIn;
+      /* not all were fixed so nothing to do */
+    else simvarsIn;
   end matchcontinue;
 end fixInitialThing;
 

@@ -2277,7 +2277,7 @@ algorithm
     case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest)) /* array equation */
       equation
         // fails if not all call results are true
-        Util.listMapAllValue(expl, isAlgebraic, true);
+        true = Util.listMapAllValue(expl, isAlgebraic, true);
         (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
         (resAlgEqn,resDiffEqn,(eqn :: resArrayEqns));
@@ -3034,9 +3034,9 @@ algorithm
         zcl = listAppend(zcl1,zcl2);
       then
         zcl;
-    case (_,_,_,_,_)
+    else
       equation
-        print("BackendDAECreate.traverseAlgStmtsFor failed \n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.traverseAlgStmtsFor failed\n"});
       then
         fail();
   end matchcontinue;
@@ -3173,9 +3173,9 @@ algorithm
 
     case ({},{},trueCls,elseCls,nextInd) then ({},nextInd,listAppend(trueCls,elseCls));
 
-    case (_,_,_,_,_)
+    else
       equation
-        print("- BackendDAECreate.mergeClauses: Error in mergeClauses.\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.mergeClauses: Error in mergeClauses."});
       then fail();
   end matchcontinue;
 end mergeClauses;

@@ -4397,7 +4397,7 @@ public function isZero
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match (inExp)
     local
       Integer ival;
       Real rzero,rval;
@@ -4411,32 +4411,22 @@ algorithm
     
     case (DAE.ICONST(integer = ival)) then intEq(ival,0);
     case (DAE.RCONST(real = rval)) then realEq(rval,0.0);
-    case (DAE.CAST(ty = t,exp = e))
-      equation
-        res = isZero(e) "Casting to zero is still zero" ;
-      then
-        res;
+    case (DAE.CAST(ty = t,exp = e)) then isZero(e);
     
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
-    case(DAE.ARRAY(array = ae))
-      equation
-        Util.listMapAllValue(ae,isZero,true);  
-      then   
-        true;
+    case(DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isZero,true);
     
     case (DAE.MATRIX(scalar = scalar))  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        Util.listMapAllValue(ae,isZero,true);  
-      then
-        true;         
+      then Util.listMapAllValue(ae,isZero,true);
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     
-    case (_) then false;
+    else false;
 
-  end matchcontinue;
+  end match;
 end isZero;
 
 public function isConst
@@ -4509,73 +4499,51 @@ algorithm
       then
         true;   
     
-    case (DAE.ARRAY(array = ae))  
-      equation
-        Util.listMapAllValue(ae,isConst,true);
-      then
-        true;
+    case (DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isConst,true);
     
     case (DAE.MATRIX(scalar = scalar))  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        Util.listMapAllValue(ae,isConst,true);
-      then
-        true;
+      then Util.listMapAllValue(ae,isConst,true);
     
     case (DAE.RANGE(exp=e,expOption=NONE(),range=e1)) 
       equation
         true = isConst(e);
-        true = isConst(e1);
-      then   
-        true;   
+      then isConst(e1);
     
     case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2)) 
       equation
         true = isConst(e);
         true = isConst(e1);
-        true = isConst(e2);
-      then   
-        true;                     
+      then isConst(e2);
     
     case (DAE.PARTEVALFUNCTION(expList = ae))  
-      equation
-        Util.listMapAllValue(ae,isConst,true);
-      then
-        true;
+      then Util.listMapAllValue(ae,isConst,true);
     
     case (DAE.TUPLE(PR = ae))  
-      equation
-        Util.listMapAllValue(ae,isConst,true);
-      then
-        true;          
+      then Util.listMapAllValue(ae,isConst,true);
     
     case (DAE.ASUB(exp=e,sub=ae)) 
       equation
         true = isConst(e);
-        Util.listMapAllValue(ae,isConst,true);
-      then
-        true;
+      then Util.listMapAllValue(ae,isConst,true);
     
     case (DAE.SIZE(exp=e,sz=NONE())) then isConst(e);
     
     case (DAE.SIZE(exp=e,sz=SOME(e1))) 
       equation
         true = isConst(e);
-        true = isConst(e1);
-      then   
-        true;                     
+      then isConst(e1);
     
     case (DAE.END()) then true;
       
     case (DAE.REDUCTION(expr=e1,range=e2))
       equation
         true = isConst(e1);
-        true = isConst(e2);
-      then   
-        true;  
+      then isConst(e2);
         
-    case (_) then false;
+    else false;
 
   end matchcontinue;
 end isConst;
@@ -5356,7 +5324,7 @@ algorithm
     /* For several terms, all must be positive or zero and at least one must be > 0 */
     case(e) equation
       (terms as _::_) = terms(e);
-      Util.listMapAllValue(terms,expIsPositiveOrZero,true);
+      true = Util.listMapAllValue(terms,expIsPositiveOrZero,true);
       _::_ = Util.listSelect(terms,expIsPositive);
     then 
       false;
