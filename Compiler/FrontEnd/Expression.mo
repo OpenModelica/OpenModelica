@@ -1487,7 +1487,7 @@ function typeof
   input DAE.Exp inExp;
   output Type outType;
 algorithm
-  outType := matchcontinue (inExp)
+  outType := match (inExp)
     local
       Type tp;
       Operator op;
@@ -1541,7 +1541,7 @@ algorithm
         msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
-  end matchcontinue;
+  end match;
 end typeof;
 
 public function typeofOp
@@ -4416,11 +4416,8 @@ algorithm
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
     case(DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isZero,true);
     
-    case (DAE.MATRIX(scalar = scalar))  
-      equation
-        aelstlst = Util.listFlatten(scalar);
-        ae = Util.listMap(aelstlst,Util.tuple21);
-      then Util.listMapAllValue(ae,isZero,true);
+    case (DAE.MATRIX(scalar = scalar))
+      then Util.listMapAllValue(scalar,isZeroMatrixExpList,true);
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     
@@ -4428,6 +4425,26 @@ algorithm
 
   end match;
 end isZero;
+
+protected function isZeroMatrixExpList
+"Helper to isZero. The input is the same as a DAE.MATRIX stores."
+  input list<tuple<DAE.Exp,Boolean>> inLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := Util.listMapAllValue(inLst,isZeroMatrixExp,true);
+end isZeroMatrixExpList;
+
+protected function isZeroMatrixExp
+"Helper to isZero. The input is the same as a DAE.MATRIX stores."
+  input tuple<DAE.Exp,Boolean> inTpl;
+  output Boolean outBoolean;
+  replaceable type TypeA subtypeof Any;
+protected
+  DAE.Exp exp;
+algorithm
+  exp := Util.tuple21(inTpl);
+  outBoolean := isZero(exp);
+end isZeroMatrixExp;
 
 public function isConst
 "Returns true if an expression is constant"
@@ -4481,10 +4498,7 @@ algorithm
     case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
     
     case (DAE.MATRIX(scalar = scalar),_)  
-      equation
-        aelstlst = Util.listFlatten(scalar);
-        ae = Util.listMap(aelstlst,Util.tuple21);
-      then isConstWorkList(ae,true);
+      then Util.listMapAllValue(scalar,isConstMatrixExpList,true);
     
     case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));  
     
@@ -4524,6 +4538,26 @@ algorithm
     case (e::exps,_) then isConstWorkList(exps,isConstWork(e,true));
   end match;
 end isConstWorkList;
+
+protected function isConstMatrixExpList
+"Helper to isConst. The input is the same as a DAE.MATRIX stores."
+  input list<tuple<DAE.Exp,Boolean>> inLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := Util.listMapAllValue(inLst,isConstMatrixExp,true);
+end isConstMatrixExpList;
+
+protected function isConstMatrixExp
+"Helper to isConst. The input is the same as a DAE.MATRIX stores."
+  input tuple<DAE.Exp,Boolean> inTpl;
+  output Boolean outBoolean;
+  replaceable type TypeA subtypeof Any;
+protected
+  DAE.Exp exp;
+algorithm
+  exp := Util.tuple21(inTpl);
+  outBoolean := isConst(exp);
+end isConstMatrixExp;
 
 public function isNotConst
 "function isNotConst
