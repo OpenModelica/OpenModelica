@@ -4434,15 +4434,16 @@ public function isConst
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := isConstWork({inExp});
+  outBoolean := isConstWork(inExp,true);
 end isConst;
 
 protected function isConstWork
-"Returns true if a list of expressions is constant"
-  input list<DAE.Exp> acc;
+"Returns true if an expression is constant"
+  input DAE.Exp inExp;
+  input Boolean res;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (acc)
+  outBoolean := match (inExp,res)
     local
       Integer ival;
       Real rval;
@@ -4456,71 +4457,73 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> scalar;      
       list<tuple<DAE.Exp, Boolean>> aelstlst;      
     
-    case ({}) then true; 
-    case (DAE.ICONST(integer = _)::acc) then isConstWork(acc);
-    case (DAE.RCONST(real = _)::acc) then isConstWork(acc);
-    case (DAE.BCONST(bool = _)::acc) then isConstWork(acc);
-    case (DAE.SCONST(string = _)::acc) then isConstWork(acc);
-    case (DAE.ENUM_LITERAL(name = _)::acc) then isConstWork(acc);
+    case (_,false) then false;
+    case (DAE.ICONST(integer = _),_) then true;
+    case (DAE.RCONST(real = _),_) then true;
+    case (DAE.BCONST(bool = _),_) then true;
+    case (DAE.SCONST(string = _),_) then true;
+    case (DAE.ENUM_LITERAL(name = _),_) then true;
 
-    case (DAE.UNARY(operator = op,exp = e)::acc) then isConstWork(e::acc);
+    case (DAE.UNARY(operator = op,exp = e),_) then isConstWork(e,true);
     
-    case (DAE.CAST(ty = t,exp = e)::acc) then isConstWork(e::acc);
+    case (DAE.CAST(ty = t,exp = e),_) then isConstWork(e,true);
     
-    case (DAE.BINARY(e1,op,e2)::acc) then isConstWork(e1::e2::acc);
+    case (DAE.BINARY(e1,op,e2),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.IFEXP(e,e1,e2)::acc) then isConstWork(e::e1::e2::acc);
+    case (DAE.IFEXP(e,e1,e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
     
-    case (DAE.LBINARY(exp1=e1,exp2=e2)::acc) then isConstWork(e1::e2::acc);
+    case (DAE.LBINARY(exp1=e1,exp2=e2),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.LUNARY(exp=e)::acc) then isConstWork(e::acc);
+    case (DAE.LUNARY(exp=e),_) then isConstWork(e,true);
     
-    case (DAE.RELATION(exp1=e1,exp2=e2)::acc) then isConstWork(e1::e2::acc);
+    case (DAE.RELATION(exp1=e1,exp2=e2),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.ARRAY(array = ae)::acc)
-      equation
-        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
-      then res;
+    case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
     
-    case (DAE.MATRIX(scalar = scalar)::acc)  
+    case (DAE.MATRIX(scalar = scalar),_)  
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
-      then res;
+      then isConstWorkList(ae,true);
     
-    case (DAE.RANGE(exp=e,expOption=NONE(),range=e1)::acc) then isConstWork(e::e1::acc);  
+    case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));  
     
-    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2)::acc) then isConstWork(e::e1::e2::acc);
+    case (DAE.RANGE(exp=e,expOption=SOME(e1),range=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
     
-    case (DAE.PARTEVALFUNCTION(expList = ae)::acc)
-      equation
-        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
-      then res;
+    case (DAE.PARTEVALFUNCTION(expList = ae),_) then isConstWorkList(ae,true);
     
-    case (DAE.TUPLE(PR = ae)::acc)
-      equation
-        res = Debug.bcallret1(isConstWork(ae), isConstWork, acc, false); 
-      then res;
+    case (DAE.TUPLE(PR = ae),_) then isConstWorkList(ae,true);
 
     
-    case (DAE.ASUB(exp=e,sub=ae)::acc) 
-      equation
-        res = Debug.bcallret1(isConstWork(e::ae), isConstWork, acc, false); 
-      then res;
+    case (DAE.ASUB(exp=e,sub=ae),_) then isConstWorkList(ae,isConstWork(e,true));
     
-    case (DAE.SIZE(exp=e,sz=NONE())::acc) then isConstWork(e::acc);
+    case (DAE.SIZE(exp=e,sz=NONE()),_) then isConstWork(e,true);
     
-    case (DAE.SIZE(exp=e,sz=SOME(e1))::acc) then isConstWork(e::e1::acc);
+    case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.END()::acc) then isConstWork(acc);
+    case (DAE.END(),_) then true;
       
-    case (DAE.REDUCTION(expr=e1,range=e2)::acc) then isConstWork(e1::e2::acc);
+    case (DAE.REDUCTION(expr=e1,range=e2),_) then isConstWork(e1,isConstWork(e2,true));
         
     else false;
 
   end match;
 end isConstWork;
+
+protected function isConstWorkList
+"Returns true if a list of expressions is constant"
+  input list<DAE.Exp> exps;
+  input Boolean inBoolean;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (exps,inBoolean)
+    local
+      DAE.Exp e;
+    case (_,false) then false;
+    case ({},_) then true;
+    case (e::exps,_) then isConstWorkList(exps,isConstWork(e,true));
+  end match;
+end isConstWorkList;
 
 public function isNotConst
 "function isNotConst
